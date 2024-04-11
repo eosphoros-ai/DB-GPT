@@ -36,7 +36,7 @@ class DefaultTracer(Tracer):
         self._span_storage_type = span_storage_type
 
     def append_span(self, span: Span):
-        self._get_current_storage().append_span(span)
+        self._get_current_storage().append_span(span.copy())
 
     def start_span(
         self,
@@ -130,9 +130,13 @@ class TracerManager:
         """
         tracer = self._get_tracer()
         if not tracer:
-            return Span("empty_span", "empty_span")
+            return Span(
+                "empty_span", "empty_span", span_type=span_type, metadata=metadata
+            )
         if not parent_span_id:
             parent_span_id = self.get_current_span_id()
+        if not span_type and parent_span_id:
+            span_type = self._get_current_span_type()
         return tracer.start_span(
             operation_name, parent_span_id, span_type=span_type, metadata=metadata
         )
@@ -155,6 +159,10 @@ class TracerManager:
             return current_span.span_id
         ctx = self._trace_context_var.get()
         return ctx.span_id if ctx else None
+
+    def _get_current_span_type(self) -> Optional[SpanType]:
+        current_span = self.get_current_span()
+        return current_span.span_type if current_span else None
 
 
 root_tracer: TracerManager = TracerManager()
@@ -197,14 +205,19 @@ def _parse_operation_name(func, *args):
 
 
 def initialize_tracer(
-    system_app: SystemApp,
     tracer_filename: str,
     root_operation_name: str = "DB-GPT-Web-Entry",
-    tracer_storage_cls: str = None,
+    system_app: Optional[SystemApp] = None,
+    tracer_storage_cls: Optional[str] = None,
+    create_system_app: bool = False,
 ):
+    """Initialize the tracer with the given filename and system app."""
+    from dbgpt.util.tracer.span_storage import FileSpanStorage, SpanStorageContainer
+
+    if not system_app and create_system_app:
+        system_app = SystemApp()
     if not system_app:
         return
-    from dbgpt.util.tracer.span_storage import FileSpanStorage, SpanStorageContainer
 
     trace_context_var = ContextVar(
         "trace_context",

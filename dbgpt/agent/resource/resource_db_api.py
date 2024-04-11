@@ -1,7 +1,7 @@
 """Database resource client API."""
 import logging
 from contextlib import contextmanager
-from typing import Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Iterator, List, Optional, Union
 
 from .resource_api import AgentResource, ResourceClient, ResourceType
 
@@ -48,7 +48,8 @@ class ResourceDbClient(ResourceClient):
 class SqliteLoadClient(ResourceDbClient):
     """SQLite resource client."""
 
-    from sqlalchemy.orm.session import Session
+    if TYPE_CHECKING:
+        from sqlalchemy.orm.session import Session
 
     def __init__(self):
         """Create a SQLite resource client."""
@@ -59,7 +60,7 @@ class SqliteLoadClient(ResourceDbClient):
         return "sqlite"
 
     @contextmanager
-    def connect(self, db) -> Iterator[Session]:
+    def connect(self, db) -> Iterator["Session"]:
         """Connect to the database."""
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker

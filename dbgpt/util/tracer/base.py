@@ -15,6 +15,7 @@ class SpanType(str, Enum):
     BASE = "base"
     RUN = "run"
     CHAT = "chat"
+    AGENT = "agent"
 
 
 class SpanTypeRunName(str, Enum):
@@ -98,6 +99,21 @@ class Span:
             else self.end_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
             "metadata": _clean_for_json(self.metadata),
         }
+
+    def copy(self) -> Span:
+        """Create a copy of this span."""
+        metadata = self.metadata.copy() if self.metadata else None
+        span = Span(
+            self.trace_id,
+            self.span_id,
+            self.span_type,
+            self.parent_span_id,
+            self.operation_name,
+            metadata=metadata,
+        )
+        span.start_time = self.start_time
+        span.end_time = self.end_time
+        return span
 
 
 class SpanStorageType(str, Enum):
@@ -191,7 +207,7 @@ class TracerContext:
 
 
 def _clean_for_json(data: Optional[str, Any] = None):
-    if not data:
+    if data is None:
         return None
     if isinstance(data, dict):
         cleaned_dict = {}

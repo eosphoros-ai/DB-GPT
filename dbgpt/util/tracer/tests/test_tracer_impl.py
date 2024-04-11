@@ -52,7 +52,7 @@ def test_start_and_end_span(tracer: Tracer):
     assert span.end_time is not None
 
     stored_span = tracer._get_current_storage().spans[0]
-    assert stored_span == span
+    assert stored_span.span_id == span.span_id
 
 
 def test_start_and_end_span_with_tracer_manager(tracer_manager: TracerManager):
@@ -76,8 +76,12 @@ def test_parent_child_span_relation(tracer: Tracer):
     tracer.end_span(child_span)
     tracer.end_span(parent_span)
 
-    assert parent_span in tracer._get_current_storage().spans
-    assert child_span in tracer._get_current_storage().spans
+    assert parent_span.operation_name in [
+        s.operation_name for s in tracer._get_current_storage().spans
+    ]
+    assert child_span.operation_name in [
+        s.operation_name for s in tracer._get_current_storage().spans
+    ]
 
 
 @pytest.mark.parametrize(

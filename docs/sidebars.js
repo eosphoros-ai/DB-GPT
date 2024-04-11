@@ -451,8 +451,18 @@ const sidebars = {
           label: 'Agents',
           items: [
             {
+              type: "category",
+              label: "Cookbook",
+              items: [
+                {
+                  type: "doc",
+                  id: "agents/cookbook/calculator_with_agents"
+                },
+              ],
+            },
+            {
               type: 'doc',
-              id: 'cookbook/agents/codeagent_develop',
+              id: 'agents/custom_agents',
             }
           ],
         },
