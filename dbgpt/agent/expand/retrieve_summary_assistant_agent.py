@@ -254,14 +254,10 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
             reply_message.success = is_success
         return reply_message
 
-    async def verify(
-        self,
-        message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
-        **kwargs,
+    async def correctness_check(
+        self, message: AgentMessage
     ) -> Tuple[bool, Optional[str]]:
-        """Verify the correctness of the message."""
+        """Verify the correctness of the results."""
         action_report = message.action_report
         task_result = ""
         if action_report:

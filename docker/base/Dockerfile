@@ -62,6 +62,6 @@ RUN (if [ "${LANGUAGE}" = "zh" ]; \
     fi;)
 
 ENV PYTHONPATH "/app:$PYTHONPATH"
-EXPOSE 5000
+EXPOSE 5670
 
 CMD ["dbgpt", "start", "webserver"]

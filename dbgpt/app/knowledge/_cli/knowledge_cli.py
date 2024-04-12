@@ -6,7 +6,7 @@ import click
 
 from dbgpt.configs.model_config import DATASETS_DIR
 
-_DEFAULT_API_ADDRESS: str = "http://127.0.0.1:5000"
+_DEFAULT_API_ADDRESS: str = "http://127.0.0.1:5670"
 API_ADDRESS: str = _DEFAULT_API_ADDRESS
 
 logger = logging.getLogger("dbgpt_cli")

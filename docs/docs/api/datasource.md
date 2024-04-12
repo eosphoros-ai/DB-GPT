@@ -30,7 +30,7 @@ import TabItem from '@theme/TabItem';
 DBGPT_API_KEY=dbgpt
 DB_NAME="{your_db_name}"
 
-curl -X POST "http://localhost:5000/api/v2/chat/completions" \
+curl -X POST "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
@@ -126,7 +126,7 @@ DELETE /api/v2/serve/datasources
 DBGPT_API_KEY=dbgpt
 DATASOURCE_ID={YOUR_DATASOURCE_ID}
  
- curl -X DELETE "http://localhost:5000/api/v2/serve/datasources/$DATASOURCE_ID" \
+ curl -X DELETE "http://localhost:5670/api/v2/serve/datasources/$DATASOURCE_ID" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
 
 ```
@@ -180,7 +180,7 @@ GET /api/v2/serve/datasources/{datasource_id}
 DBGPT_API_KEY=dbgpt
 DATASOURCE_ID={YOUR_DATASOURCE_ID}
 
-curl -X GET "http://localhost:5000/api/v2/serve/datasources/$DATASOURCE_ID" -H "Authorization: Bearer $DBGPT_API_KEY"
+curl -X GET "http://localhost:5670/api/v2/serve/datasources/$DATASOURCE_ID" -H "Authorization: Bearer $DBGPT_API_KEY"
 
 ```
  </TabItem>
@@ -234,7 +234,7 @@ GET /api/v2/serve/datasources
 ```shell
 DBGPT_API_KEY=dbgpt
 
-curl -X GET "http://localhost:5000/api/v2/serve/datasources" -H "Authorization: Bearer $DBGPT_API_KEY"
+curl -X GET "http://localhost:5670/api/v2/serve/datasources" -H "Authorization: Bearer $DBGPT_API_KEY"
 
 ```
  </TabItem>
