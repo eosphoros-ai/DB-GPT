@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { useSearchParams } from 'next/navigation';
-import MonacoEditor from './OBEditor/monaco-editor';
+import MonacoEditor from './monaco-editor';
 import ChatContent from './chat-content';
 import ChatFeedback from './chat-feedback';
 import { ChatContext } from '@/app/chat-context';

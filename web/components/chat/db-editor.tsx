@@ -4,7 +4,7 @@ import { Button, Select, Table, Tooltip } from 'antd';
 import { Input, Tree } from 'antd';
 import Icon from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';
-import MonacoEditor, { ISession } from './OBEditor/monaco-editor';
+import MonacoEditor, { ISession } from './monaco-editor';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import { useSearchParams } from 'next/navigation';
 import { OnChange } from '@monaco-editor/react';

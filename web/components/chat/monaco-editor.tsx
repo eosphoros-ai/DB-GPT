@@ -3,10 +3,11 @@ import Editor, { OnChange, loader } from '@monaco-editor/react';
 import classNames from 'classnames';
 import { useContext, useMemo } from 'react';
 import { formatSql } from '@/utils';
-import { getModelService } from './service';
+import { getModelService } from './ob-editor/service';
 import { useLatest } from 'ahooks';
 import { ChatContext } from '@/app/chat-context';
-import { github, githubDark } from './theme';
+import { github, githubDark } from './ob-editor/theme';
+import { register } from './ob-editor/ob-plugin';
 
 loader.config({ monaco });
 
@@ -47,9 +48,7 @@ export default function MonacoEditor({ className, value, language = 'mysql', onC
   const context = useContext(ChatContext);
 
   async function pluginRegister(editor: monaco.editor.IStandaloneCodeEditor) {
-    console.log('register plugin');
-    const module = await import('./ob-plugin');
-    const plugin = module.register();
+    const plugin = await register()
     plugin.setModelOptions(
       editor.getModel()?.id || '',
       getModelService({

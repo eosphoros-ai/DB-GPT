@@ -1,5 +1,5 @@
 import type { IModelOptions } from '@oceanbase-odc/monaco-plugin-ob/dist/type';
-import { ISession } from './monaco-editor';
+import { ISession } from '../monaco-editor';
 
 
 export function getModelService(
@@ -9,7 +9,6 @@ export function getModelService(
   return {
     delimiter,
     async getTableList(schemaName?: string) {
-        console.log('getTableList')
       return session?.()?.getTableList(schemaName) || []
     },
     async getTableColumns(tableName: string, dbName?: string) {
