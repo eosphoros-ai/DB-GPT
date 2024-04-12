@@ -23,7 +23,7 @@ model_path = LLM_MODEL_CONFIG[model_name]
 # or vllm
 model_type = "huggingface"
 
-controller_addr = "http://127.0.0.1:5000"
+controller_addr = "http://127.0.0.1:5670"
 
 result_csv_file = None
 

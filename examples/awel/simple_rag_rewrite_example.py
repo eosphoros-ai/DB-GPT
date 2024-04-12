@@ -21,7 +21,7 @@
 
     .. code-block:: shell
 
-        DBGPT_SERVER="http://127.0.0.1:5000"
+        DBGPT_SERVER="http://127.0.0.1:5555"
         curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/rag/rewrite \
         -H "Content-Type: application/json" -d '{
             "query": "compare curry and james",

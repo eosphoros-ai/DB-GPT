@@ -140,9 +140,9 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
 
     model_name = param.model_name or CFG.LLM_MODEL
     param.model_name = model_name
-    param.port = param.port or CFG.WEB_SERVER_PORT
+    param.port = param.port or CFG.DBGPT_WEBSERVER_PORT
     if not param.port:
-        param.port = 5000
+        param.port = 5670
 
     print(param)
 

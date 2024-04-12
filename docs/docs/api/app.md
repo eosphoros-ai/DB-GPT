@@ -30,7 +30,7 @@ import TabItem from '@theme/TabItem';
  DBGPT_API_KEY=dbgpt
  APP_ID={YOUR_APP_ID}
 
- curl -X POST "http://localhost:5000/api/v2/chat/completions" \
+ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
@@ -87,7 +87,7 @@ GET /api/v2/serve/apps/{app_id}
 ```shell
 DBGPT_API_KEY=dbgpt
 APP_ID={YOUR_APP_ID}
-curl -X GET "http://localhost:5000/api/v2/serve/apps/$APP_ID" -H "Authorization: Bearer $DBGPT_API_KEY"
+curl -X GET "http://localhost:5670/api/v2/serve/apps/$APP_ID" -H "Authorization: Bearer $DBGPT_API_KEY"
 ```
  </TabItem>
 
@@ -139,7 +139,7 @@ GET /api/v2/serve/apps
 ```shell
 DBGPT_API_KEY=dbgpt
 
-curl -X GET 'http://localhost:5000/api/v2/serve/apps' -H "Authorization: Bearer $DBGPT_API_KEY"
+curl -X GET 'http://localhost:5670/api/v2/serve/apps' -H "Authorization: Bearer $DBGPT_API_KEY"
 ```
  </TabItem>
 

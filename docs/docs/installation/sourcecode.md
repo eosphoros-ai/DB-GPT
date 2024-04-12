@@ -458,4 +458,4 @@ python pilot/server/dbgpt_server.py
 :::
 
 ## Visit website
-Open the browser and visit [`http://localhost:5000`](http://localhost:5000)
+Open the browser and visit [`http://localhost:5670`](http://localhost:5670)

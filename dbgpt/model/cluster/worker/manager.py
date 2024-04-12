@@ -1022,7 +1022,7 @@ def initialize_worker_manager_in_client(
     model_path: str = None,
     run_locally: bool = True,
     controller_addr: str = None,
-    local_port: int = 5000,
+    local_port: int = 5670,
     embedding_model_name: str = None,
     embedding_model_path: str = None,
     start_listener: Callable[["WorkerManager"], None] = None,

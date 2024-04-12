@@ -30,7 +30,7 @@ import TabItem from '@theme/TabItem';
 ```shell
  DBGPT_API_KEY="dbgpt"
 
- curl -X POST "http://localhost:5000/api/v2/chat/completions" \
+ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
@@ -94,7 +94,7 @@ data: [DONE]
 ```shell
  DBGPT_API_KEY="dbgpt"
 
- curl -X POST "http://localhost:5000/api/v2/chat/completions" \
+ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \

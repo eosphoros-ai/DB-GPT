@@ -27,7 +27,7 @@ print(completion.choices[0].message.content)
 
 
 ## Application service layer API
-The service layer API refers to the API exposed on port 5000 after starting the webserver, which is mainly focused on the application layer. It can be divided into the following parts according to categories
+The service layer API refers to the API exposed on port 5670 after starting the webserver, which is mainly focused on the application layer. It can be divided into the following parts according to categories
 
 - Chat API
 - Editor API
@@ -37,7 +37,7 @@ The service layer API refers to the API exposed on port 5000 after starting the 
 - Model API
 
 :::info
-Note: After starting the webserver, open http://127.0.0.1:5000/docs to view details
+Note: After starting the webserver, open http://127.0.0.1:5670/docs to view details
 
 Regarding the service layer API, in terms of strategy in the early days, we maintained the principle of minimum availability and openness. APIs that are stably exposed to the outside world will carry version information, such as
 - /api/v1/
@@ -164,5 +164,5 @@ Currently, due to frequent changes in Knowledge and Prompt, the relevant APIs ar
 
 :::
 
-More detailed interface parameters can be viewed at `http://127.0.0.1:5000/docs`
+More detailed interface parameters can be viewed at `http://127.0.0.1:5670/docs`
 

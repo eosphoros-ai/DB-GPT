@@ -168,13 +168,13 @@ python pilot/server/dbgpt_server.py
 ## Visit website
 
 #### 1. Production model:
-Open the browser and visit [`http://localhost:5000`](http://localhost:5000)
+Open the browser and visit [`http://localhost:5670`](http://localhost:5670)
 
 #### 2. Development mode:
 ```
 cd web & npm install
 cp .env.template .env
-// set the API_BASE_URL to your DB-GPT server address, it usually is http://localhost:5000
+// set the API_BASE_URL to your DB-GPT server address, it usually is http://localhost:5670
 npm run dev
 ```
 Open the browser and visit [`http://localhost:3000`](http://localhost:3000)

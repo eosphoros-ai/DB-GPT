@@ -58,7 +58,7 @@ with DAG("simple_dag_example") as dag:
 Before performing access verification, the project needs to be started first: `python dbgpt/app/dbgpt_server.py`
 
 ```bash
-% curl -X GET http://127.0.0.1:5000/api/v1/awel/trigger/examples/hello\?name\=zhangsan
+% curl -X GET http://127.0.0.1:5670/api/v1/awel/trigger/examples/hello\?name\=zhangsan
 "Hello, zhangsan, your age is 18"
 ```
 

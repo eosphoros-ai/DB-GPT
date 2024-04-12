@@ -66,7 +66,7 @@ def _run_current_with_gunicorn(app: str, config_path: str, kwargs: Dict):
     env_to_app.update(os.environ)
     app_env = EnvArgumentParser._kwargs_to_env_key_value(kwargs)
     env_to_app.update(app_env)
-    cmd = f"uvicorn {app} --host 0.0.0.0 --port 5000"
+    cmd = f"uvicorn {app} --host 0.0.0.0 --port 5670"
     if "windows" in platform.system().lower():
         raise Exception("Not support on windows")
     else:  # macOS, Linux, and other Unix-like systems
@@ -137,8 +137,8 @@ def _get_ports_by_cmdline_part(service_keys: List[str]) -> List[int]:
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
 
-    # Sort ports with preference for 8000 and 5000
-    ports.sort(key=lambda x: (x != 8000, x != 5000, x))
+    # Sort ports with preference for 8000 and 5670
+    ports.sort(key=lambda x: (x != 8000, x != 5670, x))
     return ports
 
 
