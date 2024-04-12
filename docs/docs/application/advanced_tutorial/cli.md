@@ -374,7 +374,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ```
 
 #### Webserver command
-The front-end service can be started through `dbgpt start webserver`, the default port is 5000, and can be accessed through  `http://127.0.0.1:5670`
+The front-end service can be started through `dbgpt start webserver`, the default port is 5670, and can be accessed through  `http://127.0.0.1:5670`
 
 ```python
 ~ dbgpt start webserver --help
