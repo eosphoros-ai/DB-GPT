@@ -575,6 +575,7 @@ function DbEditor() {
                       )}
                       onClick={() => {
                         setCurrentTabIndex(index);
+                        setNewEditorValue(editorValue?.[index]);
                       }}
                     >
                       {item.title}
