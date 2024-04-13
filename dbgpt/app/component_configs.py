@@ -47,6 +47,7 @@ def initialize_components(
     )
     _initialize_model_cache(system_app)
     _initialize_awel(system_app, param)
+    _initialize_agent(system_app)
     _initialize_openapi(system_app)
     # Register serve apps
     register_serve_apps(system_app, CFG)
@@ -76,6 +77,12 @@ def _initialize_awel(system_app: SystemApp, param: WebServerParameters):
     dag_dirs = [x.strip() for x in dag_dirs]
 
     initialize_awel(system_app, dag_dirs)
+
+
+def _initialize_agent(system_app: SystemApp):
+    from dbgpt.agent import initialize_agent
+
+    initialize_agent(system_app)
 
 
 def _initialize_openapi(system_app: SystemApp):

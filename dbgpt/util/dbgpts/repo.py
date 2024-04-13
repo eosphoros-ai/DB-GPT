@@ -73,8 +73,7 @@ def _print_repos():
     table.add_column(_("Repository"), justify="right", style="cyan", no_wrap=True)
     table.add_column(_("Path"), justify="right", style="green")
     for repo, full_path in repos:
-        if full_path.startswith(str(Path.home())):
-            full_path = full_path.replace(str(Path.home()), "~")
+        full_path = _print_path(full_path)
         table.add_row(repo, full_path)
     cl.print(table)
 
@@ -245,7 +244,14 @@ def _copy_and_install(repo: str, name: str, package_path: Path):
         shutil.copytree(package_path, install_path)
         cl.info(f"Installing dbgpts '{name}' from {repo}...")
         os.chdir(install_path)
-        subprocess.run(["poetry", "install"], check=True)
+        subprocess.run(["poetry", "build"], check=True)
+        wheel_files = list(install_path.glob("dist/*.whl"))
+        if not wheel_files:
+            cl.error("No wheel file found after building the package.", exit_code=1)
+        # Install the wheel file using pip
+        wheel_file = wheel_files[0]
+        cl.info(f"Installing dbgpts '{name}' wheel file {_print_path(wheel_file)}...")
+        subprocess.run(["pip", "install", str(wheel_file)], check=True)
         _write_install_metadata(name, repo, install_path)
         cl.success(f"Installed dbgpts at {_print_path(install_path)}.")
         cl.success(f"dbgpts '{name}' installed successfully.")
@@ -357,7 +363,6 @@ def list_installed_apps():
     packages.sort(key=lambda x: (x.package, x.package_type, x.repo))
     for package in packages:
         str_path = package.root
-        if str_path.startswith(str(Path.home())):
-            str_path = str_path.replace(str(Path.home()), "~")
+        str_path = _print_path(str_path)
         table.add_row(package.package, package.package_type, package.repo, str_path)
     cl.print(table)
