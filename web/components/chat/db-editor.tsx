@@ -1,10 +1,10 @@
-import { ChangeEvent, Key, useEffect, useMemo, useState } from 'react';
+import React, { ChangeEvent, Key, useEffect, useMemo, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { Button, Select, Table, Tooltip } from 'antd';
 import { Input, Tree } from 'antd';
 import Icon from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';
-import MonacoEditor from './monaco-editor';
+import MonacoEditor, { ISession } from './monaco-editor';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import { useSearchParams } from 'next/navigation';
 import { OnChange } from '@monaco-editor/react';
@@ -45,6 +45,7 @@ interface IProps {
   chartData?: any;
   tableData?: ITableData;
   layout?: 'TB' | 'LR';
+  tables?: any;
   handleChange: OnChange;
 }
 
@@ -58,7 +59,7 @@ interface ITableTreeItem {
   children: Array<ITableTreeItem>;
 }
 
-function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, handleChange }: IProps) {
+function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, tables, handleChange }: IProps) {
   const chartWrapper = useMemo(() => {
     if (!chartData) return null;
 
@@ -86,9 +87,36 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, han
     return {
       columns: tbCols,
       dataSource: tbDatas,
+
     };
   }, [tableData]);
-
+  const session: ISession = useMemo(() => {
+    const map: Record<string, { columnName: string; columnType: string; }[]> = {};
+    const db = tables?.data;
+    const tableList = db?.children;
+    tableList?.forEach((table: ITableTreeItem) => {
+      map[table.title] = table.children.map((column: ITableTreeItem) => {
+        return {
+          columnName: column.title,
+          columnType: column.type,
+        };
+      })
+    });
+    return {
+      async getTableList(schemaName) {
+        if (schemaName && schemaName!== db?.title) {
+          return [];
+        }
+        return tableList?.map((table: ITableTreeItem) => table.title) || [];
+      },
+      async getTableColumns(tableName) {
+        return map[tableName] || [];
+      },
+      async getSchemaList() {
+        return db?.title ? [db?.title] : [];
+      }
+    };
+  }, [tables])
   return (
     <div
       className={classNames('flex w-full flex-1 h-full gap-2 overflow-hidden', {
@@ -97,7 +125,7 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, han
       })}
     >
       <div className="flex-1 flex overflow-hidden rounded">
-        <MonacoEditor value={editorValue?.sql || ''} language="mysql" onChange={handleChange} thoughts={editorValue?.thoughts || ''} />
+        <MonacoEditor value={editorValue?.sql || ''} language="mysql" onChange={handleChange} thoughts={editorValue?.thoughts || ''} session={session} />
       </div>
       <div className="flex-1 h-full overflow-auto bg-white dark:bg-theme-dark-container rounded p-4">
         {!!tableData?.values.length ? (
@@ -626,6 +654,7 @@ function DbEditor() {
               }}
               tableData={tableData}
               chartData={undefined}
+              tables={tables}
             />
           )}
         </div>
