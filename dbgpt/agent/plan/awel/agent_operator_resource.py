@@ -11,7 +11,7 @@ from dbgpt.core.awel.flow import (
     register_resource,
 )
 
-from ...core.agent_manage import agent_manager
+from ...core.agent_manage import get_agent_manager
 from ...core.llm.llm import LLMConfig, LLMStrategyType
 from ...resource.resource_api import AgentResource, ResourceType
 
@@ -118,7 +118,7 @@ class AWELAgentConfig(LLMConfig):
 def _agent_resource_option_values() -> List[OptionValue]:
     return [
         OptionValue(label=item["name"], name=item["name"], value=item["name"])
-        for item in agent_manager.list_agents()
+        for item in get_agent_manager().list_agents()
     ]
 
 

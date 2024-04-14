@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 
 from dbgpt._private.config import Config
 from dbgpt.agent.core.agent import Agent, AgentContext
-from dbgpt.agent.core.agent_manage import agent_manager
+from dbgpt.agent.core.agent_manage import get_agent_manager
 from dbgpt.agent.core.base_agent import ConversableAgent
 from dbgpt.agent.core.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.agent.core.schema import Status
@@ -222,7 +222,9 @@ class MultiAgents(BaseComponent, ABC):
         self.llm_provider = DefaultLLMClient(worker_manager, auto_convert_message=True)
 
         for record in gpts_app.details:
-            cls: Type[ConversableAgent] = agent_manager.get_by_name(record.agent_name)
+            cls: Type[ConversableAgent] = get_agent_manager().get_by_name(
+                record.agent_name
+            )
             llm_config = LLMConfig(
                 llm_client=self.llm_provider,
                 llm_strategy=LLMStrategyType(record.llm_strategy),
@@ -340,7 +342,7 @@ multi_agents = MultiAgents()
 async def agents_list():
     logger.info("agents_list!")
     try:
-        agents = agent_manager.all_agents()
+        agents = get_agent_manager().all_agents()
         return Result.succ(agents)
     except Exception as e:
         return Result.failed(code="E30001", msg=str(e))

@@ -17,7 +17,7 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 from dbgpt.model.operators.llm_operator import MixinLLMOperator
 
 from ...core.agent import Agent, AgentGenerateContext, AgentMessage
-from ...core.agent_manage import agent_manager
+from ...core.agent_manage import get_agent_manager
 from ...core.base_agent import ConversableAgent
 from ...core.llm.llm import LLMConfig
 from .agent_operator_resource import AWELAgent
@@ -244,7 +244,7 @@ class AWELAgentOperator(
     ) -> ConversableAgent:
         """Build the agent."""
         # agent build
-        agent_cls: Type[ConversableAgent] = agent_manager.get_by_name(  # type: ignore
+        agent_cls: Type[ConversableAgent] = get_agent_manager().get_by_name(
             self.awel_agent.agent_profile
         )
         llm_config = self.awel_agent.llm_config

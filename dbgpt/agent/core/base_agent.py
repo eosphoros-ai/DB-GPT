@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConversableAgent(Role, Agent):
-    """ConversableAgent is a agent that can communicate with other agents."""
+    """ConversableAgent is an agent that can communicate with other agents."""
 
     agent_context: Optional[AgentContext] = Field(None, description="Agent context")
     actions: List[Action] = Field(default_factory=list)

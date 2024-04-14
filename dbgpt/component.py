@@ -86,6 +86,7 @@ class ComponentType(str, Enum):
     AWEL_DAG_MANAGER = "dbgpt_awel_dag_manager"
     UNIFIED_METADATA_DB_MANAGER_FACTORY = "dbgpt_unified_metadata_db_manager_factory"
     CONNECTOR_MANAGER = "dbgpt_connector_manager"
+    AGENT_MANAGER = "dbgpt_agent_manager"
 
 
 _EMPTY_DEFAULT_COMPONENT = "_EMPTY_DEFAULT_COMPONENT"
