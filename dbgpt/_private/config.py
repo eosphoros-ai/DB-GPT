@@ -300,6 +300,15 @@ class Config(metaclass=Singleton):
         # global dbgpt api key
         self.API_KEYS = os.getenv("API_KEYS", None)
 
+        # Non-streaming scene retries
+        self.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE = int(
+            os.getenv("DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE", 1)
+        )
+        # Non-streaming scene parallelism
+        self.DBGPT_APP_SCENE_NON_STREAMING_PARALLELISM_BASE = int(
+            os.getenv("DBGPT_APP_SCENE_NON_STREAMING_PARALLELISM_BASE", 1)
+        )
+
     @property
     def local_db_manager(self) -> "ConnectorManager":
         from dbgpt.datasource.manages import ConnectorManager
