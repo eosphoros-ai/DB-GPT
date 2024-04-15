@@ -21,7 +21,10 @@ from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
 from dbgpt.util import get_or_create_event_loop
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
+from dbgpt.util.retry import async_retry
 from dbgpt.util.tracer import root_tracer, trace
+
+from .exceptions import BaseAppException
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -321,69 +324,66 @@ class BaseChat(ABC):
             "BaseChat.nostream_call", metadata=payload.to_dict()
         )
         logger.info(f"Request: \n{payload}")
-        ai_response_text = ""
         payload.span_id = span.span_id
         try:
-            with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
-                model_output = await self.call_llm_operator(payload)
-
-            ### output parse
-            ai_response_text = (
-                self.prompt_template.output_parser.parse_model_nostream_resp(
-                    model_output, self.prompt_template.sep
-                )
+            ai_response_text, view_message = await self._no_streaming_call_with_retry(
+                payload
             )
-            ### model result deal
             self.current_message.add_ai_message(ai_response_text)
-            prompt_define_response = (
-                self.prompt_template.output_parser.parse_prompt_response(
-                    ai_response_text
-                )
-            )
-            metadata = {
-                "model_output": model_output.to_dict(),
-                "ai_response_text": ai_response_text,
-                "prompt_define_response": self._parse_prompt_define_response(
-                    prompt_define_response
-                ),
-            }
-            with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
-                ###  run
-                result = await blocking_func_to_async(
-                    self._executor, self.do_action, prompt_define_response
-                )
-
-            ### llm speaker
-            speak_to_user = self.get_llm_speak(prompt_define_response)
-
-            # view_message = self.prompt_template.output_parser.parse_view_response(
-            #     speak_to_user, result
-            # )
-            view_message = await blocking_func_to_async(
-                self._executor,
-                self.prompt_template.output_parser.parse_view_response,
-                speak_to_user,
-                result,
-                prompt_define_response,
-            )
-
-            view_message = view_message.replace("\n", "\\n")
             self.current_message.add_view_message(view_message)
             self.message_adjust()
-
             span.end()
-        except Exception as e:
-            print(traceback.format_exc())
-            logger.error("model response parase faild！" + str(e))
-            self.current_message.add_view_message(
-                f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
-            )
+        except BaseAppException as e:
+            self.current_message.add_view_message(e.view)
             span.end(metadata={"error": str(e)})
-        ### store dialogue
+        except Exception as e:
+            view_message = f"<span style='color:red'>ERROR!</span> {str(e)}"
+            self.current_message.add_view_message(view_message)
+            span.end(metadata={"error": str(e)})
+
+        # Store current conversation
         await blocking_func_to_async(
             self._executor, self.current_message.end_current_round
         )
         return self.current_ai_response()
+
+    @async_retry(
+        retries=CFG.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE,
+        parallel_executions=CFG.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE,
+        catch_exceptions=(Exception, BaseAppException),
+    )
+    async def _no_streaming_call_with_retry(self, payload):
+        with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
+            model_output = await self.call_llm_operator(payload)
+
+        ai_response_text = self.prompt_template.output_parser.parse_model_nostream_resp(
+            model_output, self.prompt_template.sep
+        )
+        prompt_define_response = (
+            self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
+        )
+        metadata = {
+            "model_output": model_output.to_dict(),
+            "ai_response_text": ai_response_text,
+            "prompt_define_response": self._parse_prompt_define_response(
+                prompt_define_response
+            ),
+        }
+        with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
+            result = await blocking_func_to_async(
+                self._executor, self.do_action, prompt_define_response
+            )
+
+        speak_to_user = self.get_llm_speak(prompt_define_response)
+
+        view_message = await blocking_func_to_async(
+            self._executor,
+            self.prompt_template.output_parser.parse_view_response,
+            speak_to_user,
+            result,
+            prompt_define_response,
+        )
+        return ai_response_text, view_message.replace("\n", "\\n")
 
     async def get_llm_response(self):
         payload = await self._build_model_request()
