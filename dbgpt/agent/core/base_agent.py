@@ -377,8 +377,10 @@ class ConversableAgent(Role, Agent):
                         **act_extent_param,
                     )
                     if act_out:
-                        reply_message.action_report = act_out.dict()
-                    span.metadata["action_report"] = act_out.dict() if act_out else None
+                        reply_message.action_report = act_out.to_dict()
+                    span.metadata["action_report"] = (
+                        act_out.to_dict() if act_out else None
+                    )
 
                 with root_tracer.start_span(
                     "agent.generate_reply.verify",
@@ -496,7 +498,7 @@ class ConversableAgent(Role, Agent):
                     "recipient": self.get_name(),
                     "reviewer": reviewer.get_name() if reviewer else None,
                     "need_resource": need_resource.to_dict() if need_resource else None,
-                    "rely_action_out": last_out.dict() if last_out else None,
+                    "rely_action_out": last_out.to_dict() if last_out else None,
                     "conv_uid": self.not_null_agent_context.conv_id,
                     "action_index": i,
                     "total_action": len(self.actions),
@@ -508,7 +510,7 @@ class ConversableAgent(Role, Agent):
                     rely_action_out=last_out,
                     **kwargs,
                 )
-                span.metadata["action_out"] = last_out.dict() if last_out else None
+                span.metadata["action_out"] = last_out.to_dict() if last_out else None
         return last_out
 
     async def correctness_check(

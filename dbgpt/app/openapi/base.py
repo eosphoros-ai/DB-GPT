@@ -11,4 +11,4 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         loc = ".".join(list(map(str, error.get("loc"))))
         message += loc + ":" + error.get("msg") + ";"
     res = Result.failed(code="E0001", msg=message)
-    return JSONResponse(status_code=400, content=res.dict())
+    return JSONResponse(status_code=400, content=res.to_dict())

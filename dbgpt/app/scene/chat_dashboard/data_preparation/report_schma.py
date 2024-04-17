@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import BaseModel
 
@@ -38,7 +38,7 @@ class ChartData(BaseModel):
 class ReportData(BaseModel):
     conv_uid: str
     template_name: str
-    template_introduce: str = None
+    template_introduce: Optional[str] = None
     charts: List[ChartData]
 
     def prepare_dict(self):

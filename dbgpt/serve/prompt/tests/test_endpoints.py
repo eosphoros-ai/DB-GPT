@@ -8,7 +8,7 @@ from dbgpt.storage.metadata import db
 from dbgpt.util import PaginationResult
 
 from ..api.endpoints import init_endpoints, router
-from ..api.schemas import ServeRequest, ServerResponse
+from ..api.schemas import ServerResponse
 from ..config import SERVE_CONFIG_KEY_PREFIX
 
 

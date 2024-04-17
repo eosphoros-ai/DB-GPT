@@ -43,11 +43,11 @@ class ChromaVectorConfig(VectorStoreConfig):
 
         arbitrary_types_allowed = True
 
-    persist_path: str = Field(
+    persist_path: Optional[str] = Field(
         default=os.getenv("CHROMA_PERSIST_PATH", None),
         description="the persist path of vector store.",
     )
-    collection_metadata: dict = Field(
+    collection_metadata: Optional[dict] = Field(
         default=None,
         description="the index metadata of vector store, if not set, will use the "
         "default metadata.",
@@ -61,7 +61,7 @@ class ChromaStore(VectorStoreBase):
         """Create a ChromaStore instance."""
         from langchain.vectorstores import Chroma
 
-        chroma_vector_config = vector_store_config.dict(exclude_none=True)
+        chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
         )

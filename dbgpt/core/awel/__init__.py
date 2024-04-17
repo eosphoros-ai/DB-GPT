@@ -159,9 +159,9 @@ def setup_dev_environment(
 
     start_http = _check_has_http_trigger(dags)
     if start_http:
-        from fastapi import FastAPI
+        from dbgpt.util.fastapi import create_app
 
-        app = FastAPI()
+        app = create_app()
     else:
         app = None
     system_app = SystemApp(app)

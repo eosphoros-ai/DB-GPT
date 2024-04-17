@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class SummaryAssistantAgent(ConversableAgent):
     """Summary Assistant Agent."""
 
-    name = "Aristotle"
+    name: str = "Aristotle"
     profile: str = "Summarizer"
     goal: str = (
         "Summarize answer summaries based on user questions from provided "

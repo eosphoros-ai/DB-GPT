@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, cast
 import schedule
 import tomlkit
 
-from dbgpt._private.pydantic import BaseModel, Field, root_validator
+from dbgpt._private.pydantic import BaseModel, Field, model_validator
 from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
 from dbgpt.util.dbgpts.base import (
@@ -48,9 +48,12 @@ class BasePackage(BaseModel):
     def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
         return cls(**values)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre-fill the definition_file"""
+        if not isinstance(values, dict):
+            return values
         import importlib.resources as pkg_resources
 
         name = values.get("name")
@@ -97,7 +100,7 @@ class BasePackage(BaseModel):
 
 
 class FlowPackage(BasePackage):
-    package_type = "flow"
+    package_type: str = "flow"
 
     @classmethod
     def build_from(
@@ -126,7 +129,7 @@ class FlowJsonPackage(FlowPackage):
 
 
 class OperatorPackage(BasePackage):
-    package_type = "operator"
+    package_type: str = "operator"
 
     operators: List[type] = Field(
         default_factory=list, description="The operators of the package"
@@ -141,7 +144,7 @@ class OperatorPackage(BasePackage):
 
 
 class AgentPackage(BasePackage):
-    package_type = "agent"
+    package_type: str = "agent"
 
     agents: List[type] = Field(
         default_factory=list, description="The agents of the package"
@@ -240,7 +243,7 @@ def _load_package_from_path(path: str):
 class DBGPTsLoader(BaseComponent):
     """The loader of the dbgpts packages"""
 
-    name = "dbgpt_dbgpts_loader"
+    name: str = "dbgpt_dbgpts_loader"
 
     def __init__(
         self,

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 import requests
 
-from dbgpt._private.pydantic import BaseModel, Extra, Field
+from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, Field
 from dbgpt.core import Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
@@ -96,7 +96,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = EXTRA_FORBID
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -214,7 +214,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = EXTRA_FORBID
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
@@ -301,7 +301,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = EXTRA_FORBID
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.

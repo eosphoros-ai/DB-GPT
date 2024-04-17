@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import BaseModel, model_to_dict
 
 
 class ResourceType(Enum):
@@ -67,7 +67,7 @@ class AgentResource(BaseModel):
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the AgentResource object to a dictionary."""
-        temp = self.dict()
+        temp = model_to_dict(self)
         for field, value in temp.items():
             if isinstance(value, Enum):
                 temp[field] = value.value

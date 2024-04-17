@@ -60,7 +60,7 @@ class ChatCompletionRequestBody(BaseModel):
         "or in full each time. "
         "If this parameter is not provided, the default is full return.",
     )
-    enable_vis: str = Field(
+    enable_vis: bool = Field(
         default=True, description="response content whether to output vis label"
     )
 

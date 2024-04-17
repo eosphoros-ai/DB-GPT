@@ -8,6 +8,9 @@ T = TypeVar("T")
 class PaginationResult(BaseModel, Generic[T]):
     """Pagination result"""
 
+    class Config:
+        arbitrary_types_allowed = True
+
     items: List[T] = Field(..., description="The items in the current page")
     total_count: int = Field(..., description="Total number of items")
     total_pages: int = Field(..., description="total number of pages")

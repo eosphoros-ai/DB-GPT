@@ -297,8 +297,8 @@ class SystemApp(LifeCycle):
         if not self.app:
             self._register_exit_handler()
             return
+        from dbgpt.util.fastapi import register_event_handler
 
-        @self.app.on_event("startup")
         async def startup_event():
             """ASGI app startup event handler."""
 
@@ -312,11 +312,13 @@ class SystemApp(LifeCycle):
             asyncio.create_task(_startup_func())
             self.after_start()
 
-        @self.app.on_event("shutdown")
         async def shutdown_event():
             """ASGI app shutdown event handler."""
             await self.async_before_stop()
             self.before_stop()
+
+        register_event_handler(self.app, "startup", startup_event)
+        register_event_handler(self.app, "shutdown", shutdown_event)
 
     def _register_exit_handler(self):
         """Register an exit handler to stop the system app."""

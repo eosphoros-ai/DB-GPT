@@ -244,7 +244,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
                 **act_extent_param,
             )
             if act_out:
-                reply_message.action_report = act_out.dict()
+                reply_message.action_report = act_out.to_dict()
             # 4.Reply information verification
             check_pass, reason = await self.verify(reply_message, sender, reviewer)
             is_success = check_pass

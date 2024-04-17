@@ -155,7 +155,7 @@ class MilvusStore(VectorStoreBase):
         from pymilvus import connections
 
         connect_kwargs = {}
-        milvus_vector_config = vector_store_config.dict()
+        milvus_vector_config = vector_store_config.to_dict()
         self.uri = milvus_vector_config.get("uri") or os.getenv(
             "MILVUS_URL", "localhost"
         )

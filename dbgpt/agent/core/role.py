@@ -2,7 +2,7 @@
 from abc import ABC
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import BaseModel, Field
 
 
 class Role(ABC, BaseModel):
@@ -10,14 +10,14 @@ class Role(ABC, BaseModel):
 
     profile: str = ""
     name: str = ""
-    resource_introduction = ""
+    resource_introduction: str = ""
     goal: str = ""
 
     expand_prompt: str = ""
 
-    fixed_subgoal: Optional[str] = None
+    fixed_subgoal: Optional[str] = Field(None, description="Fixed subgoal")
 
-    constraints: List[str] = []
+    constraints: List[str] = Field(default_factory=list, description="Constraints")
     examples: str = ""
     desc: str = ""
     language: str = "en"

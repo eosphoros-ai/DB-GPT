@@ -4,7 +4,7 @@ import json
 import uuid
 from typing import Any, Dict
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 
 
 class Document(BaseModel):
@@ -64,7 +64,7 @@ class Chunk(Document):
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         """Convert Chunk to dict."""
-        data = self.dict(**kwargs)
+        data = model_to_dict(self, **kwargs)
         data["class_name"] = self.class_name()
         return data
 

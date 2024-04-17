@@ -1,7 +1,7 @@
 # Define your Pydantic schemas here
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 
 from ..config import SERVE_APP_NAME_HUMP
 
@@ -41,6 +41,10 @@ class ServeRequest(BaseModel):
             "dbgpt",
         ],
     )
+
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        """Convert the model to a dictionary"""
+        return model_to_dict(self, **kwargs)
 
 
 class ServerResponse(BaseModel):
@@ -99,6 +103,10 @@ class ServerResponse(BaseModel):
         ],
     )
 
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        """Convert the model to a dictionary"""
+        return model_to_dict(self, **kwargs)
+
 
 class MessageVo(BaseModel):
     role: str = Field(
@@ -139,3 +147,7 @@ class MessageVo(BaseModel):
             "vicuna-13b-v1.5",
         ],
     )
+
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        """Convert the model to a dictionary"""
+        return model_to_dict(self, **kwargs)

@@ -112,7 +112,7 @@ class AgentManager(BaseComponent):
         """Return the description of an agent by name."""
         return self._agents[name][1].desc
 
-    def all_agents(self):
+    def all_agents(self) -> Dict[str, str]:
         """Return a dictionary of all registered agents and their descriptions."""
         result = {}
         for name, value in self._agents.items():

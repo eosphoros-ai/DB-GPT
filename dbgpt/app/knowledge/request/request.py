@@ -1,9 +1,6 @@
 from typing import List, Optional
 
-from fastapi import UploadFile
-
 from dbgpt._private.pydantic import BaseModel
-from dbgpt.rag.chunk_manager import ChunkParameters
 
 
 class KnowledgeQueryRequest(BaseModel):

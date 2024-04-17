@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Callable, Dict, List, Optional, Tuple, Union, cast
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 from dbgpt.core.interface.storage import (
     InMemoryStorage,
     ResourceIdentifier,
@@ -42,7 +42,7 @@ class BaseMessage(BaseModel, ABC):
         """
         return {
             "type": self.type,
-            "data": self.dict(),
+            "data": model_to_dict(self),
             "index": self.index,
             "round_index": self.round_index,
         }
@@ -264,7 +264,7 @@ class ModelMessage(BaseModel):
         Returns:
             List[Dict[str, str]]: The dict list
         """
-        return list(map(lambda m: m.dict(), messages))
+        return list(map(lambda m: model_to_dict(m), messages))
 
     @staticmethod
     def build_human_message(content: str) -> "ModelMessage":

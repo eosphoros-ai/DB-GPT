@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Dict
 
 from dbgpt._private.config import Config
-from dbgpt._private.pydantic import Extra
+from dbgpt._private.pydantic import EXTRA_FORBID
 from dbgpt.app.scene.base import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.operators.app_operator import (
     AppChatComposerOperator,
@@ -145,7 +145,7 @@ class BaseChat(ABC):
     class Config:
         """Configuration for this pydantic object."""
 
-        extra = Extra.forbid
+        extra = EXTRA_FORBID
         arbitrary_types_allowed = True
 
     @property

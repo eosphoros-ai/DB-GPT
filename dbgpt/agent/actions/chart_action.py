@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Optional
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_to_json
 from dbgpt.vis.tags.vis_chart import Vis, VisChart
 
 from ..resource.resource_api import AgentResource, ResourceType
@@ -86,13 +86,13 @@ class ChartAction(Action[SqlInput]):
             if not self.render_protocol:
                 raise ValueError("The rendering protocol is not initialized！")
             view = await self.render_protocol.display(
-                chart=json.loads(param.json()), data_df=data_df
+                chart=json.loads(model_to_json(param)), data_df=data_df
             )
             if not self.resource_need:
                 raise ValueError("The resource type is not found！")
             return ActionOutput(
                 is_exe_success=True,
-                content=param.json(),
+                content=model_to_json(param),
                 view=view,
                 resource_type=self.resource_need.value,
                 resource_value=resource.value,

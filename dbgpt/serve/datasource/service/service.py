@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi import HTTPException
 
 from dbgpt._private.config import Config
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.datasource.db_conn_info import DBConfig
@@ -129,9 +130,9 @@ class Service(
                 status_code=400,
                 detail=f"there is no datasource name:{request.db_name} exists",
             )
-        db_config = DBConfig(**request.dict())
+        db_config = DBConfig(**model_to_dict(request))
         if CFG.local_db_manager.edit_db(db_config):
-            return DatasourceServeResponse(**db_config.dict())
+            return DatasourceServeResponse(**model_to_dict(db_config))
         else:
             raise HTTPException(
                 status_code=400,

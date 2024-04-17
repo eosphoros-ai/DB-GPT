@@ -2,6 +2,7 @@
 import json
 from typing import List
 
+from dbgpt._private.pydantic import model_to_json
 from dbgpt.core.schema.api import Result
 
 from .client import Client, ClientException
@@ -210,7 +211,7 @@ async def sync_document(client: Client, sync_model: SyncModel) -> List:
     """
     try:
         res = await client.post(
-            "/knowledge/documents/sync", [json.loads(sync_model.json())]
+            "/knowledge/documents/sync", [json.loads(model_to_json(sync_model))]
         )
         result: Result = res.json()
         if result["success"]:

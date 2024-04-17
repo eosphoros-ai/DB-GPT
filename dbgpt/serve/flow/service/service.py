@@ -387,8 +387,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         request.incremental = False
         async for output in self.safe_chat_stream_flow(flow_uid, request):
             text = output.text
-            # if text:
-            #     text = text.replace("\n", "\\n")
+            if text:
+                text = text.replace("\n", "\\n")
             if output.error_code != 0:
                 yield f"data:[SERVER_ERROR]{text}\n\n"
                 break
@@ -407,7 +407,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         chunk = ChatCompletionStreamResponse(
             id=conv_uid, choices=[choice_data], model=request.model
         )
-        yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+        json_data = model_to_json(chunk, exclude_unset=True, ensure_ascii=False)
+
+        yield f"data: {json_data}\n\n"
 
         request.incremental = True
         async for output in self.safe_chat_stream_flow(flow_uid, request):

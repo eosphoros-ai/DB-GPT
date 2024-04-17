@@ -192,7 +192,7 @@ class PluginStatus(BaseModel):
     logo_url: Optional[str] = None
     api_result: Optional[str] = None
     err_msg: Optional[str] = None
-    start_time = datetime.now().timestamp() * 1000
+    start_time: float = datetime.now().timestamp() * 1000
     end_time: Optional[str] = None
 
     df: Any = None
