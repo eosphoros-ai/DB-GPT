@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
-from dbgpt._private.pydantic import BaseModel, Field, model_to_json
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_json
 from dbgpt.agent.plan.awel.team_awel_layout import AWELTeamContext
 from dbgpt.agent.resource.resource_api import AgentResource
 from dbgpt.serve.agent.team.base import TeamMode
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class GptsAppDetail(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     app_code: Optional[str] = None
     app_name: Optional[str] = None
     agent_name: Optional[str] = None
@@ -27,11 +29,6 @@ class GptsAppDetail(BaseModel):
     llm_strategy_value: Optional[str] = None
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}
@@ -86,6 +83,8 @@ class GptsAppDetail(BaseModel):
 
 
 class GptsApp(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     app_code: Optional[str] = None
     app_name: Optional[str] = None
     app_describe: Optional[str] = None
@@ -99,11 +98,6 @@ class GptsApp(BaseModel):
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
     details: List[GptsAppDetail] = []
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}

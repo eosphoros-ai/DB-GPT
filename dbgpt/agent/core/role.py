@@ -2,11 +2,13 @@
 from abc import ABC
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 
 class Role(ABC, BaseModel):
     """Role class for role-based conversation."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     profile: str = ""
     name: str = ""
@@ -23,11 +25,6 @@ class Role(ABC, BaseModel):
     language: str = "en"
     is_human: bool = False
     is_team: bool = False
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
 
     def prompt_template(
         self,

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -13,14 +13,12 @@ class PagenationFilter(BaseModel, Generic[T]):
 
 
 class PagenationResult(BaseModel, Generic[T]):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     page_index: int = 1
     page_size: int = 20
     total_page: int = 0
     total_row_count: int = 0
     datas: List[T] = []
-
-    class Config:
-        arbitrary_types_allowed: bool = True
 
     def to_dic(self):
         data_dicts = []

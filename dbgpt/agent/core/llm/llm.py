@@ -4,7 +4,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import LLMClient, ModelMetadata, ModelRequest
 
 logger = logging.getLogger(__name__)
@@ -106,11 +106,8 @@ def register_llm_strategy(
 class LLMConfig(BaseModel):
     """LLM configuration."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     llm_client: Optional[LLMClient] = Field(default_factory=LLMClient)
     llm_strategy: LLMStrategyType = Field(default=LLMStrategyType.Default)
     strategy_context: Optional[Any] = None
-
-    class Config:
-        """Pydantic model config."""
-
-        arbitrary_types_allowed = True

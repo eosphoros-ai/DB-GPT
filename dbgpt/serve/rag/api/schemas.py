@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import File, UploadFile
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.rag.chunk_manager import ChunkParameters
 
 from ..config import SERVE_APP_NAME_HUMP
@@ -80,6 +80,8 @@ class KnowledgeSyncRequest(BaseModel):
 class SpaceServeResponse(BaseModel):
     """Flow response model"""
 
+    model_config = ConfigDict(title=f"ServeResponse for {SERVE_APP_NAME_HUMP}")
+
     """name: knowledge space name"""
 
     """vector_type: vector type"""
@@ -97,8 +99,6 @@ class SpaceServeResponse(BaseModel):
     sys_code: Optional[str] = Field(None, description="The sys code")
 
     # TODO define your own fields here
-    class Config:
-        title = f"ServerResponse for {SERVE_APP_NAME_HUMP}"
 
 
 class DocumentChunkVO(BaseModel):

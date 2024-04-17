@@ -1,7 +1,7 @@
 # Define your Pydantic schemas here
 from typing import Any, Dict, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
 from ..config import SERVE_APP_NAME_HUMP
 
@@ -9,8 +9,7 @@ from ..config import SERVE_APP_NAME_HUMP
 class ServeRequest(BaseModel):
     """Conversation request model"""
 
-    class Config:
-        title = f"ServeRequest for {SERVE_APP_NAME_HUMP}"
+    model_config = ConfigDict(title=f"ServeRequest for {SERVE_APP_NAME_HUMP}")
 
     # Just for query
     chat_mode: str = Field(
@@ -50,8 +49,9 @@ class ServeRequest(BaseModel):
 class ServerResponse(BaseModel):
     """Conversation response model"""
 
-    class Config:
-        title = f"ServerResponse for {SERVE_APP_NAME_HUMP}"
+    model_config = ConfigDict(
+        title=f"ServerResponse for {SERVE_APP_NAME_HUMP}", protected_namespaces=()
+    )
 
     conv_uid: str = Field(
         ...,
@@ -109,6 +109,7 @@ class ServerResponse(BaseModel):
 
 
 class MessageVo(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     role: str = Field(
         ...,
         description="The role that sends out the current message.",

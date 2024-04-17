@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, cast
 
 from dbgpt._private.config import Config
-from dbgpt._private.pydantic import BaseModel, Field, validator
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, validator
 from dbgpt.core.awel import DAG
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 
@@ -76,16 +76,13 @@ class AWELTeamContext(BaseModel):
 class AWELBaseManager(ManagerAgent, ABC):
     """AWEL base manager."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     goal: str = (
         "Promote and solve user problems according to the process arranged by AWEL."
     )
     constraints: List[str] = []
     desc: str = goal
-
-    class Config:
-        """Config for the BaseModel."""
-
-        arbitrary_types_allowed = True
 
     async def _a_process_received_message(self, message: AgentMessage, sender: Agent):
         """Process the received message."""
@@ -157,14 +154,11 @@ class WrappedAWELLayoutManager(AWELBaseManager):
     Receives a DAG or builds a DAG from the agents.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     profile: str = "WrappedAWELLayoutManager"
 
     dag: Optional[DAG] = Field(None, description="The DAG of the manager")
-
-    class Config:
-        """Config for the BaseModel."""
-
-        arbitrary_types_allowed = True
 
     def get_dag(self) -> DAG:
         """Get the DAG of the manager."""
@@ -236,14 +230,11 @@ class WrappedAWELLayoutManager(AWELBaseManager):
 class DefaultAWELLayoutManager(AWELBaseManager):
     """The manager of the team for the AWEL layout."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     profile: str = "DefaultAWELLayoutManager"
 
     dag: AWELTeamContext = Field(...)
-
-    class Config:
-        """Config for the BaseModel."""
-
-        arbitrary_types_allowed = True
 
     @validator("dag")
     def check_dag(cls, value):

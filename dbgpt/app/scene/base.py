@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import BaseOutputParser, ChatPromptTemplate
 from dbgpt.core._private.example_base import ExampleSelector
 
@@ -154,10 +154,7 @@ class AppScenePromptTemplateAdapter(BaseModel):
     Include some fields that in :class:`dbgpt.core.PromptTemplate`
     """
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     prompt: ChatPromptTemplate = Field(..., description="The prompt of this scene")
     template_scene: Optional[str] = Field(

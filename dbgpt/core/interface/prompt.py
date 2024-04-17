@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from string import Formatter
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
-from dbgpt._private.pydantic import BaseModel, model_validator
+from dbgpt._private.pydantic import BaseModel, ConfigDict, model_validator
 from dbgpt.core.interface.message import BaseMessage, HumanMessage, SystemMessage
 from dbgpt.core.interface.storage import (
     InMemoryStorage,
@@ -51,6 +51,8 @@ class BasePromptTemplate(BaseModel):
 class PromptTemplate(BasePromptTemplate):
     """Prompt template."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     template: str
     """The prompt template."""
 
@@ -68,11 +70,6 @@ class PromptTemplate(BasePromptTemplate):
 
     template_define: Optional[str] = None
     """this template define"""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     @property
     def _prompt_type(self) -> str:

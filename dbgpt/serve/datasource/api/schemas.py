@@ -1,6 +1,6 @@
 from typing import Optional
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 from ..config import SERVE_APP_NAME_HUMP
 
@@ -23,6 +23,8 @@ class DatasourceServeRequest(BaseModel):
 class DatasourceServeResponse(BaseModel):
     """Flow response model"""
 
+    model_config = ConfigDict(title=f"ServeResponse for {SERVE_APP_NAME_HUMP}")
+
     """name: knowledge space name"""
 
     """vector_type: vector type"""
@@ -35,7 +37,3 @@ class DatasourceServeResponse(BaseModel):
     db_user: str = Field("", description="Database user.")
     db_pwd: str = Field("", description="Database password.")
     comment: str = Field("", description="Comment for the database.")
-
-    # TODO define your own fields here
-    class Config:
-        title = f"ServerResponse for {SERVE_APP_NAME_HUMP}"

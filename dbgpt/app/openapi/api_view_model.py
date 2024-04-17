@@ -1,6 +1,6 @@
 from typing import Any, Dict, Generic, Optional, TypeVar
 
-from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
 T = TypeVar("T")
 
@@ -32,6 +32,8 @@ class ChatSceneVo(BaseModel):
 
 
 class ConversationVo(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     """
     dialogue_uid
     """
@@ -68,6 +70,8 @@ class ConversationVo(BaseModel):
 
 
 class MessageVo(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     """
     role that sends out the current message
     """

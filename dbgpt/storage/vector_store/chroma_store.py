@@ -6,7 +6,7 @@ from typing import List, Optional
 from chromadb import PersistentClient
 from chromadb.config import Settings
 
-from dbgpt._private.pydantic import Field
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -38,10 +38,7 @@ logger = logging.getLogger(__name__)
 class ChromaVectorConfig(VectorStoreConfig):
     """Chroma vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     persist_path: Optional[str] = Field(
         default=os.getenv("CHROMA_PERSIST_PATH", None),

@@ -1,6 +1,6 @@
 from typing import Generic, List, TypeVar
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -8,8 +8,7 @@ T = TypeVar("T")
 class PaginationResult(BaseModel, Generic[T]):
     """Pagination result"""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     items: List[T] = Field(..., description="The items in the current page")
     total_count: int = Field(..., description="Total number of items")

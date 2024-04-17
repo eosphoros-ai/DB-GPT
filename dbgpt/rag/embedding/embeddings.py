@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 import requests
 
-from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, Field
+from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
@@ -64,6 +64,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             )
     """
 
+    model_config = ConfigDict(extra=EXTRA_FORBID, protected_namespaces=())
+
     client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
@@ -92,11 +94,6 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         self.client = sentence_transformers.SentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
         )
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = EXTRA_FORBID
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -184,6 +181,8 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             )
     """
 
+    model_config = ConfigDict(extra=EXTRA_FORBID, protected_namespaces=())
+
     client: Any  #: :meta private:
     model_name: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
@@ -210,11 +209,6 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             )
         except ImportError as e:
             raise ImportError("Dependencies for InstructorEmbedding not found.") from e
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = EXTRA_FORBID
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
@@ -267,6 +261,8 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             )
     """
 
+    model_config = ConfigDict(extra=EXTRA_FORBID, protected_namespaces=())
+
     client: Any  #: :meta private:
     model_name: str = DEFAULT_BGE_MODEL
     """Model name to use."""
@@ -297,11 +293,6 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         )
         if "-zh" in self.model_name:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = EXTRA_FORBID
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -359,6 +350,8 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
 
     Requires a HuggingFace Inference API key and a model name.
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     api_key: str
     """Your API key for the HuggingFace Inference API."""
@@ -474,6 +467,8 @@ class JinaEmbeddings(BaseModel, Embeddings):
     It requires an API key and a model name. The default model name is
     "jina-embeddings-v2-base-en".
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
     api_url: Any  #: :meta private:
     session: Any  #: :meta private:
@@ -627,6 +622,8 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
             openai_embeddings.embed_documents(texts)
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
+
     api_url: str = Field(
         default="http://localhost:8100/api/v1/embeddings",
         description="The URL of the embeddings API.",
@@ -642,11 +639,6 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
     )
 
     session: Optional[requests.Session] = None
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     def __init__(self, **kwargs):
         """Initialize the OpenAPIEmbeddings."""

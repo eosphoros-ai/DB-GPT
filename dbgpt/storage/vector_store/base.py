@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -87,10 +87,7 @@ _COMMON_PARAMETERS = [
 class VectorStoreConfig(BaseModel):
     """Vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = Field(
         default="dbgpt_collection",
