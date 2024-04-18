@@ -56,6 +56,8 @@ def is_empty_data(data: Any):
     """Check if the data is empty."""
     if isinstance(data, _EMPTY_DATA_TYPE):
         return data in (EMPTY_DATA, SKIP_DATA)
+    elif hasattr(data, "empty"):
+        return getattr(data, "empty", False)
     return False
 
 
