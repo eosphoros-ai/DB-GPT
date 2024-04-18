@@ -25,7 +25,7 @@ from dbgpt.util.executor_utils import (
 )
 
 from ..dag.base import DAG, DAGContext, DAGNode, DAGVar
-from ..task.base import EMPTY_DATA, OUT, T, TaskOutput
+from ..task.base import EMPTY_DATA, OUT, T, TaskOutput, is_empty_data
 
 F = TypeVar("F", bound=FunctionType)
 
@@ -213,7 +213,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Returns:
             OUT: The output of the node after execution.
         """
-        if call_data != EMPTY_DATA:
+        if not is_empty_data(call_data):
             call_data = {"data": call_data}
         out_ctx = await self._runner.execute_workflow(
             self, call_data, exist_dag_ctx=dag_ctx
