@@ -5,7 +5,13 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, cast
 
 from dbgpt._private.config import Config
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, validator
+from dbgpt._private.pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_to_dict,
+    validator,
+)
 from dbgpt.core.awel import DAG
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 
@@ -70,7 +76,7 @@ class AWELTeamContext(BaseModel):
 
     def to_dict(self):
         """Convert the object to a dictionary."""
-        return self.dict()
+        return model_to_dict(self)
 
 
 class AWELBaseManager(ManagerAgent, ABC):

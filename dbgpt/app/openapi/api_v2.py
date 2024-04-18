@@ -286,7 +286,7 @@ async def chat_flow_stream_wrapper(
         request (OpenAPIChatCompletionRequest): request
     """
     flow_service = get_chat_flow()
-    flow_req = CommonLLMHttpRequestBody(**model_to_dict(request.dict))
+    flow_req = CommonLLMHttpRequestBody(**model_to_dict(request))
     flow_uid = request.chat_param
 
     async for output in flow_service.chat_stream_openai(flow_uid, flow_req):

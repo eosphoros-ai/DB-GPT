@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import httpx
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.core.schema.api import ChatCompletionResponse, ChatCompletionStreamResponse
 
 from .schema import ChatCompletionRequestBody
@@ -167,7 +168,7 @@ class Client:
             enable_vis=enable_vis,
         )
         response = await self._http_client.post(
-            self._api_url + "/chat/completions", json=request.dict()
+            self._api_url + "/chat/completions", json=model_to_dict(request)
         )
         if response.status_code == 200:
             json_data = json.loads(response.text)
@@ -242,7 +243,7 @@ class Client:
             incremental=incremental,
             enable_vis=enable_vis,
         )
-        async for chat_completion_response in self._chat_stream(request.dict()):
+        async for chat_completion_response in self._chat_stream(model_to_dict(request)):
             yield chat_completion_response
 
     async def _chat_stream(
@@ -262,6 +263,7 @@ class Client:
             headers={},
         ) as response:
             if response.status_code == 200:
+                sse_data = ""
                 async for line in response.aiter_lines():
                     try:
                         if line.strip() == "data: [DONE]":
@@ -277,7 +279,9 @@ class Client:
                             )
                             yield chat_completion_response
                     except Exception as e:
-                        raise e
+                        raise Exception(
+                            f"Failed to parse SSE data: {e}, sse_data: {sse_data}"
+                        )
 
             else:
                 try:

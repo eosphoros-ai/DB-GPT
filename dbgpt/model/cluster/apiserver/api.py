@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
-from dbgpt._private.pydantic import BaseModel, model_to_json
+from dbgpt._private.pydantic import BaseModel, model_to_dict, model_to_json
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import ModelOutput
 from dbgpt.core.interface.message import ModelMessage
@@ -90,7 +90,7 @@ def create_error_response(code: int, message: str) -> JSONResponse:
     We can't use fastchat.serve.openai_api_server because it has too many dependencies.
     """
     return JSONResponse(
-        ErrorResponse(message=message, code=code).dict(), status_code=400
+        model_to_dict(ErrorResponse(message=message, code=code)), status_code=400
     )
 
 
@@ -343,8 +343,8 @@ class APIServer(BaseComponent):
                 )
             )
             if model_output.usage:
-                task_usage = UsageInfo.parse_obj(model_output.usage)
-                for usage_key, usage_value in task_usage.dict().items():
+                task_usage = UsageInfo.model_validate(model_output.usage)
+                for usage_key, usage_value in model_to_dict(task_usage).items():
                     setattr(usage, usage_key, getattr(usage, usage_key) + usage_value)
 
         return ChatCompletionResponse(model=model_name, choices=choices, usage=usage)
@@ -450,8 +450,9 @@ async def create_embeddings(
             }
             for i, emb in enumerate(embeddings)
         ]
-    return EmbeddingsResponse(data=data, model=request.model, usage=UsageInfo()).dict(
-        exclude_none=True
+    return model_to_dict(
+        EmbeddingsResponse(data=data, model=request.model, usage=UsageInfo()),
+        exclude_none=True,
     )
 
 

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Union
 from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 from dbgpt._private.config import Config
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.serve.conversation.api.schemas import ServeRequest
 from dbgpt.serve.rag.api.schemas import (
     DocumentServeRequest,
@@ -286,7 +287,9 @@ class KnowledgeDocumentDao(BaseDao):
             T: The entity
         """
         request_dict = (
-            request.dict() if isinstance(request, DocumentServeRequest) else request
+            model_to_dict(request)
+            if isinstance(request, DocumentServeRequest)
+            else request
         )
         entity = KnowledgeDocumentEntity(**request_dict)
         return entity
