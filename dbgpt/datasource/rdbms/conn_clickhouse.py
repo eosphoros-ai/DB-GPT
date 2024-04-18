@@ -150,6 +150,11 @@ class ClickhouseConnector(RDBMSConnector):
             for name, column_type, _, _, comment in fields[0]
         ]
 
+    @property
+    def dialect(self) -> str:
+        """Return string representation of dialect to use."""
+        pass
+
     def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""
         session = self.client
