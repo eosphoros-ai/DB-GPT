@@ -187,6 +187,7 @@ class ConnectorManager(BaseComponent):
         """Async db summary embedding."""
         # TODO: async embedding
         self.db_summary_client.db_summary_embedding(db_name, db_type)
+        return True
 
     def add_db(self, db_info: DBConfig):
         """Add db connect info.

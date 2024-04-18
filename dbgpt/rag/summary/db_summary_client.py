@@ -107,3 +107,18 @@ class DBSummaryClient:
         else:
             logger.info(f"Vector store name {vector_store_name} exist")
         logger.info("initialize db summary profile success...")
+
+    def delete_db_profile(self, dbname):
+        """Delete db profile."""
+        vector_store_name = dbname + "_profile"
+        from dbgpt.storage.vector_store.base import VectorStoreConfig
+        from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+        vector_store_config = VectorStoreConfig(name=vector_store_name)
+        vector_connector = VectorStoreConnector.from_default(
+            CFG.VECTOR_STORE_TYPE,
+            self.embeddings,
+            vector_store_config=vector_store_config,
+        )
+        vector_connector.delete_vector_name(vector_store_name)
+        logger.info(f"delete db profile {dbname} success")
