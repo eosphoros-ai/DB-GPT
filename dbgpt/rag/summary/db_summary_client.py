@@ -7,6 +7,7 @@ from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
+from dbgpt.rag.summary.gdbms_db_summary import GdbmsSummary
 
 logger = logging.getLogger(__name__)
 
