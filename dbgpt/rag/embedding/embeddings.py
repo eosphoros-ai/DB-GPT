@@ -69,7 +69,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
-    cache_folder: Optional[str] = None
+    cache_folder: Optional[str] = Field(None, description="Path of the cache folder.")
     """Path to store models. Can be also set by SENTENCE_TRANSFORMERS_HOME
     environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -81,7 +81,6 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
-        super().__init__(**kwargs)
         try:
             import sentence_transformers
 
@@ -91,9 +90,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install sentence-transformers`."
             ) from exc
 
-        self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+        kwargs["client"] = sentence_transformers.SentenceTransformer(
+            kwargs.get("model_name"),
+            cache_folder=kwargs.get("cache_folder"),
+            **kwargs.get("model_kwargs"),
         )
+        super().__init__(**kwargs)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -200,15 +202,18 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
-        super().__init__(**kwargs)
         try:
             from InstructorEmbedding import INSTRUCTOR
 
-            self.client = INSTRUCTOR(
-                self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            kwargs["client"] = INSTRUCTOR(
+                kwargs.get("model_name"),
+                cache_folder=kwargs.get("cache_folder"),
+                **kwargs.get("model_kwargs"),
             )
         except ImportError as e:
             raise ImportError("Dependencies for InstructorEmbedding not found.") from e
+
+        super().__init__(**kwargs)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
@@ -278,7 +283,6 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
-        super().__init__(**kwargs)
         try:
             import sentence_transformers
 
@@ -288,9 +292,13 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
                 "Please install it with `pip install sentence_transformers`."
             ) from exc
 
-        self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+        kwargs["client"] = sentence_transformers.SentenceTransformer(
+            kwargs.get("model_name"),
+            cache_folder=kwargs.get("cache_folder"),
+            **kwargs.get("model_kwargs"),
         )
+
+        super().__init__(**kwargs)
         if "-zh" in self.model_name:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
 
@@ -480,7 +488,6 @@ class JinaEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs):
         """Create a new JinaEmbeddings instance."""
-        super().__init__(**kwargs)
         try:
             import requests
         except ImportError:
@@ -488,11 +495,23 @@ class JinaEmbeddings(BaseModel, Embeddings):
                 "The requests python package is not installed. Please install it with "
                 "`pip install requests`"
             )
-        self.api_url = "https://api.jina.ai/v1/embeddings"
-        self.session = requests.Session()
-        self.session.headers.update(
-            {"Authorization": f"Bearer {self.api_key}", "Accept-Encoding": "identity"}
-        )
+        if "api_url" not in kwargs:
+            kwargs["api_url"] = "https://api.jina.ai/v1/embeddings"
+        if "session" not in kwargs:  # noqa: SIM401
+            session = requests.Session()
+        else:
+            session = kwargs["session"]
+        api_key = kwargs.get("api_key")
+        if api_key:
+            session.headers.update(
+                {
+                    "Authorization": f"Bearer {api_key}",
+                    "Accept-Encoding": "identity",
+                }
+            )
+        kwargs["session"] = session
+
+        super().__init__(**kwargs)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
@@ -642,7 +661,6 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs):
         """Initialize the OpenAPIEmbeddings."""
-        super().__init__(**kwargs)
         try:
             import requests
         except ImportError:
@@ -650,8 +668,15 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
                 "The requests python package is not installed. "
                 "Please install it with `pip install requests`"
             )
-        self.session = requests.Session()
-        self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
+        if "session" not in kwargs:  # noqa: SIM401
+            session = requests.Session()
+        else:
+            session = kwargs["session"]
+        api_key = kwargs.get("api_key")
+        if api_key:
+            session.headers.update({"Authorization": f"Bearer {api_key}"})
+        kwargs["session"] = session
+        super().__init__(**kwargs)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
