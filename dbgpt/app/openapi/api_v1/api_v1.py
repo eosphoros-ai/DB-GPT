@@ -169,9 +169,11 @@ async def db_connect_delete(db_name: str = None):
 
 
 @router.post("/v1/chat/db/refresh", response_model=Result[bool])
-async def db_connect_refresh(db_name: str = None, db_type: str = None):
-    CFG.local_db_manager.db_summary_client.delete_db_profile(db_name)
-    success = await CFG.local_db_manager.async_db_summary_embedding(db_name, db_type)
+async def db_connect_refresh(db_config: DBConfig = Body()):
+    CFG.local_db_manager.db_summary_client.delete_db_profile(db_config.db_name)
+    success = await CFG.local_db_manager.async_db_summary_embedding(
+        db_config.db_name, db_config.db_type
+    )
     return Result.succ(success)
 
 
