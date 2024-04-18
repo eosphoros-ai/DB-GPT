@@ -40,7 +40,10 @@ class DBSummaryClient:
 
     def db_summary_embedding(self, dbname, db_type):
         """Put db profile and table profile summary into vector store."""
-        db_summary_client = RdbmsSummary(dbname, db_type)
+        if db_type=='tugraph':
+            db_summary_client = GdbmsSummary(dbname, db_type)
+        else:
+            db_summary_client = RdbmsSummary(dbname, db_type)
 
         self.init_db_profile(db_summary_client, dbname)
 

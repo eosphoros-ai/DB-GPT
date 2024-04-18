@@ -31,12 +31,16 @@ class ChatWithDbQA(BaseChat):
         if self.db_name:
             self.database = CFG.local_db_manager.get_connector(self.db_name)
             self.tables = self.database.get_table_names()
-
-        self.top_k = (
-            CFG.KNOWLEDGE_SEARCH_TOP_SIZE
-            if len(self.tables) > CFG.KNOWLEDGE_SEARCH_TOP_SIZE
-            else len(self.tables)
-        )
+            self.db_type = self.database.db_type
+        if self.db_type == 'tugraph':
+            self.top_k = len(self.tables['vertex_tables']) + len(self.tables['edge_tables'])
+        else:
+            print(self.database.db_type)
+            self.top_k = (
+                CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+                if len(self.tables) > CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+                else len(self.tables)
+            )
 
     @trace()
     async def generate_input_values(self) -> Dict:
