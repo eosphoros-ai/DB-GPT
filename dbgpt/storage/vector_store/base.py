@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter
+from dbgpt.rag.index.base import IndexStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 
@@ -124,7 +125,7 @@ class VectorStoreConfig(BaseModel):
         return model_to_dict(self, **kwargs)
 
 
-class VectorStoreBase(ABC):
+class VectorStoreBase(IndexStoreBase, ABC):
     """Vector store base class."""
 
     @abstractmethod
