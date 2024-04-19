@@ -35,9 +35,10 @@ class DatasourceKnowledge(Knowledge):
     def _load(self) -> List[Document]:
         """Load datasource document from data_loader."""
         docs = []
-        db_summary = _parse_db_summary(self._connector, self._summary_template)
-        if self._connector.db_type == 'tugraph':
-           db_summary = _parse_gdb_summary(self._connector, self._summary_template) 
+        if self._connector.is_graph_type():
+            db_summary = _parse_gdb_summary(self._connector, self._summary_template)
+        else:
+            db_summary = _parse_db_summary(self._connector, self._summary_template)
         for table_summary in db_summary:
             metadata = {"source": "database"}
             if self._metadata:

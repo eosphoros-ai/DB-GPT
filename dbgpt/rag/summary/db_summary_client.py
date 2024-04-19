@@ -40,10 +40,7 @@ class DBSummaryClient:
 
     def db_summary_embedding(self, dbname, db_type):
         """Put db profile and table profile summary into vector store."""
-        if db_type=='tugraph':
-            db_summary_client = GdbmsSummary(dbname, db_type)
-        else:
-            db_summary_client = RdbmsSummary(dbname, db_type)
+        db_summary_client = self.create_summary_client(dbname, db_type)
 
         self.init_db_profile(db_summary_client, dbname)
 
@@ -112,6 +109,7 @@ class DBSummaryClient:
             logger.info(f"Vector store name {vector_store_name} exist")
         logger.info("initialize db summary profile success...")
 
+
     def delete_db_profile(self, dbname):
         """Delete db profile."""
         vector_store_name = dbname + "_profile"
@@ -126,3 +124,10 @@ class DBSummaryClient:
         )
         vector_connector.delete_vector_name(vector_store_name)
         logger.info(f"delete db profile {dbname} success")
+
+    @staticmethod
+    def create_summary_client(dbname: str, db_type: str):
+        if 'graph' in db_type:
+            return GdbmsSummary(dbname, db_type)
+        else:
+            return RdbmsSummary(dbname, db_type)

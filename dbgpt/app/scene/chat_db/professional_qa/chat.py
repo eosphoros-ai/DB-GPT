@@ -31,8 +31,8 @@ class ChatWithDbQA(BaseChat):
         if self.db_name:
             self.database = CFG.local_db_manager.get_connector(self.db_name)
             self.tables = self.database.get_table_names()
-            self.db_type = self.database.db_type
-        if self.db_type == 'tugraph':
+        if self.database.is_graph_type():
+            # When the current graph database retrieves source data from ChatDB, the topk uses the sum of node table and edge table.
             self.top_k = len(self.tables['vertex_tables']) + len(self.tables['edge_tables'])
         else:
             print(self.database.db_type)

@@ -2,7 +2,7 @@ from typing import Any, Optional, cast,List,Dict
 from urllib.parse import quote, quote_plus as urlquote
 from neo4j import GraphDatabase
 from .base import BaseConnector
-
+import json
 class TuGraphConnector(BaseConnector):
     """TuGraph connector."""
 
@@ -12,6 +12,7 @@ class TuGraphConnector(BaseConnector):
     def __init__(self, session):
         """Initialize the connector with a Neo4j driver."""
         self._session = session
+        self._schema = None
     @classmethod
     def from_uri_db(cls, host: str, port: int, user: str, pwd: str, db_name: str, **kwargs: Any) -> "TuGraphConnector":
         """Create a new TuGraphConnector from host, port, user, pwd, db_name."""
@@ -25,11 +26,11 @@ class TuGraphConnector(BaseConnector):
         """Get users from the TuGraph database using the Neo4j driver."""
         """Get all table names from the TuGraph database using the Neo4j driver."""
         # Run the query to get vertex labels
-        v_result = self._session.run("CALL db.vertexLabels()")
+        v_result = self._session.run("CALL db.vertexLabels()").data()
         v_data = [tabel_name['label'] for tabel_name in v_result]
         
         # Run the query to get edge labels
-        e_result = self._session.run("CALL db.edgeLabels()")
+        e_result = self._session.run("CALL db.edgeLabels()").data()
         e_data = [tabel_name['label'] for tabel_name in e_result]
         return {'vertex_tables':v_data,'edge_tables':e_data}
 
@@ -54,7 +55,7 @@ class TuGraphConnector(BaseConnector):
         self.driver.close()
     def run(self):
         return []
-    def get_columns(self, table_name: str) -> List[Dict]:
+    def get_columns(self, table_name: str,tabel_type:str) -> List[Dict]:
         """Get fileds about specified graph.
         Args:
             table_name (str): table name (graph name)
@@ -65,19 +66,48 @@ class TuGraphConnector(BaseConnector):
                 eg:[{'name': 'id', 'type': 'int', 'default_expression': '',
                 'is_in_primary_key': True, 'comment': 'id'}, ...]
         """
-        print(f"CALL db.getVertexSchema('{table_name}')")
         # data = [{'name':'id','type':str,'is_in_primary_key':True,'default_expression':''}]
-        # result = self._session.run(f"CALL db.getVertexSchema('{table_name}')")
-        return []
+        data = []
+        result = None
+        if tabel_type == 'vertex':
+            result = self._session.run(f"CALL db.getVertexSchema('{table_name}')").data()  
+        else:
+            result = self._session.run(f"CALL db.getEdgeSchema('{table_name}')").data()
+        schema_info = json.loads(result[0]['schema'])
+        for prop in schema_info.get('properties', []):
+        # 构造新的字典
+            prop_dict = {
+                'name': prop['name'],
+                'type': prop['type'],
+                'default_expression': '',  # 默认表达式为空
+                'is_in_primary_key': True if 'primary' in schema_info and prop['name'] == schema_info['primary'] else False,  # 是否为主键
+                'comment': prop['name']  # 这里假设comment为字段名，需要根据实际情况调整    
+            }  
+            data.append(prop_dict)
+        return data
     
-    def get_indexes(self, table_name: str) -> List[Dict]:
+    def get_indexes(self, table_name: str,table_type:str) -> List[Dict]:
         """Get table indexes about specified table.
 
         Args:
             table_name:(str) table name
-
+            table_type:(str）'vertex' | 'edge'
         Returns:
             List[Dict]:eg:[{'name': 'idx_key', 'column_names': ['id']}]
         """
-        # {'name':'id','column_names':['id']}
-        return []
+        # [{'name':'id','column_names':['id']}]
+        result = self._session.run(f"CALL db.listLabelIndexes('{table_name}','{table_type}')").data()
+        transformed_data = []
+        for item in result:
+            # 创建一个新的字典，按需求转换键和值
+            new_dict = {
+                'name': item['field'],  # 构造索引名，假设索引名前缀为 'idx_'
+                'column_names': [item['field']]  # 将 'field' 的值用作列名列表
+            }
+            transformed_data.append(new_dict)
+        return transformed_data
+    
+    @classmethod
+    def is_graph_type(cls) -> bool:
+        """Return whether the connector is a graph database connector."""
+        return True

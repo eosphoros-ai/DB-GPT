@@ -91,19 +91,20 @@ def _parse_table_summary(
         table_name (str): table name
 
     Examples:
-        table_name(column1(column1 comment),column2(column2 comment),
+        table_name(column1(column1 comment 'Primary Key'),column2(column2 comment),
         column3(column3 comment) and index keys, and table comment: {table_comment})
     """
     columns = []
-    for column in conn.get_columns(table_name):
-        if column.get("comment"):
-            columns.append(f"{column['name']} ({column.get('comment')})")
-        else:
-            columns.append(f"{column['name']}")
-
+    for column in conn.get_columns(table_name, table_type):
+        column_description = column.get('comment', '')
+        if column.get('is_in_primary_key'):
+            column_description += ' Primary Key' if column_description else 'Primary Key'
+        column_info = f"{column['name']} ({column_description})" if column_description else f"{column['name']}"
+        columns.append(column_info)
     column_str = ", ".join(columns)
+    
     index_keys = []
-    for index_key in conn.get_indexes(table_name):
+    for index_key in conn.get_indexes(table_name,table_type):
         key_str = ", ".join(index_key["column_names"])
         index_keys.append(f"{index_key['name']}(`{key_str}`) ")  # noqa
     table_str = summary_template.format(table_name=table_name, columns=column_str)
