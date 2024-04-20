@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from dbgpt._private.config import Config
 from dbgpt.app.openapi.api_view_model import Result
@@ -70,7 +70,7 @@ class EditorService(BaseComponent):
 
     def get_editor_sql_by_round(
         self, conv_uid: str, round_index: int
-    ) -> Optional[Dict]:
+    ) -> Optional[Union[List, Dict]]:
         storage_conv: StorageConversation = self.get_storage_conv(conv_uid)
         messages_by_round = _split_messages_by_round(storage_conv.messages)
         for one_round_message in messages_by_round:
@@ -184,7 +184,7 @@ class EditorService(BaseComponent):
         return Result.failed(msg="Can't Find Chart Detail Info!")
 
 
-def _parse_pure_dict(res_str: str) -> Dict:
+def _parse_pure_dict(res_str: str) -> Union[Dict, List]:
     output_parser = BaseOutputParser()
     context = output_parser.parse_prompt_response(res_str)
     return json.loads(context)

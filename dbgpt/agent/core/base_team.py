@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List, Optional, Tuple, Union
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 from ..actions.action import ActionOutput
 from .agent import Agent, AgentMessage
@@ -68,15 +68,12 @@ def _content_str(content: Union[str, List, None]) -> str:
 class Team(BaseModel):
     """Team class for managing a group of agents in a team chat."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     agents: List[Agent] = Field(default_factory=list)
     messages: List[Dict] = Field(default_factory=list)
     max_round: int = 100
     is_team: bool = True
-
-    class Config:
-        """Pydantic model configuration."""
-
-        arbitrary_types_allowed = True
 
     def __init__(self, **kwargs):
         """Create a new Team instance."""
@@ -122,6 +119,8 @@ class Team(BaseModel):
 class ManagerAgent(ConversableAgent, Team):
     """Manager Agent class."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     profile: str = "TeamManager"
     goal: str = "manage all hired intelligent agents to complete mission objectives"
     constraints: List[str] = []
@@ -131,11 +130,6 @@ class ManagerAgent(ConversableAgent, Team):
     # The management agent does not need to retry the exception. The actual execution
     # of the agent has already been retried.
     max_retry_count: int = 1
-
-    class Config:
-        """Pydantic model configuration."""
-
-        arbitrary_types_allowed = True
 
     def __init__(self, **kwargs):
         """Create a new ManagerAgent instance."""

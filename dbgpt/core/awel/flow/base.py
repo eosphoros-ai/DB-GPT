@@ -7,7 +7,13 @@ from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
-from dbgpt._private.pydantic import BaseModel, Field, ValidationError, root_validator
+from dbgpt._private.pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    model_to_dict,
+    model_validator,
+)
 from dbgpt.core.awel.util.parameter_util import BaseDynamicOptions, OptionValue
 from dbgpt.core.interface.serialization import Serializable
 
@@ -281,7 +287,7 @@ class TypeMetadata(BaseModel):
 
     def new(self: TM) -> TM:
         """Copy the metadata."""
-        return self.__class__(**self.dict())
+        return self.__class__(**self.model_dump(exclude_defaults=True))
 
 
 class Parameter(TypeMetadata, Serializable):
@@ -332,12 +338,15 @@ class Parameter(TypeMetadata, Serializable):
         None, description="The value of the parameter(Saved in the dag file)"
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the metadata.
 
         Transform the value to the real type.
         """
+        if not isinstance(values, dict):
+            return values
         type_cls = values.get("type_cls")
         to_handle_values = {
             "value": values.get("value"),
@@ -443,7 +452,7 @@ class Parameter(TypeMetadata, Serializable):
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        dict_value = self.dict(exclude={"options"})
+        dict_value = model_to_dict(self, exclude={"options"})
         if not self.options:
             dict_value["options"] = None
         elif isinstance(self.options, BaseDynamicOptions):
@@ -535,7 +544,7 @@ class BaseResource(Serializable, BaseModel):
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        return self.dict()
+        return model_to_dict(self)
 
 
 class Resource(BaseResource, TypeMetadata):
@@ -693,9 +702,12 @@ class BaseMetadata(BaseResource):
             )
         return runnable_parameters
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def base_pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
         if "category_label" not in values:
             category = values["category"]
             if isinstance(category, str):
@@ -713,7 +725,7 @@ class BaseMetadata(BaseResource):
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        dict_value = self.dict(exclude={"parameters"})
+        dict_value = model_to_dict(self, exclude={"parameters"})
         dict_value["parameters"] = [
             parameter.to_dict() for parameter in self.parameters
         ]
@@ -738,9 +750,12 @@ class ResourceMetadata(BaseMetadata, TypeMetadata):
         ],
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
         if "flow_type" not in values:
             values["flow_type"] = "resource"
         if "id" not in values:
@@ -846,9 +861,12 @@ class ViewMetadata(BaseMetadata):
         examples=["dbgpt.model.operators.LLMOperator"],
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
         if "flow_type" not in values:
             values["flow_type"] = "operator"
         if "id" not in values:

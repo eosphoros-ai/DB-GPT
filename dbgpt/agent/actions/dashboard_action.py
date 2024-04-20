@@ -3,7 +3,7 @@ import json
 import logging
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 from dbgpt.vis.tags.vis_dashboard import Vis, VisDashboard
 
 from ..resource.resource_api import AgentResource, ResourceType
@@ -29,6 +29,10 @@ class ChartItem(BaseModel):
         ..., description="Executable sql generated for the current target/problem"
     )
     thought: str = Field(..., description="Summary of thoughts to the user")
+
+    def to_dict(self):
+        """Convert to dict."""
+        return model_to_dict(self)
 
 
 class DashboardAction(Action[List[ChartItem]]):
@@ -101,7 +105,7 @@ class DashboardAction(Action[List[ChartItem]]):
                     sql_df = await resource_db_client.query_to_df(
                         resource.value, chart_item.sql
                     )
-                    chart_dict = chart_item.dict()
+                    chart_dict = chart_item.to_dict()
 
                     chart_dict["data"] = sql_df
                 except Exception as e:
@@ -113,7 +117,9 @@ class DashboardAction(Action[List[ChartItem]]):
             view = await self.render_protocol.display(charts=chart_params)
             return ActionOutput(
                 is_exe_success=True,
-                content=json.dumps([chart_item.dict() for chart_item in chart_items]),
+                content=json.dumps(
+                    [chart_item.to_dict() for chart_item in chart_items]
+                ),
                 view=view,
             )
         except Exception as e:

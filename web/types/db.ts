@@ -61,3 +61,8 @@ export type PromptProps = {
   gmt_created: string;
   gmt_modified: string;
 };
+
+export type PostDbRefreshParams = {
+  db_name: string;
+  db_type: DBType;
+};

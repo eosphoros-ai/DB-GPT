@@ -2,7 +2,7 @@
 import logging
 from typing import List, Optional
 
-from dbgpt._private.pydantic import Field
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -39,10 +39,7 @@ logger = logging.getLogger(__name__)
 class PGVectorConfig(VectorStoreConfig):
     """PG vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     connection_string: str = Field(
         default=None,

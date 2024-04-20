@@ -4,8 +4,13 @@ from typing import Any, Dict, List, Union
 from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 from dbgpt._private.config import Config
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.serve.conversation.api.schemas import ServeRequest
-from dbgpt.serve.rag.api.schemas import DocumentServeRequest, DocumentServeResponse
+from dbgpt.serve.rag.api.schemas import (
+    DocumentServeRequest,
+    DocumentServeResponse,
+    DocumentVO,
+)
 from dbgpt.storage.metadata import BaseDao, Model
 
 CFG = Config()
@@ -30,6 +35,55 @@ class KnowledgeDocumentEntity(Model):
     def __repr__(self):
         return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', summary='{self.summary}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
+    @classmethod
+    def to_document_vo(
+        cls, entity_list: List["KnowledgeDocumentEntity"]
+    ) -> List[DocumentVO]:
+        vo_results = []
+        for item in entity_list:
+            vo_results.append(
+                DocumentVO(
+                    id=item.id,
+                    doc_name=item.doc_name,
+                    doc_type=item.doc_type,
+                    space=item.space,
+                    chunk_size=item.chunk_size,
+                    status=item.status,
+                    last_sync=item.last_sync.strftime("%Y-%m-%d %H:%M:%S"),
+                    content=item.content,
+                    result=item.result,
+                    vector_ids=item.vector_ids,
+                    summary=item.summary,
+                    gmt_created=item.gmt_created.strftime("%Y-%m-%d %H:%M:%S"),
+                    gmt_modified=item.gmt_modified.strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            )
+        return vo_results
+
+    @classmethod
+    def from_document_vo(cls, vo: DocumentVO) -> "KnowledgeDocumentEntity":
+        entity = KnowledgeDocumentEntity(
+            id=vo.id,
+            doc_name=vo.doc_name,
+            doc_type=vo.doc_type,
+            space=vo.space,
+            chunk_size=vo.chunk_size,
+            status=vo.status,
+            content=vo.content,
+            result=vo.result,
+            vector_ids=vo.vector_ids,
+            summary=vo.summary,
+        )
+        if vo.last_sync:
+            entity.last_sync = datetime.strptime(vo.last_sync, "%Y-%m-%d %H:%M:%S")
+        if vo.gmt_created:
+            entity.gmt_created = datetime.strptime(vo.gmt_created, "%Y-%m-%d %H:%M:%S")
+        if vo.gmt_modified:
+            entity.gmt_modified = datetime.strptime(
+                vo.gmt_modified, "%Y-%m-%d %H:%M:%S"
+            )
+        return entity
+
 
 class KnowledgeDocumentDao(BaseDao):
     def create_knowledge_document(self, document: KnowledgeDocumentEntity):
@@ -53,7 +107,7 @@ class KnowledgeDocumentDao(BaseDao):
         session.close()
         return doc_id
 
-    def get_knowledge_documents(self, query, page=1, page_size=20):
+    def get_knowledge_documents(self, query, page=1, page_size=20) -> List[DocumentVO]:
         """Get a list of documents that match the given query.
         Args:
             query: A KnowledgeDocumentEntity object containing the query parameters.
@@ -92,9 +146,9 @@ class KnowledgeDocumentDao(BaseDao):
         )
         result = knowledge_documents.all()
         session.close()
-        return result
+        return KnowledgeDocumentEntity.to_document_vo(result)
 
-    def documents_by_ids(self, ids) -> List[KnowledgeDocumentEntity]:
+    def documents_by_ids(self, ids) -> List[DocumentVO]:
         """Get a list of documents by their IDs.
         Args:
             ids: A list of document IDs.
@@ -109,7 +163,7 @@ class KnowledgeDocumentDao(BaseDao):
         )
         result = knowledge_documents.all()
         session.close()
-        return result
+        return KnowledgeDocumentEntity.to_document_vo(result)
 
     def get_documents(self, query):
         session = self.get_raw_session()
@@ -233,7 +287,9 @@ class KnowledgeDocumentDao(BaseDao):
             T: The entity
         """
         request_dict = (
-            request.dict() if isinstance(request, DocumentServeRequest) else request
+            model_to_dict(request)
+            if isinstance(request, DocumentServeRequest)
+            else request
         )
         entity = KnowledgeDocumentEntity(**request_dict)
         return entity

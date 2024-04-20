@@ -2,6 +2,7 @@
 import json
 from typing import List
 
+from dbgpt._private.pydantic import model_to_dict, model_to_json
 from dbgpt.core.schema.api import Result
 
 from .client import Client, ClientException
@@ -20,7 +21,7 @@ async def create_space(client: Client, space_model: SpaceModel) -> SpaceModel:
         ClientException: If the request failed.
     """
     try:
-        res = await client.post("/knowledge/spaces", space_model.dict())
+        res = await client.post("/knowledge/spaces", model_to_dict(space_model))
         result: Result = res.json()
         if result["success"]:
             return SpaceModel(**result["data"])
@@ -42,7 +43,7 @@ async def update_space(client: Client, space_model: SpaceModel) -> SpaceModel:
         ClientException: If the request failed.
     """
     try:
-        res = await client.put("/knowledge/spaces", space_model.dict())
+        res = await client.put("/knowledge/spaces", model_to_dict(space_model))
         result: Result = res.json()
         if result["success"]:
             return SpaceModel(**result["data"])
@@ -126,7 +127,7 @@ async def create_document(client: Client, doc_model: DocumentModel) -> DocumentM
 
     """
     try:
-        res = await client.post_param("/knowledge/documents", doc_model.dict())
+        res = await client.post_param("/knowledge/documents", model_to_dict(doc_model))
         result: Result = res.json()
         if result["success"]:
             return DocumentModel(**result["data"])
@@ -210,7 +211,7 @@ async def sync_document(client: Client, sync_model: SyncModel) -> List:
     """
     try:
         res = await client.post(
-            "/knowledge/documents/sync", [json.loads(sync_model.json())]
+            "/knowledge/documents/sync", [json.loads(model_to_json(sync_model))]
         )
         result: Result = res.json()
         if result["success"]:

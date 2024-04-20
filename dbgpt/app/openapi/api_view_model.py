@@ -1,17 +1,15 @@
-import time
-import uuid
-from typing import Any, Generic, List, Literal, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
 T = TypeVar("T")
 
 
-class Result(Generic[T], BaseModel):
+class Result(BaseModel, Generic[T]):
     success: bool
-    err_code: str = None
-    err_msg: str = None
-    data: T = None
+    err_code: Optional[str] = None
+    err_msg: Optional[str] = None
+    data: Optional[T] = None
 
     @classmethod
     def succ(cls, data: T):
@@ -20,6 +18,9 @@ class Result(Generic[T], BaseModel):
     @classmethod
     def failed(cls, code: str = "E000X", msg=None):
         return Result(success=False, err_code=code, err_msg=msg, data=None)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return model_to_dict(self)
 
 
 class ChatSceneVo(BaseModel):
@@ -31,6 +32,8 @@ class ChatSceneVo(BaseModel):
 
 
 class ConversationVo(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     """
     dialogue_uid
     """
@@ -43,7 +46,7 @@ class ConversationVo(BaseModel):
     """
     user
     """
-    user_name: str = None
+    user_name: Optional[str] = Field(None, description="user name")
     """ 
     the scene of chat 
     """
@@ -52,21 +55,23 @@ class ConversationVo(BaseModel):
     """
     chat scene select param 
     """
-    select_param: str = None
+    select_param: Optional[str] = Field(None, description="chat scene select param")
     """
     llm model name
     """
-    model_name: str = None
+    model_name: Optional[str] = Field(None, description="llm model name")
 
     """Used to control whether the content is returned incrementally or in full each time. 
     If this parameter is not provided, the default is full return.
     """
     incremental: bool = False
 
-    sys_code: Optional[str] = None
+    sys_code: Optional[str] = Field(None, description="System code")
 
 
 class MessageVo(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     """
     role that sends out the current message
     """
@@ -83,7 +88,9 @@ class MessageVo(BaseModel):
     """
     time the current message was sent 
     """
-    time_stamp: Any = None
+    time_stamp: Optional[Any] = Field(
+        None, description="time the current message was sent"
+    )
 
     """
     model_name

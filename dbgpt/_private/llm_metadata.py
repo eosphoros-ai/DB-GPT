@@ -1,10 +1,12 @@
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 DEFAULT_CONTEXT_WINDOW = 3900
 DEFAULT_NUM_OUTPUTS = 256
 
 
 class LLMMetadata(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(

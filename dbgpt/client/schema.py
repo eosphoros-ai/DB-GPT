@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from fastapi import File, UploadFile
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.rag.chunk_manager import ChunkParameters
 
 
@@ -60,7 +60,7 @@ class ChatCompletionRequestBody(BaseModel):
         "or in full each time. "
         "If this parameter is not provided, the default is full return.",
     )
-    enable_vis: str = Field(
+    enable_vis: bool = Field(
         default=True, description="response content whether to output vis label"
     )
 
@@ -266,6 +266,8 @@ class DocumentModel(BaseModel):
 
 class SyncModel(BaseModel):
     """Sync model."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     """doc_id: doc id"""
     doc_id: str = Field(None, description="The doc id")

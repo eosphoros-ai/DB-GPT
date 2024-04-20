@@ -15,7 +15,14 @@ from typing import (
     get_origin,
 )
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import (
+    BaseModel,
+    Field,
+    field_is_required,
+    field_outer_type,
+    model_fields,
+    model_to_dict,
+)
 from dbgpt.util.i18n_utils import _
 
 from ..dag.base import DAG
@@ -61,7 +68,7 @@ class AWELHttpError(RuntimeError):
 
 def _default_streaming_predict_func(body: "CommonRequestType") -> bool:
     if isinstance(body, BaseModel):
-        body = body.dict()
+        body = model_to_dict(body)
     elif isinstance(body, str):
         try:
             body = json.loads(body)
@@ -254,7 +261,7 @@ class CommonLLMHttpRequestBody(BaseHttpBody):
         "or in full each time. "
         "If this parameter is not provided, the default is full return.",
     )
-    enable_vis: str = Field(
+    enable_vis: bool = Field(
         default=True, description="response content whether to output vis label"
     )
     extra: Optional[Dict[str, Any]] = Field(
@@ -574,18 +581,20 @@ class HttpTrigger(Trigger):
                 if isinstance(req_body_cls, type) and issubclass(
                     req_body_cls, BaseModel
                 ):
-                    fields = req_body_cls.__fields__  # type: ignore
+                    fields = model_fields(req_body_cls)  # type: ignore
                     parameters = []
                     for field_name, field in fields.items():
                         default_value = (
-                            Parameter.empty if field.required else field.default
+                            Parameter.empty
+                            if field_is_required(field)
+                            else field.default
                         )
                         parameters.append(
                             Parameter(
                                 name=field_name,
                                 kind=Parameter.KEYWORD_ONLY,
                                 default=default_value,
-                                annotation=field.outer_type_,
+                                annotation=field_outer_type(field),
                             )
                         )
                 elif req_body_cls == Dict[str, Any] or req_body_cls == dict:
@@ -1029,7 +1038,7 @@ class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, 
 
     async def map(self, request_body: CommonLLMHttpRequestBody) -> Dict[str, Any]:
         """Map the request body to response body."""
-        dict_value = request_body.dict()
+        dict_value = model_to_dict(request_body)
         if not self._key:
             return dict_value
         else:
@@ -1138,7 +1147,7 @@ class RequestedParsedOperator(MapOperator[CommonLLMHttpRequestBody, str]):
 
     async def map(self, request_body: CommonLLMHttpRequestBody) -> str:
         """Map the request body to response body."""
-        dict_value = request_body.dict()
+        dict_value = model_to_dict(request_body)
         if not self._key or self._key not in dict_value:
             raise ValueError(
                 f"Prefix key {self._key} is not a valid key of the request body"

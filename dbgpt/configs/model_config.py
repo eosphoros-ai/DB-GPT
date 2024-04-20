@@ -72,6 +72,10 @@ LLM_MODEL_CONFIG = {
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
+    # https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct
+    "meta-llama-3-8b-instruct": os.path.join(MODEL_PATH, "Meta-Llama-3-8B-Instruct"),
+    # https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct
+    "meta-llama-3-70b-instruct": os.path.join(MODEL_PATH, "Meta-Llama-3-70B-Instruct"),
     "baichuan-13b": os.path.join(MODEL_PATH, "Baichuan-13B-Chat"),
     # please rename "fireballoon/baichuan-vicuna-chinese-7b" to "baichuan-7b"
     "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),

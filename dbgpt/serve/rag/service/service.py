@@ -40,6 +40,7 @@ from dbgpt.util.tracer import root_tracer, trace
 from ..api.schemas import (
     DocumentServeRequest,
     DocumentServeResponse,
+    DocumentVO,
     KnowledgeSyncRequest,
     SpaceServeRequest,
     SpaceServeResponse,
@@ -419,7 +420,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
     def _sync_knowledge_document(
         self,
         space_id,
-        doc: KnowledgeDocumentEntity,
+        doc_vo: DocumentVO,
         chunk_parameters: ChunkParameters,
     ) -> List[Chunk]:
         """sync knowledge document chunk into vector store"""
@@ -430,6 +431,8 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
+
+        doc = KnowledgeDocumentEntity.from_document_vo(doc_vo)
 
         space = self.get({"id": space_id})
         config = VectorStoreConfig(

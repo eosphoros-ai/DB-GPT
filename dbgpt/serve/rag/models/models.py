@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.serve.rag.api.schemas import SpaceServeRequest, SpaceServeResponse
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -89,7 +90,7 @@ class KnowledgeSpaceDao(BaseDao):
         entry = query.first()
         if entry is None:
             raise Exception("Invalid request")
-        for key, value in update_request.dict().items():  # type: ignore
+        for key, value in model_to_dict(update_request).items():  # type: ignore
             if value is not None:
                 setattr(entry, key, value)
         session.merge(entry)
@@ -117,7 +118,9 @@ class KnowledgeSpaceDao(BaseDao):
             T: The entity
         """
         request_dict = (
-            request.dict() if isinstance(request, SpaceServeRequest) else request
+            model_to_dict(request)
+            if isinstance(request, SpaceServeRequest)
+            else request
         )
         entity = KnowledgeSpaceEntity(**request_dict)
         return entity

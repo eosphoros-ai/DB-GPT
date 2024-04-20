@@ -16,7 +16,7 @@ class PluginAssistantAgent(ConversableAgent):
 
     plugin_generator: Optional[PluginPromptGenerator] = None
 
-    name = "LuBan"
+    name: str = "LuBan"
     profile: str = "ToolExpert"
     goal: str = (
         "Read and understand the tool information given in the resources below to "

@@ -138,7 +138,9 @@ async def update(
 
 
 @router.delete("/flows/{uid}")
-async def delete(uid: str, service: Service = Depends(get_service)) -> Result[None]:
+async def delete(
+    uid: str, service: Service = Depends(get_service)
+) -> Result[ServerResponse]:
     """Delete a Flow entity
 
     Args:

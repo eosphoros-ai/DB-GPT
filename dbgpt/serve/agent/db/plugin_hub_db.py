@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 import pytz
 from sqlalchemy import (
@@ -13,6 +14,8 @@ from sqlalchemy import (
 )
 
 from dbgpt.storage.metadata import BaseDao, Model
+
+from ..model import PluginHubVO
 
 # TODO We should consider that the production environment does not have permission to execute the DDL
 char_set_sql = DDL("ALTER TABLE plugin_hub CONVERT TO CHARACTER SET utf8mb4")
@@ -39,6 +42,27 @@ class PluginHubEntity(Model):
 
     UniqueConstraint("name", name="uk_name")
     Index("idx_q_type", "type")
+
+    @classmethod
+    def to_vo(cls, entities: List["PluginHubEntity"]) -> List[PluginHubVO]:
+        results = []
+        for entity in entities:
+            vo = PluginHubVO(
+                id=entity.id,
+                name=entity.name,
+                description=entity.description,
+                author=entity.author,
+                email=entity.email,
+                type=entity.type,
+                version=entity.version,
+                storage_channel=entity.storage_channel,
+                storage_url=entity.storage_url,
+                download_param=entity.download_param,
+                installed=entity.installed,
+                gmt_created=entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S"),
+            )
+            results.append(vo)
+        return results
 
 
 class PluginHubDao(BaseDao):

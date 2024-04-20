@@ -15,7 +15,7 @@ async def create_flow(client: Client, flow: FlowPanel) -> FlowPanel:
         flow (FlowPanel): The flow panel.
     """
     try:
-        res = await client.get("/awel/flows", flow.dict())
+        res = await client.get("/awel/flows", flow.to_dict())
         result: Result = res.json()
         if result["success"]:
             return FlowPanel(**result["data"])
@@ -37,7 +37,7 @@ async def update_flow(client: Client, flow: FlowPanel) -> FlowPanel:
         ClientException: If the request failed.
     """
     try:
-        res = await client.put("/awel/flows", flow.dict())
+        res = await client.put("/awel/flows", flow.to_dict())
         result: Result = res.json()
         if result["success"]:
             return FlowPanel(**result["data"])

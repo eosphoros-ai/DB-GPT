@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 import traceback
 from typing import Any, AsyncIterator, List, Optional, cast
 
@@ -236,6 +235,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     flow.uid = exist_inst.uid
                     self.update_flow(flow, check_editable=False, save_failed_flow=True)
             except Exception as e:
+                import traceback
+
                 message = traceback.format_exc()
                 logger.warning(
                     f"Load DAG {flow.name} from dbgpts error: {str(e)}, detail: {message}"
@@ -296,7 +297,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 )
             return self.create_and_save_dag(update_obj)
         except Exception as e:
-            if old_data:
+            if old_data and old_data.state == State.RUNNING:
+                # Old flow is running, try to recover it
+                # first set the state to DEPLOYED
+                old_data.state = State.DEPLOYED
                 self.create_and_save_dag(old_data)
             raise e
 
@@ -387,8 +391,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         request.incremental = False
         async for output in self.safe_chat_stream_flow(flow_uid, request):
             text = output.text
-            # if text:
-            #     text = text.replace("\n", "\\n")
+            if text:
+                text = text.replace("\n", "\\n")
             if output.error_code != 0:
                 yield f"data:[SERVER_ERROR]{text}\n\n"
                 break
@@ -407,7 +411,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         chunk = ChatCompletionStreamResponse(
             id=conv_uid, choices=[choice_data], model=request.model
         )
-        yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+        json_data = model_to_json(chunk, exclude_unset=True, ensure_ascii=False)
+
+        yield f"data: {json_data}\n\n"
 
         request.incremental = True
         async for output in self.safe_chat_stream_flow(flow_uid, request):

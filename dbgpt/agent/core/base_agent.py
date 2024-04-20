@@ -5,7 +5,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
-from dbgpt._private.pydantic import Field
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import LLMClient, ModelMessageRoleType
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.util.tracer import SpanType, root_tracer
@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 class ConversableAgent(Role, Agent):
     """ConversableAgent is an agent that can communicate with other agents."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     agent_context: Optional[AgentContext] = Field(None, description="Agent context")
     actions: List[Action] = Field(default_factory=list)
     resources: List[AgentResource] = Field(default_factory=list)
@@ -37,11 +39,6 @@ class ConversableAgent(Role, Agent):
     consecutive_auto_reply_counter: int = 0
     llm_client: Optional[AIWrapper] = None
     oai_system_message: List[Dict] = Field(default_factory=list)
-
-    class Config:
-        """Pydantic configuration."""
-
-        arbitrary_types_allowed = True
 
     def __init__(self, **kwargs):
         """Create a new agent."""
@@ -377,8 +374,10 @@ class ConversableAgent(Role, Agent):
                         **act_extent_param,
                     )
                     if act_out:
-                        reply_message.action_report = act_out.dict()
-                    span.metadata["action_report"] = act_out.dict() if act_out else None
+                        reply_message.action_report = act_out.to_dict()
+                    span.metadata["action_report"] = (
+                        act_out.to_dict() if act_out else None
+                    )
 
                 with root_tracer.start_span(
                     "agent.generate_reply.verify",
@@ -496,7 +495,7 @@ class ConversableAgent(Role, Agent):
                     "recipient": self.get_name(),
                     "reviewer": reviewer.get_name() if reviewer else None,
                     "need_resource": need_resource.to_dict() if need_resource else None,
-                    "rely_action_out": last_out.dict() if last_out else None,
+                    "rely_action_out": last_out.to_dict() if last_out else None,
                     "conv_uid": self.not_null_agent_context.conv_id,
                     "action_index": i,
                     "total_action": len(self.actions),
@@ -508,7 +507,7 @@ class ConversableAgent(Role, Agent):
                     rely_action_out=last_out,
                     **kwargs,
                 )
-                span.metadata["action_out"] = last_out.dict() if last_out else None
+                span.metadata["action_out"] = last_out.to_dict() if last_out else None
         return last_out
 
     async def correctness_check(

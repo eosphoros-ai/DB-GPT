@@ -7,6 +7,7 @@ from typing import Any, Dict, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.core.awel.flow.flow_factory import State
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
@@ -82,7 +83,9 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             T: The entity
         """
-        request_dict = request.dict() if isinstance(request, ServeRequest) else request
+        request_dict = (
+            model_to_dict(request) if isinstance(request, ServeRequest) else request
+        )
         flow_data = json.dumps(request_dict.get("flow_data"), ensure_ascii=False)
         state = request_dict.get("state", State.INITIALIZING.value)
         error_message = request_dict.get("error_message")
@@ -184,7 +187,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 entry.flow_category = update_request.flow_category
             if update_request.flow_data:
                 entry.flow_data = json.dumps(
-                    update_request.flow_data.dict(), ensure_ascii=False
+                    model_to_dict(update_request.flow_data), ensure_ascii=False
                 )
             if update_request.description:
                 entry.description = update_request.description

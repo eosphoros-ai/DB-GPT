@@ -1,8 +1,11 @@
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint, func
 
 from dbgpt.storage.metadata import BaseDao, Model
+
+from ..model import MyPluginVO
 
 
 class MyPluginEntity(Model):
@@ -26,6 +29,28 @@ class MyPluginEntity(Model):
         DateTime, default=datetime.utcnow, comment="plugin install time"
     )
     UniqueConstraint("user_code", "name", name="uk_name")
+
+    @classmethod
+    def to_vo(cls, entities: List["MyPluginEntity"]) -> List[MyPluginVO]:
+        results = []
+        for entity in entities:
+            results.append(
+                MyPluginVO(
+                    id=entity.id,
+                    tenant=entity.tenant,
+                    user_code=entity.user_code,
+                    user_name=entity.user_name,
+                    sys_code=entity.sys_code,
+                    name=entity.name,
+                    file_name=entity.file_name,
+                    type=entity.type,
+                    version=entity.version,
+                    use_count=entity.use_count,
+                    succ_count=entity.succ_count,
+                    gmt_created=entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S"),
+                )
+            )
+        return results
 
 
 class MyPluginDao(BaseDao):

@@ -3,6 +3,7 @@ from typing import Any, Dict, Generic, Iterator, List, Optional, TypeVar, Union
 
 from sqlalchemy.orm.session import Session
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.util.pagination_utils import PaginationResult
 
 from .db_manager import BaseQuery, DatabaseManager, db
@@ -165,7 +166,7 @@ class BaseDao(Generic[T, REQ, RES]):
             entry = query.first()
             if entry is None:
                 raise Exception("Invalid request")
-            for key, value in update_request.dict().items():  # type: ignore
+            for key, value in model_to_dict(update_request).items():  # type: ignore
                 if value is not None:
                     setattr(entry, key, value)
             session.merge(entry)
@@ -272,7 +273,9 @@ class BaseDao(Generic[T, REQ, RES]):
         model_cls = type(self.from_request(query_request))
         query = session.query(model_cls)
         query_dict = (
-            query_request if isinstance(query_request, dict) else query_request.dict()
+            query_request
+            if isinstance(query_request, dict)
+            else model_to_dict(query_request)
         )
         for key, value in query_dict.items():
             if value is not None:

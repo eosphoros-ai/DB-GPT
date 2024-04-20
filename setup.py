@@ -30,6 +30,7 @@ BUILD_FROM_SOURCE_URL_FAST_CHAT = os.getenv(
     "BUILD_FROM_SOURCE_URL_FAST_CHAT", "git+https://github.com/lm-sys/FastChat.git"
 )
 BUILD_VERSION_OPENAI = os.getenv("BUILD_VERSION_OPENAI")
+INCLUDE_QUANTIZATION = os.getenv("INCLUDE_QUANTIZATION", "true").lower() == "true"
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -141,6 +142,13 @@ class SetupSpec:
     def __init__(self) -> None:
         self.extras: dict = {}
         self.install_requires: List[str] = []
+
+    @property
+    def unique_extras(self) -> dict[str, list[str]]:
+        unique_extras = {}
+        for k, v in self.extras.items():
+            unique_extras[k] = list(set(v))
+        return unique_extras
 
 
 setup_spec = SetupSpec()
@@ -405,14 +413,14 @@ def core_requires():
         "importlib-resources==5.12.0",
         "python-dotenv==1.0.0",
         "cachetools",
-        "pydantic<2,>=1",
+        "pydantic>=2.6.0",
         # For AWEL type checking
         "typeguard",
     ]
     # For DB-GPT python client SDK
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
         "httpx",
-        "fastapi==0.98.0",
+        "fastapi>=0.100.0",
     ]
     # Simple command line dependencies
     setup_spec.extras["cli"] = setup_spec.extras["client"] + [
@@ -490,8 +498,7 @@ def knowledge_requires():
     """
     setup_spec.extras["rag"] = setup_spec.extras["vstore"] + [
         "langchain>=0.0.286",
-        "spacy==3.5.3",
-        "chromadb==0.4.10",
+        "spacy>=3.7",
         "markdown",
         "bs4",
         "python-pptx",
@@ -546,7 +553,9 @@ def quantization_requires():
             # TODO(yyhhyy): Add autoawq install method for CUDA version 11.8
             quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
 
-    setup_spec.extras["quantization"] = ["cpm_kernels"] + quantization_pkgs
+    setup_spec.extras["quantization"] = (
+        ["cpm_kernels"] + quantization_pkgs + setup_spec.extras["bitsandbytes"]
+    )
 
 
 def all_vector_store_requires():
@@ -554,9 +563,23 @@ def all_vector_store_requires():
     pip install "dbgpt[vstore]"
     """
     setup_spec.extras["vstore"] = [
-        "pymilvus",
+        "chromadb>=0.4.22",
+    ]
+    setup_spec.extras["vstore_weaviate"] = setup_spec.extras["vstore"] + [
+        # "protobuf",
+        # "grpcio",
+        # weaviate depends on grpc which version is very low, we should install it
+        # manually.
         "weaviate-client",
     ]
+    setup_spec.extras["vstore_milvus"] = setup_spec.extras["vstore"] + [
+        "pymilvus",
+    ]
+    setup_spec.extras["vstore_all"] = (
+        setup_spec.extras["vstore"]
+        + setup_spec.extras["vstore_weaviate"]
+        + setup_spec.extras["vstore_milvus"]
+    )
 
 
 def all_datasource_requires():
@@ -630,7 +653,6 @@ def default_requires():
         # "tokenizers==0.13.3",
         "tokenizers>=0.14",
         "accelerate>=0.20.3",
-        "protobuf==3.20.3",
         "zhipuai",
         "dashscope",
         "chardet",
@@ -640,7 +662,9 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["rag"]
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
-    setup_spec.extras["default"] += setup_spec.extras["quantization"]
+    if INCLUDE_QUANTIZATION:
+        # Add quantization extra to default, default is True
+        setup_spec.extras["default"] += setup_spec.extras["quantization"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
 
 
@@ -734,7 +758,7 @@ setuptools.setup(
     url="https://github.com/eosphoros-ai/DB-GPT",
     license="https://opensource.org/license/mit/",
     python_requires=">=3.10",
-    extras_require=setup_spec.extras,
+    extras_require=setup_spec.unique_extras,
     entry_points={
         "console_scripts": [
             "dbgpt=dbgpt.cli.cli_scripts:main",

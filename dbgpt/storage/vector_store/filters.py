@@ -2,7 +2,7 @@
 from enum import Enum
 from typing import List, Union
 
-from pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field
 
 
 class FilterOperator(str, Enum):

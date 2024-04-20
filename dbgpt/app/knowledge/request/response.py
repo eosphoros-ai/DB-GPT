@@ -1,28 +1,29 @@
-from typing import List
+from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.serve.rag.api.schemas import DocumentChunkVO, DocumentVO
 
 
 class ChunkQueryResponse(BaseModel):
     """data: data"""
 
-    data: List = None
+    data: List[DocumentChunkVO] = Field(..., description="document chunk list")
     """summary: document summary"""
-    summary: str = None
+    summary: Optional[str] = Field(None, description="document summary")
     """total: total size"""
-    total: int = None
+    total: Optional[int] = Field(None, description="total size")
     """page: current page"""
-    page: int = None
+    page: Optional[int] = Field(None, description="current page")
 
 
 class DocumentQueryResponse(BaseModel):
     """data: data"""
 
-    data: List = None
+    data: List[DocumentVO] = Field(..., description="document list")
     """total: total size"""
-    total: int = None
+    total: Optional[int] = Field(None, description="total size")
     """page: current page"""
-    page: int = None
+    page: Optional[int] = Field(None, description="current page")
 
 
 class SpaceQueryResponse(BaseModel):

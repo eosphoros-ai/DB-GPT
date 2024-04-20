@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import Column, Integer, String
 
 from dbgpt._private.pydantic import BaseModel as PydanticBaseModel
-from dbgpt._private.pydantic import Field
+from dbgpt._private.pydantic import Field, model_to_dict
 from dbgpt.storage.metadata.db_manager import (
     BaseModel,
     DatabaseManager,
@@ -61,7 +61,7 @@ def user_dao(db, User):
     class UserDao(BaseDao[User, UserRequest, UserResponse]):
         def from_request(self, request: Union[UserRequest, Dict[str, Any]]) -> User:
             if isinstance(request, UserRequest):
-                return User(**request.dict())
+                return User(**model_to_dict(request))
             else:
                 return User(**request)
 
@@ -71,7 +71,7 @@ def user_dao(db, User):
             )
 
         def from_response(self, response: UserResponse) -> User:
-            return User(**response.dict())
+            return User(**model_to_dict(response))
 
         def to_response(self, entity: User):
             return UserResponse(id=entity.id, name=entity.name, age=entity.age)

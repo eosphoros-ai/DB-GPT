@@ -8,7 +8,7 @@ class UserProxyAgent(ConversableAgent):
     That can execute code and provide feedback to the other agents.
     """
 
-    name = "User"
+    name: str = "User"
     profile: str = "Human"
 
     desc: str = (
@@ -16,4 +16,4 @@ class UserProxyAgent(ConversableAgent):
         "Plan execution needs to be approved by this admin."
     )
 
-    is_human = True
+    is_human: bool = True

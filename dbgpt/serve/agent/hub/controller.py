@@ -18,6 +18,9 @@ from dbgpt.serve.agent.model import (
     PluginHubParam,
 )
 
+from ..db import MyPluginEntity
+from ..model import MyPluginVO, PluginHubVO
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -73,7 +76,7 @@ async def plugin_hub_update(update_param: PluginHubParam = Body()):
         return Result.failed(code="E0020", msg=f"Agent Hub Update Error! {e}")
 
 
-@router.post("/v1/agent/query", response_model=Result[str])
+@router.post("/v1/agent/query", response_model=Result[dict])
 async def get_agent_list(filter: PagenationFilter[PluginHubFilter] = Body()):
     logger.info(f"get_agent_list:{filter.__dict__}")
     filter_enetity: PluginHubEntity = PluginHubEntity()
@@ -85,24 +88,21 @@ async def get_agent_list(filter: PagenationFilter[PluginHubFilter] = Body()):
     datas, total_pages, total_count = plugin_hub.hub_dao.list(
         filter_enetity, filter.page_index, filter.page_size
     )
-    result: PagenationResult[PluginHubEntity] = PagenationResult[PluginHubEntity]()
+    result: PagenationResult[PluginHubVO] = PagenationResult[PluginHubVO]()
     result.page_index = filter.page_index
     result.page_size = filter.page_size
     result.total_page = total_pages
     result.total_row_count = total_count
-    result.datas = datas
+    result.datas = PluginHubEntity.to_vo(datas)
     # print(json.dumps(result.to_dic()))
     return Result.succ(result.to_dic())
 
 
-@router.post("/v1/agent/my", response_model=Result[str])
+@router.post("/v1/agent/my", response_model=Result[List[MyPluginVO]])
 async def my_agents(user: str = None):
     logger.info(f"my_agents:{user}")
     agents = plugin_hub.get_my_plugin(user)
-    agent_dicts = []
-    for agent in agents:
-        agent_dicts.append(agent.__dict__)
-
+    agent_dicts = MyPluginEntity.to_vo(agents)
     return Result.succ(agent_dicts)
 
 

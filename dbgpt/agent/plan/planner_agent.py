@@ -84,7 +84,7 @@ class PlannerAgent(ConversableAgent):
         " and allocate resources to achieve complex task goals."
     )
 
-    examples = """
+    examples: str = """
     user:help me build a sales report summarizing our key metrics and trends
     assistants:[
         {{

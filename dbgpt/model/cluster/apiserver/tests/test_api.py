@@ -22,9 +22,10 @@ from dbgpt.model.cluster.apiserver.api import (
 )
 from dbgpt.model.cluster.tests.conftest import _new_cluster
 from dbgpt.model.cluster.worker.manager import _DefaultWorkerManagerFactory
+from dbgpt.util.fastapi import create_app
 from dbgpt.util.openai_utils import chat_completion, chat_completion_stream
 
-app = FastAPI()
+app = create_app()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -69,7 +70,7 @@ async def client(request, system_app: SystemApp):
 async def test_get_all_models(client: AsyncClient):
     res = await client.get("/api/v1/models")
     res.status_code == 200
-    model_lists = ModelList.parse_obj(res.json())
+    model_lists = ModelList.model_validate(res.json())
     print(f"model list json: {res.json()}")
     assert model_lists.object == "list"
     assert len(model_lists.data) == 2

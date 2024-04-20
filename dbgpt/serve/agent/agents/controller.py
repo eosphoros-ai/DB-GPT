@@ -86,7 +86,9 @@ class MultiAgents(BaseComponent, ABC):
     def gpts_create(self, entity: GptsInstanceEntity):
         self.gpts_intance.add(entity)
 
-    def get_dbgpts(self, user_code: str = None, sys_code: str = None):
+    def get_dbgpts(
+        self, user_code: str = None, sys_code: str = None
+    ) -> Optional[List[GptsApp]]:
         apps = self.gpts_app.app_list(
             GptsAppQuery(user_code=user_code, sys_code=sys_code)
         ).app_list
@@ -338,7 +340,7 @@ class MultiAgents(BaseComponent, ABC):
 multi_agents = MultiAgents()
 
 
-@router.post("/v1/dbgpts/agents/list", response_model=Result[str])
+@router.post("/v1/dbgpts/agents/list", response_model=Result[Dict[str, str]])
 async def agents_list():
     logger.info("agents_list!")
     try:
@@ -348,7 +350,7 @@ async def agents_list():
         return Result.failed(code="E30001", msg=str(e))
 
 
-@router.get("/v1/dbgpts/list", response_model=Result[str])
+@router.get("/v1/dbgpts/list", response_model=Result[List[GptsApp]])
 async def get_dbgpts(user_code: str = None, sys_code: str = None):
     logger.info(f"get_dbgpts:{user_code},{sys_code}")
     try:
@@ -359,14 +361,14 @@ async def get_dbgpts(user_code: str = None, sys_code: str = None):
 
 
 @router.post("/v1/dbgpts/chat/completions", response_model=Result[str])
-async def dgpts_completions(
+async def dbgpts_completions(
     gpts_name: str,
     user_query: str,
     conv_id: str = None,
     user_code: str = None,
     sys_code: str = None,
 ):
-    logger.info(f"dgpts_completions:{gpts_name},{user_query},{conv_id}")
+    logger.info(f"dbgpts_completions:{gpts_name},{user_query},{conv_id}")
     if conv_id is None:
         conv_id = str(uuid.uuid1())
 
@@ -390,12 +392,12 @@ async def dgpts_completions(
 
 
 @router.post("/v1/dbgpts/chat/cancel", response_model=Result[str])
-async def dgpts_chat_cancel(
+async def dbgpts_chat_cancel(
     conv_id: str = None, user_code: str = None, sys_code: str = None
 ):
     pass
 
 
 @router.post("/v1/dbgpts/chat/feedback", response_model=Result[str])
-async def dgpts_chat_feedback(filter: PagenationFilter[PluginHubFilter] = Body()):
+async def dbgpts_chat_feedback(filter: PagenationFilter[PluginHubFilter] = Body()):
     pass

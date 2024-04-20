@@ -4,7 +4,7 @@ import inspect
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List
 
-from dbgpt._private.pydantic import BaseModel, Field, root_validator
+from dbgpt._private.pydantic import BaseModel, Field, model_validator
 from dbgpt.core.interface.serialization import Serializable
 
 _DEFAULT_DYNAMIC_REGISTRY = {}
@@ -44,9 +44,12 @@ class FunctionDynamicOptions(BaseDynamicOptions):
         """Return the option values of the parameter."""
         return self.func()
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the function id."""
+        if not isinstance(values, dict):
+            return values
         func = values.get("func")
         if func is None:
             raise ValueError(

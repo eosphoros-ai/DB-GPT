@@ -10,6 +10,7 @@ from fastapi import APIRouter, Body, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
 
 from dbgpt._private.config import Config
+from dbgpt._private.pydantic import model_to_dict, model_to_json
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_view_model import (
@@ -147,7 +148,7 @@ def get_executor() -> Executor:
     ).create()
 
 
-@router.get("/v1/chat/db/list", response_model=Result[DBConfig])
+@router.get("/v1/chat/db/list", response_model=Result[List[DBConfig]])
 async def db_connect_list():
     return Result.succ(CFG.local_db_manager.get_db_list())
 
@@ -164,7 +165,17 @@ async def db_connect_edit(db_config: DBConfig = Body()):
 
 @router.post("/v1/chat/db/delete", response_model=Result[bool])
 async def db_connect_delete(db_name: str = None):
+    CFG.local_db_manager.db_summary_client.delete_db_profile(db_name)
     return Result.succ(CFG.local_db_manager.delete_db(db_name))
+
+
+@router.post("/v1/chat/db/refresh", response_model=Result[bool])
+async def db_connect_refresh(db_config: DBConfig = Body()):
+    CFG.local_db_manager.db_summary_client.delete_db_profile(db_config.db_name)
+    success = await CFG.local_db_manager.async_db_summary_embedding(
+        db_config.db_name, db_config.db_type
+    )
+    return Result.succ(success)
 
 
 async def async_db_summary_embedding(db_name, db_type):
@@ -189,7 +200,7 @@ async def db_summary(db_name: str, db_type: str):
     return Result.succ(True)
 
 
-@router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
+@router.get("/v1/chat/db/support/type", response_model=Result[List[DbTypeInfo]])
 async def db_support_types():
     support_types = CFG.local_db_manager.get_all_completed_types()
     db_type_infos = []
@@ -223,7 +234,7 @@ async def dialogue_scenes():
     return Result.succ(scene_vos)
 
 
-@router.post("/v1/chat/mode/params/list", response_model=Result[dict])
+@router.post("/v1/chat/mode/params/list", response_model=Result[dict | list])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
     if ChatScene.ChatWithDbQA.value() == chat_mode:
         return Result.succ(get_db_list())
@@ -378,7 +389,9 @@ async def chat_completions(
         )
     else:
         with root_tracer.start_span(
-            "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
+            "get_chat_instance",
+            span_type=SpanType.CHAT,
+            metadata=model_to_dict(dialogue),
         ):
             chat: BaseChat = await get_chat_instance(dialogue)
 
@@ -458,7 +471,10 @@ async def stream_generator(chat, incremental: bool, model_name: str):
                 chunk = ChatCompletionStreamResponse(
                     id=chat.chat_session_id, choices=[choice_data], model=model_name
                 )
-                yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+                json_chunk = model_to_json(
+                    chunk, exclude_unset=True, ensure_ascii=False
+                )
+                yield f"data: {json_chunk}\n\n"
             else:
                 # TODO generate an openai-compatible streaming responses
                 msg = msg.replace("\n", "\\n")

@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Dict
 
 from dbgpt._private.config import Config
-from dbgpt._private.pydantic import Extra
+from dbgpt._private.pydantic import EXTRA_FORBID
 from dbgpt.app.scene.base import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.operators.app_operator import (
     AppChatComposerOperator,
@@ -72,11 +72,6 @@ class BaseChat(ABC):
     # convert system message to human message
     auto_convert_message: bool = True
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
     @trace("BaseChat.__init__")
     def __init__(self, chat_param: Dict):
         """Chat Module Initialization
@@ -141,12 +136,6 @@ class BaseChat(ABC):
         # In the future, we will upgrade the message version to v2, and the message will be compatible with all models
         self._message_version = chat_param.get("message_version", "v2")
         self._chat_param = chat_param
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
 
     @property
     def chat_type(self) -> str:

@@ -43,7 +43,7 @@ def get_edit_service() -> EditorService:
     return EditorService.get_instance(CFG.SYSTEM_APP)
 
 
-@router.get("/v1/editor/db/tables", response_model=Result[DbTable])
+@router.get("/v1/editor/db/tables", response_model=Result[DataNode])
 async def get_editor_tables(
     db_name: str, page_index: int, page_size: int, search_str: str = ""
 ):
@@ -70,15 +70,15 @@ async def get_editor_tables(
     return Result.succ(db_node)
 
 
-@router.get("/v1/editor/sql/rounds", response_model=Result[ChatDbRounds])
+@router.get("/v1/editor/sql/rounds", response_model=Result[List[ChatDbRounds]])
 async def get_editor_sql_rounds(
     con_uid: str, editor_service: EditorService = Depends(get_edit_service)
 ):
-    logger.info("get_editor_sql_rounds:{con_uid}")
+    logger.info(f"get_editor_sql_rounds:{ con_uid}")
     return Result.succ(editor_service.get_editor_sql_rounds(con_uid))
 
 
-@router.get("/v1/editor/sql", response_model=Result[dict])
+@router.get("/v1/editor/sql", response_model=Result[dict | list])
 async def get_editor_sql(
     con_uid: str, round: int, editor_service: EditorService = Depends(get_edit_service)
 ):
@@ -107,7 +107,7 @@ async def editor_sql_run(run_param: dict = Body()):
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(
             result_info="",
-            run_cost=(end_time - start_time) / 1000,
+            run_cost=int((end_time - start_time) / 1000),
             colunms=colunms,
             values=sql_result,
         )
