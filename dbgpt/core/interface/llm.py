@@ -10,7 +10,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
 from cachetools import TTLCache
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import BaseModel, model_to_dict
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.util import BaseParameters
 from dbgpt.util.annotations import PublicAPI
@@ -312,7 +312,7 @@ class ModelRequest:
             if isinstance(context, dict):
                 context_dict = context
             elif isinstance(context, BaseModel):
-                context_dict = context.dict()
+                context_dict = model_to_dict(context)
             if context_dict and "stream" not in context_dict:
                 context_dict["stream"] = stream
             if context_dict:

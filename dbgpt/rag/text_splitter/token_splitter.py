@@ -58,7 +58,6 @@ class TokenTextSplitter(BaseModel):
         tokenizer = tokenizer or globals_helper.tokenizer
 
         all_seps = [separator] + (backup_separators or [])
-        self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
 
         super().__init__(
             chunk_size=chunk_size,
@@ -68,6 +67,7 @@ class TokenTextSplitter(BaseModel):
             # callback_manager=callback_manager,
             tokenizer=tokenizer,
         )
+        self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
 
     @classmethod
     def class_name(cls) -> str:

@@ -2,32 +2,29 @@
 from abc import ABC
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 
 class Role(ABC, BaseModel):
     """Role class for role-based conversation."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     profile: str = ""
     name: str = ""
-    resource_introduction = ""
+    resource_introduction: str = ""
     goal: str = ""
 
     expand_prompt: str = ""
 
-    fixed_subgoal: Optional[str] = None
+    fixed_subgoal: Optional[str] = Field(None, description="Fixed subgoal")
 
-    constraints: List[str] = []
+    constraints: List[str] = Field(default_factory=list, description="Constraints")
     examples: str = ""
     desc: str = ""
     language: str = "en"
     is_human: bool = False
     is_team: bool = False
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
 
     def prompt_template(
         self,

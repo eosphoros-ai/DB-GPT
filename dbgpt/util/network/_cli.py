@@ -197,10 +197,12 @@ def _start_http_forward(
 ):
     import httpx
     import uvicorn
-    from fastapi import BackgroundTasks, FastAPI, Request, Response
+    from fastapi import BackgroundTasks, Request, Response
     from fastapi.responses import StreamingResponse
 
-    app = FastAPI()
+    from dbgpt.util.fastapi import create_app
+
+    app = create_app()
 
     @app.middleware("http")
     async def forward_http_request(request: Request, call_next):

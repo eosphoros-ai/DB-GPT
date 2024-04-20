@@ -6,7 +6,7 @@ from typing import List, Optional
 from chromadb import PersistentClient
 from chromadb.config import Settings
 
-from dbgpt._private.pydantic import Field
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -38,16 +38,13 @@ logger = logging.getLogger(__name__)
 class ChromaVectorConfig(VectorStoreConfig):
     """Chroma vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-        arbitrary_types_allowed = True
-
-    persist_path: str = Field(
+    persist_path: Optional[str] = Field(
         default=os.getenv("CHROMA_PERSIST_PATH", None),
         description="the persist path of vector store.",
     )
-    collection_metadata: dict = Field(
+    collection_metadata: Optional[dict] = Field(
         default=None,
         description="the index metadata of vector store, if not set, will use the "
         "default metadata.",
@@ -61,7 +58,7 @@ class ChromaStore(VectorStoreBase):
         """Create a ChromaStore instance."""
         from langchain.vectorstores import Chroma
 
-        chroma_vector_config = vector_store_config.dict(exclude_none=True)
+        chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
         )

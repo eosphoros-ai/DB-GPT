@@ -1,6 +1,7 @@
 """this module contains the datasource client functions."""
 from typing import List
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.core.schema.api import Result
 
 from .client import Client, ClientException
@@ -17,7 +18,7 @@ async def create_datasource(
         datasource (DatasourceModel): The datasource model.
     """
     try:
-        res = await client.get("/datasources", datasource.dict())
+        res = await client.get("/datasources", model_to_dict(datasource))
         result: Result = res.json()
         if result["success"]:
             return DatasourceModel(**result["data"])
@@ -41,7 +42,7 @@ async def update_datasource(
         ClientException: If the request failed.
     """
     try:
-        res = await client.put("/datasources", datasource.dict())
+        res = await client.put("/datasources", model_to_dict(datasource))
         result: Result = res.json()
         if result["success"]:
             return DatasourceModel(**result["data"])

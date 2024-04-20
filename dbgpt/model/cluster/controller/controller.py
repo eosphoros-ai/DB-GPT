@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.model.base import ModelInstance
@@ -10,6 +10,7 @@ from dbgpt.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
 from dbgpt.model.parameter import ModelControllerParameters
 from dbgpt.util.api_utils import _api_remote as api_remote
 from dbgpt.util.api_utils import _sync_api_remote as sync_api_remote
+from dbgpt.util.fastapi import create_app
 from dbgpt.util.parameter_utils import EnvArgumentParser
 from dbgpt.util.utils import setup_http_service_logging, setup_logging
 
@@ -152,7 +153,7 @@ def initialize_controller(
         import uvicorn
 
         setup_http_service_logging()
-        app = FastAPI()
+        app = create_app()
         app.include_router(router, prefix="/api", tags=["Model"])
         uvicorn.run(app, host=host, port=port, log_level="info")
 

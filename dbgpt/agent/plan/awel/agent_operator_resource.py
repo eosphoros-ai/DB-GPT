@@ -1,7 +1,7 @@
 """The AWEL Agent Operator Resource."""
 from typing import Any, Dict, List, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field, root_validator
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_validator
 from dbgpt.core import LLMClient
 from dbgpt.core.awel.flow import (
     FunctionDynamicOptions,
@@ -55,9 +55,12 @@ from ...resource.resource_api import AgentResource, ResourceType
 class AWELAgentResource(AgentResource):
     """AWEL Agent Resource."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the agent ResourceType."""
+        if not isinstance(values, dict):
+            return values
         name = values.pop("agent_resource_name")
         type = values.pop("agent_resource_type")
         value = values.pop("agent_resource_value")
@@ -109,10 +112,7 @@ class AWELAgentResource(AgentResource):
 class AWELAgentConfig(LLMConfig):
     """AWEL Agent Config."""
 
-    @root_validator(pre=True)
-    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Pre fill the agent ResourceType."""
-        return values
+    pass
 
 
 def _agent_resource_option_values() -> List[OptionValue]:
@@ -173,20 +173,20 @@ def _agent_resource_option_values() -> List[OptionValue]:
 class AWELAgent(BaseModel):
     """AWEL Agent."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     agent_profile: str
     role_name: Optional[str] = None
     llm_config: Optional[LLMConfig] = None
     resources: List[AgentResource] = Field(default_factory=list)
     fixed_subgoal: Optional[str] = None
 
-    class Config:
-        """Config for the BaseModel."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the agent ResourceType."""
+        if not isinstance(values, dict):
+            return values
         resource = values.pop("agent_resource")
         llm_config = values.pop("agent_llm_Config")
 

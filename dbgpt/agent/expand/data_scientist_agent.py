@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class DataScientistAgent(ConversableAgent):
     """Data Scientist Agent."""
 
-    name = "Edgar"
+    name: str = "Edgar"
     profile: str = "DataScientist"
     goal: str = (
         "Use correct {dialect} SQL to analyze and solve tasks based on the data"

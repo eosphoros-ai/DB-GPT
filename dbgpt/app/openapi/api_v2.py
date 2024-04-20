@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import JSONResponse, StreamingResponse
 
+from dbgpt._private.pydantic import model_to_dict, model_to_json
 from dbgpt.app.openapi.api_v1.api_v1 import (
     CHAT_FACTORY,
     __new_conversation,
@@ -130,7 +131,9 @@ async def chat_completions(
         or request.chat_mode == ChatMode.CHAT_DATA.value
     ):
         with root_tracer.start_span(
-            "get_chat_instance", span_type=SpanType.CHAT, metadata=request.dict()
+            "get_chat_instance",
+            span_type=SpanType.CHAT,
+            metadata=model_to_dict(request),
         ):
             chat: BaseChat = await get_chat_instance(request)
 
@@ -243,21 +246,22 @@ async def chat_app_stream_wrapper(request: ChatCompletionRequestBody = None):
                     model=request.model,
                     created=int(time.time()),
                 )
-                content = (
-                    f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+                json_content = model_to_json(
+                    chunk, exclude_unset=True, ensure_ascii=False
                 )
+                content = f"data: {json_content}\n\n"
                 yield content
     yield "data: [DONE]\n\n"
 
 
 async def chat_flow_wrapper(request: ChatCompletionRequestBody):
     flow_service = get_chat_flow()
-    flow_req = CommonLLMHttpRequestBody(**request.dict())
+    flow_req = CommonLLMHttpRequestBody(**model_to_dict(request))
     flow_uid = request.chat_param
     output = await flow_service.safe_chat_flow(flow_uid, flow_req)
     if not output.success:
         return JSONResponse(
-            ErrorResponse(message=output.text, code=output.error_code).dict(),
+            model_to_dict(ErrorResponse(message=output.text, code=output.error_code)),
             status_code=400,
         )
     else:
@@ -282,7 +286,7 @@ async def chat_flow_stream_wrapper(
         request (OpenAPIChatCompletionRequest): request
     """
     flow_service = get_chat_flow()
-    flow_req = CommonLLMHttpRequestBody(**request.dict())
+    flow_req = CommonLLMHttpRequestBody(**model_to_dict(request))
     flow_uid = request.chat_param
 
     async for output in flow_service.chat_stream_openai(flow_uid, flow_req):

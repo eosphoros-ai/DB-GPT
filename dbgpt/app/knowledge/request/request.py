@@ -1,9 +1,6 @@
 from typing import List, Optional
 
-from fastapi import UploadFile
-
-from dbgpt._private.pydantic import BaseModel
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt._private.pydantic import BaseModel, ConfigDict
 
 
 class KnowledgeQueryRequest(BaseModel):
@@ -59,6 +56,8 @@ class DocumentQueryRequest(BaseModel):
 class DocumentSyncRequest(BaseModel):
     """Sync request"""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     """doc_ids: doc ids"""
     doc_ids: List
 
@@ -104,6 +103,8 @@ class SpaceArgumentRequest(BaseModel):
 class DocumentSummaryRequest(BaseModel):
     """Sync request"""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     """doc_ids: doc ids"""
     doc_id: int
     model_name: str
@@ -112,6 +113,8 @@ class DocumentSummaryRequest(BaseModel):
 
 class EntityExtractRequest(BaseModel):
     """argument: argument"""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     text: str
     model_name: str

@@ -174,9 +174,11 @@ class KnowledgeService:
         Returns:
             - res DocumentQueryResponse
         """
-        res = DocumentQueryResponse()
+
+        total = None
+        page = request.page
         if request.doc_ids and len(request.doc_ids) > 0:
-            res.data = knowledge_document_dao.documents_by_ids(request.doc_ids)
+            data = knowledge_document_dao.documents_by_ids(request.doc_ids)
         else:
             query = KnowledgeDocumentEntity(
                 doc_name=request.doc_name,
@@ -184,12 +186,11 @@ class KnowledgeService:
                 space=space,
                 status=request.status,
             )
-            res.data = knowledge_document_dao.get_knowledge_documents(
+            data = knowledge_document_dao.get_knowledge_documents(
                 query, page=request.page, page_size=request.page_size
             )
-            res.total = knowledge_document_dao.get_knowledge_documents_count(query)
-            res.page = request.page
-        return res
+            total = knowledge_document_dao.get_knowledge_documents_count(query)
+        return DocumentQueryResponse(data=data, total=total, page=page)
 
     def batch_document_sync(
         self,
@@ -505,13 +506,15 @@ class KnowledgeService:
         document_query = KnowledgeDocumentEntity(id=request.document_id)
         documents = knowledge_document_dao.get_documents(document_query)
 
-        res = ChunkQueryResponse()
-        res.data = document_chunk_dao.get_document_chunks(
+        data = document_chunk_dao.get_document_chunks(
             query, page=request.page, page_size=request.page_size
         )
-        res.summary = documents[0].summary
-        res.total = document_chunk_dao.get_document_chunks_count(query)
-        res.page = request.page
+        res = ChunkQueryResponse(
+            data=data,
+            summary=documents[0].summary,
+            total=document_chunk_dao.get_document_chunks_count(query),
+            page=request.page,
+        )
         return res
 
     @trace("async_doc_embedding")

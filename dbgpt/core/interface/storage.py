@@ -426,7 +426,7 @@ class InMemoryStorage(StorageInterface[T, T]):
         """
         if not data:
             raise StorageError("Data cannot be None")
-        if not data.serializer:
+        if not data._serializer:
             data.set_serializer(self.serializer)
 
         if data.identifier.str_identifier in self._data:
@@ -439,7 +439,7 @@ class InMemoryStorage(StorageInterface[T, T]):
         """Update the data to the storage."""
         if not data:
             raise StorageError("Data cannot be None")
-        if not data.serializer:
+        if not data._serializer:
             data.set_serializer(self.serializer)
         self._data[data.identifier.str_identifier] = data.serialize()
 

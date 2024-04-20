@@ -6,6 +6,7 @@ from typing import Any, Dict, Union
 
 from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueConstraint
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.storage.metadata import BaseDao, Model, db
 
 from ..api.schemas import ServeRequest, ServerResponse
@@ -78,7 +79,9 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             T: The entity
         """
-        request_dict = request.dict() if isinstance(request, ServeRequest) else request
+        request_dict = (
+            model_to_dict(request) if isinstance(request, ServeRequest) else request
+        )
         entity = ServeEntity(**request_dict)
         return entity
 

@@ -41,7 +41,9 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             T: The entity
         """
-        request_dict = request.dict() if isinstance(request, ServeRequest) else request
+        request_dict = (
+            request.to_dict() if isinstance(request, ServeRequest) else request
+        )
         entity = ServeEntity(**request_dict)
         # TODO implement your own logic here, transfer the request_dict to an entity
         return entity

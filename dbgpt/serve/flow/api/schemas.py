@@ -1,3 +1,5 @@
+from dbgpt._private.pydantic import ConfigDict
+
 # Define your Pydantic schemas here
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
 
@@ -10,5 +12,5 @@ class ServerResponse(FlowPanel):
     """Flow response model"""
 
     # TODO define your own fields here
-    class Config:
-        title = f"ServerResponse for {SERVE_APP_NAME_HUMP}"
+
+    model_config = ConfigDict(title=f"ServerResponse for {SERVE_APP_NAME_HUMP}")

@@ -6,7 +6,13 @@ from contextlib import suppress
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
-from dbgpt._private.pydantic import BaseModel, Field, root_validator, validator
+from dbgpt._private.pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+    model_to_dict,
+    model_validator,
+)
 from dbgpt.core.awel.dag.base import DAG, DAGNode
 
 from .base import (
@@ -73,7 +79,8 @@ class FlowNodeData(BaseModel):
         ..., description="Absolute position of the node"
     )
 
-    @validator("data", pre=True)
+    @field_validator("data", mode="before")
+    @classmethod
     def parse_data(cls, value: Any):
         """Parse the data."""
         if isinstance(value, dict):
@@ -123,9 +130,12 @@ class FlowEdgeData(BaseModel):
         examples=["buttonedge"],
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
         if (
             "source_order" not in values
             and "source_handle" in values
@@ -315,9 +325,12 @@ class FlowPanel(BaseModel):
         examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
         label = values.get("label")
         name = values.get("name")
         flow_category = str(values.get("flow_category", ""))
@@ -328,6 +341,10 @@ class FlowPanel(BaseModel):
                 name = str(flow_category) + "_" + name
             values["name"] = name
         return values
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict."""
+        return model_to_dict(self)
 
 
 class FlowFactory:

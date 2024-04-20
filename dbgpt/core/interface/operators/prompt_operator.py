@@ -2,7 +2,7 @@
 from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
-from dbgpt._private.pydantic import root_validator
+from dbgpt._private.pydantic import model_validator
 from dbgpt.core import (
     ModelMessage,
     ModelMessageRoleType,
@@ -71,9 +71,12 @@ from dbgpt.util.i18n_utils import _
 class CommonChatPromptTemplate(ChatPromptTemplate):
     """The common chat prompt template."""
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the messages."""
+        if not isinstance(values, dict):
+            return values
         if "system_message" not in values:
             values["system_message"] = "You are a helpful AI Assistant."
         if "human_message" not in values:

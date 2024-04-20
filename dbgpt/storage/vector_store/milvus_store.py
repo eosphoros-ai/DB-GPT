@@ -6,7 +6,7 @@ import logging
 import os
 from typing import Any, Iterable, List, Optional
 
-from dbgpt._private.pydantic import Field
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -96,10 +96,7 @@ logger = logging.getLogger(__name__)
 class MilvusVectorConfig(VectorStoreConfig):
     """Milvus vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     uri: str = Field(
         default="localhost",
@@ -155,7 +152,7 @@ class MilvusStore(VectorStoreBase):
         from pymilvus import connections
 
         connect_kwargs = {}
-        milvus_vector_config = vector_store_config.dict()
+        milvus_vector_config = vector_store_config.to_dict()
         self.uri = milvus_vector_config.get("uri") or os.getenv(
             "MILVUS_URL", "localhost"
         )

@@ -3,7 +3,7 @@ import logging
 import os
 from typing import List, Optional
 
-from dbgpt._private.pydantic import Field
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
@@ -44,10 +44,7 @@ logger = logging.getLogger(__name__)
 class WeaviateVectorConfig(VectorStoreConfig):
     """Weaviate vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     weaviate_url: str = Field(
         default=os.getenv("WEAVIATE_URL", None),

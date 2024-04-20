@@ -2,12 +2,12 @@ from typing import Dict
 
 import pytest
 import pytest_asyncio
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient
 
 from dbgpt.component import SystemApp
 from dbgpt.util import AppConfig
+from dbgpt.util.fastapi import create_app
 
 
 def create_system_app(param: Dict) -> SystemApp:
@@ -17,7 +17,7 @@ def create_system_app(param: Dict) -> SystemApp:
     elif not isinstance(app_config, AppConfig):
         raise RuntimeError("app_config must be AppConfig or dict")
 
-    test_app = FastAPI()
+    test_app = create_app()
     test_app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],

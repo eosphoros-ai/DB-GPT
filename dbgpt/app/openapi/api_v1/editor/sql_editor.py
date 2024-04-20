@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.app.scene.chat_dashboard.data_preparation.report_schma import ValueItem
@@ -9,15 +9,15 @@ class DataNode(BaseModel):
     key: str
 
     type: str = ""
-    default_value: str = None
+    default_value: Optional[Any] = None
     can_null: str = "YES"
-    comment: str = None
+    comment: Optional[str] = None
     children: List = []
 
 
 class SqlRunData(BaseModel):
     result_info: str
-    run_cost: str
+    run_cost: int
     colunms: List[str]
     values: List
 

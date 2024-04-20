@@ -218,9 +218,9 @@ async def run_model(wh: WorkerManager) -> None:
 
 
 def startup_llm_env():
-    from fastapi import FastAPI
+    from dbgpt.util.fastapi import create_app
 
-    app = FastAPI()
+    app = create_app()
     initialize_worker_manager_in_client(
         app=app,
         model_name=model_name,

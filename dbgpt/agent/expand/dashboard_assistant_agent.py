@@ -34,8 +34,6 @@ class DashboardAssistantAgent(ConversableAgent):
         "professional reports"
     )
 
-    max_retry_count: int = 3
-
     def __init__(self, **kwargs):
         """Create a new instance of DashboardAssistantAgent."""
         super().__init__(**kwargs)

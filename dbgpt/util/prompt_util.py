@@ -13,7 +13,7 @@ from string import Formatter
 from typing import Callable, List, Optional, Sequence, Set
 
 from dbgpt._private.llm_metadata import LLMMetadata
-from dbgpt._private.pydantic import BaseModel, Field, PrivateAttr
+from dbgpt._private.pydantic import BaseModel, Field, PrivateAttr, model_validator
 from dbgpt.core.interface.prompt import get_template_vars
 from dbgpt.rag.text_splitter.token_splitter import TokenTextSplitter
 from dbgpt.util.global_helper import globals_helper
@@ -62,12 +62,14 @@ class PromptHelper(BaseModel):
         default=DEFAULT_CHUNK_OVERLAP_RATIO,
         description="The percentage token amount that each chunk should overlap.",
     )
-    chunk_size_limit: Optional[int] = Field(description="The maximum size of a chunk.")
+    chunk_size_limit: Optional[int] = Field(
+        None, description="The maximum size of a chunk."
+    )
     separator: str = Field(
         default=" ", description="The separator when chunking tokens."
     )
 
-    _tokenizer: Callable[[str], List] = PrivateAttr()
+    _tokenizer: Optional[Callable[[str], List]] = PrivateAttr()
 
     def __init__(
         self,
@@ -77,13 +79,11 @@ class PromptHelper(BaseModel):
         chunk_size_limit: Optional[int] = None,
         tokenizer: Optional[Callable[[str], List]] = None,
         separator: str = " ",
+        **kwargs,
     ) -> None:
         """Init params."""
         if chunk_overlap_ratio > 1.0 or chunk_overlap_ratio < 0.0:
             raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
-
-        # TODO: make configurable
-        self._tokenizer = tokenizer or globals_helper.tokenizer
 
         super().__init__(
             context_window=context_window,
@@ -91,7 +91,10 @@ class PromptHelper(BaseModel):
             chunk_overlap_ratio=chunk_overlap_ratio,
             chunk_size_limit=chunk_size_limit,
             separator=separator,
+            **kwargs,
         )
+        # TODO: make configurable
+        self._tokenizer = tokenizer or globals_helper.tokenizer
 
     def token_count(self, prompt_template: str) -> int:
         """Get token count of prompt template."""

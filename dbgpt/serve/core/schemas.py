@@ -30,7 +30,7 @@ async def validation_exception_handler(
         message += loc + ":" + error.get("msg") + ";"
     res = Result.failed(msg=message, err_code="E0001")
     logger.error(f"validation_exception_handler catch RequestValidationError: {res}")
-    return JSONResponse(status_code=400, content=res.dict())
+    return JSONResponse(status_code=400, content=res.to_dict())
 
 
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -39,7 +39,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         err_code=str(exc.status_code),
     )
     logger.error(f"http_exception_handler catch HTTPException: {res}")
-    return JSONResponse(status_code=exc.status_code, content=res.dict())
+    return JSONResponse(status_code=exc.status_code, content=res.to_dict())
 
 
 async def common_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -57,7 +57,7 @@ async def common_exception_handler(request: Request, exc: Exception) -> JSONResp
         err_code="E0003",
     )
     logger.error(f"common_exception_handler catch Exception: {res}")
-    return JSONResponse(status_code=400, content=res.dict())
+    return JSONResponse(status_code=400, content=res.to_dict())
 
 
 def add_exception_handler(app: "FastAPI"):

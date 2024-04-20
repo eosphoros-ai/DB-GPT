@@ -1,16 +1,15 @@
 # Define your Pydantic schemas here
 from typing import Optional
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 from ..config import SERVE_APP_NAME_HUMP
 
 
 class ServeRequest(BaseModel):
-    """Prompt request model"""
+    """Prompt request model."""
 
-    class Config:
-        title = f"ServeRequest for {SERVE_APP_NAME_HUMP}"
+    model_config = ConfigDict(title=f"ServeRequest for {SERVE_APP_NAME_HUMP}")
 
     chat_scene: Optional[str] = Field(
         None,
@@ -69,8 +68,7 @@ class ServeRequest(BaseModel):
 class ServerResponse(ServeRequest):
     """Prompt response model"""
 
-    class Config:
-        title = f"ServerResponse for {SERVE_APP_NAME_HUMP}"
+    model_config = ConfigDict(title=f"ServerResponse for {SERVE_APP_NAME_HUMP}")
 
     id: Optional[int] = Field(
         None,

@@ -15,7 +15,13 @@ from typing import (
     get_origin,
 )
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import (
+    BaseModel,
+    field_default,
+    field_description,
+    model_fields,
+    model_to_dict,
+)
 from dbgpt.util.json_utils import find_json_objects
 
 from ...vis.base import Vis
@@ -44,6 +50,10 @@ class ActionOutput(BaseModel):
         if not param:
             return None
         return cls.parse_obj(param)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the object to a dictionary."""
+        return model_to_dict(self)
 
 
 class Action(ABC, Generic[T]):
@@ -85,12 +95,13 @@ class Action(ABC, Generic[T]):
         if origin is None:
             example = {}
             single_model_type = cast(Type[BaseModel], model_type)
-            for field_name, field in single_model_type.__fields__.items():
-                field_info = field.field_info
-                if field_info.description:
-                    example[field_name] = field_info.description
-                elif field_info.default:
-                    example[field_name] = field_info.default
+            for field_name, field in model_fields(single_model_type).items():
+                description = field_description(field)
+                default_value = field_default(field)
+                if description:
+                    example[field_name] = description
+                elif default_value:
+                    example[field_name] = default_value
                 else:
                     example[field_name] = ""
             return example
