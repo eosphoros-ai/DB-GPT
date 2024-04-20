@@ -267,6 +267,33 @@ class QwenAdapter(NewHFChatModelAdapter):
             lower_model_name_or_path
             and "qwen" in lower_model_name_or_path
             and "1.5" in lower_model_name_or_path
+            and "moe" not in lower_model_name_or_path
+        )
+
+
+class QwenMoeAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/Qwen/Qwen1.5-MoE-A2.7B
+
+    TODO: There are problems with quantization.
+    """
+
+    support_4bit: bool = False
+    support_8bit: bool = False
+
+    def check_transformer_version(self, current_version: str) -> None:
+        print(f"Checking version: Current version {current_version}")
+        if not current_version >= "4.40.0":
+            raise ValueError(
+                "Qwen 1.5 Moe require transformers.__version__>=4.40.0, please upgrade your transformers package."
+            )
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "qwen" in lower_model_name_or_path
+            and "1.5" in lower_model_name_or_path
+            and "moe" in lower_model_name_or_path
         )
 
 
@@ -314,4 +341,5 @@ register_model_adapter(SOLARAdapter)
 register_model_adapter(GemmaAdapter)
 register_model_adapter(StarlingLMAdapter)
 register_model_adapter(QwenAdapter)
+register_model_adapter(QwenMoeAdapter)
 register_model_adapter(Llama3Adapter)
