@@ -219,6 +219,7 @@ const en = {
   operators: 'Operators',
   Chinese: 'Chinese',
   English: 'English',
+  refreshSuccess: 'Refresh Success',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -444,6 +445,7 @@ const zh: Resources['translation'] = {
   operators: '算子',
   Chinese: '中文',
   English: '英文',
+  refreshSuccess: '刷新成功',
 } as const;
 
 i18n.use(initReactI18next).init({

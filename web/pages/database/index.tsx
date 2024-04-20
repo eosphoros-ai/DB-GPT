@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useAsyncEffect } from 'ahooks';
-import { Badge, Button, Card, Drawer, Empty, Modal, message } from 'antd';
+import { Badge, Button, Card, Drawer, Empty, Modal, Spin, message } from 'antd';
 import FormDialog from '@/components/database/form-dialog';
-import { apiInterceptors, getDbList, getDbSupportType, postDbDelete } from '@/client/api';
-import { DeleteFilled, EditFilled, PlusOutlined } from '@ant-design/icons';
+import { apiInterceptors, getDbList, getDbSupportType, postDbDelete, postDbRefresh } from '@/client/api';
+import { DeleteFilled, EditFilled, PlusOutlined, RedoOutlined } from '@ant-design/icons';
 import { DBOption, DBType, DbListResponse, DbSupportTypeResponse } from '@/types/db';
 import MuiLoading from '@/components/common/loading';
 import { dbMapper } from '@/utils';
@@ -24,6 +24,7 @@ function Database() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<{ open: boolean; info?: DBItem; dbType?: DBType }>({ open: false });
   const [draw, setDraw] = useState<{ open: boolean; dbList?: DbListResponse; name?: string; type?: DBType }>({ open: false });
+  const [refreshLoading, setRefreshLoading] = useState(false);
 
   const getDbSupportList = async () => {
     const [, data] = await apiInterceptors(getDbSupportType());
@@ -75,6 +76,13 @@ function Database() {
         });
       },
     });
+  };
+
+  const onRefresh = async (item: DBItem) => {
+    setRefreshLoading(true);
+    const [, res] = await apiInterceptors(postDbRefresh({ db_name: item.db_name, db_type: item.db_type }));
+    if (res) message.success(t('refreshSuccess'));
+    setRefreshLoading(false);
   };
 
   const dbListByType = useMemo(() => {
@@ -150,7 +158,7 @@ function Database() {
         open={draw.open}
       >
         {draw.type && dbListByType[draw.type] && dbListByType[draw.type].length ? (
-          <>
+          <Spin spinning={refreshLoading}>
             <Button
               type="primary"
               className="mb-4 flex items-center"
@@ -166,9 +174,14 @@ function Database() {
                 key={item.db_name}
                 title={item.db_name}
                 extra={
-                  <>
+                  <div className="flex items-center gap-3">
+                    <RedoOutlined
+                      style={{ color: 'gray' }}
+                      onClick={() => {
+                        onRefresh(item);
+                      }}
+                    />
                     <EditFilled
-                      className="mr-2"
                       style={{ color: '#1b7eff' }}
                       onClick={() => {
                         onModify(item);
@@ -180,7 +193,7 @@ function Database() {
                         onDelete(item);
                       }}
                     />
-                  </>
+                  </div>
                 }
                 className="mb-4"
               >
@@ -196,7 +209,7 @@ function Database() {
                 <p>remark: {item.comment}</p>
               </Card>
             ))}
-          </>
+          </Spin>
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_DEFAULT}>
             <Button

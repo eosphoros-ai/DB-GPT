@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
 import { DELETE, GET, POST, PUT } from '.';
-import { DbListResponse, DbSupportTypeResponse, PostDbParams, ChatFeedBackSchema } from '@/types/db';
+import { DbListResponse, DbSupportTypeResponse, PostDbParams, ChatFeedBackSchema, PostDbRefreshParams } from '@/types/db';
 import { DialogueListResponse, IChatDialogueSchema, NewDialogueParam, SceneResponse, ChatHistoryResponse, FeedBack, IDB } from '@/types/chat';
 import { IModelData, StartModelParams, BaseModelParams, SupportModel } from '@/types/model';
 import {
@@ -61,6 +61,9 @@ export const postDbAdd = (data: PostDbParams) => {
 };
 export const postDbTestConnect = (data: PostDbParams) => {
   return POST<PostDbParams, null>('/api/v1/chat/db/test/connect', data);
+};
+export const postDbRefresh = (data: PostDbRefreshParams) => {
+  return POST<PostDbRefreshParams, boolean>('/api/v1/chat/db/refresh', data);
 };
 
 /** Chat Page */
