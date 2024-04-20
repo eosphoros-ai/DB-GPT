@@ -153,7 +153,7 @@ class ClickhouseConnector(RDBMSConnector):
     @property
     def dialect(self) -> str:
         """Return string representation of dialect to use."""
-        pass
+        return ""
 
     def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""

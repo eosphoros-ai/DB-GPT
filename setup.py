@@ -30,6 +30,7 @@ BUILD_FROM_SOURCE_URL_FAST_CHAT = os.getenv(
     "BUILD_FROM_SOURCE_URL_FAST_CHAT", "git+https://github.com/lm-sys/FastChat.git"
 )
 BUILD_VERSION_OPENAI = os.getenv("BUILD_VERSION_OPENAI")
+INCLUDE_QUANTIZATION = os.getenv("INCLUDE_QUANTIZATION", "true").lower() == "true"
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -552,7 +553,9 @@ def quantization_requires():
             # TODO(yyhhyy): Add autoawq install method for CUDA version 11.8
             quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
 
-    setup_spec.extras["quantization"] = ["cpm_kernels"] + quantization_pkgs
+    setup_spec.extras["quantization"] = (
+        ["cpm_kernels"] + quantization_pkgs + setup_spec.extras["bitsandbytes"]
+    )
 
 
 def all_vector_store_requires():
@@ -659,7 +662,9 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["rag"]
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
-    setup_spec.extras["default"] += setup_spec.extras["quantization"]
+    if INCLUDE_QUANTIZATION:
+        # Add quantization extra to default, default is True
+        setup_spec.extras["default"] += setup_spec.extras["quantization"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
 
 
