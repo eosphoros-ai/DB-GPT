@@ -3,7 +3,7 @@ from dbgpt.datasource.conn_tugraph import TuGraphConnector
 
 # 设定数据库连接参数
 HOST = 'localhost'
-PORT = 37687
+PORT = 7687
 USER = 'admin'
 PWD = '73@TuGraph'
 DB_NAME = 'default'
