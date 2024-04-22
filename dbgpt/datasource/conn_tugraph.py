@@ -17,10 +17,10 @@ class TuGraphConnector(BaseConnector):
     def from_uri_db(cls, host: str, port: int, user: str, pwd: str, db_name: str, **kwargs: Any) -> "TuGraphConnector":
         """Create a new TuGraphConnector from host, port, user, pwd, db_name."""
         db_url = f"{cls.driver}://{host}:{str(port)}"
-        client = GraphDatabase.driver(db_url, auth=(user, pwd))
-        client.verify_connectivity()
-        session = client.session(database=db_name)
-        return cast(TuGraphConnector,cls(session=session))
+        with GraphDatabase.driver(db_url, auth=(user, pwd)) as client:
+            client.verify_connectivity()
+            session = client.session(database=db_name)
+            return cast(TuGraphConnector,cls(session=session))
 
     def get_table_names(self) -> Dict[str, List[str]]:
         """Get all table names from the TuGraph database using the Neo4j driver."""

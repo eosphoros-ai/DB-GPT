@@ -3,7 +3,7 @@ from dbgpt.datasource.conn_tugraph import TuGraphConnector
 
 # 设定数据库连接参数
 HOST = 'localhost'
-PORT = 7687
+PORT = 37687
 USER = 'admin'
 PWD = '73@TuGraph'
 DB_NAME = 'default'
@@ -15,7 +15,7 @@ def connector():
     connector = TuGraphConnector.from_uri_db(HOST, PORT, USER, PWD, DB_NAME)
     yield connector
     # 所有测试完成后关闭连接
-    # connector.close()
+    connector.close()
 
 def test_get_table_names(connector):
     """Test retrieving table names from the graph database."""
