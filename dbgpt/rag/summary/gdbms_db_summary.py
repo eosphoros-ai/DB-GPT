@@ -1,7 +1,7 @@
 
 """Summary for rdbms database."""
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional,Dict
 
 from dbgpt._private.config import Config
 from dbgpt.datasource import BaseConnector
@@ -62,14 +62,10 @@ class GdbmsSummary(DBSummary):
 def _parse_db_summary(
     conn: BaseConnector, summary_template: str = "{table_name}({columns})"
 ) -> List[str]:
-    """Get db summary for database.
-
-    Args:
-        conn (BaseConnector): database connection
-        summary_template (str): summary template
-    """
-    v_tables = conn.get_table_names()['vertex_tables']
-    e_tables = conn.get_table_names()['edge_tables']
+    """Get db summary for database."""
+    table_names = conn.get_table_names()
+    v_tables = table_names['vertex_tables']
+    e_tables = table_names['edge_tables']
     table_info_summaries = [
         _parse_table_summary(conn, summary_template, table_name,'vertex')
         for table_name in v_tables
@@ -79,38 +75,31 @@ def _parse_db_summary(
     ]
     return table_info_summaries
 
+def _format_column(column: Dict) -> str:
+    """Format a single column's summary."""
+    comment = column.get('comment', '')
+    if column.get('is_in_primary_key'):
+        comment += ' Primary Key' if comment else 'Primary Key'
+    return f"{column['name']} ({comment})" if comment else column['name']
 
-def _parse_table_summary(
-    conn: BaseConnector, summary_template: str, table_name: str,table_type:str
-) -> str:
-    """Get table summary for table.
+def _format_indexes(indexes: List[Dict]) -> str:
+    """Format index keys for table summary."""
+    return ", ".join(
+        f"{index['name']}(`{', '.join(index['column_names'])}`)"
+        for index in indexes
+    )
 
-    Args:
-        conn (BaseConnector): database connection
-        summary_template (str): summary template
-        table_name (str): table name
-
-    Examples:
-        table_name(column1(column1 comment 'Primary Key'),column2(column2 comment),
-        column3(column3 comment) and index keys, and table comment: {table_comment})
-    """
-    columns = []
-    for column in conn.get_columns(table_name, table_type):
-        column_description = column.get('comment', '')
-        if column.get('is_in_primary_key'):
-            column_description += ' Primary Key' if column_description else 'Primary Key'
-        column_info = f"{column['name']} ({column_description})" if column_description else f"{column['name']}"
-        columns.append(column_info)
+def _parse_table_summary(conn: BaseConnector, summary_template: str, table_name: str, table_type: str) -> str:
+    """Enhanced table summary function."""
+    columns = [_format_column(column) for column in conn.get_columns(table_name, table_type)]
     column_str = ", ".join(columns)
-    
-    index_keys = []
-    for index_key in conn.get_indexes(table_name,table_type):
-        key_str = ", ".join(index_key["column_names"])
-        index_keys.append(f"{index_key['name']}(`{key_str}`) ")  # noqa
+
+    indexes = conn.get_indexes(table_name, table_type)
+    index_str = _format_indexes(indexes) if indexes else ""
+
     table_str = summary_template.format(table_name=table_name, columns=column_str)
-    if len(index_keys) > 0:
-        index_key_str = ", ".join(index_keys)
-        table_str += f", and index keys: {index_key_str}"
+    if index_str:
+        table_str += f", and index keys: {index_str}"
     try:
         comment = conn.get_table_comment(table_name)
     except Exception:

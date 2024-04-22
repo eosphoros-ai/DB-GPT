@@ -22,16 +22,15 @@ class TuGraphConnector(BaseConnector):
         session = client.session(database=db_name)
         return cast(TuGraphConnector,cls(session=session))
 
-    def get_table_names(self):
-        """Get users from the TuGraph database using the Neo4j driver."""
+    def get_table_names(self) -> Dict[str, List[str]]:
         """Get all table names from the TuGraph database using the Neo4j driver."""
         # Run the query to get vertex labels
         v_result = self._session.run("CALL db.vertexLabels()").data()
-        v_data = [tabel_name['label'] for tabel_name in v_result]
+        v_data = [table_name['label'] for table_name in v_result]
         
         # Run the query to get edge labels
         e_result = self._session.run("CALL db.edgeLabels()").data()
-        e_data = [tabel_name['label'] for tabel_name in e_result]
+        e_data = [table_name['label'] for table_name in e_result]
         return {'vertex_tables':v_data,'edge_tables':e_data}
 
     def get_grants(self):
@@ -52,11 +51,11 @@ class TuGraphConnector(BaseConnector):
 
     def close(self):
         """Close the Neo4j driver."""
-        self.driver.close()
+        self._session.close()
     def run(self):
         return []
-    def get_columns(self, table_name: str,tabel_type:str) -> List[Dict]:
-        """Get fileds about specified graph.
+    def get_columns(self, table_name: str,table_type:str) -> List[Dict]:
+        """Get fields about specified graph.
         Args:
             table_name (str): table name (graph name)
 
@@ -69,19 +68,18 @@ class TuGraphConnector(BaseConnector):
         # data = [{'name':'id','type':str,'is_in_primary_key':True,'default_expression':''}]
         data = []
         result = None
-        if tabel_type == 'vertex':
+        if table_type == 'vertex':
             result = self._session.run(f"CALL db.getVertexSchema('{table_name}')").data()  
         else:
             result = self._session.run(f"CALL db.getEdgeSchema('{table_name}')").data()
         schema_info = json.loads(result[0]['schema'])
         for prop in schema_info.get('properties', []):
-        # 构造新的字典
             prop_dict = {
                 'name': prop['name'],
                 'type': prop['type'],
-                'default_expression': '',  # 默认表达式为空
-                'is_in_primary_key': True if 'primary' in schema_info and prop['name'] == schema_info['primary'] else False,  # 是否为主键
-                'comment': prop['name']  # 这里假设comment为字段名，需要根据实际情况调整    
+                'default_expression': '',
+                'is_in_primary_key': True if 'primary' in schema_info and prop['name'] == schema_info['primary'] else False,
+                'comment': prop['name']   
             }  
             data.append(prop_dict)
         return data
@@ -99,10 +97,9 @@ class TuGraphConnector(BaseConnector):
         result = self._session.run(f"CALL db.listLabelIndexes('{table_name}','{table_type}')").data()
         transformed_data = []
         for item in result:
-            # 创建一个新的字典，按需求转换键和值
             new_dict = {
-                'name': item['field'],  # 构造索引名，假设索引名前缀为 'idx_'
-                'column_names': [item['field']]  # 将 'field' 的值用作列名列表
+                'name': item['field'],
+                'column_names': [item['field']]
             }
             transformed_data.append(new_dict)
         return transformed_data
