@@ -6,8 +6,8 @@ import traceback
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
-from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
 from dbgpt.rag.summary.gdbms_db_summary import GdbmsSummary
+from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +127,14 @@ class DBSummaryClient:
 
     @staticmethod
     def create_summary_client(dbname: str, db_type: str):
-        if 'graph' in db_type:
+        """
+        Create a summary client based on the database type.
+
+        Args:
+            dbname (str): The name of the database.
+            db_type (str): The type of the database.
+        """
+        if "graph" in db_type:
             return GdbmsSummary(dbname, db_type)
         else:
             return RdbmsSummary(dbname, db_type)

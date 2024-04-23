@@ -33,7 +33,9 @@ class ChatWithDbQA(BaseChat):
             self.tables = self.database.get_table_names()
         if self.database.is_graph_type():
             # When the current graph database retrieves source data from ChatDB, the topk uses the sum of node table and edge table.
-            self.top_k = len(self.tables['vertex_tables']) + len(self.tables['edge_tables'])
+            self.top_k = len(self.tables["vertex_tables"]) + len(
+                self.tables["edge_tables"]
+            )
         else:
             print(self.database.db_type)
             self.top_k = (

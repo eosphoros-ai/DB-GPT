@@ -15,9 +15,6 @@ class DBSummary:
     def get_summary(self) -> Optional[str]:
         """Get the summary."""
         return self.summary
-    
-    def is_gdbms(self,db_type:str) -> bool:
-        return 'graph' in db_type
 
 
 class TableSummary:

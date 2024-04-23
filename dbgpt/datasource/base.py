@@ -216,7 +216,7 @@ class BaseConnector(ABC):
     def is_normal_type(cls) -> bool:
         """Return whether the connector is a normal type."""
         return True
-    
+
     @classmethod
     def is_graph_type(cls) -> bool:
         """Return whether the connector is a graph database connector."""

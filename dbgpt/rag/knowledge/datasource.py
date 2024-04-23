@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Union
 from dbgpt.core import Document
 from dbgpt.datasource import BaseConnector
 
-from ..summary.rdbms_db_summary import _parse_db_summary
 from ..summary.gdbms_db_summary import _parse_db_summary as _parse_gdb_summary
+from ..summary.rdbms_db_summary import _parse_db_summary
 from .base import ChunkStrategy, DocumentType, Knowledge, KnowledgeType
 
 

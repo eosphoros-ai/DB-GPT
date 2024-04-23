@@ -475,6 +475,7 @@ def core_requires():
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
         "pymysql",
+        "neo4j",
         "jsonschema",
         # TODO move transformers to default
         # "transformers>=4.31.0",
@@ -589,6 +590,7 @@ def all_datasource_requires():
     setup_spec.extras["datasource"] = [
         # "sqlparse==0.4.4",
         "pymysql",
+        "neo4j",
     ]
     # If you want to install psycopg2 and mysqlclient in ubuntu, you should install
     # libpq-dev and libmysqlclient-dev first.
