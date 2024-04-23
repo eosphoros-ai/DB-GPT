@@ -188,7 +188,6 @@ class CrossEncoderRanker(Ranker):
             rank_fn: Optional[callable] - The rank function.
         Refer: https://www.sbert.net/examples/applications/cross-encoder/README.html
         """
-
         try:
             from sentence_transformers import CrossEncoder
         except ImportError:
