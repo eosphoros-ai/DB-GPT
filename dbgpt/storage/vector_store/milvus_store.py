@@ -450,7 +450,7 @@ class MilvusStore(VectorStoreBase):
                     metadata=doc.metadata,
                     content=doc.content,
                     score=score,
-                    chunk_id=id,
+                    chunk_id=str(id),
                 )
                 for doc, score, id in docs_and_scores
                 if score >= score_threshold
