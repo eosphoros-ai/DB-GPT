@@ -1,6 +1,7 @@
 """Transformer base class."""
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,15 @@ class EmbedderBase(TransformerBase, ABC):
 
 
 class ExtractorBase(TransformerBase, ABC):
-    """Translator base class."""
+    """Extractor base class."""
+
+    @abstractmethod
+    async def extract(
+        self,
+        text: str,
+        limit: int = None
+    ) -> List:
+        """Extract results from text."""
 
 
 class TranslatorBase(TransformerBase, ABC):
