@@ -238,6 +238,18 @@ class Config(metaclass=Singleton):
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
 
+        ## OceanBase Configuration
+        self.OB_HOST = os.getenv("OB_HOST", "127.0.0.1")
+        self.OB_PORT = int(os.getenv("OB_PORT", "2881"))
+        self.OB_USER = os.getenv("OB_USER", "root")
+        self.OB_PASSWORD = os.getenv("OB_PASSWORD", "")
+        self.OB_DATABASE = os.getenv("OB_DATABASE", "test")
+        self.OB_SQL_DBG_LOG_PATH = os.getenv("OB_SQL_DBG_LOG_PATH", "")
+        self.OB_ENABLE_NORMALIZE_VECTOR = bool(
+            os.getenv("OB_ENABLE_NORMALIZE_VECTOR", "")
+        )
+        self.OB_ENABLE_INDEX = bool(os.getenv("OB_ENABLE_INDEX", ""))
+
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
         self.IS_LOAD_8BIT = os.getenv("QUANTIZE_8bit", "True").lower() == "true"

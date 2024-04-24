@@ -26,6 +26,12 @@ def _import_weaviate() -> Any:
     return WeaviateStore
 
 
+def _import_oceanbase() -> Any:
+    from dbgpt.storage.vector_store.oceanbase_store import OceanBaseStore
+
+    return OceanBaseStore
+
+
 def __getattr__(name: str) -> Any:
     if name == "Chroma":
         return _import_chroma()
@@ -35,8 +41,10 @@ def __getattr__(name: str) -> Any:
         return _import_weaviate()
     elif name == "PGVector":
         return _import_pgvector()
+    elif name == "OceanBase":
+        return _import_oceanbase()
     else:
         raise AttributeError(f"Could not find: {name}")
 
 
-__all__ = ["Chroma", "Milvus", "Weaviate", "PGVector"]
+__all__ = ["Chroma", "Milvus", "Weaviate", "OceanBase", "PGVector"]
