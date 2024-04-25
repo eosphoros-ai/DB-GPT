@@ -12,6 +12,7 @@ from .embeddings import (  # noqa: F401
     HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
     JinaEmbeddings,
+    OllamaEmbeddings,
     OpenAPIEmbeddings,
 )
 
@@ -23,6 +24,7 @@ __ALL__ = [
     "HuggingFaceInstructEmbeddings",
     "JinaEmbeddings",
     "OpenAPIEmbeddings",
+    "OllamaEmbeddings",
     "DefaultEmbeddingFactory",
     "EmbeddingFactory",
     "WrappedEmbeddingFactory",

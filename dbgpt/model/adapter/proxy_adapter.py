@@ -114,6 +114,23 @@ class TongyiProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return tongyi_generate_stream
 
 
+class OllamaLLMModelAdapter(ProxyLLMModelAdapter):
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path == "ollama_proxyllm"
+
+    def get_llm_client_class(
+        self, params: ProxyModelParameters
+    ) -> Type[ProxyLLMClient]:
+        from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
+
+        return OllamaLLMClient
+
+    def get_generate_stream_function(self, model, model_path: str):
+        from dbgpt.model.proxy.llms.ollama import ollama_generate_stream
+
+        return ollama_generate_stream
+
+
 class ZhipuProxyLLMModelAdapter(ProxyLLMModelAdapter):
     support_system_message = False
 
@@ -279,6 +296,7 @@ class MoonshotProxyLLMModelAdapter(ProxyLLMModelAdapter):
 
 register_model_adapter(OpenAIProxyLLMModelAdapter)
 register_model_adapter(TongyiProxyLLMModelAdapter)
+register_model_adapter(OllamaLLMModelAdapter)
 register_model_adapter(ZhipuProxyLLMModelAdapter)
 register_model_adapter(WenxinProxyLLMModelAdapter)
 register_model_adapter(GeminiProxyLLMModelAdapter)

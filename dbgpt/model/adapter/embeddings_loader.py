@@ -50,6 +50,16 @@ class EmbeddingLoader:
                 if proxy_param.proxy_backend:
                     openapi_param["model_name"] = proxy_param.proxy_backend
                 return OpenAPIEmbeddings(**openapi_param)
+            elif model_name in ["proxy_ollama"]:
+                from dbgpt.rag.embedding import OllamaEmbeddings
+
+                proxy_param = cast(ProxyEmbeddingParameters, param)
+                ollama_param = {}
+                if proxy_param.proxy_server_url:
+                    ollama_param["api_url"] = proxy_param.proxy_server_url
+                if proxy_param.proxy_backend:
+                    ollama_param["model_name"] = proxy_param.proxy_backend
+                return OllamaEmbeddings(**ollama_param)
             else:
                 from dbgpt.rag.embedding import HuggingFaceEmbeddings
 
