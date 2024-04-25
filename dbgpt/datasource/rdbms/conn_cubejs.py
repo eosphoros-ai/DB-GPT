@@ -43,8 +43,8 @@ class CubeJSConnector(RDBMSConnector):
         if 'comment' in kwargs:
           remark_value = kwargs['comment']
           json_data = json.loads(remark_value)
-          CUBE_API_URL = json_data["CUBE_API_URL"]
-          CUBE_API_SECRET = json_data["CUBE_API_SECRET"]
+          cls.CUBE_API_URL = json_data["CUBE_API_URL"]
+          cls.CUBE_API_SECRET = json_data["CUBE_API_SECRET"]
         return cast(CubeJSConnector, cls.from_uri(db_url, engine_args))
 
     def _sync_tables_from_db(self) -> Iterable[str]:
