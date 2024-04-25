@@ -2,8 +2,6 @@
 import json
 from typing import Any, Dict, List, cast
 
-from neo4j import GraphDatabase
-
 from .base import BaseConnector
 
 
@@ -24,11 +22,16 @@ class TuGraphConnector(BaseConnector):
         cls, host: str, port: int, user: str, pwd: str, db_name: str, **kwargs: Any
     ) -> "TuGraphConnector":
         """Create a new TuGraphConnector from host, port, user, pwd, db_name."""
-        db_url = f"{cls.driver}://{host}:{str(port)}"
-        with GraphDatabase.driver(db_url, auth=(user, pwd)) as client:
-            client.verify_connectivity()
-            session = client.session(database=db_name)
-            return cast(TuGraphConnector, cls(session=session))
+        try:
+            from neo4j import GraphDatabase
+
+            db_url = f"{cls.driver}://{host}:{str(port)}"
+            with GraphDatabase.driver(db_url, auth=(user, pwd)) as client:
+                client.verify_connectivity()
+                session = client.session(database=db_name)
+                return cast(TuGraphConnector, cls(session=session))
+        except ImportError as err:
+            raise ImportError("requests package is not installed") from err
 
     def get_table_names(self) -> Dict[str, List[str]]:
         """Get all table names from the TuGraph database using the Neo4j driver."""

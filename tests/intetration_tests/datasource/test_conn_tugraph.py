@@ -2,10 +2,10 @@ import pytest
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 
 # Set database connection parameters.
-HOST = "100.88.118.28"
-PORT = 37687
+HOST = "localhost"
+PORT = 7687
 USER = "admin"
-PWD = "123456"
+PWD = "73@TuGraph"
 DB_NAME = "default"
 
 
