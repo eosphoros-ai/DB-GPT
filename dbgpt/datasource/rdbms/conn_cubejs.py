@@ -1,13 +1,13 @@
 """PostgreSQL connector."""
-import logging
 import json
-import jwt
+import logging
 from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
-from langchain.document_loaders import CubeSemanticLoader
-from langchain.docstore.document import Document
 
+import jwt
+from langchain.docstore.document import Document
+from langchain.document_loaders import CubeSemanticLoader
 from sqlalchemy import text
 
 from .base import RDBMSConnector
@@ -21,8 +21,8 @@ class CubeJSConnector(RDBMSConnector):
     driver = "postgresql+psycopg2"
     db_type = "cubejs"
     db_dialect = "postgresql"
-    CUBE_API_URL= ""
-    CUBE_API_SECRET= ""
+    CUBE_API_URL = ""
+    CUBE_API_SECRET = ""
 
     @classmethod
     def from_uri_db(
@@ -40,11 +40,11 @@ class CubeJSConnector(RDBMSConnector):
             f"{cls.driver}://{quote(user)}:{urlquote(pwd)}@{host}:{str(port)}/{db_name}"
         )
 
-        if 'comment' in kwargs:
-          remark_value = kwargs['comment']
-          json_data = json.loads(remark_value)
-          cls.CUBE_API_URL = json_data["CUBE_API_URL"]
-          cls.CUBE_API_SECRET = json_data["CUBE_API_SECRET"]
+        if "comment" in kwargs:
+            remark_value = kwargs["comment"]
+            json_data = json.loads(remark_value)
+            cls.CUBE_API_URL = json_data["CUBE_API_URL"]
+            cls.CUBE_API_SECRET = json_data["CUBE_API_SECRET"]
         return cast(CubeJSConnector, cls.from_uri(db_url, engine_args))
 
     def _sync_tables_from_db(self) -> Iterable[str]:
@@ -99,7 +99,7 @@ class CubeJSConnector(RDBMSConnector):
     def get_users(self):
         """Get user info."""
         return []
-        
+
     def get_columns(self, table_name: str) -> List[Dict]:
         """Get columns.
 
@@ -112,16 +112,16 @@ class CubeJSConnector(RDBMSConnector):
                 'is_in_primary_key': True, 'comment': 'id'}, ...]
         """
         documents = self.ingest_cube_meta(table_name)
-        
+
         return [
             {
                 "name": doc.metadata["column_name"],
                 "type": doc.metadata["column_data_type"],
-                "comment": doc.metadata["column_description"]
+                "comment": doc.metadata["column_description"],
             }
             for doc in documents
             if doc.metadata["table_name"] == table_name
-        ]    
+        ]
 
     def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""
@@ -243,9 +243,8 @@ class CubeJSConnector(RDBMSConnector):
         """Get table indexes about specified table."""
         return []
 
-
     def ingest_cube_meta(self, table_name) -> List[Document]:
-        security_context = {}
+        security_context: dict[str, Any] = {}
         token = jwt.encode(security_context, self.CUBE_API_SECRET, algorithm="HS256")
 
         loader = CubeSemanticLoader(self.CUBE_API_URL, token)
