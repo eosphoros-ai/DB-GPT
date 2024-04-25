@@ -79,9 +79,8 @@ class RetrieverMRRMetric(RetrieverEvaluationMetric):
 
     def sync_compute(
         self,
-        prediction: Optional[List[str]] = None,
-        contexts: Optional[List[str]] = None,
-        **kwargs: Any,
+        prediction: List[str],
+        contexts: Optional[Sequence[str]] = None,
     ) -> BaseEvaluationResult:
         """Compute MRR metric.
 
@@ -118,9 +117,8 @@ class RetrieverHitRateMetric(RetrieverEvaluationMetric):
 
     def sync_compute(
         self,
-        prediction: Optional[List[str]] = None,
-        contexts: Optional[List[str]] = None,
-        **kwargs: Any,
+        prediction: List[str],
+        contexts: Optional[Sequence[str]] = None,
     ) -> BaseEvaluationResult:
         """Compute HitRate metric.
 
