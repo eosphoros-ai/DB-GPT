@@ -68,4 +68,5 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
   hive: { label: 'Hive', icon: '/icons/hive.png', desc: 'A distributed fault-tolerant data warehouse system.' },
   space: { label: 'Space', icon: '/icons/knowledge.png', desc: 'knowledge analytics.' },
   cubejs: { label: 'CubeJS', icon: '/icons/cubejs.png', desc: 'Open-source analytics engine for building data applications.' },
-}
+  tugraph:{label: 'TuGraph', icon: '/icons/tugraph.png', desc: 'TuGraph is a high-performance graph database jointly developed by Ant Group and Tsinghua University.' }
+};

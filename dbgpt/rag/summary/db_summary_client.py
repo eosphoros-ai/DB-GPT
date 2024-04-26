@@ -6,6 +6,7 @@ import traceback
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
+from dbgpt.rag.summary.gdbms_db_summary import GdbmsSummary
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class DBSummaryClient:
 
     def db_summary_embedding(self, dbname, db_type):
         """Put db profile and table profile summary into vector store."""
-        db_summary_client = RdbmsSummary(dbname, db_type)
+        db_summary_client = self.create_summary_client(dbname, db_type)
 
         self.init_db_profile(db_summary_client, dbname)
 
@@ -122,3 +123,17 @@ class DBSummaryClient:
         )
         vector_connector.delete_vector_name(vector_store_name)
         logger.info(f"delete db profile {dbname} success")
+
+    @staticmethod
+    def create_summary_client(dbname: str, db_type: str):
+        """
+        Create a summary client based on the database type.
+
+        Args:
+            dbname (str): The name of the database.
+            db_type (str): The type of the database.
+        """
+        if "graph" in db_type:
+            return GdbmsSummary(dbname, db_type)
+        else:
+            return RdbmsSummary(dbname, db_type)
