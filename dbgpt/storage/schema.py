@@ -29,6 +29,7 @@ class DBType(Enum):
     Doris = DbInfo("doris")
     Hive = DbInfo("hive")
     Cubejs = DbInfo("cubejs")
+    TuGraph = DbInfo("tugraph")
 
     def value(self) -> str:
         """Return the name of the database type."""

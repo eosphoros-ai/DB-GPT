@@ -8,6 +8,11 @@ from dbgpt.rag import ChunkParameters
 from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.evaluation import RetrieverEvaluator
+from dbgpt.rag.evaluation.retriever import (
+    RetrieverHitRateMetric,
+    RetrieverMRRMetric,
+    RetrieverSimilarityMetric,
+)
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.operators import EmbeddingRetrieverOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
@@ -42,7 +47,7 @@ async def main():
     knowledge = KnowledgeFactory.from_file_path(file_path)
     embeddings = _create_embeddings()
     vector_connector = _create_vector_connector(embeddings)
-    chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
+    chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_MARKDOWN_HEADER")
     # get embedding assembler
     assembler = EmbeddingAssembler.load_from_knowledge(
         knowledge=knowledge,
@@ -55,9 +60,14 @@ async def main():
         {
             "query": "what is awel talk about",
             "contexts": [
-                "Through the AWEL API, you can focus on the development"
-                " of business logic for LLMs applications without paying "
-                "attention to cumbersome model and environment details."
+                "# What is AWEL? \n\nAgentic Workflow Expression Language(AWEL) is a "
+                "set of intelligent agent workflow expression language specially "
+                "designed for large model application\ndevelopment. It provides great "
+                "functionality and flexibility. Through the AWEL API, you can focus on "
+                "the development of business logic for LLMs applications\nwithout "
+                "paying attention to cumbersome model and environment details.\n\nAWEL "
+                "adopts a layered API design. AWEL's layered API design architecture is "
+                "shown in the figure below."
             ],
         },
     ]
@@ -69,7 +79,12 @@ async def main():
             "vector_store_connector": vector_connector,
         },
     )
-    results = await evaluator.evaluate(dataset)
+    metrics = [
+        RetrieverHitRateMetric(),
+        RetrieverMRRMetric(),
+        RetrieverSimilarityMetric(embeddings=embeddings),
+    ]
+    results = await evaluator.evaluate(dataset, metrics)
     for result in results:
         for metric in result:
             print("Metric:", metric.metric_name)

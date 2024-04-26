@@ -606,6 +606,7 @@ def all_datasource_requires():
         "pyhive",
         "thrift",
         "thrift_sasl",
+        "neo4j",
     ]
 
 
