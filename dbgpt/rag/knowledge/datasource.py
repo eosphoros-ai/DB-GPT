@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from dbgpt.core import Document
 from dbgpt.datasource import BaseConnector
 
+from ..summary.gdbms_db_summary import _parse_db_summary as _parse_gdb_summary
 from ..summary.rdbms_db_summary import _parse_db_summary
 from .base import ChunkStrategy, DocumentType, Knowledge, KnowledgeType
 
@@ -34,7 +35,11 @@ class DatasourceKnowledge(Knowledge):
     def _load(self) -> List[Document]:
         """Load datasource document from data_loader."""
         docs = []
-        for table_summary in _parse_db_summary(self._connector, self._summary_template):
+        if self._connector.is_graph_type():
+            db_summary = _parse_gdb_summary(self._connector, self._summary_template)
+        else:
+            db_summary = _parse_db_summary(self._connector, self._summary_template)
+        for table_summary in db_summary:
             metadata = {"source": "database"}
             if self._metadata:
                 metadata.update(self._metadata)  # type: ignore

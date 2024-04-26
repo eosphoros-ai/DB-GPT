@@ -39,6 +39,7 @@ class ConnectorManager(BaseComponent):
         Load all connector classes.
         """
         from dbgpt.datasource.conn_spark import SparkConnector  # noqa: F401
+        from dbgpt.datasource.conn_tugraph import TuGraphConnector  # noqa: F401
         from dbgpt.datasource.rdbms.base import RDBMSConnector  # noqa: F401
         from dbgpt.datasource.rdbms.conn_clickhouse import (  # noqa: F401
             ClickhouseConnector,
