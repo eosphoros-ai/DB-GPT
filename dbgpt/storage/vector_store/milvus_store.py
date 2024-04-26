@@ -354,8 +354,7 @@ class MilvusStore(VectorStoreBase):
         res = self.col.insert(
             insert_list, partition_name=partition_name, timeout=timeout
         )
-        # make sure data is searchable.
-        self.col.flush()
+
         return res.primary_keys
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
