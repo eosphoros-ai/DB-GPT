@@ -244,6 +244,7 @@ class CubeJSConnector(RDBMSConnector):
         return []
 
     def ingest_cube_meta(self, table_name) -> List[Document]:
+        """ingest cube metadata."""
         security_context: dict[str, Any] = {}
         token = jwt.encode(security_context, self.CUBE_API_SECRET, algorithm="HS256")
 
