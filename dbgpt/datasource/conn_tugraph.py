@@ -70,7 +70,7 @@ class TuGraphConnector(BaseConnector):
         """Run GQL."""
         with self._driver.session(database=self._graph) as session:
             result = session.run(query)
-        return result.data()
+            return result.data()
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get fields about specified graph.
