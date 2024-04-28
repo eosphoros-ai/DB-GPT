@@ -658,6 +658,7 @@ def default_requires():
         "dashscope",
         "chardet",
         "sentencepiece",
+        "ollama",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]

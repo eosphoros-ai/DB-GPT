@@ -69,6 +69,7 @@ LLM_MODEL_CONFIG = {
     "yi_proxyllm": "yi_proxyllm",
     # https://platform.moonshot.cn/docs/
     "moonshot_proxyllm": "moonshot_proxyllm",
+    "ollama_proxyllm": "ollama_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
@@ -200,6 +201,7 @@ EMBEDDING_MODEL_CONFIG = {
     "proxy_azure": "proxy_azure",
     # Common HTTP embedding model
     "proxy_http_openapi": "proxy_http_openapi",
+    "proxy_ollama": "proxy_ollama",
 }
 
 
