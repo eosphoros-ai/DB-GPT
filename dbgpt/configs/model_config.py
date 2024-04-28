@@ -112,6 +112,8 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/Qwen/Qwen1.5-32B-Chat
     "qwen1.5-32b-chat": os.path.join(MODEL_PATH, "Qwen1.5-32B-Chat"),
     "qwen1.5-72b-chat": os.path.join(MODEL_PATH, "Qwen1.5-72B-Chat"),
+    # https://huggingface.co/Qwen/Qwen1.5-110B-Chat
+    "qwen1.5-110b-chat": os.path.join(MODEL_PATH, "Qwen1.5-110B-Chat"),
     # https://huggingface.co/Qwen/CodeQwen1.5-7B-Chat
     "codeqwen1.5-7b-chat": os.path.join(MODEL_PATH, "CodeQwen1.5-7B-Chat"),
     # https://huggingface.co/Qwen/Qwen1.5-MoE-A2.7B-Chat
