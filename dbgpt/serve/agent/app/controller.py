@@ -15,6 +15,7 @@ from dbgpt.serve.agent.db.gpts_app import (
     GptsAppCollectionDao,
     GptsAppDao,
     GptsAppQuery,
+    GptsAppResponse,
 )
 from dbgpt.serve.agent.hub.plugin_hub import plugin_hub
 from dbgpt.serve.agent.team.base import TeamMode
@@ -36,7 +37,7 @@ async def create(gpts_app: GptsApp):
         return Result.failed(code="E000X", msg=f"create app error: {ex}")
 
 
-@router.post("/v1/app/list")
+@router.post("/v1/app/list", response_model=Result[GptsAppResponse])
 async def app_list(query: GptsAppQuery):
     try:
         return Result.succ(gpts_dao.app_list(query, True))
@@ -137,7 +138,7 @@ async def llm_strategy_values(type: str):
         )
 
 
-@router.get("/v1/app/resources/list", response_model=Result[str])
+@router.get("/v1/app/resources/list", response_model=Result[list[str]])
 async def app_resources(
     type: str, name: str = None, user_code: str = None, sys_code: str = None
 ):
