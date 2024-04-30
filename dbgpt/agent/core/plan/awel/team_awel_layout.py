@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import (
@@ -15,9 +15,10 @@ from dbgpt._private.pydantic import (
 from dbgpt.core.awel import DAG
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 
-from ...actions.action import ActionOutput
-from ...core.agent import Agent, AgentGenerateContext, AgentMessage
-from ...core.base_team import ManagerAgent
+from ...action.base import ActionOutput
+from ...agent import Agent, AgentGenerateContext, AgentMessage
+from ...base_team import ManagerAgent
+from ...profile import DynConfig, ProfileConfig
 from .agent_operator import AWELAgentOperator, WrappedAgentOperator
 
 logger = logging.getLogger(__name__)
@@ -84,11 +85,24 @@ class AWELBaseManager(ManagerAgent, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    goal: str = (
-        "Promote and solve user problems according to the process arranged by AWEL."
+    profile: ProfileConfig = ProfileConfig(
+        name="AWELBaseManager",
+        role=DynConfig(
+            "PlanManager", category="agent", key="dbgpt_agent_plan_awel_profile_name"
+        ),
+        goal=DynConfig(
+            "Promote and solve user problems according to the process arranged "
+            "by AWEL.",
+            category="agent",
+            key="dbgpt_agent_plan_awel_profile_goal",
+        ),
+        desc=DynConfig(
+            "Promote and solve user problems according to the process arranged "
+            "by AWEL.",
+            category="agent",
+            key="dbgpt_agent_plan_awel_profile_desc",
+        ),
     )
-    constraints: List[str] = []
-    desc: str = goal
 
     async def _a_process_received_message(self, message: AgentMessage, sender: Agent):
         """Process the received message."""
@@ -116,7 +130,7 @@ class AWELBaseManager(ManagerAgent, ABC):
                 message=AgentMessage(content=message, current_goal=message),
                 sender=sender,
                 reviewer=reviewer,
-                memory=self.memory,
+                memory=self.memory.structure_clone(),
                 agent_context=self.agent_context,
                 resource_loader=self.resource_loader,
                 llm_client=self.not_null_llm_config.llm_client,
@@ -161,8 +175,6 @@ class WrappedAWELLayoutManager(AWELBaseManager):
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    profile: str = "WrappedAWELLayoutManager"
 
     dag: Optional[DAG] = Field(None, description="The DAG of the manager")
 
@@ -237,8 +249,6 @@ class DefaultAWELLayoutManager(AWELBaseManager):
     """The manager of the team for the AWEL layout."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    profile: str = "DefaultAWELLayoutManager"
 
     dag: AWELTeamContext = Field(...)
 

@@ -5,8 +5,9 @@ from typing import Dict, Optional
 _COMPAT_FLOW_MAPPING: Dict[str, str] = {}
 
 
-_OLD_AGENT_RESOURCE_MODULE = "dbgpt.serve.agent.team.layout.agent_operator_resource"
-_NEW_AGENT_RESOURCE_MODULE = "dbgpt.agent.plan.awel.agent_operator_resource"
+_OLD_AGENT_RESOURCE_MODULE_1 = "dbgpt.serve.agent.team.layout.agent_operator_resource"
+_OLD_AGENT_RESOURCE_MODULE_2 = "dbgpt.agent.plan.awel.agent_operator_resource"
+_NEW_AGENT_RESOURCE_MODULE = "dbgpt.agent.core.plan.awel.agent_operator_resource"
 
 
 def _register(
@@ -24,17 +25,32 @@ def get_new_class_name(old_class_name: str) -> Optional[str]:
 
 
 _register(
-    _OLD_AGENT_RESOURCE_MODULE,
+    _OLD_AGENT_RESOURCE_MODULE_1,
     _NEW_AGENT_RESOURCE_MODULE,
     "AwelAgentResource",
     "AWELAgentResource",
 )
 _register(
-    _OLD_AGENT_RESOURCE_MODULE,
+    _OLD_AGENT_RESOURCE_MODULE_2,
+    _NEW_AGENT_RESOURCE_MODULE,
+    "AWELAgentResource",
+)
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_1,
     _NEW_AGENT_RESOURCE_MODULE,
     "AwelAgentConfig",
     "AWELAgentConfig",
 )
 _register(
-    _OLD_AGENT_RESOURCE_MODULE, _NEW_AGENT_RESOURCE_MODULE, "AwelAgent", "AWELAgent"
+    _OLD_AGENT_RESOURCE_MODULE_2,
+    _NEW_AGENT_RESOURCE_MODULE,
+    "AWELAgentConfig",
+    "AWELAgentConfig",
+)
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_1, _NEW_AGENT_RESOURCE_MODULE, "AwelAgent", "AWELAgent"
+)
+
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_2, _NEW_AGENT_RESOURCE_MODULE, "AWELAgent", "AWELAgent"
 )

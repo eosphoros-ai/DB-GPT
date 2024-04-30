@@ -1,7 +1,7 @@
 """Base retriever module."""
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from dbgpt.core import Chunk
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -23,6 +23,15 @@ class RetrieverStrategy(str, Enum):
 
 class BaseRetriever(ABC):
     """Base retriever."""
+
+    def load_document(self, chunks: List[Chunk], **kwargs: Dict[str, Any]) -> List[str]:
+        """Load document in vector database.
+
+        Args:
+            - chunks: document chunks.
+        Return chunk ids.
+        """
+        raise NotImplementedError
 
     def retrieve(
         self, query: str, filters: Optional[MetadataFilters] = None

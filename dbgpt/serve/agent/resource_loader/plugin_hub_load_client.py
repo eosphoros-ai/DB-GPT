@@ -28,7 +28,7 @@ class PluginHubLoadClient(ResourcePluginClient):
         logger.info(f"PluginHubLoadClient load plugin:{value}")
         if plugin_generator is None:
             plugin_generator = PluginPromptGenerator()
-            plugin_generator.command_registry = CFG.command_registry
+            plugin_generator.set_command_registry(CFG.command_registry)
 
         agent_module = CFG.SYSTEM_APP.get_component(
             ComponentType.PLUGIN_HUB, ModulePlugin

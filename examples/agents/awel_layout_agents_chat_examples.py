@@ -19,16 +19,16 @@ import os
 
 from dbgpt.agent import (
     AgentContext,
+    AgentMemory,
     AgentResource,
-    GptsMemory,
     LLMConfig,
     ResourceLoader,
     ResourceType,
     UserProxyAgent,
+    WrappedAWELLayoutManager,
 )
 from dbgpt.agent.expand.plugin_assistant_agent import PluginAssistantAgent
 from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
-from dbgpt.agent.plan import WrappedAWELLayoutManager
 from dbgpt.agent.resource import PluginFileLoadClient
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.util.tracer import initialize_tracer
@@ -44,8 +44,7 @@ async def main():
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test456", gpts_app_name="信息析助手")
 
-    default_memory = GptsMemory()
-
+    agent_memory = AgentMemory()
     resource_loader = ResourceLoader()
     plugin_file_loader = PluginFileLoadClient()
     resource_loader.register_resource_api(plugin_file_loader)
@@ -60,7 +59,7 @@ async def main():
         await PluginAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .bind([plugin_resource])
         .bind(resource_loader)
         .build()
@@ -68,7 +67,7 @@ async def main():
     summarizer = (
         await SummaryAssistantAgent()
         .bind(context)
-        .bind(default_memory)
+        .bind(agent_memory)
         .bind(LLMConfig(llm_client=llm_client))
         .build()
     )
@@ -76,13 +75,13 @@ async def main():
     manager = (
         await WrappedAWELLayoutManager()
         .bind(context)
-        .bind(default_memory)
+        .bind(agent_memory)
         .bind(LLMConfig(llm_client=llm_client))
         .build()
     )
     manager.hire([tool_engineer, summarizer])
 
-    user_proxy = await UserProxyAgent().bind(context).bind(default_memory).build()
+    user_proxy = await UserProxyAgent().bind(context).bind(agent_memory).build()
 
     await user_proxy.initiate_chat(
         recipient=manager,
@@ -93,7 +92,7 @@ async def main():
         # message="find papers on LLM applications from arxiv in the last month, create a markdown table of different domains.",
     )
 
-    print(await default_memory.one_chat_completions("test456"))
+    print(await agent_memory.gpts_memory.one_chat_completions("test456"))
 
 
 if __name__ == "__main__":

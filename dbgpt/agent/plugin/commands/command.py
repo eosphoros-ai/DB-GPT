@@ -70,7 +70,7 @@ def execute_ai_response_json(
 
 def execute_command(
     command_name: str,
-    arguments,
+    arguments: Dict[str, Any],
     plugin_generator: PluginPromptGenerator,
 ) -> Any:
     """Execute the command and return the result.
@@ -78,6 +78,7 @@ def execute_command(
     Args:
         command_name (str): The name of the command to execute
         arguments (dict): The arguments for the command
+        plugin_generator (PluginPromptGenerator): The plugin generator
 
     Returns:
         str: The result of the command
@@ -103,18 +104,23 @@ def execute_command(
     else:
         for command in plugin_generator.commands:
             if (
-                command_name == command["label"].lower()
-                or command_name == command["name"].lower()
+                command_name == command.label.lower()
+                or command_name == command.name.lower()
             ):
                 try:
-                    # 删除非定义参数
+                    # Delete non-defined parameters
                     diff_ags = list(
-                        set(arguments.keys()).difference(set(command["args"].keys()))
+                        set(arguments.keys()).difference(set(command.args.keys()))
                     )
                     for arg_name in diff_ags:
                         del arguments[arg_name]
                     print(str(arguments))
-                    return command["function"](**arguments)
+                    func = command.function
+                    if not func:
+                        raise ExecutionCommandException(
+                            f"Function not found for command: {command_name}"
+                        )
+                    return func(**arguments)
                 except Exception as e:
                     raise ExecutionCommandException(f"Execution error: {str(e)}")
         raise NotCommandException("Invalid command: " + command_name)

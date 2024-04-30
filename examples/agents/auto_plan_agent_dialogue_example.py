@@ -14,27 +14,33 @@
             python examples/agents/auto_plan_agent_dialogue_example.py 
 """
 
-
 import asyncio
 
 from dbgpt.agent import (
     AgentContext,
-    GptsMemory,
+    AgentMemory,
+    AutoPlanChatManager,
     LLMConfig,
     ResourceLoader,
     UserProxyAgent,
 )
 from dbgpt.agent.expand.code_assistant_agent import CodeAssistantAgent
-from dbgpt.agent.plan import AutoPlanChatManager
+from dbgpt.util.tracer import initialize_tracer
+
+initialize_tracer(
+    "/tmp/agent_auto_plan_agent_dialogue_example_trace.jsonl", create_system_app=True
+)
 
 
 async def main():
     from dbgpt.model.proxy import OpenAILLMClient
 
-    llm_client = OpenAILLMClient(model_alias="gpt-4")
-    context: AgentContext = AgentContext(conv_id="test456", gpts_app_name="代码分析助手")
+    agent_memory = AgentMemory()
 
-    default_memory = GptsMemory()
+    llm_client = OpenAILLMClient(model_alias="gpt-4")
+    context: AgentContext = AgentContext(
+        conv_id="test456", gpts_app_name="代码分析助手", max_new_tokens=2048
+    )
 
     resource_loader = ResourceLoader()
 
@@ -42,21 +48,21 @@ async def main():
         await CodeAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
         .bind(resource_loader)
+        .bind(agent_memory)
         .build()
     )
 
     manager = (
         await AutoPlanChatManager()
         .bind(context)
-        .bind(default_memory)
+        .bind(agent_memory)
         .bind(LLMConfig(llm_client=llm_client))
         .build()
     )
     manager.hire([coder])
 
-    user_proxy = await UserProxyAgent().bind(context).bind(default_memory).build()
+    user_proxy = await UserProxyAgent().bind(context).bind(agent_memory).build()
 
     await user_proxy.initiate_chat(
         recipient=manager,
@@ -66,7 +72,7 @@ async def main():
         # message="find papers on LLM applications from arxiv in the last month, create a markdown table of different domains.",
     )
 
-    print(await default_memory.one_chat_completions("test456"))
+    print(await agent_memory.gpts_memory.one_chat_completions("test456"))
 
 
 if __name__ == "__main__":

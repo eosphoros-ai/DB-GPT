@@ -6,12 +6,12 @@ from typing import List, Optional
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_agent_plans import Vis, VisAgentPlans
 
-from ..actions.action import Action, ActionOutput
-from ..core.agent import AgentContext
-from ..core.schema import Status
-from ..memory.base import GptsPlan
-from ..memory.gpts_memory import GptsPlansMemory
-from ..resource.resource_api import AgentResource
+from ...resource.resource_api import AgentResource
+from ..action.base import Action, ActionOutput
+from ..agent import AgentContext
+from ..memory.gpts.base import GptsPlan
+from ..memory.gpts.gpts_memory import GptsPlansMemory
+from ..schema import Status
 
 logger = logging.getLogger(__name__)
 

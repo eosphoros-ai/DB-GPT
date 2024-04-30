@@ -1,13 +1,14 @@
 """Base classes for managing a group of agents in a team chat."""
 
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
-from ..actions.action import ActionOutput
+from .action.base import ActionOutput
 from .agent import Agent, AgentMessage
 from .base_agent import ConversableAgent
+from .profile import ProfileConfig
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class Team(BaseModel):
     @property
     def agent_names(self) -> List[str]:
         """Return the names of the agents in the group chat."""
-        return [agent.get_profile() for agent in self.agents]
+        return [agent.role for agent in self.agents]
 
     def agent_by_name(self, name: str) -> Agent:
         """Return the agent with a given name."""
@@ -121,10 +122,14 @@ class ManagerAgent(ConversableAgent, Team):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    profile: str = "TeamManager"
-    goal: str = "manage all hired intelligent agents to complete mission objectives"
-    constraints: List[str] = []
-    desc: str = goal
+    profile: ProfileConfig = ProfileConfig(
+        name="ManagerAgent",
+        profile="TeamManager",
+        goal="manage all hired intelligent agents to complete mission objectives",
+        constraints=[],
+        desc="manage all hired intelligent agents to complete mission objectives",
+    )
+
     is_team: bool = True
 
     # The management agent does not need to retry the exception. The actual execution
@@ -148,6 +153,16 @@ class ManagerAgent(ConversableAgent, Team):
             message = messages[-1]
             self.messages.append(message.to_llm_message())
             return message.content, None
+
+    async def _load_thinking_messages(
+        self,
+        received_message: AgentMessage,
+        sender: Agent,
+        rely_messages: Optional[List[AgentMessage]] = None,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> List[AgentMessage]:
+        """Load messages for thinking."""
+        return [AgentMessage(content=received_message.content)]
 
     async def act(
         self,

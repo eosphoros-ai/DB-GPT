@@ -1,4 +1,5 @@
 """Plugin Action Module."""
+
 import json
 import logging
 from typing import Optional
@@ -6,11 +7,11 @@ from typing import Optional
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 
-from ..core.schema import Status
-from ..plugin.generator import PluginPromptGenerator
-from ..resource.resource_api import AgentResource, ResourceType
-from ..resource.resource_plugin_api import ResourcePluginClient
-from .action import Action, ActionOutput
+from ...core.action.base import Action, ActionOutput
+from ...core.schema import Status
+from ...plugin.generator import PluginPromptGenerator
+from ...resource.resource_api import AgentResource, ResourceType
+from ...resource.resource_plugin_api import ResourcePluginClient
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +145,10 @@ class PluginAction(Action[PluginInput]):
             view = await self.render_protocol.display(content=plugin_param)
 
             return ActionOutput(
-                is_exe_success=response_success, content=tool_result, view=view
+                is_exe_success=response_success,
+                content=tool_result,
+                view=view,
+                observations=tool_result,
             )
         except Exception as e:
             logger.exception("Tool Action Run Failed！")

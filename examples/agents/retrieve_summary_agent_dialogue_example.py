@@ -17,7 +17,7 @@
 import asyncio
 import os
 
-from dbgpt.agent import AgentContext, GptsMemory, LLMConfig, UserProxyAgent
+from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.agent.expand.retrieve_summary_assistant_agent import (
     RetrieveSummaryAssistantAgent,
 )
@@ -29,17 +29,16 @@ async def summary_example_with_success():
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo-16k")
     context: AgentContext = AgentContext(conv_id="retrieve_summarize")
-
-    default_memory = GptsMemory()
+    agent_memory = AgentMemory()
     summarizer = (
         await RetrieveSummaryAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .build()
     )
 
-    user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
+    user_proxy = UserProxyAgent(memory=agent_memory, agent_context=context)
 
     paths_urls = [
         os.path.join(ROOT_PATH, "examples/agents/example_files/Nuclear_power.pdf"),
@@ -56,7 +55,7 @@ async def summary_example_with_success():
     )
 
     # dbgpt-vis message infos
-    print(await default_memory.one_chat_completions("retrieve_summarize"))
+    print(await agent_memory.gpts_memory.one_chat_completions("retrieve_summarize"))
 
 
 if __name__ == "__main__":

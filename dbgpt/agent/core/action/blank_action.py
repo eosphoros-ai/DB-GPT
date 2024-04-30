@@ -3,8 +3,8 @@
 import logging
 from typing import Optional
 
-from ..resource.resource_api import AgentResource
-from .action import Action, ActionOutput
+from ...resource.resource_api import AgentResource
+from .base import Action, ActionOutput
 
 logger = logging.getLogger(__name__)
 
@@ -33,4 +33,8 @@ class BlankAction(Action):
 
         Just return the AI message.
         """
-        return ActionOutput(is_exe_success=True, content=ai_message, view=ai_message)
+        return ActionOutput(
+            is_exe_success=True,
+            content=ai_message,
+            view=ai_message,
+        )

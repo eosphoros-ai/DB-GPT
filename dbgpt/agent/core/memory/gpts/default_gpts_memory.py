@@ -5,8 +5,13 @@ from typing import List, Optional
 
 import pandas as pd
 
-from ..core.schema import Status
-from .base import GptsMessage, GptsMessageMemory, GptsPlan, GptsPlansMemory
+from dbgpt.agent.core.memory.gpts.base import (
+    GptsMessage,
+    GptsMessageMemory,
+    GptsPlan,
+    GptsPlansMemory,
+)
+from dbgpt.agent.core.schema import Status
 
 
 class DefaultGptsPlansMemory(GptsPlansMemory):

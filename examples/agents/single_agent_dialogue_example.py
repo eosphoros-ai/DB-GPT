@@ -16,7 +16,14 @@
 
 import asyncio
 
-from dbgpt.agent import AgentContext, GptsMemory, LLMConfig, UserProxyAgent
+from dbgpt.agent import (
+    AgentContext,
+    AgentMemory,
+    AgentMemoryFragment,
+    HybridMemory,
+    LLMConfig,
+    UserProxyAgent,
+)
 from dbgpt.agent.expand.code_assistant_agent import CodeAssistantAgent
 
 
@@ -25,17 +32,17 @@ async def main():
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test123")
-    default_memory: GptsMemory = GptsMemory()
+    agent_memory = AgentMemory(HybridMemory[AgentMemoryFragment].from_chroma())
 
     coder = (
         await CodeAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .build()
     )
 
-    user_proxy = await UserProxyAgent().bind(context).bind(default_memory).build()
+    user_proxy = await UserProxyAgent().bind(context).bind(agent_memory).build()
 
     await user_proxy.initiate_chat(
         recipient=coder,
@@ -44,7 +51,7 @@ async def main():
         # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
     )
     ## dbgpt-vis message infos
-    print(await default_memory.one_chat_completions("test123"))
+    print(await agent_memory.gpts_memory.one_chat_completions("test123"))
 
 
 if __name__ == "__main__":

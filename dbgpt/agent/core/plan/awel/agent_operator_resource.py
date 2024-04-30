@@ -1,4 +1,5 @@
 """The AWEL Agent Operator Resource."""
+
 from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -11,9 +12,9 @@ from dbgpt.core.awel.flow import (
     register_resource,
 )
 
-from ...core.agent_manage import get_agent_manager
-from ...core.llm.llm import LLMConfig, LLMStrategyType
-from ...resource.resource_api import AgentResource, ResourceType
+from ....resource.resource_api import AgentResource, ResourceType
+from ....util.llm.llm import LLMConfig, LLMStrategyType
+from ...agent_manage import get_agent_manager
 
 
 @register_resource(
@@ -50,7 +51,10 @@ from ...resource.resource_api import AgentResource, ResourceType
             description="The agent resource value.",
         ),
     ],
-    alias=["dbgpt.serve.agent.team.layout.agent_operator_resource.AwelAgentResource"],
+    alias=[
+        "dbgpt.serve.agent.team.layout.agent_operator_resource.AwelAgentResource",
+        "dbgpt.agent.plan.awel.agent_operator_resource.AWELAgentResource",
+    ],
 )
 class AWELAgentResource(AgentResource):
     """AWEL Agent Resource."""
@@ -107,7 +111,10 @@ class AWELAgentResource(AgentResource):
             description="The agent LLM Strategy Value.",
         ),
     ],
-    alias=["dbgpt.serve.agent.team.layout.agent_operator_resource.AwelAgentConfig"],
+    alias=[
+        "dbgpt.serve.agent.team.layout.agent_operator_resource.AwelAgentConfig",
+        "dbgpt.agent.plan.awel.agent_operator_resource.AWELAgentConfig",
+    ],
 )
 class AWELAgentConfig(LLMConfig):
     """AWEL Agent Config."""
@@ -168,7 +175,10 @@ def _agent_resource_option_values() -> List[OptionValue]:
             description="The agent llm config.",
         ),
     ],
-    alias=["dbgpt.serve.agent.team.layout.agent_operator_resource.AwelAgent"],
+    alias=[
+        "dbgpt.serve.agent.team.layout.agent_operator_resource.AwelAgent",
+        "dbgpt.agent.plan.awel.agent_operator_resource.AWELAgent",
+    ],
 )
 class AWELAgent(BaseModel):
     """AWEL Agent."""

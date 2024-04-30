@@ -2,14 +2,15 @@
 
 import json
 import logging
-from typing import List, Optional, Tuple, cast
+from typing import Optional, Tuple, cast
 
-from ..actions.action import ActionOutput
-from ..actions.chart_action import ChartAction
+from ..core.action.base import ActionOutput
 from ..core.agent import AgentMessage
 from ..core.base_agent import ConversableAgent
+from ..core.profile import DynConfig, ProfileConfig
 from ..resource.resource_api import ResourceType
 from ..resource.resource_db_api import ResourceDbClient
+from .actions.chart_action import ChartAction
 
 logger = logging.getLogger(__name__)
 
@@ -17,31 +18,53 @@ logger = logging.getLogger(__name__)
 class DataScientistAgent(ConversableAgent):
     """Data Scientist Agent."""
 
-    name: str = "Edgar"
-    profile: str = "DataScientist"
-    goal: str = (
-        "Use correct {dialect} SQL to analyze and solve tasks based on the data"
-        " structure information of the database given in the resource."
+    profile: ProfileConfig = ProfileConfig(
+        name=DynConfig(
+            "Edgar",
+            category="agent",
+            key="dbgpt_agent_expand_dashboard_assistant_agent_profile_name",
+        ),
+        role=DynConfig(
+            "DataScientist",
+            category="agent",
+            key="dbgpt_agent_expand_dashboard_assistant_agent_profile_role",
+        ),
+        goal=DynConfig(
+            "Use correct {{ dialect }} SQL to analyze and solve tasks based on the data"
+            " structure information of the database given in the resource.",
+            category="agent",
+            key="dbgpt_agent_expand_dashboard_assistant_agent_profile_goal",
+        ),
+        constraints=DynConfig(
+            [
+                "Please check the generated SQL carefully. Please strictly abide by "
+                "the data structure definition given. It is prohibited to use "
+                "non-existent fields and data values. Do not use fields from table A "
+                "to table B. You can perform multi-table related queries.",
+                "If the data and fields that need to be analyzed in the target are in "
+                "different tables, it is recommended to use multi-table correlation "
+                "queries first, and pay attention to the correlation between multiple "
+                "table structures.",
+                "It is forbidden to construct data by yourself as a query condition. "
+                "If you want to query a specific field, if the value of the field is "
+                "provided, then you can perform a group statistical query on the "
+                "field.",
+                "Please select an appropriate one from the supported display methods "
+                "for data display. If no suitable display type is found, "
+                "table display is used by default. Supported display types: \n"
+                "{{ display_type }}",
+            ],
+            category="agent",
+            key="dbgpt_agent_expand_dashboard_assistant_agent_profile_constraints",
+        ),
+        desc=DynConfig(
+            "Use database resources to conduct data analysis, analyze SQL, and provide "
+            "recommended rendering methods.",
+            category="agent",
+            key="dbgpt_agent_expand_dashboard_assistant_agent_profile_desc",
+        ),
     )
-    constraints: List[str] = [
-        "Please check the generated SQL carefully. Please strictly abide by the data "
-        "structure definition given. It is prohibited to use non-existent fields and "
-        "data values. Do not use fields from table A to table B. You can perform "
-        "multi-table related queries.",
-        "If the data and fields that need to be analyzed in the target are in different"
-        " tables, it is recommended to use multi-table correlation queries first, and "
-        "pay attention to the correlation between multiple table structures.",
-        "It is forbidden to construct data by yourself as a query condition. If you "
-        "want to query a specific field, if the value of the field is provided, then "
-        "you can perform a group statistical query on the field.",
-        "Please select an appropriate one from the supported display methods for data "
-        "display. If no suitable display type is found, table display is used by "
-        "default. Supported display types: \n {display_type}",
-    ]
-    desc: str = (
-        "Use database resources to conduct data analysis, analyze SQL, and "
-        "provide recommended rendering methods."
-    )
+
     max_retry_count: int = 5
 
     def __init__(self, **kwargs):

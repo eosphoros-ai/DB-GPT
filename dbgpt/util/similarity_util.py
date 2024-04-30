@@ -1,8 +1,51 @@
 """Utility functions for calculating similarity."""
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, List, Sequence
 
 if TYPE_CHECKING:
     from dbgpt.core.interface.embeddings import Embeddings
+
+
+def cosine_similarity(embedding1: List[float], embedding2: List[float]) -> float:
+    """Calculate the cosine similarity between two vectors.
+
+    Args:
+        embedding1(List[float]): The first vector.
+        embedding2(List[float]): The second vector.
+
+    Returns:
+        float: The cosine similarity.
+    """
+    try:
+        import numpy as np
+    except ImportError:
+        raise ImportError("numpy is required for SimilarityMetric")
+    dot_product = np.dot(embedding1, embedding2)
+    norm1 = np.linalg.norm(embedding1)
+    norm2 = np.linalg.norm(embedding2)
+    similarity = dot_product / (norm1 * norm2)
+    return similarity
+
+
+def sigmoid_function(x: float) -> float:
+    """Calculate the sigmoid function.
+
+    The sigmoid function is defined as:
+    .. math::
+        f(x) = \\frac{1}{1 + e^{-x}}
+
+    It is used to map the input to a value between 0 and 1.
+
+    Args:
+        x(float): The input to the sigmoid function.
+
+    Returns:
+        float: The output of the sigmoid function.
+    """
+    try:
+        import numpy as np
+    except ImportError:
+        raise ImportError("numpy is required for sigmoid_function")
+    return 1 / (1 + np.exp(-x))
 
 
 def calculate_cosine_similarity(

@@ -4,8 +4,8 @@ from fastapi import APIRouter
 
 from dbgpt._private.config import Config
 from dbgpt.agent.core.agent_manage import get_agent_manager
-from dbgpt.agent.core.llm.llm import LLMStrategyType
 from dbgpt.agent.resource.resource_api import ResourceType
+from dbgpt.agent.util.llm.llm import LLMStrategyType
 from dbgpt.app.knowledge.api import knowledge_space_service
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.openapi.api_view_model import Result
@@ -69,11 +69,11 @@ async def all_agents():
         return Result.failed(code="E000X", msg=f"query agents error: {ex}")
 
 
-@router.post("/v1/app/remove", response_model=Result[str])
+@router.post("/v1/app/remove")
 async def delete(gpts_app: GptsApp):
     try:
         gpts_dao.delete(gpts_app.app_code, gpts_app.user_code, gpts_app.sys_code)
-        return Result.succ([])
+        return Result.succ(None)
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"delete app error: {ex}")
 

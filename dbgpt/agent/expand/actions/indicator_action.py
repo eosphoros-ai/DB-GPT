@@ -7,9 +7,9 @@ from typing import Optional
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 
-from ..core.schema import Status
-from ..resource.resource_api import AgentResource, ResourceType
-from .action import Action, ActionOutput
+from ...core.action.base import Action, ActionOutput
+from ...core.schema import Status
+from ...resource.resource_api import AgentResource, ResourceType
 
 logger = logging.getLogger(__name__)
 

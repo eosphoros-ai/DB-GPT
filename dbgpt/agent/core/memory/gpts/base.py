@@ -1,10 +1,11 @@
 """Base memory interface for agents."""
+
 import dataclasses
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from dbgpt.agent.core.schema import Status
+from ...schema import Status
 
 
 @dataclasses.dataclass

@@ -1,4 +1,5 @@
 """Base Action class for defining agent actions."""
+
 import json
 from abc import ABC, abstractmethod
 from typing import (
@@ -21,12 +22,13 @@ from dbgpt._private.pydantic import (
     field_description,
     model_fields,
     model_to_dict,
+    model_validator,
 )
 from dbgpt.util.json_utils import find_json_objects
+from dbgpt.vis.base import Vis
 
-from ...vis.base import Vis
-from ..resource.resource_api import AgentResource, ResourceType
-from ..resource.resource_loader import ResourceLoader
+from ...resource.resource_api import AgentResource, ResourceType
+from ...resource.resource_loader import ResourceLoader
 
 T = TypeVar("T", bound=Union[BaseModel, List[BaseModel], None])
 
@@ -41,6 +43,20 @@ class ActionOutput(BaseModel):
     view: Optional[str] = None
     resource_type: Optional[str] = None
     resource_value: Optional[Any] = None
+    action: Optional[str] = None
+    thoughts: Optional[str] = None
+    observations: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def pre_fill(cls, values: Any) -> Any:
+        """Pre-fill the values."""
+        if not isinstance(values, dict):
+            return values
+        is_exe_success = values.get("is_exe_success", True)
+        if not is_exe_success and "observations" not in values:
+            values["observations"] = values.get("content")
+        return values
 
     @classmethod
     def from_dict(

@@ -1,9 +1,10 @@
 """Connector for vector store."""
 
+import copy
 import os
 from typing import Any, Dict, List, Optional, Type, cast
 
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import (
     FunctionDynamicOptions,
     OptionValue,
@@ -11,7 +12,6 @@ from dbgpt.core.awel.flow import (
     ResourceCategory,
     register_resource,
 )
-from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
@@ -20,6 +20,8 @@ connector: Dict[str, Type] = {}
 
 
 def _load_vector_options() -> List[OptionValue]:
+    from dbgpt.storage import vector_store
+
     return [
         OptionValue(label=cls, name=cls, value=cls)
         for cls in vector_store.__all__
@@ -88,6 +90,10 @@ class VectorStoreConnector:
             raise Exception(f"Vector Store Type Not support. {0}", vector_store_type)
 
         print(self.connector_class)
+        self._vector_store_type = vector_store_type
+        self._embeddings = (
+            vector_store_config.embedding_fn if vector_store_config else None
+        )
         self.client = self.connector_class(vector_store_config)
 
     @classmethod
@@ -195,10 +201,30 @@ class VectorStoreConnector:
         """
         return self.client.delete_by_ids(ids=ids)
 
+    @property
+    def current_embeddings(self) -> Optional[Embeddings]:
+        """Return the current embeddings."""
+        return self._embeddings
+
+    def new_connector(self, name: str, **kwargs) -> "VectorStoreConnector":
+        """Create a new connector.
+
+        New connector based on the current connector.
+        """
+        config = copy.copy(self.vector_store_config)
+        for k, v in kwargs.items():
+            if v is not None:
+                setattr(config, k, v)
+        config.name = name
+
+        return self.__class__(self._vector_store_type, config)
+
     def _match(self, vector_store_type) -> bool:
         return bool(connector.get(vector_store_type))
 
     def _register(self):
+        from dbgpt.storage import vector_store
+
         for cls in vector_store.__all__:
             if issubclass(getattr(vector_store, cls), VectorStoreBase):
                 _k, _v = cls, getattr(vector_store, cls)

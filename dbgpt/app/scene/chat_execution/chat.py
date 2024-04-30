@@ -29,7 +29,7 @@ class ChatWithPlugin(BaseChat):
         chat_param["chat_mode"] = ChatScene.ChatExecution
         super().__init__(chat_param=chat_param)
         self.plugins_prompt_generator = PluginPromptGenerator()
-        self.plugins_prompt_generator.command_registry = CFG.command_registry
+        self.plugins_prompt_generator.set_command_registry(CFG.command_registry)
         # 加载插件中可用命令
         self.select_plugin = self.plugin_selector
         if self.select_plugin:

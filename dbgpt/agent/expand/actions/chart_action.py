@@ -1,4 +1,5 @@
 """Chart Action for SQL execution and rendering."""
+
 import json
 import logging
 from typing import Optional
@@ -6,9 +7,9 @@ from typing import Optional
 from dbgpt._private.pydantic import BaseModel, Field, model_to_json
 from dbgpt.vis.tags.vis_chart import Vis, VisChart
 
-from ..resource.resource_api import AgentResource, ResourceType
-from ..resource.resource_db_api import ResourceDbClient
-from .action import Action, ActionOutput
+from ...core.action.base import Action, ActionOutput
+from ...resource.resource_api import AgentResource, ResourceType
+from ...resource.resource_db_api import ResourceDbClient
 
 logger = logging.getLogger(__name__)
 

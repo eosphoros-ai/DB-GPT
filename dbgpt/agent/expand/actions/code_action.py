@@ -1,4 +1,5 @@
 """Code Action Module."""
+
 import logging
 from typing import Optional, Union
 
@@ -6,8 +7,8 @@ from dbgpt.util.code_utils import UNKNOWN, execute_code, extract_code, infer_lan
 from dbgpt.util.utils import colored
 from dbgpt.vis.tags.vis_code import Vis, VisCode
 
-from ..resource.resource_api import AgentResource
-from .action import Action, ActionOutput
+from ...core.action.base import Action, ActionOutput
+from ...resource.resource_api import AgentResource
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,13 @@ class CodeAction(Action[None]):
             if not self.render_protocol:
                 raise NotImplementedError("The render_protocol should be implemented.")
             view = await self.render_protocol.display(content=param)
-            return ActionOutput(is_exe_success=exit_success, content=content, view=view)
+            return ActionOutput(
+                is_exe_success=exit_success,
+                content=content,
+                view=view,
+                thoughts=ai_message,
+                observations=content,
+            )
         except Exception as e:
             logger.exception("Code Action Run Failed！")
             return ActionOutput(

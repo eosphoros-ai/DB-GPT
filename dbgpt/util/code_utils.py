@@ -70,6 +70,7 @@ def extract_code(
     text: Union[str, List],
     pattern: str = CODE_BLOCK_PATTERN,
     detect_single_line_code: bool = False,
+    default_lang: str = "python",
 ) -> List[Tuple[str, str]]:
     """Extract code from a text.
 
@@ -80,6 +81,7 @@ def extract_code(
             code block. Defaults to CODE_BLOCK_PATTERN.
         detect_single_line_code (bool, optional): Enable the new feature for
             extracting single line code. Defaults to False.
+        default_lang (str, optional): The default language to use when the language
 
     Returns:
         list: A list of tuples, each containing the language and the code.
@@ -89,7 +91,7 @@ def extract_code(
     text = content_str(text)
     if not detect_single_line_code:
         match = re.findall(pattern, text, flags=re.DOTALL)
-        return match if match else [(UNKNOWN, text)]
+        return match if match else [(default_lang, text)]
 
     # Extract both multi-line and single-line code block, separated by the | operator
     # `([^`]+)`: Matches inline code.

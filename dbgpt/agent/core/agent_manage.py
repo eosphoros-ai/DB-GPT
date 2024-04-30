@@ -18,7 +18,7 @@ def participant_roles(agents: List[Agent]) -> str:
     # Default to all agents registered
     roles = []
     for agent in agents:
-        roles.append(f"{agent.get_name()}: {agent.get_describe()}")
+        roles.append(f"{agent.name}: {agent.desc}")
     return "\n".join(roles)
 
 
@@ -34,13 +34,13 @@ def mentioned_agents(message_content: str, agents: List[Agent]) -> Dict:
     mentions = dict()
     for agent in agents:
         regex = (
-            r"(?<=\W)" + re.escape(agent.get_name()) + r"(?=\W)"
+            r"(?<=\W)" + re.escape(agent.name) + r"(?=\W)"
         )  # Finds agent mentions, taking word boundaries into account
         count = len(
             re.findall(regex, " " + message_content + " ")
         )  # Pad the message to help with matching
         if count > 0:
-            mentions[agent.get_name()] = count
+            mentions[agent.name] = count
     return mentions
 
 
@@ -84,7 +84,7 @@ class AgentManager(BaseComponent):
     ) -> str:
         """Register an agent."""
         inst = cls()
-        profile = inst.get_profile()
+        profile = inst.role
         if profile in self._agents and (
             profile in self._core_agents or not ignore_duplicate
         ):
@@ -110,13 +110,13 @@ class AgentManager(BaseComponent):
 
     def get_describe_by_name(self, name: str) -> str:
         """Return the description of an agent by name."""
-        return self._agents[name][1].desc
+        return self._agents[name][1].desc or ""
 
     def all_agents(self) -> Dict[str, str]:
         """Return a dictionary of all registered agents and their descriptions."""
         result = {}
         for name, value in self._agents.items():
-            result[name] = value[1].desc
+            result[name] = value[1].desc or ""
         return result
 
     def list_agents(self):
@@ -125,7 +125,7 @@ class AgentManager(BaseComponent):
         for name, value in self._agents.items():
             result.append(
                 {
-                    "name": value[1].profile,
+                    "name": value[1].role,
                     "desc": value[1].goal,
                 }
             )
