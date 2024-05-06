@@ -34,8 +34,6 @@ class ConversableAgent(Role, Agent):
     actions: List[Action] = Field(default_factory=list)
     resources: List[AgentResource] = Field(default_factory=list)
     llm_config: Optional[LLMConfig] = None
-    # memory: GptsMemory = Field(default_factory=GptsMemory)
-    # memory: AgentMemory = Field(default_factory=AgentMemory)
     resource_loader: Optional[ResourceLoader] = None
     max_retry_count: int = 3
     consecutive_auto_reply_counter: int = 0

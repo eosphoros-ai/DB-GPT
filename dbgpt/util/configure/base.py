@@ -1,8 +1,11 @@
 """Configuration base module."""
 
+import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Optional, Union
+
+logger = logging.getLogger(__name__)
 
 
 class _MISSING_TYPE:
@@ -61,7 +64,12 @@ class PromptManagerConfigProvider(ConfigProvider):
 
     def query(self, key: str, **kwargs) -> Any:
         from dbgpt._private.config import Config
-        from dbgpt.serve.prompt.serve import Serve
+
+        try:
+            from dbgpt.serve.prompt.serve import Serve
+        except ImportError:
+            logger.warning("Prompt manager is not available.")
+            return None
 
         cfg = Config()
         sys_app = cfg.SYSTEM_APP
