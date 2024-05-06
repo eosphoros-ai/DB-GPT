@@ -10,7 +10,7 @@ summarizer.
 Install the required packages by running the following command:
 
 ```bash
-pip install "dbgpt[agent]>=0.5.6rc0" -U
+pip install "dbgpt[agent]>=0.5.6rc1" -U
 pip install openai
 ```
 
