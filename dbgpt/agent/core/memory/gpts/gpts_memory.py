@@ -4,17 +4,11 @@ import json
 from collections import OrderedDict, defaultdict
 from typing import Dict, List, Optional
 
-from dbgpt.agent.core.action.base import ActionOutput
-from dbgpt.agent.core.memory.gpts.base import (
-    GptsMessage,
-    GptsMessageMemory,
-    GptsPlansMemory,
-)
-from dbgpt.agent.core.memory.gpts.default_gpts_memory import (
-    DefaultGptsMessageMemory,
-    DefaultGptsPlansMemory,
-)
 from dbgpt.vis.client import VisAgentMessages, VisAgentPlans, vis_client
+
+from ...action.base import ActionOutput
+from .base import GptsMessage, GptsMessageMemory, GptsPlansMemory
+from .default_gpts_memory import DefaultGptsMessageMemory, DefaultGptsPlansMemory
 
 NONE_GOAL_PREFIX: str = "none_goal_count_"
 

@@ -1,7 +1,5 @@
 """DB-GPT Multi-Agents Module."""
 
-from dbgpt.agent.util.llm.llm import LLMConfig  # noqa: F401
-
 from .core.action import *  # noqa: F401, F403
 from .core.agent import (  # noqa: F401
     Agent,
@@ -23,6 +21,7 @@ from .core.schema import PluginStorageType  # noqa: F401
 from .core.user_proxy_agent import UserProxyAgent  # noqa: F401
 from .resource.resource_api import AgentResource, ResourceType  # noqa: F401
 from .resource.resource_loader import ResourceLoader  # noqa: F401
+from .util.llm.llm import LLMConfig  # noqa: F401
 
 __ALL__ = [
     "Agent",
