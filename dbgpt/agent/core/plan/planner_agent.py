@@ -89,15 +89,41 @@ class PlannerAgent(ConversableAgent):
             category="agent",
             key="dbgpt_agent_plan_planner_agent_profile_desc",
         ),
+        examples=DynConfig(
+            """
+user:help me build a sales report summarizing our key metrics and trends
+assistants:[
+    {{
+        "serial_number": "1",
+        "agent": "DataScientist",
+        "content": "Retrieve total sales, average sales, and number of transactions grouped by "product_category"'.",
+        "rely": ""
+    }},
+    {{
+        "serial_number": "2",
+        "agent": "DataScientist",
+        "content": "Retrieve monthly sales and transaction number trends.",
+        "rely": ""
+    }},
+    {{
+        "serial_number": "3",
+        "agent": "Reporter",
+        "content": "Integrate analytical data into the format required to build sales reports.",
+        "rely": "1,2"
+    }}
+]""",  # noqa: E501
+            category="agent",
+            key="dbgpt_agent_plan_planner_agent_profile_examples",
+        ),
     )
-    goal_zh: str = (
+    _goal_zh: str = (
         "理解下面每个智能体(agent)和他们的能力，使用给出的资源，通过协调智能体来解决"
         "用户问题。 请发挥你LLM的知识和理解能力，理解用户问题的意图和目标，生成一个可以在没有用户帮助"
         "下，由智能体协作完成目标的任务计划。"
     )
-    expand_prompt_zh: str = "可用智能体(agent):\n {{ agents }}"
+    _expand_prompt_zh: str = "可用智能体(agent):\n {{ agents }}"
 
-    constraints_zh: List[str] = [
+    _constraints_zh: List[str] = [
         "任务计划的每个步骤都应该是为了推进解决用户目标而存在，不要生成无意义的任务步骤，确保每个步骤内目标明确内容完整。",
         "关注任务计划每个步骤的依赖关系和逻辑，被依赖步骤要考虑被依赖的数据，是否能基于当前目标得到，如果不能请在目标中提示要生成被依赖数据。",
         "每个步骤都是一个独立可完成的目标，一定要确保逻辑和信息完整，不要出现类似:"
@@ -109,31 +135,7 @@ class PlannerAgent(ConversableAgent):
         "尽量合并有顺序依赖的连续相同步骤,如果用户目标无拆分必要，可以生成内容为用户目标的单步任务。",
         "仔细检查计划，确保计划完整的包含了用户问题所涉及的所有信息，并且最终能完成目标，确认每个步骤是否包含了需要用到的资源信息,如URL、资源名等. ",
     ]
-    desc_zh: str = "你是一个任务规划专家！可以协调智能体，分配资源完成复杂的任务目标。"
-
-    examples: str = """
-    user:help me build a sales report summarizing our key metrics and trends
-    assistants:[
-        {{
-            "serial_number": "1",
-            "agent": "DataScientist",
-            "content": "Retrieve total sales, average sales, and number of transactions grouped by "product_category"'.",
-            "rely": ""
-        }},
-        {{
-            "serial_number": "2",
-            "agent": "DataScientist",
-            "content": "Retrieve monthly sales and transaction number trends.",
-            "rely": ""
-        }},
-        {{
-            "serial_number": "3",
-            "agent": "Reporter",
-            "content": "Integrate analytical data into the format required to build sales reports.",
-            "rely": "1,2"
-        }}
-    ]
-    """  # noqa: E501
+    _desc_zh: str = "你是一个任务规划专家！可以协调智能体，分配资源完成复杂的任务目标。"
 
     def __init__(self, **kwargs):
         """Create a new PlannerAgent instance."""

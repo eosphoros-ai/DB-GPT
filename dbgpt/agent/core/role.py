@@ -27,7 +27,6 @@ class Role(ABC, BaseModel):
 
     fixed_subgoal: Optional[str] = Field(None, description="Fixed subgoal")
 
-    examples: str = ""
     language: str = "en"
     is_human: bool = False
     is_team: bool = False
@@ -61,7 +60,7 @@ class Role(ABC, BaseModel):
             "most_recent_memories": (
                 most_recent_memories if most_recent_memories else None
             ),
-            "examples": self.examples if self.examples else None,
+            "examples": self.examples,
             # "out_schema": out_schema if out_schema else None,
             # "resource_prompt": resource_prompt if resource_prompt else None,
             "question": question,
@@ -108,6 +107,11 @@ class Role(ABC, BaseModel):
     def name(self) -> str:
         """Return the name of the role."""
         return self.current_profile.get_name()
+
+    @property
+    def examples(self) -> Optional[str]:
+        """Return the examples of the role."""
+        return self.current_profile.get_examples()
 
     @property
     def role(self) -> str:

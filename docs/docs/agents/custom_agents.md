@@ -92,7 +92,7 @@ class MySummarizerAgent(ConversableAgent):
             " and output the summarization."
         ),
         # Refer to the following. It can contain multiple constraints and reasoning 
-        # restriction logic, and supports the use of parameter template {param_name}.
+        # restriction logic, and supports the use of parameter template {{ param_name }}.
         constraints=[
             "Prioritize the summary of answers to user questions from the improved resource"
             " text. If no relevant information is found, summarize it from the historical "
@@ -104,7 +104,7 @@ class MySummarizerAgent(ConversableAgent):
             "Output the content of summarization ONLY related to user's question. The "
             "output language must be the same to user's question language.",
             "If you think the provided text content is not related to user questions at "
-            "all, ONLY output '{not_related_message}'!!.",
+            "all, ONLY output '{{ not_related_message }}'!!.",
         ]
     )
     def __init__(self, **kwargs):
@@ -141,7 +141,7 @@ class MySummarizerAgent(ConversableAgent):
             " and output the summarization."
         ),
         # Refer to the following. It can contain multiple constraints and reasoning
-        # restriction logic, and supports the use of parameter template {param_name}.
+        # restriction logic, and supports the use of parameter template {{ param_name }}.
         constraints=[
             "Prioritize the summary of answers to user questions from the improved resource"
             " text. If no relevant information is found, summarize it from the historical "
@@ -153,7 +153,7 @@ class MySummarizerAgent(ConversableAgent):
             "Output the content of summarization ONLY related to user's question. The "
             "output language must be the same to user's question language.",
             "If you think the provided text content is not related to user questions at "
-            "all, ONLY output '{not_related_message}'!!.",
+            "all, ONLY output '{{ not_related_message }}'!!.",
         ],
     )
 
@@ -349,7 +349,7 @@ class SummaryAction(Action[SummaryActionInput]):
 
 ### Binding Action to Agent
 
-After the development and definition of agent and cction are completed, 
+After the development and definition of agent and action are completed, 
 bind the action to the corresponding agent.
 
 ```python
@@ -522,7 +522,7 @@ class MySummarizerAgent(ConversableAgent):
             " and output the summarization."
         ),
         # Refer to the following. It can contain multiple constraints and reasoning
-        # restriction logic, and supports the use of parameter template {param_name}.
+        # restriction logic, and supports the use of parameter template {{ param_name }}.
         constraints=[
             "Prioritize the summary of answers to user questions from the improved resource"
             " text. If no relevant information is found, summarize it from the historical "
@@ -534,7 +534,7 @@ class MySummarizerAgent(ConversableAgent):
             "Output the content of summarization ONLY related to user's question. The "
             "output language must be the same to user's question language.",
             "If you think the provided text content is not related to user questions at "
-            "all, ONLY output '{not_related_message}'!!.",
+            "all, ONLY output '{{ not_related_message }}'!!.",
         ],
     )
 

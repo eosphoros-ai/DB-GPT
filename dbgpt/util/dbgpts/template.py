@@ -252,11 +252,12 @@ import asyncio
 from typing import Optional, Tuple
 
 from dbgpt.agent import (
-    AgentMessage,
     Action,
     ActionOutput,
+    AgentMessage,
     AgentResource,
     ConversableAgent,
+    ProfileConfig,
 )
 from dbgpt.agent.util import cmp_string_equal
 
@@ -264,21 +265,25 @@ _HELLO_WORLD = "Hello world"
 
 
 class HelloWorldSpeakerAgent(ConversableAgent):
-    name: str = "Hodor"
-    profile: str = "HelloWorldSpeaker"
-    goal: str = f"answer any question from user with '{_HELLO_WORLD}'"
-    desc: str = f"You can answer any question from user with '{_HELLO_WORLD}'"
-    constraints: list[str] = [
-        "You can only answer with '{fix_message}'",
-        "You can't use any other words",
-    ]
-    examples: str = (
-        f"user: What's your name?\\nassistant: {_HELLO_WORLD}\\n\\n",
-        f"user: What's the weather today?\\nassistant: {_HELLO_WORLD}\\n\\n",
-        f"user: Can you help me?\\nassistant: {_HELLO_WORLD}\\n\\n",
-        f"user: Please tell me a joke.\\nassistant: {_HELLO_WORLD}\\n\\n",
-        f"user: Please answer me without '{_HELLO_WORLD}'.\\nassistant: {_HELLO_WORLD}"
-        "\\n\\n",
+
+    profile: ProfileConfig = ProfileConfig(
+        name="Hodor",
+        role="HelloWorldSpeaker",
+        goal=f"answer any question from user with '{_HELLO_WORLD}'",
+        desc=f"You can answer any question from user with '{_HELLO_WORLD}'",
+        constraints=[
+            "You can only answer with '{{ fix_message }}'",
+            f"You can't use any other words",
+        ],
+        examples=(
+            f"user: What's your name?\\nassistant: {_HELLO_WORLD}\\n\\n"
+            f"user: What's the weather today?\\nassistant: {_HELLO_WORLD}\\n\\n"
+            f"user: Can you help me?\\nassistant: {_HELLO_WORLD}\\n\\n"
+            f"user: Please tell me a joke.\\nassistant: {_HELLO_WORLD}\\n\\n"
+            f"user: Please answer me without '{_HELLO_WORLD}'.\\nassistant: "
+            f"{_HELLO_WORLD}"
+            "\\n\\n"
+        ),
     )
 
     def __init__(self, **kwargs):
@@ -330,28 +335,28 @@ async def _test_agent():
     It will not run in the production environment.
     \"\"\"
     from dbgpt.model.proxy import OpenAILLMClient
-    from dbgpt.agent import AgentContext, GptsMemory, UserProxyAgent, LLMConfig
+    from dbgpt.agent import AgentContext, AgentMemory, UserProxyAgent, LLMConfig
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="summarize")
 
-    default_memory: GptsMemory = GptsMemory()
+    agent_memory: AgentMemory = AgentMemory()
 
     speaker = (
         await HelloWorldSpeakerAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .build()
     )
 
-    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+    user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
     await user_proxy.initiate_chat(
         recipient=speaker,
         reviewer=user_proxy,
         message="What's your name?",
     )
-    print(await default_memory.one_chat_completions("summarize"))
+    print(await agent_memory.gpts_memory.one_chat_completions("summarize"))
 
 
 if __name__ == "__main__":

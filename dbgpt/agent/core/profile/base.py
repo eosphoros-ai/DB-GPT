@@ -99,6 +99,10 @@ class Profile(ABC):
         """Return the expand prompt of current agent."""
         return None
 
+    def get_examples(self) -> Optional[str]:
+        """Return the examples of current agent."""
+        return None
+
     @abstractmethod
     def get_system_prompt_template(self) -> str:
         """Return the prompt template of current agent."""
@@ -128,6 +132,10 @@ class DefaultProfile(BaseModel, Profile):
 
     expand_prompt: Optional[str] = Field(
         None, description="The expand prompt of the agent."
+    )
+
+    examples: Optional[str] = Field(
+        None, description="The examples of the agent prompt."
     )
 
     system_prompt_template: str = Field(
@@ -168,6 +176,10 @@ class DefaultProfile(BaseModel, Profile):
     def get_expand_prompt(self) -> Optional[str]:
         """Return the expand prompt of current agent."""
         return self.expand_prompt
+
+    def get_examples(self) -> Optional[str]:
+        """Return the examples of current agent."""
+        return self.examples
 
     def get_system_prompt_template(self) -> str:
         """Return the prompt template of current agent."""
@@ -296,6 +308,8 @@ class ProfileConfig(BaseModel):
     expand_prompt: str | ConfigInfo | None = DynConfig(
         None, description="The expand prompt."
     )
+    examples: str | ConfigInfo | None = DynConfig(None, description="The examples.")
+
     system_prompt_template: str | ConfigInfo | None = DynConfig(
         _DEFAULT_SYSTEM_TEMPLATE, description="The prompt template."
     )
@@ -343,6 +357,7 @@ class ProfileConfig(BaseModel):
         system_prompt_template = self.system_prompt_template
         user_prompt_template = self.user_prompt_template
         save_memory_template = self.save_memory_template
+        examples = self.examples
         call_args = {
             "prefer_prompt_language": prefer_prompt_language,
             "prefer_model": prefer_model,
@@ -359,6 +374,8 @@ class ProfileConfig(BaseModel):
             desc = desc.query(**call_args)
         if isinstance(expand_prompt, ConfigInfo):
             expand_prompt = expand_prompt.query(**call_args)
+        if isinstance(examples, ConfigInfo):
+            examples = examples.query(**call_args)
         if isinstance(system_prompt_template, ConfigInfo):
             system_prompt_template = system_prompt_template.query(**call_args)
         if isinstance(user_prompt_template, ConfigInfo):
@@ -385,6 +402,7 @@ class ProfileConfig(BaseModel):
             constraints=constraints,
             desc=desc,
             expand_prompt=expand_prompt,
+            examples=examples,
             system_prompt_template=system_prompt_template,
             user_prompt_template=user_prompt_template,
             save_memory_template=save_memory_template,
