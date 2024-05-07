@@ -10,7 +10,7 @@ summarizer.
 Install the required packages by running the following command:
 
 ```bash
-pip install "dbgpt[agent]>=0.5.4rc0" -U
+pip install "dbgpt[agent]>=0.5.6rc1" -U
 pip install openai
 ```
 
@@ -35,23 +35,25 @@ Before designing each Agent, it is necessary to define its role, identity, and
 functional role. The specific definitions are as follows:
 
 ```python
-from dbgpt.agent import ConversableAgent
+from dbgpt.agent import ConversableAgent, ProfileConfig
 
 class MySummarizerAgent(ConversableAgent):
-    # The name of the agent
-    name = "Aristotle"
-    # The profile of the agent
-    profile: str = "Summarizer"
-    # The core functional goals of the agent tell LLM what it can do with it.
-    goal: str = (
-        "Summarize answer summaries based on user questions from provided "
-        "resource information or from historical conversation memories."
-    ) 
-    # Introduction and description of the agent, used for task assignment and display. 
-    # If it is empty, the goal content will be used.
-    desc: str = (
-        "You can summarize provided text content according to user's questions"
-        " and output the summarization."
+    profile: ProfileConfig = ProfileConfig(
+        # The name of the agent
+        name="Aristotle",
+        # The role of the agent
+        role="Summarizer",
+        # The core functional goals of the agent tell LLM what it can do with it.
+        goal=(
+            "Summarize answer summaries based on user questions from provided "
+            "resource information or from historical conversation memories."
+        ),
+        # Introduction and description of the agent, used for task assignment and display. 
+        # If it is empty, the goal content will be used.
+        desc=(
+            "You can summarize provided text content according to user's questions"
+            " and output the summarization."
+        ),
     )
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -70,39 +72,41 @@ be bound if there are some special requirements). which mainly includes:
 So, we can define the constraints of the agent's prompt as follows:
 
 ```python
-from dbgpt.agent import ConversableAgent
+from dbgpt.agent import ConversableAgent, ProfileConfig
 
 class MySummarizerAgent(ConversableAgent):
-    # The name of the agent
-    name = "Aristotle"
-    # The profile of the agent
-    profile: str = "Summarizer"
-    # The core functional goals of the agent tell LLM what it can do with it.
-    goal: str = (
-        "Summarize answer summaries based on user questions from provided "
-        "resource information or from historical conversation memories."
-    ) 
-    # Introduction and description of the agent, used for task assignment and display. 
-    # If it is empty, the goal content will be used.
-    desc: str = (
-        "You can summarize provided text content according to user's questions"
-        " and output the summarization."
+    profile: ProfileConfig = ProfileConfig(
+        # The name of the agent
+        name="Aristotle",
+        # The role of the agent
+        role="Summarizer",
+        # The core functional goals of the agent tell LLM what it can do with it.
+        goal=(
+            "Summarize answer summaries based on user questions from provided "
+            "resource information or from historical conversation memories."
+        ),
+        # Introduction and description of the agent, used for task assignment and display. 
+        # If it is empty, the goal content will be used.
+        desc=(
+            "You can summarize provided text content according to user's questions"
+            " and output the summarization."
+        ),
+        # Refer to the following. It can contain multiple constraints and reasoning 
+        # restriction logic, and supports the use of parameter template {{ param_name }}.
+        constraints=[
+            "Prioritize the summary of answers to user questions from the improved resource"
+            " text. If no relevant information is found, summarize it from the historical "
+            "dialogue memory given. It is forbidden to make up your own.",
+            "You need to first detect user's question that you need to answer with your"
+            " summarization.",
+            "Extract the provided text content used for summarization.",
+            "Then you need to summarize the extracted text content.",
+            "Output the content of summarization ONLY related to user's question. The "
+            "output language must be the same to user's question language.",
+            "If you think the provided text content is not related to user questions at "
+            "all, ONLY output '{{ not_related_message }}'!!.",
+        ]
     )
-    # Refer to the following. It can contain multiple constraints and reasoning 
-    # restriction logic, and supports the use of parameter template {param_name}.
-    constraints: list[str] = [
-        "Prioritize the summary of answers to user questions from the improved resource"
-        " text. If no relevant information is found, summarize it from the historical "
-        "dialogue memory given. It is forbidden to make up your own.",
-        "You need to first detect user's question that you need to answer with your"
-        " summarization.",
-        "Extract the provided text content used for summarization.",
-        "Then you need to summarize the extracted text content.",
-        "Output the content of summarization ONLY related to user's question. The "
-        "output language must be the same to user's question language.",
-        "If you think the provided text content is not related to user questions at "
-        "all, ONLY output '{not_related_message}'!!.",
-    ]
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 ```
@@ -114,50 +118,52 @@ to assemble the values, and the following interface (`_init_reply_message`) need
 overloaded and implemented:
 
 ```python
-from dbgpt.agent import ConversableAgent, AgentMessage
+from dbgpt.agent import AgentMessage, ConversableAgent, ProfileConfig
 
 NOT_RELATED_MESSAGE = "Did not find the information you want."
 
+
 class MySummarizerAgent(ConversableAgent):
-    # The name of the agent
-    name = "Aristotle"
-    # The profile of the agent
-    profile: str = "Summarizer"
-    # The core functional goals of the agent tell LLM what it can do with it.
-    goal: str = (
-        "Summarize answer summaries based on user questions from provided "
-        "resource information or from historical conversation memories."
-    ) 
-    # Introduction and description of the agent, used for task assignment and display. 
-    # If it is empty, the goal content will be used.
-    desc: str = (
-        "You can summarize provided text content according to user's questions"
-        " and output the summarization."
+    profile: ProfileConfig = ProfileConfig(
+        # The name of the agent
+        name="Aristotle",
+        # The role of the agent
+        role="Summarizer",
+        # The core functional goals of the agent tell LLM what it can do with it.
+        goal=(
+            "Summarize answer summaries based on user questions from provided "
+            "resource information or from historical conversation memories."
+        ),
+        # Introduction and description of the agent, used for task assignment and display.
+        # If it is empty, the goal content will be used.
+        desc=(
+            "You can summarize provided text content according to user's questions"
+            " and output the summarization."
+        ),
+        # Refer to the following. It can contain multiple constraints and reasoning
+        # restriction logic, and supports the use of parameter template {{ param_name }}.
+        constraints=[
+            "Prioritize the summary of answers to user questions from the improved resource"
+            " text. If no relevant information is found, summarize it from the historical "
+            "dialogue memory given. It is forbidden to make up your own.",
+            "You need to first detect user's question that you need to answer with your"
+            " summarization.",
+            "Extract the provided text content used for summarization.",
+            "Then you need to summarize the extracted text content.",
+            "Output the content of summarization ONLY related to user's question. The "
+            "output language must be the same to user's question language.",
+            "If you think the provided text content is not related to user questions at "
+            "all, ONLY output '{{ not_related_message }}'!!.",
+        ],
     )
-    # Refer to the following. It can contain multiple constraints and reasoning 
-    # restriction logic, and supports the use of parameter template {param_name}.
-    constraints: list[str] = [
-        "Prioritize the summary of answers to user questions from the improved resource"
-        " text. If no relevant information is found, summarize it from the historical "
-        "dialogue memory given. It is forbidden to make up your own.",
-        "You need to first detect user's question that you need to answer with your"
-        " summarization.",
-        "Extract the provided text content used for summarization.",
-        "Then you need to summarize the extracted text content.",
-        "Output the content of summarization ONLY related to user's question. The "
-        "output language must be the same to user's question language.",
-        "If you think the provided text content is not related to user questions at "
-        "all, ONLY output '{not_related_message}'!!.",
-    ]
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def _init_reply_message(self, received_message: AgentMessage) -> AgentMessage:
         reply_message = super()._init_reply_message(received_message)
         # Fill in the dynamic parameters in the prompt template
-        reply_message.context = {
-            "not_related_message": NOT_RELATED_MESSAGE
-        }
+        reply_message.context = {"not_related_message": NOT_RELATED_MESSAGE}
         return reply_message
 ```
 
@@ -343,7 +349,7 @@ class SummaryAction(Action[SummaryActionInput]):
 
 ### Binding Action to Agent
 
-After the development and definition of agent and cction are completed, 
+After the development and definition of agent and action are completed, 
 bind the action to the corresponding agent.
 
 ```python
@@ -405,7 +411,7 @@ After the custom agent is created, you can use it in the following way:
 
 import asyncio
 
-from dbgpt.agent import AgentContext, ConversableAgent, GptsMemory, LLMConfig, UserProxyAgent
+from dbgpt.agent import AgentContext, ConversableAgent, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.model.proxy import OpenAILLMClient
 
 class MySummarizerAgent(ConversableAgent):
@@ -415,17 +421,17 @@ async def main():
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="summarize")
 
-    default_memory: GptsMemory = GptsMemory()
+    agent_memory: AgentMemory = AgentMemory()
 
     summarizer = (
         await MySummarizerAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .build()
     )
 
-    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+    user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
   
 
     await user_proxy.initiate_chat(
@@ -451,7 +457,7 @@ async def main():
             Nuclear electric rocket
             """,
     )
-    print(await default_memory.one_chat_completions("summarize"))
+    print(await agent_memory.gpts_memory.one_chat_completions("summarize"))
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -467,11 +473,12 @@ from dbgpt.agent import (
     Action,
     ActionOutput,
     AgentContext,
+    AgentMemory,
     AgentMessage,
     AgentResource,
     ConversableAgent,
-    GptsMemory,
     LLMConfig,
+    ProfileConfig,
     ResourceType,
     UserProxyAgent,
 )
@@ -480,7 +487,6 @@ from dbgpt.core import ModelMessageRoleType
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.vis import Vis
 from pydantic import BaseModel, Field
-
 
 NOT_RELATED_MESSAGE = "Did not find the information you want."
 
@@ -496,37 +502,42 @@ CHECK_RESULT_SYSTEM_MESSAGE = (
     "by TERMINATE. For instance: False|Some important concepts in the input are "
     "not summarized. TERMINATE"
 )
+
+
 class MySummarizerAgent(ConversableAgent):
-    # The name of the agent
-    name = "Aristotle"
-    # The profile of the agent
-    profile: str = "Summarizer"
-    # The core functional goals of the agent tell LLM what it can do with it.
-    goal: str = (
-        "Summarize answer summaries based on user questions from provided "
-        "resource information or from historical conversation memories."
-    ) 
-    # Introduction and description of the agent, used for task assignment and display. 
-    # If it is empty, the goal content will be used.
-    desc: str = (
-        "You can summarize provided text content according to user's questions"
-        " and output the summarization."
+    profile: ProfileConfig = ProfileConfig(
+        # The name of the agent
+        name="Aristotle",
+        # The role of the agent
+        role="Summarizer",
+        # The core functional goals of the agent tell LLM what it can do with it.
+        goal=(
+            "Summarize answer summaries based on user questions from provided "
+            "resource information or from historical conversation memories."
+        ),
+        # Introduction and description of the agent, used for task assignment and display.
+        # If it is empty, the goal content will be used.
+        desc=(
+            "You can summarize provided text content according to user's questions"
+            " and output the summarization."
+        ),
+        # Refer to the following. It can contain multiple constraints and reasoning
+        # restriction logic, and supports the use of parameter template {{ param_name }}.
+        constraints=[
+            "Prioritize the summary of answers to user questions from the improved resource"
+            " text. If no relevant information is found, summarize it from the historical "
+            "dialogue memory given. It is forbidden to make up your own.",
+            "You need to first detect user's question that you need to answer with your"
+            " summarization.",
+            "Extract the provided text content used for summarization.",
+            "Then you need to summarize the extracted text content.",
+            "Output the content of summarization ONLY related to user's question. The "
+            "output language must be the same to user's question language.",
+            "If you think the provided text content is not related to user questions at "
+            "all, ONLY output '{{ not_related_message }}'!!.",
+        ],
     )
-    # Refer to the following. It can contain multiple constraints and reasoning 
-    # restriction logic, and supports the use of parameter template {param_name}.
-    constraints: list[str] = [
-        "Prioritize the summary of answers to user questions from the improved resource"
-        " text. If no relevant information is found, summarize it from the historical "
-        "dialogue memory given. It is forbidden to make up your own.",
-        "You need to first detect user's question that you need to answer with your"
-        " summarization.",
-        "Extract the provided text content used for summarization.",
-        "Then you need to summarize the extracted text content.",
-        "Output the content of summarization ONLY related to user's question. The "
-        "output language must be the same to user's question language.",
-        "If you think the provided text content is not related to user questions at "
-        "all, ONLY output '{not_related_message}'!!.",
-    ]
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._init_actions([SummaryAction])
@@ -534,11 +545,9 @@ class MySummarizerAgent(ConversableAgent):
     def _init_reply_message(self, received_message: AgentMessage) -> AgentMessage:
         reply_message = super()._init_reply_message(received_message)
         # Fill in the dynamic parameters in the prompt template
-        reply_message.context = {
-            "not_related_message": NOT_RELATED_MESSAGE
-        }
+        reply_message.context = {"not_related_message": NOT_RELATED_MESSAGE}
         return reply_message
-    
+
     def prepare_act_param(self) -> Dict[str, Any]:
         return {"action_extra_param_key": "this is extra param"}
 
@@ -565,7 +574,7 @@ class MySummarizerAgent(ConversableAgent):
             ],
             prompt=CHECK_RESULT_SYSTEM_MESSAGE,
         )
-        
+
         fail_reason = ""
         if check_result and (
             "true" in check_result.lower() or "yes" in check_result.lower()
@@ -595,6 +604,7 @@ class SummaryActionInput(BaseModel):
         description="The summary content",
     )
 
+
 class SummaryAction(Action[SummaryActionInput]):
     def __init__(self):
         super().__init__()
@@ -604,13 +614,13 @@ class SummaryAction(Action[SummaryActionInput]):
         # The resource type that the current Agent needs to use
         # here we do not need to use resources, just return None
         return None
-    
+
     @property
     def render_protocol(self) -> Optional[Vis]:
         # The visualization rendering protocol that the current Agent needs to use
         # here we do not need to use visualization rendering, just return None
         return None
-    
+
     @property
     def out_model_type(self):
         return SummaryActionInput
@@ -624,14 +634,16 @@ class SummaryAction(Action[SummaryActionInput]):
         **kwargs,
     ) -> ActionOutput:
         """Perform the action.
-        
-        The entry point for actual execution of Action. Action execution will be 
-        automatically initiated after model inference. 
+
+        The entry point for actual execution of Action. Action execution will be
+        automatically initiated after model inference.
         """
         extra_param = kwargs.get("action_extra_param_key", None)
         try:
             # Parse the input message
-            param: SummaryActionInput = self._input_convert(ai_message, SummaryActionInput)
+            param: SummaryActionInput = self._input_convert(
+                ai_message, SummaryActionInput
+            )
         except Exception:
             return ActionOutput(
                 is_exe_success=False,
@@ -640,7 +652,7 @@ class SummaryAction(Action[SummaryActionInput]):
             )
         # Check if the summary content is not related to user questions
         if param.summary and cmp_string_equal(
-            param.summary, 
+            param.summary,
             NOT_RELATED_MESSAGE,
             ignore_case=True,
             ignore_punctuation=True,
@@ -662,18 +674,17 @@ async def main():
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="summarize")
 
-    default_memory: GptsMemory = GptsMemory()
+    agent_memory: AgentMemory = AgentMemory()
 
     summarizer = (
         await MySummarizerAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .build()
     )
 
-    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
-  
+    user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
     await user_proxy.initiate_chat(
         recipient=summarizer,
@@ -698,7 +709,8 @@ async def main():
             Nuclear electric rocket
             """,
     )
-    print(await default_memory.one_chat_completions("summarize"))
+    print(await agent_memory.gpts_memory.one_chat_completions("summarize"))
+
 
 if __name__ == "__main__":
     asyncio.run(main())

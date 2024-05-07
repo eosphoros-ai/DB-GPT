@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dbgpt.core import LLMClient
 from dbgpt.util.annotations import PublicAPI
 
-from ..actions.action import ActionOutput
-from ..memory.gpts_memory import GptsMemory
 from ..resource.resource_loader import ResourceLoader
+from .action.base import ActionOutput
+from .memory.agent_memory import AgentMemory
 
 
 class Agent(ABC):
@@ -160,17 +160,20 @@ class Agent(ABC):
                 verification result.
         """
 
+    @property
     @abstractmethod
-    def get_name(self) -> str:
-        """Return name of the agent."""
+    def name(self) -> str:
+        """Return the name of the agent."""
 
+    @property
     @abstractmethod
-    def get_profile(self) -> str:
-        """Return profile of the agent."""
+    def role(self) -> str:
+        """Return the role of the agent."""
 
+    @property
     @abstractmethod
-    def get_describe(self) -> str:
-        """Return describe of the agent."""
+    def desc(self) -> Optional[str]:
+        """Return the description of the agent."""
 
 
 @dataclasses.dataclass
@@ -204,7 +207,7 @@ class AgentGenerateContext:
     rely_messages: List[AgentMessage] = dataclasses.field(default_factory=list)
     final: Optional[bool] = True
 
-    memory: Optional[GptsMemory] = None
+    memory: Optional[AgentMemory] = None
     agent_context: Optional[AgentContext] = None
     resource_loader: Optional[ResourceLoader] = None
     llm_client: Optional[LLMClient] = None
@@ -302,3 +305,9 @@ class AgentMessage:
             role=self.role,
             success=self.success,
         )
+
+    def get_dict_context(self) -> Dict[str, Any]:
+        """Return the context as a dictionary."""
+        if isinstance(self.context, dict):
+            return self.context
+        return {}

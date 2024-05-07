@@ -16,7 +16,7 @@
 
 import asyncio
 
-from dbgpt.agent import AgentContext, GptsMemory, LLMConfig, UserProxyAgent
+from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
 
 
@@ -26,17 +26,16 @@ async def summary_example_with_success():
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="summarize")
 
-    default_memory: GptsMemory = GptsMemory()
-
+    agent_memory = AgentMemory()
     summarizer = (
         await SummaryAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .build()
     )
 
-    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+    user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
     await user_proxy.initiate_chat(
         recipient=summarizer,
@@ -71,8 +70,8 @@ async def summary_example_with_success():
             """,
     )
 
-    ## dbgpt-vis message infos
-    print(await default_memory.one_chat_completions("summarize"))
+    # dbgpt-vis message infos
+    print(await agent_memory.gpts_memory.one_chat_completions("summarize"))
 
 
 async def summary_example_with_faliure():
@@ -81,17 +80,16 @@ async def summary_example_with_faliure():
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="summarize")
 
-    default_memory: GptsMemory = GptsMemory()
-
+    agent_memory = AgentMemory()
     summarizer = (
         await SummaryAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .build()
     )
 
-    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+    user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
     # Test the failure example
 
@@ -112,7 +110,7 @@ async def summary_example_with_faliure():
             """,
     )
 
-    print(await default_memory.one_chat_completions("summarize"))
+    print(await agent_memory.gpts_memory.one_chat_completions("summarize"))
 
 
 if __name__ == "__main__":

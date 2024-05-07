@@ -1,11 +1,12 @@
 """GPTs memory."""
+
 import json
 from collections import OrderedDict, defaultdict
 from typing import Dict, List, Optional
 
 from dbgpt.vis.client import VisAgentMessages, VisAgentPlans, vis_client
 
-from ..actions.action import ActionOutput
+from ...action.base import ActionOutput
 from .base import GptsMessage, GptsMessageMemory, GptsPlansMemory
 from .default_gpts_memory import DefaultGptsMessageMemory, DefaultGptsPlansMemory
 

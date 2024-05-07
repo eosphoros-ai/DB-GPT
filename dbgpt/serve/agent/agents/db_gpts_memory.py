@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from dbgpt.agent.memory.base import GptsPlan
-from dbgpt.agent.memory.gpts_memory import (
+from dbgpt.agent.core.memory.gpts.base import GptsPlan
+from dbgpt.agent.core.memory.gpts.gpts_memory import (
     GptsMessage,
     GptsMessageMemory,
     GptsPlansMemory,

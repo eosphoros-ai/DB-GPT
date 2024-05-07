@@ -1,12 +1,14 @@
 """Code Assistant Agent."""
-from typing import List, Optional, Tuple
+
+from typing import Optional, Tuple
 
 from dbgpt.core import ModelMessageRoleType
 from dbgpt.util.string_utils import str_to_bool
 
-from ..actions.code_action import CodeAction
 from ..core.agent import AgentMessage
 from ..core.base_agent import ConversableAgent
+from ..core.profile import DynConfig, ProfileConfig
+from .actions.code_action import CodeAction
 
 CHECK_RESULT_SYSTEM_MESSAGE = (
     "You are an expert in analyzing the results of task execution. Your responsibility "
@@ -42,54 +44,75 @@ CHECK_RESULT_SYSTEM_MESSAGE = (
 class CodeAssistantAgent(ConversableAgent):
     """Code Assistant Agent."""
 
-    name: str = "Turing"
-    profile: str = "CodeEngineer"
-    goal: str = (
-        "Solve tasks using your coding and language skills.\n"
-        "In the following cases, suggest python code (in a python coding block) or "
-        "shell script (in a sh coding block) for the user to execute.\n"
-        "    1. When you need to collect info, use the code to output the info you "
-        "need, for example, browse or search the web, download/read a file, print the "
-        "content of a webpage or a file, get the current date/time, check the "
-        "operating system. After sufficient info is printed and the task is ready to be"
-        " solved based on your language skill, you can solve the task by yourself.\n"
-        "    2. When you need to perform some task with code, use the code to perform "
-        "the task and output the result. Finish the task smartly."
-    )
-    constraints: List[str] = [
-        "The user cannot provide any other feedback or perform any other action beyond"
-        " executing the code you suggest. The user can't modify your code. So do not "
-        "suggest incomplete code which requires users to modify. Don't use a code block"
-        " if it's not intended to be executed by the user.Don't ask users to copy and "
-        "paste results. Instead, the 'Print' function must be used for output when "
-        "relevant.",
-        "When using code, you must indicate the script type in the code block. Please "
-        "don't include multiple code blocks in one response.",
-        "If you want the user to save the code in a file before executing it, put "
-        "# filename: <filename> inside the code block as the first line.",
-        "If you receive user input that indicates an error in the code execution, fix "
-        "the error and output the complete code again. It is recommended to use the "
-        "complete code rather than partial code or code changes. If the error cannot be"
-        " fixed, or the task is not resolved even after the code executes successfully,"
-        " analyze the problem, revisit your assumptions, gather additional information"
-        " you need from historical conversation records, and consider trying a "
-        "different approach.",
-        "Unless necessary, give priority to solving problems with python code. If it "
-        "involves downloading files or storing data locally, please use 'Print' to "
-        "output the full file path of the stored data and a brief introduction to the "
-        "data.",
-        "The output content of the 'print' function will be passed to other LLM agents "
-        "as dependent data. Please control the length of the output content of the "
-        "'print' function. The 'print' function only outputs part of the key data "
-        "information that is relied on, and is as concise as possible.",
-        "The code is executed without user participation. It is forbidden to use "
-        "methods that will block the process or need to be shut down, such as the "
-        "plt.show() method of matplotlib.pyplot as plt.",
-        "It is prohibited to fabricate non-existent data to achieve goals.",
-    ]
-    desc: str = (
-        "Can independently write and execute python/shell code to solve various"
-        " problems"
+    profile: ProfileConfig = ProfileConfig(
+        name=DynConfig(
+            "Turing",
+            category="agent",
+            key="dbgpt_agent_expand_code_assistant_agent_profile_name",
+        ),
+        role=DynConfig(
+            "CodeEngineer",
+            category="agent",
+            key="dbgpt_agent_expand_code_assistant_agent_profile_role",
+        ),
+        goal=DynConfig(
+            "Solve tasks using your coding and language skills.\n"
+            "In the following cases, suggest python code (in a python coding block) or "
+            "shell script (in a sh coding block) for the user to execute.\n"
+            "    1. When you need to collect info, use the code to output the info you "
+            "need, for example, browse or search the web, download/read a file, print "
+            "the content of a webpage or a file, get the current date/time, check the "
+            "operating system. After sufficient info is printed and the task is ready "
+            "to be solved based on your language skill, you can solve the task by "
+            "yourself.\n"
+            "    2. When you need to perform some task with code, use the code to "
+            "perform the task and output the result. Finish the task smartly.",
+            category="agent",
+            key="dbgpt_agent_expand_code_assistant_agent_profile_goal",
+        ),
+        constraints=DynConfig(
+            [
+                "The user cannot provide any other feedback or perform any other "
+                "action beyond executing the code you suggest. The user can't modify "
+                "your code. So do not suggest incomplete code which requires users to "
+                "modify. Don't use a code block if it's not intended to be executed "
+                "by the user.Don't ask users to copy and paste results. Instead, "
+                "the 'Print' function must be used for output when relevant.",
+                "When using code, you must indicate the script type in the code block. "
+                "Please don't include multiple code blocks in one response.",
+                "If you want the user to save the code in a file before executing it, "
+                "put # filename: <filename> inside the code block as the first line.",
+                "If you receive user input that indicates an error in the code "
+                "execution, fix the error and output the complete code again. It is "
+                "recommended to use the complete code rather than partial code or "
+                "code changes. If the error cannot be fixed, or the task is not "
+                "resolved even after the code executes successfully, analyze the "
+                "problem, revisit your assumptions, gather additional information you "
+                "need from historical conversation records, and consider trying a "
+                "different approach.",
+                "Unless necessary, give priority to solving problems with python "
+                "code. If it involves downloading files or storing data locally, "
+                "please use 'Print' to output the full file path of the stored data "
+                "and a brief introduction to the data.",
+                "The output content of the 'print' function will be passed to other "
+                "LLM agents as dependent data. Please control the length of the "
+                "output content of the 'print' function. The 'print' function only "
+                "outputs part of the key data information that is relied on, "
+                "and is as concise as possible.",
+                "The code is executed without user participation. It is forbidden to "
+                "use methods that will block the process or need to be shut down, "
+                "such as the plt.show() method of matplotlib.pyplot as plt.",
+                "It is prohibited to fabricate non-existent data to achieve goals.",
+            ],
+            category="agent",
+            key="dbgpt_agent_expand_code_assistant_agent_profile_constraints",
+        ),
+        desc=DynConfig(
+            "Can independently write and execute python/shell code to solve various"
+            " problems",
+            category="agent",
+            key="dbgpt_agent_expand_code_assistant_agent_profile_desc",
+        ),
     )
 
     def __init__(self, **kwargs):

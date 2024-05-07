@@ -1,4 +1,5 @@
 """Agent Operator for AWEL."""
+
 from abc import ABC
 from typing import List, Optional, Type
 
@@ -16,10 +17,10 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 # TODO: Don't dependent on MixinLLMOperator
 from dbgpt.model.operators.llm_operator import MixinLLMOperator
 
-from ...core.agent import Agent, AgentGenerateContext, AgentMessage
-from ...core.agent_manage import get_agent_manager
-from ...core.base_agent import ConversableAgent
-from ...core.llm.llm import LLMConfig
+from ....util.llm.llm import LLMConfig
+from ...agent import Agent, AgentGenerateContext, AgentMessage
+from ...agent_manage import get_agent_manager
+from ...base_agent import ConversableAgent
 from .agent_operator_resource import AWELAgent
 
 
@@ -61,9 +62,7 @@ class WrappedAgentOperator(
         input_message = input_value.message.copy()
 
         # Isolate the message delivery mechanism and pass it to the operator
-        _goal = (
-            self.agent.get_name() if self.agent.get_name() else self.agent.get_profile()
-        )
+        _goal = self.agent.name if self.agent.name else self.agent.role
         current_goal = f"[{_goal}]:"
 
         if input_message.content:
@@ -95,7 +94,7 @@ class WrappedAgentOperator(
 
         if not is_success:
             raise ValueError(
-                f"The task failed at step {self.agent.get_profile()} and the attempt "
+                f"The task failed at step {self.agent.role} and the attempt "
                 f"to repair it failed. The final reason for "
                 f"failure:{agent_reply_message.content}!"
             )
@@ -170,18 +169,14 @@ class AWELAgentOperator(
         agent = await self.get_agent(input_value)
         if agent.fixed_subgoal and len(agent.fixed_subgoal) > 0:
             # Isolate the message delivery mechanism and pass it to the operator
-            current_goal = (
-                f"[{agent.get_name() if agent.get_name() else agent.get_profile()}]:"
-            )
+            current_goal = f"[{agent.name if agent.name else agent.role}]:"
             if agent.fixed_subgoal:
                 current_goal += agent.fixed_subgoal
             input_message.current_goal = current_goal
             input_message.content = agent.fixed_subgoal
         else:
             # Isolate the message delivery mechanism and pass it to the operator
-            current_goal = (
-                f"[{agent.get_name() if agent.get_name() else agent.get_profile()}]:"
-            )
+            current_goal = f"[{agent.name if agent.name else agent.role}]:"
             if input_message.content:
                 current_goal += input_message.content
             input_message.current_goal = current_goal
@@ -213,7 +208,7 @@ class AWELAgentOperator(
 
         if not is_success:
             raise ValueError(
-                f"The task failed at step {agent.get_profile()} and the attempt to "
+                f"The task failed at step {agent.role} and the attempt to "
                 f"repair it failed. The final reason for "
                 f"failure:{agent_reply_message.content}!"
             )
@@ -231,7 +226,7 @@ class AWELAgentOperator(
             # Default single step transfer of information
             rely_messages=now_rely_messages,
             silent=input_value.silent,
-            memory=input_value.memory,
+            memory=input_value.memory.structure_clone() if input_value.memory else None,
             agent_context=input_value.agent_context,
             resource_loader=input_value.resource_loader,
             llm_client=input_value.llm_client,

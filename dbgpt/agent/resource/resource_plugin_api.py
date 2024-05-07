@@ -1,7 +1,7 @@
 """Resource plugin client API."""
 import logging
 import os
-from typing import List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from ..plugin.commands.command_manage import execute_command
 from ..plugin.generator import PluginPromptGenerator
@@ -48,8 +48,8 @@ class ResourcePluginClient(ResourceClient):
     async def execute_command(
         self,
         command_name: str,
-        arguments: Optional[dict],
-        plugin_generator: Optional[PluginPromptGenerator],
+        arguments: Dict[str, Any],
+        plugin_generator: PluginPromptGenerator,
     ):
         """Execute the command."""
         if plugin_generator is None:

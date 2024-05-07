@@ -35,8 +35,8 @@ class ChatAgent(BaseChat):
 
         chat_param["chat_mode"] = ChatScene.ChatAgent
         super().__init__(chat_param=chat_param)
-        self.plugins_prompt_generator = PluginPromptGenerator()
-        self.plugins_prompt_generator.command_registry = CFG.command_registry
+        self.plugins_prompt_generator: PluginPromptGenerator = PluginPromptGenerator()
+        self.plugins_prompt_generator.set_command_registry(CFG.command_registry)
 
         # load  select plugin
         agent_module = CFG.SYSTEM_APP.get_component(

@@ -416,6 +416,8 @@ def core_requires():
         "pydantic>=2.6.0",
         # For AWEL type checking
         "typeguard",
+        # Snowflake no additional dependencies.
+        "snowflake-id",
     ]
     # For DB-GPT python client SDK
     setup_spec.extras["client"] = setup_spec.extras["core"] + [

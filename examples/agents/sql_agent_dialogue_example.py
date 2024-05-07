@@ -19,8 +19,8 @@ import os
 
 from dbgpt.agent import (
     AgentContext,
+    AgentMemory,
     AgentResource,
-    GptsMemory,
     LLMConfig,
     ResourceLoader,
     ResourceType,
@@ -40,10 +40,10 @@ initialize_tracer("/tmp/agent_trace.jsonl", create_system_app=True)
 async def main():
     from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
+    agent_memory = AgentMemory()
+
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test456")
-
-    default_memory: GptsMemory = GptsMemory()
 
     db_resource = AgentResource(
         type=ResourceType.DB,
@@ -55,15 +55,15 @@ async def main():
     sqlite_file_loader = SqliteLoadClient()
     resource_loader.register_resource_api(sqlite_file_loader)
 
-    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+    user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
     sql_boy = (
         await DataScientistAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
         .bind([db_resource])
         .bind(resource_loader)
+        .bind(agent_memory)
         .build()
     )
 
@@ -74,7 +74,7 @@ async def main():
     )
 
     ## dbgpt-vis message infos
-    print(await default_memory.one_chat_completions("test456"))
+    print(await agent_memory.gpts_memory.one_chat_completions("test456"))
 
 
 if __name__ == "__main__":

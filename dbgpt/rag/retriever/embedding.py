@@ -1,6 +1,6 @@
 """Embedding retriever."""
 from functools import reduce
-from typing import List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
@@ -65,6 +65,16 @@ class EmbeddingRetriever(BaseRetriever):
         self._query_rewrite = query_rewrite
         self._vector_store_connector = vector_store_connector
         self._rerank = rerank or DefaultRanker(self._top_k)
+
+    def load_document(self, chunks: List[Chunk], **kwargs: Dict[str, Any]) -> List[str]:
+        """Load document in vector database.
+
+        Args:
+            chunks (List[Chunk]): document chunks.
+        Return:
+            List[str]: chunk ids.
+        """
+        return self._vector_store_connector.load_document(chunks)
 
     def _retrieve(
         self, query: str, filters: Optional[MetadataFilters] = None

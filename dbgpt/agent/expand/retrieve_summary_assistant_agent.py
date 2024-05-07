@@ -1,4 +1,5 @@
 """Retrieve Summary Assistant Agent."""
+
 import glob
 import json
 import logging
@@ -9,9 +10,10 @@ from urllib.parse import urlparse
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import ModelMessageRoleType
 
-from ..actions.action import Action, ActionOutput
+from ..core.action.base import Action, ActionOutput
 from ..core.agent import Agent, AgentMessage, AgentReviewInfo
 from ..core.base_agent import ConversableAgent
+from ..core.profile import ProfileConfig
 from ..resource.resource_api import AgentResource
 from ..util.cmp import cmp_string_equal
 
@@ -86,18 +88,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
     including suggesting python code blocks and debugging.
     """
 
-    goal = (
-        "You're an extraction expert. You need to extract Please complete this task "
-        "step by step following instructions below:\n"
-        "   1. You need to first ONLY extract user's question that you need to answer "
-        "without ANY file paths and URLs. \n"
-        "   2. Extract the provided file paths and URLs.\n"
-        "   3. Construct the extracted file paths and URLs as a list of strings.\n"
-        "   4. ONLY output the extracted results with the following json format: "
-        "{response}."
-    )
-
-    PROMPT_QA = (
+    PROMPT_QA: str = (
         "You are a great summary writer to summarize the provided text content "
         "according to user questions.\n"
         "User's Question is: {input_question}\n\n"
@@ -118,7 +109,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         "If the provided text content CAN NOT ANSWER user's question, ONLY output "
         "'NO RELATIONSHIP.UPDATE TEXT CONTENT.'!!."
     )
-    CHECK_RESULT_SYSTEM_MESSAGE = (
+    CHECK_RESULT_SYSTEM_MESSAGE: str = (
         "You are an expert in analyzing the results of a summary task."
         "Your responsibility is to check whether the summary results can summarize the "
         "input provided by the user, and then make a judgment. You need to answer "
@@ -131,20 +122,30 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         "not summarized. TERMINATE"
     )
 
-    DEFAULT_DESCRIBE = (
+    DEFAULT_DESCRIBE: str = (
         "Summarize provided content according to user's questions and "
         "the provided file paths."
     )
-
-    name = "RetrieveSummarizer"
-    desc = DEFAULT_DESCRIBE
+    profile: ProfileConfig = ProfileConfig(
+        name="RetrieveSummarizer",
+        role="Assistant",
+        goal="You're an extraction expert. You need to extract Please complete this "
+        "task step by step following instructions below:\n"
+        "   1. You need to first ONLY extract user's question that you need to answer "
+        "without ANY file paths and URLs. \n"
+        "   2. Extract the provided file paths and URLs.\n"
+        "   3. Construct the extracted file paths and URLs as a list of strings.\n"
+        "   4. ONLY output the extracted results with the following json format: "
+        "{{ response }}.",
+        desc=DEFAULT_DESCRIBE,
+    )
 
     chunk_token_size: int = 4000
     chunk_mode: str = "multi_lines"
 
-    _model = "gpt-3.5-turbo-16k"
-    _max_tokens = _get_max_tokens(_model)
-    context_max_tokens = _max_tokens * 0.8
+    _model: str = "gpt-3.5-turbo-16k"
+    _max_tokens: int = _get_max_tokens(_model)
+    context_max_tokens: int = int(_max_tokens * 0.8)
 
     def __init__(
         self,
@@ -174,12 +175,14 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         reply_message: AgentMessage = self._init_reply_message(
             received_message=received_message
         )
-        await self._system_message_assembly(
-            received_message.content, reply_message.context
-        )
         # 1.Think about how to do things
         llm_reply, model_name = await self.thinking(
-            self._load_thinking_messages(received_message, sender, rely_messages)
+            await self._load_thinking_messages(
+                received_message,
+                sender,
+                rely_messages,
+                context=reply_message.get_dict_context(),
+            )
         )
 
         if not llm_reply:
@@ -454,16 +457,16 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
                         " set to False."
                     )
                     must_break_at_empty_line = False
-            chunks.append(prev) if len(
-                prev
-            ) > 10 else None  # don't add chunks less than 10 characters
+            (
+                chunks.append(prev) if len(prev) > 10 else None
+            )  # don't add chunks less than 10 characters
             lines = lines[cnt:]
             lines_tokens = lines_tokens[cnt:]
             sum_tokens = sum(lines_tokens)
         text_to_chunk = "\n".join(lines)
-        chunks.append(text_to_chunk) if len(
-            text_to_chunk
-        ) > 10 else None  # don't add chunks less than 10 characters
+        (
+            chunks.append(text_to_chunk) if len(text_to_chunk) > 10 else None
+        )  # don't add chunks less than 10 characters
         return chunks
 
     def _extract_text_from_pdf(self, file: str) -> str:

@@ -19,8 +19,8 @@ import os
 
 from dbgpt.agent import (
     AgentContext,
+    AgentMemory,
     AgentResource,
-    GptsMemory,
     LLMConfig,
     ResourceLoader,
     ResourceType,
@@ -40,7 +40,7 @@ async def main():
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test456")
 
-    default_memory: GptsMemory = GptsMemory()
+    agent_memory = AgentMemory()
 
     plugin_resource = AgentResource(
         type=ResourceType.Plugin,
@@ -52,13 +52,13 @@ async def main():
     plugin_file_loader = PluginFileLoadClient()
     resource_loader.register_resource_api(plugin_file_loader)
 
-    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+    user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
     tool_engineer = (
         await PluginAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(default_memory)
+        .bind(agent_memory)
         .bind([plugin_resource])
         .bind(resource_loader)
         .build()
@@ -70,8 +70,8 @@ async def main():
         message="查询今天成都的天气",
     )
 
-    ## dbgpt-vis message infos
-    print(await default_memory.one_chat_completions("test456"))
+    # dbgpt-vis message infos
+    print(await agent_memory.gpts_memory.one_chat_completions("test456"))
 
 
 if __name__ == "__main__":

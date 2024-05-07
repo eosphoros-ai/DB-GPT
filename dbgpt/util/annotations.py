@@ -67,6 +67,44 @@ def DeveloperAPI(*args, **kwargs):
     return decorator
 
 
+def mutable(func):
+    """Decorator to mark a method of an instance will change the instance state.
+
+    Examples:
+        >>> from dbgpt.util.annotations import mutable
+        >>> class Foo:
+        ...     def __init__(self):
+        ...         self.a = 1
+        ...
+        ...     @mutable
+        ...     def change_a(self):
+        ...         self.a = 2
+        ...
+
+    """
+    _modify_mutability(func, mutability=True)
+    return func
+
+
+def immutable(func):
+    """Decorator to mark a method of an instance will not change the instance state.
+
+    Examples:
+        >>> from dbgpt.util.annotations import immutable
+        >>> class Foo:
+        ...     def __init__(self):
+        ...         self.a = 1
+        ...
+        ...     @immutable
+        ...     def get_a(self):
+        ...         return self.a
+        ...
+
+    """
+    _modify_mutability(func, mutability=False)
+    return func
+
+
 def _modify_docstring(obj, message: Optional[str] = None):
     if not message:
         return
@@ -94,3 +132,7 @@ def _modify_annotation(obj, stability) -> None:
         obj._public_stability = stability
     if hasattr(obj, "__name__"):
         obj._annotated = obj.__name__
+
+
+def _modify_mutability(obj, mutability) -> None:
+    obj._mutability = mutability

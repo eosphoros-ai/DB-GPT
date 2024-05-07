@@ -5,7 +5,7 @@ from typing import List, Optional
 
 import pandas as pd
 
-from ..core.schema import Status
+from ...schema import Status
 from .base import GptsMessage, GptsMessageMemory, GptsPlan, GptsPlansMemory
 
 

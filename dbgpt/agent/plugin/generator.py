@@ -1,5 +1,34 @@
 """A module for generating custom prompt strings."""
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+
+from dbgpt._private.pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from .commands.command_manage import CommandRegistry
+
+
+class CommandEntry(BaseModel):
+    """CommandEntry class.
+
+    A class for storing information about a command.
+    """
+
+    label: str = Field(
+        ...,
+        description="The label of the command.",
+    )
+    name: str = Field(
+        ...,
+        description="The name of the command.",
+    )
+    args: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="A dictionary containing argument names and their values.",
+    )
+    function: Optional[Callable] = Field(
+        None,
+        description="A callable function to be called when the command is executed.",
+    )
 
 
 class PluginPromptGenerator:
@@ -9,7 +38,7 @@ class PluginPromptGenerator:
         resources, and performance evaluations.
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Create a new PromptGenerator object.
 
         Initialize the PromptGenerator object with empty lists of constraints,
@@ -17,11 +46,44 @@ class PluginPromptGenerator:
         """
         from .commands.command_manage import CommandRegistry
 
-        self.constraints: List[str] = []
-        self.commands: List[Dict[str, Any]] = []
-        self.resources: List[str] = []
-        self.performance_evaluation: List[str] = []
-        self.command_registry: CommandRegistry = CommandRegistry()
+        self._constraints: List[str] = []
+        self._commands: List[CommandEntry] = []
+        self._resources: List[str] = []
+        self._performance_evaluation: List[str] = []
+        self._command_registry: CommandRegistry = CommandRegistry()
+
+    @property
+    def constraints(self) -> List[str]:
+        """Return the list of constraints."""
+        return self._constraints
+
+    @property
+    def commands(self) -> List[CommandEntry]:
+        """Return the list of commands."""
+        return self._commands
+
+    @property
+    def resources(self) -> List[str]:
+        """Return the list of resources."""
+        return self._resources
+
+    @property
+    def performance_evaluation(self) -> List[str]:
+        """Return the list of performance evaluations."""
+        return self._performance_evaluation
+
+    @property
+    def command_registry(self) -> "CommandRegistry":
+        """Return the command registry."""
+        return self._command_registry
+
+    def set_command_registry(self, command_registry: "CommandRegistry") -> None:
+        """Set the command registry.
+
+        Args:
+            command_registry: CommandRegistry
+        """
+        self._command_registry = command_registry
 
     def add_constraint(self, constraint: str) -> None:
         """Add a constraint to the constraints list.
@@ -29,13 +91,13 @@ class PluginPromptGenerator:
         Args:
             constraint (str): The constraint to be added.
         """
-        self.constraints.append(constraint)
+        self._constraints.append(constraint)
 
     def add_command(
         self,
         command_label: str,
         command_name: str,
-        args=None,
+        args: Optional[Dict[str, Any]] = None,
         function: Optional[Callable] = None,
     ) -> None:
         """Add a command to the commands.
@@ -55,16 +117,15 @@ class PluginPromptGenerator:
 
         command_args = {arg_key: arg_value for arg_key, arg_value in args.items()}
 
-        command = {
-            "label": command_label,
-            "name": command_name,
-            "args": command_args,
-            "function": function,
-        }
+        command = CommandEntry(
+            label=command_label,
+            name=command_name,
+            args=command_args,
+            function=function,
+        )
+        self._commands.append(command)
 
-        self.commands.append(command)
-
-    def _generate_command_string(self, command: Dict[str, Any]) -> str:
+    def _generate_command_string(self, command: CommandEntry) -> str:
         """
         Generate a formatted string representation of a command.
 
@@ -75,9 +136,9 @@ class PluginPromptGenerator:
             str: The formatted command string.
         """
         args_string = ", ".join(
-            f'"{key}": "{value}"' for key, value in command["args"].items()
+            f'"{key}": "{value}"' for key, value in command.args.items()
         )
-        return f'"{command["name"]}": {command["label"]} , args: {args_string}'
+        return f'"{command.name}": {command.label} , args: {args_string}'
 
     def add_resource(self, resource: str) -> None:
         """
@@ -86,7 +147,7 @@ class PluginPromptGenerator:
         Args:
             resource (str): The resource to be added.
         """
-        self.resources.append(resource)
+        self._resources.append(resource)
 
     def add_performance_evaluation(self, evaluation: str) -> None:
         """
@@ -95,7 +156,7 @@ class PluginPromptGenerator:
         Args:
             evaluation (str): The evaluation item to be added.
         """
-        self.performance_evaluation.append(evaluation)
+        self._performance_evaluation.append(evaluation)
 
     def _generate_numbered_list(self, items: List[Any], item_type="list") -> str:
         """
@@ -111,10 +172,10 @@ class PluginPromptGenerator:
         """
         if item_type == "command":
             command_strings = []
-            if self.command_registry:
+            if self._command_registry:
                 command_strings += [
                     str(item)
-                    for item in self.command_registry.commands.values()
+                    for item in self._command_registry.commands.values()
                     if item.enabled
                 ]
             # terminate command is added manually
@@ -125,4 +186,4 @@ class PluginPromptGenerator:
 
     def generate_commands_string(self) -> str:
         """Return a formatted string representation of the commands list."""
-        return f"{self._generate_numbered_list(self.commands, item_type='command')}"
+        return f"{self._generate_numbered_list(self._commands, item_type='command')}"
