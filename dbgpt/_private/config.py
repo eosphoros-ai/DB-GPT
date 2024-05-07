@@ -128,6 +128,16 @@ class Config(metaclass=Singleton):
             os.environ["moonshot_proxyllm_api_base"] = os.getenv(
                 "MOONSHOT_API_BASE", "https://api.moonshot.cn/v1"
             )
+        # Deepseek proxy
+        self.deepseek_proxy_api_key = os.getenv("DEEPSEEK_API_KEY")
+        if self.deepseek_proxy_api_key:
+            os.environ["deepseek_proxyllm_proxy_api_key"] = self.deepseek_proxy_api_key
+            os.environ["deepseek_proxyllm_proxyllm_backend"] = os.getenv(
+                "DEEPSEEK_MODEL_VERSION", "deepseek-chat"
+            )
+            os.environ["deepseek_proxyllm_api_base"] = os.getenv(
+                "DEEPSEEK_API_BASE", "https://api.deepseek.com/v1"
+            )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
