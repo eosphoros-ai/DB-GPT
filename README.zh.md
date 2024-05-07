@@ -167,7 +167,9 @@
     - 🔥🔥🔥  [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
   - [更多开源模型](https://www.yuque.com/eosphoros/dbgpt-docs/iqaaqwriwhp6zslc#qQktR)
 
-  - 支持在线代理模型 
+  - 支持在线代理模型
+    - [x] [DeepSeek.deepseek-chat](https://platform.deepseek.com/api-docs/)
+    - [x] [Ollama.API](https://github.com/ollama/ollama/blob/main/docs/api.md)
     - [x] [月之暗面.Moonshot](https://platform.moonshot.cn/docs/)
     - [x] [零一万物.Yi](https://platform.lingyiwanwu.com/docs)
     - [x] [OpenAI·ChatGPT](https://api.openai.com/)
