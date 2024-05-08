@@ -20,8 +20,8 @@ def g():
 
 
 @pytest.mark.parametrize("action, vc, ec", [
-    (lambda g: g.del_vertex("G"), 6, 9),
-    (lambda g: g.del_vertex("C"), 6, 7),
+    (lambda g: g.del_vertices("G", "G"), 6, 9),
+    (lambda g: g.del_vertices("C"), 6, 7),
     (lambda g: g.del_vertices("A", "G"), 5, 6),
     (lambda g: g.del_edges("E", "F", label='8'), 7, 8),
     (lambda g: g.del_edges("A", "B"), 7, 8),
@@ -84,4 +84,3 @@ def test_search_depth_limit(g, vids, dir, dep_lim, rs_len):
     print(f"\n{subgraph.graphviz()}")
     assert sum(1 for _ in subgraph.edges()) == rs_len
 
-# todo: visitSet error? use edgecount
