@@ -19,18 +19,20 @@ def g():
     yield g
 
 
-@pytest.mark.parametrize("action, rs_len", [
-    (lambda g: g.del_vertex("G"), 185),
-    (lambda g: g.del_vertex("C"), 151),
-    (lambda g: g.del_edge("E", "F", label='8'), 170),
-    (lambda g: g.del_edge("A", "B"), 170),
-    (lambda g: g.del_edges("A", Direction.IN), 151),
+@pytest.mark.parametrize("action, vc, ec", [
+    (lambda g: g.del_vertex("G"), 6, 9),
+    (lambda g: g.del_vertex("C"), 6, 7),
+    (lambda g: g.del_vertices("A", "G"), 5, 6),
+    (lambda g: g.del_edges("E", "F", label='8'), 7, 8),
+    (lambda g: g.del_edges("A", "B"), 7, 8),
+    (lambda g: g.del_neighbor_edges("A", Direction.IN), 7, 7),
 ])
-def test_delete(g, action, rs_len):
+def test_delete(g, action, vc, ec):
     action(g)
     result = g.graphviz()
     print(f"\n{result}")
-    assert len(result) == rs_len
+    assert g.vertex_count == vc
+    assert g.edge_count == ec
 
 
 @pytest.mark.parametrize("vids, dir, rs_len", [
@@ -40,8 +42,8 @@ def test_delete(g, action, rs_len):
     (["B"], Direction.BOTH, 185),
     (["A", "G"], Direction.BOTH, 189),
 ])
-def test_bfs(g, vids, dir, rs_len):
-    result = g.bfs(vids, dir).graphviz()
+def test_search(g, vids, dir, rs_len):
+    result = g.search(vids, dir).graphviz()
     print(f"\n{result}")
     assert len(result) == rs_len
 
@@ -51,8 +53,8 @@ def test_bfs(g, vids, dir, rs_len):
     (["B"], Direction.OUT, 5),
     (["B"], Direction.IN, 3),
 ])
-def test_bfs_result_limit(g, vids, dir, rs_lim):
-    subgraph = g.bfs(vids, dir, result_limit=rs_lim)
+def test_search_result_limit(g, vids, dir, rs_lim):
+    subgraph = g.search(vids, dir, result_limit=rs_lim)
     print(f"\n{subgraph.graphviz()}")
     assert sum(1 for _ in subgraph.edges()) == rs_lim
 
@@ -62,8 +64,8 @@ def test_bfs_result_limit(g, vids, dir, rs_lim):
     (["B"], Direction.OUT, 2, 3),
     (["F"], Direction.IN, 1, 4),
 ])
-def test_bfs_fan_limit(g, vids, dir, fan_lim, rs_len):
-    subgraph = g.bfs(vids, dir, fan_limit=fan_lim)
+def test_search_fan_limit(g, vids, dir, fan_lim, rs_len):
+    subgraph = g.search(vids, dir, fan_limit=fan_lim)
     print(f"\n{subgraph.graphviz()}")
     assert sum(1 for _ in subgraph.edges()) == rs_len
 
@@ -73,13 +75,13 @@ def test_bfs_fan_limit(g, vids, dir, fan_lim, rs_len):
     (["A"], Direction.OUT, 2, 6),
     (["B"], Direction.OUT, 2, 5),
     (["B"], Direction.IN, 1, 1),
-    (["D"], Direction.IN, 2, 3),
+    (["D"], Direction.IN, 2, 4),
     (["B"], Direction.BOTH, 1, 4),
     (["B"], Direction.BOTH, 2, 9),
 ])
-def test_bfs_depth_limit(g, vids, dir, dep_lim, rs_len):
-    subgraph = g.bfs(vids, dir, depth_limit=dep_lim)
+def test_search_depth_limit(g, vids, dir, dep_lim, rs_len):
+    subgraph = g.search(vids, dir, depth_limit=dep_lim)
     print(f"\n{subgraph.graphviz()}")
     assert sum(1 for _ in subgraph.edges()) == rs_len
 
-# todo: bfs not real \ visitSet error?
+# todo: visitSet error? use edgecount

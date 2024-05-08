@@ -112,7 +112,7 @@ class Graph(ABC):
         """Get a vertex."""
 
     @abstractmethod
-    def get_edges(
+    def get_neighbor_edges(
         self,
         vid: str,
         direction: Direction = Direction.OUT
@@ -123,12 +123,17 @@ class Graph(ABC):
     def del_vertex(self, vid: str):
         """Delete vertex and its neighbor edges."""
 
-    @abstractmethod
-    def del_edge(self, sid: str, tid: str, **props):
-        """Delete an edge matches props."""
+    def del_vertices(self, *vids: str):
+        """Delete vertices."""
+        for vid in vids:
+            self.del_vertex(vid)
 
     @abstractmethod
-    def del_edges(
+    def del_edges(self, sid: str, tid: str, **props):
+        """Delete edges(sid -> tid) matches props."""
+
+    @abstractmethod
+    def del_neighbor_edges(
         self,
         vid: str,
         direction: Direction = Direction.OUT
@@ -136,7 +141,7 @@ class Graph(ABC):
         """Delete neighbor edges."""
 
     @abstractmethod
-    def bfs(
+    def search(
         self,
         vids: List[str],
         direction: Direction = Direction.OUT,
@@ -144,28 +149,38 @@ class Graph(ABC):
         fan_limit: int = None,
         result_limit: int = None
     ) -> "Graph":
-        """Traverse the graph."""
-
-
-class Counter:
-    def __init__(self):
-        self.count = 0
-
-    def inc(self):
-        self.count += 1
-
-    def get(self):
-        return self.count
+        """Breadth-first search."""
 
 
 class MemoryGraph(Graph):
     """Graph class."""
 
+    class Counter:
+        """A simple global counter"""
+
+        def __init__(self):
+            self.count = 0
+
+        def inc(self):
+            self.count += 1
+
+        def get(self):
+            return self.count
+
     def __init__(self):
         """init vertices, out edges, in edges index"""
-        self._vs = defaultdict()
+        self._vs = defaultdict(lambda: None)
         self._oes = defaultdict(lambda: defaultdict(set))
         self._ies = defaultdict(lambda: defaultdict(set))
+        self._edge_count = 0
+
+    @property
+    def vertex_count(self):
+        return len(self._vs)
+
+    @property
+    def edge_count(self):
+        return self._edge_count
 
     def upsert_vertex(self, vertex: Vertex):
         self._vs[vertex.vid] = vertex
@@ -184,13 +199,14 @@ class MemoryGraph(Graph):
         # construct edge index
         self._oes[sid][tid].add(edge)
         self._ies[tid][sid].add(edge)
+        self._edge_count += 1
 
         return True
 
     def get_vertex(self, vid: str) -> Vertex:
         return self._vs[vid]
 
-    def get_edges(
+    def get_neighbor_edges(
         self,
         vid: str,
         direction: Direction = Direction.OUT,
@@ -220,37 +236,42 @@ class MemoryGraph(Graph):
         return itertools.islice(es, limit) if limit else es
 
     def del_vertex(self, vid: str):
-        self.del_edges(vid, Direction.BOTH)
-        del self._vs[vid]
+        self.del_neighbor_edges(vid, Direction.BOTH)
+        self._vs.pop(vid, None)
 
-    def del_edge(self, sid: str, tid: str, **props):
+    def del_edges(self, sid: str, tid: str, **props):
+        old_edge_cnt = len(self._oes[sid][tid])
+
         if not props:
-            del self._oes[sid][tid]
-            del self._ies[tid][sid]
+            self._edge_count -= old_edge_cnt
+            self._oes[sid].pop(tid, None)
+            self._ies[tid].pop(sid, None)
             return
 
-        oes = self._oes[sid][tid]
-        self._oes[sid][tid] = filter(lambda e: not e.has_props(**props), oes)
+        func = lambda es: set(filter(lambda e: not e.has_props(**props), es))
+        self._oes[sid][tid] = func(self._oes[sid][tid])
+        self._ies[tid][sid] = func(self._ies[tid][sid])
 
-        ies = self._ies[tid][sid]
-        self._ies[tid][sid] = filter(lambda e: not e.has_props(**props), ies)
+        self._edge_count -= (old_edge_cnt - len(self._oes[sid][tid]))
 
-    def del_edges(
+    def del_neighbor_edges(
         self,
         vid: str,
         direction: Direction = Direction.OUT
     ):
         if direction == Direction.OUT or direction == Direction.BOTH:
             for nid in self._oes[vid].keys():
-                del self._ies[nid][vid]
-            del self._oes[vid]
+                self._edge_count -= len(self._ies[nid][vid])
+                self._ies[nid].pop(vid, None)
+            self._oes.pop(vid, None)
 
         if direction == Direction.IN or direction == Direction.BOTH:
             for nid in self._ies[vid].keys():
-                del self._oes[nid][vid]
-            del self._ies[vid]
+                self._edge_count -= len(self._oes[nid][vid])
+                self._oes[nid].pop(vid, None)
+            self._ies.pop(vid, None)
 
-    def bfs(
+    def search(
         self,
         vids: List[str],
         direction: Direction = Direction.OUT,
@@ -259,10 +280,10 @@ class MemoryGraph(Graph):
         result_limit: int = None
     ) -> "MemoryGraph":
         subgraph = MemoryGraph()
-        counter = Counter()
+        counter = MemoryGraph.Counter()
 
         for vid in vids:
-            self.__bfs(
+            self.__search(
                 vid,
                 direction,
                 depth_limit,
@@ -276,7 +297,7 @@ class MemoryGraph(Graph):
 
         return subgraph
 
-    def __bfs(
+    def __search(
         self,
         vid: str,
         direction: Direction,
@@ -300,7 +321,7 @@ class MemoryGraph(Graph):
 
         # visit edges
         nids = set()
-        for edge in self.get_edges(vid, direction, fan_limit):
+        for edge in self.get_neighbor_edges(vid, direction, fan_limit):
             if result_limit and result_count.get() >= result_limit:
                 return
 
@@ -315,7 +336,7 @@ class MemoryGraph(Graph):
 
         # next hop
         for nid in nids:
-            self.__bfs(
+            self.__search(
                 nid,
                 direction,
                 depth_limit,

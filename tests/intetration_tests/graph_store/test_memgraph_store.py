@@ -19,4 +19,20 @@ def test_graph_store(graph_store):
     graph_store.insert_triplet("F", "7", "E")
     graph_store.insert_triplet("E", "8", "F")
 
-    graph_store.explore(["A"])
+    subgraph = graph_store.explore(["A"])
+    print(f"\n{subgraph.graphviz()}")
+    assert sum(1 for _ in subgraph.edges()) == 9
+
+    graph_store.delete_triplet("A", "0", "A")
+    graph_store.delete_triplet("B", "4", "D")
+    subgraph = graph_store.explore(["A"])
+    print(f"\n{subgraph.graphviz()}")
+    assert sum(1 for _ in subgraph.edges()) == 7
+
+    triplets = graph_store.get_triplets("B")
+    print(f"\nTriplets of B: {triplets}")
+    assert len(triplets) == 2
+
+    schema = graph_store.get_schema()
+    print(f"\nSchema: {schema}")
+    assert len(schema) == 240
