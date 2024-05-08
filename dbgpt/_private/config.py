@@ -247,7 +247,11 @@ class Config(metaclass=Singleton):
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
-
+        self.ElasticSearch_URL = os.getenv("ElasticSearch_URL", "127.0.0.1")
+        self.ElasticSearch_PORT = os.getenv("ElasticSearch_PORT", "9200")
+        self.ElasticSearch_USERNAME = os.getenv("ElasticSearch_USERNAME", None)
+        self.ElasticSearch_PASSWORD = os.getenv("ElasticSearch_PASSWORD", None)
+        
         ## OceanBase Configuration
         self.OB_HOST = os.getenv("OB_HOST", "127.0.0.1")
         self.OB_PORT = int(os.getenv("OB_PORT", "2881"))
