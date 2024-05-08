@@ -1,8 +1,10 @@
 """Graph store base class."""
 import logging
-from abc import ABC
-from typing import Any,List,Optional,Dict
+from abc import ABC, abstractmethod
+from typing import List, Tuple
+
 from dbgpt._private.pydantic import BaseModel
+from dbgpt.storage.graph_store.graph import Direction, Graph
 
 logger = logging.getLogger(__name__)
 
@@ -13,25 +15,34 @@ class GraphStoreConfig(BaseModel):
 
 class GraphStoreBase(ABC):
     """Graph store base class."""
-    @property
-    def client(self) -> Any:
-        """Get client."""
 
-    def get_triplets(self, subj: str) -> List[List[str]]:
+    @abstractmethod
+    def insert_triplet(self, sub: str, rel: str, obj: str):
+        """Add triplet."""
+
+    @abstractmethod
+    def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Get triplets."""
 
-    def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
-        """Add triplet."""
-        ...
-
-    def delete_triplets(self, subj: str, rel: str, obj: str) -> None:
+    @abstractmethod
+    def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete triplet."""
-        ...
 
+    @abstractmethod
     def get_schema(self, refresh: bool = False) -> str:
-        """Get the schema of the graph store."""
-        ...
+        """Get schema."""
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        """Query the graph store with statement and parameters."""
-        ...
+    @abstractmethod
+    def explore(
+        self,
+        subs: List[str],
+        direction: Direction = Direction.BOTH,
+        depth_limit: int = None,
+        fan_limit: int = None,
+        result_limit: int = None
+    ) -> Graph:
+        """Breadth-first search."""
+
+    @abstractmethod
+    def query(self, query: str, **args) -> Graph:
+        """Execute a query."""

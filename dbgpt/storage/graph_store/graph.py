@@ -5,7 +5,7 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
-from typing import Any, List, Set, Iterator
+from typing import Any, List, Dict, Set, Iterator
 
 import networkx as nx
 
@@ -24,17 +24,21 @@ class Elem(ABC):
     def __init__(self):
         self._props = {}
 
+    @property
+    def props(self) -> Dict[str, Any]:
+        return self._props
+
     def set_prop(self, key: str, value: Any):
         self._props[key] = value
 
     def get_prop(self, key: str):
-        return self._props[key]
-
-    def get_props(self):
-        return list(self._props)
+        return self._props.get(key)
 
     def del_prop(self, key: str):
-        del self._props[key]
+        self._props.pop(key, None)
+
+    def has_props(self, **props):
+        return all(self._props.get(k) == v for k, v in props.items())
 
 
 class Vertex(Elem):
@@ -120,6 +124,10 @@ class Graph(ABC):
         """Delete vertex and its neighbor edges."""
 
     @abstractmethod
+    def del_edge(self, sid: str, tid: str, **props):
+        """Delete an edge matches props."""
+
+    @abstractmethod
     def del_edges(
         self,
         vid: str,
@@ -128,7 +136,7 @@ class Graph(ABC):
         """Delete neighbor edges."""
 
     @abstractmethod
-    def traverse(
+    def bfs(
         self,
         vids: List[str],
         direction: Direction = Direction.OUT,
@@ -137,6 +145,17 @@ class Graph(ABC):
         result_limit: int = None
     ) -> "Graph":
         """Traverse the graph."""
+
+
+class Counter:
+    def __init__(self):
+        self.count = 0
+
+    def inc(self):
+        self.count += 1
+
+    def get(self):
+        return self.count
 
 
 class MemoryGraph(Graph):
@@ -155,6 +174,9 @@ class MemoryGraph(Graph):
         sid = edge.sid
         tid = edge.tid
 
+        if edge in self._oes[sid][tid]:
+            return False
+
         # construct vertex index
         self._vs.setdefault(sid, Vertex(sid))
         self._vs.setdefault(tid, Vertex(tid))
@@ -162,6 +184,8 @@ class MemoryGraph(Graph):
         # construct edge index
         self._oes[sid][tid].add(edge)
         self._ies[tid][sid].add(edge)
+
+        return True
 
     def get_vertex(self, vid: str) -> Vertex:
         return self._vs[vid]
@@ -199,6 +223,18 @@ class MemoryGraph(Graph):
         self.del_edges(vid, Direction.BOTH)
         del self._vs[vid]
 
+    def del_edge(self, sid: str, tid: str, **props):
+        if not props:
+            del self._oes[sid][tid]
+            del self._ies[tid][sid]
+            return
+
+        oes = self._oes[sid][tid]
+        self._oes[sid][tid] = filter(lambda e: not e.has_props(**props), oes)
+
+        ies = self._ies[tid][sid]
+        self._ies[tid][sid] = filter(lambda e: not e.has_props(**props), ies)
+
     def del_edges(
         self,
         vid: str,
@@ -214,7 +250,7 @@ class MemoryGraph(Graph):
                 del self._oes[nid][vid]
             del self._ies[vid]
 
-    def traverse(
+    def bfs(
         self,
         vids: List[str],
         direction: Direction = Direction.OUT,
@@ -223,9 +259,10 @@ class MemoryGraph(Graph):
         result_limit: int = None
     ) -> "MemoryGraph":
         subgraph = MemoryGraph()
+        counter = Counter()
 
         for vid in vids:
-            self.__traverse(
+            self.__bfs(
                 vid,
                 direction,
                 depth_limit,
@@ -233,13 +270,13 @@ class MemoryGraph(Graph):
                 result_limit,
                 0,
                 set(),
-                0,
+                counter,
                 subgraph
             )
 
         return subgraph
 
-    def __traverse(
+    def __bfs(
         self,
         vid: str,
         direction: Direction,
@@ -248,12 +285,9 @@ class MemoryGraph(Graph):
         result_limit: int,
         depth: int,
         visited: Set,
-        result_count: int,
+        result_count: Counter,
         subgraph: "MemoryGraph"
     ):
-        if depth_limit and depth >= depth_limit:
-            return
-
         if vid in visited:
             return
 
@@ -261,19 +295,27 @@ class MemoryGraph(Graph):
         subgraph.upsert_vertex(self.get_vertex(vid))
         visited.add(vid)
 
+        if depth_limit and depth >= depth_limit:
+            return
+
         # visit edges
         nids = set()
         for edge in self.get_edges(vid, direction, fan_limit):
-            result_count += 1
-            if result_limit and result_count > result_limit:
+            if result_limit and result_count.get() >= result_limit:
                 return
 
-            subgraph.append_edge(edge)
-            nids.add(edge.nid(vid))
+            # count if append success
+            if subgraph.append_edge(edge):
+                result_count.inc()
+
+                # new id
+                nid = edge.nid(vid)
+                if nid not in visited:
+                    nids.add(nid)
 
         # next hop
         for nid in nids:
-            self.__traverse(
+            self.__bfs(
                 nid,
                 direction,
                 depth_limit,

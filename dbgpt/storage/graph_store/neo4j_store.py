@@ -7,4 +7,4 @@ logger = logging.getLogger(__name__)
 
 
 class Neo4jStore(GraphStoreBase):
-    """Neo4j vector store."""
+    """Neo4j graph store."""
