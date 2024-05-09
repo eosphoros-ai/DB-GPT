@@ -36,12 +36,12 @@ class GraphStoreBase(ABC):
     def explore(
         self,
         subs: List[str],
-        direction: Direction = Direction.BOTH,
-        depth_limit: int = None,
-        fan_limit: int = None,
-        result_limit: int = None
+        direct: Direction = Direction.BOTH,
+        depth: int = None,
+        fan: int = None,
+        limit: int = None
     ) -> Graph:
-        """Breadth-first search."""
+        """Explore on graph."""
 
     @abstractmethod
     def query(self, query: str, **args) -> Graph:

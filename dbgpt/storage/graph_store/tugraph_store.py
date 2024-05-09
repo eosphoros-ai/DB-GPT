@@ -105,13 +105,13 @@ class TuGraphStore(GraphStoreBase):
     def explore(
         self,
         subs: List[str],
-        direction: Direction = Direction.BOTH,
-        depth_limit: int = None,
-        fan_limit: int = None,
-        result_limit: int = None
+        direct: Direction = Direction.BOTH,
+        depth: int = None,
+        fan: int = None,
+        limit: int = None
     ) -> MemoryGraph:
         # todo: bfs on tugraph
-        query = f'''MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth_limit}]-() WHERE n.id IN {subs} RETURN p,r.id as rel LIMIT {result_limit}'''
+        query = f'''MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth}]-() WHERE n.id IN {subs} RETURN p,r.id as rel LIMIT {limit}'''
         data = self.conn.run(query=query)
         result = []
         formatted_paths = format_paths(data['data'])

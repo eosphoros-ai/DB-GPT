@@ -21,13 +21,13 @@ def test_graph_store(graph_store):
 
     subgraph = graph_store.explore(["A"])
     print(f"\n{subgraph.graphviz()}")
-    assert sum(1 for _ in subgraph.edges()) == 9
+    assert subgraph.edge_count == 9
 
     graph_store.delete_triplet("A", "0", "A")
     graph_store.delete_triplet("B", "4", "D")
     subgraph = graph_store.explore(["A"])
     print(f"\n{subgraph.graphviz()}")
-    assert sum(1 for _ in subgraph.edges()) == 7
+    assert subgraph.edge_count == 7
 
     triplets = graph_store.get_triplets("B")
     print(f"\nTriplets of B: {triplets}")
@@ -35,4 +35,4 @@ def test_graph_store(graph_store):
 
     schema = graph_store.get_schema()
     print(f"\nSchema: {schema}")
-    assert len(schema) == 240
+    assert len(schema) == 138

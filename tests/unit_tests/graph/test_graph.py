@@ -35,42 +35,43 @@ def test_delete(g, action, vc, ec):
     assert g.edge_count == ec
 
 
-@pytest.mark.parametrize("vids, dir, rs_len", [
-    (["B"], Direction.OUT, 128),
-    (["A"], Direction.IN, 52),
-    (["F"], Direction.IN, 128),
-    (["B"], Direction.BOTH, 185),
-    (["A", "G"], Direction.BOTH, 189),
+@pytest.mark.parametrize("vids, dir, vc, ec", [
+    (["B"], Direction.OUT, 5, 6),
+    (["A"], Direction.IN, 1, 2),
+    (["F"], Direction.IN, 4, 6),
+    (["B"], Direction.BOTH, 6, 9),
+    (["A", "G"], Direction.BOTH, 7, 9),
 ])
-def test_search(g, vids, dir, rs_len):
-    result = g.search(vids, dir).graphviz()
-    print(f"\n{result}")
-    assert len(result) == rs_len
+def test_search(g, vids, dir, vc, ec):
+    subgraph = g.search(vids, dir)
+    print(f"\n{subgraph.graphviz()}")
+    assert subgraph.vertex_count == vc
+    assert subgraph.edge_count == ec
 
 
-@pytest.mark.parametrize("vids, dir, rs_lim", [
+@pytest.mark.parametrize("vids, dir, ec", [
     (["B"], Direction.BOTH, 5),
     (["B"], Direction.OUT, 5),
     (["B"], Direction.IN, 3),
 ])
-def test_search_result_limit(g, vids, dir, rs_lim):
-    subgraph = g.search(vids, dir, result_limit=rs_lim)
+def test_search_result_limit(g, vids, dir, ec):
+    subgraph = g.search(vids, dir, limit=ec)
     print(f"\n{subgraph.graphviz()}")
-    assert sum(1 for _ in subgraph.edges()) == rs_lim
+    assert subgraph.edge_count == ec
 
 
-@pytest.mark.parametrize("vids, dir, fan_lim, rs_len", [
+@pytest.mark.parametrize("vids, dir, fan, ec", [
     (["A"], Direction.OUT, 1, 1),
     (["B"], Direction.OUT, 2, 3),
     (["F"], Direction.IN, 1, 4),
 ])
-def test_search_fan_limit(g, vids, dir, fan_lim, rs_len):
-    subgraph = g.search(vids, dir, fan_limit=fan_lim)
+def test_search_fan_limit(g, vids, dir, fan, ec):
+    subgraph = g.search(vids, dir, fan=fan)
     print(f"\n{subgraph.graphviz()}")
-    assert sum(1 for _ in subgraph.edges()) == rs_len
+    assert subgraph.edge_count == ec
 
 
-@pytest.mark.parametrize("vids, dir, dep_lim, rs_len", [
+@pytest.mark.parametrize("vids, dir, dep, ec", [
     (["A"], Direction.OUT, 1, 3),
     (["A"], Direction.OUT, 2, 6),
     (["B"], Direction.OUT, 2, 5),
@@ -79,8 +80,7 @@ def test_search_fan_limit(g, vids, dir, fan_lim, rs_len):
     (["B"], Direction.BOTH, 1, 4),
     (["B"], Direction.BOTH, 2, 9),
 ])
-def test_search_depth_limit(g, vids, dir, dep_lim, rs_len):
-    subgraph = g.search(vids, dir, depth_limit=dep_lim)
+def test_search_depth_limit(g, vids, dir, dep, ec):
+    subgraph = g.search(vids, dir, depth=dep)
     print(f"\n{subgraph.graphviz()}")
-    assert sum(1 for _ in subgraph.edges()) == rs_len
-
+    assert subgraph.edge_count == ec

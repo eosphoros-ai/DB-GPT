@@ -1,4 +1,5 @@
 """Knowledge graph class."""
+import asyncio
 import logging
 from typing import Optional, List
 
@@ -12,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class KnowledgeGraph(KnowledgeGraphBase):
-
     """Knowledge graph class."""
+
     def __init__(
         self,
         graph_store: GraphStoreBase,
@@ -21,27 +22,41 @@ class KnowledgeGraph(KnowledgeGraphBase):
         keyword_extractor: ExtractorBase
     ) -> None:
         """Create a KnowledgeGraph instance."""
-        self.graph_store = graph_store
-        self.extractor = triplet_extractor
-        self.keyword_extractor = keyword_extractor
+        self._graph_store = graph_store
+        self._triplet_extractor = triplet_extractor
+        self._keyword_extractor = keyword_extractor
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
-        # extract chunk content to triplets
-        triplets = set()
-        for chunk in chunks:
-            triplets += self.extractor.extract(chunk.content)
+        # extract and persist triplets to graph store
+        async def process_chunk(chunk):
+            triplets = await self._triplet_extractor.extract(chunk.content)
+            for triplet in triplets:
+                self._graph_store.insert_triplet(*triplet)
+            return chunk.chunk_id
 
-        # persist triplets
-        for triplet in triplets:
-            self.graph_store.insert_triplet(*triplet)
+        # wait async tasks completed
+        tasks = [process_chunk(chunk) for chunk in chunks]
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(asyncio.gather(*tasks))
 
-        return [chunk.chunk_id for chunk in chunks]
+    def similar_search_with_scores(
+        self,
+        text,
+        topk,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        if not filters:
+            raise ValueError("Filters on knowledge graph not supported yet")
 
-    def similar_search_with_scores(self, text, topk, score_threshold: float,
-        filters: Optional[MetadataFilters] = None) -> List[Chunk]:
-        # extract keywords from query text
-        keywords = self.keyword_extractor.extract(text)
+        # extract keywords and explore graph store
+        async def process_query(query):
+            keywords = await self._keyword_extractor.extract(query)
+            subgraph = self._graph_store.explore(keywords, limit=topk)
+            return [
+                Chunk(content=subgraph.format(), metadata=subgraph.schema())
+            ]
 
-        # todo: async to sync
-        self.graph_store.explore(keywords, result_limit=topk)
-        pass
+        # wait async task completed
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(asyncio.gather(*[process_query(text)]))
