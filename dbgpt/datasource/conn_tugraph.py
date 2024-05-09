@@ -17,6 +17,7 @@ class TuGraphConnector(BaseConnector):
         self._driver = driver
         self._schema = None
         self._graph = graph
+        self._session = None
 
     @classmethod
     def from_uri_db(
@@ -64,13 +65,21 @@ class TuGraphConnector(BaseConnector):
 
     def close(self):
         """Close the Neo4j driver."""
+        self.close_session()
         self._driver.close()
+
+    def close_session(self):
+        """Close the Neo4j session."""
+        if self._session is not None:
+            self._session.close()
+            self._session = None
 
     def run(self,query:str):
         """Run GQL."""
-        with self._driver.session(database=self._graph) as session:
-            result = session.run(query)
-            return result.data()
+        session = self._driver.session(database=self._graph)
+        result = session.run(query)
+        self._session = session
+        return result
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get fields about specified graph.

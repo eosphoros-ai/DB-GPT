@@ -25,7 +25,7 @@ class GraphStoreBase(ABC):
         """Get triplets."""
 
     @abstractmethod
-    def delete_triplet(self, sub: str, rel: str, obj: str):
+    def delete_triplets(self, sub: str, rel: str, obj: str):
         """Delete triplet."""
 
     @abstractmethod
