@@ -4,7 +4,7 @@ from typing import Any, List, Tuple,Optional,Dict
 
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.graph_store.graph import Direction, MemoryGraph
+from dbgpt.storage.graph_store.graph import Direction, MemoryGraph,Edge,Vertex
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,34 @@ def remove_duplicates(lst):
             result.append(sub_lst)
             seen.add(sub_tuple)
     return result
+
+def process_data(data):
+    nodes = {}
+    edges = {}
+
+    def add_vertex(vid):
+        if vid not in nodes:
+            nodes[vid] = Vertex(vid)
+
+    def add_edge(sid, tid, prop_id):
+        edge_key = (sid, tid, prop_id)
+        
+        if edge_key not in edges:
+            print(edge_key)
+            edges[edge_key] = Edge(sid, tid, id=prop_id)
+
+    for item in data:
+        sid = item[0]
+        i = 1
+        while i < len(item) - 1:
+            prop_id = item[i]
+            tid = item[i + 1]
+            add_vertex(sid)
+            add_vertex(tid)
+            add_edge(sid, tid, prop_id)
+            i += 2  
+
+    return {'nodes': list(nodes.values()), 'edges': list(edges.values())}
 
 class TuGraphStore(GraphStoreBase):
     """TuGraph vector store."""
@@ -82,7 +110,6 @@ class TuGraphStore(GraphStoreBase):
         data = self.conn.run(query=query)
         result = []
         formatted_paths = format_paths(data['data'])
-        print(len(formatted_paths))
         for path in formatted_paths:
             result.append(path)
         # result = remove_duplicates(result)
@@ -111,16 +138,18 @@ class TuGraphStore(GraphStoreBase):
         limit: int = None
     ) -> MemoryGraph:
         # todo: bfs on tugraph
-        query = f'''MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth}]-() WHERE n.id IN {subs} RETURN p,r.id as rel LIMIT {limit}'''
+        query = f'''MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth_limit}]-() WHERE n.id IN {subs} RETURN p LIMIT {result_limit}'''
         data = self.conn.run(query=query)
         result = []
         formatted_paths = format_paths(data['data'])
-        print(len(formatted_paths))
         for path in formatted_paths:
             result.append(path)
+        graph = process_data(result)
         mg = MemoryGraph()
-        # mg.upsert_vertex()
-        # mg.append_edge()
+        for vertex in graph['nodes']:
+            mg.upsert_vertex(vertex)
+        for edge in graph['edges']:
+            mg.append_edge(edge)
         return mg
 
     def query(self, query: str, **args) -> MemoryGraph:

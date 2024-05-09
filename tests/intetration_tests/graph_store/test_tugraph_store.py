@@ -8,7 +8,7 @@ from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
 @pytest.fixture(scope="module")
 def store():
     store = TuGraphStore(
-        host='100.88.118.28',
+        host='localhost',
         port=37687,
         user='admin',
         pwd='123456',
@@ -46,6 +46,15 @@ def test_get_rel_map(store):
     rel_map = store.get_rel_map(subjs, depth=2, limit=10)
     assert len(rel_map) == 10
 
+
+
+def test_explore(store):
+    subs = ['A', 'B']
+    result = store.explore(subs, depth_limit=2, fan_limit=None, result_limit=10)
+    v_c = result.vertex_count
+    e_c = result.edge_count
+    assert (v_c == 2 and e_c == 4)
+
 def test_delete_triplet(store):
     subj = 'A'
     rel = '0'
@@ -53,11 +62,6 @@ def test_delete_triplet(store):
     store.delete_triplet(subj,rel, obj)
     triplets = store.get_triplets(subj)
     assert len(triplets) == 0
-
-# def test_explore(store):
-#     subs = ['subj1', 'subj2']
-#     result = store.explore(subs, depth_limit=2, fan_limit=None, result_limit=30)
-#     # Add your assertions here
 
 # def test_query(store):
 #     query = "MATCH (n) RETURN n LIMIT 10"
