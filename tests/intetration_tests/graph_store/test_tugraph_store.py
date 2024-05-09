@@ -8,11 +8,7 @@ from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
 @pytest.fixture(scope="module")
 def store():
     store = TuGraphStore(
-        host='localhost',
-        port=37687,
-        user='admin',
-        pwd='123456',
-        db_name='RAG_1'
+        host="localhost", port=7687, user="admin", pwd="123456", db_name="RAG_1"
     )
     yield store
     store.conn.close()
@@ -41,27 +37,29 @@ def test_insert_and_get_triplets(store):
     triplets = store.get_triplets("F")
     assert len(triplets) == 1
 
+
 def test_get_rel_map(store):
-    subjs = ['A', 'B']
+    subjs = ["A", "B"]
     rel_map = store.get_rel_map(subjs, depth=2, limit=10)
     assert len(rel_map) == 10
 
 
-
 def test_explore(store):
-    subs = ['A', 'B']
-    result = store.explore(subs, depth_limit=2, fan_limit=None, result_limit=10)
+    subs = ["A", "B"]
+    result = store.explore(subs, depth=2, fan=None, limit=10)
     v_c = result.vertex_count
     e_c = result.edge_count
-    assert (v_c == 2 and e_c == 4)
+    assert v_c == 2 and e_c == 4
+
 
 def test_delete_triplet(store):
-    subj = 'A'
-    rel = '0'
-    obj = 'B'
-    store.delete_triplet(subj,rel, obj)
+    subj = "A"
+    rel = "0"
+    obj = "B"
+    store.delete_triplet(subj, rel, obj)
     triplets = store.get_triplets(subj)
     assert len(triplets) == 0
+
 
 # def test_query(store):
 #     query = "MATCH (n) RETURN n LIMIT 10"

@@ -39,7 +39,7 @@ class GraphStoreBase(ABC):
         direct: Direction = Direction.BOTH,
         depth: int = None,
         fan: int = None,
-        limit: int = None
+        limit: int = None,
     ) -> Graph:
         """Explore on graph."""
 

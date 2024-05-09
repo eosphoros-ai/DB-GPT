@@ -30,7 +30,7 @@ class TuGraphConnector(BaseConnector):
             db_url = f"{cls.driver}://{host}:{str(port)}"
             driver = GraphDatabase.driver(db_url, auth=(user, pwd))
             driver.verify_connectivity()
-            return cast(TuGraphConnector, cls(driver=driver,graph=db_name))
+            return cast(TuGraphConnector, cls(driver=driver, graph=db_name))
 
         except ImportError as err:
             raise ImportError("requests package is not installed") from err
@@ -67,13 +67,12 @@ class TuGraphConnector(BaseConnector):
         """Close the Neo4j driver."""
         self._driver.close()
 
-    def run(self,query:str):
+    def run(self, query: str):
         """Run GQL."""
         with self._driver.session(database=self._graph) as session:
             result = session.run(query)
-            print(query)
             data = [record for record in result]
-            return {'data': data}
+            return {"data": data}
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get fields about specified graph.
@@ -91,9 +90,7 @@ class TuGraphConnector(BaseConnector):
             data = []
             result = None
             if table_type == "vertex":
-                result = session.run(
-                    f"CALL db.getVertexSchema('{table_name}')"
-                ).data()
+                result = session.run(f"CALL db.getVertexSchema('{table_name}')").data()
             else:
                 result = session.run(f"CALL db.getEdgeSchema('{table_name}')").data()
             schema_info = json.loads(result[0]["schema"])
@@ -103,7 +100,8 @@ class TuGraphConnector(BaseConnector):
                     "type": prop["type"],
                     "default_expression": "",
                     "is_in_primary_key": bool(
-                        "primary" in schema_info and prop["name"] == schema_info["primary"]
+                        "primary" in schema_info
+                        and prop["name"] == schema_info["primary"]
                     ),
                     "comment": prop["name"],
                 }
