@@ -24,7 +24,6 @@ def remove_duplicates(lst):
     seen = set()
     result = []
     for sub_lst in lst:
-        # 将子列表转换为元组以进行哈希
         sub_tuple = tuple(sub_lst)
         if sub_tuple not in seen:
             result.append(sub_lst)
