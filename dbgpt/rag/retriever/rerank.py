@@ -219,7 +219,7 @@ class CrossEncoderRanker(Ranker):
         rank_scores = self._model.predict(sentences=query_content_pairs)
 
         for candidate, score in zip(candidates_with_scores, rank_scores):
-            candidate.score = score
+            candidate.score = float(score)
 
         new_candidates_with_scores = sorted(
             candidates_with_scores, key=lambda x: x.score, reverse=True
