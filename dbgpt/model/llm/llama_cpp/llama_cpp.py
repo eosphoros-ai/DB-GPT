@@ -1,6 +1,7 @@
 """
 Fork from text-generation-webui https://github.com/oobabooga/text-generation-webui/blob/main/modules/llamacpp_model.py
 """
+
 import logging
 import re
 from typing import Dict

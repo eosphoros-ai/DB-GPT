@@ -1,4 +1,5 @@
 """Protocol module for agent messages vis tag."""
+
 from ..base import Vis
 
 

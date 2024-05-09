@@ -1,4 +1,5 @@
 """Connection manager."""
+
 import logging
 from typing import TYPE_CHECKING, List, Optional, Type
 

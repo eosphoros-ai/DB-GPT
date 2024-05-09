@@ -1,4 +1,5 @@
 """ MacOS TTS Voice. """
+
 import os
 
 from dbgpt.util.speech.base import VoiceBase

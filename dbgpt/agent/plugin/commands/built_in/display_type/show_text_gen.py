@@ -1,4 +1,5 @@
 """Generate text display content for the data frame."""
+
 import logging
 
 from pandas import DataFrame

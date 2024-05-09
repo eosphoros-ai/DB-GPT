@@ -1,4 +1,5 @@
 """This module contains the client for the DB-GPT API."""
+
 import atexit
 import json
 import os

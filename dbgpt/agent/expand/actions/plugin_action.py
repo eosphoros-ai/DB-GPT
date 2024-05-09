@@ -109,10 +109,10 @@ class PluginAction(Action[PluginInput]):
         try:
             if not self.resource_loader:
                 raise ValueError("No resource_loader found!")
-            resource_plugin_client: Optional[
-                ResourcePluginClient
-            ] = self.resource_loader.get_resource_api(
-                self.resource_need, ResourcePluginClient
+            resource_plugin_client: Optional[ResourcePluginClient] = (
+                self.resource_loader.get_resource_api(
+                    self.resource_need, ResourcePluginClient
+                )
             )
             if not resource_plugin_client:
                 raise ValueError("No implementation of the use of plug-in resources！")

@@ -14,6 +14,7 @@
             "user_input": "hello"
         }'
 """
+
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import ModelMessage, ModelRequest
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator

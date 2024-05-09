@@ -1,4 +1,5 @@
 """The prompt operator."""
+
 from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
@@ -135,9 +136,9 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
                 break
         if not lass_user_message:
             raise ValueError("No user message")
-        storage_conv: Optional[
-            StorageConversation
-        ] = await self.get_storage_conversation()
+        storage_conv: Optional[StorageConversation] = (
+            await self.get_storage_conversation()
+        )
         if not storage_conv:
             return
         # Start new round
@@ -147,16 +148,16 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
     async def after_dag_end(self, event_loop_task_id: int):
         """Execute after the DAG finished."""
         # Save the storage conversation to storage after the whole DAG finished
-        storage_conv: Optional[
-            StorageConversation
-        ] = await self.get_storage_conversation()
+        storage_conv: Optional[StorageConversation] = (
+            await self.get_storage_conversation()
+        )
 
         if not storage_conv:
             return
-        model_output: Optional[
-            ModelOutput
-        ] = await self.current_dag_context.get_from_share_data(
-            BaseLLM.SHARE_DATA_KEY_MODEL_OUTPUT
+        model_output: Optional[ModelOutput] = (
+            await self.current_dag_context.get_from_share_data(
+                BaseLLM.SHARE_DATA_KEY_MODEL_OUTPUT
+            )
         )
         if model_output:
             # Save model output message to storage

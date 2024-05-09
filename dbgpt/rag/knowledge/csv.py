@@ -1,4 +1,5 @@
 """CSV Knowledge."""
+
 import csv
 from typing import Any, Dict, List, Optional, Union
 

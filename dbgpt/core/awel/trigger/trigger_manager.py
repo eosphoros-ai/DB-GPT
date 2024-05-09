@@ -2,6 +2,7 @@
 
 After DB-GPT started, the trigger manager will be initialized and register all triggers
 """
+
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict

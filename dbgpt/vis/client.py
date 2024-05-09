@@ -1,4 +1,5 @@
 """Client for vis protocol."""
+
 from typing import Dict, Type
 
 from .base import Vis

@@ -1,4 +1,5 @@
 """Query rewrite."""
+
 from typing import List, Optional
 
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest

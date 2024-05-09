@@ -6,6 +6,7 @@
         ..code-block:: shell
             python examples/rag/metadata_filter_example.py
 """
+
 import asyncio
 import os
 

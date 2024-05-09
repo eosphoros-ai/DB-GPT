@@ -1,4 +1,5 @@
 """Knowledge Factory to create knowledge from file path and url."""
+
 from typing import Dict, List, Optional, Type, Union
 
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType

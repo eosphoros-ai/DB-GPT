@@ -2,6 +2,7 @@
 This code file will be deprecated in the future. 
 We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 """
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 

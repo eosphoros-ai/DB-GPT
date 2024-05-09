@@ -1,4 +1,5 @@
 """DuckDB connector."""
+
 from typing import Any, Iterable, Optional
 
 from sqlalchemy import create_engine, text

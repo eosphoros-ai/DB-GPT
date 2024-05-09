@@ -166,7 +166,9 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             temp_json = self._illegal_json_ends(temp_json)
             return temp_json
         except Exception:
-            raise ValueError("Failed to find a valid json in LLM response！" + temp_json)
+            raise ValueError(
+                "Failed to find a valid json in LLM response！" + temp_json
+            )
 
     def _json_interception(self, s, is_json_array: bool = False):
         try:

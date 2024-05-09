@@ -1,4 +1,5 @@
 """Evaluation for retriever."""
+
 from abc import ABC
 from typing import Any, Dict, List, Optional, Sequence, Type
 

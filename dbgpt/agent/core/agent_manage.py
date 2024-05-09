@@ -53,9 +53,9 @@ class AgentManager(BaseComponent):
         """Create a new AgentManager."""
         super().__init__(system_app)
         self.system_app = system_app
-        self._agents: Dict[
-            str, Tuple[Type[ConversableAgent], ConversableAgent]
-        ] = defaultdict()
+        self._agents: Dict[str, Tuple[Type[ConversableAgent], ConversableAgent]] = (
+            defaultdict()
+        )
 
         self._core_agents: Set[str] = set()
 

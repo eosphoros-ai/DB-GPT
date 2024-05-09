@@ -2,6 +2,7 @@
 
 It will remove in the future, just support db store type now.
 """
+
 import logging
 from typing import Type
 

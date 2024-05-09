@@ -20,7 +20,6 @@
             python examples/rag/summary_extractor_example.py
 """
 
-
 import asyncio
 import os
 

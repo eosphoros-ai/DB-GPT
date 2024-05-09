@@ -1,4 +1,5 @@
 """TXT Knowledge."""
+
 from typing import Any, Dict, List, Optional, Union
 
 import chardet

@@ -1,4 +1,5 @@
 """Resource loader module."""
+
 from collections import defaultdict
 from typing import Optional, Type, TypeVar
 

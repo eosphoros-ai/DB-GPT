@@ -1,4 +1,5 @@
 """TuGraph Connector."""
+
 import json
 from typing import Any, Dict, List, cast
 

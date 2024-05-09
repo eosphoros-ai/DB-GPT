@@ -1,4 +1,5 @@
 """Console utility functions for CLI."""
+
 import dataclasses
 import sys
 from functools import lru_cache

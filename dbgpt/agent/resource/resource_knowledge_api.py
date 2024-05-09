@@ -1,4 +1,5 @@
 """Knowledge resource API for the agent."""
+
 from typing import Any, Optional
 
 from .resource_api import ResourceClient, ResourceType

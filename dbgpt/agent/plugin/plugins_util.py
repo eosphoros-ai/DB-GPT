@@ -201,7 +201,9 @@ def update_from_git(
                 f.write(response.content)
             return plugin_repo_name
         else:
-            logger.error(f"Update plugins failed，response code：{response.status_code}")
+            logger.error(
+                f"Update plugins failed，response code：{response.status_code}"
+            )
             raise ValueError(f"Download plugin failed: {response.status_code}")
     except Exception as e:
         logger.error("update plugins from git exception!" + str(e))

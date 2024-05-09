@@ -1,4 +1,5 @@
 """The message operator."""
+
 import logging
 import uuid
 from abc import ABC

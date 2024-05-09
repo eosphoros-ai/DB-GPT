@@ -76,7 +76,7 @@ class ChatDashboard(BaseChat):
             "input": self.current_user_input,
             "dialect": self.database.dialect,
             "table_info": self.database.table_simple_info(),
-            "supported_chat_type": self.dashboard_template["supported_chart_type"]
+            "supported_chat_type": self.dashboard_template["supported_chart_type"],
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
 

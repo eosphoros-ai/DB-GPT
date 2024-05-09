@@ -1,4 +1,5 @@
 """AIWrapper for LLM."""
+
 import json
 import logging
 import traceback
@@ -75,14 +76,16 @@ class AIWrapper:
         elif context and messages and isinstance(messages, list):
             # Instantiate the messages
             params["messages"] = [
-                {
-                    **m,
-                    "content": self.instantiate(
-                        m["content"], context, allow_format_str_template
-                    ),
-                }
-                if m.get("content")
-                else m
+                (
+                    {
+                        **m,
+                        "content": self.instantiate(
+                            m["content"], context, allow_format_str_template
+                        ),
+                    }
+                    if m.get("content")
+                    else m
+                )
                 for m in messages
             ]
         return params

@@ -1,4 +1,5 @@
 """Token splitter."""
+
 from typing import Callable, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field, PrivateAttr

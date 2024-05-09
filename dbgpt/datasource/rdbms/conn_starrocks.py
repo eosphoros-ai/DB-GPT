@@ -1,4 +1,5 @@
 """StarRocks connector."""
+
 from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote

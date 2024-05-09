@@ -1,4 +1,5 @@
 """Milvus vector store."""
+
 from __future__ import annotations
 
 import json

@@ -1,4 +1,5 @@
 """Vector Store Module."""
+
 from typing import Any
 
 

@@ -16,6 +16,7 @@
     (102, 'Sort your data based on your commonly-used queries', today(),     2.718   ),
     (101, 'Granules are the smallest chunks of data read',      now() + 5,   3.14159 )
     """
+
 from typing import Dict, List
 
 import pytest

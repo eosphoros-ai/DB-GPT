@@ -2,6 +2,7 @@
 
 This runner will run the workflow in the current process.
 """
+
 import asyncio
 import logging
 import traceback

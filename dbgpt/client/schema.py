@@ -1,4 +1,5 @@
 """this module contains the schemas for the dbgpt client."""
+
 import json
 from datetime import datetime
 from enum import Enum

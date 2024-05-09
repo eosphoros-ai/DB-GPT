@@ -113,7 +113,11 @@ async def test_chat_completions(client: AsyncClient, expected_messages):
             "Hello world.",
             "abc",
         ),
-        ({"stream_messags": ["你好，我是", "张三。"], "api_keys": ["abc"]}, "你好，我是张三。", "abc"),
+        (
+            {"stream_messags": ["你好，我是", "张三。"], "api_keys": ["abc"]},
+            "你好，我是张三。",
+            "abc",
+        ),
     ],
     indirect=["client"],
 )
@@ -160,7 +164,11 @@ async def test_chat_completions_with_openai_lib_async_no_stream(
             "Hello world.",
             "abc",
         ),
-        ({"stream_messags": ["你好，我是", "张三。"], "api_keys": ["abc"]}, "你好，我是张三。", "abc"),
+        (
+            {"stream_messags": ["你好，我是", "张三。"], "api_keys": ["abc"]},
+            "你好，我是张三。",
+            "abc",
+        ),
     ],
     indirect=["client"],
 )

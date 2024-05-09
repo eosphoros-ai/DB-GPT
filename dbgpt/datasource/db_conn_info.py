@@ -1,4 +1,5 @@
 """Configuration for database connection."""
+
 from dbgpt._private.pydantic import BaseModel, Field
 
 

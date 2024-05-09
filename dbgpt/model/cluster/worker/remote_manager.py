@@ -168,9 +168,9 @@ class RemoteWorkerManager(LocalWorkerManager):
     async def get_all_model_instances(
         self, worker_type: str, healthy_only: bool = True
     ) -> List[WorkerRunData]:
-        instances: List[
-            ModelInstance
-        ] = await self.model_registry.get_all_model_instances(healthy_only=healthy_only)
+        instances: List[ModelInstance] = (
+            await self.model_registry.get_all_model_instances(healthy_only=healthy_only)
+        )
         result = []
         for instance in instances:
             name, wt = WorkerType.parse_worker_key(instance.model_name)

@@ -1,4 +1,5 @@
 """Translate the po file content to Chinese using LLM."""
+
 from typing import List, Dict, Any
 import asyncio
 import os

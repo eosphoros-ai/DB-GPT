@@ -1,4 +1,5 @@
 """Clickhouse connector."""
+
 import logging
 import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple

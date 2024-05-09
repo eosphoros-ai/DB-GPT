@@ -1,5 +1,6 @@
 """Import all models to make sure they are registered with SQLAlchemy.
 """
+
 from dbgpt.app.knowledge.chunk_db import DocumentChunkEntity
 from dbgpt.app.knowledge.document_db import KnowledgeDocumentEntity
 from dbgpt.app.openapi.api_v1.feedback.feed_back_db import ChatFeedBackEntity

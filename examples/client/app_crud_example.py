@@ -11,6 +11,7 @@ Example:
         # 2. Get an app
         res = await get_app(client, app_id="bf1c7561-13fc-4fe0-bf5d-c22e724766a8")
 """
+
 import asyncio
 
 from dbgpt.client import Client

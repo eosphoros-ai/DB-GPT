@@ -1,4 +1,5 @@
 """A module for generating custom prompt strings."""
+
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field

@@ -1,4 +1,5 @@
 """Command module."""
+
 import json
 from typing import Any, Dict
 
