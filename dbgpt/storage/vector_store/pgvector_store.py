@@ -93,7 +93,8 @@ class PGVectorStore(VectorStoreBase):
             List[str]: chunk ids.
         """
         lc_documents = [Chunk.chunk2langchain(chunk) for chunk in chunks]
-        return self.vector_store_client.from_documents(lc_documents)
+        self.vector_store_client.from_documents(lc_documents)
+        return [str(chunk.chunk_id) for chunk in lc_documents]
 
     def delete_vector_name(self, vector_name: str):
         """Delete vector by name.
@@ -109,4 +110,5 @@ class PGVectorStore(VectorStoreBase):
         Args:
             ids(str): vector ids, separated by comma.
         """
-        return self.vector_store_client.delete(ids)
+        delete_ids = ids.split(",")
+        return self.vector_store_client.delete(delete_ids)

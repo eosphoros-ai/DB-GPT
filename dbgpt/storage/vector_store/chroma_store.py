@@ -82,7 +82,7 @@ class ChromaStore(VectorStoreBase):
             # client_settings=chroma_settings,
             client=client,
             collection_metadata=collection_metadata,
-        )
+        )   # type: ignore
 
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None
