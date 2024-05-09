@@ -12,13 +12,14 @@ def format_paths(paths):
     formatted_paths = []
     for path in paths:
         formatted_path = []
-        nodes = list(path.nodes)
+        nodes = list(path['p'].nodes)
+        rels = list(path['p'].relationships)
         for i in range(len(nodes)):
             formatted_path.append(nodes[i]._properties['id'])
-            if i < len(path.relationships):
-                formatted_path.append(path.relationships[i]._properties['id'])
-            formatted_paths.append(formatted_path)
-    return formatted_paths        
+            if i < len(rels):
+                formatted_path.append(rels[i]._properties['id'])
+        formatted_paths.append(formatted_path)
+    return formatted_paths     
 
 def remove_duplicates(lst):
     seen = set()
@@ -56,12 +57,11 @@ class TuGraphStore(GraphStoreBase):
             self.conn.run(create_edge_gql)
         
 
-    def get_triplets(self, subj: str) -> List[List[str]]:
+    def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""
         query = f"""MATCH (n1:{self._node_label})-[r]->(n2:{self._node_label}) WHERE n1.id = "{subj}" RETURN r.id as rel, n2.id as obj;"""
         data = self.conn.run(query)
-        result = [[item['rel'],item['obj']] for item in data.data()]
-        return result
+        return [(record['rel'], record['obj']) for record in data['data']]
        
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
@@ -81,27 +81,26 @@ class TuGraphStore(GraphStoreBase):
         query = f'''MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth}]->() WHERE n.id IN {subjs} RETURN p LIMIT {limit}'''
         data = self.conn.run(query=query)
         result = []
-        formatted_paths = format_paths(data.value())
+        formatted_paths = format_paths(data['data'])
+        print(len(formatted_paths))
         for path in formatted_paths:
             result.append(path)
-        result = remove_duplicates(result)
+        # result = remove_duplicates(result)
         return result
         
 
-    def delete_triplets(self, subj: str, obj: str) -> None:
+    def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
         """Delete triplet."""
-        del_subj_query = f"MATCH (n:{self._node_label}) WHERE n.id = '{subj}' DELETE n"
-        del_obj_query = f"MATCH (n:{self._node_label}) WHERE n.id = '{obj}' DELETE n"
-        self.conn.run(query=del_subj_query)
-        self.conn.close_session()
-        self.conn.run(query=del_obj_query)
-        self.conn.close_session()
+        del_query = f"MATCH (n1:{self._node_label} {{id:'{sub}'}})-[r:{self._edge_label} {{id:'{rel}'}}]->(n2:{self._node_label} {{id:'{obj}'}}) DELETE n1,n2,r"     
+        self.conn.run(query=del_query)
+        
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
         query = "CALL dbms.graph.getGraphSchema()"
         data = self.conn.run(query=query)
-        return data.data()[0]["schema"]
+        schema = data['data'][0]["schema"]
+        return schema
 
     def explore(
         self,
@@ -112,9 +111,17 @@ class TuGraphStore(GraphStoreBase):
         result_limit: int = None
     ) -> MemoryGraph:
         # todo: bfs on tugraph
-        query = f'''MATCH p=(n:{self._node_label})-[r:{self._edge_label}]->() WHERE n.id IN {subs} RETURN p,r.id as rel LIMIT {result_limit}'''
-        self.conn.run(query=query)
-        return MemoryGraph()
+        query = f'''MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth_limit}]-() WHERE n.id IN {subs} RETURN p,r.id as rel LIMIT {result_limit}'''
+        data = self.conn.run(query=query)
+        result = []
+        formatted_paths = format_paths(data['data'])
+        print(len(formatted_paths))
+        for path in formatted_paths:
+            result.append(path)
+        mg = MemoryGraph()
+        # mg.upsert_vertex()
+        # mg.append_edge()
+        return mg
 
     def query(self, query: str, **args) -> MemoryGraph:
         self.conn.run(query=query)
