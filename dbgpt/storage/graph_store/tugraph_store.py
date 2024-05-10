@@ -148,20 +148,22 @@ class TuGraphStore(GraphStoreBase):
         fan: int = None,
         limit: int = None,
     ) -> MemoryGraph:
-        # todo: bfs on tugraph
-        query = f"""MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth}]-() WHERE n.id IN {subs} RETURN p LIMIT {limit}"""
-        data = self.conn.run(query=query)
-        result = []
-        formatted_paths = format_paths(data["data"])
-        for path in formatted_paths:
-            result.append(path)
-        graph = process_data(result)
-        mg = MemoryGraph()
-        for vertex in graph["nodes"]:
-            mg.upsert_vertex(vertex)
-        for edge in graph["edges"]:
-            mg.append_edge(edge)
-        return mg
+        if fan is not None:
+            raise ValueError("Fan functionality is not supported at this time.")
+        else:
+            query = f"""MATCH p=(n:{self._node_label})-[r:{self._edge_label}*1..{depth}]-() WHERE n.id IN {subs} RETURN p LIMIT {limit}"""
+            data = self.conn.run(query=query)
+            result = []
+            formatted_paths = format_paths(data["data"])
+            for path in formatted_paths:
+                result.append(path)
+            graph = process_data(result)
+            mg = MemoryGraph()
+            for vertex in graph["nodes"]:
+                mg.upsert_vertex(vertex)
+            for edge in graph["edges"]:
+                mg.append_edge(edge)
+            return mg
 
     def query(self, query: str, **args) -> MemoryGraph:
         self.conn.run(query=query)
