@@ -6,7 +6,7 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterator, List, Set, Tuple
+from typing import Any, List, Dict, Set, Iterator, Tuple
 
 import networkx as nx
 
@@ -43,7 +43,9 @@ class Elem(ABC):
 
     def format(self, label_key: str = None):
         formatted_props = [
-            f"{k}:{json.dumps(v)}" for k, v in self._props.items() if k != label_key
+            f"{k}:{json.dumps(v)}"
+            for k, v in self._props.items()
+            if k != label_key
         ]
         return f"{{{';'.join(formatted_props)}}}"
 
@@ -131,7 +133,9 @@ class Graph(ABC):
 
     @abstractmethod
     def get_neighbor_edges(
-        self, vid: str, direction: Direction = Direction.OUT
+        self,
+        vid: str,
+        direction: Direction = Direction.OUT
     ) -> List[Edge]:
         """Get neighbor edges"""
 
@@ -152,7 +156,11 @@ class Graph(ABC):
         """Delete edges(sid -> tid) matches props."""
 
     @abstractmethod
-    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
+    def del_neighbor_edges(
+        self,
+        vid: str,
+        direction: Direction = Direction.OUT
+    ):
         """Delete neighbor edges."""
 
     @abstractmethod
@@ -162,7 +170,7 @@ class Graph(ABC):
         direct: Direction = Direction.OUT,
         depth: int = None,
         fan: int = None,
-        limit: int = None,
+        limit: int = None
     ) -> "Graph":
         """Search on graph."""
 
@@ -178,7 +186,11 @@ class Graph(ABC):
 class MemoryGraph(Graph):
     """Graph class."""
 
-    def __init__(self, vertex_label: str = None, edge_label: str = "label"):
+    def __init__(
+        self,
+        vertex_label: str = None,
+        edge_label: str = "label"
+    ):
         assert edge_label, "Edge label is needed"
 
         # metadata
@@ -253,7 +265,10 @@ class MemoryGraph(Graph):
         return self._vs[vid]
 
     def get_neighbor_edges(
-        self, vid: str, direction: Direction = Direction.OUT, limit: int = None
+        self,
+        vid: str,
+        direction: Direction = Direction.OUT,
+        limit: int = None
     ) -> Iterator[Edge]:
         if direction == Direction.OUT:
             es = (e for es in self._oes[vid].values() for e in es)
@@ -282,7 +297,9 @@ class MemoryGraph(Graph):
         return iter(self._vs.values())
 
     def edges(self) -> Iterator[Edge]:
-        return iter(e for nbs in self._oes.values() for es in nbs.values() for e in es)
+        return iter(
+            e for nbs in self._oes.values() for es in nbs.values() for e in es
+        )
 
     def del_vertices(self, *vids: str):
         for vid in vids:
@@ -304,9 +321,13 @@ class MemoryGraph(Graph):
         self._oes[sid][tid] = remove_matches(self._oes[sid][tid])
         self._ies[tid][sid] = remove_matches(self._ies[tid][sid])
 
-        self._edge_count -= old_edge_cnt - len(self._oes[sid][tid])
+        self._edge_count -= (old_edge_cnt - len(self._oes[sid][tid]))
 
-    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
+    def del_neighbor_edges(
+        self,
+        vid: str,
+        direction: Direction = Direction.OUT
+    ):
         def del_index(idx, i_idx):
             for nid in idx[vid].keys():
                 self._edge_count -= len(i_idx[nid][vid])
@@ -325,7 +346,7 @@ class MemoryGraph(Graph):
         direct: Direction = Direction.OUT,
         depth: int = None,
         fan: int = None,
-        limit: int = None,
+        limit: int = None
     ) -> "MemoryGraph":
         subgraph = MemoryGraph()
 
@@ -343,7 +364,7 @@ class MemoryGraph(Graph):
         limit: int,
         _depth: int,
         _visited: Set,
-        _subgraph: "MemoryGraph",
+        _subgraph: "MemoryGraph"
     ):
         if vid in _visited or depth and _depth >= depth:
             return
@@ -376,13 +397,17 @@ class MemoryGraph(Graph):
                 {
                     "type": "VERTEX",
                     "label": f"{self._vertex_label}",
-                    "properties": [{"name": k} for k in self._vertex_prop_keys],
+                    "properties": [
+                        {"name": k} for k in self._vertex_prop_keys
+                    ],
                 },
                 {
                     "type": "EDGE",
                     "label": f"{self._edge_label}",
-                    "properties": [{"name": k} for k in self._edge_prop_keys],
-                },
+                    "properties": [
+                        {"name": k} for k in self._edge_prop_keys
+                    ],
+                }
             ]
         }
 
