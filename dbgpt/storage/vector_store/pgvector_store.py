@@ -66,7 +66,7 @@ class PGVectorStore(VectorStoreBase):
             embedding_function=self.embeddings,
             collection_name=self.collection_name,
             connection_string=self.connection_string,
-        )
+        )   # mypy: ignore
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None
