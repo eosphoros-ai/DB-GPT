@@ -7,7 +7,7 @@ from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelReques
 from dbgpt.rag.transformer.base import ExtractorBase
 
 logger = logging.getLogger(__name__)
-
+limit_num = 10
 
 class LLMExtractor(ExtractorBase, ABC):
     """LLMExtractor class."""
@@ -18,7 +18,7 @@ class LLMExtractor(ExtractorBase, ABC):
         self._model_name = model_name
         self._prompt_template = prompt_template
 
-    async def extract(self, text: str, limit: int = None) -> List:
+    async def extract(self, text: str, limit: int = limit_num) -> List:
         """Extract keywords from text using the configured model."""
         template = HumanPromptTemplate.from_template(self._prompt_template)
         messages = template.format_messages(text=text)
