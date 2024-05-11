@@ -73,9 +73,9 @@ class Config(metaclass=Singleton):
         self.wenxin_model_version = os.getenv("WEN_XIN_MODEL_VERSION")
         if self.wenxin_proxy_api_key and self.wenxin_proxy_api_secret:
             os.environ["wenxin_proxyllm_proxy_api_key"] = self.wenxin_proxy_api_key
-            os.environ[
-                "wenxin_proxyllm_proxy_api_secret"
-            ] = self.wenxin_proxy_api_secret
+            os.environ["wenxin_proxyllm_proxy_api_secret"] = (
+                self.wenxin_proxy_api_secret
+            )
             os.environ["wenxin_proxyllm_proxyllm_backend"] = (
                 self.wenxin_model_version or ""
             )
@@ -251,7 +251,7 @@ class Config(metaclass=Singleton):
         self.ElasticSearch_PORT = os.getenv("ElasticSearch_PORT", "9200")
         self.ElasticSearch_USERNAME = os.getenv("ElasticSearch_USERNAME", None)
         self.ElasticSearch_PASSWORD = os.getenv("ElasticSearch_PASSWORD", None)
-        
+
         ## OceanBase Configuration
         self.OB_HOST = os.getenv("OB_HOST", "127.0.0.1")
         self.OB_PORT = int(os.getenv("OB_PORT", "2881"))

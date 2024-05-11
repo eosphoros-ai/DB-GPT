@@ -52,7 +52,6 @@ document_chunk_dao = DocumentChunkDao()
 logger = logging.getLogger(__name__)
 CFG = Config()
 
-
 # default summary max iteration call with llm.
 DEFAULT_SUMMARY_MAX_ITERATION = 5
 # default summary concurrency call with llm.
@@ -480,28 +479,35 @@ class KnowledgeService:
             raise Exception(f"there are no or more than one document called {doc_name}")
         vector_ids = documents[0].vector_ids
         if vector_ids is not None:
-            embedding_factory = CFG.SYSTEM_APP.get_component("embedding_factory", EmbeddingFactory)
-            embedding_fn = embedding_factory.create(model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL])    
-            
+            embedding_factory = CFG.SYSTEM_APP.get_component(
+                "embedding_factory", EmbeddingFactory
+            )
+            embedding_fn = embedding_factory.create(
+                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+            )
+
             if CFG.VECTOR_STORE_TYPE == "Milvus":
                 logger.info(f"正在删除Milvus类型的文档。")
-                config = VectorStoreConfig(name=space_name,            
-                                        embedding_fn=embedding_fn,   
-                                        max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,    
-                                        user=CFG.MILVUS_USERNAME,
-                                        password=CFG.MILVUS_PASSWORD,
-                                        ) 
+                config = VectorStoreConfig(
+                    name=space_name,
+                    embedding_fn=embedding_fn,
+                    max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
+                    user=CFG.MILVUS_USERNAME,
+                    password=CFG.MILVUS_PASSWORD,
+                )
             elif CFG.VECTOR_STORE_TYPE == "ElasticSearch":
                 logger.info(f"正在删除ES类型的文档。")
-                config = VectorStoreConfig(name=space_name, embedding_fn=embedding_fn,  ## wwt add
-                                        max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,   ## wwt add
-                                        user=CFG.ElasticSearch_USERNAME,
-                                        password=CFG.ElasticSearch_PASSWORD,
-                                        )
+                config = VectorStoreConfig(
+                    name=space_name,
+                    embedding_fn=embedding_fn,  ## wwt add
+                    max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,  ## wwt add
+                    user=CFG.ElasticSearch_USERNAME,
+                    password=CFG.ElasticSearch_PASSWORD,
+                )
             elif CFG.VECTOR_STORE_TYPE == "Chroma":
                 config = VectorStoreConfig(name=space_name)
             else:
-                config = VectorStoreConfig(name=space_name)  
+                config = VectorStoreConfig(name=space_name)
             vector_store_connector = VectorStoreConnector(
                 vector_store_type=CFG.VECTOR_STORE_TYPE,
                 vector_store_config=config,
