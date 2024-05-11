@@ -1,7 +1,7 @@
 """Knowledge graph class."""
 import asyncio
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.base import ExtractorBase
@@ -19,7 +19,7 @@ class KnowledgeGraph(KnowledgeGraphBase):
         self,
         graph_store: GraphStoreBase,
         triplet_extractor: ExtractorBase,
-        keyword_extractor: ExtractorBase
+        keyword_extractor: ExtractorBase,
     ) -> None:
         """Create a KnowledgeGraph instance."""
         self._graph_store = graph_store
@@ -27,7 +27,8 @@ class KnowledgeGraph(KnowledgeGraphBase):
         self._keyword_extractor = keyword_extractor
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
-        # extract and persist triplets to graph store
+        """Extract and persist triplets to graph store."""
+
         async def process_chunk(chunk):
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
@@ -44,8 +45,9 @@ class KnowledgeGraph(KnowledgeGraphBase):
         text,
         topk,
         score_threshold: float,
-        filters: Optional[MetadataFilters] = None
+        filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
+        """Search for similar items based on text and returns chunks with scores."""
         if not filters:
             raise ValueError("Filters on knowledge graph not supported yet")
 
@@ -53,9 +55,7 @@ class KnowledgeGraph(KnowledgeGraphBase):
         async def process_query(query):
             keywords = await self._keyword_extractor.extract(query)
             subgraph = self._graph_store.explore(keywords, limit=topk)
-            return [
-                Chunk(content=subgraph.format(), metadata=subgraph.schema())
-            ]
+            return [Chunk(content=subgraph.format(), metadata=subgraph.schema())]
 
         # wait async task completed
         loop = asyncio.get_event_loop()

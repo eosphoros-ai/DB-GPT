@@ -6,7 +6,7 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
-from typing import Any, List, Dict, Set, Iterator, Tuple
+from typing import Any, Dict, Iterator, List, Set, Tuple
 
 import networkx as nx
 
@@ -14,38 +14,46 @@ logger = logging.getLogger(__name__)
 
 
 class Direction(Enum):
+    """Direction class."""
+
     OUT = 0
     IN = 1
     BOTH = 2
 
 
 class Elem(ABC):
-    """Elem class"""
+    """Elem class."""
 
     def __init__(self):
+        """Initialize Elem."""
         self._props = {}
 
     @property
     def props(self) -> Dict[str, Any]:
+        """Get all the properties of Elem."""
         return self._props
 
     def set_prop(self, key: str, value: Any):
+        """Set a property of ELem."""
         self._props[key] = value
 
     def get_prop(self, key: str):
+        """Get one of the properties of Elem."""
         return self._props.get(key)
 
     def del_prop(self, key: str):
+        """Delete a property of ELem."""
         self._props.pop(key, None)
 
     def has_props(self, **props):
+        """Check if the element has the specified properties with the given values."""
         return all(self._props.get(k) == v for k, v in props.items())
 
+    @abstractmethod
     def format(self, label_key: str = None):
+        """Format properties into a string."""
         formatted_props = [
-            f"{k}:{json.dumps(v)}"
-            for k, v in self._props.items()
-            if k != label_key
+            f"{k}:{json.dumps(v)}" for k, v in self._props.items() if k != label_key
         ]
         return f"{{{';'.join(formatted_props)}}}"
 
@@ -54,6 +62,7 @@ class Vertex(Elem):
     """Vertex class."""
 
     def __init__(self, vid: str, **props):
+        """Initialize Vertex."""
         super().__init__()
         self._vid = vid
         for k, v in props.items():
@@ -61,9 +70,11 @@ class Vertex(Elem):
 
     @property
     def vid(self) -> str:
+        """Return the vertex ID."""
         return self._vid
 
     def format(self, label_key: str = None):
+        """Format vertex properties into a string."""
         label = self.get_prop(label_key) if label_key else self._vid
         props_str = super().format(label_key)
         if props_str == "{}":
@@ -72,6 +83,7 @@ class Vertex(Elem):
             return f"({label}:{props_str})"
 
     def __str__(self):
+        """Return the vertex ID as its string representation."""
         return f"({self._vid})"
 
 
@@ -79,6 +91,7 @@ class Edge(Elem):
     """Edge class."""
 
     def __init__(self, sid: str, tid: str, **props):
+        """Initialize Edge."""
         super().__init__()
         self._sid = sid
         self._tid = tid
@@ -87,14 +100,16 @@ class Edge(Elem):
 
     @property
     def sid(self) -> str:
+        """Return the source vertex ID of the edge."""
         return self._sid
 
     @property
     def tid(self) -> str:
+        """Return the target vertex ID of the edge."""
         return self._tid
 
     def nid(self, vid):
-        """return neighbor id"""
+        """Return neighbor id."""
         if vid == self._sid:
             return self._tid
         elif vid == self._tid:
@@ -103,6 +118,7 @@ class Edge(Elem):
             raise ValueError(f"Get nid of {vid} on {self} failed")
 
     def format(self, label_key: str = None):
+        """Format the edge properties into a string."""
         label = self.get_prop(label_key) if label_key else ""
         props_str = super().format(label_key)
         if props_str == "{}":
@@ -111,14 +127,18 @@ class Edge(Elem):
             return f"-[{label}:{props_str}]->" if label else f"-[{props_str}]->"
 
     def triplet(self, label_key: str) -> Tuple[str, str, str]:
+        """Return a triplet."""
         assert label_key, "label key is needed"
         return self._sid, str(self.get_prop(label_key)), self._tid
 
     def __str__(self):
+        """Return the edge '(sid)->(tid)'."""
         return f"({self._sid})->({self._tid})"
 
 
 class Graph(ABC):
+    """Graph class."""
+
     @abstractmethod
     def upsert_vertex(self, vertex: Vertex):
         """Add a vertex."""
@@ -133,11 +153,9 @@ class Graph(ABC):
 
     @abstractmethod
     def get_neighbor_edges(
-        self,
-        vid: str,
-        direction: Direction = Direction.OUT
+        self, vid: str, direction: Direction = Direction.OUT
     ) -> List[Edge]:
-        """Get neighbor edges"""
+        """Get neighbor edges."""
 
     @abstractmethod
     def vertices(self) -> Iterator[Vertex]:
@@ -156,11 +174,7 @@ class Graph(ABC):
         """Delete edges(sid -> tid) matches props."""
 
     @abstractmethod
-    def del_neighbor_edges(
-        self,
-        vid: str,
-        direction: Direction = Direction.OUT
-    ):
+    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
         """Delete neighbor edges."""
 
     @abstractmethod
@@ -170,7 +184,7 @@ class Graph(ABC):
         direct: Direction = Direction.OUT,
         depth: int = None,
         fan: int = None,
-        limit: int = None
+        limit: int = None,
     ) -> "Graph":
         """Search on graph."""
 
@@ -186,11 +200,8 @@ class Graph(ABC):
 class MemoryGraph(Graph):
     """Graph class."""
 
-    def __init__(
-        self,
-        vertex_label: str = None,
-        edge_label: str = "label"
-    ):
+    def __init__(self, vertex_label: str = None, edge_label: str = "label"):
+        """Initialize MemoryGraph with vertex label and edge label."""
         assert edge_label, "Edge label is needed"
 
         # metadata
@@ -207,29 +218,36 @@ class MemoryGraph(Graph):
 
     @property
     def vertex_label(self):
+        """Return the label for vertices."""
         return self._vertex_label
 
     @property
     def edge_label(self):
+        """Return the label for edges."""
         return self._edge_label
 
     @property
     def vertex_prop_keys(self):
+        """Return a set of property keys for vertices."""
         return self._vertex_prop_keys
 
     @property
     def edge_prop_keys(self):
+        """Return a set of property keys for edges."""
         return self._edge_prop_keys
 
     @property
     def vertex_count(self):
+        """Return the number of vertices in the graph."""
         return len(self._vs)
 
     @property
     def edge_count(self):
+        """Return the count of edges in the graph."""
         return self._edge_count
 
     def upsert_vertex(self, vertex: Vertex):
+        """Insert or update a vertex based on its ID."""
         if vertex.vid in self._vs:
             self._vs[vertex.vid].props.update(vertex.props)
         else:
@@ -239,6 +257,7 @@ class MemoryGraph(Graph):
         self._vertex_prop_keys.update(vertex.props.keys())
 
     def append_edge(self, edge: Edge):
+        """Append an edge if it doesn't exist; requires edge label."""
         if self.edge_label not in edge.props.keys():
             raise ValueError(f"Edge prop '{self.edge_label}' is needed")
 
@@ -262,14 +281,13 @@ class MemoryGraph(Graph):
         return True
 
     def get_vertex(self, vid: str) -> Vertex:
+        """Retrieve a vertex by ID."""
         return self._vs[vid]
 
     def get_neighbor_edges(
-        self,
-        vid: str,
-        direction: Direction = Direction.OUT,
-        limit: int = None
+        self, vid: str, direction: Direction = Direction.OUT, limit: int = None
     ) -> Iterator[Edge]:
+        """Get edges connected to a vertex by direction."""
         if direction == Direction.OUT:
             es = (e for es in self._oes[vid].values() for e in es)
 
@@ -294,19 +312,21 @@ class MemoryGraph(Graph):
         return itertools.islice(es, limit) if limit else es
 
     def vertices(self) -> Iterator[Vertex]:
+        """Return vertices."""
         return iter(self._vs.values())
 
     def edges(self) -> Iterator[Edge]:
-        return iter(
-            e for nbs in self._oes.values() for es in nbs.values() for e in es
-        )
+        """Return edges."""
+        return iter(e for nbs in self._oes.values() for es in nbs.values() for e in es)
 
     def del_vertices(self, *vids: str):
+        """Delete specified vertices."""
         for vid in vids:
             self.del_neighbor_edges(vid, Direction.BOTH)
             self._vs.pop(vid, None)
 
     def del_edges(self, sid: str, tid: str, **props):
+        """Delete edges."""
         old_edge_cnt = len(self._oes[sid][tid])
 
         if not props:
@@ -321,13 +341,11 @@ class MemoryGraph(Graph):
         self._oes[sid][tid] = remove_matches(self._oes[sid][tid])
         self._ies[tid][sid] = remove_matches(self._ies[tid][sid])
 
-        self._edge_count -= (old_edge_cnt - len(self._oes[sid][tid]))
+        self._edge_count -= old_edge_cnt - len(self._oes[sid][tid])
 
-    def del_neighbor_edges(
-        self,
-        vid: str,
-        direction: Direction = Direction.OUT
-    ):
+    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
+        """Delete all neighbor edges."""
+
         def del_index(idx, i_idx):
             for nid in idx[vid].keys():
                 self._edge_count -= len(i_idx[nid][vid])
@@ -346,8 +364,9 @@ class MemoryGraph(Graph):
         direct: Direction = Direction.OUT,
         depth: int = None,
         fan: int = None,
-        limit: int = None
+        limit: int = None,
     ) -> "MemoryGraph":
+        """Search the graph from a vertex with specified parameters."""
         subgraph = MemoryGraph()
 
         for vid in vids:
@@ -364,7 +383,7 @@ class MemoryGraph(Graph):
         limit: int,
         _depth: int,
         _visited: Set,
-        _subgraph: "MemoryGraph"
+        _subgraph: "MemoryGraph",
     ):
         if vid in _visited or depth and _depth >= depth:
             return
@@ -392,26 +411,24 @@ class MemoryGraph(Graph):
             )
 
     def schema(self) -> Dict[str, Any]:
+        """Return schema."""
         return {
             "schema": [
                 {
                     "type": "VERTEX",
                     "label": f"{self._vertex_label}",
-                    "properties": [
-                        {"name": k} for k in self._vertex_prop_keys
-                    ],
+                    "properties": [{"name": k} for k in self._vertex_prop_keys],
                 },
                 {
                     "type": "EDGE",
                     "label": f"{self._edge_label}",
-                    "properties": [
-                        {"name": k} for k in self._edge_prop_keys
-                    ],
-                }
+                    "properties": [{"name": k} for k in self._edge_prop_keys],
+                },
             ]
         }
 
     def format(self) -> str:
+        """Format graph to string."""
         vs_str = "\n".join(v.format(self.vertex_label) for v in self.vertices())
         es_str = "\n".join(
             f"{self.get_vertex(e.sid).format(self.vertex_label)}"
@@ -422,7 +439,7 @@ class MemoryGraph(Graph):
         return f"Vertices:\n{vs_str}\nEdges:\n{es_str}"
 
     def graphviz(self, name="g"):
-        """View graphviz graph: https://dreampuf.github.io/GraphvizOnline"""
+        """View graphviz graph: https://dreampuf.github.io/GraphvizOnline."""
         g = nx.MultiDiGraph()
         for vertex in self.vertices():
             g.add_node(vertex.vid)

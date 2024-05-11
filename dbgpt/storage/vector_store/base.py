@@ -1,9 +1,8 @@
 """Vector store base class."""
 import logging
+import math
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List
-
-import math
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Embeddings, Chunk

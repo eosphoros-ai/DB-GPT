@@ -9,7 +9,7 @@ from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex
 logger = logging.getLogger(__name__)
 
 
-def format_paths(paths):
+def _format_paths(paths):
     formatted_paths = []
     for path in paths:
         formatted_path = []
@@ -23,7 +23,7 @@ def format_paths(paths):
     return formatted_paths
 
 
-def remove_duplicates(lst):
+def _remove_duplicates(lst):
     seen = set()
     result = []
     for sub_lst in lst:
@@ -34,7 +34,7 @@ def remove_duplicates(lst):
     return result
 
 
-def process_data(data):
+def _process_data(data):
     nodes = {}
     edges = {}
 
@@ -100,17 +100,15 @@ class TuGraphStore(GraphStoreBase):
             )
             self.conn.run(create_vertex_gql)
         if not self._check_label("edge"):
-            create_edge_gql = (
-                f"""CALL db.createLabel(
-                'edge', '{self._edge_label}', '[["{self._node_label}", 
+            create_edge_gql = f"""CALL db.createLabel(
+                'edge', '{self._edge_label}', '[["{self._node_label}",
                 "{self._node_label}"]]', ["id",STRING,false])"""
-            )
             self.conn.run(create_edge_gql)
 
     def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""
         query = (
-            f'MATCH (n1:{self._node_label})-[r]->(n2:{self._node_label}) '
+            f"MATCH (n1:{self._node_label})-[r]->(n2:{self._node_label}) "
             f'WHERE n1.id = "{subj}" RETURN r.id as rel, n2.id as obj;'
         )
         data = self.conn.run(query)
@@ -141,10 +139,10 @@ class TuGraphStore(GraphStoreBase):
         )
         data = self.conn.run(query=query)
         result = []
-        formatted_paths = format_paths(data)
+        formatted_paths = _format_paths(data)
         for path in formatted_paths:
             result.append(path)
-        # result = remove_duplicates(result)
+        # result = _remove_duplicates(result)
         return result
 
     def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
@@ -171,6 +169,7 @@ class TuGraphStore(GraphStoreBase):
         fan: int = None,
         limit: int = None,
     ) -> MemoryGraph:
+        """Explore the graph from given subjects up to a depth."""
         if fan is not None:
             raise ValueError("Fan functionality is not supported at this time.")
         else:
@@ -181,10 +180,10 @@ class TuGraphStore(GraphStoreBase):
             )
             data = self.conn.run(query=query)
             result = []
-            formatted_paths = format_paths(data)
+            formatted_paths = _format_paths(data)
             for path in formatted_paths:
                 result.append(path)
-            graph = process_data(result)
+            graph = _process_data(result)
             mg = MemoryGraph()
             for vertex in graph["nodes"]:
                 mg.upsert_vertex(vertex)
@@ -193,6 +192,7 @@ class TuGraphStore(GraphStoreBase):
             return mg
 
     def query(self, query: str, **args) -> MemoryGraph:
+        """Execute a query on graph."""
         self.conn.run(query=query)
         # todo: construct MemoryGraph
         return MemoryGraph()

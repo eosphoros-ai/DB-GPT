@@ -46,8 +46,7 @@ class IndexStoreBase(ABC):
         """
 
     def load_document_with_limit(
-        self, chunks: List[Chunk], max_chunks_once_load: int = 10,
-        max_threads: int = 1
+        self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
     ) -> List[str]:
         """Load document in index database with specified limit.
 
@@ -61,7 +60,7 @@ class IndexStoreBase(ABC):
         """
         # Group the chunks into chunks of size max_chunks
         chunk_groups = [
-            chunks[i: i + max_chunks_once_load]
+            chunks[i : i + max_chunks_once_load]
             for i in range(0, len(chunks), max_chunks_once_load)
         ]
         logger.info(
@@ -79,8 +78,7 @@ class IndexStoreBase(ABC):
                 success_ids = future.result()
                 ids.extend(success_ids)
                 loaded_cnt += len(success_ids)
-                logger.info(
-                    f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
+                logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
         logger.info(
             f"Loaded {len(chunks)} chunks in {time.time() - start_time} seconds"
         )

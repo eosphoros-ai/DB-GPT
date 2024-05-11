@@ -21,12 +21,7 @@ class TuGraphConnector(BaseConnector):
 
     @classmethod
     def from_uri_db(
-        cls,
-        host: str,
-        port: int,
-        user: str,
-        pwd: str,
-        db_name: str
+        cls, host: str, port: int, user: str, pwd: str, db_name: str
     ) -> "TuGraphConnector":
         """Create a new TuGraphConnector from host, port, user, pwd, db_name."""
         try:
@@ -76,13 +71,9 @@ class TuGraphConnector(BaseConnector):
         """Run GQL."""
         with self._driver.session(database=self._graph) as session:
             result = session.run(query)
-            return [record for record in result]
+            return list(result)
 
-    def get_columns(
-        self,
-        table_name: str,
-        table_type: str = "vertex"
-    ) -> List[Dict]:
+    def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get fields about specified graph.
 
         Args:
@@ -98,11 +89,9 @@ class TuGraphConnector(BaseConnector):
             data = []
             result = None
             if table_type == "vertex":
-                result = session.run(
-                    f"CALL db.getVertexSchema('{table_name}')").data()
+                result = session.run(f"CALL db.getVertexSchema('{table_name}')").data()
             else:
-                result = session.run(
-                    f"CALL db.getEdgeSchema('{table_name}')").data()
+                result = session.run(f"CALL db.getEdgeSchema('{table_name}')").data()
             schema_info = json.loads(result[0]["schema"])
             for prop in schema_info.get("properties", []):
                 prop_dict = {
@@ -118,11 +107,7 @@ class TuGraphConnector(BaseConnector):
                 data.append(prop_dict)
             return data
 
-    def get_indexes(
-        self,
-        table_name: str,
-        table_type: str = "vertex"
-    ) -> List[Dict]:
+    def get_indexes(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get table indexes about specified table.
 
         Args:
@@ -138,10 +123,7 @@ class TuGraphConnector(BaseConnector):
             ).data()
             transformed_data = []
             for item in result:
-                new_dict = {
-                    "name": item["field"],
-                    "column_names": [item["field"]]
-                }
+                new_dict = {"name": item["field"], "column_names": [item["field"]]}
                 transformed_data.append(new_dict)
             return transformed_data
 
