@@ -177,6 +177,36 @@ class VectorStoreBase(ABC):
         )
         return ids
 
+    def filter_by_score_threshold(
+        self, chunks: List[Chunk], score_threshold: float
+    ) -> List[Chunk]:
+        """Filter chunks by score threshold.
+
+        Args:
+            chunks(List[Chunks]): The chunks to filter.
+            score_threshold(float): The score threshold.
+        Return:
+            List[Chunks]: The filtered chunks.
+        """
+        candidates_chunks = chunks
+        if score_threshold is not None:
+            candidates_chunks = [
+                Chunk(
+                    metadata=chunk.metadata,
+                    content=chunk.content,
+                    score=chunk.score,
+                    chunk_id=str(id),
+                )
+                for chunk in chunks
+                if chunk.score >= score_threshold
+            ]
+            if len(candidates_chunks) == 0:
+                logger.warning(
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
+                )
+        return candidates_chunks
+
     @abstractmethod
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

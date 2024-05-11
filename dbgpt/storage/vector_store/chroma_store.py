@@ -1,7 +1,7 @@
 """Chroma vector store."""
 import logging
 import os
-from typing import List, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from chromadb import PersistentClient
 from chromadb.config import Settings
@@ -17,6 +17,7 @@ from .filters import FilterOperator, MetadataFilters
 
 logger = logging.getLogger(__name__)
 
+CHROMA_COLLECTION_NAME = "langchain"
 
 @register_resource(
     _("Chroma Vector Store"),
@@ -55,9 +56,11 @@ class ChromaStore(VectorStoreBase):
     """Chroma vector store."""
 
     def __init__(self, vector_store_config: ChromaVectorConfig) -> None:
-        """Create a ChromaStore instance."""
-        from langchain.vectorstores import Chroma
+        """Create a ChromaStore instance.
 
+        Args:
+            vector_store_config(ChromaVectorConfig): vector store config.
+        """
         chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
@@ -71,31 +74,35 @@ class ChromaStore(VectorStoreBase):
             persist_directory=self.persist_dir,
             anonymized_telemetry=False,
         )
-        client = PersistentClient(path=self.persist_dir, settings=chroma_settings)
+        self._chroma_client = PersistentClient(
+            path=self.persist_dir, settings=chroma_settings
+        )
 
         collection_metadata = chroma_vector_config.get("collection_metadata") or {
             "hnsw:space": "cosine"
         }
-        self.vector_store_client = Chroma(
-            persist_directory=self.persist_dir,
-            embedding_function=self.embeddings,
-            # client_settings=chroma_settings,
-            client=client,
-            collection_metadata=collection_metadata,
-        )  # type: ignore
+        self._collection = self._chroma_client.get_or_create_collection(
+            name=CHROMA_COLLECTION_NAME,
+            embedding_function=None,
+            metadata=collection_metadata,
+        )
 
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
         """Search similar documents."""
         logger.info("ChromaStore similar search")
-        where_filters = self.convert_metadata_filters(filters) if filters else None
-        lc_documents = self.vector_store_client.similarity_search(
-            text, topk, filter=where_filters
+        chroma_results = self._query(
+            text=text,
+            topk=topk,
+            filters=filters,
         )
         return [
-            Chunk(content=doc.page_content, metadata=doc.metadata)
-            for doc in lc_documents
+            Chunk(content=chroma_result[0], metadata=chroma_result[1] or {}, score=0.0)
+            for chroma_result in zip(
+                chroma_results["documents"][0],
+                chroma_results["metadatas"][0],
+            )
         ]
 
     def similar_search_with_scores(
@@ -114,19 +121,26 @@ class ChromaStore(VectorStoreBase):
             filters(MetadataFilters): metadata filters, defaults to None
         """
         logger.info("ChromaStore similar search with scores")
-        where_filters = self.convert_metadata_filters(filters) if filters else None
-        docs_and_scores = (
-            self.vector_store_client.similarity_search_with_relevance_scores(
-                query=text,
-                k=topk,
-                score_threshold=score_threshold,
-                filter=where_filters,
-            )
+        chroma_results = self._query(
+            text=text,
+            topk=topk,
+            filters=filters,
         )
-        return [
-            Chunk(content=doc.page_content, metadata=doc.metadata, score=score)
-            for doc, score in docs_and_scores
+        chunks = [
+            (
+                Chunk(
+                    content=chroma_result[0],
+                    metadata=chroma_result[1] or {},
+                    score=chroma_result[2],
+                )
+            )
+            for chroma_result in zip(
+                chroma_results["documents"][0],
+                chroma_results["metadatas"][0],
+                chroma_results["distances"][0],
+            )
         ]
+        return self.filter_by_score_threshold(chunks, score_threshold)
 
     def vector_name_exists(self) -> bool:
         """Whether vector name exists."""
@@ -138,19 +152,24 @@ class ChromaStore(VectorStoreBase):
         files = list(filter(lambda f: f != "chroma.sqlite3", files))
         return len(files) > 0
 
+
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document to vector store."""
         logger.info("ChromaStore load document")
         texts = [chunk.content for chunk in chunks]
         metadatas = [chunk.metadata for chunk in chunks]
         ids = [chunk.chunk_id for chunk in chunks]
-        self.vector_store_client.add_texts(texts=texts, metadatas=metadatas, ids=ids)
+        chroma_metadatas = [
+            _transform_chroma_metadata(metadata) for metadata in metadatas
+        ]
+        self._add_texts(texts=texts, metadatas=chroma_metadatas, ids=ids)
         return ids
 
     def delete_vector_name(self, vector_name: str):
         """Delete vector name."""
         logger.info(f"chroma vector_name:{vector_name} begin delete...")
-        self.vector_store_client.delete_collection()
+        # self.vector_store_client.delete_collection()
+        self._chroma_client.delete_collection(self._collection.name)
         self._clean_persist_folder()
         return True
 
@@ -159,8 +178,7 @@ class ChromaStore(VectorStoreBase):
         logger.info(f"begin delete chroma ids: {ids}")
         ids = ids.split(",")
         if len(ids) > 0:
-            collection = self.vector_store_client._collection
-            collection.delete(ids=ids)
+            self._collection.delete(ids=ids)
 
     def convert_metadata_filters(
         self,
@@ -198,6 +216,65 @@ class ChromaStore(VectorStoreBase):
             where_filters[chroma_condition] = filters_list
         return where_filters
 
+    def _add_texts(
+        self,
+        texts: Iterable[str],
+        ids: List[str],
+        metadatas: Optional[List[Mapping[str, Union[str, int, float, bool]]]] = None,
+    ) -> List[str]:
+        """Add texts to Chroma collection.
+
+        Args:
+            texts(Iterable[str]): texts.
+            metadatas(Optional[List[dict]]): metadatas.
+            ids(Optional[List[str]]): ids.
+        Returns:
+            List[str]: ids.
+        """
+        embeddings = None
+        texts = list(texts)
+        if self.embeddings is not None:
+            embeddings = self.embeddings.embed_documents(texts)
+        if metadatas:
+            try:
+                self._collection.upsert(
+                    metadatas=metadatas,
+                    embeddings=embeddings,  # type: ignore
+                    documents=texts,
+                    ids=ids,
+                )
+            except ValueError as e:
+                logger.error(f"Error upsert chromadb with metadata: {e}")
+        else:
+            self._collection.upsert(
+                embeddings=embeddings,  # type: ignore
+                documents=texts,
+                ids=ids,
+            )
+        return ids
+
+    def _query(self, text: str, topk: int, filters: Optional[MetadataFilters] = None):
+        """Query Chroma collection.
+
+        Args:
+            text(str): query text.
+            topk(int): topk.
+            filters(MetadataFilters): metadata filters.
+        Returns:
+            dict: query result.
+        """
+        if not text:
+            return {}
+        where_filters = self.convert_metadata_filters(filters) if filters else None
+        if self.embeddings is None:
+            raise ValueError("Chroma Embeddings is None")
+        query_embedding = self.embeddings.embed_query(text)
+        return self._collection.query(
+            query_embeddings=query_embedding,
+            n_results=topk,
+            where=where_filters,
+        )
+
     def _clean_persist_folder(self):
         """Clean persist folder."""
         for root, dirs, files in os.walk(self.persist_dir, topdown=False):
@@ -230,3 +307,14 @@ def _convert_chroma_filter_operator(operator: str) -> str:
         return "$lte"
     else:
         raise ValueError(f"Chroma Where operator {operator} not supported")
+
+
+def _transform_chroma_metadata(
+    metadata: Dict[str, Any]
+) -> Mapping[str, str | int | float | bool]:
+    """Transform metadata to Chroma metadata."""
+    transformed = {}
+    for key, value in metadata.items():
+        if isinstance(value, (str, int, float, bool)):
+            transformed[key] = value
+    return transformed
