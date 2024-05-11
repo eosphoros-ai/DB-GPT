@@ -17,6 +17,7 @@ from .filters import FilterOperator, MetadataFilters
 
 logger = logging.getLogger(__name__)
 
+CHROMA_COLLECTION_NAME = "langchain"
 
 @register_resource(
     _("Chroma Vector Store"),
@@ -81,7 +82,7 @@ class ChromaStore(VectorStoreBase):
             "hnsw:space": "cosine"
         }
         self._collection = self._chroma_client.get_or_create_collection(
-            name=vector_store_config.name,
+            name=CHROMA_COLLECTION_NAME,
             embedding_function=None,
             metadata=collection_metadata,
         )
@@ -150,6 +151,7 @@ class ChromaStore(VectorStoreBase):
         # Skip default file: chroma.sqlite3
         files = list(filter(lambda f: f != "chroma.sqlite3", files))
         return len(files) > 0
+
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document to vector store."""
