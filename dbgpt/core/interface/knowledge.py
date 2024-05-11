@@ -112,7 +112,7 @@ class Chunk(Document):
     def chunk2langchain(cls, chunk):
         """Transform Chunk to Langchain format."""
         try:
-            from langchain.schema import Document as LCDocument
+            from langchain.schema import Document as LCDocument  # mypy: ignore
         except ImportError:
             raise ValueError(
                 "Could not import python package: langchain "

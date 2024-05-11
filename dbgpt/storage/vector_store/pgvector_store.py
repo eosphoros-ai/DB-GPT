@@ -57,7 +57,7 @@ class PGVectorStore(VectorStoreBase):
     def __init__(self, vector_store_config: PGVectorConfig) -> None:
         """Create a PGVectorStore instance."""
         try:
-            from langchain.vectorstores import PGVector
+            from langchain.vectorstores import PGVector  # mypy: ignore
         except ImportError:
             raise ImportError(
                 "Please install the `langchain` package to use the PGVector."
