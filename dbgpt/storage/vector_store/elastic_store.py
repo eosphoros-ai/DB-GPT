@@ -31,7 +31,8 @@ except ImportError:
     raise ValueError(
         "Could not import elasticsearch AND jieba python package. "
         "Please install it with `pip install elasticsearch`."
-        "Please install it with `pip install jieba`.")
+        "Please install it with `pip install jieba`."
+    )
 
 
 @register_resource(
@@ -46,7 +47,8 @@ except ImportError:
             str,
             description=_(
                 "The uri of elasticsearch store, if not set, will use the default "
-                "uri."),
+                "uri."
+            ),
             optional=True,
             default="localhost",
         ),
@@ -56,7 +58,8 @@ except ImportError:
             str,
             description=_(
                 "The port of elasticsearch store, if not set, will use the default "
-                "port."),
+                "port."
+            ),
             optional=True,
             default="9200",
         ),
@@ -66,7 +69,8 @@ except ImportError:
             str,
             description=_(
                 "The alias of elasticsearch store, if not set, will use the default "
-                "alias."),
+                "alias."
+            ),
             optional=True,
             default="default",
         ),
@@ -76,7 +80,8 @@ except ImportError:
             str,
             description=_(
                 "The index name of elasticsearch store, if not set, will use the "
-                "default index name."),
+                "default index name."
+            ),
             optional=True,
             default="index_name_test",
         ),
@@ -93,37 +98,31 @@ class ElasticsearchVectorConfig(VectorStoreConfig):
 
     uri: str = Field(
         default="localhost",
-        description=
-        "The uri of elasticsearch store, if not set, will use the default uri.",
+        description="The uri of elasticsearch store, if not set, will use the default uri.",
     )
     port: str = Field(
         default="9200",
-        description=
-        "The port of elasticsearch store, if not set, will use the default port.",
+        description="The port of elasticsearch store, if not set, will use the default port.",
     )
 
     alias: str = Field(
         default="default",
-        description=
-        "The alias of elasticsearch store, if not set, will use the default "
+        description="The alias of elasticsearch store, if not set, will use the default "
         "alias.",
     )
     index_name: str = Field(
         default="index_name_test",
-        description=
-        "The index name of elasticsearch store, if not set, will use the "
+        description="The index name of elasticsearch store, if not set, will use the "
         "default index name.",
     )
     metadata_field: str = Field(
         default="metadata",
-        description=
-        "The metadata field of elasticsearch store, if not set, will use the "
+        description="The metadata field of elasticsearch store, if not set, will use the "
         "default metadata field.",
     )
     secure: str = Field(
         default="",
-        description=
-        "The secure of elasticsearch store, if not set, will use the default "
+        description="The secure of elasticsearch store, if not set, will use the default "
         "secure.",
     )
 
@@ -141,16 +140,21 @@ class ElasticStore(VectorStoreBase):
         connect_kwargs = {}
         elasticsearch_vector_config = vector_store_config.dict()
         self.uri = elasticsearch_vector_config.get("uri") or os.getenv(
-            "ElasticSearch_URL", "localhost")
+            "ElasticSearch_URL", "localhost"
+        )
         self.port = elasticsearch_vector_config.get("post") or os.getenv(
-            "ElasticSearch_PORT", "9200")
-        self.username = elasticsearch_vector_config.get(
-            "username") or os.getenv("ElasticSearch_USERNAME")
-        self.password = elasticsearch_vector_config.get(
-            "password") or os.getenv("ElasticSearch_PASSWORD")
+            "ElasticSearch_PORT", "9200"
+        )
+        self.username = elasticsearch_vector_config.get("username") or os.getenv(
+            "ElasticSearch_USERNAME"
+        )
+        self.password = elasticsearch_vector_config.get("password") or os.getenv(
+            "ElasticSearch_PASSWORD"
+        )
 
-        self.collection_name = (elasticsearch_vector_config.get("name")
-                                or vector_store_config.name)
+        self.collection_name = (
+            elasticsearch_vector_config.get("name") or vector_store_config.name
+        )
         ### 同milvus,目前只支持全中文、英文+数字的命名形式，若是全中文会转换成英文+数字的命名形式
         ### 同时es索引只支持小写字符。
         if string_utils.is_all_chinese(self.collection_name):
@@ -169,7 +173,8 @@ class ElasticStore(VectorStoreBase):
         if (self.username is None) != (self.password is None):
             raise ValueError(
                 "Both username and password must be set to use authentication for "
-                "ElasticSearch")
+                "ElasticSearch"
+            )
 
         if self.username:
             connect_kwargs["username"] = self.username
@@ -193,14 +198,15 @@ class ElasticStore(VectorStoreBase):
                 # 创建索引，报错--先忽略
                 if not self.vector_name_exists():
                     self.es_client_python.indices.create(
-                        index=self.index_name, body=self.index_settings)
+                        index=self.index_name, body=self.index_settings
+                    )
             else:
                 logger.warning("ES未配置用户名和密码")
-                self.es_client_python = Elasticsearch(
-                    f"http://{self.uri}:{self.port}")
+                self.es_client_python = Elasticsearch(f"http://{self.uri}:{self.port}")
                 if not self.vector_name_exists():
                     self.es_client_python.indices.create(
-                        index=self.index_name, body=self.index_settings)
+                        index=self.index_name, body=self.index_settings
+                    )
         except ConnectionError:
             logger.error("连接到 Elasticsearch 失败！")
         except Exception as e:
@@ -255,12 +261,9 @@ class ElasticStore(VectorStoreBase):
                     ids=ids,
                     es_url=f"http://{self.uri}:{self.port}",
                     index_name=self.index_name,
-                    distance_strategy=
-                    "COSINE",  # Defaults to COSINE. Can be one of COSINE, EUCLIDEAN_DISTANCE, or DOT_PRODUCT.
-                    query_field=
-                    "context",  ## Name of the field to store the texts in.
-                    vector_query_field=
-                    "dense_vector",  # Optional. Name of the field to store the embedding vectors in.
+                    distance_strategy="COSINE",  # Defaults to COSINE. Can be one of COSINE, EUCLIDEAN_DISTANCE, or DOT_PRODUCT.
+                    query_field="context",  ## Name of the field to store the texts in.
+                    vector_query_field="dense_vector",  # Optional. Name of the field to store the embedding vectors in.
                     # verify_certs=False,
                     # strategy: Optional. Retrieval strategy to use when searching the index.
                     # Defaults to ApproxRetrievalStrategy.
@@ -320,9 +323,9 @@ class ElasticStore(VectorStoreBase):
         if len(query_list) == 0:
             query_list = [query]
         body = {"query": {"match": {"context": " ".join(query_list)}}}
-        search_results = self.es_client_python.search(index=self.index_name,
-                                                      body=body,
-                                                      size=topk)
+        search_results = self.es_client_python.search(
+            index=self.index_name, body=body, size=topk
+        )
         search_results = search_results["hits"]["hits"]
 
         # 判断搜索结果是否为空
@@ -346,7 +349,7 @@ class ElasticStore(VectorStoreBase):
                 3000  ### 每种向量库的prompt字节的最大长度，超过则截断，后面放到.env中
             )
             if (byte_count + len(context)) > VS_TYPE_PROMPT_TOTAL_BYTE_SIZE:
-                context = context[:VS_TYPE_PROMPT_TOTAL_BYTE_SIZE - byte_count]
+                context = context[: VS_TYPE_PROMPT_TOTAL_BYTE_SIZE - byte_count]
 
             doc_with_score = [
                 Document(page_content=context, metadata=metadata),
@@ -380,15 +383,13 @@ class ElasticStore(VectorStoreBase):
             Chunk(
                 metadata=json.loads(doc.metadata.get("metadata", "")),
                 content=doc.page_content,
-            ) for doc, score, id in info_docs
+            )
+            for doc, score, id in info_docs
         ]
 
     def similar_search_with_scores(
-            self,
-            text,
-            topk,
-            score_threshold,
-            filters: Optional[MetadataFilters] = None) -> List[Chunk]:
+        self, text, topk, score_threshold, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Perform a search on a query string and return results with score.
 
         For more information about the search parameters, take a look at the ElasticSearch
@@ -410,9 +411,9 @@ class ElasticStore(VectorStoreBase):
         if len(query_list) == 0:
             query_list = [query]
         body = {"query": {"match": {"context": " ".join(query_list)}}}
-        search_results = self.es_client_python.search(index=self.index_name,
-                                                      body=body,
-                                                      size=topk)
+        search_results = self.es_client_python.search(
+            index=self.index_name, body=body, size=topk
+        )
         search_results = search_results["hits"]["hits"]
         # 判断搜索结果是否为空
         if not search_results:
@@ -438,7 +439,7 @@ class ElasticStore(VectorStoreBase):
                 3000  ### 每种向量库的prompt字节的最大长度，超过则截断，后面放到.env中
             )
             if (byte_count + len(context)) > VS_TYPE_PROMPT_TOTAL_BYTE_SIZE:
-                context = context[:VS_TYPE_PROMPT_TOTAL_BYTE_SIZE - byte_count]
+                context = context[: VS_TYPE_PROMPT_TOTAL_BYTE_SIZE - byte_count]
 
             doc_with_score = [
                 Document(page_content=context, metadata=metadata),
@@ -470,8 +471,7 @@ class ElasticStore(VectorStoreBase):
         result_file.close()
 
         if any(score < 0.0 or score > 1.0 for _, score, _ in info_docs):
-            logger.warning("similarity score need between"
-                           f" 0 and 1, got {info_docs}")
+            logger.warning("similarity score need between" f" 0 and 1, got {info_docs}")
 
         logger.info(f"wwt add score_threshold: {score_threshold}")
         if score_threshold is not None:
@@ -485,12 +485,15 @@ class ElasticStore(VectorStoreBase):
                     content=doc.page_content,
                     score=score,
                     chunk_id=id,
-                ) for doc, score, id in info_docs if score >= score_threshold
+                )
+                for doc, score, id in info_docs
+                if score >= score_threshold
             ]
             if len(docs_and_scores) == 0:
                 logger.warning(
                     "No relevant docs were retrieved using the relevance score"
-                    f" threshold {score_threshold}")
+                    f" threshold {score_threshold}"
+                )
         return docs_and_scores
 
     def vector_name_exists(self):
