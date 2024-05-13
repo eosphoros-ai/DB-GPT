@@ -23,43 +23,36 @@ def _format_paths(paths):
     return formatted_paths
 
 
-def _remove_duplicates(lst):
-    seen = set()
-    result = []
-    for sub_lst in lst:
-        sub_tuple = tuple(sub_lst)
-        if sub_tuple not in seen:
-            result.append(sub_lst)
-            seen.add(sub_tuple)
-    return result
+def _format_query_data(data):
+    node_ids_set = set()
+    rels_set = set()
+    from neo4j import graph
 
+    for record in data:
+        for key in record.keys():
+            value = record[key]
+            if isinstance(value, graph.Node):
+                node_id = value._properties["id"]
+                node_ids_set.add(node_id)
+            elif isinstance(value, graph.Relationship):
+                rel_nodes = value.nodes
+                prop_id = value._properties["id"]
+                src_id = rel_nodes[0]._properties["id"]
+                dst_id = rel_nodes[1]._properties["id"]
+                rels_set.add((src_id, dst_id, prop_id))
+            elif isinstance(value, graph.Path):
+                formatted_paths = _format_paths(data)
+                for path in formatted_paths:
+                    for i in range(0, len(path), 2):
+                        node_ids_set.add(path[i])
+                        if i + 2 < len(path):
+                            rels_set.add((path[i], path[i + 2], path[i + 1]))
 
-def _process_data(data):
-    nodes = {}
-    edges = {}
-
-    def add_vertex(vid):
-        if vid not in nodes:
-            nodes[vid] = Vertex(vid)
-
-    def add_edge(sid, tid, prop_id):
-        edge_key = (sid, tid, prop_id)
-
-        if edge_key not in edges:
-            edges[edge_key] = Edge(sid, tid, label=prop_id)
-
-    for item in data:
-        sid = item[0]
-        i = 1
-        while i < len(item) - 1:
-            prop_id = item[i]
-            tid = item[i + 1]
-            add_vertex(sid)
-            add_vertex(tid)
-            add_edge(sid, tid, prop_id)
-            i += 2
-
-    return {"nodes": list(nodes.values()), "edges": list(edges.values())}
+    nodes = [Vertex(node_id) for node_id in node_ids_set]
+    rels = [
+        Edge(src_id, dst_id, label=prop_id) for (src_id, dst_id, prop_id) in rels_set
+    ]
+    return {"nodes": nodes, "edges": rels}
 
 
 class TuGraphStore(GraphStoreBase):
@@ -142,7 +135,6 @@ class TuGraphStore(GraphStoreBase):
         formatted_paths = _format_paths(data)
         for path in formatted_paths:
             result.append(path)
-        # result = _remove_duplicates(result)
         return result
 
     def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
@@ -178,12 +170,8 @@ class TuGraphStore(GraphStoreBase):
                 f"-[r:{self._edge_label}*1..{depth}]-() "
                 f"WHERE n.id IN {subs} RETURN p LIMIT {limit}"
             )
-            data = self.conn.run(query=query)
-            result = []
-            formatted_paths = _format_paths(data)
-            for path in formatted_paths:
-                result.append(path)
-            graph = _process_data(result)
+            result = self.conn.run(query=query)
+            graph = _format_query_data(result)
             mg = MemoryGraph()
             for vertex in graph["nodes"]:
                 mg.upsert_vertex(vertex)
@@ -193,6 +181,11 @@ class TuGraphStore(GraphStoreBase):
 
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""
-        self.conn.run(query=query)
-        # todo: construct MemoryGraph
-        return MemoryGraph()
+        result = self.conn.run(query=query)
+        graph = _format_query_data(result)
+        mg = MemoryGraph()
+        for vertex in graph["nodes"]:
+            mg.upsert_vertex(vertex)
+        for edge in graph["edges"]:
+            mg.append_edge(edge)
+        return mg

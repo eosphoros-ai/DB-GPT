@@ -9,6 +9,7 @@ from dbgpt.rag.transformer.base import ExtractorBase
 logger = logging.getLogger(__name__)
 limit_num = 10
 
+
 class LLMExtractor(ExtractorBase, ABC):
     """LLMExtractor class."""
 

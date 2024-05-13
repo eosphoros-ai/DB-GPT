@@ -44,6 +44,14 @@ def test_get_rel_map(store):
     assert len(rel_map) == 10
 
 
+def test_query(store):
+    query = "MATCH (n)-[r]->(n1) return n,n1,r limit 3"
+    result = store.query(query)
+    v_c = result.vertex_count
+    e_c = result.edge_count
+    assert v_c == 2 and e_c == 2
+
+
 def test_explore(store):
     subs = ["A", "B"]
     result = store.explore(subs, depth=2, fan=None, limit=10)
@@ -59,9 +67,3 @@ def test_delete_triplet(store):
     store.delete_triplet(subj, rel, obj)
     triplets = store.get_triplets(subj)
     assert len(triplets) == 0
-
-
-# def test_query(store):
-#     query = "MATCH (n) RETURN n LIMIT 10"
-#     result = store.query(query)
-#     # Add your assertions here
