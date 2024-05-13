@@ -5,18 +5,46 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
 from ..base import ResourceType, T
 from ..pack import Resource, ResourcePack
-from .base import BaseTool, FunctionTool
+from .base import DB_GPT_TOOL_IDENTIFIER, BaseTool, FunctionTool, ToolFunc
 from .exceptions import ToolExecutionException, ToolNotFoundException
+
+ToolResourceType = Union[BaseTool, List[BaseTool], ToolFunc, List[ToolFunc]]
+
+
+def _is_function_tool(resources: ToolResourceType) -> bool:
+    return (
+        callable(resources)
+        and hasattr(resources, DB_GPT_TOOL_IDENTIFIER)
+        and getattr(resources, DB_GPT_TOOL_IDENTIFIER)
+        and hasattr(resources, "_tool")
+        and isinstance(getattr(resources, "_tool"), BaseTool)
+    )
+
+
+def _to_tool_list(resources: ToolResourceType) -> List[BaseTool]:
+    if isinstance(resources, BaseTool):
+        return [resources]
+    elif isinstance(resources, list) and all(
+        isinstance(r, BaseTool) for r in resources
+    ):
+        return cast(List[BaseTool], resources)
+    elif isinstance(resources, list) and all(_is_function_tool(r) for r in resources):
+        return [cast(FunctionTool, getattr(r, "_tool")) for r in resources]
+    elif _is_function_tool(resources):
+        function_tool = cast(FunctionTool, getattr(resources, "_tool"))
+        return [function_tool]
+    raise ValueError("Invalid tool resource type")
 
 
 class ToolPack(ResourcePack):
     """Tool resource pack class."""
 
     def __init__(
-        self, resources: List[BaseTool], name: str = "Tool Resource Pack", **kwargs
+        self, resources: ToolResourceType, name: str = "Tool Resource Pack", **kwargs
     ):
         """Initialize the tool resource pack."""
-        super().__init__(resources, name=name, **kwargs)  # type: ignore
+        tools = cast(List[Resource], _to_tool_list(resources))
+        super().__init__(resources=tools, name=name, **kwargs)
 
     @classmethod
     def from_resource(

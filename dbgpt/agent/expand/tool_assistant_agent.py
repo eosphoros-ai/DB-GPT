@@ -4,13 +4,13 @@ import logging
 
 from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
-from .actions.plugin_action import PluginAction
+from .actions.tool_action import ToolAction
 
 logger = logging.getLogger(__name__)
 
 
-class PluginAssistantAgent(ConversableAgent):
-    """Plugin Assistant Agent."""
+class ToolAssistantAgent(ConversableAgent):
+    """Tool Assistant Agent."""
 
     profile: ProfileConfig = ProfileConfig(
         name=DynConfig(
@@ -51,6 +51,6 @@ class PluginAssistantAgent(ConversableAgent):
     )
 
     def __init__(self, **kwargs):
-        """Create a new instance of PluginAssistantAgent."""
+        """Create a new instance of ToolAssistantAgent."""
         super().__init__(**kwargs)
-        self._init_actions([PluginAction])
+        self._init_actions([ToolAction])

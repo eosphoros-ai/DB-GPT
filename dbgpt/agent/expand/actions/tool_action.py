@@ -15,7 +15,7 @@ from ...resource.tool.pack import ToolPack
 logger = logging.getLogger(__name__)
 
 
-class PluginInput(BaseModel):
+class ToolInput(BaseModel):
     """Plugin input model."""
 
     tool_name: str = Field(
@@ -31,8 +31,8 @@ class PluginInput(BaseModel):
     thought: str = Field(..., description="Summary of thoughts to the user")
 
 
-class PluginAction(Action[PluginInput]):
-    """Plugin action class."""
+class ToolAction(Action[ToolInput]):
+    """Tool action class."""
 
     def __init__(self):
         """Create a plugin action."""
@@ -52,19 +52,19 @@ class PluginAction(Action[PluginInput]):
     @property
     def out_model_type(self):
         """Return the output model type."""
-        return PluginInput
+        return ToolInput
 
     @property
     def ai_out_schema(self) -> Optional[str]:
         """Return the AI output schema."""
         out_put_schema = {
+            "thought": "Summary of thoughts to the user",
             "tool_name": "The name of a tool that can be used to answer the current "
             "question or solve the current task.",
             "args": {
                 "arg name1": "arg value1",
                 "arg name2": "arg value2",
             },
-            "thought": "Summary of thoughts to the user",
         }
 
         return f"""Please response in the following json format:
@@ -92,7 +92,7 @@ class PluginAction(Action[PluginInput]):
                 Defaults to True.
         """
         try:
-            param: PluginInput = self._input_convert(ai_message, PluginInput)
+            param: ToolInput = self._input_convert(ai_message, ToolInput)
         except Exception as e:
             logger.exception((str(e)))
             return ActionOutput(
@@ -135,9 +135,9 @@ class PluginAction(Action[PluginInput]):
 
             return ActionOutput(
                 is_exe_success=response_success,
-                content=tool_result,
+                content=str(tool_result),
                 view=view,
-                observations=tool_result,
+                observations=str(tool_result),
             )
         except Exception as e:
             logger.exception("Tool Action Run Failed！")

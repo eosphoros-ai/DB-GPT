@@ -18,7 +18,7 @@ import asyncio
 import os
 
 from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
-from dbgpt.agent.expand.plugin_assistant_agent import PluginAssistantAgent
+from dbgpt.agent.expand.tool_assistant_agent import ToolAssistantAgent
 from dbgpt.agent.resource import AutoGPTPluginToolPack
 
 current_dir = os.getcwd()
@@ -39,7 +39,7 @@ async def main():
     user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
     tool_engineer = (
-        await PluginAssistantAgent()
+        await ToolAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
         .bind(agent_memory)
