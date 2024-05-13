@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, List
 from dbgpt.core import Embeddings
 
 if TYPE_CHECKING:
-    from langchain.embeddings.base import Embeddings as LangChainEmbeddings
+    from langchain.embeddings.base import (
+        Embeddings as LangChainEmbeddings,  # mypy: ignore
+    )
 
 
 class WrappedEmbeddings(Embeddings):

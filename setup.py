@@ -418,6 +418,7 @@ def core_requires():
         "typeguard",
         # Snowflake no additional dependencies.
         "snowflake-id",
+        "typing_inspect",
     ]
     # For DB-GPT python client SDK
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
