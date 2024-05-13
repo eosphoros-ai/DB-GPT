@@ -8,7 +8,7 @@ from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
 @pytest.fixture(scope="module")
 def store():
     store = TuGraphStore(
-        host="localhost", port=7687, user="admin", pwd="123456", db_name="RAG_1"
+        host="localhost", port=7687, user="admin", pwd="123456", graph_name="RAG_1"
     )
     yield store
     store.conn.close()
