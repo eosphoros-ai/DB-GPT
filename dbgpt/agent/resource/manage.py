@@ -1,7 +1,8 @@
 """Resource manager."""
 
 import logging
-from typing import Dict, List, Optional, Type, cast
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, model_validator
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
@@ -9,6 +10,7 @@ from dbgpt.util.parameter_utils import ParameterDescription
 
 from .base import AgentResource, Resource, ResourceParameters, ResourceType
 from .pack import ResourcePack
+from .tool.pack import ToolResourceType, _is_function_tool, _to_tool_list
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +81,8 @@ class ResourceManager(BaseComponent):
         """Create a new AgentManager."""
         super().__init__(system_app)
         self.system_app = system_app
-        self._resources: dict[str, RegisterResource] = {}
-        self._type_to_resources: dict[str, RegisterResource] = {}
+        self._resources: Dict[str, RegisterResource] = {}
+        self._type_to_resources: Dict[str, List[RegisterResource]] = defaultdict(list)
 
     def init_app(self, system_app: SystemApp):
         """Initialize the AgentManager."""
@@ -94,17 +96,20 @@ class ResourceManager(BaseComponent):
     def register_resource(
         self,
         resource_cls: Optional[Type[Resource]] = None,
-        resource_instance: Optional[Resource] = None,
+        resource_instance: Optional[Union[Resource, ToolResourceType]] = None,
         resource_type: Optional[ResourceType] = None,
         resource_type_alias: Optional[str] = None,
     ):
         """Register a resource."""
+        if resource_instance and _is_function_tool(resource_instance):
+            resource_instance = _to_tool_list(resource_instance)[0]  # type: ignore
+
         if resource_cls is None and resource_instance is None:
             raise ValueError("Resource class or instance must be provided.")
         name: Optional[str] = None
         if resource_instance is not None:
-            resource_cls = resource_cls or type(resource_instance)
-            name = resource_instance.name
+            resource_cls = resource_cls or type(resource_instance)  # type: ignore
+            name = resource_instance.name  # type: ignore
         resource = RegisterResource(
             name=name,
             resource_cls=resource_cls,
@@ -113,7 +118,7 @@ class ResourceManager(BaseComponent):
             resource_type_alias=resource_type_alias,
         )
         self._resources[resource.key] = resource
-        self._type_to_resources[resource.type_unique_key] = resource
+        self._type_to_resources[resource.type_unique_key].append(resource)
 
     def get_supported_resources(
         self, version: Optional[str] = None
@@ -123,32 +128,69 @@ class ResourceManager(BaseComponent):
         for key, resource in self._resources.items():
             parameter_class = resource.get_parameter_class()
             resource_type = resource.type_unique_key
-            results[resource_type] = parameter_class.to_configurations(
+            configs: Any = parameter_class.to_configurations(
                 parameter_class, version=version
             )
+            if (
+                version == "v1"
+                and isinstance(configs, list)
+                and len(configs) > 0
+                and isinstance(configs[0], ParameterDescription)
+            ):
+                # v1, not compatible with class
+                configs = []
+                if not resource.is_class:
+                    for r in self._type_to_resources[resource_type]:
+                        if not r.is_class:
+                            configs.append(r.resource_instance.name)  # type: ignore
+            results[resource_type] = configs
         return results
 
     def build_resource_by_type(
-        self, type_unique_key: str, agent_resource: AgentResource
+        self,
+        type_unique_key: str,
+        agent_resource: AgentResource,
+        version: Optional[str] = None,
     ) -> Resource:
         """Return the resource by type."""
         item = self._type_to_resources.get(type_unique_key)
         if not item:
             raise ValueError(f"Resource type {type_unique_key} not found.")
-        if not item.is_class:
-            return cast(Resource, item.resource_instance)
+        inst_items = [i for i in item if not i.is_class]
+        if inst_items:
+            if version == "v1":
+                for i in inst_items:
+                    if (
+                        i.resource_instance
+                        and i.resource_instance.name == agent_resource.value
+                    ):
+                        return i.resource_instance
+                raise ValueError(
+                    f"Resource {agent_resource.value} not found in {type_unique_key}"
+                )
+            return cast(Resource, inst_items[0].resource_instance)
+        elif len(inst_items) > 1:
+            raise ValueError(
+                f"Multiple instances of resource {type_unique_key} found, "
+                f"please specify the resource name."
+            )
         else:
+            single_item = item[0]
             try:
-                parameter_cls = item.get_parameter_class()
+                parameter_cls = single_item.get_parameter_class()
                 param = parameter_cls.from_dict(agent_resource.to_dict())
-                resource_inst = item.resource_cls(**param.to_dict())
+                resource_inst = single_item.resource_cls(**param.to_dict())
                 return resource_inst
             except Exception as e:
-                logger.warning(f"Failed to build resource {item.key}: {str(e)}")
-                raise ValueError(f"Failed to build resource {item.key}: {str(e)}")
+                logger.warning(f"Failed to build resource {single_item.key}: {str(e)}")
+                raise ValueError(
+                    f"Failed to build resource {single_item.key}: {str(e)}"
+                )
 
     def build_resource(
-        self, agent_resources: Optional[List[AgentResource]] = None
+        self,
+        agent_resources: Optional[List[AgentResource]] = None,
+        version: Optional[str] = None,
     ) -> Optional[Resource]:
         """Build a resource.
 
@@ -157,6 +199,7 @@ class ResourceManager(BaseComponent):
 
         Args:
             agent_resources: The agent resources.
+            version: The resource version.
 
         Returns:
             Optional[Resource]: The resource instance.
@@ -165,7 +208,9 @@ class ResourceManager(BaseComponent):
             return None
         dependencies: List[Resource] = []
         for resource in agent_resources:
-            resource_inst = self.build_resource_by_type(resource.type, resource)
+            resource_inst = self.build_resource_by_type(
+                resource.type, resource, version=version
+            )
             dependencies.append(resource_inst)
         if len(dependencies) == 1:
             return dependencies[0]

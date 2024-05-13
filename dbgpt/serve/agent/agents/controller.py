@@ -267,7 +267,7 @@ class MultiAgents(BaseComponent, ABC):
                 llm_strategy=LLMStrategyType(record.llm_strategy),
                 strategy_context=record.llm_strategy_value,
             )
-            depend_resource = rm.build_resource(record.resources)
+            depend_resource = rm.build_resource(record.resources, version="v1")
 
             agent = (
                 await cls()

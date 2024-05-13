@@ -11,7 +11,7 @@ from .exceptions import ToolExecutionException, ToolNotFoundException
 ToolResourceType = Union[BaseTool, List[BaseTool], ToolFunc, List[ToolFunc]]
 
 
-def _is_function_tool(resources: ToolResourceType) -> bool:
+def _is_function_tool(resources: Any) -> bool:
     return (
         callable(resources)
         and hasattr(resources, DB_GPT_TOOL_IDENTIFIER)
