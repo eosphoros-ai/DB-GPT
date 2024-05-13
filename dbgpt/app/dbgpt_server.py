@@ -21,7 +21,12 @@ from dbgpt.app.base import (
 # initialize_components import time cost about 0.1s
 from dbgpt.app.component_configs import initialize_components
 from dbgpt.component import SystemApp
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG, LOGDIR
+from dbgpt.configs.model_config import (
+    EMBEDDING_MODEL_CONFIG,
+    LLM_MODEL_CONFIG,
+    LOGDIR,
+    STATIC_MESSAGE_IMG_PATH,
+)
 from dbgpt.serve.core import add_exception_handler
 from dbgpt.util.fastapi import create_app, replace_router
 from dbgpt.util.i18n_utils import _, set_default_language
@@ -88,14 +93,10 @@ def mount_routers(app: FastAPI):
 
 
 def mount_static_files(app: FastAPI):
-    from dbgpt.agent.plugin.commands.built_in.display_type import (
-        static_message_img_path,
-    )
-
-    os.makedirs(static_message_img_path, exist_ok=True)
+    os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
     app.mount(
         "/images",
-        StaticFiles(directory=static_message_img_path, html=True),
+        StaticFiles(directory=STATIC_MESSAGE_IMG_PATH, html=True),
         name="static2",
     )
     app.mount(

@@ -1,4 +1,5 @@
 """this module contains the schemas for the dbgpt client."""
+
 import json
 from datetime import datetime
 from enum import Enum
@@ -143,7 +144,7 @@ class AgentResourceType(Enum):
 class AgentResourceModel(BaseModel):
     """Agent resource model."""
 
-    type: AgentResourceType
+    type: str
     name: str
     value: str
     is_dynamic: bool = (
@@ -156,7 +157,7 @@ class AgentResourceModel(BaseModel):
         if d is None:
             return None
         return AgentResourceModel(
-            type=AgentResourceType(d.get("type")),
+            type=d.get("type"),
             name=d.get("name"),
             introduce=d.get("introduce"),
             value=d.get("value", None),

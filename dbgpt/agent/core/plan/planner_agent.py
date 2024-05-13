@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 
 from dbgpt._private.pydantic import Field
 
+from ...resource.pack import ResourcePack
 from ..agent import AgentMessage
 from ..base_agent import ConversableAgent
 from ..plan.plan_action import PlanAction
@@ -152,9 +153,11 @@ assistants:[
     def bind_agents(self, agents: List[ConversableAgent]) -> ConversableAgent:
         """Bind the agents to the planner agent."""
         self.agents = agents
+        resources = []
         for agent in self.agents:
-            if agent.resources and len(agent.resources) > 0:
-                self.resources.extend(agent.resources)
+            if agent.resource:
+                resources.append(agent.resource)
+        self.resource = ResourcePack(resources)
         return self
 
     def prepare_act_param(self) -> Dict[str, Any]:

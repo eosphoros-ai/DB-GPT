@@ -15,7 +15,7 @@ from dbgpt._private.pydantic import (
     model_validator,
 )
 from dbgpt.agent.core.plan import AWELTeamContext
-from dbgpt.agent.resource.resource_api import AgentResource
+from dbgpt.agent.resource.base import AgentResource
 from dbgpt.serve.agent.team.base import TeamMode
 from dbgpt.storage.metadata import BaseDao, Model
 

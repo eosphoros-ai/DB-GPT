@@ -1,185 +1,17 @@
 """Module for managing commands and command plugins."""
 
-import functools
-import importlib
-import inspect
 import json
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.agent.core.schema import Status
 from dbgpt.util.json_utils import serialize
 from dbgpt.util.string_utils import extract_content, extract_content_open_ending
 
-from .command import execute_command
-
-# Unique identifier for auto-gpt commands
-AUTO_GPT_COMMAND_IDENTIFIER = "auto_gpt_command"
 logger = logging.getLogger(__name__)
-
-
-class Command:
-    """A class representing a command.
-
-    Attributes:
-        name (str): The name of the command.
-        description (str): A brief description of what the command does.
-        signature (str): The signature of the function that the command executes.
-            Defaults to None.
-    """
-
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        method: Callable[..., Any],
-        signature: str = "",
-        enabled: bool = True,
-        disabled_reason: Optional[str] = None,
-    ):
-        """Create a new Command object."""
-        self.name = name
-        self.description = description
-        self.method = method
-        self.signature = signature if signature else str(inspect.signature(self.method))
-        self.enabled = enabled
-        self.disabled_reason = disabled_reason
-
-    def __call__(self, *args, **kwargs) -> Any:
-        """Run the command."""
-        if not self.enabled:
-            return f"Command '{self.name}' is disabled: {self.disabled_reason}"
-        return self.method(*args, **kwargs)
-
-    def __str__(self) -> str:
-        """Return a string representation of the Command object."""
-        return f"{self.name}: {self.description}, args: {self.signature}"
-
-
-class CommandRegistry:
-    """Command registry class.
-
-    The CommandRegistry class is a manager for a collection of Command objects.
-    It allows the registration, modification, and retrieval of Command objects,
-    as well as the scanning and loading of command plugins from a specified
-    directory.
-    """
-
-    def __init__(self):
-        """Create a new CommandRegistry object."""
-        self.commands = {}
-
-    def _import_module(self, module_name: str) -> Any:
-        return importlib.import_module(module_name)
-
-    def _reload_module(self, module: Any) -> Any:
-        return importlib.reload(module)
-
-    def register(self, cmd: Command) -> None:
-        """Register a new Command object with the registry."""
-        self.commands[cmd.name] = cmd
-
-    def unregister(self, command_name: str):
-        """Unregisters a Command object from the registry."""
-        if command_name in self.commands:
-            del self.commands[command_name]
-        else:
-            raise KeyError(f"Command '{command_name}' not found in registry.")
-
-    def reload_commands(self) -> None:
-        """Reload all loaded command plugins."""
-        for cmd_name in self.commands:
-            cmd = self.commands[cmd_name]
-            module = self._import_module(cmd.__module__)
-            reloaded_module = self._reload_module(module)
-            if hasattr(reloaded_module, "register"):
-                reloaded_module.register(self)
-
-    def is_valid_command(self, name: str) -> bool:
-        """Check if the specified command name is registered."""
-        return name in self.commands
-
-    def get_command(self, name: str) -> Callable[..., Any]:
-        """Return the Command object with the specified name."""
-        return self.commands[name]
-
-    def call(self, command_name: str, **kwargs) -> Any:
-        """Run command."""
-        if command_name not in self.commands:
-            raise KeyError(f"Command '{command_name}' not found in registry.")
-        command = self.commands[command_name]
-        return command(**kwargs)
-
-    def command_prompt(self) -> str:
-        """Return a string representation of all registered `Command` objects."""
-        commands_list = [
-            f"{idx + 1}. {str(cmd)}" for idx, cmd in enumerate(self.commands.values())
-        ]
-        return "\n".join(commands_list)
-
-    def import_commands(self, module_name: str) -> None:
-        """Import module.
-
-        Import the specified Python module containing command plugins.
-
-        This method imports the associated module and registers any functions or
-        classes that are decorated with the `AUTO_GPT_COMMAND_IDENTIFIER` attribute
-        as `Command` objects. The registered `Command` objects are then added to the
-        `commands` dictionary of the `CommandRegistry` object.
-
-        Args:
-            module_name (str): The name of the module to import for command plugins.
-        """
-        module = importlib.import_module(module_name)
-
-        for attr_name in dir(module):
-            attr = getattr(module, attr_name)
-            # Register decorated functions
-            if hasattr(attr, AUTO_GPT_COMMAND_IDENTIFIER) and getattr(
-                attr, AUTO_GPT_COMMAND_IDENTIFIER
-            ):
-                self.register(attr.command)
-            # Register command classes
-            elif (
-                inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
-            ):
-                cmd_instance = attr()  # type: ignore
-                self.register(cmd_instance)
-
-
-def command(
-    name: str,
-    description: str,
-    signature: str = "",
-    enabled: bool = True,
-    disabled_reason: Optional[str] = None,
-) -> Callable[..., Any]:
-    """Register a function as a command."""
-
-    def decorator(func: Callable[..., Any]) -> Command:
-        cmd = Command(
-            name=name,
-            description=description,
-            method=func,
-            signature=signature,
-            enabled=enabled,
-            disabled_reason=disabled_reason,
-        )
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            return func(*args, **kwargs)
-
-        wrapper.command = cmd  # type: ignore
-
-        setattr(wrapper, AUTO_GPT_COMMAND_IDENTIFIER, True)
-
-        return wrapper  # type: ignore
-
-    return decorator
 
 
 class PluginStatus(BaseModel):
@@ -398,28 +230,6 @@ class ApiCall:
             data = api_status.api_result
         param["data"] = data
         return json.dumps(param, ensure_ascii=False)
-
-    def run(self, llm_text):
-        """Run the API calls."""
-        if self._is_need_wait_plugin_call(
-            llm_text
-        ) and self.check_last_plugin_call_ready(llm_text):
-            # wait api call generate complete
-            self.update_from_context(llm_text)
-            for key, value in self.plugin_status_map.items():
-                if value.status == Status.TODO.value:
-                    value.status = Status.RUNNING.value
-                    logger.info(f"Plugin execution:{value.name},{value.args}")
-                    try:
-                        value.api_result = execute_command(
-                            value.name, value.args, self.plugin_generator
-                        )
-                        value.status = Status.COMPLETE.value
-                    except Exception as e:
-                        value.status = Status.FAILED.value
-                        value.err_msg = str(e)
-                    value.end_time = datetime.now().timestamp() * 1000
-        return self.api_view_context(llm_text)
 
     def run_display_sql(self, llm_text, sql_run_func):
         """Run the API calls for displaying SQL data."""

@@ -1,21 +1,49 @@
-"""Resource module for Agent."""
-from .resource_api import AgentResource, ResourceClient, ResourceType  # noqa: F401
-from .resource_db_api import ResourceDbClient, SqliteLoadClient  # noqa: F401
-from .resource_knowledge_api import ResourceKnowledgeClient  # noqa: F401
-from .resource_loader import ResourceLoader  # noqa: F401
-from .resource_plugin_api import (  # noqa: F401
-    PluginFileLoadClient,
-    ResourcePluginClient,
+"""Resource module for agent."""
+
+from .base import (  # noqa: F401
+    AgentResource,
+    Resource,
+    ResourceParameters,
+    ResourceType,
 )
+from .database import (  # noqa: F401
+    DBParameters,
+    DBResource,
+    RDBMSConnectorResource,
+    SQLiteDBResource,
+)
+from .knowledge import RetrieverResource, RetrieverResourceParameters  # noqa: F401
+from .manage import (  # noqa: F401
+    RegisterResource,
+    ResourceManager,
+    get_resource_manager,
+    initialize_resource,
+)
+from .pack import PackResourceParameters, ResourcePack  # noqa: F401
+from .tool.base import BaseTool, FunctionTool, ToolParameter, tool  # noqa: F401
+from .tool.pack import AutoGPTPluginToolPack, ToolPack  # noqa: F401
 
 __all__ = [
     "AgentResource",
-    "ResourceClient",
+    "Resource",
+    "ResourceParameters",
     "ResourceType",
-    "ResourceDbClient",
-    "SqliteLoadClient",
-    "ResourceKnowledgeClient",
-    "ResourceLoader",
-    "PluginFileLoadClient",
-    "ResourcePluginClient",
+    "DBParameters",
+    "DBResource",
+    "RDBMSConnectorResource",
+    "SQLiteDBResource",
+    "RetrieverResource",
+    "RetrieverResourceParameters",
+    "RegisterResource",
+    "ResourceManager",
+    "get_resource_manager",
+    "initialize_resource",
+    "PackResourceParameters",
+    "ResourcePack",
+    "BaseTool",
+    "FunctionTool",
+    "ToolParameter",
+    "tool",
+    "AutoGPTPluginToolPack",
+    "ToolPack",
 ]

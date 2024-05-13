@@ -4,8 +4,8 @@ from typing import List
 
 from fastapi import APIRouter, Body, File, UploadFile
 
-from dbgpt.agent.plugin.generator import PluginPromptGenerator
-from dbgpt.agent.plugin.plugins_util import scan_plugins
+from dbgpt.agent.resource.tool.autogpt.plugins_util import scan_plugins
+from dbgpt.agent.resource.tool.pack import AutoGPTPluginToolPack
 from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.configs.model_config import PLUGINS_DIR
@@ -30,25 +30,15 @@ class ModulePlugin(BaseComponent, ABC):
 
     def __init__(self):
         # load plugins
-        self.plugins = scan_plugins(PLUGINS_DIR)
+        self.refresh_plugins()
 
     def init_app(self, system_app: SystemApp):
         system_app.app.include_router(router, prefix="/api", tags=["Agent"])
 
     def refresh_plugins(self):
         self.plugins = scan_plugins(PLUGINS_DIR)
-
-    def load_select_plugin(
-        self, generator: PluginPromptGenerator, select_plugins: List[str]
-    ) -> PluginPromptGenerator:
-        logger.info(f"load_select_plugin:{select_plugins}")
-        # load select plugin
-        for plugin in self.plugins:
-            if plugin._name in select_plugins:
-                if not plugin.can_handle_post_prompt():
-                    continue
-                generator = plugin.post_prompt(generator)
-        return generator
+        self.tools = AutoGPTPluginToolPack(PLUGINS_DIR)
+        self.tools.preload_resource()
 
 
 module_plugin = ModulePlugin()

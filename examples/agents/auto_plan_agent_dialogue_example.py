@@ -21,7 +21,6 @@ from dbgpt.agent import (
     AgentMemory,
     AutoPlanChatManager,
     LLMConfig,
-    ResourceLoader,
     UserProxyAgent,
 )
 from dbgpt.agent.expand.code_assistant_agent import CodeAssistantAgent
@@ -42,13 +41,10 @@ async def main():
         conv_id="test456", gpts_app_name="代码分析助手", max_new_tokens=2048
     )
 
-    resource_loader = ResourceLoader()
-
     coder = (
         await CodeAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(resource_loader)
         .bind(agent_memory)
         .build()
     )

@@ -1,9 +1,20 @@
 import asyncio
 import inspect
 from functools import wraps
-from typing import Any, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Union,
+    _UnionGenericAlias,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from typeguard import check_type
+from typing_extensions import Annotated, Doc, _AnnotatedAlias
 
 
 def _is_typing(obj):
@@ -119,3 +130,61 @@ def rearrange_args_by_type(func):
         return await func(*sorted_args, **sorted_kwargs)
 
     return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+
+
+def type_to_string(obj: Any, default_type: str = "unknown") -> str:
+    """Convert a type to a string representation."""
+    type_map = {
+        int: "integer",
+        str: "string",
+        float: "float",
+        bool: "boolean",
+        Any: "any",
+        List: "array",
+        dict: "object",
+    }
+    # Check NoneType
+    if obj is type(None):
+        return "null"
+
+    # Get the origin of the type
+    origin = getattr(obj, "__origin__", None)
+    if origin:
+        if _is_typing(origin) and not isinstance(obj, _UnionGenericAlias):
+            obj = origin
+            origin = origin.__origin__
+        # Handle special cases like List[int]
+        if origin is Union and hasattr(obj, "__args__"):
+            subtypes = ", ".join(
+                type_to_string(t) for t in obj.__args__ if t is not type(None)
+            )
+            # return f"Optional[{subtypes}]"
+            return subtypes
+        elif origin is list or origin is List:
+            subtypes = ", ".join(type_to_string(t) for t in obj.__args__)
+            # return f"List[{subtypes}]"
+            return "array"
+        elif origin in [dict, Dict]:
+            key_type, value_type = (type_to_string(t) for t in obj.__args__)
+            # return f"Dict[{key_type}, {value_type}]"
+            return "object"
+        return type_map.get(origin, default_type)
+    else:
+        if hasattr(obj, "__args__"):
+            subtypes = ", ".join(
+                type_to_string(t) for t in obj.__args__ if t is not type(None)
+            )
+            return subtypes
+
+    return type_map.get(obj, default_type)
+
+
+def parse_param_description(name: str, obj: Any) -> str:
+    default_type_title = name.replace("_", " ").title()
+    if isinstance(obj, _AnnotatedAlias):
+        metadata = obj.__metadata__
+        docs = [arg for arg in metadata if isinstance(arg, Doc)]
+        doc_str = docs[0].documentation if docs else default_type_title
+    else:
+        doc_str = default_type_title
+    return doc_str

@@ -132,7 +132,6 @@ class AWELBaseManager(ManagerAgent, ABC):
                 reviewer=reviewer,
                 memory=self.memory.structure_clone(),
                 agent_context=self.agent_context,
-                resource_loader=self.resource_loader,
                 llm_client=self.not_null_llm_config.llm_client,
             )
             final_generate_context: AgentGenerateContext = await last_node.call(

@@ -9,9 +9,8 @@ from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 
 from ...core.action.base import Action, ActionOutput
 from ...core.schema import Status
-from ...plugin.generator import PluginPromptGenerator
-from ...resource.resource_api import AgentResource, ResourceType
-from ...resource.resource_plugin_api import ResourcePluginClient
+from ...resource.base import AgentResource, ResourceType
+from ...resource.tool.pack import ToolPack
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,7 @@ class PluginAction(Action[PluginInput]):
     @property
     def resource_need(self) -> Optional[ResourceType]:
         """Return the resource type needed for the action."""
-        return ResourceType.Plugin
+        return ResourceType.Tool
 
     @property
     def render_protocol(self) -> Optional[Vis]:
@@ -92,11 +91,6 @@ class PluginAction(Action[PluginInput]):
             need_vis_render (bool, optional): Whether need visualization rendering.
                 Defaults to True.
         """
-        plugin_generator: Optional[PluginPromptGenerator] = kwargs.get(
-            "plugin_generator", None
-        )
-        if not plugin_generator:
-            raise ValueError("No plugin generator found!")
         try:
             param: PluginInput = self._input_convert(ai_message, PluginInput)
         except Exception as e:
@@ -107,21 +101,16 @@ class PluginAction(Action[PluginInput]):
             )
 
         try:
-            if not self.resource_loader:
-                raise ValueError("No resource_loader found!")
-            resource_plugin_client: Optional[
-                ResourcePluginClient
-            ] = self.resource_loader.get_resource_api(
-                self.resource_need, ResourcePluginClient
-            )
-            if not resource_plugin_client:
-                raise ValueError("No implementation of the use of plug-in resources！")
+            tool_packs = ToolPack.from_resource(self.resource)
+            if not tool_packs:
+                raise ValueError("The tool resource is not found！")
+            tool_pack = tool_packs[0]
             response_success = True
             status = Status.RUNNING.value
             err_msg = None
             try:
-                tool_result = await resource_plugin_client.execute_command(
-                    param.tool_name, param.args, plugin_generator
+                tool_result = await tool_pack.async_execute(
+                    resource_name=param.tool_name, **param.args
                 )
                 status = Status.COMPLETE.value
             except Exception as e:

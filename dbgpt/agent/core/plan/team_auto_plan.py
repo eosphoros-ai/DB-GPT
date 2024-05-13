@@ -188,7 +188,6 @@ class AutoPlanChatManager(ManagerAgent):
                     .bind(self.memory)
                     .bind(self.agent_context)
                     .bind(self.llm_config)
-                    .bind(self.resource_loader)
                     .bind_agents(self.agents)
                     .build()
                 )

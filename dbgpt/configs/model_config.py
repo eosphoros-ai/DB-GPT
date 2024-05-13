@@ -8,6 +8,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
 PILOT_PATH = os.path.join(ROOT_PATH, "pilot")
 LOGDIR = os.getenv("DBGPT_LOG_DIR", os.path.join(ROOT_PATH, "logs"))
+STATIC_MESSAGE_IMG_PATH = os.path.join(PILOT_PATH, "message/img")
 
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")

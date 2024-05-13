@@ -1,4 +1,8 @@
-"""Load plugins from a directory or a zip file."""
+"""Load plugins from a directory or a zip file.
+
+This module provides utility functions to load auto_gpt plugins from a directory or a
+zip file.
+"""
 
 import datetime
 import glob
@@ -7,8 +11,6 @@ import logging
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
-
-from dbgpt._private.config import Config
 
 if TYPE_CHECKING:
     from auto_gpt_plugin_template import AutoGPTPluginTemplate
@@ -129,30 +131,6 @@ def scan_plugins(
     for plugin in loaded_plugins:
         logger.info(f"{plugin._name}: {plugin._version} - {plugin._description}")
     return loaded_plugins
-
-
-def denylist_allowlist_check(plugin_name: str, cfg: Config) -> bool:
-    """Check if the plugin is in the allowlist or denylist.
-
-    Args:
-        plugin_name (str): Name of the plugin.
-        cfg (Config): Config object.
-
-    Returns:
-        True or False
-    """
-    logger.debug(f"Checking if plugin {plugin_name} should be loaded")
-    if plugin_name in cfg.plugins_denylist:
-        logger.debug(f"Not loading plugin {plugin_name} as it was in the denylist.")
-        return False
-    if plugin_name in cfg.plugins_allowlist:
-        logger.debug(f"Loading plugin {plugin_name} as it was in the allowlist.")
-        return True
-    ack = input(
-        f"WARNING: Plugin {plugin_name} found. But not in the"
-        f" allowlist... Load? ({cfg.authorise_key}/{cfg.exit_key}): "
-    )
-    return ack.lower() == cfg.authorise_key
 
 
 def update_from_git(
