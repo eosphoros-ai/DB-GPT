@@ -71,14 +71,14 @@ class TuGraphStore(GraphStoreBase):
         port: int,
         user: str,
         pwd: str,
-        db_name: str,
+        graph_name: str,
         node_label: str = "entity",
         edge_label: str = "rel",
         **kwargs: Any,
     ) -> None:
         """Initialize the TuGraphStore with connection details."""
         self.conn = TuGraphConnector.from_uri_db(
-            host=host, port=port, user=user, pwd=pwd, db_name=db_name
+            host=host, port=port, user=user, pwd=pwd, db_name=graph_name
         )
         self._node_label = node_label
         self._edge_label = edge_label
