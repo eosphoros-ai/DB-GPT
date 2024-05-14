@@ -1,10 +1,9 @@
 """Connector for vector store."""
 import logging
-from typing import Optional, Type
+from typing import Type
 
-from dbgpt.rag.index.base import IndexStoreConfig
 from dbgpt.storage import graph_store
-from dbgpt.storage.graph_store.base import GraphStoreBase
+from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ class GraphStoreFactory:
     @staticmethod
     def create(
         graph_store_type: str,
-        graph_store_config: Optional[IndexStoreConfig] = None
+        graph_store_configure=None
     ) -> GraphStoreBase:
         """Create a GraphStore instance.
 
@@ -23,19 +22,25 @@ class GraphStoreFactory:
             - graph_store_type: graph store type Memory, TuGraph, Neo4j
             - graph_store_config: graph store config
         """
-        cls = GraphStoreFactory.__find_type(graph_store_type)
+        store_cls, cfg_cls = GraphStoreFactory.__find_type(graph_store_type)
 
         try:
-            return cls(graph_store_config)
+            config = cfg_cls()
+            if graph_store_configure:
+                graph_store_configure(config)
+            return store_cls(config)
         except Exception as e:
             logger.error("create graph store failed: %s", e)
             raise e
 
     @staticmethod
-    def __find_type(graph_store_type: str) -> Type:
+    def __find_type(graph_store_type: str) -> (Type, Type):
         for t in graph_store.__all__:
             if t.lower() == graph_store_type.lower():
-                cls = getattr(graph_store, t)
-                if issubclass(cls, GraphStoreBase):
-                    return cls
+                store_cls, cfg_cls = getattr(graph_store, t)
+                if (
+                    issubclass(store_cls, GraphStoreBase)
+                    and issubclass(cfg_cls, GraphStoreConfig)
+                ):
+                    return store_cls, cfg_cls
         raise Exception(f"Graph store {graph_store_type} not supported")

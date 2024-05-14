@@ -8,7 +8,7 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
-from dbgpt.storage.graph_store.base import GraphStoreBase
+from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
     KnowledgeGraphConfig
@@ -65,8 +65,13 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             config.graph_store_type
             or os.getenv("GRAPH_STORE_TYPE", "TuGraph")
         )
-        self._graph_store: GraphStoreBase = (
-            GraphStoreFactory.create(self._graph_store_type, self._config)
+
+        def configure(cfg: GraphStoreConfig):
+            cfg.name = self._config.name
+            cfg.embedding_fn = self._config.embedding_fn
+
+        self._graph_store: GraphStoreBase = GraphStoreFactory.create(
+            self._graph_store_type, configure
         )
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:

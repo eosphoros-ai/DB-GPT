@@ -353,7 +353,8 @@ class KnowledgeService:
             name=space.name,
             embedding_fn=embedding_fn,
             max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
-            llm_client=self.llm_client
+            llm_client=self.llm_client,
+            model_name=self.model_name
         )
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type,
@@ -472,7 +473,8 @@ class KnowledgeService:
         config = VectorStoreConfig(
             name=space.name,
             embedding_fn=embedding_fn,
-            llm_client=self.llm_client
+            llm_client=self.llm_client,
+            model_name=None
         )
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type,
@@ -517,7 +519,8 @@ class KnowledgeService:
             config = VectorStoreConfig(
                 name=space.name,
                 embedding_fn=embedding_fn,
-                llm_client=self.llm_client
+                llm_client=self.llm_client,
+                model_name=None
             )
             vector_store_connector = VectorStoreConnector(
                 vector_store_type=space.vector_type,

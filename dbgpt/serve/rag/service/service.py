@@ -295,7 +295,8 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             raise HTTPException(status_code=400, detail=f"Space {space_id} not found")
         config = VectorStoreConfig(
             name=space.name,
-            llm_client=self.llm_client
+            llm_client=self.llm_client,
+            model_name=None
         )
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type,
@@ -339,7 +340,8 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         if vector_ids is not None:
             config = VectorStoreConfig(
                 name=space.name,
-                llm_client=self.llm_client
+                llm_client=self.llm_client,
+                model_name=None
             )
             vector_store_connector = VectorStoreConnector(
                 vector_store_type=space.vector_type,
@@ -461,7 +463,8 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             name=space.name,
             embedding_fn=embedding_fn,
             max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
-            llm_client=self.llm_client
+            llm_client=self.llm_client,
+            model_name=None
         )
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type,

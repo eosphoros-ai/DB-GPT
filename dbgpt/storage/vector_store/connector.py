@@ -91,7 +91,7 @@ class VectorStoreConnector:
         if self._match(vector_store_type):
             self.connector_class = connector[vector_store_type]
         else:
-            raise Exception(f"Vector Store Type Not support. {0}", vector_store_type)
+            raise Exception(f"Vector store {vector_store_type} not supported")
 
         print(self.connector_class)
         self._vector_store_type = vector_store_type
