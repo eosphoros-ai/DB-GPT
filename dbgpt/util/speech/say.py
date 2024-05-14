@@ -1,5 +1,4 @@
 """ Text to speech module """
-
 import threading
 from threading import Semaphore
 

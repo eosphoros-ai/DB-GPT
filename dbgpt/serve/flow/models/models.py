@@ -1,7 +1,6 @@
 """This is an auto-generated model file
 You can define your own models and DAOs here
 """
-
 import json
 from datetime import datetime
 from typing import Any, Dict, Union

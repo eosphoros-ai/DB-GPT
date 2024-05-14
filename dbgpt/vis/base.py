@@ -1,5 +1,4 @@
 """Base class for vis protocol module."""
-
 import json
 from typing import Any, Dict, Optional
 

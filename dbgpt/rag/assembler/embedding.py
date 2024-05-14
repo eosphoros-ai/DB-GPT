@@ -1,5 +1,4 @@
 """Embedding Assembler."""
-
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings

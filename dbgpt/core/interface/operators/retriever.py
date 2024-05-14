@@ -1,5 +1,4 @@
 """The Abstract Retriever Operator."""
-
 from abc import abstractmethod
 
 from dbgpt.core.awel import MapOperator

@@ -1,5 +1,4 @@
 """Base class for resource group."""
-
 from abc import ABC, abstractmethod
 
 

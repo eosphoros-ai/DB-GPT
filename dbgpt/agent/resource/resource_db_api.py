@@ -1,5 +1,4 @@
 """Database resource client API."""
-
 import logging
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Iterator, List, Optional, Union

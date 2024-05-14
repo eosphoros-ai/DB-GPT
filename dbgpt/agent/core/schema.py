@@ -1,5 +1,4 @@
 """Schema definition for the agent."""
-
 from enum import Enum
 
 

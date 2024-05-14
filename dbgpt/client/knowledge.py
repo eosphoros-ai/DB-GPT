@@ -1,5 +1,4 @@
 """Knowledge API client."""
-
 import json
 from typing import List
 

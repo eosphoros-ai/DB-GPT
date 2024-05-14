@@ -1211,11 +1211,9 @@ def _append_view_messages(messages: List[BaseMessage]) -> List[BaseMessage]:
                 content=ai_message.content,
                 index=ai_message.index,
                 round_index=ai_message.round_index,
-                additional_kwargs=(
-                    ai_message.additional_kwargs.copy()
-                    if ai_message.additional_kwargs
-                    else {}
-                ),
+                additional_kwargs=ai_message.additional_kwargs.copy()
+                if ai_message.additional_kwargs
+                else {},
             )
             current_round.append(view_message)
     return sum(messages_by_round, [])

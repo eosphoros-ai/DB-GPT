@@ -1,5 +1,4 @@
 """Base class for all connectors."""
-
 from abc import ABC, abstractmethod
 from typing import Dict, Iterable, List, Optional, Tuple
 

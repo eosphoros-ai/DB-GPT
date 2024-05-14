@@ -26,7 +26,6 @@ Example:
         res = await list_flow(client)
 
 """
-
 import asyncio
 
 from dbgpt.client import Client

@@ -1,7 +1,6 @@
 """
 Run unit test with command: pytest dbgpt/datasource/rdbms/tests/test_conn_sqlite.py
 """
-
 import os
 import tempfile
 

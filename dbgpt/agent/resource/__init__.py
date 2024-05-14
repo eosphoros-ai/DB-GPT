@@ -1,5 +1,4 @@
 """Resource module for Agent."""
-
 from .resource_api import AgentResource, ResourceClient, ResourceType  # noqa: F401
 from .resource_db_api import ResourceDbClient, SqliteLoadClient  # noqa: F401
 from .resource_knowledge_api import ResourceKnowledgeClient  # noqa: F401

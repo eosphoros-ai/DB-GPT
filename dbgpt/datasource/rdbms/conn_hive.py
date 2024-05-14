@@ -1,5 +1,4 @@
 """Hive Connector."""
-
 from typing import Any, Optional, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote

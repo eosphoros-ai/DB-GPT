@@ -1,5 +1,4 @@
 """Base classes for task-related objects."""
-
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (

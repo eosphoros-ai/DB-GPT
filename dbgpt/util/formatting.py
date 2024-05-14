@@ -1,5 +1,4 @@
 """Utilities for formatting strings."""
-
 import json
 from string import Formatter
 from typing import Any, List, Mapping, Sequence, Set, Union

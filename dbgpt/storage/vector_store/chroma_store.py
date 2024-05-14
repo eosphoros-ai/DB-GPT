@@ -1,5 +1,4 @@
 """Chroma vector store."""
-
 import logging
 import os
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union

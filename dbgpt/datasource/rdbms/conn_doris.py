@@ -1,5 +1,4 @@
 """Doris connector."""
-
 from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote

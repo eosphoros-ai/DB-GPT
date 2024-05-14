@@ -1,5 +1,4 @@
 """Agent Plans Vis Protocol."""
-
 from ..base import Vis
 
 

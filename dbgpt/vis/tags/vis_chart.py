@@ -1,5 +1,4 @@
 """Chart visualization protocol conversion class."""
-
 import json
 from typing import Any, Dict, Optional
 

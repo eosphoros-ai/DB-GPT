@@ -1,5 +1,4 @@
 """Visualize plugins."""
-
 from ..base import Vis
 
 

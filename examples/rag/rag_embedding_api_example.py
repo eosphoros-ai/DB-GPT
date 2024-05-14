@@ -22,7 +22,6 @@ Example:
         python examples/rag/rag_embedding_api_example.py
 
 """
-
 import asyncio
 import os
 from typing import Optional

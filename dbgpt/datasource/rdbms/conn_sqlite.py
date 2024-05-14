@@ -1,5 +1,4 @@
 """SQLite connector."""
-
 import logging
 import os
 import tempfile

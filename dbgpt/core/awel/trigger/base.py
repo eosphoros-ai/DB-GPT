@@ -1,5 +1,4 @@
 """Base class for all trigger classes."""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

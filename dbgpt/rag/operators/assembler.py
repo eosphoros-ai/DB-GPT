@@ -1,5 +1,4 @@
 """Base Assembler Operator."""
-
 from abc import abstractmethod
 
 from dbgpt.core.awel import MapOperator

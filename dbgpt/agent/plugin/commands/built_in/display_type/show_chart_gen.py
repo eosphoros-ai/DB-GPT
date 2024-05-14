@@ -1,5 +1,4 @@
 """Chart display command implementation."""
-
 import logging
 import os
 import uuid

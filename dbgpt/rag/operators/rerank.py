@@ -1,5 +1,4 @@
 """The Rerank Operator."""
-
 from typing import List, Optional
 
 from dbgpt.core import Chunk

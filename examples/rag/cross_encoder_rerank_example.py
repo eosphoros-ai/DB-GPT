@@ -8,7 +8,6 @@ Download pretrained cross-encoder models can be found at https://huggingface.co/
 Example:
     python examples/rag/cross_encoder_rerank_example.py
 """
-
 import asyncio
 import os
 

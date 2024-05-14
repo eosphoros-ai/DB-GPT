@@ -1,5 +1,4 @@
 """PDF Knowledge."""
-
 from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import Document

@@ -1,5 +1,4 @@
 """Postgres vector store."""
-
 import logging
 from typing import List, Optional
 

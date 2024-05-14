@@ -1,5 +1,4 @@
 """Summary Assembler."""
-
 import os
 from typing import Any, List, Optional
 

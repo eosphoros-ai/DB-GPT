@@ -3,7 +3,6 @@ Adapted from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/ser
 For benchmarks.
 
 """
-
 import gc
 from typing import Dict, Iterable
 

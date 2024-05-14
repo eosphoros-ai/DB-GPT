@@ -1,5 +1,4 @@
 """this module contains the datasource client functions."""
-
 from typing import List
 
 from dbgpt._private.pydantic import model_to_dict

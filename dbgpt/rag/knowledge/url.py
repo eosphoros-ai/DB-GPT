@@ -1,5 +1,4 @@
 """URL Knowledge."""
-
 from typing import Any, List, Optional
 
 from dbgpt.core import Document

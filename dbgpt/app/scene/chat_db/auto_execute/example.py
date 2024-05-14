@@ -4,10 +4,7 @@ from dbgpt.core._private.example_base import ExampleSelector, ExampleType
 EXAMPLES = [
     {
         "messages": [
-            {
-                "type": "human",
-                "data": {"content": "查询用户test1所在的城市", "example": True},
-            },
+            {"type": "human", "data": {"content": "查询用户test1所在的城市", "example": True}},
             {
                 "type": "ai",
                 "data": {
@@ -19,10 +16,7 @@ EXAMPLES = [
     },
     {
         "messages": [
-            {
-                "type": "human",
-                "data": {"content": "查询成都的用户的订单信息", "example": True},
-            },
+            {"type": "human", "data": {"content": "查询成都的用户的订单信息", "example": True}},
             {
                 "type": "ai",
                 "data": {

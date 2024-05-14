@@ -1,5 +1,4 @@
 """Utility functions for calculating similarity."""
-
 from typing import TYPE_CHECKING, Any, List, Sequence
 
 if TYPE_CHECKING:

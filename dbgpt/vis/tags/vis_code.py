@@ -1,5 +1,4 @@
 """Code visualization protocol."""
-
 from ..base import Vis
 
 

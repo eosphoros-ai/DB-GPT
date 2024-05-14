@@ -1,5 +1,4 @@
 """A proxy agent for the user."""
-
 from .base_agent import ConversableAgent
 from .profile import ProfileConfig
 

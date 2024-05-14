@@ -1,5 +1,4 @@
 """Embedding retriever."""
-
 from functools import reduce
 from typing import Any, Dict, List, Optional, cast
 

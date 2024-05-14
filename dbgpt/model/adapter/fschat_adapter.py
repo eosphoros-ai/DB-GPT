@@ -2,7 +2,6 @@
 
 You can import fastchat only in this file, so that the user does not need to install fastchat if he does not use it.
 """
-
 import logging
 import os
 import threading

@@ -1,5 +1,4 @@
 """Generate a table display for the response."""
-
 import logging
 
 from pandas import DataFrame

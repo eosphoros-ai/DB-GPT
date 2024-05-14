@@ -34,9 +34,9 @@ def _jinja2_formatter(template: str, **kwargs: Any) -> str:
 
 
 _DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
-    "f-string": lambda is_strict: (
-        formatter.format if is_strict else no_strict_formatter.format
-    ),
+    "f-string": lambda is_strict: formatter.format
+    if is_strict
+    else no_strict_formatter.format,
     "jinja2": lambda is_strict: _jinja2_formatter,
 }
 

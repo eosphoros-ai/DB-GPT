@@ -1,5 +1,4 @@
 """Pre text splitter."""
-
 from typing import Iterable, List
 
 from dbgpt.core import Chunk, Document

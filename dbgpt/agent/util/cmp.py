@@ -1,5 +1,4 @@
 """Compare string utility functions."""
-
 import string
 
 

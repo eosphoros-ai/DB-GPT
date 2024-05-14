@@ -1,5 +1,4 @@
 """Summary for rdbms database."""
-
 import re
 from typing import TYPE_CHECKING, List, Optional
 

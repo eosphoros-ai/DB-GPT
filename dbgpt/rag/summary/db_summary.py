@@ -1,5 +1,4 @@
 """Summary classes for database, table, field and index."""
-
 from typing import Dict, Iterable, List, Optional, Tuple
 
 

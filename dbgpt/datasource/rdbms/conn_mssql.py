@@ -1,5 +1,4 @@
 """MSSQL connector."""
-
 from typing import Iterable
 
 from sqlalchemy import text

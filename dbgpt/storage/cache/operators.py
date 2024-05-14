@@ -1,5 +1,4 @@
 """Operators for processing model outputs with caching support."""
-
 import logging
 from typing import AsyncIterator, Dict, List, Optional, Union, cast
 

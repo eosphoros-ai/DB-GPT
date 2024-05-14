@@ -1,5 +1,4 @@
 """this module contains the flow client functions."""
-
 from typing import List
 
 from dbgpt.core.awel.flow.flow_factory import FlowPanel

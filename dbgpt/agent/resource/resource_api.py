@@ -1,5 +1,4 @@
 """Resource API for the agent."""
-
 import json
 from abc import ABC, abstractmethod
 from enum import Enum

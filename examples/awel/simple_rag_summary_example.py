@@ -26,7 +26,6 @@ This example shows how to use AWEL to build a simple rag summary example.
             "url": "https://docs.dbgpt.site/docs/awel"
         }'
 """
-
 from typing import Dict
 
 from dbgpt._private.pydantic import BaseModel, Field

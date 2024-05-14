@@ -1,5 +1,4 @@
 """The mixin of DAGs."""
-
 import abc
 import dataclasses
 import inspect
