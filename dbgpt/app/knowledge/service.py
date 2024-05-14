@@ -482,7 +482,13 @@ class KnowledgeService:
             raise Exception(f"there are no or more than one document called {doc_name}")
         vector_ids = documents[0].vector_ids
         if vector_ids is not None:
-            config = VectorStoreConfig(name=space_name)
+            embedding_factory = CFG.SYSTEM_APP.get_component(
+                "embedding_factory", EmbeddingFactory
+            )
+            embedding_fn = embedding_factory.create(
+                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+            )
+            config = VectorStoreConfig(name=space_name, embedding_fn=embedding_fn)
             vector_store_connector = VectorStoreConnector(
                 vector_store_type=CFG.VECTOR_STORE_TYPE,
                 vector_store_config=config,
