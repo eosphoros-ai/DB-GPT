@@ -1,6 +1,8 @@
 import React, { useEffect,useRef, useState } from 'react';
-import cytoscape from 'cytoscape'
-import euler from 'cytoscape-euler'
+import cytoscape from 'cytoscape';
+import euler from 'cytoscape-euler';
+import { Button } from 'antd';
+import { RollbackOutlined } from '@ant-design/icons';
 cytoscape.use(euler)
 import { getGraphVis } from '@/client/api';
 import { useRouter } from 'next/router';
@@ -23,6 +25,7 @@ const LAYOUTCONFIG = {
 function GraphVis() {
   const myRef = useRef<HTMLDivElement>(null);
   const LIMIT = 500
+  const router = useRouter();
   const fetchGraphVis = async () => {
     const result = await getGraphVis(spaceName as string,{limit:LIMIT})
     if(myRef.current){
@@ -111,6 +114,9 @@ function GraphVis() {
       y: dom.clientHeight / 2
      })
   }
+  const back = ()=>{
+    router.push(`/knowledge`);
+  }
   const {
     query: { spaceName },
   } = useRouter();
@@ -118,8 +124,10 @@ function GraphVis() {
     spaceName && fetchGraphVis()
   })
   return (
-    <div className="h-full overflow-y-scroll relative px-2">
-        {/* <h1>在这里做可视化视图渲染</h1> */}
+    <div className="p-4 h-full overflow-y-scroll relative px-2">
+       <div>
+        <Button onClick={back} icon={<RollbackOutlined />}> Back </Button>
+       </div>
         <div className='h-full w-full' ref={myRef}></div>
     </div>
   );

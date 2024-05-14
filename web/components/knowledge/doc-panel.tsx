@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, Space, Divider, Empty, Spin, Tag, Tooltip, Modal } from 'antd';
-import { DeleteFilled, InteractionFilled, PlusOutlined, ToolFilled, EyeFilled, WarningOutlined } from '@ant-design/icons';
+import { DeleteFilled, InteractionFilled, PlusOutlined, ToolFilled, EyeFilled, WarningOutlined, DeploymentUnitOutlined} from '@ant-design/icons';
 import { apiInterceptors, delDocument, getDocumentList, syncDocument } from '@/client/api';
 import { IDocument, ISpace } from '@/types/knowledge';
 import moment from 'moment';
@@ -214,7 +214,7 @@ export default function DocPanel(props: IProps) {
           Arguments
         </Button>
         {
-          space.vector_type === 'Chroma' && (<Button size="middle" className="flex items-center mx-2" onClick={openGraphVisualPage}>Graph Visual</Button>)
+          space.vector_type === 'Chroma' && (<Button size="middle" className="flex items-center mx-2" icon={<DeploymentUnitOutlined />} onClick={openGraphVisualPage}>Graph Visual</Button>)
         }
       </Space>
       <Divider />

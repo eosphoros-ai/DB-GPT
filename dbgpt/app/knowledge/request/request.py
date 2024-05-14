@@ -52,6 +52,9 @@ class DocumentQueryRequest(BaseModel):
     """page_size: page size"""
     page_size: int = 20
 
+class GraphVisRequest(BaseModel):
+    limit: int = 100
+
 
 class DocumentSyncRequest(BaseModel):
     """Sync request"""

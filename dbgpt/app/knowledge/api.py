@@ -17,6 +17,7 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
+    GraphVisRequest
 )
 from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
 from dbgpt.app.knowledge.service import KnowledgeService
@@ -154,6 +155,20 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
         )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document list error {e}")
+
+@router.post("/knowledge/{space_name}/graphvis")
+def graph_vis(space_name: str, query_request: GraphVisRequest):
+    print(f"/document/list params: {space_name}, {query_request}")
+    return {
+        'nodes':[],
+        'edges':[]
+    }
+    # try:
+    #     return Result.succ(
+    #         knowledge_space_service.get_knowledge_documents(space_name, query_request)
+    #     )
+    # except Exception as e:
+    #     return Result.failed(code="E000X", msg=f"document list error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/delete")
