@@ -112,3 +112,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def delete_vector_name(self, index_name: str):
         self._graph_store.drop()
+
+    def query_graph(self,limit):
+        query = f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}'
+        res = self._graph_store.query(query)
+        return res

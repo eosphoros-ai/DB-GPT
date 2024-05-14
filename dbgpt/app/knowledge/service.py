@@ -695,12 +695,13 @@ class KnowledgeService:
             embedding_fn=embedding_fn,
             max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
             llm_client=self.llm_client,
-            model_name=CFG.LLM_MODEL
+            model_name=CFG.LLM_MODEL,
         )
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type,
             vector_store_config=config
         )
-
-        return {}
+        # data = vector_store_connector.query_graph(100)
+        # todo with data
+        return {'nodes':[],'edges':[]}
     

@@ -24,7 +24,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         description="TuGraph host",
     )
     port: int = Field(
-        default=7070,
+        default=7687,
         description="TuGraph port",
     )
     username: str = Field(
@@ -101,21 +101,16 @@ class TuGraphStore(GraphStoreBase):
 
     def __init__(
         self,
-        host: str,
-        port: int,
-        user: str,
-        pwd: str,
-        graph_name: str,
-        node_label: str = "entity",
-        edge_label: str = "rel",
+        config:TuGraphStoreConfig,
         **kwargs: Any,
     ) -> None:
         """Initialize the TuGraphStore with connection details."""
         self.conn = TuGraphConnector.from_uri_db(
-            host=host, port=port, user=user, pwd=pwd, db_name=graph_name
+            host=config.host, port=config.port, user=config.username, pwd=config.password, db_name=config.name
         )
-        self._node_label = node_label
-        self._edge_label = edge_label
+        self.conn.create_graph(graph_name=config.name)
+        self._node_label = config.vertex_type
+        self._edge_label = config.edge_type
         self._create_schema()
 
     def _check_label(self, type: str):
@@ -161,6 +156,10 @@ class TuGraphStore(GraphStoreBase):
         self.conn.run(query=obj_query)
         self.conn.run(query=rel_query)
 
+    def drop(self):
+        query = f'MATCH (n) DELETE n'
+        self.conn.run(query=query)
+
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> List[List[str]]:
@@ -186,10 +185,6 @@ class TuGraphStore(GraphStoreBase):
             f"(n2:{self._node_label} {{id:'{obj}'}}) DELETE n1,n2,r"
         )
         self.conn.run(query=del_query)
-
-    def drop(self):
-        # todo: drop graph
-        pass
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""

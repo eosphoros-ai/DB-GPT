@@ -20,3 +20,6 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
 
     def delete_by_ids(self, ids: str):
         raise Exception("Delete document not supported by knowledge graph")
+    
+    def query_graph(self,limit:int):
+        return {'nodes':[],'relationships':[]}
