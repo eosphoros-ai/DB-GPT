@@ -229,3 +229,9 @@ class TuGraphStore(GraphStoreBase):
         for edge in graph["edges"]:
             mg.append_edge(edge)
         return mg
+
+
+    def get_full_graph(self,limit):
+        query = f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}'
+        data = self.conn.run(query=query)
+        return data

@@ -690,17 +690,20 @@ class KnowledgeService:
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")
         space = spaces[0]
+        print(CFG.LLM_MODEL)
         config = VectorStoreConfig(
             name=space.name,
             embedding_fn=embedding_fn,
             max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
             llm_client=self.llm_client,
-            model_name=CFG.LLM_MODEL,
+            model_name=None,
         )
+       
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type,
             vector_store_config=config
         )
+        # print(vector_store_connector.query_graph)
         # data = vector_store_connector.query_graph(limit=limit)
         # todo with data
         return {'nodes':[],'edges':[]}

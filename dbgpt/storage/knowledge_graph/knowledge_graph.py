@@ -114,6 +114,5 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._graph_store.drop()
 
     def query_graph(self,limit):
-        query = f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}'
-        res = self._graph_store.query(query)
+        res = self._graph_store.get_full_graph(limit)
         return res
