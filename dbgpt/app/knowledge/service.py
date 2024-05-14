@@ -679,7 +679,7 @@ class KnowledgeService:
         )
         return chat
 
-    def query_graph(self,space_name):
+    def query_graph(self,space_name,limit):
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
@@ -701,7 +701,7 @@ class KnowledgeService:
             vector_store_type=space.vector_type,
             vector_store_config=config
         )
-        # data = vector_store_connector.query_graph(100)
+        # data = vector_store_connector.query_graph(limit=limit)
         # todo with data
         return {'nodes':[],'edges':[]}
     

@@ -159,7 +159,8 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
 @router.post("/knowledge/{space_name}/graphvis")
 def graph_vis(space_name: str, query_request: GraphVisRequest):
     print(f"/document/list params: {space_name}, {query_request}")
-    knowledge_space_service.query_graph(space_name=space_name)
+    print(query_request.limit)
+    knowledge_space_service.query_graph(space_name=space_name,limit=query_request.limit)
     return {
         'nodes':[],
         'edges':[]
