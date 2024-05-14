@@ -135,6 +135,41 @@ class YiAdapter(NewHFChatModelAdapter):
         )
 
 
+class Yi15Adapter(YiAdapter):
+    """Yi 1.5 model adapter."""
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "yi-" in lower_model_name_or_path
+            and "1.5" in lower_model_name_or_path
+            and "chat" in lower_model_name_or_path
+        )
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        str_prompt = super().get_str_prompt(
+            params,
+            messages,
+            tokenizer,
+            prompt_template,
+            convert_to_compatible_format,
+        )
+        terminators = [
+            tokenizer.eos_token_id,
+        ]
+        exist_token_ids = params.get("stop_token_ids", [])
+        terminators.extend(exist_token_ids)
+        params["stop_token_ids"] = terminators
+        return str_prompt
+
+
 class Mixtral8x7BAdapter(NewHFChatModelAdapter):
     """
     https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1
@@ -335,7 +370,10 @@ class Llama3Adapter(NewHFChatModelAdapter):
         return str_prompt
 
 
+# The following code is used to register the model adapter
+# The last registered model adapter is matched first
 register_model_adapter(YiAdapter)
+register_model_adapter(Yi15Adapter)
 register_model_adapter(Mixtral8x7BAdapter)
 register_model_adapter(SOLARAdapter)
 register_model_adapter(GemmaAdapter)

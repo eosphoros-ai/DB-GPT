@@ -121,7 +121,7 @@ class EmbeddingRetriever(BaseRetriever):
         new_candidates_with_score = cast(
             List[Chunk], reduce(lambda x, y: x + y, candidates_with_score)
         )
-        new_candidates_with_score = self._rerank.rank(new_candidates_with_score)
+        new_candidates_with_score = self._rerank.rank(new_candidates_with_score, query)
         return new_candidates_with_score
 
     async def _aretrieve(
@@ -208,7 +208,9 @@ class EmbeddingRetriever(BaseRetriever):
                 "rerank_cls": self._rerank.__class__.__name__,
             },
         ):
-            new_candidates_with_score = self._rerank.rank(new_candidates_with_score)
+            new_candidates_with_score = self._rerank.rank(
+                new_candidates_with_score, query
+            )
             return new_candidates_with_score
 
     async def _similarity_search(

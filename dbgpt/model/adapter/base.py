@@ -524,11 +524,11 @@ def get_model_adapter(
     """
     adapter = None
     # First find adapter by model_name
-    for adapter_entry in model_adapters:
+    for adapter_entry in model_adapters[::-1]:
         if adapter_entry.model_adapter.match(model_type, model_name, None):
             adapter = adapter_entry.model_adapter
             break
-    for adapter_entry in model_adapters:
+    for adapter_entry in model_adapters[::-1]:
         if adapter_entry.model_adapter.match(model_type, None, model_path):
             adapter = adapter_entry.model_adapter
             break

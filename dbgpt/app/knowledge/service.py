@@ -247,11 +247,13 @@ class KnowledgeService:
         doc_ids = sync_request.doc_ids
         self.model_name = sync_request.model_name or CFG.LLM_MODEL
         for doc_id in doc_ids:
-            query = KnowledgeDocumentEntity(
-                id=doc_id,
-                space=space_name,
-            )
-            doc = knowledge_document_dao.get_knowledge_documents(query)[0]
+            query = KnowledgeDocumentEntity(id=doc_id)
+            docs = knowledge_document_dao.get_documents(query)
+            if len(docs) == 0:
+                raise Exception(
+                    f"there are document called, doc_id: {sync_request.doc_id}"
+                )
+            doc = docs[0]
             if (
                 doc.status == SyncStatus.RUNNING.name
                 or doc.status == SyncStatus.FINISHED.name
