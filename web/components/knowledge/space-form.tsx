@@ -23,10 +23,7 @@ export default function SpaceForm(props: IProps) {
   const handleFinish = async (fieldsValue: FieldType) => {
     const { spaceName, owner, description,storage } = fieldsValue;
     setSpinning(true);
-    let vector_type = 'Chroma'
-    if(storage === 'KG'){
-      vector_type = 'TuGraph'
-    }
+    let vector_type = storage
     const [_, data, res] = await apiInterceptors(
       addSpace({
         name: spaceName,
@@ -71,8 +68,8 @@ export default function SpaceForm(props: IProps) {
         </Form.Item>
         <Form.Item<FieldType> label={t('Storage')} name="storage" rules={[{ required: true, message: t('Please_select_the_storage') }]}>
           <Select className="mb-5 h-12" placeholder={t('Please_select_the_storage')}>
-            <Select.Option value="VS">Vector Store</Select.Option>
-            <Select.Option value="KG">Knowledge Graph</Select.Option>
+            <Select.Option value="Chroma">Vector Store</Select.Option>
+            <Select.Option value="KnowledgeGraph">Knowledge Graph</Select.Option>
           </Select>
         </Form.Item>
         <Form.Item<FieldType> label={t('Description')} name="description" rules={[{ required: true, message: t('Please_input_the_description') }]}>

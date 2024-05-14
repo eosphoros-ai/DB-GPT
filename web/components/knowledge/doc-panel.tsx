@@ -94,6 +94,9 @@ export default function DocPanel(props: IProps) {
     setArgumentsShow(true);
   };
 
+  const openGraphVisualPage = () => {
+    router.push(`/knowledge/graph/?spaceName=${space.name}`);
+  }
   const renderResultTag = (status: string, result: string) => {
     let color;
     switch (status) {
@@ -210,6 +213,9 @@ export default function DocPanel(props: IProps) {
         <Button size="middle" className="flex items-center mx-2" icon={<ToolFilled />} onClick={handleArguments}>
           Arguments
         </Button>
+        {
+          space.vector_type === 'Chroma' && (<Button size="middle" className="flex items-center mx-2" onClick={openGraphVisualPage}>Graph Visual</Button>)
+        }
       </Space>
       <Divider />
       <Spin spinning={isLoading}>{renderDocumentCard()}</Spin>

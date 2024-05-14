@@ -25,6 +25,7 @@ import {
   DocumentParams,
   IArguments,
   IChunkList,
+  GraphVisResult,
   IChunkStrategyResponse,
   IDocumentResponse,
   ISpace,
@@ -143,6 +144,10 @@ export const getSpaceList = () => {
 export const getDocumentList = (spaceName: string, data: Record<string, number | Array<number>>) => {
   return POST<Record<string, number | Array<number>>, IDocumentResponse>(`/knowledge/${spaceName}/document/list`, data);
 };
+export const getGraphVis = (spaceName: string, data:{limit: number}) => {
+  // return POST<Record<string, number>, GraphVisResult>(`/knowledge/${spaceName}/graphvis`, data);
+  return {"nodes":[{"identity":178,"label":"entity","properties":{"id":"Tom"}},{"identity":179,"label":"entity","properties":{"id":"Cat"}},{"identity":182,"label":"entity","properties":{"id":"C"}},{"identity":183,"label":"entity","properties":{"id":"D"}},{"identity":184,"label":"entity","properties":{"id":"E"}},{"identity":185,"label":"entity","properties":{"id":"F"}},{"identity":258,"label":"entity","properties":{"id":"A"}},{"identity":259,"label":"entity","properties":{"id":"B"}}],"relationships":[{"dst":179,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"is"},"src":178,"temporal_id":0},{"dst":183,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"5"},"src":182,"temporal_id":0},{"dst":185,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"8"},"src":184,"temporal_id":0},{"dst":184,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"7"},"src":185,"temporal_id":0},{"dst":258,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"0"},"src":258,"temporal_id":0},{"dst":258,"forward":true,"identity":1,"label":"rel","label_id":0,"properties":{"id":"1"},"src":258,"temporal_id":0},{"dst":259,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"2"},"src":258,"temporal_id":0},{"dst":182,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"3"},"src":259,"temporal_id":0},{"dst":183,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"4"},"src":259,"temporal_id":0},{"dst":184,"forward":true,"identity":0,"label":"rel","label_id":0,"properties":{"id":"6"},"src":259,"temporal_id":0}]}
+}
 
 export const addDocument = (knowledgeName: string, data: DocumentParams) => {
   return POST<DocumentParams, number>(`/knowledge/${knowledgeName}/document/add`, data);
@@ -172,8 +177,8 @@ export const getChunkList = (spaceName: string, data: ChunkListParams) => {
   return POST<ChunkListParams, IChunkList>(`/knowledge/${spaceName}/chunk/list`, data);
 };
 
-export const delDocument = (spaceName: string, data: Record<string, string>) => {
-  return POST<Record<string, string>, null>(`/knowledge/${spaceName}/document/delete`, data);
+export const delDocument = (spaceName: string, data: Record<string, number>) => {
+  return POST<Record<string, number>>(`/knowledge/${spaceName}/document/delete`, data);
 };
 
 export const delSpace = (data: Record<string, string>) => {
