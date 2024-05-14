@@ -33,8 +33,8 @@ class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
     )
 
     graph_store_type: str = Field(
-        default="TuGraph",
-        description="The type of graph store, memory by default."
+        default=None,
+        description="The type of graph store."
     )
 
 

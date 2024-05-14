@@ -1,47 +1,49 @@
 """Vector Store Module."""
-from typing import Any
+from typing import Type
 
 
-def _import_pgvector() -> Any:
+def _import_pgvector() -> (Type, Type):
     from dbgpt.storage.vector_store.pgvector_store import PGVectorStore
+    from dbgpt.storage.vector_store.pgvector_store import PGVectorConfig
+    return PGVectorStore, PGVectorConfig
 
-    return PGVectorStore
 
-
-def _import_milvus() -> Any:
+def _import_milvus() -> (Type, Type):
     from dbgpt.storage.vector_store.milvus_store import MilvusStore
+    from dbgpt.storage.vector_store.milvus_store import MilvusVectorConfig
+    return MilvusStore, MilvusVectorConfig
 
-    return MilvusStore
 
-
-def _import_chroma() -> Any:
+def _import_chroma() -> (Type, Type):
     from dbgpt.storage.vector_store.chroma_store import ChromaStore
+    from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+    return ChromaStore, ChromaVectorConfig
 
-    return ChromaStore
 
-
-def _import_weaviate() -> Any:
+def _import_weaviate() -> (Type, Type):
     from dbgpt.storage.vector_store.weaviate_store import WeaviateStore
+    from dbgpt.storage.vector_store.weaviate_store import WeaviateVectorConfig
+    return WeaviateStore, WeaviateVectorConfig
 
-    return WeaviateStore
 
-
-def _import_oceanbase() -> Any:
+def _import_oceanbase() -> (Type, Type):
     from dbgpt.storage.vector_store.oceanbase_store import OceanBaseStore
+    from dbgpt.storage.vector_store.oceanbase_store import OceanBaseConfig
+    return OceanBaseStore, OceanBaseConfig
 
-    return OceanBaseStore
 
-
-def _import_builtin_knowledge_graph() -> Any:
+def _import_builtin_knowledge_graph() -> (Type, Type):
     from dbgpt.storage.knowledge_graph.knowledge_graph import \
         BuiltinKnowledgeGraph
+    from dbgpt.storage.knowledge_graph.knowledge_graph import \
+        BuiltinKnowledgeGraphConfig
+    return BuiltinKnowledgeGraph, BuiltinKnowledgeGraphConfig
 
-    return BuiltinKnowledgeGraph
 
-
-def _import_openspg() -> Any:
+def _import_openspg() -> (Type, Type):
     from dbgpt.storage.knowledge_graph.open_spg import OpenSPG
-    return OpenSPG
+    from dbgpt.storage.knowledge_graph.open_spg import OpenSPGConfig
+    return OpenSPG, OpenSPGConfig
 
 def _import_elastic() -> Any:
     from dbgpt.storage.vector_store.elastic_store import ElasticStore
@@ -49,7 +51,7 @@ def _import_elastic() -> Any:
     return ElasticStore
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> (Type, Type):
     if name == "Chroma":
         return _import_chroma()
     elif name == "Milvus":

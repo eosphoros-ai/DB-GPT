@@ -3,7 +3,7 @@
 import copy
 import logging
 import os
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, List, Optional, Type, cast, Tuple
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import (
@@ -20,7 +20,7 @@ from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
-connector: Dict[str, Type] = {}
+connector: Dict[str, Tuple[Type, Type]] = {}
 
 
 def _load_vector_options() -> List[OptionValue]:
@@ -89,18 +89,31 @@ class VectorStoreConnector:
         self._register()
 
         if self._match(vector_store_type):
-            self.connector_class = connector[vector_store_type]
+            self.connector_class, self.config_class = connector[vector_store_type]
         else:
             raise Exception(f"Vector store {vector_store_type} not supported")
 
-        print(self.connector_class)
+        logger.info(f"VectorStore:{self.connector_class}")
         self._vector_store_type = vector_store_type
         self._embeddings = (
             vector_store_config.embedding_fn if vector_store_config else None
         )
 
         try:
-            self.client = self.connector_class(vector_store_config)
+            config: IndexStoreConfig = self.config_class()
+            config.name = vector_store_config.name
+            config.embedding_fn = vector_store_config.embedding_fn
+            config.max_chunks_once_load = vector_store_config.max_chunks_once_load
+            config.max_threads = vector_store_config.max_threads
+            config.user = vector_store_config.user
+            config.password = vector_store_config.password
+
+            # extra
+            config_dict = vector_store_config.dict()
+            config.llm_client = config_dict.get("llm_client", None)
+            config.model_name = config_dict.get("model_name", None)
+
+            self.client = self.connector_class(config)
         except Exception as e:
             logger.error("connect vector store failed: %s", e)
             raise e
@@ -235,6 +248,9 @@ class VectorStoreConnector:
         from dbgpt.storage import vector_store
 
         for cls in vector_store.__all__:
-            if issubclass(getattr(vector_store, cls), IndexStoreBase):
-                _k, _v = cls, getattr(vector_store, cls)
-                connector.update({_k: _v})
+            store_cls, config_cls = getattr(vector_store, cls)
+            if (
+                issubclass(store_cls, IndexStoreBase)
+                and issubclass(config_cls, IndexStoreConfig)
+            ):
+                connector[cls] = (store_cls, config_cls)

@@ -22,6 +22,9 @@ class OpenSPG(KnowledgeGraphBase):
 
     # todo: add OpenSPG implementation
 
+    def __init__(self, config: OpenSPGConfig):
+        pass
+
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         pass
 
