@@ -679,17 +679,28 @@ class KnowledgeService:
         )
         return chat
 
-    def query_graph():
-        # config = VectorStoreConfig(
-        # name=space.name,
-        # embedding_fn=embedding_fn,
-        # max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
-        # llm_client=self.llm_client,
-        # model_name=self.model_name
-        # )
-        # vector_store_connector = VectorStoreConnector(
-        #     vector_store_type=space.vector_type,
-        #     vector_store_config=config
-        # )
-        return ''
+    def query_graph(self,space_name):
+        embedding_factory = CFG.SYSTEM_APP.get_component(
+            "embedding_factory", EmbeddingFactory
+        )
+        embedding_fn = embedding_factory.create(
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+        )
+        spaces = self.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
+        if len(spaces) != 1:
+            raise Exception(f"invalid space name:{space_name}")
+        space = spaces[0]
+        config = VectorStoreConfig(
+            name=space.name,
+            embedding_fn=embedding_fn,
+            max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
+            llm_client=self.llm_client,
+            model_name=CFG.LLM_MODEL
+        )
+        vector_store_connector = VectorStoreConnector(
+            vector_store_type=space.vector_type,
+            vector_store_config=config
+        )
+
+        return {}
     

@@ -71,7 +71,7 @@ export default function SpaceCard(props: IProps) {
           <GptCard
             title={space.name}
             desc={space.desc}
-            icon={space.vector_type!=='Chroma'?"/models/knowledge-default.jpg":"/models/knowledge-graph.png"}
+            icon={space.vector_type === 'KnowledgeGraph'?"/models/knowledge-graph.png":"/models/knowledge-default.jpg"}
             iconBorder={false}
             tags={[
               {
