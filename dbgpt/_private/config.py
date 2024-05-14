@@ -207,7 +207,7 @@ class Config(metaclass=Singleton):
             os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True").lower() == "true"
         )
 
-        ###dbgpt meta info database connection configuration
+        ### dbgpt meta info database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST")
         self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "data/default_sqlite.db")
         self.LOCAL_DB_TYPE = os.getenv("LOCAL_DB_TYPE", "sqlite")
@@ -247,6 +247,11 @@ class Config(metaclass=Singleton):
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
+        # Elasticsearch Vector Configuration
+        self.ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "127.0.0.1")
+        self.ELASTICSEARCH_PORT = os.getenv("ELASTICSEARCH_PORT", "9200")
+        self.ELASTICSEARCH_USERNAME = os.getenv("ELASTICSEARCH_USERNAME", None)
+        self.ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", None)
 
         ## OceanBase Configuration
         self.OB_HOST = os.getenv("OB_HOST", "127.0.0.1")

@@ -32,6 +32,12 @@ def _import_oceanbase() -> Any:
     return OceanBaseStore
 
 
+def _import_elastic() -> Any:
+    from dbgpt.storage.vector_store.elastic_store import ElasticStore
+
+    return ElasticStore
+
+
 def __getattr__(name: str) -> Any:
     if name == "Chroma":
         return _import_chroma()
@@ -43,8 +49,10 @@ def __getattr__(name: str) -> Any:
         return _import_pgvector()
     elif name == "OceanBase":
         return _import_oceanbase()
+    elif name == "ElasticSearch":
+        return _import_elastic()
     else:
         raise AttributeError(f"Could not find: {name}")
 
 
-__all__ = ["Chroma", "Milvus", "Weaviate", "OceanBase", "PGVector"]
+__all__ = ["Chroma", "Milvus", "Weaviate", "OceanBase", "PGVector", "ElasticSearch"]
