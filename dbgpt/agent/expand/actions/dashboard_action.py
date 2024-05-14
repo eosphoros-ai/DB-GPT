@@ -89,8 +89,8 @@ class DashboardAction(Action[List[ChartItem]]):
 
             db = db_resources[0]
 
-            if not resource:
-                raise ValueError("Resource is not initialized!")
+            if not db:
+                raise ValueError("The database resource is not found！")
 
             chart_params = []
             for chart_item in chart_items:
