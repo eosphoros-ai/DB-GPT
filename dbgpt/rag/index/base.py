@@ -3,12 +3,44 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
-from dbgpt.core import Chunk
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
+
+
+class IndexStoreConfig(BaseModel):
+    """Index store config."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+
+    name: str = Field(
+        default="dbgpt_collection",
+        description="The name of index store, if not set, will use the default name.",
+    )
+    embedding_fn: Optional[Embeddings] = Field(
+        default=None,
+        description="The embedding function of vector store, if not set, will use the "
+                    "default embedding function.",
+    )
+    max_chunks_once_load: int = Field(
+        default=10,
+        description="The max number of chunks to load at once. If your document is "
+                    "large, you can set this value to a larger number to speed up the loading "
+                    "process. Default is 10.",
+    )
+    max_threads: int = Field(
+        default=1,
+        description="The max number of threads to use. Default is 1. If you set this "
+                    "bigger than 1, please make sure your vector store is thread-safe.",
+    )
+
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        """Convert to dict."""
+        return model_to_dict(self, **kwargs)
 
 
 class IndexStoreBase(ABC):
@@ -43,6 +75,22 @@ class IndexStoreBase(ABC):
             filters(Optional[MetadataFilters]): metadata filters.
         Return:
             List[Chunk]: The similar documents.
+        """
+
+    @abstractmethod
+    def delete_by_ids(self, ids: str):
+        """Delete docs.
+
+        Args:
+            ids(str): The vector ids to delete, separated by comma.
+        """
+
+    @abstractmethod
+    def delete_vector_name(self, index_name: str):
+        """Delete index by name.
+
+        Args:
+            index_name(str): The name of index to delete.
         """
 
     def load_document_with_limit(

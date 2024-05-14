@@ -21,8 +21,10 @@ from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, LLMClient
 from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.model import DefaultLLMClient
+from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
@@ -36,7 +38,6 @@ from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer, trace
-
 from ..api.schemas import (
     DocumentServeRequest,
     DocumentServeResponse,
@@ -45,7 +46,8 @@ from ..api.schemas import (
     SpaceServeRequest,
     SpaceServeResponse,
 )
-from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, \
+    ServeConfig
 from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 
 logger = logging.getLogger(__name__)
@@ -71,7 +73,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         document_dao: Optional[KnowledgeDocumentDao] = None,
         chunk_dao: Optional[DocumentChunkDao] = None,
     ):
-        self._system_app = None
+        self._system_app = system_app
         self._dao: KnowledgeSpaceDao = dao
         self._document_dao: KnowledgeDocumentDao = document_dao
         self._chunk_dao: DocumentChunkDao = chunk_dao
@@ -111,6 +113,13 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
     def config(self) -> ServeConfig:
         """Returns the internal ServeConfig."""
         return self._serve_config
+
+    @property
+    def llm_client(self) -> LLMClient:
+        worker_manager = self._system_app.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        return DefaultLLMClient(worker_manager, True)
 
     def create_space(self, request: SpaceServeRequest) -> SpaceServeResponse:
         """Create a new Space entity
@@ -284,10 +293,13 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         space = self.get(query_request)
         if space is None:
             raise HTTPException(status_code=400, detail=f"Space {space_id} not found")
-        config = VectorStoreConfig(name=space.name)
+        config = VectorStoreConfig(
+            name=space.name,
+            llm_client=self.llm_client
+        )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE,
-            vector_store_config=config,
+            vector_store_type=space.vector_type,
+            vector_store_config=config
         )
         # delete vectors
         vector_store_connector.delete_vector_name(space.name)
@@ -316,12 +328,22 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         docuemnt = self._document_dao.get_one(query_request)
         if docuemnt is None:
             raise Exception(f"there are no or more than one document  {document_id}")
+
+        # get space by name
+        spaces = self._dao.get_knowledge_space(KnowledgeSpaceEntity(name=docuemnt.space))
+        if len(spaces) != 1:
+            raise Exception(f"invalid space name: {docuemnt.space}")
+        space = spaces[0]
+
         vector_ids = docuemnt.vector_ids
         if vector_ids is not None:
-            config = VectorStoreConfig(name=docuemnt.space)
+            config = VectorStoreConfig(
+                name=space.name,
+                llm_client=self.llm_client
+            )
             vector_store_connector = VectorStoreConnector(
-                vector_store_type=CFG.VECTOR_STORE_TYPE,
-                vector_store_config=config,
+                vector_store_type=space.vector_type,
+                vector_store_config=config
             )
             # delete vector by ids
             vector_store_connector.delete_by_ids(vector_ids)
@@ -439,10 +461,11 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             name=space.name,
             embedding_fn=embedding_fn,
             max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
+            llm_client=self.llm_client
         )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE,
-            vector_store_config=config,
+            vector_store_type=space.vector_type,
+            vector_store_config=config
         )
         knowledge = KnowledgeFactory.create(
             datasource=doc.content,

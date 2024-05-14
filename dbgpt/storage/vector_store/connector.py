@@ -1,6 +1,7 @@
 """Connector for vector store."""
 
 import copy
+import logging
 import os
 from typing import Any, Dict, List, Optional, Type, cast
 
@@ -12,9 +13,12 @@ from dbgpt.core.awel.flow import (
     ResourceCategory,
     register_resource,
 )
-from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
+from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
+
+logger = logging.getLogger(__name__)
 
 connector: Dict[str, Type] = {}
 
@@ -25,7 +29,7 @@ def _load_vector_options() -> List[OptionValue]:
     return [
         OptionValue(label=cls, name=cls, value=cls)
         for cls in vector_store.__all__
-        if issubclass(getattr(vector_store, cls), VectorStoreBase)
+        if issubclass(getattr(vector_store, cls), IndexStoreBase)
     ]
 
 
@@ -73,7 +77,7 @@ class VectorStoreConnector:
     def __init__(
         self,
         vector_store_type: str,
-        vector_store_config: Optional[VectorStoreConfig] = None,
+        vector_store_config: Optional[IndexStoreConfig] = None
     ) -> None:
         """Create a VectorStoreConnector instance.
 
@@ -81,7 +85,7 @@ class VectorStoreConnector:
             - vector_store_type: vector store type Milvus, Chroma, Weaviate
             - ctx: vector store config params.
         """
-        self._vector_store_config = vector_store_config
+        self._index_store_config = vector_store_config
         self._register()
 
         if self._match(vector_store_type):
@@ -94,7 +98,12 @@ class VectorStoreConnector:
         self._embeddings = (
             vector_store_config.embedding_fn if vector_store_config else None
         )
-        self.client = self.connector_class(vector_store_config)
+
+        try:
+            self.client = self.connector_class(vector_store_config)
+        except Exception as e:
+            logger.error("connect vector store failed: %s", e)
+            raise e
 
     @classmethod
     def from_default(
@@ -122,12 +131,12 @@ class VectorStoreConnector:
         Return chunk ids.
         """
         max_chunks_once_load = (
-            self._vector_store_config.max_chunks_once_load
-            if self._vector_store_config
+            self._index_store_config.max_chunks_once_load
+            if self._index_store_config
             else 10
         )
         max_threads = (
-            self._vector_store_config.max_threads if self._vector_store_config else 1
+            self._index_store_config.max_threads if self._index_store_config else 1
         )
         return self.client.load_document_with_limit(
             chunks,
@@ -175,11 +184,11 @@ class VectorStoreConnector:
         )
 
     @property
-    def vector_store_config(self) -> VectorStoreConfig:
+    def vector_store_config(self) -> IndexStoreConfig:
         """Return the vector store config."""
-        if not self._vector_store_config:
+        if not self._index_store_config:
             raise ValueError("vector store config not set.")
-        return self._vector_store_config
+        return self._index_store_config
 
     def vector_name_exists(self):
         """Whether vector name exists."""
@@ -226,6 +235,6 @@ class VectorStoreConnector:
         from dbgpt.storage import vector_store
 
         for cls in vector_store.__all__:
-            if issubclass(getattr(vector_store, cls), VectorStoreBase):
+            if issubclass(getattr(vector_store, cls), IndexStoreBase):
                 _k, _v = cls, getattr(vector_store, cls)
                 connector.update({_k: _v})

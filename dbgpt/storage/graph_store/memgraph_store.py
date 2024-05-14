@@ -1,35 +1,54 @@
 """Graph store base class."""
 import json
 import logging
-from typing import List, Tuple
+from typing import List
+from typing import Tuple
 
-from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.graph_store.graph import Direction, Edge, Graph, MemoryGraph
+from dbgpt._private.pydantic import ConfigDict, Field
+from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
+from dbgpt.storage.graph_store.graph import Direction, Graph
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph
 
 logger = logging.getLogger(__name__)
+
+
+class MemoryGraphStoreConfig(GraphStoreConfig):
+    """Memory graph store config."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    edge_name_key: str = Field(
+        default="label",
+        description="The label of edge name, `label` by default.",
+    )
 
 
 class MemoryGraphStore(GraphStoreBase):
     """Memory graph store."""
 
-    EDGE_NAME_KEY = "label"
-
-    def __init__(self, graph: MemoryGraph = MemoryGraph(edge_label=EDGE_NAME_KEY)):
+    def __init__(self, graph_store_config: MemoryGraphStoreConfig):
         """Initialize MemoryGraphStore with a memory graph."""
-        self._graph = graph
+        self._edge_name_key = graph_store_config.edge_name_key
+        self._graph = MemoryGraph(edge_label=self._edge_name_key)
 
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Insert a triplet into the graph."""
-        self._graph.append_edge(Edge(sub, obj, **{self.EDGE_NAME_KEY: rel}))
+        self._graph.append_edge(Edge(sub, obj, **{self._edge_name_key: rel}))
 
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Retrieve triplets originating from a subject."""
         subgraph = self.explore([sub], direct=Direction.OUT, depth=1)
-        return [(e.get_prop(self.EDGE_NAME_KEY), e.tid) for e in subgraph.edges()]
+        return [
+            (e.get_prop(self._edge_name_key), e.tid) for e in subgraph.edges()
+        ]
 
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete a specific triplet from the graph."""
-        self._graph.del_edges(sub, obj, **{self.EDGE_NAME_KEY: rel})
+        self._graph.del_edges(sub, obj, **{self._edge_name_key: rel})
+
+    def drop(self):
+        """Drop graph."""
+        self._graph = None
 
     def get_schema(self, refresh: bool = False) -> str:
         """Return the graph schema as a JSON string."""

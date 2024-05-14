@@ -10,11 +10,6 @@ limit_num = 10
 class TransformerBase(ABC):
     """Transformer base class."""
 
-    @abstractmethod
-    def transform(self, data):
-        """Transform the input data and return the result."""
-        pass
-
 
 class EmbedderBase(TransformerBase, ABC):
     """Embedder base class."""

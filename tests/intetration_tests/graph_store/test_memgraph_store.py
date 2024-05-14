@@ -1,11 +1,12 @@
 import pytest
 
-from dbgpt.storage.graph_store.memgraph_store import MemoryGraphStore
+from dbgpt.storage.graph_store.memgraph_store import MemoryGraphStore, \
+    MemoryGraphStoreConfig
 
 
 @pytest.fixture
 def graph_store():
-    yield MemoryGraphStore()
+    yield MemoryGraphStore(MemoryGraphStoreConfig())
 
 
 def test_graph_store(graph_store):

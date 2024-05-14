@@ -1,12 +1,52 @@
 """TuGraph vector store."""
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
+from typing import List
+from typing import Tuple
 
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
-from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
+from dbgpt.storage.graph_store.graph import Direction
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph
+from dbgpt.storage.graph_store.graph import Vertex
 
 logger = logging.getLogger(__name__)
+
+
+class TuGraphStoreConfig(GraphStoreConfig):
+    """TuGraph store config."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    host: str = Field(
+        default="127.0.0.1",
+        description="TuGraph host",
+    )
+    port: int = Field(
+        default=7070,
+        description="TuGraph port",
+    )
+    username: str = Field(
+        default="admin",
+        description="login username",
+    )
+    password: str = Field(
+        default="73@TuGraph",
+        description="login password",
+    )
+    vertex_type: str = Field(
+        default="entity",
+        description="The type of graph vertex, `entity` by default.",
+    )
+    edge_type: str = Field(
+        default="relation",
+        description="The type of graph edge, `relation` by default.",
+    )
+    edge_name_key: str = Field(
+        default="label",
+        description="The label of edge name, `label` by default.",
+    )
 
 
 def _format_paths(paths):
@@ -50,13 +90,14 @@ def _format_query_data(data):
 
     nodes = [Vertex(node_id) for node_id in node_ids_set]
     rels = [
-        Edge(src_id, dst_id, label=prop_id) for (src_id, dst_id, prop_id) in rels_set
+        Edge(src_id, dst_id, label=prop_id) for (src_id, dst_id, prop_id) in
+        rels_set
     ]
     return {"nodes": nodes, "edges": rels}
 
 
 class TuGraphStore(GraphStoreBase):
-    """TuGraph vector store."""
+    """TuGraph graph store."""
 
     def __init__(
         self,
@@ -145,6 +186,10 @@ class TuGraphStore(GraphStoreBase):
             f"(n2:{self._node_label} {{id:'{obj}'}}) DELETE n1,n2,r"
         )
         self.conn.run(query=del_query)
+
+    def drop(self):
+        # todo: drop graph
+        pass
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""

@@ -1,30 +1,73 @@
 """Knowledge graph class."""
 import asyncio
 import logging
-from typing import List, Optional
+import os
+from typing import Optional, List
 
-from dbgpt.core import Chunk
-from dbgpt.rag.transformer.base import ExtractorBase
+from dbgpt._private.pydantic import ConfigDict, Field
+from dbgpt.core import Chunk, LLMClient
+from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
+from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
 from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase
+from dbgpt.storage.graph_store.factory import GraphStoreFactory
+from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
+    KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
 
 
-class KnowledgeGraph(KnowledgeGraphBase):
-    """Knowledge graph class."""
+class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
+    """Builtin knowledge graph config."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    llm_client: LLMClient = Field(
+        default=None,
+        description="The default llm client."
+    )
+
+    model_name: str = Field(
+        default=None,
+        description="The name of llm model."
+    )
+
+    graph_store_type: str = Field(
+        default="TuGraph",
+        description="The type of graph store, memory by default."
+    )
+
+
+class BuiltinKnowledgeGraph(KnowledgeGraphBase):
+    """Builtin knowledge graph class."""
 
     def __init__(
         self,
-        graph_store: GraphStoreBase,
-        triplet_extractor: ExtractorBase,
-        keyword_extractor: ExtractorBase,
-    ) -> None:
-        """Create a KnowledgeGraph instance."""
-        self._graph_store = graph_store
-        self._triplet_extractor = triplet_extractor
-        self._keyword_extractor = keyword_extractor
+        config: BuiltinKnowledgeGraphConfig
+    ):
+        """Create builtin knowledge graph instance."""
+        self._config = config
+
+        self._llm_client = config.llm_client
+        if not self._llm_client:
+            raise ValueError("No llm client provided.")
+
+        self._model_name = config.model_name
+        self._triplet_extractor = TripletExtractor(
+            self._llm_client,
+            self._model_name
+        )
+        self._keyword_extractor = KeywordExtractor(
+            self._llm_client,
+            self._model_name
+        )
+        self._graph_store_type = (
+            config.graph_store_type
+            or os.getenv("GRAPH_STORE_TYPE", "TuGraph")
+        )
+        self._graph_store: GraphStoreBase = (
+            GraphStoreFactory.create(self._graph_store_type, self._config)
+        )
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist triplets to graph store."""
@@ -47,7 +90,7 @@ class KnowledgeGraph(KnowledgeGraphBase):
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        """Search for similar items based on text and returns chunks with scores."""
+        """Search neighbours on knowledge graph."""
         if not filters:
             raise ValueError("Filters on knowledge graph not supported yet")
 
@@ -55,8 +98,12 @@ class KnowledgeGraph(KnowledgeGraphBase):
         async def process_query(query):
             keywords = await self._keyword_extractor.extract(query)
             subgraph = self._graph_store.explore(keywords, limit=topk)
-            return [Chunk(content=subgraph.format(), metadata=subgraph.schema())]
+            return [
+                Chunk(content=subgraph.format(), metadata=subgraph.schema())]
 
         # wait async task completed
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(asyncio.gather(*[process_query(text)]))
+
+    def delete_vector_name(self, index_name: str):
+        self._graph_store.drop()

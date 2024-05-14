@@ -1,9 +1,11 @@
 """Graph store base class."""
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional
+from typing import Tuple
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
+from dbgpt.core import Embeddings
 from dbgpt.storage.graph_store.graph import Direction, Graph
 
 logger = logging.getLogger(__name__)
@@ -11,6 +13,17 @@ logger = logging.getLogger(__name__)
 
 class GraphStoreConfig(BaseModel):
     """Graph store config."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
+
+    name: str = Field(
+        default="dbgpt_collection",
+        description="The name of graph store, inherit from index store.",
+    )
+    embedding_fn: Optional[Embeddings] = Field(
+        default=None,
+        description="The embedding function of graph store, optional.",
+    )
 
 
 class GraphStoreBase(ABC):
@@ -27,6 +40,10 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete triplet."""
+
+    @abstractmethod
+    def drop(self):
+        """Drop graph."""
 
     @abstractmethod
     def get_schema(self, refresh: bool = False) -> str:

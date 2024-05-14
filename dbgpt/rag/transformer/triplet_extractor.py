@@ -31,7 +31,6 @@ class TripletExtractor(LLMExtractor):
     """TripletExtractor class."""
 
     def __init__(self, llm_client: LLMClient, model_name: str):
-        """Initialize the TripletExtractor with a LLM client and a specific model."""
         super().__init__(llm_client, model_name, TRIPLET_EXTRACT_PT)
 
     def _parse_response(self, text: str, limit: int) -> List[Tuple[Any, ...]]:

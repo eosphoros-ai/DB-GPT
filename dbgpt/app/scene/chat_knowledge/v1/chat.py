@@ -70,11 +70,23 @@ class ChatKnowledge(BaseChat):
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
+        from dbgpt.serve.rag.models.models import KnowledgeSpaceDao
+        from dbgpt.serve.rag.models.models import KnowledgeSpaceEntity
 
-        config = VectorStoreConfig(name=self.knowledge_space, embedding_fn=embedding_fn)
+        spaces = KnowledgeSpaceDao().get_knowledge_space(KnowledgeSpaceEntity(name=self.knowledge_space))
+        if len(spaces) != 1:
+            raise Exception(f"invalid space name:{self.knowledge_space}")
+        space = spaces[0]
+
+        config = VectorStoreConfig(
+            name=space.name,
+            embedding_fn=embedding_fn,
+            llm_client=self.llm_client,
+            llm_model=self.llm_model
+        )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE,
-            vector_store_config=config,
+            vector_store_type=space.vector_type,
+            vector_store_config=config
         )
         query_rewrite = None
         if CFG.KNOWLEDGE_SEARCH_REWRITE:

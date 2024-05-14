@@ -75,7 +75,7 @@ def space_delete(request: KnowledgeSpaceRequest):
     try:
         return Result.succ(knowledge_space_service.delete_space(request.name))
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space delete error {e}")
 
 
 @router.post("/knowledge/{space_name}/arguments")
@@ -84,7 +84,7 @@ def arguments(space_name: str):
     try:
         return Result.succ(knowledge_space_service.arguments(space_name))
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space arguments error {e}")
 
 
 @router.post("/knowledge/{space_name}/argument/save")
@@ -95,7 +95,7 @@ def arguments_save(space_name: str, argument_request: SpaceArgumentRequest):
             knowledge_space_service.argument_save(space_name, argument_request)
         )
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space save error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/add")
@@ -164,7 +164,7 @@ def document_delete(space_name: str, query_request: DocumentQueryRequest):
             knowledge_space_service.delete_document(space_name, query_request.doc_name)
         )
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"document list error {e}")
+        return Result.failed(code="E000X", msg=f"document delete error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/upload")
@@ -248,7 +248,7 @@ def batch_document_sync(
         # )
         return Result.succ({"tasks": doc_ids})
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"document sync error {e}")
+        return Result.failed(code="E000X", msg=f"document sync batch error {e}")
 
 
 @router.post("/knowledge/{space_name}/chunk/list")

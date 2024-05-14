@@ -1,18 +1,20 @@
 """Vector store base class."""
 import logging
-import math
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, List
+from typing import Any, Optional
+from typing import List
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
-from dbgpt.core import Embeddings, Chunk
+import math
+
+from dbgpt._private.pydantic import ConfigDict, Field
+from dbgpt.core import Chunk
+from dbgpt.core import Embeddings
 from dbgpt.core.awel.flow import Parameter
-from dbgpt.rag.index.base import IndexStoreBase
+from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
-
 
 _COMMON_PARAMETERS = [
     Parameter.build_from(
@@ -20,7 +22,7 @@ _COMMON_PARAMETERS = [
         "name",
         str,
         description=_(
-            "The name of vector store, if not set, will use the default " "name."
+            "The name of vector store, if not set, will use the default name."
         ),
         optional=True,
         default="dbgpt_collection",
@@ -30,7 +32,7 @@ _COMMON_PARAMETERS = [
         "user",
         str,
         description=_(
-            "The user of vector store, if not set, will use the default " "user."
+            "The user of vector store, if not set, will use the default user."
         ),
         optional=True,
         default=None,
@@ -83,44 +85,19 @@ _COMMON_PARAMETERS = [
 ]
 
 
-class VectorStoreConfig(BaseModel):
+class VectorStoreConfig(IndexStoreConfig):
     """Vector store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
-    name: str = Field(
-        default="dbgpt_collection",
-        description="The name of vector store, if not set, will use the default name.",
-    )
     user: Optional[str] = Field(
         default=None,
         description="The user of vector store, if not set, will use the default user.",
     )
     password: Optional[str] = Field(
         default=None,
-        description="The password of vector store, if not set, will use the default "
-        "password.",
+        description="The password of vector store, if not set, will use the default password.",
     )
-    embedding_fn: Optional[Embeddings] = Field(
-        default=None,
-        description="The embedding function of vector store, if not set, will use the "
-        "default embedding function.",
-    )
-    max_chunks_once_load: int = Field(
-        default=10,
-        description="The max number of chunks to load at once. If your document is "
-        "large, you can set this value to a larger number to speed up the loading "
-        "process. Default is 10.",
-    )
-    max_threads: int = Field(
-        default=1,
-        description="The max number of threads to use. Default is 1. If you set this "
-        "bigger than 1, please make sure your vector store is thread-safe.",
-    )
-
-    def to_dict(self, **kwargs) -> Dict[str, Any]:
-        """Convert to dict."""
-        return model_to_dict(self, **kwargs)
 
 
 class VectorStoreBase(IndexStoreBase, ABC):
@@ -160,23 +137,6 @@ class VectorStoreBase(IndexStoreBase, ABC):
     def vector_name_exists(self) -> bool:
         """Whether vector name exists."""
         return False
-
-    @abstractmethod
-    def delete_by_ids(self, ids: str):
-        """Delete vectors by ids.
-
-        Args:
-            ids(str): The ids of vectors to delete, separated by comma.
-        """
-
-    @abstractmethod
-    def delete_vector_name(self, vector_name: str):
-        """Delete vector by name.
-
-        Args:
-            vector_name(str): The name of vector to delete.
-        """
-        pass
 
     def convert_metadata_filters(self, filters: MetadataFilters) -> Any:
         """Convert metadata filters to vector store filters.
