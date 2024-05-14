@@ -36,7 +36,7 @@ async def main():
 
     agent_memory = AgentMemory()
 
-    llm_client = OpenAILLMClient(model_alias="gpt-4")
+    llm_client = OpenAILLMClient(model_alias="gpt-4o")
     context: AgentContext = AgentContext(
         conv_id="test456", gpts_app_name="代码分析助手", max_new_tokens=2048
     )
