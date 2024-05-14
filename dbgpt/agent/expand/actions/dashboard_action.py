@@ -85,10 +85,10 @@ class DashboardAction(Action[List[ChartItem]]):
         try:
             if not self.resource_loader:
                 raise ValueError("Resource loader is not initialized!")
-            resource_db_client: Optional[ResourceDbClient] = (
-                self.resource_loader.get_resource_api(
-                    self.resource_need, ResourceDbClient
-                )
+            resource_db_client: Optional[
+                ResourceDbClient
+            ] = self.resource_loader.get_resource_api(
+                self.resource_need, ResourceDbClient
             )
             if not resource_db_client:
                 raise ValueError(

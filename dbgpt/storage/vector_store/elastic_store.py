@@ -226,7 +226,7 @@ class ElasticStore(VectorStoreBase):
                     index_name=self.index_name,
                     query_field="context",
                     vector_query_field="dense_vector",
-                    embedding=self.embedding,   # type: ignore
+                    embedding=self.embedding,  # type: ignore
                 )
         except ConnectionError:
             logger.error("ElasticSearch connection failed")
@@ -254,7 +254,7 @@ class ElasticStore(VectorStoreBase):
             if self.username != "" and self.password != "":
                 self.db = ElasticsearchStore.from_texts(
                     texts=texts,
-                    embedding=self.embedding,   # type: ignore
+                    embedding=self.embedding,  # type: ignore
                     metadatas=metadatas,
                     ids=ids,
                     es_url=f"http://{self.uri}:{self.port}",
@@ -274,13 +274,13 @@ class ElasticStore(VectorStoreBase):
                     # or SparseRetrievalStrategy.
                     es_user=self.username,
                     es_password=self.password,
-                )   # type: ignore
+                )  # type: ignore
                 logger.info("Elasticsearch save success.......")
                 return ids
             else:
                 self.db = ElasticsearchStore.from_documents(
                     texts=texts,
-                    embedding=self.embedding,   # type: ignore
+                    embedding=self.embedding,  # type: ignore
                     metadatas=metadatas,
                     ids=ids,
                     es_url=f"http://{self.uri}:{self.port}",
@@ -289,7 +289,7 @@ class ElasticStore(VectorStoreBase):
                     query_field="context",
                     vector_query_field="dense_vector",
                     # verify_certs=False,
-                )   # type: ignore
+                )  # type: ignore
                 return ids
         except ConnectionError as ce:
             logger.error(f"ElasticSearch connect failed {ce}")
@@ -321,6 +321,7 @@ class ElasticStore(VectorStoreBase):
         self, text, topk, score_threshold, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
         """Perform a search on a query string and return results with score.
+
         For more information about the search parameters, take a look at the
         ElasticSearch documentation found here: https://www.elastic.co/.
 

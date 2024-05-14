@@ -5,7 +5,8 @@ import os
 from functools import cache
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MODEL_PATH = os.path.join(ROOT_PATH, "models")
+# MODEL_PATH = os.path.join(ROOT_PATH, "models")
+MODEL_PATH = "/Users/chenketing/Desktop/project/DB-GPT-NEW/DB-GPT/models"
 PILOT_PATH = os.path.join(ROOT_PATH, "pilot")
 LOGDIR = os.getenv("DBGPT_LOG_DIR", os.path.join(ROOT_PATH, "logs"))
 
@@ -28,7 +29,9 @@ def get_device() -> str:
         return (
             "cuda"
             if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
         )
     except ModuleNotFoundError:
         return "cpu"

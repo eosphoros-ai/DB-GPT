@@ -112,10 +112,10 @@ class DataScientistAgent(ConversableAgent):
                 "generated is not found.",
             )
         try:
-            resource_db_client: Optional[ResourceDbClient] = (
-                self.not_null_resource_loader.get_resource_api(
-                    ResourceType(action_out.resource_type), ResourceDbClient
-                )
+            resource_db_client: Optional[
+                ResourceDbClient
+            ] = self.not_null_resource_loader.get_resource_api(
+                ResourceType(action_out.resource_type), ResourceDbClient
             )
             if not resource_db_client:
                 return (

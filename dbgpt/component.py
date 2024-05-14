@@ -161,9 +161,9 @@ class SystemApp(LifeCycle):
         asgi_app: Optional["FastAPI"] = None,
         app_config: Optional[AppConfig] = None,
     ) -> None:
-        self.components: Dict[str, BaseComponent] = (
-            {}
-        )  # Dictionary to store registered components.
+        self.components: Dict[
+            str, BaseComponent
+        ] = {}  # Dictionary to store registered components.
         self._asgi_app = asgi_app
         self._app_config = app_config or AppConfig()
         self._stop_event = threading.Event()

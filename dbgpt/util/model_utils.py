@@ -67,7 +67,9 @@ def _get_current_cuda_memory() -> List[GPUInfo]:
                 allocated_memory = round(
                     torch.cuda.memory_allocated() / (1.0 * 1024**3), 2
                 )
-                cached_memory = round(torch.cuda.memory_reserved() / (1.0 * 1024**3), 2)
+                cached_memory = round(
+                    torch.cuda.memory_reserved() / (1.0 * 1024**3), 2
+                )
                 available_memory = total_memory - allocated_memory
                 gpu_infos.append(
                     GPUInfo(

@@ -171,9 +171,9 @@ class ConversationComposerOperator(MapOperator[CommonLLMHttpRequestBody, ModelRe
             prompt_build_task = PromptFormatDictBuilderOperator(
                 human_message_key=self._human_message_key
             )
-            model_request_build_task: JoinOperator[ModelRequest] = (
-                MergedRequestBuilderOperator()
-            )
+            model_request_build_task: JoinOperator[
+                ModelRequest
+            ] = MergedRequestBuilderOperator()
 
             # Build composer dag
             (
