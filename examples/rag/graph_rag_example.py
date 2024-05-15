@@ -1,0 +1,69 @@
+import asyncio
+import os
+
+from dbgpt.configs.model_config import ROOT_PATH
+from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
+from dbgpt.rag import ChunkParameters
+from dbgpt.rag.assembler import EmbeddingAssembler
+from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+"""Graph rag example.
+    pre-requirements:
+    * Set LLM config (url/sk) in `.env`.
+    * `TuGraph` graph storage is used by default.
+    ```
+    GRAPH_STORE_TYPE=TuGraph
+    TUGRAPH_HOST=127.0.0.1
+    TUGRAPH_PORT=7070
+    TUGRAPH_USERNAME=admin
+    TUGRAPH_PASSWORD=73@TuGraph
+    ```
+    * Switch to memory graph for quick test.
+    ```
+    GRAPH_STORE_TYPE=Memory
+    ```
+
+    Examples:
+        ..code-block:: shell
+            python examples/rag/graph_rag_example.py
+"""
+
+
+def _create_vector_connector():
+    """Create vector connector."""
+    return VectorStoreConnector(
+        vector_store_type="KnowledgeGraph",
+        vector_store_config=VectorStoreConfig(
+            name="graph_rag_test_kg",
+            embedding_fn=None,
+            llm_client=OpenAILLMClient(),
+            model_name="gpt-4"
+        )
+    )
+
+
+async def main():
+    file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")
+    knowledge = KnowledgeFactory.from_file_path(file_path)
+    vector_connector = _create_vector_connector()
+    chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
+    # get embedding assembler
+    assembler = EmbeddingAssembler.load_from_knowledge(
+        knowledge=knowledge,
+        chunk_parameters=chunk_parameters,
+        vector_store_connector=vector_connector,
+    )
+    assembler.persist()
+    # get embeddings retriever
+    retriever = assembler.as_retriever(3)
+    chunks = await retriever.aretrieve_with_scores(
+        "what is AWEL talk about",
+        score_threshold=0.3
+    )
+    print(f"embedding rag example results:{chunks}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

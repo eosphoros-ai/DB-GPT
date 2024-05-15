@@ -147,3 +147,15 @@ class IndexStoreBase(ABC):
             List[Chunk]: The similar documents.
         """
         return self.similar_search_with_scores(text, topk, 1.0, filters)
+
+    async def asimilar_search_with_scores(
+        self,
+        doc: str,
+        topk: int,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
+        """Aynsc similar_search_with_score in vector database."""
+        return self.similar_search_with_scores(
+            doc, topk, score_threshold, filters
+        )

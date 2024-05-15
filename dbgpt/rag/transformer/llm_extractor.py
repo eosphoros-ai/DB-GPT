@@ -37,6 +37,7 @@ class LLMExtractor(ExtractorBase, ABC):
             if not models:
                 raise Exception("No models available")
             self._model_name = models[0].model
+            logger.info(f"Using model {self._model_name} to extract")
 
         model_messages = ModelMessage.from_base_messages(messages)
         request = ModelRequest(model=self._model_name, messages=model_messages)

@@ -196,6 +196,18 @@ class VectorStoreConnector:
             doc, topk, score_threshold, filters
         )
 
+    async def asimilar_search_with_scores(
+        self,
+        doc: str,
+        topk: int,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
+        """Async similar_search_with_score in vector database."""
+        return await self.client.asimilar_search_with_scores(
+            doc, topk, score_threshold, filters
+        )
+
     @property
     def vector_store_config(self) -> IndexStoreConfig:
         """Return the vector store config."""

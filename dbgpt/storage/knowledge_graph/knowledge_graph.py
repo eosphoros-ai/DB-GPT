@@ -81,12 +81,18 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
                 self._graph_store.insert_triplet(*triplet)
+            logger.info(
+                f"load {len(triplets)} triplets from chunk {chunk.chunk_id}"
+            )
             return chunk.chunk_id
 
         # wait async tasks completed
         tasks = [process_chunk(chunk) for chunk in chunks]
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(asyncio.gather(*tasks))
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(asyncio.gather(*tasks))
+        loop.close()
+        return result
 
     def similar_search_with_scores(
         self,
@@ -96,19 +102,42 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         """Search neighbours on knowledge graph."""
+        raise Exception("Sync similar_search_with_scores not supported")
+
+    async def asimilar_search_with_scores(
+        self,
+        text,
+        topk,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
+        """Search neighbours on knowledge graph."""
         if not filters:
-            raise ValueError("Filters on knowledge graph not supported yet")
+            logger.info("Filters on knowledge graph not supported yet")
 
         # extract keywords and explore graph store
-        async def process_query(query):
-            keywords = await self._keyword_extractor.extract(query)
-            subgraph = self._graph_store.explore(keywords, limit=topk)
-            return [
-                Chunk(content=subgraph.format(), metadata=subgraph.schema())]
+        keywords = await self._keyword_extractor.extract(text)
+        subgraph = self._graph_store.explore(keywords, limit=topk)
+        logger.info(f"Search subgraph from {len(keywords)} keywords")
 
-        # wait async task completed
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(asyncio.gather(*[process_query(text)]))
+        content = (
+            "The following vertices and edges data of directed subgraph "
+            "are retrieved from the knowledge graph based on the keywords:\n"
+            f"Keywords:\n{','.join(keywords)}\n"
+            "---------------------\n"
+            "Example vertices:\n"
+            "(alice)\n"
+            "(bob:{age:28})\n"
+            "(carry:{age:18;role:\"teacher\"})\n\n"
+            "Example edges:\n"
+            "(alice)-[reward]->(alice)\n"
+            "(alice)-[notify:{method:\"email\"}]->"
+            "(carry:{age:18;role:\"teacher\"})\n"
+            "(bob:{age:28})-[teach:{course:\"math\";hour:180}]->(alice)\n"
+            "---------------------\n"
+            f"Subgraph Data:\n{subgraph.format()}\n"
+        )
+        return [Chunk(content=content, metadata=subgraph.schema())]
 
     def delete_vector_name(self, index_name: str):
         self._graph_store.drop()

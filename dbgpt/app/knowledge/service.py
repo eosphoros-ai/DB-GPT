@@ -569,7 +569,7 @@ class KnowledgeService:
         """
 
         logger.info(
-            f"async doc embedding sync, doc:{doc.doc_name}, chunks length is {len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
+            f"async doc embedding sync, doc:{doc.doc_name}, chunks length is {len(chunk_docs)}"
         )
         try:
             with root_tracer.start_span(

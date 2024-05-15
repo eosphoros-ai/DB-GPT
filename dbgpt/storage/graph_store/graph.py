@@ -53,7 +53,8 @@ class Elem(ABC):
     def format(self, label_key: str = None):
         """Format properties into a string."""
         formatted_props = [
-            f"{k}:{json.dumps(v)}" for k, v in self._props.items() if k != label_key
+            f"{k}:{json.dumps(v)}" for k, v in self._props.items() if
+            k != label_key
         ]
         return f"{{{';'.join(formatted_props)}}}"
 
@@ -148,6 +149,10 @@ class Graph(ABC):
         """Add an edge."""
 
     @abstractmethod
+    def has_vertex(self, vid: str) -> bool:
+        """Check vertex exists."""
+
+    @abstractmethod
     def get_vertex(self, vid: str) -> Vertex:
         """Get a vertex."""
 
@@ -174,7 +179,8 @@ class Graph(ABC):
         """Delete edges(sid -> tid) matches props."""
 
     @abstractmethod
-    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
+    def del_neighbor_edges(self, vid: str,
+        direction: Direction = Direction.OUT):
         """Delete neighbor edges."""
 
     @abstractmethod
@@ -280,6 +286,10 @@ class MemoryGraph(Graph):
         self._edge_count += 1
         return True
 
+    def has_vertex(self, vid: str) -> bool:
+        """Retrieve a vertex by ID."""
+        return vid in self._vs
+
     def get_vertex(self, vid: str) -> Vertex:
         """Retrieve a vertex by ID."""
         return self._vs[vid]
@@ -317,7 +327,8 @@ class MemoryGraph(Graph):
 
     def edges(self) -> Iterator[Edge]:
         """Return edges."""
-        return iter(e for nbs in self._oes.values() for es in nbs.values() for e in es)
+        return iter(
+            e for nbs in self._oes.values() for es in nbs.values() for e in es)
 
     def del_vertices(self, *vids: str):
         """Delete specified vertices."""
@@ -343,7 +354,8 @@ class MemoryGraph(Graph):
 
         self._edge_count -= old_edge_cnt - len(self._oes[sid][tid])
 
-    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
+    def del_neighbor_edges(self, vid: str,
+        direction: Direction = Direction.OUT):
         """Delete all neighbor edges."""
 
         def del_index(idx, i_idx):
@@ -389,6 +401,8 @@ class MemoryGraph(Graph):
             return
 
         # visit vertex
+        if not self.has_vertex(vid):
+            return
         _subgraph.upsert_vertex(self.get_vertex(vid))
         _visited.add(vid)
 
@@ -436,7 +450,7 @@ class MemoryGraph(Graph):
             f"{self.get_vertex(e.tid).format(self.vertex_label)}"
             for e in self.edges()
         )
-        return f"Vertices:\n{vs_str}\nEdges:\n{es_str}"
+        return f"Vertices:\n{vs_str}\n\nEdges:\n{es_str}"
 
     def graphviz(self, name="g"):
         """View graphviz graph: https://dreampuf.github.io/GraphvizOnline."""
