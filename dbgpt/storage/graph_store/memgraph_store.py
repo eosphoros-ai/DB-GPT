@@ -1,13 +1,11 @@
 """Graph store base class."""
 import json
 import logging
-from typing import List
-from typing import Tuple
+from typing import List, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Direction, Graph
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph
+from dbgpt.storage.graph_store.graph import Direction, Edge, Graph, MemoryGraph
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +36,7 @@ class MemoryGraphStore(GraphStoreBase):
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Retrieve triplets originating from a subject."""
         subgraph = self.explore([sub], direct=Direction.OUT, depth=1)
-        return [
-            (e.get_prop(self._edge_name_key), e.tid) for e in subgraph.edges()
-        ]
+        return [(e.get_prop(self._edge_name_key), e.tid) for e in subgraph.edges()]
 
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete a specific triplet from the graph."""

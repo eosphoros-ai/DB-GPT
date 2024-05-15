@@ -33,6 +33,7 @@ class KeywordExtractor(LLMExtractor):
     """KeywordExtractor class."""
 
     def __init__(self, llm_client: LLMClient, model_name: str):
+        """Initialize the KeywordExtractor."""
         super().__init__(llm_client, model_name, KEYWORD_EXTRACT_PT)
 
     def _parse_response(self, text: str, limit: int) -> List[str]:

@@ -1,14 +1,11 @@
 """Vector store base class."""
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Optional
-from typing import List
-
 import math
+from abc import ABC, abstractmethod
+from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
-from dbgpt.core import Chunk
-from dbgpt.core import Embeddings
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter
 from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -96,7 +93,9 @@ class VectorStoreConfig(IndexStoreConfig):
     )
     password: Optional[str] = Field(
         default=None,
-        description="The password of vector store, if not set, will use the default password.",
+        description=(
+            "The password of vector store, if not set, will use the default password."
+        ),
     )
 
 

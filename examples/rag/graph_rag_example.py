@@ -16,7 +16,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
     ```
     GRAPH_STORE_TYPE=TuGraph
     TUGRAPH_HOST=127.0.0.1
-    TUGRAPH_PORT=7070
+    TUGRAPH_PORT=7687
     TUGRAPH_USERNAME=admin
     TUGRAPH_PASSWORD=73@TuGraph
     ```
@@ -39,8 +39,8 @@ def _create_vector_connector():
             name="graph_rag_test_kg",
             embedding_fn=None,
             llm_client=OpenAILLMClient(),
-            model_name="gpt-4"
-        )
+            model_name="gpt-4",
+        ),
     )
 
 
@@ -59,8 +59,7 @@ async def main():
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
     chunks = await retriever.aretrieve_with_scores(
-        "what is AWEL talk about",
-        score_threshold=0.3
+        "what is AWEL talk about", score_threshold=0.3
     )
     print(f"embedding rag example results:{chunks}")
 

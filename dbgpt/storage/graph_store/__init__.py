@@ -3,20 +3,23 @@ from typing import Type
 
 
 def _import_memgraph() -> (Type, Type):
-    from dbgpt.storage.graph_store.memgraph_store import MemoryGraphStore
-    from dbgpt.storage.graph_store.memgraph_store import MemoryGraphStoreConfig
+    from dbgpt.storage.graph_store.memgraph_store import (
+        MemoryGraphStore,
+        MemoryGraphStoreConfig,
+    )
+
     return MemoryGraphStore, MemoryGraphStoreConfig
 
 
 def _import_tugraph() -> (Type, Type):
-    from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
-    from dbgpt.storage.graph_store.tugraph_store import TuGraphStoreConfig
+    from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
+
     return TuGraphStore, TuGraphStoreConfig
 
 
 def _import_neo4j() -> (Type, Type):
-    from dbgpt.storage.graph_store.neo4j_store import Neo4jStore
-    from dbgpt.storage.graph_store.neo4j_store import Neo4jStoreConfig
+    from dbgpt.storage.graph_store.neo4j_store import Neo4jStore, Neo4jStoreConfig
+
     return Neo4jStore, Neo4jStoreConfig
 
 
@@ -31,6 +34,4 @@ def __getattr__(name: str) -> (Type, Type):
         raise AttributeError(f"Could not find: {name}")
 
 
-__all__ = [
-    "Memory", "TuGraph", "Neo4j"
-]
+__all__ = ["Memory", "TuGraph", "Neo4j"]

@@ -19,16 +19,22 @@ class TuGraphConnector(BaseConnector):
         self._graph = graph
         self._session = None
 
-    def create_graph(
-        self, graph_name: str
-    ) -> None:
+    def create_graph(self, graph_name: str) -> None:
         """Create a new graph."""
-         # run the query to get vertex labels
-        with self._driver.session(database='default') as session:
-            graph_list = session.run(f"CALL dbms.graph.listGraphs()").data()
-            exists = any(item['graph_name'] == graph_name for item in graph_list)
+        # run the query to get vertex labels
+        with self._driver.session(database="default") as session:
+            graph_list = session.run("CALL dbms.graph.listGraphs()").data()
+            exists = any(item["graph_name"] == graph_name for item in graph_list)
             if not exists:
                 session.run(f"CALL dbms.graph.createGraph('{graph_name}', '', 2048)")
+
+    def delete_graph(self, graph_name: str) -> None:
+        """Delete a graph."""
+        with self._driver.session(database="default") as session:
+            graph_list = session.run("CALL dbms.graph.listGraphs()").data()
+            exists = any(item["graph_name"] == graph_name for item in graph_list)
+            if exists:
+                session.run(f"Call dbms.graph.deleteGraph('{graph_name}')")
 
     @classmethod
     def from_uri_db(
@@ -37,6 +43,7 @@ class TuGraphConnector(BaseConnector):
         """Create a new TuGraphConnector from host, port, user, pwd, db_name."""
         try:
             from neo4j import GraphDatabase
+
             db_url = f"{cls.driver}://{host}:{str(port)}"
             driver = GraphDatabase.driver(db_url, auth=(user, pwd))
             driver.verify_connectivity()

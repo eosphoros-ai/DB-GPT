@@ -38,6 +38,7 @@ from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer, trace
+
 from ..api.schemas import (
     DocumentServeRequest,
     DocumentServeResponse,
@@ -46,8 +47,7 @@ from ..api.schemas import (
     SpaceServeRequest,
     SpaceServeResponse,
 )
-from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, \
-    ServeConfig
+from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 
 logger = logging.getLogger(__name__)
@@ -294,13 +294,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         if space is None:
             raise HTTPException(status_code=400, detail=f"Space {space_id} not found")
         config = VectorStoreConfig(
-            name=space.name,
-            llm_client=self.llm_client,
-            model_name=None
+            name=space.name, llm_client=self.llm_client, model_name=None
         )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config
+            vector_store_type=space.vector_type, vector_store_config=config
         )
         # delete vectors
         vector_store_connector.delete_vector_name(space.name)
@@ -331,7 +328,9 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             raise Exception(f"there are no or more than one document  {document_id}")
 
         # get space by name
-        spaces = self._dao.get_knowledge_space(KnowledgeSpaceEntity(name=docuemnt.space))
+        spaces = self._dao.get_knowledge_space(
+            KnowledgeSpaceEntity(name=docuemnt.space)
+        )
         if len(spaces) != 1:
             raise Exception(f"invalid space name: {docuemnt.space}")
         space = spaces[0]
@@ -339,13 +338,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         vector_ids = docuemnt.vector_ids
         if vector_ids is not None:
             config = VectorStoreConfig(
-                name=space.name,
-                llm_client=self.llm_client,
-                model_name=None
+                name=space.name, llm_client=self.llm_client, model_name=None
             )
             vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type,
-                vector_store_config=config
+                vector_store_type=space.vector_type, vector_store_config=config
             )
             # delete vector by ids
             vector_store_connector.delete_by_ids(vector_ids)
@@ -464,11 +460,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             embedding_fn=embedding_fn,
             max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
             llm_client=self.llm_client,
-            model_name=None
+            model_name=None,
         )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config
+            vector_store_type=space.vector_type, vector_store_config=config
         )
         knowledge = KnowledgeFactory.create(
             datasource=doc.content,

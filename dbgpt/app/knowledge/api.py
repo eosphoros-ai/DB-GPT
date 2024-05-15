@@ -13,11 +13,11 @@ from dbgpt.app.knowledge.request.request import (
     DocumentSummaryRequest,
     DocumentSyncRequest,
     EntityExtractRequest,
+    GraphVisRequest,
     KnowledgeDocumentRequest,
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
-    GraphVisRequest
 )
 from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
 from dbgpt.app.knowledge.service import KnowledgeService
@@ -156,13 +156,16 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document list error {e}")
 
+
 @router.post("/knowledge/{space_name}/graphvis")
 def graph_vis(space_name: str, query_request: GraphVisRequest):
     print(f"/document/list params: {space_name}, {query_request}")
     print(query_request.limit)
     try:
-        return Result.succ(knowledge_space_service.query_graph(
-            space_name=space_name, limit=query_request.limit)
+        return Result.succ(
+            knowledge_space_service.query_graph(
+                space_name=space_name, limit=query_request.limit
+            )
         )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"get graph vis error {e}")

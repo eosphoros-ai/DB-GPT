@@ -53,8 +53,7 @@ class Elem(ABC):
     def format(self, label_key: str = None):
         """Format properties into a string."""
         formatted_props = [
-            f"{k}:{json.dumps(v)}" for k, v in self._props.items() if
-            k != label_key
+            f"{k}:{json.dumps(v)}" for k, v in self._props.items() if k != label_key
         ]
         return f"{{{';'.join(formatted_props)}}}"
 
@@ -179,8 +178,7 @@ class Graph(ABC):
         """Delete edges(sid -> tid) matches props."""
 
     @abstractmethod
-    def del_neighbor_edges(self, vid: str,
-        direction: Direction = Direction.OUT):
+    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
         """Delete neighbor edges."""
 
     @abstractmethod
@@ -327,8 +325,7 @@ class MemoryGraph(Graph):
 
     def edges(self) -> Iterator[Edge]:
         """Return edges."""
-        return iter(
-            e for nbs in self._oes.values() for es in nbs.values() for e in es)
+        return iter(e for nbs in self._oes.values() for es in nbs.values() for e in es)
 
     def del_vertices(self, *vids: str):
         """Delete specified vertices."""
@@ -354,8 +351,7 @@ class MemoryGraph(Graph):
 
         self._edge_count -= old_edge_cnt - len(self._oes[sid][tid])
 
-    def del_neighbor_edges(self, vid: str,
-        direction: Direction = Direction.OUT):
+    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
         """Delete all neighbor edges."""
 
         def del_index(idx, i_idx):

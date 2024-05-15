@@ -21,8 +21,8 @@ from dbgpt.app.knowledge.request.request import (
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
     DocumentQueryResponse,
+    GraphVisQueryRespone,
     SpaceQueryResponse,
-    GraphVisQueryRespone
 )
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
@@ -40,8 +40,7 @@ from dbgpt.rag.text_splitter.text_splitter import (
     SpacyTextSplitter,
 )
 from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
-from dbgpt.serve.rag.models.models import KnowledgeSpaceDao, \
-    KnowledgeSpaceEntity
+from dbgpt.serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from dbgpt.serve.rag.service.service import SyncStatus
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -93,8 +92,7 @@ class KnowledgeService:
         space_id = knowledge_space_dao.create_knowledge_space(request)
         return space_id
 
-    def create_knowledge_document(self, space,
-        request: KnowledgeDocumentRequest):
+    def create_knowledge_document(self, space, request: KnowledgeDocumentRequest):
         """create knowledge document
         Args:
            - request: KnowledgeDocumentRequest
@@ -102,8 +100,7 @@ class KnowledgeService:
         query = KnowledgeDocumentEntity(doc_name=request.doc_name, space=space)
         documents = knowledge_document_dao.get_knowledge_documents(query)
         if len(documents) > 0:
-            raise Exception(
-                f"document name:{request.doc_name} have already named")
+            raise Exception(f"document name:{request.doc_name} have already named")
         document = KnowledgeDocumentEntity(
             doc_name=request.doc_name,
             doc_type=request.doc_type,
@@ -125,8 +122,7 @@ class KnowledgeService:
            - request: KnowledgeSpaceRequest
         """
         query = KnowledgeSpaceEntity(
-            name=request.name, vector_type=request.vector_type,
-            owner=request.owner
+            name=request.name, vector_type=request.vector_type, owner=request.owner
         )
         spaces = knowledge_space_dao.get_knowledge_space(query)
         space_names = [space.name for space in spaces]
@@ -156,8 +152,7 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(name=space_name)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
-            raise Exception(
-                f"there are no or more than one space called {space_name}")
+            raise Exception(f"there are no or more than one space called {space_name}")
         space = spaces[0]
         if space.context is None:
             context = self._build_default_context()
@@ -174,8 +169,7 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(name=space_name)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
-            raise Exception(
-                f"there are no or more than one space called {space_name}")
+            raise Exception(f"there are no or more than one space called {space_name}")
         space = spaces[0]
         space.context = argument_request.argument
         return knowledge_space_dao.update_knowledge_space(space)
@@ -220,8 +214,7 @@ class KnowledgeService:
         """
         doc_ids = []
         for sync_request in sync_requests:
-            docs = knowledge_document_dao.documents_by_ids(
-                [sync_request.doc_id])
+            docs = knowledge_document_dao.documents_by_ids([sync_request.doc_id])
             if len(docs) == 0:
                 raise Exception(
                     f"there are document called, doc_id: {sync_request.doc_id}"
@@ -251,8 +244,7 @@ class KnowledgeService:
             doc_ids.append(doc.id)
         return doc_ids
 
-    def sync_knowledge_document(self, space_name,
-        sync_request: DocumentSyncRequest):
+    def sync_knowledge_document(self, space_name, sync_request: DocumentSyncRequest):
         """sync knowledge document chunk into vector store
         Args:
             - space: Knowledge Space Name
@@ -349,8 +341,7 @@ class KnowledgeService:
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
 
-        spaces = self.get_knowledge_space(
-            KnowledgeSpaceRequest(name=space_name))
+        spaces = self.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")
         space = spaces[0]
@@ -362,11 +353,10 @@ class KnowledgeService:
             embedding_fn=embedding_fn,
             max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
             llm_client=self.llm_client,
-            model_name=self.model_name
+            model_name=self.model_name,
         )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config
+            vector_store_type=space.vector_type, vector_store_config=config
         )
         knowledge = KnowledgeFactory.create(
             datasource=doc.content,
@@ -468,7 +458,8 @@ class KnowledgeService:
             - space_name: knowledge space name
         """
         spaces = knowledge_space_dao.get_knowledge_space(
-            KnowledgeSpaceEntity(name=space_name))
+            KnowledgeSpaceEntity(name=space_name)
+        )
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")
         space = spaces[0]
@@ -483,11 +474,10 @@ class KnowledgeService:
             name=space.name,
             embedding_fn=embedding_fn,
             llm_client=self.llm_client,
-            model_name=None
+            model_name=None,
         )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config
+            vector_store_type=space.vector_type, vector_store_config=config
         )
         # delete vectors
         vector_store_connector.delete_vector_name(space.name)
@@ -507,15 +497,12 @@ class KnowledgeService:
             - space_name: knowledge space name
             - doc_name: doocument name
         """
-        document_query = KnowledgeDocumentEntity(doc_name=doc_name,
-                                                 space=space_name)
+        document_query = KnowledgeDocumentEntity(doc_name=doc_name, space=space_name)
         documents = knowledge_document_dao.get_documents(document_query)
         if len(documents) != 1:
-            raise Exception(
-                f"there are no or more than one document called {doc_name}")
+            raise Exception(f"there are no or more than one document called {doc_name}")
 
-        spaces = self.get_knowledge_space(
-            KnowledgeSpaceRequest(name=space_name))
+        spaces = self.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")
         space = spaces[0]
@@ -532,11 +519,10 @@ class KnowledgeService:
                 name=space.name,
                 embedding_fn=embedding_fn,
                 llm_client=self.llm_client,
-                model_name=None
+                model_name=None,
             )
             vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type,
-                vector_store_config=config
+                vector_store_type=space.vector_type, vector_store_config=config
             )
             # delete vector by ids
             vector_store_connector.delete_by_ids(vector_ids)
@@ -624,9 +610,7 @@ class KnowledgeService:
                 "topk": CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
                 "recall_score": CFG.KNOWLEDGE_SEARCH_RECALL_SCORE,
                 "recall_type": "TopK",
-                "model":
-                    EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL].rsplit("/", 1)[
-                        -1],
+                "model": EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL].rsplit("/", 1)[-1],
                 "chunk_size": CFG.KNOWLEDGE_CHUNK_SIZE,
                 "chunk_overlap": CFG.KNOWLEDGE_CHUNK_OVERLAP,
             },
@@ -700,8 +684,7 @@ class KnowledgeService:
         embedding_fn = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
-        spaces = self.get_knowledge_space(
-            KnowledgeSpaceRequest(name=space_name))
+        spaces = self.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")
         space = spaces[0]
@@ -715,8 +698,7 @@ class KnowledgeService:
         )
 
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config
+            vector_store_type=space.vector_type, vector_store_config=config
         )
         res = GraphVisQueryRespone()
         graph = vector_store_connector.client.query_graph(limit=limit)
@@ -724,9 +706,11 @@ class KnowledgeService:
         for node in graph.vertices():
             res["nodes"].append({"vid": node.vid})
         for edge in graph.edges():
-            res["edges"].append({
-                "src": edge.sid,
-                "dst": edge.tid,
-                "label": edge.props[graph.edge_label]
-            })
+            res["edges"].append(
+                {
+                    "src": edge.sid,
+                    "dst": edge.tid,
+                    "label": edge.props[graph.edge_label],
+                }
+            )
         return res

@@ -12,10 +12,7 @@ class GraphStoreFactory:
     """Factory for graph store."""
 
     @staticmethod
-    def create(
-        graph_store_type: str,
-        graph_store_configure=None
-    ) -> GraphStoreBase:
+    def create(graph_store_type: str, graph_store_configure=None) -> GraphStoreBase:
         """Create a GraphStore instance.
 
         Args:
@@ -38,9 +35,8 @@ class GraphStoreFactory:
         for t in graph_store.__all__:
             if t.lower() == graph_store_type.lower():
                 store_cls, cfg_cls = getattr(graph_store, t)
-                if (
-                    issubclass(store_cls, GraphStoreBase)
-                    and issubclass(cfg_cls, GraphStoreConfig)
+                if issubclass(store_cls, GraphStoreBase) and issubclass(
+                    cfg_cls, GraphStoreConfig
                 ):
                     return store_cls, cfg_cls
         raise Exception(f"Graph store {graph_store_type} not supported")

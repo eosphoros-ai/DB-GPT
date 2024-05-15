@@ -3,8 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from dbgpt._private.pydantic import ConfigDict
-from dbgpt.rag.index.base import IndexStoreBase
-from dbgpt.rag.index.base import IndexStoreConfig
+from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.graph_store.graph import Graph
 
 logger = logging.getLogger(__name__)
@@ -24,4 +23,5 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
         """Get graph data."""
 
     def delete_by_ids(self, ids: str):
+        """Delete document by ids."""
         raise Exception("Delete document not supported by knowledge graph")

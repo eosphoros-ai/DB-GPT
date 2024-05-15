@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 limit_num = 10
 
 
-class TransformerBase(ABC):
+class TransformerBase:
     """Transformer base class."""
 
 

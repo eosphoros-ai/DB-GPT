@@ -1,8 +1,7 @@
 """Graph store base class."""
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
@@ -52,7 +51,7 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def get_full_graph(self, limit=None) -> Graph:
         """Get full graph."""
-        
+
     @abstractmethod
     def explore(
         self,

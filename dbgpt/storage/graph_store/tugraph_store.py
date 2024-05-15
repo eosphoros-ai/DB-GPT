@@ -1,15 +1,12 @@
 """TuGraph vector store."""
 import logging
 import os
-from typing import Any, Optional
-from typing import List
-from typing import Tuple
+from typing import List, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Direction
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex
 
 logger = logging.getLogger(__name__)
 
@@ -54,23 +51,29 @@ class TuGraphStore(GraphStoreBase):
 
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
-        self.host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
-        self.port = os.getenv("TUGRAPH_PORT", "7070") or config.port
-        self.username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
-        self.password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
-        self._node_label = os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
-        self._edge_label = os.getenv("TUGRAPH_EDGE_TYPE", "relation") or config.edge_type
-        self.edge_name_key = os.getenv("TUGRAPH_EDGE_NAME_KEY", "label") or config.edge_name_key
+        self._host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
+        self._port = os.getenv("TUGRAPH_PORT", "7687") or config.port
+        self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
+        self._password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
+        self._node_label = (
+            os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
+        )
+        self._edge_label = (
+            os.getenv("TUGRAPH_EDGE_TYPE", "relation") or config.edge_type
+        )
+        self.edge_name_key = (
+            os.getenv("TUGRAPH_EDGE_NAME_KEY", "label") or config.edge_name_key
+        )
         self._graph_name = config.name
         self.conn = TuGraphConnector.from_uri_db(
-            host=self.host,
-            port=self.port,
-            user=self.username,
-            pwd=self.password,
-            db_name=config.name
+            host=self._host,
+            port=self._port,
+            user=self._username,
+            pwd=self._password,
+            db_name=config.name,
         )
         self.conn.create_graph(graph_name=config.name)
-        
+
         self._create_schema()
 
     def _check_label(self, elem_type: str):
@@ -117,9 +120,8 @@ class TuGraphStore(GraphStoreBase):
         self.conn.run(query=rel_query)
 
     def drop(self):
-        '''Delete Graph.'''
-        query = f'Call dbms.graph.deleteGraph({self._graph_name})'
-        self.conn.run(query=query)
+        """Delete Graph."""
+        self.conn.delete_graph(self._graph_name)
 
     def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
         """Delete triplet."""
@@ -138,7 +140,8 @@ class TuGraphStore(GraphStoreBase):
         return schema
 
     def get_full_graph(self, limit=None):
-        return self.query(f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}')
+        """Get full graph."""
+        return self.query(f"MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}")
 
     def explore(
         self,
@@ -165,19 +168,20 @@ class TuGraphStore(GraphStoreBase):
 
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""
+
         def _format_paths(paths):
             formatted_paths = []
             for path in paths:
-                    formatted_path = []
-                    nodes = list(path["p"].nodes)
-                    rels = list(path["p"].relationships)
-                    for i in range(len(nodes)):
-                        formatted_path.append(nodes[i]._properties["id"])
-                        if i < len(rels):
-                            formatted_path.append(rels[i]._properties["id"])
-                    formatted_paths.append(formatted_path)
+                formatted_path = []
+                nodes = list(path["p"].nodes)
+                rels = list(path["p"].relationships)
+                for i in range(len(nodes)):
+                    formatted_path.append(nodes[i]._properties["id"])
+                    if i < len(rels):
+                        formatted_path.append(rels[i]._properties["id"])
+                formatted_paths.append(formatted_path)
             return formatted_paths
-        
+
         def _format_query_data(data):
             node_ids_set = set()
             rels_set = set()
@@ -205,10 +209,11 @@ class TuGraphStore(GraphStoreBase):
 
             nodes = [Vertex(node_id) for node_id in node_ids_set]
             rels = [
-                Edge(src_id, dst_id, label=prop_id) for (src_id, dst_id, prop_id) in
-                rels_set
+                Edge(src_id, dst_id, label=prop_id)
+                for (src_id, dst_id, prop_id) in rels_set
             ]
             return {"nodes": nodes, "edges": rels}
+
         result = self.conn.run(query=query)
         graph = _format_query_data(result)
         mg = MemoryGraph()

@@ -3,7 +3,7 @@
 import copy
 import logging
 import os
-from typing import Any, Dict, List, Optional, Type, cast, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import (
@@ -77,7 +77,7 @@ class VectorStoreConnector:
     def __init__(
         self,
         vector_store_type: str,
-        vector_store_config: Optional[IndexStoreConfig] = None
+        vector_store_config: Optional[IndexStoreConfig] = None,
     ) -> None:
         """Create a VectorStoreConnector instance.
 
@@ -261,8 +261,7 @@ class VectorStoreConnector:
 
         for cls in vector_store.__all__:
             store_cls, config_cls = getattr(vector_store, cls)
-            if (
-                issubclass(store_cls, IndexStoreBase)
-                and issubclass(config_cls, IndexStoreConfig)
+            if issubclass(store_cls, IndexStoreBase) and issubclass(
+                config_cls, IndexStoreConfig
             ):
                 connector[cls] = (store_cls, config_cls)

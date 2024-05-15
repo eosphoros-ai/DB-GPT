@@ -1,7 +1,9 @@
 import pytest
 
-from dbgpt.storage.graph_store.memgraph_store import MemoryGraphStore, \
-    MemoryGraphStoreConfig
+from dbgpt.storage.graph_store.memgraph_store import (
+    MemoryGraphStore,
+    MemoryGraphStoreConfig,
+)
 
 
 @pytest.fixture

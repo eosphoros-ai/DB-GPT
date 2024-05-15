@@ -3,17 +3,16 @@
 import pytest
 
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
+
+
 class TuGraphStoreConfig:
-    def __init__(self,name):
+    def __init__(self, name):
         self.name = name
-        
 
 
 @pytest.fixture(scope="module")
 def store():
-    config = TuGraphStoreConfig(
-        name="TestGraph" 
-    )
+    config = TuGraphStoreConfig(name="TestGraph")
     store = TuGraphStore(config=config)
     yield store
     store.conn.close()
@@ -41,6 +40,7 @@ def test_insert_and_get_triplets(store):
     assert len(triplets) == 1
     triplets = store.get_triplets("F")
     assert len(triplets) == 1
+
 
 def test_query(store):
     query = "MATCH (n)-[r]->(n1) return n,n1,r limit 3"
