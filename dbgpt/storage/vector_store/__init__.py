@@ -32,6 +32,13 @@ def _import_oceanbase() -> (Type, Type):
     return OceanBaseStore, OceanBaseConfig
 
 
+def _import_elastic() -> (Type, Type):
+    from dbgpt.storage.vector_store.elastic_store import ElasticStore
+    from dbgpt.storage.vector_store.elastic_store import \
+        ElasticsearchVectorConfig
+    return ElasticStore, ElasticsearchVectorConfig
+
+
 def _import_builtin_knowledge_graph() -> (Type, Type):
     from dbgpt.storage.knowledge_graph.knowledge_graph import \
         BuiltinKnowledgeGraph
@@ -44,11 +51,6 @@ def _import_openspg() -> (Type, Type):
     from dbgpt.storage.knowledge_graph.open_spg import OpenSPG
     from dbgpt.storage.knowledge_graph.open_spg import OpenSPGConfig
     return OpenSPG, OpenSPGConfig
-
-def _import_elastic() -> Any:
-    from dbgpt.storage.vector_store.elastic_store import ElasticStore
-
-    return ElasticStore
 
 
 def __getattr__(name: str) -> (Type, Type):

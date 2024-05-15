@@ -10,6 +10,7 @@ from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
+from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
     KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -139,9 +140,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         )
         return [Chunk(content=content, metadata=subgraph.schema())]
 
+    def query_graph(self, limit: int = None) -> Graph:
+        return self._graph_store.get_full_graph(limit)
+
     def delete_vector_name(self, index_name: str):
         self._graph_store.drop()
-
-    def query_graph(self,limit):
-        res = self._graph_store.get_full_graph(limit)
-        return res

@@ -4,6 +4,7 @@ from typing import Optional, List
 
 from dbgpt._private.pydantic import ConfigDict
 from dbgpt.core import Chunk
+from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
     KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -35,6 +36,9 @@ class OpenSPG(KnowledgeGraphBase):
         score_threshold: float,
         filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
+        pass
+
+    def query_graph(self, limit: int = None) -> Graph:
         pass
 
     def delete_vector_name(self, index_name: str):

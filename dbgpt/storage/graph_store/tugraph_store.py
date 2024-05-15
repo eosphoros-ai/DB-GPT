@@ -195,6 +195,11 @@ class TuGraphStore(GraphStoreBase):
         schema = data[0]["schema"]
         return schema
 
+    def get_full_graph(self, limit):
+        query = f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}'
+        result = self.conn.run(query=query)
+        return _format_query_data(result)
+
     def explore(
         self,
         subs: List[str],
@@ -233,9 +238,3 @@ class TuGraphStore(GraphStoreBase):
             mg.append_edge(edge)
         return mg
 
-
-    def get_full_graph(self,limit):
-        query = f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}'
-        result = self.conn.run(query=query)
-        data = _format_query_data(result)
-        return data

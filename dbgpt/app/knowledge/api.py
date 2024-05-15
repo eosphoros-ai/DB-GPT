@@ -161,7 +161,9 @@ def graph_vis(space_name: str, query_request: GraphVisRequest):
     print(f"/document/list params: {space_name}, {query_request}")
     print(query_request.limit)
     try:
-        return Result.succ(knowledge_space_service.query_graph(space_name=space_name,limit=query_request.limit))
+        return Result.succ(knowledge_space_service.query_graph(
+            space_name=space_name, limit=query_request.limit)
+        )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"get graph vis error {e}")
 

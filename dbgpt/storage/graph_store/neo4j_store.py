@@ -38,6 +38,9 @@ class Neo4jStore(GraphStoreBase):
     def get_schema(self, refresh: bool = False) -> str:
         pass
 
+    def get_full_graph(self, limit) -> Graph:
+        pass
+
     def explore(self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
