@@ -54,7 +54,7 @@ class MemoryGraphStore(GraphStoreBase):
         """Return the graph schema as a JSON string."""
         return json.dumps(self._graph.schema())
 
-    def get_full_graph(self, limit) -> Graph:
+    def get_full_graph(self, limit=None) -> Graph:
         """Return self."""
         return self._graph
 

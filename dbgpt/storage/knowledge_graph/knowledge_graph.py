@@ -34,7 +34,7 @@ class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
     )
 
     graph_store_type: str = Field(
-        default=None,
+        default="TuGraph",
         description="The type of graph store."
     )
 
@@ -63,8 +63,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             self._model_name
         )
         self._graph_store_type = (
-            config.graph_store_type
-            or os.getenv("GRAPH_STORE_TYPE", "TuGraph")
+            os.getenv("GRAPH_STORE_TYPE", "TuGraph")
+            or config.graph_store_type
         )
 
         def configure(cfg: GraphStoreConfig):

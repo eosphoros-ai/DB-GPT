@@ -1,5 +1,6 @@
 """TuGraph vector store."""
 import logging
+import os
 from typing import Any, Optional
 from typing import List
 from typing import Tuple
@@ -9,7 +10,6 @@ from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.graph import Direction
 from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
-
 
 logger = logging.getLogger(__name__)
 
@@ -99,14 +99,22 @@ def _format_query_data(data):
 class TuGraphStore(GraphStoreBase):
     """TuGraph graph store."""
 
-    def __init__(
-        self,
-        config:TuGraphStoreConfig,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
+        self.host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
+        self.port = os.getenv("TUGRAPH_PORT", "7070") or config.port
+        self.username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
+        self.password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
+        self.vertex_type = os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
+        self.edge_type = os.getenv("TUGRAPH_EDGE_TYPE", "relation") or config.edge_type
+        self.edge_name_key = os.getenv("TUGRAPH_EDGE_NAME_KEY", "label") or config.edge_name_key
+
         self.conn = TuGraphConnector.from_uri_db(
-            host=config.host, port=config.port, user=config.username, pwd=config.password, db_name=config.name
+            host=self.host,
+            port=self.port,
+            user=self.username,
+            pwd=self.password,
+            graph_name=config.name
         )
         self.conn.create_graph(graph_name=config.name)
         self._node_label = config.vertex_type
@@ -114,11 +122,11 @@ class TuGraphStore(GraphStoreBase):
         self._graph_name = config.name
         self._create_schema()
 
-    def _check_label(self, type: str):
+    def _check_label(self, elem_type: str):
         result = self.conn.get_table_names()
-        if type == "vertex":
+        if elem_type == "vertex":
             return self._node_label in result["vertex_tables"]
-        if type == "edge":
+        if elem_type == "edge":
             return self._edge_label in result["edge_tables"]
 
     def _create_schema(self):
@@ -195,10 +203,8 @@ class TuGraphStore(GraphStoreBase):
         schema = data[0]["schema"]
         return schema
 
-    def get_full_graph(self, limit):
-        query = f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}'
-        result = self.conn.run(query=query)
-        return _format_query_data(result)
+    def get_full_graph(self, limit=None):
+        return self.query(f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}')
 
     def explore(
         self,
@@ -217,19 +223,14 @@ class TuGraphStore(GraphStoreBase):
                 f"-[r:{self._edge_label}*1..{depth}]-(m:{self._node_label}) "
                 f"WHERE n.id IN {subs} RETURN p LIMIT {limit}"
             )
-            print(query)
-            result = self.conn.run(query=query)
-            graph = _format_query_data(result)
-            mg = MemoryGraph()
-            for vertex in graph["nodes"]:
-                mg.upsert_vertex(vertex)
-            for edge in graph["edges"]:
-                mg.append_edge(edge)
-            return mg
+            return self.query(query)
 
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""
+        # todo: ctor MemoryGraph directly
         result = self.conn.run(query=query)
+
+        # format to MemoryGraph
         graph = _format_query_data(result)
         mg = MemoryGraph()
         for vertex in graph["nodes"]:
@@ -237,4 +238,3 @@ class TuGraphStore(GraphStoreBase):
         for edge in graph["edges"]:
             mg.append_edge(edge)
         return mg
-
