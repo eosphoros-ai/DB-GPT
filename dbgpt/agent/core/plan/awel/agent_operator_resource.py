@@ -12,9 +12,15 @@ from dbgpt.core.awel.flow import (
     register_resource,
 )
 
-from ....resource.resource_api import AgentResource, ResourceType
+from ....resource.base import AgentResource
+from ....resource.manage import get_resource_manager
 from ....util.llm.llm import LLMConfig, LLMStrategyType
 from ...agent_manage import get_agent_manager
+
+
+def _load_resource_types():
+    resources = get_resource_manager().get_supported_resources()
+    return [OptionValue(label=item, name=item, value=item) for item in resources.keys()]
 
 
 @register_resource(
@@ -29,10 +35,7 @@ from ...agent_manage import get_agent_manager
             type=str,
             optional=True,
             default=None,
-            options=[
-                OptionValue(label=item.name, name=item.value, value=item.value)
-                for item in ResourceType
-            ],
+            options=FunctionDynamicOptions(func=_load_resource_types),
         ),
         Parameter.build_from(
             label="Agent Resource Name",
@@ -70,7 +73,7 @@ class AWELAgentResource(AgentResource):
         value = values.pop("agent_resource_value")
 
         values["name"] = name
-        values["type"] = ResourceType(type)
+        values["type"] = type
         values["value"] = value
 
         return values

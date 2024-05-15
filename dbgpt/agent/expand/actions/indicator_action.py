@@ -9,7 +9,7 @@ from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 
 from ...core.action.base import Action, ActionOutput
 from ...core.schema import Status
-from ...resource.resource_api import AgentResource, ResourceType
+from ...resource.base import AgentResource, ResourceType
 
 logger = logging.getLogger(__name__)
 

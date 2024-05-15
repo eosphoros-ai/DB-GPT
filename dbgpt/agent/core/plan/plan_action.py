@@ -6,7 +6,7 @@ from typing import List, Optional
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_agent_plans import Vis, VisAgentPlans
 
-from ...resource.resource_api import AgentResource
+from ...resource.base import AgentResource
 from ..action.base import Action, ActionOutput
 from ..agent import AgentContext
 from ..memory.gpts.base import GptsPlan

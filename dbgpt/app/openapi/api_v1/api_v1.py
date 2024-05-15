@@ -80,13 +80,6 @@ def get_db_list():
     return db_params
 
 
-def plugins_select_info():
-    plugins_infos: dict = {}
-    for plugin in CFG.plugins:
-        plugins_infos.update({f"【{plugin._name}】=>{plugin._description}": plugin._name})
-    return plugins_infos
-
-
 def get_db_list_info():
     dbs = CFG.local_db_manager.get_db_list()
     params: dict = {}
@@ -242,8 +235,6 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
         return Result.succ(get_db_list())
     elif ChatScene.ChatDashboard.value() == chat_mode:
         return Result.succ(get_db_list())
-    elif ChatScene.ChatExecution.value() == chat_mode:
-        return Result.succ(plugins_select_info())
     elif ChatScene.ChatKnowledge.value() == chat_mode:
         return Result.succ(knowledge_list())
     elif ChatScene.ChatKnowledge.ExtractRefineSummary.value() == chat_mode:

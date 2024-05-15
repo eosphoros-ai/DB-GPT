@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from ...resource.resource_api import AgentResource
+from ...resource.base import AgentResource
 from .base import Action, ActionOutput
 
 logger = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ import os
 from typing import Dict
 
 from dbgpt._private.config import Config
-from dbgpt.agent.plugin.commands.command_manage import ApiCall
+from dbgpt.agent.util.api_call import ApiCall
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.app.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from dbgpt.app.scene.chat_data.chat_excel.excel_reader import ExcelReader
@@ -45,7 +45,7 @@ class ChatExcel(BaseChat):
                     KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), self.select_param
                 )
             )
-        self.api_call = ApiCall(display_registry=CFG.command_display)
+        self.api_call = ApiCall()
         super().__init__(chat_param=chat_param)
 
     @trace()

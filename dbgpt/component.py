@@ -2,6 +2,7 @@
 
 Manages the lifecycle and registration of components.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -87,6 +88,7 @@ class ComponentType(str, Enum):
     UNIFIED_METADATA_DB_MANAGER_FACTORY = "dbgpt_unified_metadata_db_manager_factory"
     CONNECTOR_MANAGER = "dbgpt_connector_manager"
     AGENT_MANAGER = "dbgpt_agent_manager"
+    RESOURCE_MANAGER = "dbgpt_resource_manager"
 
 
 _EMPTY_DEFAULT_COMPONENT = "_EMPTY_DEFAULT_COMPONENT"

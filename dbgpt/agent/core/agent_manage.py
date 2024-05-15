@@ -68,15 +68,15 @@ class AgentManager(BaseComponent):
         from ..expand.code_assistant_agent import CodeAssistantAgent
         from ..expand.dashboard_assistant_agent import DashboardAssistantAgent
         from ..expand.data_scientist_agent import DataScientistAgent
-        from ..expand.plugin_assistant_agent import PluginAssistantAgent
         from ..expand.summary_assistant_agent import SummaryAssistantAgent
+        from ..expand.tool_assistant_agent import ToolAssistantAgent
 
         core_agents = set()
         core_agents.add(self.register_agent(CodeAssistantAgent))
         core_agents.add(self.register_agent(DashboardAssistantAgent))
         core_agents.add(self.register_agent(DataScientistAgent))
         core_agents.add(self.register_agent(SummaryAssistantAgent))
-        core_agents.add(self.register_agent(PluginAssistantAgent))
+        core_agents.add(self.register_agent(ToolAssistantAgent))
         self._core_agents = core_agents
 
     def register_agent(

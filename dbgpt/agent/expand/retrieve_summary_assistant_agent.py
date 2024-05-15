@@ -14,7 +14,7 @@ from ..core.action.base import Action, ActionOutput
 from ..core.agent import Agent, AgentMessage, AgentReviewInfo
 from ..core.base_agent import ConversableAgent
 from ..core.profile import ProfileConfig
-from ..resource.resource_api import AgentResource
+from ..resource.base import AgentResource
 from ..util.cmp import cmp_string_equal
 
 try:

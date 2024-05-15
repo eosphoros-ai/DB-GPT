@@ -8,7 +8,7 @@ from dbgpt.util.utils import colored
 from dbgpt.vis.tags.vis_code import Vis, VisCode
 
 from ...core.action.base import Action, ActionOutput
-from ...resource.resource_api import AgentResource
+from ...resource.base import AgentResource
 
 logger = logging.getLogger(__name__)
 

@@ -17,6 +17,7 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 # TODO: Don't dependent on MixinLLMOperator
 from dbgpt.model.operators.llm_operator import MixinLLMOperator
 
+from ....resource.manage import get_resource_manager
 from ....util.llm.llm import LLMConfig
 from ...agent import Agent, AgentGenerateContext, AgentMessage
 from ...agent_manage import get_agent_manager
@@ -228,7 +229,6 @@ class AWELAgentOperator(
             silent=input_value.silent,
             memory=input_value.memory.structure_clone() if input_value.memory else None,
             agent_context=input_value.agent_context,
-            resource_loader=input_value.resource_loader,
             llm_client=input_value.llm_client,
             round_index=agent.consecutive_auto_reply_counter,
         )
@@ -262,13 +262,13 @@ class AWELAgentOperator(
         if self.awel_agent.fixed_subgoal:
             kwargs["fixed_subgoal"] = self.awel_agent.fixed_subgoal
 
+        resource = get_resource_manager().build_resource(self.awel_agent.resources)
         agent = (
             await agent_cls(**kwargs)
             .bind(input_value.memory)
             .bind(llm_config)
             .bind(input_value.agent_context)
-            .bind(self.awel_agent.resources)
-            .bind(input_value.resource_loader)
+            .bind(resource)
             .build()
         )
 

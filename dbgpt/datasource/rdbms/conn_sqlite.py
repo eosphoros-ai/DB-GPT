@@ -1,4 +1,5 @@
 """SQLite connector."""
+
 import logging
 import os
 import tempfile
@@ -121,6 +122,18 @@ class SQLiteConnector(RDBMSConnector):
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
         ]
+
+    def get_current_db_name(self) -> str:
+        """Get current database name.
+
+        Returns:
+            str: database name
+        """
+        full_path = self._engine.url.database
+        db_name = os.path.basename(full_path)
+        if db_name.endswith(".db"):
+            db_name = db_name[:-3]
+        return db_name
 
     def table_simple_info(self) -> Iterable[str]:
         """Get table simple info."""
