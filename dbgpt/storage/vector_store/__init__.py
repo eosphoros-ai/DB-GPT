@@ -1,26 +1,26 @@
 """Vector Store Module."""
-from typing import Type
+from typing import Tuple, Type
 
 
-def _import_pgvector() -> (Type, Type):
+def _import_pgvector() -> Tuple[Type, Type]:
     from dbgpt.storage.vector_store.pgvector_store import PGVectorConfig, PGVectorStore
 
     return PGVectorStore, PGVectorConfig
 
 
-def _import_milvus() -> (Type, Type):
+def _import_milvus() -> Tuple[Type, Type]:
     from dbgpt.storage.vector_store.milvus_store import MilvusStore, MilvusVectorConfig
 
     return MilvusStore, MilvusVectorConfig
 
 
-def _import_chroma() -> (Type, Type):
+def _import_chroma() -> Tuple[Type, Type]:
     from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
     return ChromaStore, ChromaVectorConfig
 
 
-def _import_weaviate() -> (Type, Type):
+def _import_weaviate() -> Tuple[Type, Type]:
     from dbgpt.storage.vector_store.weaviate_store import (
         WeaviateStore,
         WeaviateVectorConfig,
@@ -29,7 +29,7 @@ def _import_weaviate() -> (Type, Type):
     return WeaviateStore, WeaviateVectorConfig
 
 
-def _import_oceanbase() -> (Type, Type):
+def _import_oceanbase() -> Tuple[Type, Type]:
     from dbgpt.storage.vector_store.oceanbase_store import (
         OceanBaseConfig,
         OceanBaseStore,
@@ -38,7 +38,7 @@ def _import_oceanbase() -> (Type, Type):
     return OceanBaseStore, OceanBaseConfig
 
 
-def _import_elastic() -> (Type, Type):
+def _import_elastic() -> Tuple[Type, Type]:
     from dbgpt.storage.vector_store.elastic_store import (
         ElasticsearchVectorConfig,
         ElasticStore,
@@ -47,7 +47,7 @@ def _import_elastic() -> (Type, Type):
     return ElasticStore, ElasticsearchVectorConfig
 
 
-def _import_builtin_knowledge_graph() -> (Type, Type):
+def _import_builtin_knowledge_graph() -> Tuple[Type, Type]:
     from dbgpt.storage.knowledge_graph.knowledge_graph import (
         BuiltinKnowledgeGraph,
         BuiltinKnowledgeGraphConfig,
@@ -56,13 +56,13 @@ def _import_builtin_knowledge_graph() -> (Type, Type):
     return BuiltinKnowledgeGraph, BuiltinKnowledgeGraphConfig
 
 
-def _import_openspg() -> (Type, Type):
+def _import_openspg() -> Tuple[Type, Type]:
     from dbgpt.storage.knowledge_graph.open_spg import OpenSPG, OpenSPGConfig
 
     return OpenSPG, OpenSPGConfig
 
 
-def __getattr__(name: str) -> (Type, Type):
+def __getattr__(name: str) -> Tuple[Type, Type]:
     if name == "Chroma":
         return _import_chroma()
     elif name == "Milvus":

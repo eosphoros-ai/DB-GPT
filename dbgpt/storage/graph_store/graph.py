@@ -6,7 +6,7 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterator, List, Set, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
 import networkx as nx
 
@@ -50,7 +50,7 @@ class Elem(ABC):
         return all(self._props.get(k) == v for k, v in props.items())
 
     @abstractmethod
-    def format(self, label_key: str = None):
+    def format(self, label_key: Optional[str] = None):
         """Format properties into a string."""
         formatted_props = [
             f"{k}:{json.dumps(v)}" for k, v in self._props.items() if k != label_key
@@ -73,7 +73,7 @@ class Vertex(Elem):
         """Return the vertex ID."""
         return self._vid
 
-    def format(self, label_key: str = None):
+    def format(self, label_key: Optional[str] = None):
         """Format vertex properties into a string."""
         label = self.get_prop(label_key) if label_key else self._vid
         props_str = super().format(label_key)
@@ -117,7 +117,7 @@ class Edge(Elem):
         else:
             raise ValueError(f"Get nid of {vid} on {self} failed")
 
-    def format(self, label_key: str = None):
+    def format(self, label_key: Optional[str] = None):
         """Format the edge properties into a string."""
         label = self.get_prop(label_key) if label_key else ""
         props_str = super().format(label_key)
@@ -157,8 +157,11 @@ class Graph(ABC):
 
     @abstractmethod
     def get_neighbor_edges(
-        self, vid: str, direction: Direction = Direction.OUT
-    ) -> List[Edge]:
+        self,
+        vid: str,
+        direction: Direction = Direction.OUT,
+        limit: Optional[int] = None,
+    ) -> Iterator[Edge]:
         """Get neighbor edges."""
 
     @abstractmethod
@@ -186,9 +189,9 @@ class Graph(ABC):
         self,
         vids: List[str],
         direct: Direction = Direction.OUT,
-        depth: int = None,
-        fan: int = None,
-        limit: int = None,
+        depth: Optional[int] = None,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> "Graph":
         """Search on graph."""
 
@@ -204,7 +207,7 @@ class Graph(ABC):
 class MemoryGraph(Graph):
     """Graph class."""
 
-    def __init__(self, vertex_label: str = None, edge_label: str = "label"):
+    def __init__(self, vertex_label: Optional[str] = None, edge_label: str = "label"):
         """Initialize MemoryGraph with vertex label and edge label."""
         assert edge_label, "Edge label is needed"
 
@@ -216,9 +219,9 @@ class MemoryGraph(Graph):
         self._edge_count = 0
 
         # init vertices, out edges, in edges index
-        self._vs = defaultdict()
-        self._oes = defaultdict(lambda: defaultdict(set))
-        self._ies = defaultdict(lambda: defaultdict(set))
+        self._vs: Any = defaultdict()
+        self._oes: Any = defaultdict(lambda: defaultdict(set))
+        self._ies: Any = defaultdict(lambda: defaultdict(set))
 
     @property
     def vertex_label(self):
@@ -293,7 +296,10 @@ class MemoryGraph(Graph):
         return self._vs[vid]
 
     def get_neighbor_edges(
-        self, vid: str, direction: Direction = Direction.OUT, limit: int = None
+        self,
+        vid: str,
+        direction: Direction = Direction.OUT,
+        limit: Optional[int] = None,
     ) -> Iterator[Edge]:
         """Get edges connected to a vertex by direction."""
         if direction == Direction.OUT:
@@ -312,8 +318,15 @@ class MemoryGraph(Graph):
 
             # distinct
             seen = set()
-            es = (e for e in es if e not in seen and not seen.add(e))
 
+            # es = (e for e in es if e not in seen and not seen.add(e))
+            def unique_elements(elements):
+                for element in elements:
+                    if element not in seen:
+                        seen.add(element)
+                        yield element
+
+            es = unique_elements(es)
         else:
             raise ValueError(f"Invalid direction: {direction}")
 
@@ -370,9 +383,9 @@ class MemoryGraph(Graph):
         self,
         vids: List[str],
         direct: Direction = Direction.OUT,
-        depth: int = None,
-        fan: int = None,
-        limit: int = None,
+        depth: Optional[int] = None,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> "MemoryGraph":
         """Search the graph from a vertex with specified parameters."""
         subgraph = MemoryGraph()
@@ -386,9 +399,9 @@ class MemoryGraph(Graph):
         self,
         vid: str,
         direct: Direction,
-        depth: int,
-        fan: int,
-        limit: int,
+        depth: Optional[int],
+        fan: Optional[int],
+        limit: Optional[int],
         _depth: int,
         _visited: Set,
         _subgraph: "MemoryGraph",

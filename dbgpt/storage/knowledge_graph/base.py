@@ -1,6 +1,7 @@
 """Knowledge graph base class."""
 import logging
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from dbgpt._private.pydantic import ConfigDict
 from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
@@ -19,7 +20,7 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
     """Knowledge graph base class."""
 
     @abstractmethod
-    def query_graph(self, limit: int = None) -> Graph:
+    def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Get graph data."""
 
     def delete_by_ids(self, ids: str):

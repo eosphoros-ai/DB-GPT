@@ -1,8 +1,7 @@
 """TuGraph vector store."""
 import logging
 import os
-from typing import List
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
@@ -57,7 +56,7 @@ class TuGraphStore(GraphStoreBase):
             os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
         )
         self._port = (
-            os.getenv("TUGRAPH_PORT", "7687") or config.port
+            int(os.getenv("TUGRAPH_PORT", 7687)) or config.port
         )
         self._username = (
             os.getenv("TUGRAPH_USERNAME", "admin") or config.username
@@ -159,22 +158,26 @@ class TuGraphStore(GraphStoreBase):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: int = None,
-        fan: int = None,
-        limit: int = None,
+        depth: Optional[int] = None,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         if fan is not None:
             raise ValueError("Fan functionality is not supported at this time.")
         else:
+            depth_string = f"1..{depth}"
             if depth is None:
-                depth = ".."
-            else:
-                depth = f"1..{depth}"
+                depth_string = ".."
+
+            limit_string = f"LIMIT {limit}"
+            if limit is None:
+                limit_string = ""
+
             query = (
                 f"MATCH p=(n:{self._node_label})"
-                f"-[r:{self._edge_label}*{depth}]-(m:{self._node_label}) "
-                f"WHERE n.id IN {subs} RETURN p LIMIT {limit}"
+                f"-[r:{self._edge_label}*{depth_string}]-(m:{self._node_label}) "
+                f"WHERE n.id IN {subs} RETURN p {limit_string}"
             )
             return self.query(query)
 

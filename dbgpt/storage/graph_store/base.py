@@ -57,9 +57,9 @@ class GraphStoreBase(ABC):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: int = None,
-        fan: int = None,
-        limit: int = None,
+        depth: Optional[int] = None,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> Graph:
         """Explore on graph."""
 

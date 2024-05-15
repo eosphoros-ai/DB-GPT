@@ -1,6 +1,6 @@
 """Connector for vector store."""
 import logging
-from typing import Type
+from typing import Tuple, Type
 
 from dbgpt.storage import graph_store
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
@@ -31,7 +31,7 @@ class GraphStoreFactory:
             raise e
 
     @staticmethod
-    def __find_type(graph_store_type: str) -> (Type, Type):
+    def __find_type(graph_store_type: str) -> Tuple[Type, Type]:
         for t in graph_store.__all__:
             if t.lower() == graph_store_type.lower():
                 store_cls, cfg_cls = getattr(graph_store, t)

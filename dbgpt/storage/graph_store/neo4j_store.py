@@ -1,10 +1,10 @@
 """Neo4j vector store."""
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from dbgpt._private.pydantic import ConfigDict
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Direction, Graph
+from dbgpt.storage.graph_store.graph import Direction, Graph, MemoryGraph
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class Neo4jStore(GraphStoreBase):
 
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Get triplets."""
-        pass
+        return []
 
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete triplets."""
@@ -42,23 +42,23 @@ class Neo4jStore(GraphStoreBase):
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get schema."""
-        pass
+        return ""
 
     def get_full_graph(self, limit: int = None) -> Graph:
         """Get full graph."""
-        pass
+        return MemoryGraph()
 
     def explore(
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: int = None,
-        fan: int = None,
-        limit: int = None,
+        depth: Optional[int] = None,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> Graph:
         """Explore the graph from given subjects up to a depth."""
-        pass
+        return MemoryGraph()
 
     def query(self, query: str, **args) -> Graph:
         """Execute a query on graph."""
-        pass
+        return MemoryGraph()

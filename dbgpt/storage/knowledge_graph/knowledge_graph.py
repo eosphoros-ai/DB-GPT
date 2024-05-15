@@ -123,7 +123,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         )
         return [Chunk(content=content, metadata=subgraph.schema())]
 
-    def query_graph(self, limit: int = None) -> Graph:
+    def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Query graph."""
         return self._graph_store.get_full_graph(limit)
 

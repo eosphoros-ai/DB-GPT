@@ -100,20 +100,23 @@ class VectorStoreConnector:
         )
 
         try:
-            config: IndexStoreConfig = self.config_class()
-            config.name = vector_store_config.name
-            config.embedding_fn = vector_store_config.embedding_fn
-            config.max_chunks_once_load = vector_store_config.max_chunks_once_load
-            config.max_threads = vector_store_config.max_threads
-            config.user = vector_store_config.user
-            config.password = vector_store_config.password
+            if vector_store_config is not None:
+                config: IndexStoreConfig = self.config_class()
+                config.name = getattr(vector_store_config, "name", "default_name")
+                config.embedding_fn = getattr(vector_store_config, "embedding_fn", None)
+                config.max_chunks_once_load = getattr(
+                    vector_store_config, "max_chunks_once_load", 5
+                )
+                config.max_threads = getattr(vector_store_config, "max_threads", 4)
+                config.user = getattr(vector_store_config, "user", None)
+                config.password = getattr(vector_store_config, "password", None)
 
-            # extra
-            config_dict = vector_store_config.dict()
-            config.llm_client = config_dict.get("llm_client", None)
-            config.model_name = config_dict.get("model_name", None)
+                # extra
+                config_dict = vector_store_config.dict()
+                config.llm_client = config_dict.get("llm_client", None)
+                config.model_name = config_dict.get("model_name", None)
 
-            self.client = self.connector_class(config)
+                self.client = self.connector_class(config)
         except Exception as e:
             logger.error("connect vector store failed: %s", e)
             raise e

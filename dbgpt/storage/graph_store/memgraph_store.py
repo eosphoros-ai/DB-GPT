@@ -1,7 +1,7 @@
 """Graph store base class."""
 import json
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
@@ -71,9 +71,9 @@ class MemoryGraphStore(GraphStoreBase):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: int = None,
-        fan: int = None,
-        limit: int = None,
+        depth: Optional[int] = None,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         return self._graph.search(subs, direct, depth, fan, limit)

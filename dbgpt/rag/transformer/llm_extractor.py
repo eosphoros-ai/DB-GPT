@@ -1,7 +1,7 @@
 """TripletExtractor class."""
 import logging
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
 from dbgpt.rag.transformer.base import ExtractorBase
@@ -18,8 +18,8 @@ class LLMExtractor(ExtractorBase, ABC):
         self._model_name = model_name
         self._prompt_template = prompt_template
 
-    async def extract(self, text: str, limit: int = None) -> List:
-        """Extract by LLm."""
+    async def extract(self, text: str, limit: Optional[int] = None) -> List:
+        """Extract by LLm"""
         template = HumanPromptTemplate.from_template(self._prompt_template)
         messages = template.format_messages(text=text)
 
