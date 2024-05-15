@@ -1,7 +1,22 @@
 """Interface for embedding models."""
+
 import asyncio
 from abc import ABC, abstractmethod
 from typing import List
+
+
+class RerankEmbeddings(ABC):
+    """Interface for rerank models."""
+
+    @abstractmethod
+    def predict(self, query: str, candidates: List[str]) -> List[float]:
+        """Predict the scores of the candidates."""
+
+    async def apredict(self, query: str, candidates: List[str]) -> List[float]:
+        """Asynchronously predict the scores of the candidates."""
+        return await asyncio.get_running_loop().run_in_executor(
+            None, self.predict, query, candidates
+        )
 
 
 class Embeddings(ABC):

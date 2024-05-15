@@ -227,6 +227,14 @@ class WebServerParameters(BaseParameters):
             "text2vec --model_name xxx --model_path xxx`"
         },
     )
+    remote_rerank: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "Whether to enable remote rerank models. If it is True, you need"
+            " to start a rerank model through `dbgpt start worker --worker_type "
+            "text2vec --rerank --model_name xxx --model_path xxx`"
+        },
+    )
     log_level: Optional[str] = field(
         default=None,
         metadata={

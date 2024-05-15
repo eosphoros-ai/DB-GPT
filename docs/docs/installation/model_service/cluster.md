@@ -52,13 +52,28 @@ dbgpt start worker --model_name vicuna-13b-v1.5 \
 :::
 
 
-## Start the embedding model service
+## Start Embedding Model Worker
 
 ```python
 dbgpt start worker --model_name text2vec \
 --model_path /app/models/text2vec-large-chinese \
 --worker_type text2vec \
 --port 8003 \
+--controller_addr http://127.0.0.1:8000
+```
+:::info note
+⚠️  Make sure to use your own model name and model path.
+
+:::
+
+## Start Reranking Model Worker
+
+```python
+dbgpt start worker --model_name text2vec \
+--rerank \
+--model_path /app/models/bge-reranker-base \
+--worker_type bge-reranker-base \
+--port 8004 \
 --controller_addr http://127.0.0.1:8000
 ```
 :::info note
@@ -74,16 +89,18 @@ View and inspect deployed models
 ```python
 $ dbgpt model list
 
-+-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
-|    Model Name   | Model Type |    Host    | Port | Healthy | Enabled | Prompt Template |       Last Heartbeat       |
-+-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
-|   chatglm2-6b   |    llm     | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.287654 |
-|  WorkerManager  |  service   | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.286668 |
-|  WorkerManager  |  service   | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.845617 |
-|  WorkerManager  |  service   | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
-|     text2vec    |  text2vec  | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.844796 |
-| vicuna-13b-v1.5 |    llm     | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.597775 |
-+-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
++-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
+|    Model Name     | Model Type |    Host    | Port | Healthy | Enabled | Prompt Template |       Last Heartbeat       |
++-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
+|   chatglm2-6b     |    llm     | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.287654 |
+|  WorkerManager    |  service   | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.286668 |
+|  WorkerManager    |  service   | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.845617 |
+|  WorkerManager    |  service   | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
+|  WorkerManager    |  service   | 172.21.0.5 | 8004 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
+|     text2vec      |  text2vec  | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.844796 |
+| vicuna-13b-v1.5   |    llm     | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.597775 |
+| bge-reranker-base |  text2vec  | 172.21.0.5 | 8004 |   True  |   True  |                 | 2024-05-15T11:36:12.935012 |
++-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
 ```
 
 

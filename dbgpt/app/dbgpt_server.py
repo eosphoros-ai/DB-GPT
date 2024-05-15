@@ -146,11 +146,24 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
 
     embedding_model_name = CFG.EMBEDDING_MODEL
     embedding_model_path = EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+    rerank_model_name = CFG.RERANK_MODEL
+    rerank_model_path = None
+    if rerank_model_name:
+        rerank_model_path = CFG.RERANK_MODEL_PATH or EMBEDDING_MODEL_CONFIG.get(
+            rerank_model_name
+        )
 
     server_init(param, system_app)
     mount_routers(app)
     model_start_listener = _create_model_start_listener(system_app)
-    initialize_components(param, system_app, embedding_model_name, embedding_model_path)
+    initialize_components(
+        param,
+        system_app,
+        embedding_model_name,
+        embedding_model_path,
+        rerank_model_name,
+        rerank_model_path,
+    )
     system_app.on_init()
 
     # Migration db storage, so you db models must be imported before this
@@ -161,7 +174,13 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     if not param.light:
         print("Model Unified Deployment Mode!")
         if not param.remote_embedding:
+            # Embedding model is running in the same process, set embedding_model_name
+            # and embedding_model_path to None
             embedding_model_name, embedding_model_path = None, None
+        if not param.remote_rerank:
+            # Rerank model is running in the same process, set rerank_model_name and
+            # rerank_model_path to None
+            rerank_model_name, rerank_model_path = None, None
         initialize_worker_manager_in_client(
             app=app,
             model_name=model_name,
@@ -169,6 +188,8 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
             local_port=param.port,
             embedding_model_name=embedding_model_name,
             embedding_model_path=embedding_model_path,
+            rerank_model_name=rerank_model_name,
+            rerank_model_path=rerank_model_path,
             start_listener=model_start_listener,
             system_app=system_app,
         )

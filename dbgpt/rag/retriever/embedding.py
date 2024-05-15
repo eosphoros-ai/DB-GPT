@@ -1,4 +1,5 @@
 """Embedding retriever."""
+
 from functools import reduce
 from typing import Any, Dict, List, Optional, cast
 
@@ -207,7 +208,7 @@ class EmbeddingRetriever(BaseRetriever):
                 "rerank_cls": self._rerank.__class__.__name__,
             },
         ):
-            new_candidates_with_score = self._rerank.rank(
+            new_candidates_with_score = await self._rerank.arank(
                 new_candidates_with_score, query
             )
             return new_candidates_with_score
