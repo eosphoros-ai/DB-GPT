@@ -4,7 +4,7 @@ import euler from 'cytoscape-euler';
 import { Button } from 'antd';
 import { RollbackOutlined } from '@ant-design/icons';
 cytoscape.use(euler)
-import { getGraphVis } from '@/client/api';
+import { apiInterceptors,getGraphVis } from '@/client/api';
 import { useRouter } from 'next/router';
 
 const LAYOUTCONFIG = {
@@ -27,31 +27,31 @@ function GraphVis() {
   const LIMIT = 500
   const router = useRouter();
   const fetchGraphVis = async () => {
-    const result = await getGraphVis(spaceName as string,{limit:LIMIT})
-    if(myRef.current){
-      let processedData = processResult(result)
+    const [_, data] =  await apiInterceptors(getGraphVis(spaceName as string,{limit:LIMIT}))
+    if(myRef.current && data){
+      let processedData = processResult(data)
       renderGraphVis(processedData)
     }
   }
-  const processResult = (data:{nodes:Array<any>,relationships:Array<any>}) => {
+  const processResult = (data:{nodes:Array<any>,edges:Array<any>}) => {
     let nodes:any[] = []
     let edges:any[] = []
     data.nodes.forEach((node:any)=>{
       let n = {
         data:{
-          id:node.identity,
-          displayName:node.properties['id']
+          id:node.vid,
+          displayName:node.vid,
         }
       }
       nodes.push(n)
     })
-    data.relationships.forEach((edge:any)=>{
+    data.edges.forEach((edge:any)=>{
       let e = {
         data:{
-          id:edge.src+'_'+edge.dst,
+          id:edge.src+'_'+edge.dst+'_'+edge.label,
           source:edge.src,
           target:edge.dst,
-          displayName:edge.properties['id']
+          displayName:edge.label
         }
       }
       edges.push(e)
@@ -67,7 +67,8 @@ function GraphVis() {
       {
         container:myRef.current,
         elements:data,
-        zoom:0.5,
+        zoom:0.3,
+        pixelRatio: 'auto',
         style:[
           {
             selector: 'node',

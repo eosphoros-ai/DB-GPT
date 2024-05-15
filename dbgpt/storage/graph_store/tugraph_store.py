@@ -8,8 +8,8 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.graph import Direction
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph
-from dbgpt.storage.graph_store.graph import Vertex
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         description="login username",
     )
     password: str = Field(
-        default="73@TuGraph",
+        default="123456",
         description="login password",
     )
     vertex_type: str = Field(
@@ -207,9 +207,10 @@ class TuGraphStore(GraphStoreBase):
         else:
             query = (
                 f"MATCH p=(n:{self._node_label})"
-                f"-[r:{self._edge_label}*1..{depth}]-() "
+                f"-[r:{self._edge_label}*1..{depth}]-(m:{self._node_label}) "
                 f"WHERE n.id IN {subs} RETURN p LIMIT {limit}"
             )
+            print(query)
             result = self.conn.run(query=query)
             graph = _format_query_data(result)
             mg = MemoryGraph()
@@ -233,5 +234,6 @@ class TuGraphStore(GraphStoreBase):
 
     def get_full_graph(self,limit):
         query = f'MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}'
-        data = self.conn.run(query=query)
+        result = self.conn.run(query=query)
+        data = _format_query_data(result)
         return data

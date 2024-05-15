@@ -44,6 +44,10 @@ class SpaceQueryResponse(BaseModel):
     """doc_count: doc_count"""
     docs: int = None
 
+class GraphVisQueryRespone(BaseModel):
+    """data: data"""
+    nodes: List = []
+    edges: List = []
 
 class KnowledgeQueryResponse(BaseModel):
     """source: knowledge reference source"""

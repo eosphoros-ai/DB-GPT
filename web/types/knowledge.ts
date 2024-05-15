@@ -134,7 +134,7 @@ export type IChunkList = {
 
 export type GraphVisResult = {
   nodes:Array<any>,
-  relationships:Array<any>
+  edges:Array<any>
 }
 
 export type ArgumentsParams = {

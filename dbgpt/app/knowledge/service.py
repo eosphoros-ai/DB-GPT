@@ -22,6 +22,7 @@ from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
     DocumentQueryResponse,
     SpaceQueryResponse,
+    GraphVisQueryRespone
 )
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
@@ -703,8 +704,11 @@ class KnowledgeService:
             vector_store_type=space.vector_type,
             vector_store_config=config
         )
-        # print(vector_store_connector.query_graph)
-        # data = vector_store_connector.query_graph(limit=limit)
-        # todo with data
-        return {'nodes':[],'edges':[]}
+        res = GraphVisQueryRespone()
+        data = vector_store_connector.client.query_graph(limit = limit)
+        for node in data["nodes"]:
+            res.nodes.append({"vid":node.vid})
+        for edge in data["edges"]:
+            res.edges.append({"src":edge.sid,"dst":edge.tid,"label":edge.props['label']})    
+        return res
     

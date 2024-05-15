@@ -160,17 +160,10 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
 def graph_vis(space_name: str, query_request: GraphVisRequest):
     print(f"/document/list params: {space_name}, {query_request}")
     print(query_request.limit)
-    knowledge_space_service.query_graph(space_name=space_name,limit=query_request.limit)
-    return {
-        'nodes':[],
-        'edges':[]
-    }
-    # try:
-    #     return Result.succ(
-    #         knowledge_space_service.get_knowledge_documents(space_name, query_request)
-    #     )
-    # except Exception as e:
-    #     return Result.failed(code="E000X", msg=f"document list error {e}")
+    try:
+        return Result.succ(knowledge_space_service.query_graph(space_name=space_name,limit=query_request.limit))
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"get graph vis error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/delete")
