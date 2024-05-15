@@ -32,7 +32,7 @@ class TuGraphConnector(BaseConnector):
 
     @classmethod
     def from_uri_db(
-        cls, host: str, port: int, user: str, pwd: str, graph_name: str
+        cls, host: str, port: int, user: str, pwd: str, db_name: str
     ) -> "TuGraphConnector":
         """Create a new TuGraphConnector from host, port, user, pwd, db_name."""
         try:
@@ -40,7 +40,7 @@ class TuGraphConnector(BaseConnector):
             db_url = f"{cls.driver}://{host}:{str(port)}"
             driver = GraphDatabase.driver(db_url, auth=(user, pwd))
             driver.verify_connectivity()
-            return cast(TuGraphConnector, cls(driver=driver, graph=graph_name))
+            return cast(TuGraphConnector, cls(driver=driver, graph=db_name))
 
         except ImportError as err:
             raise ImportError("requests package is not installed") from err

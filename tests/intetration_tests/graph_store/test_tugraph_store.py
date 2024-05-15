@@ -4,26 +4,15 @@ import pytest
 
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
 class TuGraphStoreConfig:
-    def __init__(self, host, port, username, password, name, vertex_type, edge_type):
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
+    def __init__(self,name):
         self.name = name
-        self.vertex_type = vertex_type
-        self.edge_type = edge_type
+        
 
 
 @pytest.fixture(scope="module")
 def store():
     config = TuGraphStoreConfig(
-        host="127.0.0.1",
-        port=7687,
-        username="admin",
-        password="123456",
-        name="A",
-        vertex_type="entity",
-        edge_type="relation"       
+        name="TestGraph" 
     )
     store = TuGraphStore(config=config)
     yield store
@@ -52,13 +41,6 @@ def test_insert_and_get_triplets(store):
     assert len(triplets) == 1
     triplets = store.get_triplets("F")
     assert len(triplets) == 1
-
-
-def test_get_rel_map(store):
-    subjs = ["A", "B"]
-    rel_map = store.get_rel_map(subjs, depth=2, limit=10)
-    assert len(rel_map) == 10
-
 
 def test_query(store):
     query = "MATCH (n)-[r]->(n1) return n,n1,r limit 3"

@@ -719,11 +719,14 @@ class KnowledgeService:
             vector_store_config=config
         )
         res = GraphVisQueryRespone()
-        data = vector_store_connector.client.query_graph(limit=limit)
-        for node in data["nodes"]:
-            res.nodes.append({"vid": node.vid})
-        for edge in data["edges"]:
-            res.edges.append(
-                {"src": edge.sid, "dst": edge.tid, "label": edge.props['label']}
-            )
+        graph = vector_store_connector.client.query_graph(limit=limit)
+        res = {"nodes": [], "edges": []}
+        for node in graph.vertices():
+            res["nodes"].append({"vid": node.vid})
+        for edge in graph.edges():
+            res["edges"].append({
+                "src": edge.sid,
+                "dst": edge.tid,
+                "label": edge.props[graph.edge_label]
+            })
         return res

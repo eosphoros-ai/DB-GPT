@@ -49,53 +49,6 @@ class TuGraphStoreConfig(GraphStoreConfig):
     )
 
 
-def _format_paths(paths):
-    formatted_paths = []
-    for path in paths:
-        formatted_path = []
-        nodes = list(path["p"].nodes)
-        rels = list(path["p"].relationships)
-        for i in range(len(nodes)):
-            formatted_path.append(nodes[i]._properties["id"])
-            if i < len(rels):
-                formatted_path.append(rels[i]._properties["id"])
-        formatted_paths.append(formatted_path)
-    return formatted_paths
-
-
-def _format_query_data(data):
-    node_ids_set = set()
-    rels_set = set()
-    from neo4j import graph
-
-    for record in data:
-        for key in record.keys():
-            value = record[key]
-            if isinstance(value, graph.Node):
-                node_id = value._properties["id"]
-                node_ids_set.add(node_id)
-            elif isinstance(value, graph.Relationship):
-                rel_nodes = value.nodes
-                prop_id = value._properties["id"]
-                src_id = rel_nodes[0]._properties["id"]
-                dst_id = rel_nodes[1]._properties["id"]
-                rels_set.add((src_id, dst_id, prop_id))
-            elif isinstance(value, graph.Path):
-                formatted_paths = _format_paths(data)
-                for path in formatted_paths:
-                    for i in range(0, len(path), 2):
-                        node_ids_set.add(path[i])
-                        if i + 2 < len(path):
-                            rels_set.add((path[i], path[i + 2], path[i + 1]))
-
-    nodes = [Vertex(node_id) for node_id in node_ids_set]
-    rels = [
-        Edge(src_id, dst_id, label=prop_id) for (src_id, dst_id, prop_id) in
-        rels_set
-    ]
-    return {"nodes": nodes, "edges": rels}
-
-
 class TuGraphStore(GraphStoreBase):
     """TuGraph graph store."""
 
@@ -105,21 +58,19 @@ class TuGraphStore(GraphStoreBase):
         self.port = os.getenv("TUGRAPH_PORT", "7070") or config.port
         self.username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
         self.password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
-        self.vertex_type = os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
-        self.edge_type = os.getenv("TUGRAPH_EDGE_TYPE", "relation") or config.edge_type
+        self._node_label = os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
+        self._edge_label = os.getenv("TUGRAPH_EDGE_TYPE", "relation") or config.edge_type
         self.edge_name_key = os.getenv("TUGRAPH_EDGE_NAME_KEY", "label") or config.edge_name_key
-
+        self._graph_name = config.name
         self.conn = TuGraphConnector.from_uri_db(
             host=self.host,
             port=self.port,
             user=self.username,
             pwd=self.password,
-            graph_name=config.name
+            db_name=config.name
         )
         self.conn.create_graph(graph_name=config.name)
-        self._node_label = config.vertex_type
-        self._edge_label = config.edge_type
-        self._graph_name = config.name
+        
         self._create_schema()
 
     def _check_label(self, elem_type: str):
@@ -170,23 +121,6 @@ class TuGraphStore(GraphStoreBase):
         query = f'Call dbms.graph.deleteGraph({self._graph_name})'
         self.conn.run(query=query)
 
-    def get_rel_map(
-        self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
-    ) -> List[List[str]]:
-        """Get flat rel map."""
-        # *1..{depth}
-        query = (
-            f"MATCH p=(n:{self._node_label})"
-            f"-[r:{self._edge_label}*1..{depth}]->() "
-            f"WHERE n.id IN {subjs} RETURN p LIMIT {limit}"
-        )
-        data = self.conn.run(query=query)
-        result = []
-        formatted_paths = _format_paths(data)
-        for path in formatted_paths:
-            result.append(path)
-        return result
-
     def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         del_query = (
@@ -218,19 +152,64 @@ class TuGraphStore(GraphStoreBase):
         if fan is not None:
             raise ValueError("Fan functionality is not supported at this time.")
         else:
+            if depth is None:
+                depth = ".."
+            else:
+                depth = f"1..{depth}"
             query = (
                 f"MATCH p=(n:{self._node_label})"
-                f"-[r:{self._edge_label}*1..{depth}]-(m:{self._node_label}) "
+                f"-[r:{self._edge_label}*{depth}]-(m:{self._node_label}) "
                 f"WHERE n.id IN {subs} RETURN p LIMIT {limit}"
             )
             return self.query(query)
 
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""
-        # todo: ctor MemoryGraph directly
-        result = self.conn.run(query=query)
+        def _format_paths(paths):
+            formatted_paths = []
+            for path in paths:
+                    formatted_path = []
+                    nodes = list(path["p"].nodes)
+                    rels = list(path["p"].relationships)
+                    for i in range(len(nodes)):
+                        formatted_path.append(nodes[i]._properties["id"])
+                        if i < len(rels):
+                            formatted_path.append(rels[i]._properties["id"])
+                    formatted_paths.append(formatted_path)
+            return formatted_paths
+        
+        def _format_query_data(data):
+            node_ids_set = set()
+            rels_set = set()
+            from neo4j import graph
 
-        # format to MemoryGraph
+            for record in data:
+                for key in record.keys():
+                    value = record[key]
+                    if isinstance(value, graph.Node):
+                        node_id = value._properties["id"]
+                        node_ids_set.add(node_id)
+                    elif isinstance(value, graph.Relationship):
+                        rel_nodes = value.nodes
+                        prop_id = value._properties["id"]
+                        src_id = rel_nodes[0]._properties["id"]
+                        dst_id = rel_nodes[1]._properties["id"]
+                        rels_set.add((src_id, dst_id, prop_id))
+                    elif isinstance(value, graph.Path):
+                        formatted_paths = _format_paths(data)
+                        for path in formatted_paths:
+                            for i in range(0, len(path), 2):
+                                node_ids_set.add(path[i])
+                                if i + 2 < len(path):
+                                    rels_set.add((path[i], path[i + 2], path[i + 1]))
+
+            nodes = [Vertex(node_id) for node_id in node_ids_set]
+            rels = [
+                Edge(src_id, dst_id, label=prop_id) for (src_id, dst_id, prop_id) in
+                rels_set
+            ]
+            return {"nodes": nodes, "edges": rels}
+        result = self.conn.run(query=query)
         graph = _format_query_data(result)
         mg = MemoryGraph()
         for vertex in graph["nodes"]:
