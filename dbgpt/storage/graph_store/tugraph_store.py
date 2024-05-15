@@ -111,6 +111,7 @@ class TuGraphStore(GraphStoreBase):
         self.conn.create_graph(graph_name=config.name)
         self._node_label = config.vertex_type
         self._edge_label = config.edge_type
+        self._graph_name = config.name
         self._create_schema()
 
     def _check_label(self, type: str):
@@ -157,7 +158,8 @@ class TuGraphStore(GraphStoreBase):
         self.conn.run(query=rel_query)
 
     def drop(self):
-        query = f'MATCH (n) DELETE n'
+        '''Delete Graph.'''
+        query = f'Call dbms.graph.deleteGraph({self._graph_name})'
         self.conn.run(query=query)
 
     def get_rel_map(
