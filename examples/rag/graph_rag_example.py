@@ -9,20 +9,17 @@ from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
-"""Graph rag example.
+"""GraphRAG example.
     pre-requirements:
     * Set LLM config (url/sk) in `.env`.
-    * `TuGraph` graph storage is used by default.
+    * Setup/startup TuGraph from: https://github.com/TuGraph-family/tugraph-db
+    * Config TuGraph following the format below. 
     ```
     GRAPH_STORE_TYPE=TuGraph
     TUGRAPH_HOST=127.0.0.1
     TUGRAPH_PORT=7687
     TUGRAPH_USERNAME=admin
     TUGRAPH_PASSWORD=73@TuGraph
-    ```
-    * Switch to memory graph for quick test.
-    ```
-    GRAPH_STORE_TYPE=Memory
     ```
 
     Examples:
@@ -31,12 +28,12 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 """
 
 
-def _create_vector_connector():
-    """Create vector connector."""
+def _create_kg_connector():
+    """Create knowledge graph connector."""
     return VectorStoreConnector(
         vector_store_type="KnowledgeGraph",
         vector_store_config=VectorStoreConfig(
-            name="graph_rag_test_kg",
+            name="graph_rag_test",
             embedding_fn=None,
             llm_client=OpenAILLMClient(),
             model_name="gpt-4",
@@ -47,7 +44,7 @@ def _create_vector_connector():
 async def main():
     file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")
     knowledge = KnowledgeFactory.from_file_path(file_path)
-    vector_connector = _create_vector_connector()
+    vector_connector = _create_kg_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     # get embedding assembler
     assembler = EmbeddingAssembler.load_from_knowledge(

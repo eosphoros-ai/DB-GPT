@@ -1,7 +1,8 @@
 """TuGraph vector store."""
 import logging
 import os
-from typing import List, Tuple
+from typing import List
+from typing import Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
@@ -51,10 +52,18 @@ class TuGraphStore(GraphStoreBase):
 
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
-        self._host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
-        self._port = os.getenv("TUGRAPH_PORT", "7687") or config.port
-        self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
-        self._password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
+        self._host = (
+            os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
+        )
+        self._port = (
+            os.getenv("TUGRAPH_PORT", "7687") or config.port
+        )
+        self._username = (
+            os.getenv("TUGRAPH_USERNAME", "admin") or config.username
+        )
+        self._password = (
+            os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
+        )
         self._node_label = (
             os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
         )
