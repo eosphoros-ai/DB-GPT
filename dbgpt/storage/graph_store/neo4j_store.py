@@ -44,7 +44,7 @@ class Neo4jStore(GraphStoreBase):
         """Get schema."""
         pass
 
-    def get_full_graph(self, limit=None) -> Graph:
+    def get_full_graph(self, limit: int = None) -> Graph:
         """Get full graph."""
         pass
 

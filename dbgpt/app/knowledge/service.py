@@ -21,7 +21,6 @@ from dbgpt.app.knowledge.request.request import (
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
     DocumentQueryResponse,
-    GraphVisQueryRespone,
     SpaceQueryResponse,
 )
 from dbgpt.component import ComponentType
@@ -700,7 +699,6 @@ class KnowledgeService:
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type, vector_store_config=config
         )
-        res = GraphVisQueryRespone()
         graph = vector_store_connector.client.query_graph(limit=limit)
         res = {"nodes": [], "edges": []}
         for node in graph.vertices():

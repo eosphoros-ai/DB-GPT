@@ -7,7 +7,8 @@ from typing import Tuple
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, \
+    Vertex
 
 logger = logging.getLogger(__name__)
 
@@ -148,8 +149,10 @@ class TuGraphStore(GraphStoreBase):
         schema = data[0]["schema"]
         return schema
 
-    def get_full_graph(self, limit=None):
+    def get_full_graph(self, limit: int = None) -> MemoryGraph:
         """Get full graph."""
+        if not limit:
+            raise Exception("limit must be set")
         return self.query(f"MATCH (n)-[r]-(m) RETURN n,m,r LIMIT {limit}")
 
     def explore(
