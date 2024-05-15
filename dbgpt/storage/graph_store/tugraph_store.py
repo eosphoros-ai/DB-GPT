@@ -6,8 +6,7 @@ from typing import List, Optional, Tuple
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, \
-    Vertex
+from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex
 
 logger = logging.getLogger(__name__)
 
@@ -52,18 +51,10 @@ class TuGraphStore(GraphStoreBase):
 
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
-        self._host = (
-            os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
-        )
-        self._port = (
-            int(os.getenv("TUGRAPH_PORT", 7687)) or config.port
-        )
-        self._username = (
-            os.getenv("TUGRAPH_USERNAME", "admin") or config.username
-        )
-        self._password = (
-            os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
-        )
+        self._host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
+        self._port = int(os.getenv("TUGRAPH_PORT", 7687)) or config.port
+        self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
+        self._password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
         self._node_label = (
             os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
         )
@@ -148,7 +139,7 @@ class TuGraphStore(GraphStoreBase):
         schema = data[0]["schema"]
         return schema
 
-    def get_full_graph(self, limit: int = None) -> MemoryGraph:
+    def get_full_graph(self, limit: Optional[int] = None) -> MemoryGraph:
         """Get full graph."""
         if not limit:
             raise Exception("limit must be set")

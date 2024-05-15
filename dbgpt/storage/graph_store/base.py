@@ -49,7 +49,7 @@ class GraphStoreBase(ABC):
         """Get schema."""
 
     @abstractmethod
-    def get_full_graph(self, limit: int = None) -> Graph:
+    def get_full_graph(self, limit: Optional[int] = None) -> Graph:
         """Get full graph."""
 
     @abstractmethod

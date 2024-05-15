@@ -6,7 +6,6 @@ from typing import List, Optional
 logger = logging.getLogger(__name__)
 
 
-
 class TransformerBase:
     """Transformer base class."""
 

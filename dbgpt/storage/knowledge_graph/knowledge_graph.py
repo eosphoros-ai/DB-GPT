@@ -11,8 +11,7 @@ from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
-from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
-    KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
@@ -112,7 +111,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             "Sample vertices:\n"
             "(alice)\n"
             "(bob:{age:28})\n"
-            "(carry:{age:18;role:\"teacher\"})\n\n"
+            '(carry:{age:18;role:"teacher"})\n\n'
             "Sample edges:\n"
             "(alice)-[reward]->(alice)\n"
             '(alice)-[notify:{method:"email"}]->'

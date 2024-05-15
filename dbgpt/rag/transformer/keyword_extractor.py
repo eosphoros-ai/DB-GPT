@@ -1,6 +1,6 @@
 """KeywordExtractor class."""
 import logging
-from typing import List
+from typing import List, Optional
 
 from dbgpt.core import LLMClient
 from dbgpt.rag.transformer.llm_extractor import LLMExtractor
@@ -36,7 +36,7 @@ class KeywordExtractor(LLMExtractor):
         """Initialize the KeywordExtractor."""
         super().__init__(llm_client, model_name, KEYWORD_EXTRACT_PT)
 
-    def _parse_response(self, text: str, limit: int) -> List[str]:
+    def _parse_response(self, text: str, limit: Optional[int] = None) -> List[str]:
         keywords = set()
 
         for part in text.split(";"):

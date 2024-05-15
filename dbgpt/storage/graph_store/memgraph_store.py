@@ -36,8 +36,7 @@ class MemoryGraphStore(GraphStoreBase):
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Retrieve triplets originating from a subject."""
         subgraph = self.explore([sub], direct=Direction.OUT, depth=1)
-        return [(e.get_prop(self._edge_name_key), e.tid) for e in
-                subgraph.edges()]
+        return [(e.get_prop(self._edge_name_key), e.tid) for e in subgraph.edges()]
 
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete a specific triplet from the graph."""
@@ -51,14 +50,13 @@ class MemoryGraphStore(GraphStoreBase):
         """Return the graph schema as a JSON string."""
         return json.dumps(self._graph.schema())
 
-    def get_full_graph(self, limit: int = None) -> MemoryGraph:
+    def get_full_graph(self, limit: Optional[int] = None) -> MemoryGraph:
         """Return self."""
         if not limit:
             return self._graph
 
         subgraph = MemoryGraph()
-        count = 0
-        for edge in self._graph.edges():
+        for count, edge in enumerate(self._graph.edges()):
             if count >= limit:
                 break
             subgraph.upsert_vertex(self._graph.get_vertex(edge.sid))

@@ -1,7 +1,7 @@
 """TripletExtractor class."""
 import logging
 import re
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 from dbgpt.core import LLMClient
 from dbgpt.rag.transformer.llm_extractor import LLMExtractor
@@ -34,7 +34,9 @@ class TripletExtractor(LLMExtractor):
         """Initialize the TripletExtractor."""
         super().__init__(llm_client, model_name, TRIPLET_EXTRACT_PT)
 
-    def _parse_response(self, text: str, limit: int) -> List[Tuple[Any, ...]]:
+    def _parse_response(
+        self, text: str, limit: Optional[int] = None
+    ) -> List[Tuple[Any, ...]]:
         triplets = []
 
         for line in text.split("\n"):
