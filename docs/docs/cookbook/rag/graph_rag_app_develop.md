@@ -24,12 +24,13 @@ docker pull tugraph/tugraph-runtime-centos7:latest
 docker run -it -d -p 7001:7001 -p 7070:7070 -p 7687:7687 -p 8000:8000 -p 8888:8888 -p 8889:8889 -p 9090:9090 \
  -v /root/tugraph/data:/var/lib/lgraph/data  -v /root/tugraph/log:/var/log/lgraph_log \
  --name tugraph_demo tugraph/tugraph-runtime-centos7:latest /bin/bash
+docker exec -d tugraph_demo bash /setup.sh
 ```
 
 The default port for the bolt protocol is `7687`, and DB-GPT accesses TuGraph through this port via `neo4j` python client.
 
 ```
- pip install "neo4j>=5.20.0"
+pip install "neo4j>=5.20.0"
 ```
 
 ### Prepare LLM
