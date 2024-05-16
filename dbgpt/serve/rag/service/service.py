@@ -480,12 +480,11 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         doc.chunk_size = len(chunk_docs)
         doc.gmt_modified = datetime.now()
         self._document_dao.update_knowledge_document(doc)
-        executor = CFG.SYSTEM_APP.get_component(
-            ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-        ).create()
+        # executor = CFG.SYSTEM_APP.get_component(
+        #     ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        # ).create()
         # executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
-        task = asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
-        await task
+        asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
         return chunk_docs
 
