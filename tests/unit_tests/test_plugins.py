@@ -87,16 +87,6 @@ def test_denylist_allowlist_check_user_input_invalid(
 
 
 @pytest.fixture
-def config_with_plugins():
-    """Mock config object for testing the scan_plugins function"""
-    # Test that the function returns the correct number of plugins
-    cfg = Config()
-    cfg.plugins_dir = PLUGINS_TEST_DIR
-    cfg.plugins_openai = ["https://weathergpt.vercel.app/"]
-    return cfg
-
-
-@pytest.fixture
 def mock_config_openai_plugin():
     """Mock config object for testing the scan_plugins function"""
 

@@ -104,6 +104,9 @@ class BaseParameters:
         """
         return _dict_to_command_args(asdict(self), args_prefix=args_prefix)
 
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
 
 def _get_dataclass_print_str(obj):
     class_name = obj.__class__.__name__

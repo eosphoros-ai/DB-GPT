@@ -17,17 +17,9 @@
 import asyncio
 import os
 
-from dbgpt.agent import (
-    AgentContext,
-    AgentMemory,
-    AgentResource,
-    LLMConfig,
-    ResourceLoader,
-    ResourceType,
-    UserProxyAgent,
-)
-from dbgpt.agent.expand.plugin_assistant_agent import PluginAssistantAgent
-from dbgpt.agent.resource import PluginFileLoadClient
+from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
+from dbgpt.agent.expand.tool_assistant_agent import ToolAssistantAgent
+from dbgpt.agent.resource import AutoGPTPluginToolPack
 
 current_dir = os.getcwd()
 parent_dir = os.path.dirname(current_dir)
@@ -42,25 +34,16 @@ async def main():
 
     agent_memory = AgentMemory()
 
-    plugin_resource = AgentResource(
-        type=ResourceType.Plugin,
-        name="test",
-        value=test_plugin_dir,
-    )
-
-    resource_loader = ResourceLoader()
-    plugin_file_loader = PluginFileLoadClient()
-    resource_loader.register_resource_api(plugin_file_loader)
+    tools = AutoGPTPluginToolPack(test_plugin_dir)
 
     user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
     tool_engineer = (
-        await PluginAssistantAgent()
+        await ToolAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
         .bind(agent_memory)
-        .bind([plugin_resource])
-        .bind(resource_loader)
+        .bind(tools)
         .build()
     )
 

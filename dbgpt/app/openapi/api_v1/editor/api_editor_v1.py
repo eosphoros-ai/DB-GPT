@@ -179,7 +179,7 @@ async def editor_chart_run(run_param: dict = Body()):
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(
             result_info="",
-            run_cost=(end_time - start_time) / 1000,
+            run_cost=int((end_time - start_time) / 1000),
             colunms=colunms,
             values=sql_result,
         )

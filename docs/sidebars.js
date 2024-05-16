@@ -239,6 +239,10 @@ const sidebars = {
             },
             {
               type: 'doc',
+              id: 'installation/advanced_usage/ollama',
+            },
+            {
+              type: 'doc',
               id: 'installation/advanced_usage/vLLM_inference',
             },
             {

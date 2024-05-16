@@ -1,4 +1,5 @@
 """Postgres vector store."""
+
 import logging
 from typing import List, Optional
 
@@ -56,14 +57,18 @@ class PGVectorStore(VectorStoreBase):
 
     def __init__(self, vector_store_config: PGVectorConfig) -> None:
         """Create a PGVectorStore instance."""
-        from langchain.vectorstores import PGVector
-
+        try:
+            from langchain.vectorstores import PGVector  # mypy: ignore
+        except ImportError:
+            raise ImportError(
+                "Please install the `langchain` package to use the PGVector."
+            )
         self.connection_string = vector_store_config.connection_string
         self.embeddings = vector_store_config.embedding_fn
         self.collection_name = vector_store_config.name
 
         self.vector_store_client = PGVector(
-            embedding_function=self.embeddings,
+            embedding_function=self.embeddings,  # type: ignore
             collection_name=self.collection_name,
             connection_string=self.connection_string,
         )
@@ -93,7 +98,8 @@ class PGVectorStore(VectorStoreBase):
             List[str]: chunk ids.
         """
         lc_documents = [Chunk.chunk2langchain(chunk) for chunk in chunks]
-        return self.vector_store_client.from_documents(lc_documents)
+        self.vector_store_client.from_documents(lc_documents)  # type: ignore
+        return [str(chunk.chunk_id) for chunk in lc_documents]
 
     def delete_vector_name(self, vector_name: str):
         """Delete vector by name.
@@ -109,4 +115,5 @@ class PGVectorStore(VectorStoreBase):
         Args:
             ids(str): vector ids, separated by comma.
         """
-        return self.vector_store_client.delete(ids)
+        delete_ids = ids.split(",")
+        return self.vector_store_client.delete(delete_ids)

@@ -2,14 +2,14 @@
 
 import json
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_json
 from dbgpt.vis.tags.vis_chart import Vis, VisChart
 
 from ...core.action.base import Action, ActionOutput
-from ...resource.resource_api import AgentResource, ResourceType
-from ...resource.resource_db_api import ResourceDbClient
+from ...resource.base import AgentResource, ResourceType
+from ...resource.database import DBResource
 
 logger = logging.getLogger(__name__)
 
@@ -69,34 +69,28 @@ class ChartAction(Action[SqlInput]):
                 content="The requested correctly structured answer could not be found.",
             )
         try:
-            if not self.resource_loader:
-                raise ValueError("ResourceLoader is not initialized！")
-            resource_db_client: Optional[
-                ResourceDbClient
-            ] = self.resource_loader.get_resource_api(
-                self.resource_need, ResourceDbClient
-            )
-            if not resource_db_client:
-                raise ValueError(
-                    "There is no implementation class bound to database resource "
-                    "execution！"
-                )
-            if not resource:
-                raise ValueError("The data resource is not found！")
-            data_df = await resource_db_client.query_to_df(resource.value, param.sql)
+            if not self.resource_need:
+                raise ValueError("The resource type is not found！")
+
             if not self.render_protocol:
                 raise ValueError("The rendering protocol is not initialized！")
+
+            db_resources: List[DBResource] = DBResource.from_resource(self.resource)
+            if not db_resources:
+                raise ValueError("The database resource is not found！")
+
+            db = db_resources[0]
+            data_df = await db.query_to_df(param.sql)
             view = await self.render_protocol.display(
                 chart=json.loads(model_to_json(param)), data_df=data_df
             )
-            if not self.resource_need:
-                raise ValueError("The resource type is not found！")
+
             return ActionOutput(
                 is_exe_success=True,
                 content=model_to_json(param),
                 view=view,
                 resource_type=self.resource_need.value,
-                resource_value=resource.value,
+                resource_value=db._db_name,
             )
         except Exception as e:
             logger.exception("Check your answers, the sql run failed！")

@@ -36,9 +36,9 @@ RUN pip3 install --upgrade pip -i $PIP_INDEX_URL \
 
 RUN (if [ "${LANGUAGE}" = "zh" ]; \
         # language is zh, download zh_core_web_sm from github
-        then wget https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.5.0/zh_core_web_sm-3.5.0-py3-none-any.whl -O /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl \
-        && pip3 install /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl -i $PIP_INDEX_URL \
-        && rm /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl; \
+        then wget https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.7.0/zh_core_web_sm-3.7.0-py3-none-any.whl -O /tmp/zh_core_web_sm-3.7.0-py3-none-any.whl \
+        && pip3 install /tmp/zh_core_web_sm-3.7.0-py3-none-any.whl -i $PIP_INDEX_URL \
+        && rm /tmp/zh_core_web_sm-3.7.0-py3-none-any.whl; \
         # not zh, download directly
         else python3 -m spacy download zh_core_web_sm; \
     fi;) \

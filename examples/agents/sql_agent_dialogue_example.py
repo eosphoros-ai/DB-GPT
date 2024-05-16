@@ -17,17 +17,9 @@
 import asyncio
 import os
 
-from dbgpt.agent import (
-    AgentContext,
-    AgentMemory,
-    AgentResource,
-    LLMConfig,
-    ResourceLoader,
-    ResourceType,
-    UserProxyAgent,
-)
+from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.agent.expand.data_scientist_agent import DataScientistAgent
-from dbgpt.agent.resource import SqliteLoadClient
+from dbgpt.agent.resource import SQLiteDBResource
 from dbgpt.util.tracer import initialize_tracer
 
 current_dir = os.getcwd()
@@ -38,22 +30,14 @@ initialize_tracer("/tmp/agent_trace.jsonl", create_system_app=True)
 
 
 async def main():
-    from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
-    agent_memory = AgentMemory()
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test456")
+    agent_memory = AgentMemory()
 
-    db_resource = AgentResource(
-        type=ResourceType.DB,
-        name="TestData",
-        value=f"{test_plugin_dir}/dbgpt.db",
-    )
-
-    resource_loader = ResourceLoader()
-    sqlite_file_loader = SqliteLoadClient()
-    resource_loader.register_resource_api(sqlite_file_loader)
+    sqlite_resource = SQLiteDBResource("SQLite Database", f"{test_plugin_dir}/dbgpt.db")
 
     user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
@@ -61,8 +45,7 @@ async def main():
         await DataScientistAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind([db_resource])
-        .bind(resource_loader)
+        .bind(sqlite_resource)
         .bind(agent_memory)
         .build()
     )

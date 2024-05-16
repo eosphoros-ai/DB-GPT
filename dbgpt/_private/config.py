@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from dbgpt.util.singleton import Singleton
 
 if TYPE_CHECKING:
-    from auto_gpt_plugin_template import AutoGPTPluginTemplate
-
-    from dbgpt.agent.plugin import CommandRegistry
     from dbgpt.component import SystemApp
     from dbgpt.datasource.manages import ConnectorManager
 
@@ -165,14 +162,6 @@ class Config(metaclass=Singleton):
         from dbgpt.core._private.prompt_registry import PromptTemplateRegistry
 
         self.prompt_template_registry = PromptTemplateRegistry()
-        ### Related configuration of built-in commands
-        self.command_registry: Optional[CommandRegistry] = None
-
-        disabled_command_categories = os.getenv("DISABLED_COMMAND_CATEGORIES")
-        if disabled_command_categories:
-            self.disabled_command_categories = disabled_command_categories.split(",")
-        else:
-            self.disabled_command_categories = []
 
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False").lower() == "true"
@@ -180,25 +169,6 @@ class Config(metaclass=Singleton):
         ### message stor file
         self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
 
-        ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
-
-        self.plugins: List["AutoGPTPluginTemplate"] = []
-        self.plugins_openai = []  # type: ignore
-        self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True").lower() == "true"
-
-        self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
-
-        plugins_allowlist = os.getenv("ALLOWLISTED_PLUGINS")
-        if plugins_allowlist:
-            self.plugins_allowlist = plugins_allowlist.split(",")
-        else:
-            self.plugins_allowlist = []
-
-        plugins_denylist = os.getenv("DENYLISTED_PLUGINS")
-        if plugins_denylist:
-            self.plugins_denylist = plugins_denylist.split(",")
-        else:
-            self.plugins_denylist = []
         ### Native SQL Execution Capability Control Configuration
         self.NATIVE_SQL_CAN_RUN_DDL = (
             os.getenv("NATIVE_SQL_CAN_RUN_DDL", "True").lower() == "true"
@@ -207,7 +177,7 @@ class Config(metaclass=Singleton):
             os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True").lower() == "true"
         )
 
-        ###dbgpt meta info database connection configuration
+        ### dbgpt meta info database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST")
         self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "data/default_sqlite.db")
         self.LOCAL_DB_TYPE = os.getenv("LOCAL_DB_TYPE", "sqlite")
@@ -247,6 +217,11 @@ class Config(metaclass=Singleton):
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
+        # Elasticsearch Vector Configuration
+        self.ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "127.0.0.1")
+        self.ELASTICSEARCH_PORT = os.getenv("ELASTICSEARCH_PORT", "9200")
+        self.ELASTICSEARCH_USERNAME = os.getenv("ELASTICSEARCH_USERNAME", None)
+        self.ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD", None)
 
         ## OceanBase Configuration
         self.OB_HOST = os.getenv("OB_HOST", "127.0.0.1")

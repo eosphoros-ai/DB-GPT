@@ -1,9 +1,11 @@
 """Dashboard Assistant Agent."""
 
+from typing import List
+
 from ..core.agent import AgentMessage
 from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
-from ..resource.resource_db_api import ResourceDbClient
+from ..resource.database import DBResource
 from .actions.dashboard_action import DashboardAction
 
 
@@ -58,15 +60,16 @@ class DashboardAssistantAgent(ConversableAgent):
 
     def _init_reply_message(self, received_message: AgentMessage) -> AgentMessage:
         reply_message = super()._init_reply_message(received_message)
-        client = self.not_null_resource_loader.get_resource_api(
-            self.actions[0].resource_need, ResourceDbClient
-        )
-        if not client:
+
+        dbs: List[DBResource] = DBResource.from_resource(self.resource)
+
+        if not dbs:
             raise ValueError(
                 f"Resource type {self.actions[0].resource_need} is not supported."
             )
+        db = dbs[0]
         reply_message.context = {
             "display_type": self.actions[0].render_prompt(),
-            "dialect": client.get_data_type(self.resources[0]),
+            "dialect": db.dialect,
         }
         return reply_message

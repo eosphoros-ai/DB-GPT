@@ -47,6 +47,8 @@ def initialize_components(
     )
     _initialize_model_cache(system_app)
     _initialize_awel(system_app, param)
+    # Initialize resource manager of agent
+    _initialize_resource_manager(system_app)
     _initialize_agent(system_app)
     _initialize_openapi(system_app)
     # Register serve apps
@@ -83,6 +85,25 @@ def _initialize_agent(system_app: SystemApp):
     from dbgpt.agent import initialize_agent
 
     initialize_agent(system_app)
+
+
+def _initialize_resource_manager(system_app: SystemApp):
+    from dbgpt.agent.expand.resources.dbgpt_tool import list_dbgpt_support_models
+    from dbgpt.agent.expand.resources.search_tool import baidu_search
+    from dbgpt.agent.resource.base import ResourceType
+    from dbgpt.agent.resource.manage import get_resource_manager, initialize_resource
+    from dbgpt.serve.agent.resource.datasource import DatasourceResource
+    from dbgpt.serve.agent.resource.knowledge import KnowledgeSpaceRetrieverResource
+    from dbgpt.serve.agent.resource.plugin import PluginToolPack
+
+    initialize_resource(system_app)
+    rm = get_resource_manager(system_app)
+    rm.register_resource(DatasourceResource)
+    rm.register_resource(KnowledgeSpaceRetrieverResource)
+    rm.register_resource(PluginToolPack, resource_type=ResourceType.Tool)
+    # Register a search tool
+    rm.register_resource(resource_instance=baidu_search)
+    rm.register_resource(resource_instance=list_dbgpt_support_models)
 
 
 def _initialize_openapi(system_app: SystemApp):
