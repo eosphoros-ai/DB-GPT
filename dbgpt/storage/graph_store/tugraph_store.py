@@ -108,9 +108,11 @@ class TuGraphStore(GraphStoreBase):
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
+
         def escape_quotes(value: str) -> str:
             """Escape single and double quotes in a string for queries."""
-            return value.replace("'", "\'").replace('"', '\"')
+            return value.replace("'", "'").replace('"', '"')
+
         subj_escaped = escape_quotes(subj)
         rel_escaped = escape_quotes(rel)
         obj_escaped = escape_quotes(obj)
