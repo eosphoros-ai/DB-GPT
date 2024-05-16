@@ -55,7 +55,6 @@ curl http://127.0.0.1:8100/api/v1/embeddings \
 ```
 
 
-
 ## Verify via OpenAI SDK
 
 ```bash
@@ -72,3 +71,49 @@ completion = openai.ChatCompletion.create(
 print(completion.choices[0].message.content)
 ```
 
+## (Experimental) Rerank Open API
+
+The rerank API is an experimental feature that can be used to rerank the candidate list. 
+
+1. Use cURL to verify the rerank API.
+```bash
+curl http://127.0.0.1:8100/api/v1/beta/relevance \
+-H "Authorization: Bearer EMPTY" \
+-H "Content-Type: application/json" \
+-d '{
+    "model": "bge-reranker-base",
+    "query": "what is awel talk about?",
+    "documents": [
+      "Agentic Workflow Expression Language(AWEL) is a set of intelligent agent workflow expression language specially designed for large model application development.",
+      "Autonomous agents have long been a research focus in academic and industry communities",
+      "AWEL is divided into three levels in deign, namely the operator layer, AgentFream layer and DSL layer.",
+      "Elon musk is a famous entrepreneur and inventor, he is the founder of SpaceX and Tesla."
+    ]
+}'
+```
+
+2. Use python to verify the rerank API.
+```python
+from dbgpt.rag.embedding import OpenAPIRerankEmbeddings
+
+rerank = OpenAPIRerankEmbeddings(api_key="EMPTY", model_name="bge-reranker-base")
+rerank.predict(
+    query="what is awel talk about?", 
+    candidates=[
+        "Agentic Workflow Expression Language(AWEL) is a set of intelligent agent workflow expression language specially designed for large model application development.",
+        "Autonomous agents have long been a research focus in academic and industry communities",
+        "AWEL is divided into three levels in deign, namely the operator layer, AgentFream layer and DSL layer.",
+        "Elon musk is a famous entrepreneur and inventor, he is the founder of SpaceX and Tesla."
+    ]
+)
+```
+
+The output is as follows:
+```bash
+[
+ 0.9685816764831543,
+ 3.7338297261158004e-05,
+ 0.03692878410220146,
+ 3.73825132555794e-05
+]
+```

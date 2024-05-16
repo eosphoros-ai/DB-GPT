@@ -209,6 +209,11 @@ EMBEDDING_MODEL_CONFIG = {
     # Common HTTP embedding model
     "proxy_http_openapi": "proxy_http_openapi",
     "proxy_ollama": "proxy_ollama",
+    # Rerank model, rerank mode is a special embedding model
+    "bge-reranker-base": os.path.join(MODEL_PATH, "bge-reranker-base"),
+    "bge-reranker-large": os.path.join(MODEL_PATH, "bge-reranker-large"),
+    # Proxy rerank model
+    "rerank_proxy_http_openapi": "rerank_proxy_http_openapi",
 }
 
 

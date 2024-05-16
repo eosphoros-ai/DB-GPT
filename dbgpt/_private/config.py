@@ -247,6 +247,10 @@ class Config(metaclass=Singleton):
 
         ### EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
+        # Rerank model configuration
+        self.RERANK_MODEL = os.getenv("RERANK_MODEL")
+        self.RERANK_MODEL_PATH = os.getenv("RERANK_MODEL_PATH")
+        self.RERANK_TOP_K = int(os.getenv("RERANK_TOP_K", 3))
         self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 100))
         self.KNOWLEDGE_CHUNK_OVERLAP = int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 50))
         self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
