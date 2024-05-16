@@ -214,7 +214,7 @@ export default function DocPanel(props: IProps) {
           Arguments
         </Button>
         {
-          space.vector_type === 'KnowledgeGraph' && (<Button size="middle" className="flex items-center mx-2" icon={<DeploymentUnitOutlined />} onClick={openGraphVisualPage}>Graph Visual</Button>)
+          space.vector_type === 'KnowledgeGraph' && (<Button size="middle" className="flex items-center mx-2" icon={<DeploymentUnitOutlined />} onClick={openGraphVisualPage}>{t('View_Graph')}</Button>)
         }
       </Space>
       <Divider />
