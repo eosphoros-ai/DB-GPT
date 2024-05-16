@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -207,7 +208,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             raise Exception(f"create document failed, {request.doc_name}")
         return doc_id
 
-    def sync_document(self, requests: List[KnowledgeSyncRequest]) -> List:
+    async def sync_document(self, requests: List[KnowledgeSyncRequest]) -> List:
         """Create a new document entity
 
         Args:
@@ -245,7 +246,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
-            self._sync_knowledge_document(space_id, doc, chunk_parameters)
+            await self._sync_knowledge_document(space_id, doc, chunk_parameters)
             doc_ids.append(doc.id)
         return doc_ids
 
@@ -395,7 +396,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         """
         return self._document_dao.get_list_page(request, page, page_size)
 
-    def _batch_document_sync(
+    async def _batch_document_sync(
         self, space_id, sync_requests: List[KnowledgeSyncRequest]
     ) -> List[int]:
         """batch sync knowledge document chunk into vector store
@@ -433,11 +434,11 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
-            self._sync_knowledge_document(space_id, doc, chunk_parameters)
+            await self._sync_knowledge_document(space_id, doc, chunk_parameters)
             doc_ids.append(doc.id)
         return doc_ids
 
-    def _sync_knowledge_document(
+    async def _sync_knowledge_document(
         self,
         space_id,
         doc_vo: DocumentVO,
@@ -482,12 +483,14 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         executor = CFG.SYSTEM_APP.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
-        executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
+        # executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
+        task = asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
+        await task
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
         return chunk_docs
 
     @trace("async_doc_embedding")
-    def async_doc_embedding(self, assembler, chunk_docs, doc):
+    async def async_doc_embedding(self, assembler, chunk_docs, doc):
         """async document embedding into vector db
         Args:
             - client: EmbeddingEngine Client
@@ -503,7 +506,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 "app.knowledge.assembler.persist",
                 metadata={"doc": doc.doc_name, "chunks": len(chunk_docs)},
             ):
-                vector_ids = assembler.persist()
+                # vector_ids = assembler.persist()
+                space = self.get({"name": doc.space})
+                if space and space.vector_type == "KnowledgeGraph":
+                    vector_ids = await assembler.apersist()
+                else:
+                    vector_ids = assembler.persist()
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
             if vector_ids is not None:

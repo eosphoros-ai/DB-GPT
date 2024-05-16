@@ -158,3 +158,14 @@ class VectorStoreBase(IndexStoreBase, ABC):
     def _default_relevance_score_fn(self, distance: float) -> float:
         """Return a similarity score on a scale [0, 1]."""
         return 1.0 - distance / math.sqrt(2)
+
+    async def aload_document(self, chunks: List[Chunk]) -> List[str]:   # type: ignore
+        """Load document in index database.
+
+        Args:
+            chunks(List[Chunk]): document chunks.
+
+        Return:
+            List[str]: chunk ids.
+        """
+        raise NotImplementedError

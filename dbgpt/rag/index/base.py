@@ -58,6 +58,17 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
+    def aload_document(self, chunks: List[Chunk]) -> List[str]:
+        """Load document in index database.
+
+        Args:
+            chunks(List[Chunk]): document chunks.
+
+        Return:
+            List[str]: chunk ids.
+        """
+
+    @abstractmethod
     def similar_search_with_scores(
         self,
         text,

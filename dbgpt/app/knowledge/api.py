@@ -247,7 +247,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
 
 
 @router.post("/knowledge/{space_name}/document/sync_batch")
-def batch_document_sync(
+async def batch_document_sync(
     space_name: str,
     request: List[KnowledgeSyncRequest],
     service: Service = Depends(get_rag_service),
@@ -257,7 +257,7 @@ def batch_document_sync(
         space = service.get({"name": space_name})
         for sync_request in request:
             sync_request.space_id = space.id
-        doc_ids = service.sync_document(requests=request)
+        doc_ids = await service.sync_document(requests=request)
         # doc_ids = service.sync_document(
         #     space_name=space_name, sync_requests=request
         # )

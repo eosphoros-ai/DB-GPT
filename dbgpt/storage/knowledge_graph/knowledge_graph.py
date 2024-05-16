@@ -75,6 +75,21 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         loop.close()
         return result
 
+    async def aload_document(self, chunks: List[Chunk]) -> List[str]:   # type: ignore
+        """Extract and persist triplets to graph store.
+
+        Args:
+            chunks: List[Chunk]: document chunks.
+        Return:
+            List[str]: chunk ids.
+        """
+        for chunk in chunks:
+            triplets = await self._triplet_extractor.extract(chunk.content)
+            for triplet in triplets:
+                self._graph_store.insert_triplet(*triplet)
+            logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
+        return [chunk.chunk_id for chunk in chunks]
+
     def similar_search_with_scores(
         self,
         text,
