@@ -111,7 +111,7 @@ class TuGraphStore(GraphStoreBase):
 
         def escape_quotes(value: str) -> str:
             """Escape single and double quotes in a string for queries."""
-            return value.replace("'", "'").replace('"', '"')
+            return value.replace("'", "\\'").replace('"', '\\"')
 
         subj_escaped = escape_quotes(subj)
         rel_escaped = escape_quotes(rel)

@@ -42,7 +42,7 @@ def _create_kg_connector():
 
 
 async def main():
-    file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")
+    file_path = os.path.join(ROOT_PATH, "examples/test_files/tranformers_story.md")
     knowledge = KnowledgeFactory.from_file_path(file_path)
     vector_connector = _create_kg_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
@@ -56,9 +56,11 @@ async def main():
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
     chunks = await retriever.aretrieve_with_scores(
-        "what is AWEL talk about", score_threshold=0.3
+        "What actions has Megatron taken ?",
+        score_threshold=0.3
     )
     print(f"embedding rag example results:{chunks}")
+    vector_connector.delete_vector_name("graph_rag_test")
 
 
 if __name__ == "__main__":

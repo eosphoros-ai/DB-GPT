@@ -17,13 +17,13 @@ pip install "dbgpt[rag]>=0.5.6"
 
 To store the knowledge in graph, we need an graph database, [TuGraph](https://github.com/TuGraph-family/tugraph-db) is the first graph database supported by DB-GPT.
 
-Visit github repository of TuGraph to view [Quick Start](https://tugraph-db.readthedocs.io/zh-cn/latest/3.quick-start/1.preparation.html#id5) document, follow the instructions to pull the TuGraph database docker image (version >= 4.3.0) and launch it.
+Visit github repository of TuGraph to view [Quick Start](https://tugraph-db.readthedocs.io/zh-cn/latest/3.quick-start/1.preparation.html#id5) document, follow the instructions to pull the TuGraph database docker image (latest / version >= 4.3.0) and launch it.
 
 ```
-docker pull tugraph/tugraph-runtime-centos7:4.3.0
+docker pull tugraph/tugraph-runtime-centos7:latest
 docker run -it -d -p 7001:7001 -p 7070:7070 -p 7687:7687 -p 8000:8000 -p 8888:8888 -p 8889:8889 -p 9090:9090 \
  -v /root/tugraph/data:/var/lib/lgraph/data  -v /root/tugraph/log:/var/log/lgraph_log \
- --name tugraph_demo tugraph/tugraph-runtime-centos7:4.3.0 /bin/bash
+ --name tugraph_demo tugraph/tugraph-runtime-centos7:latest /bin/bash
 ```
 
 The default port for the bolt protocol is `7687`, and DB-GPT accesses TuGraph through this port via `neo4j` python client.
@@ -159,7 +159,7 @@ from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 
 async def main():
-    file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")
+    file_path = os.path.join(ROOT_PATH, "examples/test_files/tranformers_story.md")
     knowledge = KnowledgeFactory.from_file_path(file_path)
     vector_connector = _create_kg_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
@@ -173,10 +173,11 @@ async def main():
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
     chunks = await retriever.aretrieve_with_scores(
-        "what is AWEL talk about",
+        "What actions has Megatron taken?",
         score_threshold=0.3
     )
     print(f"embedding rag example results:{chunks}")
+    vector_connector.delete_vector_name("graph_rag_test")
 ```
 
 
@@ -190,11 +191,20 @@ First, create a knowledge base using the `Knowledge Graph` type. Upload the know
 
 
 <p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/create_kg.jpg'} width="1000px"/>
+  <img src={'/img/chat_knowledge/graph_rag/create_knowledge_graph.jpg'} width="1000px"/>
 </p>
 
-Then, view the knowledge graph data and start chat.
-
+Then, view the knowledge graph data.
 <p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/graph_visual.jpg'} width="1000px"/>
+  <img src={'/img/chat_knowledge/graph_rag/view_graph.jpg'} width="1000px"/>
+</p>
+
+The graph data may look like this.
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/graph_data.jpg'} width="1000px"/>
+</p>
+
+Start chat to knowledge based on Graph RAG.
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/graph_rag_chat.jpg'} width="1000px"/>
 </p>
