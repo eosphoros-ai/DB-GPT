@@ -108,12 +108,19 @@ class TuGraphStore(GraphStoreBase):
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
-        subj_query = f"""MERGE (n1:{self._node_label} {{id:'{subj}'}})"""
-        obj_query = f"MERGE (n1:{self._node_label} {{id:'{obj}'}})"
+        def escape_quotes(value: str) -> str:
+            """Escape single and double quotes in a string for queries."""
+            return value.replace("'", "\'").replace('"', '\"')
+        subj_escaped = escape_quotes(subj)
+        rel_escaped = escape_quotes(rel)
+        obj_escaped = escape_quotes(obj)
+
+        subj_query = f"MERGE (n1:{self._node_label} {{id:'{subj_escaped}'}})"
+        obj_query = f"MERGE (n1:{self._node_label} {{id:'{obj_escaped}'}})"
         rel_query = (
-            f"MERGE (n1:{self._node_label} {{id:'{subj}'}})"
-            f"-[r:{self._edge_label} {{id:'{rel}'}}]->"
-            f"(n2:{self._node_label} {{id:'{obj}'}})"
+            f"MERGE (n1:{self._node_label} {{id:'{subj_escaped}'}})"
+            f"-[r:{self._edge_label} {{id:'{rel_escaped}'}}]->"
+            f"(n2:{self._node_label} {{id:'{obj_escaped}'}})"
         )
         self.conn.run(query=subj_query)
         self.conn.run(query=obj_query)
