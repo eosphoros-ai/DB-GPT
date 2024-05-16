@@ -254,6 +254,9 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 100))
         self.KNOWLEDGE_CHUNK_OVERLAP = int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 50))
         self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
+        self.KNOWLEDGE_GRAPH_SEARCH_TOP_SIZE = int(
+            os.getenv("KNOWLEDGE_GRAPH_SEARCH_TOP_SIZE", 50)
+        )
         self.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD = int(
             os.getenv("KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD", 10)
         )

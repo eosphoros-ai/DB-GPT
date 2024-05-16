@@ -48,8 +48,8 @@ function GPTCard({
           className={classNames('w-11 h-11 rounded-full mr-4 object-contain bg-white', {
             'border border-gray-200': iconBorder,
           })}
-          width={44}
-          height={44}
+          width={48}
+          height={48}
           src={icon}
           alt={title}
         />

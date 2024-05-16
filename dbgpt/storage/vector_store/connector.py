@@ -1,8 +1,9 @@
 """Connector for vector store."""
 
 import copy
+import logging
 import os
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import (
@@ -12,11 +13,14 @@ from dbgpt.core.awel.flow import (
     ResourceCategory,
     register_resource,
 )
-from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
+from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 
-connector: Dict[str, Type] = {}
+logger = logging.getLogger(__name__)
+
+connector: Dict[str, Tuple[Type, Type]] = {}
 
 
 def _load_vector_options() -> List[OptionValue]:
@@ -25,7 +29,7 @@ def _load_vector_options() -> List[OptionValue]:
     return [
         OptionValue(label=cls, name=cls, value=cls)
         for cls in vector_store.__all__
-        if issubclass(getattr(vector_store, cls), VectorStoreBase)
+        if issubclass(getattr(vector_store, cls)[0], IndexStoreBase)
     ]
 
 
@@ -73,7 +77,7 @@ class VectorStoreConnector:
     def __init__(
         self,
         vector_store_type: str,
-        vector_store_config: Optional[VectorStoreConfig] = None,
+        vector_store_config: Optional[IndexStoreConfig] = None,
     ) -> None:
         """Create a VectorStoreConnector instance.
 
@@ -81,20 +85,41 @@ class VectorStoreConnector:
             - vector_store_type: vector store type Milvus, Chroma, Weaviate
             - ctx: vector store config params.
         """
-        self._vector_store_config = vector_store_config
+        self._index_store_config = vector_store_config
         self._register()
 
         if self._match(vector_store_type):
-            self.connector_class = connector[vector_store_type]
+            self.connector_class, self.config_class = connector[vector_store_type]
         else:
-            raise Exception(f"Vector Store Type Not support. {0}", vector_store_type)
+            raise Exception(f"Vector store {vector_store_type} not supported")
 
-        print(self.connector_class)
+        logger.info(f"VectorStore:{self.connector_class}")
         self._vector_store_type = vector_store_type
         self._embeddings = (
             vector_store_config.embedding_fn if vector_store_config else None
         )
-        self.client = self.connector_class(vector_store_config)
+
+        try:
+            if vector_store_config is not None:
+                config: IndexStoreConfig = self.config_class()
+                config.name = getattr(vector_store_config, "name", "default_name")
+                config.embedding_fn = getattr(vector_store_config, "embedding_fn", None)
+                config.max_chunks_once_load = getattr(
+                    vector_store_config, "max_chunks_once_load", 5
+                )
+                config.max_threads = getattr(vector_store_config, "max_threads", 4)
+                config.user = getattr(vector_store_config, "user", None)
+                config.password = getattr(vector_store_config, "password", None)
+
+                # extra
+                config_dict = vector_store_config.dict()
+                config.llm_client = config_dict.get("llm_client", None)
+                config.model_name = config_dict.get("model_name", None)
+
+                self.client = self.connector_class(config)
+        except Exception as e:
+            logger.error("connect vector store failed: %s", e)
+            raise e
 
     @classmethod
     def from_default(
@@ -122,17 +147,28 @@ class VectorStoreConnector:
         Return chunk ids.
         """
         max_chunks_once_load = (
-            self._vector_store_config.max_chunks_once_load
-            if self._vector_store_config
+            self._index_store_config.max_chunks_once_load
+            if self._index_store_config
             else 10
         )
         max_threads = (
-            self._vector_store_config.max_threads if self._vector_store_config else 1
+            self._index_store_config.max_threads if self._index_store_config else 1
         )
         return self.client.load_document_with_limit(
             chunks,
             max_chunks_once_load,
             max_threads,
+        )
+
+    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
+        """Load document in vector database.
+
+        Args:
+            - chunks: document chunks.
+        Return chunk ids.
+        """
+        return await self.client.aload_document(
+            chunks,
         )
 
     def similar_search(
@@ -174,12 +210,24 @@ class VectorStoreConnector:
             doc, topk, score_threshold, filters
         )
 
+    async def asimilar_search_with_scores(
+        self,
+        doc: str,
+        topk: int,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
+        """Async similar_search_with_score in vector database."""
+        return await self.client.asimilar_search_with_scores(
+            doc, topk, score_threshold, filters
+        )
+
     @property
-    def vector_store_config(self) -> VectorStoreConfig:
+    def vector_store_config(self) -> IndexStoreConfig:
         """Return the vector store config."""
-        if not self._vector_store_config:
+        if not self._index_store_config:
             raise ValueError("vector store config not set.")
-        return self._vector_store_config
+        return self._index_store_config
 
     def vector_name_exists(self):
         """Whether vector name exists."""
@@ -226,6 +274,8 @@ class VectorStoreConnector:
         from dbgpt.storage import vector_store
 
         for cls in vector_store.__all__:
-            if issubclass(getattr(vector_store, cls), VectorStoreBase):
-                _k, _v = cls, getattr(vector_store, cls)
-                connector.update({_k: _v})
+            store_cls, config_cls = getattr(vector_store, cls)
+            if issubclass(store_cls, IndexStoreBase) and issubclass(
+                config_cls, IndexStoreConfig
+            ):
+                connector[cls] = (store_cls, config_cls)

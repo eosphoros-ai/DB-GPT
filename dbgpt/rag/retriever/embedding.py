@@ -229,6 +229,6 @@ class EmbeddingRetriever(BaseRetriever):
         self, query, score_threshold, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
         """Similar search with score."""
-        return self._vector_store_connector.similar_search_with_scores(
+        return await self._vector_store_connector.asimilar_search_with_scores(
             query, self._top_k, score_threshold, filters
         )
