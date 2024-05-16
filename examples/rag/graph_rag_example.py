@@ -36,7 +36,7 @@ def _create_kg_connector():
             name="graph_rag_test",
             embedding_fn=None,
             llm_client=OpenAILLMClient(),
-            model_name="gpt-4",
+            model_name="gpt-3.5-turbo",
         ),
     )
 
