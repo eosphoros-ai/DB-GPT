@@ -3,6 +3,7 @@
 import copy
 import logging
 import os
+from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt.core import Chunk, Embeddings
@@ -21,6 +22,7 @@ from dbgpt.util.i18n_utils import _
 logger = logging.getLogger(__name__)
 
 connector: Dict[str, Tuple[Type, Type]] = {}
+pools = defaultdict(dict)
 
 
 def _load_vector_options() -> List[OptionValue]:
@@ -115,8 +117,15 @@ class VectorStoreConnector:
                 config_dict = vector_store_config.dict()
                 config.llm_client = config_dict.get("llm_client", None)
                 config.model_name = config_dict.get("model_name", None)
-
-                self.client = self.connector_class(config)
+                if (
+                    vector_store_type in pools
+                    and config.name in pools[vector_store_type]
+                ):
+                    self.client = pools[vector_store_type][config.name]
+                else:
+                    client = self.connector_class(config)
+                    pools[vector_store_type][config.name] = self.client = client
+                    self.client = client
         except Exception as e:
             logger.error("connect vector store failed: %s", e)
             raise e
