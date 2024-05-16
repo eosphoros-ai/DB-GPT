@@ -29,7 +29,7 @@ def _load_vector_options() -> List[OptionValue]:
     return [
         OptionValue(label=cls, name=cls, value=cls)
         for cls in vector_store.__all__
-        if issubclass(getattr(vector_store, cls), IndexStoreBase)
+        if issubclass(getattr(vector_store, cls)[0], IndexStoreBase)
     ]
 
 

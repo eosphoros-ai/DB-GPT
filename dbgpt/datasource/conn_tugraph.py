@@ -1,4 +1,5 @@
 """TuGraph Connector."""
+
 import json
 from typing import Dict, List, cast
 
@@ -50,7 +51,10 @@ class TuGraphConnector(BaseConnector):
             return cast(TuGraphConnector, cls(driver=driver, graph=db_name))
 
         except ImportError as err:
-            raise ImportError("requests package is not installed") from err
+            raise ImportError(
+                "neo4j package is not installed, please install it with "
+                "`pip install neo4j`"
+            ) from err
 
     def get_table_names(self) -> Dict[str, List[str]]:
         """Get all table names from the TuGraph by Neo4j driver."""

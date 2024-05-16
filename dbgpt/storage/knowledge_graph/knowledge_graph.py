@@ -75,7 +75,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         loop.close()
         return result
 
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:   # type: ignore
+    async def aload_document(self, chunks: List[Chunk]) -> List[str]:  # type: ignore
         """Extract and persist triplets to graph store.
 
         Args:
