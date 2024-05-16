@@ -70,13 +70,13 @@ class BaseAssembler(ABC):
             List[str]: List of persisted chunk ids.
         """
 
-    @abstractmethod
     async def apersist(self) -> List[str]:
         """Persist chunks.
 
         Returns:
             List[str]: List of persisted chunk ids.
         """
+        NotImplementedError
 
     def get_chunks(self) -> List[Chunk]:
         """Return chunks."""
