@@ -9,6 +9,7 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
+from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
@@ -46,7 +47,7 @@ class ChatKnowledge(BaseChat):
         )
         self.space_context = self.get_space_context(self.knowledge_space)
         self.top_k = (
-            CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+            self.get_knowledge_search_top_size(self.knowledge_space)
             if self.space_context is None
             else int(self.space_context["embedding"]["topk"])
         )
@@ -237,6 +238,17 @@ class ChatKnowledge(BaseChat):
     def get_space_context(self, space_name):
         service = KnowledgeService()
         return service.get_space_context(space_name)
+
+    def get_knowledge_search_top_size(self, space_name) -> int:
+        service = KnowledgeService()
+        request = KnowledgeSpaceRequest(name=space_name)
+        spaces = service.get_knowledge_space(request)
+        if len(spaces) == 1:
+            from dbgpt.storage import vector_store
+            if spaces[0].vector_type in vector_store.__knowledge_graph__:
+                return CFG.KNOWLEDGE_GRAPH_SEARCH_TOP_SIZE
+
+        return CFG.KNOWLEDGE_SEARCH_TOP_SIZE
 
     async def execute_similar_search(self, query):
         """execute similarity search"""
