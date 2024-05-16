@@ -56,8 +56,7 @@ async def main():
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
     chunks = await retriever.aretrieve_with_scores(
-        "What actions has Megatron taken ?",
-        score_threshold=0.3
+        "What actions has Megatron taken ?", score_threshold=0.3
     )
     print(f"embedding rag example results:{chunks}")
     vector_connector.delete_vector_name("graph_rag_test")
