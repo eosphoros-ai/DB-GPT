@@ -6,7 +6,7 @@ from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
 
-model_name = "gpt-4"
+model_name = "gpt-3.5-turbo"
 
 
 @pytest.fixture

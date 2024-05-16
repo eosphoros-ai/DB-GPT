@@ -245,6 +245,7 @@ class ChatKnowledge(BaseChat):
         spaces = service.get_knowledge_space(request)
         if len(spaces) == 1:
             from dbgpt.storage import vector_store
+
             if spaces[0].vector_type in vector_store.__knowledge_graph__:
                 return CFG.KNOWLEDGE_GRAPH_SEARCH_TOP_SIZE
 
