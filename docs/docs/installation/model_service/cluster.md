@@ -69,10 +69,10 @@ dbgpt start worker --model_name text2vec \
 ## Start Reranking Model Worker
 
 ```shell
-dbgpt start worker --model_name text2vec \
+dbgpt start worker --worker_type text2vec \
 --rerank \
 --model_path /app/models/bge-reranker-base \
---worker_type bge-reranker-base \
+--model_name bge-reranker-base \
 --port 8004 \
 --controller_addr http://127.0.0.1:8000
 ```
