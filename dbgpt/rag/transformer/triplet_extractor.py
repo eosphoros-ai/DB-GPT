@@ -9,8 +9,9 @@ from dbgpt.rag.transformer.llm_extractor import LLMExtractor
 logger = logging.getLogger(__name__)
 
 TRIPLET_EXTRACT_PT = (
-    "Some text is provided below. Given the text, extract up to "
-    "knowledge triplets in the form of (subject, predicate, object).\n"
+    "Some text is provided below. Given the text, "
+    "extract up to knowledge triplets as more as possible "
+    "in the form of (subject, predicate, object).\n"
     "Avoid stopwords.\n"
     "---------------------\n"
     "Example:\n"
@@ -44,6 +45,13 @@ class TripletExtractor(LLMExtractor):
                 splits = match.split(",")
                 parts = [split.strip() for split in splits if split.strip()]
                 if len(parts) == 3:
+                    parts = [
+                        p.strip(
+                            "`~!@#$%^&*()-=+[]\\{}|;':\",./<>?"
+                            "·！￥&*（）—【】、「」；‘’：“”，。、《》？"
+                        )
+                        for p in parts
+                    ]
                     triplets.append(tuple(parts))
                     if limit and len(triplets) >= limit:
                         return triplets
