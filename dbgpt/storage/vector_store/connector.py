@@ -4,7 +4,7 @@ import copy
 import logging
 import os
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, cast, DefaultDict
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import (
