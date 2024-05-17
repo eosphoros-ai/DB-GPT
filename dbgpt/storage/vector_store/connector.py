@@ -251,9 +251,6 @@ class VectorStoreConnector:
         try:
             if self.vector_name_exists():
                 self.client.delete_vector_name(vector_name)
-                if vector_name in pools[self._vector_store_type]:
-                    logger.info(f"{vector_name} delete client in pools")
-                    del pools[self._vector_store_type][vector_name]
         except Exception as e:
             logger.error(f"delete vector name {vector_name} failed: {e}")
             raise Exception(f"delete name {vector_name} failed")
