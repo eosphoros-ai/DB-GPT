@@ -4,7 +4,7 @@ import copy
 import logging
 import os
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple, Type, cast
+from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import (
@@ -22,7 +22,7 @@ from dbgpt.util.i18n_utils import _
 logger = logging.getLogger(__name__)
 
 connector: Dict[str, Tuple[Type, Type]] = {}
-pools = defaultdict(dict)
+pools: DefaultDict[str, Dict] = defaultdict(dict)
 
 
 def _load_vector_options() -> List[OptionValue]:
@@ -248,7 +248,13 @@ class VectorStoreConnector:
         Args:
             - vector_name: vector store name
         """
-        return self.client.delete_vector_name(vector_name)
+        try:
+            if self.vector_name_exists():
+                self.client.delete_vector_name(vector_name)
+        except Exception as e:
+            logger.error(f"delete vector name {vector_name} failed: {e}")
+            raise Exception(f"delete name {vector_name} failed")
+        return True
 
     def delete_by_ids(self, ids):
         """Delete vector by ids.
