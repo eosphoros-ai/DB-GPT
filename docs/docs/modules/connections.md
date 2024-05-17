@@ -7,6 +7,7 @@ The list of data sources we currently support is as follows.
 | ------------------------------------------------------------------------------  |---------| ------------------------------------------- |
 | [MySQL](https://www.mysql.com/)                                                 | Yes     |  MySQL is the world's most popular open source database.                             |
 | [PostgresSQL](https://www.postgresql.org/)                                      | Yes     |  The World's Most Advanced Open Source Relational Database                                   |
+| [Vertica](https://www.vertica.com/)                                             | Yes     |  Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built for the scale and complexity of today’s data-driven world.                                   |
 | [Spark](https://github.com/apache/spark)                                        | Yes     |  Unified Engine for large-scale data analytics                                |
 | [DuckDB](https://github.com/duckdb/duckdb)                                      | Yes     |  DuckDB is an in-process SQL OLAP database management system                                          |
 | [Sqlite](https://github.com/sqlite/sqlite)                                      | Yes     |                                             |
