@@ -29,14 +29,15 @@ Give the correct {dialect} analysis SQL
 4.Carefully check the correctness of the SQL, the SQL must be correct, display method and summary of brief analysis thinking, and respond in the following json format:
 {response}
 The important thing is: Please make sure to only return the json string, do not add any other content (for direct processing by the program), and the json can be parsed by Python json.loads
+5. Please use the same language as the "user"
 """
 
 RESPONSE_FORMAT = [
     {
+        "thoughts": "Current thinking and value of data analysis",
+        "showcase": "What type of charts to show",
         "sql": "data analysis SQL",
         "title": "Data Analysis Title",
-        "showcase": "What type of charts to show",
-        "thoughts": "Current thinking and value of data analysis",
     }
 ]
 

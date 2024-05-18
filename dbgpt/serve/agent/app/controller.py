@@ -4,10 +4,8 @@ from fastapi import APIRouter
 
 from dbgpt._private.config import Config
 from dbgpt.agent.core.agent_manage import get_agent_manager
-from dbgpt.agent.resource.resource_api import ResourceType
+from dbgpt.agent.resource.manage import get_resource_manager
 from dbgpt.agent.util.llm.llm import LLMStrategyType
-from dbgpt.app.knowledge.api import knowledge_space_service
-from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.serve.agent.app.gpts_server import available_llms
 from dbgpt.serve.agent.db.gpts_app import (
@@ -17,7 +15,6 @@ from dbgpt.serve.agent.db.gpts_app import (
     GptsAppQuery,
     GptsAppResponse,
 )
-from dbgpt.serve.agent.hub.plugin_hub import plugin_hub
 from dbgpt.serve.agent.team.base import TeamMode
 
 CFG = Config()
@@ -109,7 +106,8 @@ async def team_mode_list():
 @router.get("/v1/resource-type/list")
 async def team_mode_list():
     try:
-        return Result.succ([type.value for type in ResourceType])
+        resources = get_resource_manager().get_supported_resources(version="v1")
+        return Result.succ(list(resources.keys()))
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"query resource type list error: {ex}")
 
@@ -146,29 +144,8 @@ async def app_resources(
     Get agent resources, such as db, knowledge, internet, plugin.
     """
     try:
-        results = []
-        match type:
-            case ResourceType.DB.value:
-                dbs = CFG.local_db_manager.get_db_list()
-                results = [db["db_name"] for db in dbs]
-                if name:
-                    results = [r for r in results if name in r]
-            case ResourceType.Knowledge.value:
-                knowledge_spaces = knowledge_space_service.get_knowledge_space(
-                    KnowledgeSpaceRequest()
-                )
-                results = [ks.name for ks in knowledge_spaces]
-                if name:
-                    results = [r for r in results if name in r]
-            case ResourceType.Plugin.value:
-                plugins = plugin_hub.get_my_plugin(user_code)
-                results = [plugin.name for plugin in plugins]
-                if name:
-                    results = [r for r in results if name in r]
-            case ResourceType.Internet.value:
-                return Result.succ(None)
-            case ResourceType.File.value:
-                return Result.succ(None)
+        resources = get_resource_manager().get_supported_resources("v1")
+        results = resources.get(type, [])
         return Result.succ(results)
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"query app resources error: {ex}")

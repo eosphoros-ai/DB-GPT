@@ -8,8 +8,8 @@ from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 from dbgpt.vis.tags.vis_dashboard import Vis, VisDashboard
 
 from ...core.action.base import Action, ActionOutput
-from ...resource.resource_api import AgentResource, ResourceType
-from ...resource.resource_db_api import ResourceDbClient
+from ...resource.base import AgentResource, ResourceType
+from ...resource.database import DBResource
 
 logger = logging.getLogger(__name__)
 
@@ -83,29 +83,20 @@ class DashboardAction(Action[List[ChartItem]]):
             )
         chart_items: List[ChartItem] = input_param
         try:
-            if not self.resource_loader:
-                raise ValueError("Resource loader is not initialized!")
-            resource_db_client: Optional[
-                ResourceDbClient
-            ] = self.resource_loader.get_resource_api(
-                self.resource_need, ResourceDbClient
-            )
-            if not resource_db_client:
-                raise ValueError(
-                    "There is no implementation class bound to database resource "
-                    "execution！"
-                )
+            db_resources: List[DBResource] = DBResource.from_resource(self.resource)
+            if not db_resources:
+                raise ValueError("The database resource is not found！")
 
-            if not resource:
-                raise ValueError("Resource is not initialized!")
+            db = db_resources[0]
+
+            if not db:
+                raise ValueError("The database resource is not found！")
 
             chart_params = []
             for chart_item in chart_items:
                 chart_dict = {}
                 try:
-                    sql_df = await resource_db_client.query_to_df(
-                        resource.value, chart_item.sql
-                    )
+                    sql_df = await db.query_to_df(chart_item.sql)
                     chart_dict = chart_item.to_dict()
 
                     chart_dict["data"] = sql_df

@@ -21,7 +21,12 @@ from dbgpt.app.base import (
 # initialize_components import time cost about 0.1s
 from dbgpt.app.component_configs import initialize_components
 from dbgpt.component import SystemApp
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG, LOGDIR
+from dbgpt.configs.model_config import (
+    EMBEDDING_MODEL_CONFIG,
+    LLM_MODEL_CONFIG,
+    LOGDIR,
+    STATIC_MESSAGE_IMG_PATH,
+)
 from dbgpt.serve.core import add_exception_handler
 from dbgpt.util.fastapi import create_app, replace_router
 from dbgpt.util.i18n_utils import _, set_default_language
@@ -88,14 +93,10 @@ def mount_routers(app: FastAPI):
 
 
 def mount_static_files(app: FastAPI):
-    from dbgpt.agent.plugin.commands.built_in.display_type import (
-        static_message_img_path,
-    )
-
-    os.makedirs(static_message_img_path, exist_ok=True)
+    os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
     app.mount(
         "/images",
-        StaticFiles(directory=static_message_img_path, html=True),
+        StaticFiles(directory=STATIC_MESSAGE_IMG_PATH, html=True),
         name="static2",
     )
     app.mount(
@@ -145,11 +146,24 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
 
     embedding_model_name = CFG.EMBEDDING_MODEL
     embedding_model_path = EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+    rerank_model_name = CFG.RERANK_MODEL
+    rerank_model_path = None
+    if rerank_model_name:
+        rerank_model_path = CFG.RERANK_MODEL_PATH or EMBEDDING_MODEL_CONFIG.get(
+            rerank_model_name
+        )
 
     server_init(param, system_app)
     mount_routers(app)
     model_start_listener = _create_model_start_listener(system_app)
-    initialize_components(param, system_app, embedding_model_name, embedding_model_path)
+    initialize_components(
+        param,
+        system_app,
+        embedding_model_name,
+        embedding_model_path,
+        rerank_model_name,
+        rerank_model_path,
+    )
     system_app.on_init()
 
     # Migration db storage, so you db models must be imported before this
@@ -160,7 +174,13 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     if not param.light:
         print("Model Unified Deployment Mode!")
         if not param.remote_embedding:
+            # Embedding model is running in the same process, set embedding_model_name
+            # and embedding_model_path to None
             embedding_model_name, embedding_model_path = None, None
+        if not param.remote_rerank:
+            # Rerank model is running in the same process, set rerank_model_name and
+            # rerank_model_path to None
+            rerank_model_name, rerank_model_path = None, None
         initialize_worker_manager_in_client(
             app=app,
             model_name=model_name,
@@ -168,6 +188,8 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
             local_port=param.port,
             embedding_model_name=embedding_model_name,
             embedding_model_path=embedding_model_path,
+            rerank_model_name=rerank_model_name,
+            rerank_model_path=rerank_model_path,
             start_listener=model_start_listener,
             system_app=system_app,
         )

@@ -27,8 +27,7 @@ from dbgpt._private.pydantic import (
 from dbgpt.util.json_utils import find_json_objects
 from dbgpt.vis.base import Vis
 
-from ...resource.resource_api import AgentResource, ResourceType
-from ...resource.resource_loader import ResourceLoader
+from ...resource.base import AgentResource, Resource, ResourceType
 
 T = TypeVar("T", bound=Union[BaseModel, List[BaseModel], None])
 
@@ -77,11 +76,11 @@ class Action(ABC, Generic[T]):
 
     def __init__(self):
         """Create an action."""
-        self.resource_loader: Optional[ResourceLoader] = None
+        self.resource: Optional[Resource] = None
 
-    def init_resource_loader(self, resource_loader: Optional[ResourceLoader]):
-        """Initialize the resource loader."""
-        self.resource_loader = resource_loader
+    def init_resource(self, resource: Optional[Resource]):
+        """Initialize the resource."""
+        self.resource = resource
 
     @property
     def resource_need(self) -> Optional[ResourceType]:

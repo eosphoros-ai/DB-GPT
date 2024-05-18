@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import UploadFile
 
 from dbgpt.agent.core.schema import PluginStorageType
-from dbgpt.agent.plugin.plugins_util import scan_plugins, update_from_git
+from dbgpt.agent.resource.tool.autogpt.plugins_util import scan_plugins, update_from_git
 from dbgpt.configs.model_config import PLUGINS_DIR
 
 from ..db.my_plugin_db import MyPluginDao, MyPluginEntity

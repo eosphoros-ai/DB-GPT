@@ -147,15 +147,14 @@ def _dynamic_model_parser() -> Optional[List[Type[BaseModelParameters]]]:
     model_path = pre_args.get("model_path")
     worker_type = pre_args.get("worker_type")
     model_type = pre_args.get("model_type")
-    if model_name is None and model_type != ModelType.VLLM:
-        return None
     if worker_type == WorkerType.TEXT2VEC:
         return [
             EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
                 model_name, EmbeddingModelParameters
             )
         ]
-
+    if model_name is None and model_type != ModelType.VLLM:
+        return None
     llm_adapter = get_llm_model_adapter(model_name, model_path, model_type=model_type)
     param_class = llm_adapter.model_param_class()
     return [param_class]

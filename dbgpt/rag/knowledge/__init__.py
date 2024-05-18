@@ -27,6 +27,7 @@ def __getattr__(name: str):
         "StringKnowledge": "string",
         "TXTKnowledge": "txt",
         "URLKnowledge": "url",
+        "ExcelKnowledge": "xlsx",
     }
 
     if name in _LIBS:
@@ -53,4 +54,5 @@ __all__ = [
     "StringKnowledge",
     "TXTKnowledge",
     "URLKnowledge",
+    "ExcelKnowledge",
 ]

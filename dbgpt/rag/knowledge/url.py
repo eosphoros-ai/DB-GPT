@@ -37,7 +37,7 @@ class URLKnowledge(Knowledge):
         if self._loader:
             documents = self._loader.load()
         else:
-            from langchain.document_loaders import WebBaseLoader
+            from langchain.document_loaders import WebBaseLoader  # mypy: ignore
 
             if self._path is not None:
                 web_reader = WebBaseLoader(web_path=self._path)

@@ -19,8 +19,7 @@ from .core.plan import *  # noqa: F401, F403
 from .core.profile import *  # noqa: F401, F403
 from .core.schema import PluginStorageType  # noqa: F401
 from .core.user_proxy_agent import UserProxyAgent  # noqa: F401
-from .resource.resource_api import AgentResource, ResourceType  # noqa: F401
-from .resource.resource_loader import ResourceLoader  # noqa: F401
+from .resource.base import AgentResource, Resource, ResourceType  # noqa: F401
 from .util.llm.llm import LLMConfig  # noqa: F401
 
 __ALL__ = [
@@ -38,7 +37,6 @@ __ALL__ = [
     "GptsMemory",
     "AgentResource",
     "ResourceType",
-    "ResourceLoader",
     "PluginStorageType",
     "UserProxyAgent",
 ]

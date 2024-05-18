@@ -31,7 +31,6 @@ def async_db_summary(system_app: SystemApp):
 
 
 def server_init(param: "WebServerParameters", system_app: SystemApp):
-    from dbgpt.agent.plugin.commands.command_manage import CommandRegistry
 
     # logger.info(f"args: {args}")
     # init config
@@ -42,28 +41,6 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
-
-    # Loader plugins and commands
-    command_categories = []
-    # exclude commands
-    command_categories = [
-        x for x in command_categories if x not in cfg.disabled_command_categories
-    ]
-    command_registry = CommandRegistry()
-    for command_category in command_categories:
-        command_registry.import_commands(command_category)
-
-    cfg.command_registry = command_registry
-
-    command_dispaly_commands = [
-        "dbgpt.agent.plugin.commands.built_in.display_type.show_chart_gen",
-        "dbgpt.agent.plugin.commands.built_in.display_type.show_table_gen",
-        "dbgpt.agent.plugin.commands.built_in.display_type.show_text_gen",
-    ]
-    command_dispaly_registry = CommandRegistry()
-    for command in command_dispaly_commands:
-        command_dispaly_registry.import_commands(command)
-    cfg.command_display = command_dispaly_commands
 
 
 def _create_model_start_listener(system_app: SystemApp):
@@ -248,6 +225,14 @@ class WebServerParameters(BaseParameters):
             "help": "Whether to enable remote embedding models. If it is True, you need"
             " to start a embedding model through `dbgpt start worker --worker_type "
             "text2vec --model_name xxx --model_path xxx`"
+        },
+    )
+    remote_rerank: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "Whether to enable remote rerank models. If it is True, you need"
+            " to start a rerank model through `dbgpt start worker --worker_type "
+            "text2vec --rerank --model_name xxx --model_path xxx`"
         },
     )
     log_level: Optional[str] = field(

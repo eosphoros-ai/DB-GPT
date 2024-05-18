@@ -18,8 +18,8 @@ DEFAULT_REPO_MAP = {
     "fangyinc/dbgpts": "https://github.com/fangyinc/dbgpts.git",
 }
 
-DEFAULT_PACKAGES = ["agents", "apps", "operators", "workflow"]
-DEFAULT_PACKAGE_TYPES = ["agent", "app", "operator", "flow"]
+DEFAULT_PACKAGES = ["agents", "apps", "operators", "workflow", "resources"]
+DEFAULT_PACKAGE_TYPES = ["agent", "app", "operator", "flow", "resource"]
 INSTALL_METADATA_FILE = "install_metadata.toml"
 DBGPTS_METADATA_FILE = "dbgpts.toml"
 
@@ -28,6 +28,7 @@ TYPE_TO_PACKAGE = {
     "app": "apps",
     "operator": "operators",
     "flow": "workflow",
+    "resource": "resources",
 }
 
 

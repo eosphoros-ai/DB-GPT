@@ -106,6 +106,14 @@ class EmbeddingAssembler(BaseAssembler):
         """
         return self._vector_store_connector.load_document(self._chunks)
 
+    async def apersist(self) -> List[str]:
+        """Persist chunks into store.
+
+        Returns:
+            List[str]: List of chunk ids.
+        """
+        return await self._vector_store_connector.aload_document(self._chunks)
+
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""
         return []

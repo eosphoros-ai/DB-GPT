@@ -111,13 +111,23 @@ class Chunk(Document):
     @classmethod
     def chunk2langchain(cls, chunk):
         """Transform Chunk to Langchain format."""
-        from langchain.schema import Document as LCDocument
-
+        try:
+            from langchain.schema import Document as LCDocument  # mypy: ignore
+        except ImportError:
+            raise ValueError(
+                "Could not import python package: langchain "
+                "Please install langchain by command `pip install langchain"
+            )
         return LCDocument(page_content=chunk.content, metadata=chunk.metadata)
 
     @classmethod
     def chunk2llamaindex(cls, chunk):
         """Transform Chunk to llama-index format."""
-        from llama_index.schema import TextNode
-
+        try:
+            from llama_index.schema import TextNode
+        except ImportError:
+            raise ValueError(
+                "Could not import python package: llama_index "
+                "Please install llama_index by command `pip install llama_index"
+            )
         return TextNode(text=chunk.content, metadata=chunk.metadata)
