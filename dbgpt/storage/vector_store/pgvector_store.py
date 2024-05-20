@@ -63,6 +63,7 @@ class PGVectorStore(VectorStoreBase):
             raise ImportError(
                 "Please install the `langchain` package to use the PGVector."
             )
+        super().__init__()
         self.connection_string = vector_store_config.connection_string
         self.embeddings = vector_store_config.embedding_fn
         self.collection_name = vector_store_config.name

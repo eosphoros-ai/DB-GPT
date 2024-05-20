@@ -717,7 +717,7 @@ class OceanBaseStore(VectorStoreBase):
         """Create a OceanBaseStore instance."""
         if vector_store_config.embedding_fn is None:
             raise ValueError("embedding_fn is required for OceanBaseStore")
-
+        super().__init__()
         self.embeddings = vector_store_config.embedding_fn
         self.collection_name = vector_store_config.name
         vector_store_config = vector_store_config.dict()

@@ -149,8 +149,14 @@ class MilvusStore(VectorStoreBase):
             vector_store_config (MilvusVectorConfig): MilvusStore config.
             refer to https://milvus.io/docs/v2.0.x/manage_connection.md
         """
-        from pymilvus import connections
-
+        super().__init__()
+        try:
+            from pymilvus import connections
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
         connect_kwargs = {}
         milvus_vector_config = vector_store_config.to_dict()
         self.uri = milvus_vector_config.get("uri") or os.getenv(
@@ -373,8 +379,13 @@ class MilvusStore(VectorStoreBase):
         self, text, topk, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
         """Perform a search on a query string and return results."""
-        from pymilvus import Collection, DataType
-
+        try:
+            from pymilvus import Collection, DataType
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
         """similar_search in vector database."""
         self.col = Collection(self.collection_name)
         schema = self.col.schema
@@ -419,7 +430,13 @@ class MilvusStore(VectorStoreBase):
         Returns:
             List[Tuple[Document, float]]: Result doc and score.
         """
-        from pymilvus import Collection
+        try:
+            from pymilvus import Collection, DataType
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
 
         self.col = Collection(self.collection_name)
         schema = self.col.schema
@@ -429,7 +446,6 @@ class MilvusStore(VectorStoreBase):
                 self.fields.remove(x.name)
             if x.is_primary:
                 self.primary_field = x.name
-            from pymilvus import DataType
 
             if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
                 self.vector_field = x.name
@@ -526,15 +542,26 @@ class MilvusStore(VectorStoreBase):
 
     def vector_name_exists(self):
         """Whether vector name exists."""
-        from pymilvus import utility
+        try:
+            from pymilvus import utility
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
 
         """is vector store name exist."""
         return utility.has_collection(self.collection_name)
 
     def delete_vector_name(self, vector_name: str):
         """Delete vector name."""
-        from pymilvus import utility
-
+        try:
+            from pymilvus import utility
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
         """milvus delete collection name"""
         logger.info(f"milvus vector_name:{vector_name} begin delete...")
         utility.drop_collection(self.collection_name)
@@ -542,8 +569,13 @@ class MilvusStore(VectorStoreBase):
 
     def delete_by_ids(self, ids):
         """Delete vector by ids."""
-        from pymilvus import Collection
-
+        try:
+            from pymilvus import Collection
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
         self.col = Collection(self.collection_name)
         # milvus delete vectors by ids
         logger.info(f"begin delete milvus ids: {ids}")

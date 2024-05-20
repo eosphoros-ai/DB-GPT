@@ -505,12 +505,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 "app.knowledge.assembler.persist",
                 metadata={"doc": doc.doc_name, "chunks": len(chunk_docs)},
             ):
-                # vector_ids = assembler.persist()
-                space = self.get({"name": doc.space})
-                if space and space.vector_type == "KnowledgeGraph":
-                    vector_ids = await assembler.apersist()
-                else:
-                    vector_ids = assembler.persist()
+                vector_ids = await assembler.apersist()
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
             if vector_ids is not None:
