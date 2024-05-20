@@ -59,6 +59,15 @@ def create_template(
             definition_type,
             working_directory,
         )
+    elif dbgpts_type == "resource":
+        _create_resource_template(
+            name,
+            mod_name,
+            dbgpts_type,
+            base_metadata,
+            definition_type,
+            working_directory,
+        )
     else:
         raise ValueError(f"Invalid dbgpts type: {dbgpts_type}")
 
@@ -142,6 +151,31 @@ def _create_agent_template(
     _create_poetry_project(working_directory, name)
     _write_dbgpts_toml(working_directory, name, json_dict)
     _write_agent_init_file(working_directory, name, mod_name)
+    _write_manifest_file(working_directory, name, mod_name)
+
+
+def _create_resource_template(
+    name: str,
+    mod_name: str,
+    dbgpts_type: str,
+    base_metadata: dict,
+    definition_type: str,
+    working_directory: str,
+):
+    json_dict = {
+        "resource": base_metadata,
+        "python_config": {},
+        "json_config": {},
+    }
+    if definition_type != "python":
+        raise click.ClickException(
+            f"Unsupported definition type: {definition_type} for dbgpts type: "
+            f"{dbgpts_type}"
+        )
+
+    _create_poetry_project(working_directory, name)
+    _write_dbgpts_toml(working_directory, name, json_dict)
+    _write_resource_init_file(working_directory, name, mod_name)
     _write_manifest_file(working_directory, name, mod_name)
 
 
@@ -365,3 +399,25 @@ if __name__ == "__main__":
 """
     with open(init_file, "w") as f:
         f.write(f'"""{name} agent package."""\n{content}')
+
+
+def _write_resource_init_file(working_directory: str, name: str, mod_name: str):
+    """Write the resource __init__.py file"""
+
+    init_file = Path(working_directory) / name / mod_name / "__init__.py"
+    content = """\"\"\"A custom resource module that provides a simple tool to send GET requests.\"\"\"
+
+from dbgpt.agent.resource import tool
+
+
+@tool
+def simple_send_requests_get(url: str):
+    \"\"\"Send a GET request to the specified URL and return the text content.\"\"\"
+    import requests
+
+    response = requests.get(url)
+    return response.text
+    
+"""
+    with open(init_file, "w") as f:
+        f.write(content)

@@ -370,6 +370,32 @@ class Llama3Adapter(NewHFChatModelAdapter):
         return str_prompt
 
 
+class DeepseekV2Adapter(NewHFChatModelAdapter):
+    support_4bit: bool = False
+    support_8bit: bool = False
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "deepseek" in lower_model_name_or_path
+            and "v2" in lower_model_name_or_path
+            and "chat" in lower_model_name_or_path
+        )
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        if not from_pretrained_kwargs:
+            from_pretrained_kwargs = {}
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = True
+        model, tokenizer = super().load(model_path, from_pretrained_kwargs)
+
+        from transformers import GenerationConfig
+
+        model.generation_config = GenerationConfig.from_pretrained(model_path)
+        model.generation_config.pad_token_id = model.generation_config.eos_token_id
+        return model, tokenizer
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(YiAdapter)
@@ -381,3 +407,4 @@ register_model_adapter(StarlingLMAdapter)
 register_model_adapter(QwenAdapter)
 register_model_adapter(QwenMoeAdapter)
 register_model_adapter(Llama3Adapter)
+register_model_adapter(DeepseekV2Adapter)

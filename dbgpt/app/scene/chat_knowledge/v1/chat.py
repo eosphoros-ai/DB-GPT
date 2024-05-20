@@ -9,6 +9,7 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
+from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
@@ -18,6 +19,7 @@ from dbgpt.core import (
     MessagesPlaceholder,
     SystemPromptTemplate,
 )
+from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.tracer import root_tracer, trace
 
@@ -37,7 +39,10 @@ class ChatKnowledge(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) space name
         """
-        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import (
+            EmbeddingFactory,
+            RerankEmbeddingFactory,
+        )
 
         self.knowledge_space = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatKnowledge
@@ -46,7 +51,7 @@ class ChatKnowledge(BaseChat):
         )
         self.space_context = self.get_space_context(self.knowledge_space)
         self.top_k = (
-            CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+            self.get_knowledge_search_top_size(self.knowledge_space)
             if self.space_context is None
             else int(self.space_context["embedding"]["topk"])
         )
@@ -69,12 +74,27 @@ class ChatKnowledge(BaseChat):
         embedding_fn = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
+        from dbgpt.serve.rag.models.models import (
+            KnowledgeSpaceDao,
+            KnowledgeSpaceEntity,
+        )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        config = VectorStoreConfig(name=self.knowledge_space, embedding_fn=embedding_fn)
+        spaces = KnowledgeSpaceDao().get_knowledge_space(
+            KnowledgeSpaceEntity(name=self.knowledge_space)
+        )
+        if len(spaces) != 1:
+            raise Exception(f"invalid space name:{self.knowledge_space}")
+        space = spaces[0]
+
+        config = VectorStoreConfig(
+            name=space.name,
+            embedding_fn=embedding_fn,
+            llm_client=self.llm_client,
+            llm_model=self.llm_model,
+        )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE,
-            vector_store_config=config,
+            vector_store_type=space.vector_type, vector_store_config=config
         )
         query_rewrite = None
         if CFG.KNOWLEDGE_SEARCH_REWRITE:
@@ -83,10 +103,22 @@ class ChatKnowledge(BaseChat):
                 model_name=self.llm_model,
                 language=CFG.LANGUAGE,
             )
+        reranker = None
+        retriever_top_k = self.top_k
+        if CFG.RERANK_MODEL:
+            rerank_embeddings = RerankEmbeddingFactory.get_instance(
+                CFG.SYSTEM_APP
+            ).create()
+            reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=CFG.RERANK_TOP_K)
+            if retriever_top_k < CFG.RERANK_TOP_K or retriever_top_k < 20:
+                # We use reranker, so if the top_k is less than 20,
+                # we need to set it to 20
+                retriever_top_k = max(CFG.RERANK_TOP_K, 20)
         self.embedding_retriever = EmbeddingRetriever(
-            top_k=self.top_k,
+            top_k=retriever_top_k,
             vector_store_connector=vector_store_connector,
             query_rewrite=query_rewrite,
+            rerank=reranker,
         )
         self.prompt_template.template_is_strict = False
         self.relations = None
@@ -222,6 +254,18 @@ class ChatKnowledge(BaseChat):
     def get_space_context(self, space_name):
         service = KnowledgeService()
         return service.get_space_context(space_name)
+
+    def get_knowledge_search_top_size(self, space_name) -> int:
+        service = KnowledgeService()
+        request = KnowledgeSpaceRequest(name=space_name)
+        spaces = service.get_knowledge_space(request)
+        if len(spaces) == 1:
+            from dbgpt.storage import vector_store
+
+            if spaces[0].vector_type in vector_store.__knowledge_graph__:
+                return CFG.KNOWLEDGE_GRAPH_SEARCH_TOP_SIZE
+
+        return CFG.KNOWLEDGE_SEARCH_TOP_SIZE
 
     async def execute_similar_search(self, query):
         """execute similarity search"""

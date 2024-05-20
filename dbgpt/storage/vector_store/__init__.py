@@ -1,44 +1,68 @@
 """Vector Store Module."""
-from typing import Any
+from typing import Tuple, Type
 
 
-def _import_pgvector() -> Any:
-    from dbgpt.storage.vector_store.pgvector_store import PGVectorStore
+def _import_pgvector() -> Tuple[Type, Type]:
+    from dbgpt.storage.vector_store.pgvector_store import PGVectorConfig, PGVectorStore
 
-    return PGVectorStore
-
-
-def _import_milvus() -> Any:
-    from dbgpt.storage.vector_store.milvus_store import MilvusStore
-
-    return MilvusStore
+    return PGVectorStore, PGVectorConfig
 
 
-def _import_chroma() -> Any:
-    from dbgpt.storage.vector_store.chroma_store import ChromaStore
+def _import_milvus() -> Tuple[Type, Type]:
+    from dbgpt.storage.vector_store.milvus_store import MilvusStore, MilvusVectorConfig
 
-    return ChromaStore
-
-
-def _import_weaviate() -> Any:
-    from dbgpt.storage.vector_store.weaviate_store import WeaviateStore
-
-    return WeaviateStore
+    return MilvusStore, MilvusVectorConfig
 
 
-def _import_oceanbase() -> Any:
-    from dbgpt.storage.vector_store.oceanbase_store import OceanBaseStore
+def _import_chroma() -> Tuple[Type, Type]:
+    from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
-    return OceanBaseStore
-
-
-def _import_elastic() -> Any:
-    from dbgpt.storage.vector_store.elastic_store import ElasticStore
-
-    return ElasticStore
+    return ChromaStore, ChromaVectorConfig
 
 
-def __getattr__(name: str) -> Any:
+def _import_weaviate() -> Tuple[Type, Type]:
+    from dbgpt.storage.vector_store.weaviate_store import (
+        WeaviateStore,
+        WeaviateVectorConfig,
+    )
+
+    return WeaviateStore, WeaviateVectorConfig
+
+
+def _import_oceanbase() -> Tuple[Type, Type]:
+    from dbgpt.storage.vector_store.oceanbase_store import (
+        OceanBaseConfig,
+        OceanBaseStore,
+    )
+
+    return OceanBaseStore, OceanBaseConfig
+
+
+def _import_elastic() -> Tuple[Type, Type]:
+    from dbgpt.storage.vector_store.elastic_store import (
+        ElasticsearchVectorConfig,
+        ElasticStore,
+    )
+
+    return ElasticStore, ElasticsearchVectorConfig
+
+
+def _import_builtin_knowledge_graph() -> Tuple[Type, Type]:
+    from dbgpt.storage.knowledge_graph.knowledge_graph import (
+        BuiltinKnowledgeGraph,
+        BuiltinKnowledgeGraphConfig,
+    )
+
+    return BuiltinKnowledgeGraph, BuiltinKnowledgeGraphConfig
+
+
+def _import_openspg() -> Tuple[Type, Type]:
+    from dbgpt.storage.knowledge_graph.open_spg import OpenSPG, OpenSPGConfig
+
+    return OpenSPG, OpenSPGConfig
+
+
+def __getattr__(name: str) -> Tuple[Type, Type]:
     if name == "Chroma":
         return _import_chroma()
     elif name == "Milvus":
@@ -51,8 +75,23 @@ def __getattr__(name: str) -> Any:
         return _import_oceanbase()
     elif name == "ElasticSearch":
         return _import_elastic()
+    elif name == "KnowledgeGraph":
+        return _import_builtin_knowledge_graph()
+    elif name == "OpenSPG":
+        return _import_openspg()
     else:
         raise AttributeError(f"Could not find: {name}")
 
 
-__all__ = ["Chroma", "Milvus", "Weaviate", "OceanBase", "PGVector", "ElasticSearch"]
+__vector_store__ = [
+    "Chroma",
+    "Milvus",
+    "Weaviate",
+    "OceanBase",
+    "PGVector",
+    "ElasticSearch",
+]
+
+__knowledge_graph__ = ["KnowledgeGraph", "OpenSPG"]
+
+__all__ = __vector_store__ + __knowledge_graph__

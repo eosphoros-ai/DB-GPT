@@ -609,6 +609,7 @@ def all_datasource_requires():
         "thrift",
         "thrift_sasl",
         "neo4j",
+        "vertica_python",
     ]
 
 

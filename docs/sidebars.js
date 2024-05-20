@@ -472,6 +472,16 @@ const sidebars = {
         },
         {
           type: 'category',
+          label: 'RAG',
+          items: [
+            {
+              type: 'doc',
+              id: 'cookbook/rag/graph_rag_app_develop',
+            }
+          ],
+        },
+        {
+          type: 'category',
           label: 'App',
           items: [
             {
@@ -479,7 +489,7 @@ const sidebars = {
               id: 'cookbook/app/data_analysis_app_develop',
             }
           ],
-        }, 
+        },
       ],
 
     },

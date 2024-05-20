@@ -1,6 +1,6 @@
 import { addSpace, apiInterceptors } from '@/client/api';
 import { StepChangeParams } from '@/types/knowledge';
-import { Button, Form, Input, Spin } from 'antd';
+import { Button, Form, Input, Spin,Select } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +8,7 @@ type FieldType = {
   spaceName: string;
   owner: string;
   description: string;
+  storage:string;
 };
 
 type IProps = {
@@ -20,12 +21,13 @@ export default function SpaceForm(props: IProps) {
   const [spinning, setSpinning] = useState<boolean>(false);
 
   const handleFinish = async (fieldsValue: FieldType) => {
-    const { spaceName, owner, description } = fieldsValue;
+    const { spaceName, owner, description,storage } = fieldsValue;
     setSpinning(true);
+    let vector_type = storage
     const [_, data, res] = await apiInterceptors(
       addSpace({
         name: spaceName,
-        vector_type: 'Chroma',
+        vector_type: vector_type,
         owner,
         desc: description,
       }),
@@ -63,6 +65,12 @@ export default function SpaceForm(props: IProps) {
         </Form.Item>
         <Form.Item<FieldType> label={t('Owner')} name="owner" rules={[{ required: true, message: t('Please_input_the_owner') }]}>
           <Input className="mb-5  h-12" placeholder={t('Please_input_the_owner')} />
+        </Form.Item>
+        <Form.Item<FieldType> label={t('Storage')} name="storage" rules={[{ required: true, message: t('Please_select_the_storage') }]}>
+          <Select className="mb-5 h-12" placeholder={t('Please_select_the_storage')}>
+            <Select.Option value="Chroma">Vector Store</Select.Option>
+            <Select.Option value="KnowledgeGraph">Knowledge Graph</Select.Option>
+          </Select>
         </Form.Item>
         <Form.Item<FieldType> label={t('Description')} name="description" rules={[{ required: true, message: t('Please_input_the_description') }]}>
           <Input className="mb-5  h-12" placeholder={t('Please_input_the_description')} />

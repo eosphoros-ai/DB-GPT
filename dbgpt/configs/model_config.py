@@ -184,6 +184,7 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/google/gemma-2b-it
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
     "starling-lm-7b-beta": os.path.join(MODEL_PATH, "Starling-LM-7B-beta"),
+    "deepseek-v2-lite-chat": os.path.join(MODEL_PATH, "DeepSeek-V2-Lite-Chat"),
 }
 
 EMBEDDING_MODEL_CONFIG = {
@@ -209,6 +210,11 @@ EMBEDDING_MODEL_CONFIG = {
     # Common HTTP embedding model
     "proxy_http_openapi": "proxy_http_openapi",
     "proxy_ollama": "proxy_ollama",
+    # Rerank model, rerank mode is a special embedding model
+    "bge-reranker-base": os.path.join(MODEL_PATH, "bge-reranker-base"),
+    "bge-reranker-large": os.path.join(MODEL_PATH, "bge-reranker-large"),
+    # Proxy rerank model
+    "rerank_proxy_http_openapi": "rerank_proxy_http_openapi",
 }
 
 

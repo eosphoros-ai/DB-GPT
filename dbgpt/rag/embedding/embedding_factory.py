@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Type
 
 from dbgpt.component import BaseComponent, SystemApp
-from dbgpt.core import Embeddings
+from dbgpt.core import Embeddings, RerankEmbeddings
 from dbgpt.core.awel import DAGVar
 from dbgpt.core.awel.flow import ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
@@ -31,6 +31,26 @@ class EmbeddingFactory(BaseComponent, ABC):
 
         Returns:
             Embeddings: The embedding instance.
+        """
+
+
+class RerankEmbeddingFactory(BaseComponent, ABC):
+    """Class for RerankEmbeddingFactory."""
+
+    name = "rerank_embedding_factory"
+
+    @abstractmethod
+    def create(
+        self, model_name: Optional[str] = None, embedding_cls: Optional[Type] = None
+    ) -> RerankEmbeddings:
+        """Create an embedding instance.
+
+        Args:
+            model_name (str): The model name.
+            embedding_cls (Type): The embedding class.
+
+        Returns:
+            RerankEmbeddings: The embedding instance.
         """
 
 

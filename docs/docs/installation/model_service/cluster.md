@@ -3,21 +3,21 @@
 ## Install command line tools
 All the following operations are completed through the `dbgpt` command. To use the `dbgpt` command, you first need to install the `DB-GPT` project. You can install it through the following command
 
-```python
+```shell
 $ pip install -e ".[default]"
 ```
 It can also be used in script mode
-```python
+```shell
 $ python pilot/scripts/cli_scripts.py
 ```
 
 ## Start Model Controller
-```python
+```shell
 $ dbgpt start controller
 ```
 
 ## View log
-```python
+```shell
 $ docker logs db-gpt-webserver-1 -f
 ```
 By default, `Model Server` will start on port `8000`
@@ -28,7 +28,7 @@ By default, `Model Server` will start on port `8000`
 Start `chatglm2-6b` model Worker
 :::
 
-```python
+```shell
 dbgpt start worker --model_name chatglm2-6b \
 --model_path /app/models/chatglm2-6b \
 --port 8001 \
@@ -40,7 +40,7 @@ dbgpt start worker --model_name chatglm2-6b \
 Start `vicuna-13b-v1.5` model Worker
 :::
 
-```python
+```shell
 dbgpt start worker --model_name vicuna-13b-v1.5 \
 --model_path /app/models/vicuna-13b-v1.5 \
 --port 8002 \
@@ -52,13 +52,28 @@ dbgpt start worker --model_name vicuna-13b-v1.5 \
 :::
 
 
-## Start the embedding model service
+## Start Embedding Model Worker
 
-```python
+```shell
 dbgpt start worker --model_name text2vec \
 --model_path /app/models/text2vec-large-chinese \
 --worker_type text2vec \
 --port 8003 \
+--controller_addr http://127.0.0.1:8000
+```
+:::info note
+⚠️  Make sure to use your own model name and model path.
+
+:::
+
+## Start Reranking Model Worker
+
+```shell
+dbgpt start worker --worker_type text2vec \
+--rerank \
+--model_path /app/models/bge-reranker-base \
+--model_name bge-reranker-base \
+--port 8004 \
 --controller_addr http://127.0.0.1:8000
 ```
 :::info note
@@ -71,19 +86,21 @@ View and inspect deployed models
 :::
 
 
-```python
+```shell
 $ dbgpt model list
 
-+-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
-|    Model Name   | Model Type |    Host    | Port | Healthy | Enabled | Prompt Template |       Last Heartbeat       |
-+-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
-|   chatglm2-6b   |    llm     | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.287654 |
-|  WorkerManager  |  service   | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.286668 |
-|  WorkerManager  |  service   | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.845617 |
-|  WorkerManager  |  service   | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
-|     text2vec    |  text2vec  | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.844796 |
-| vicuna-13b-v1.5 |    llm     | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.597775 |
-+-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
++-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
+|    Model Name     | Model Type |    Host    | Port | Healthy | Enabled | Prompt Template |       Last Heartbeat       |
++-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
+|   chatglm2-6b     |    llm     | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.287654 |
+|  WorkerManager    |  service   | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.286668 |
+|  WorkerManager    |  service   | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.845617 |
+|  WorkerManager    |  service   | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
+|  WorkerManager    |  service   | 172.21.0.5 | 8004 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
+|     text2vec      |  text2vec  | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.844796 |
+| vicuna-13b-v1.5   |    llm     | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.597775 |
+| bge-reranker-base |  text2vec  | 172.21.0.5 | 8004 |   True  |   True  |                 | 2024-05-15T11:36:12.935012 |
++-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
 ```
 
 
@@ -91,13 +108,13 @@ $ dbgpt model list
 
 The model service deployed as above can be used through dbgpt_server. First modify the `.env` configuration file to change the connection model address
 
-```python
+```shell
 dbgpt start webserver --light
 ```
 
 ## Start Webserver 
 
-```python
+```shell
 LLM_MODEL=vicuna-13b-v1.5
 # The current default MODEL_SERVER address is the address of the Model Controller
 MODEL_SERVER=http://127.0.0.1:8000
@@ -106,7 +123,7 @@ MODEL_SERVER=http://127.0.0.1:8000
 
 
 Or it can be started directly by command to formulate the model.
-```python
+```shell
 LLM_MODEL=chatglm2-6b dbgpt start webserver --light
 ```
 
@@ -118,7 +135,7 @@ For more information about the use of the command line, you can view the command
 View dbgpt help `dbgpt --help`
 :::
 
-```python
+```shell
 dbgpt --help
 
 Already connect 'dbgpt'
@@ -143,7 +160,7 @@ Commands:
 Check the dbgpt start command `dbgpt start --help`
 :::
 
-```python
+```shell
 dbgpt start --help
 
 Already connect 'dbgpt'
@@ -166,7 +183,7 @@ Commands:
 View the dbgpt start model service help command `dbgpt start worker --help`
 :::
 
-```python
+```shell
 dbgpt start worker --help
 
 Already connect 'dbgpt'
@@ -239,7 +256,7 @@ Options:
 View dbgpt model service related commands `dbgpt model --help`
 :::
 
-```python
+```shell
 dbgpt model --help
 
 

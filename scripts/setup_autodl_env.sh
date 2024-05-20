@@ -41,7 +41,7 @@ clone_repositories() {
 }
 
 install_dbgpt_packages() {
-    conda activate dbgpt && cd /root/DB-GPT && pip install -e ".[default]"
+    conda activate dbgpt && cd /root/DB-GPT && pip install -e ".[default]" && pip install transformers_stream_generator einops
     cp .env.template .env && sed -i 's/LLM_MODEL=vicuna-13b-v1.5/LLM_MODEL=qwen-1.8b-chat/' .env
 }
 

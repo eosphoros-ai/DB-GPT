@@ -12,3 +12,5 @@ declare namespace JSX {
     'chart-view': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
   }
 }
+
+declare module 'cytoscape-euler';

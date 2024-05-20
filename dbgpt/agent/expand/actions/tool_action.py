@@ -125,7 +125,7 @@ class ToolAction(Action[ToolInput]):
                 "args": param.args,
                 "status": status,
                 "logo": None,
-                "result": tool_result,
+                "result": str(tool_result),
                 "err_msg": err_msg,
             }
             if not self.render_protocol:
