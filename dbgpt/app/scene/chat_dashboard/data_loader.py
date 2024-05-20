@@ -19,41 +19,62 @@ class DashboardDataLoader:
 
     def get_chart_values_by_data(self, field_names, datas, chart_sql: str):
         logger.info(f"get_chart_values_by_conn:{chart_sql}")
-        try:
-            values: List[ValueItem] = []
-            data_map = {}
-            field_map = {}
-            index = 0
-            for field_name in field_names:
-                data_map.update({f"{field_name}": [row[index] for row in datas]})
-                index += 1
-                if not data_map[field_name]:
-                    field_map.update({f"{field_name}": False})
-                else:
-                    field_map.update(
-                        {
-                            f"{field_name}": all(
-                                isinstance(item, (int, float, Decimal))
-                                for item in data_map[field_name]
-                            )
-                        }
-                    )
+        # try:
+        values: List[ValueItem] = []
+        data_map = {}
 
-            for field_name in field_names[1:]:
-                if not field_map[field_name]:
-                    logger.info("More than 2 non-numeric column:" + field_name)
-                else:
+        data_map.update(
+            {
+                f"{field_name}": [row[index] for row in datas]
+                for index, field_name in enumerate(field_names)
+            }
+        )
+        # to Check Whether there are data in it
+        if len(datas) != 0:
+            # find the first string column
+            str_index = next(
+                (
+                    index
+                    for index, value in enumerate(datas[0])
+                    if isinstance(value, str)
+                ),
+                1,
+            )
+            if type(datas[0][str_index]) == str:
+                tempFieldName = field_names[:str_index]
+                tempFieldName.extend(field_names[str_index + 1 :])
+                for field_name in tempFieldName:
                     for data in datas:
-                        value_item = ValueItem(
-                            name=data[0],
-                            type=field_name,
-                            value=str(data[field_names.index(field_name)]),
-                        )
-                        values.append(value_item)
+                        # None Data won't be ok for the chart
+                        if not any(item is None for item in data):
+                            value_item = ValueItem(
+                                name=data[str_index],
+                                type=field_name,
+                                value=str(data[field_names.index(field_name)]),
+                            )
+                            values.append(value_item)
+                        else:
+                            value_item = ValueItem(
+                                name=data[str_index],
+                                type=field_name,
+                                value="0",
+                            )
+                            values.append(value_item)
+            else:
+                result = [sum(values) for values in zip(*datas)]
+                for index, field_name in enumerate(field_names):
+                    value_item = ValueItem(
+                        name=field_name,
+                        type=f"{field_name}_count",
+                        value=str(result[index]),
+                    )
+                    values.append(value_item)
             return field_names, values
-        except Exception as e:
-            logger.debug("Prepare Chart Data Failed!" + str(e))
-            raise ValueError("Prepare Chart Data Failed!")
+        else:
+            return field_names, [
+                ValueItem(name=f"{field_name}", type=f"{field_name}", value="0")
+                for index, field_name in enumerate(field_names)
+            ]
 
     def get_chart_values_by_db(self, db_name: str, chart_sql: str):
         logger.info(f"get_chart_values_by_db:{db_name},{chart_sql}")
