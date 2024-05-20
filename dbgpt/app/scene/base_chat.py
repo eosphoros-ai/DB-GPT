@@ -338,7 +338,7 @@ class BaseChat(ABC):
 
     @async_retry(
         retries=CFG.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE,
-        parallel_executions=CFG.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE,
+        parallel_executions=CFG.DBGPT_APP_SCENE_NON_STREAMING_PARALLELISM_BASE,
         catch_exceptions=(Exception, BaseAppException),
     )
     async def _no_streaming_call_with_retry(self, payload):
