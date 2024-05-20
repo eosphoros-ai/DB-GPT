@@ -8,6 +8,7 @@ export type DBType =
   | 'clickhouse'
   | 'oracle'
   | 'postgresql'
+  | 'vertica'
   | 'db2'
   | 'access'
   | 'mongodb'

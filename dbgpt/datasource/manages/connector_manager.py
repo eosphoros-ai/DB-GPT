@@ -56,6 +56,7 @@ class ConnectorManager(BaseComponent):
         from dbgpt.datasource.rdbms.conn_starrocks import (  # noqa: F401
             StarRocksConnector,
         )
+        from dbgpt.datasource.rdbms.conn_vertica import VerticaConnector  # noqa: F401
 
         from .connect_config_db import ConnectConfigEntity  # noqa: F401
 
