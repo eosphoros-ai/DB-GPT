@@ -178,7 +178,9 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/01-ai/Yi-1.5-6B-Chat
     "yi-1.5-6b-chat": os.path.join(MODEL_PATH, "Yi-1.5-6B-Chat"),
     "yi-1.5-9b-chat": os.path.join(MODEL_PATH, "Yi-1.5-9B-Chat"),
+    "yi-1.5-9b-chat-16k": os.path.join(MODEL_PATH, "Yi-1.5-9B-Chat-16K"),
     "yi-1.5-34b-chat": os.path.join(MODEL_PATH, "Yi-1.5-34B-Chat"),
+    "yi-1.5-34b-chat-16k": os.path.join(MODEL_PATH, "Yi-1.5-34B-Chat-16K"),
     # https://huggingface.co/google/gemma-7b-it
     "gemma-7b-it": os.path.join(MODEL_PATH, "gemma-7b-it"),
     # https://huggingface.co/google/gemma-2b-it
