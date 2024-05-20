@@ -239,6 +239,8 @@ class CrossEncoderRanker(Ranker):
         Returns:
             List[Chunk], reranked candidates
         """
+        if len(candidates_with_scores) <= 1:
+            return candidates_with_scores
         contents = [candidate.content for candidate in candidates_with_scores]
         query_content_pairs = [
             [
