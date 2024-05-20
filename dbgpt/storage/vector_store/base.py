@@ -106,7 +106,7 @@ class VectorStoreBase(IndexStoreBase, ABC):
 
     def __init__(self, executor: Optional[ThreadPoolExecutor] = None):
         """Initialize vector store."""
-        self._executor = executor or ThreadPoolExecutor()
+        super().__init__(executor)
 
     def filter_by_score_threshold(
         self, chunks: List[Chunk], score_threshold: float
