@@ -132,6 +132,11 @@ export type IChunkList = {
   total: number;
 };
 
+export type GraphVisResult = {
+  nodes:Array<any>,
+  edges:Array<any>
+}
+
 export type ArgumentsParams = {
   argument: string;
 };

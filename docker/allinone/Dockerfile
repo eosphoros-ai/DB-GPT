@@ -23,7 +23,7 @@ RUN mkdir /docker-entrypoint-initdb.d \
 ENV MYSQL_ROOT_PASSWORD=aa123456
 ENV LOCAL_DB_PASSWORD="$MYSQL_ROOT_PASSWORD"
 
-RUN cp /app/assets/schema/knowledge_management.sql /docker-entrypoint-initdb.d/
+RUN cp /app/assets/schema/dbgpt.sql /docker-entrypoint-initdb.d/
 
 COPY docker/allinone/allinone-entrypoint.sh /usr/local/bin/allinone-entrypoint.sh
 COPY docker/examples/sqls/*_mysql.sql /docker-entrypoint-initdb.d/

@@ -1,7 +1,7 @@
 import logging
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Union
 
-from dbgpt.core import ModelMetadata
+from dbgpt.core import Embeddings, ModelMetadata, RerankEmbeddings
 from dbgpt.model.adapter.embeddings_loader import (
     EmbeddingLoader,
     _parse_embedding_params,
@@ -20,13 +20,12 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingsModelWorker(ModelWorker):
-    def __init__(self) -> None:
-        from dbgpt.rag.embedding import Embeddings
-
-        self._embeddings_impl: Embeddings = None
+    def __init__(self, rerank_model: bool = False) -> None:
+        self._embeddings_impl: Union[Embeddings, RerankEmbeddings, None] = None
         self._model_params = None
         self.model_name = None
         self.model_path = None
+        self._rerank_model = rerank_model
         self._loader = EmbeddingLoader()
 
     def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
@@ -64,8 +63,17 @@ class EmbeddingsModelWorker(ModelWorker):
         """Start model worker"""
         if not model_params:
             model_params = self.parse_parameters(command_args)
+        if self._rerank_model:
+            model_params.rerank = True  # type: ignore
         self._model_params = model_params
-        self._embeddings_impl = self._loader.load(self.model_name, model_params)
+        if model_params.is_rerank_model():
+            logger.info(f"Load rerank embeddings model: {self.model_name}")
+            self._embeddings_impl = self._loader.load_rerank_model(
+                self.model_name, model_params
+            )
+        else:
+            logger.info(f"Load embeddings model: {self.model_name}")
+            self._embeddings_impl = self._loader.load(self.model_name, model_params)
 
     def __del__(self):
         self.stop()
@@ -96,5 +104,10 @@ class EmbeddingsModelWorker(ModelWorker):
     def embeddings(self, params: Dict) -> List[List[float]]:
         model = params.get("model")
         logger.info(f"Receive embeddings request, model: {model}")
-        input: List[str] = params["input"]
-        return self._embeddings_impl.embed_documents(input)
+        textx: List[str] = params["input"]
+        if isinstance(self._embeddings_impl, RerankEmbeddings):
+            query = params["query"]
+            scores: List[float] = self._embeddings_impl.predict(query, textx)
+            return [scores]
+        else:
+            return self._embeddings_impl.embed_documents(textx)

@@ -99,6 +99,7 @@ class ResourceManager(BaseComponent):
         resource_instance: Optional[Union[Resource, ToolResourceType]] = None,
         resource_type: Optional[ResourceType] = None,
         resource_type_alias: Optional[str] = None,
+        ignore_duplicate: bool = False,
     ):
         """Register a resource."""
         if resource_instance and _is_function_tool(resource_instance):
@@ -117,14 +118,21 @@ class ResourceManager(BaseComponent):
             resource_type=resource_type,
             resource_type_alias=resource_type_alias,
         )
+        if resource.key in self._resources:
+            if ignore_duplicate:
+                return
+            else:
+                raise ValueError(f"Resource {resource.key} already exists.")
         self._resources[resource.key] = resource
         self._type_to_resources[resource.type_unique_key].append(resource)
 
     def get_supported_resources(
         self, version: Optional[str] = None
-    ) -> Dict[str, List[ParameterDescription]]:
+    ) -> Dict[str, Union[List[ParameterDescription], List[str]]]:
         """Return the resources."""
-        results = {}
+        results: Dict[str, Union[List[ParameterDescription], List[str]]] = defaultdict(
+            list
+        )
         for key, resource in self._resources.items():
             parameter_class = resource.get_parameter_class()
             resource_type = resource.type_unique_key
@@ -138,12 +146,14 @@ class ResourceManager(BaseComponent):
                 and isinstance(configs[0], ParameterDescription)
             ):
                 # v1, not compatible with class
-                configs = []
+                set_configs = set(results[resource_type])
                 if not resource.is_class:
                     for r in self._type_to_resources[resource_type]:
                         if not r.is_class:
-                            configs.append(r.resource_instance.name)  # type: ignore
+                            set_configs.add(r.resource_instance.name)  # type: ignore
+                configs = list(set_configs)
             results[resource_type] = configs
+
         return results
 
     def build_resource_by_type(

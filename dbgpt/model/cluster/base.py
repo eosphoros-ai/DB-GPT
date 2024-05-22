@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.core.interface.message import ModelMessage
@@ -31,7 +31,9 @@ class PromptRequest(BaseModel):
 class EmbeddingsRequest(BaseModel):
     model: str
     input: List[str]
-    span_id: str = None
+    span_id: Optional[str] = None
+    query: Optional[str] = None
+    """For rerank model, query is required"""
 
 
 class CountTokenRequest(BaseModel):

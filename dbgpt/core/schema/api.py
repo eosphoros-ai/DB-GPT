@@ -166,6 +166,23 @@ class EmbeddingsResponse(BaseModel):
     usage: UsageInfo = Field(..., description="Usage info")
 
 
+class RelevanceRequest(BaseModel):
+    """Relevance request entity."""
+
+    model: str = Field(..., description="Rerank model name")
+    query: str = Field(..., description="Query text")
+    documents: List[str] = Field(..., description="Document texts")
+
+
+class RelevanceResponse(BaseModel):
+    """Relevance response entity."""
+
+    object: str = Field("list", description="Object type")
+    model: str = Field(..., description="Rerank model name")
+    data: List[float] = Field(..., description="Data list, relevance scores")
+    usage: UsageInfo = Field(..., description="Usage info")
+
+
 class ModelPermission(BaseModel):
     """Model permission entity."""
 

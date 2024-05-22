@@ -13,6 +13,7 @@ from dbgpt.app.knowledge.request.request import (
     DocumentSummaryRequest,
     DocumentSyncRequest,
     EntityExtractRequest,
+    GraphVisRequest,
     KnowledgeDocumentRequest,
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
@@ -75,7 +76,7 @@ def space_delete(request: KnowledgeSpaceRequest):
     try:
         return Result.succ(knowledge_space_service.delete_space(request.name))
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space delete error {e}")
 
 
 @router.post("/knowledge/{space_name}/arguments")
@@ -84,7 +85,7 @@ def arguments(space_name: str):
     try:
         return Result.succ(knowledge_space_service.arguments(space_name))
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space arguments error {e}")
 
 
 @router.post("/knowledge/{space_name}/argument/save")
@@ -95,7 +96,7 @@ def arguments_save(space_name: str, argument_request: SpaceArgumentRequest):
             knowledge_space_service.argument_save(space_name, argument_request)
         )
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space save error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/add")
@@ -156,6 +157,20 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
         return Result.failed(code="E000X", msg=f"document list error {e}")
 
 
+@router.post("/knowledge/{space_name}/graphvis")
+def graph_vis(space_name: str, query_request: GraphVisRequest):
+    print(f"/document/list params: {space_name}, {query_request}")
+    print(query_request.limit)
+    try:
+        return Result.succ(
+            knowledge_space_service.query_graph(
+                space_name=space_name, limit=query_request.limit
+            )
+        )
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"get graph vis error {e}")
+
+
 @router.post("/knowledge/{space_name}/document/delete")
 def document_delete(space_name: str, query_request: DocumentQueryRequest):
     print(f"/document/list params: {space_name}, {query_request}")
@@ -164,7 +179,7 @@ def document_delete(space_name: str, query_request: DocumentQueryRequest):
             knowledge_space_service.delete_document(space_name, query_request.doc_name)
         )
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"document list error {e}")
+        return Result.failed(code="E000X", msg=f"document delete error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/upload")
@@ -232,7 +247,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
 
 
 @router.post("/knowledge/{space_name}/document/sync_batch")
-def batch_document_sync(
+async def batch_document_sync(
     space_name: str,
     request: List[KnowledgeSyncRequest],
     service: Service = Depends(get_rag_service),
@@ -242,13 +257,13 @@ def batch_document_sync(
         space = service.get({"name": space_name})
         for sync_request in request:
             sync_request.space_id = space.id
-        doc_ids = service.sync_document(requests=request)
+        doc_ids = await service.sync_document(requests=request)
         # doc_ids = service.sync_document(
         #     space_name=space_name, sync_requests=request
         # )
         return Result.succ({"tasks": doc_ids})
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"document sync error {e}")
+        return Result.failed(code="E000X", msg=f"document sync batch error {e}")
 
 
 @router.post("/knowledge/{space_name}/chunk/list")

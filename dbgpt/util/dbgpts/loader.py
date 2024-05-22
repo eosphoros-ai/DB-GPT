@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, cast
 
 import schedule
 import tomlkit
@@ -73,8 +73,11 @@ class BasePackage(BaseModel):
 
     @classmethod
     def load_module_class(
-        cls, values: Dict[str, Any], expected_cls: Type[T]
-    ) -> List[Type[T]]:
+        cls,
+        values: Dict[str, Any],
+        expected_cls: Type[T],
+        predicates: Optional[List[Callable[..., bool]]] = None,
+    ) -> Tuple[List[Type[T]], List[Any]]:
         import importlib.resources as pkg_resources
 
         from dbgpt.core.awel.dag.loader import _load_modules_from_file
@@ -90,12 +93,15 @@ class BasePackage(BaseModel):
         with pkg_resources.path(name, "__init__.py") as path:
             mods = _load_modules_from_file(str(path), name, show_log=False)
             all_cls = [_get_classes_from_module(m) for m in mods]
+            all_predicate_results = []
+            for m in mods:
+                all_predicate_results.extend(_get_from_module(m, predicates))
             module_cls = []
             for list_cls in all_cls:
                 for c in list_cls:
                     if issubclass(c, expected_cls):
                         module_cls.append(c)
-            return module_cls
+            return module_cls, all_predicate_results
 
 
 class FlowPackage(BasePackage):
@@ -138,7 +144,7 @@ class OperatorPackage(BasePackage):
     def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
         from dbgpt.core.awel import BaseOperator
 
-        values["operators"] = cls.load_module_class(values, BaseOperator)
+        values["operators"], _ = cls.load_module_class(values, BaseOperator)
         return cls(**values)
 
 
@@ -153,7 +159,47 @@ class AgentPackage(BasePackage):
     def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
         from dbgpt.agent import ConversableAgent
 
-        values["agents"] = cls.load_module_class(values, ConversableAgent)
+        values["agents"], _ = cls.load_module_class(values, ConversableAgent)
+        return cls(**values)
+
+
+class ResourcePackage(BasePackage):
+    package_type: str = "resource"
+
+    resources: List[type] = Field(
+        default_factory=list, description="The resources of the package"
+    )
+    resource_instances: List[Any] = Field(
+        default_factory=list, description="The resource instances of the package"
+    )
+
+    @classmethod
+    def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
+        from dbgpt.agent.resource import Resource
+        from dbgpt.agent.resource.tool.pack import _is_function_tool
+
+        def _predicate(obj):
+            if not obj:
+                return False
+            elif _is_function_tool(obj):
+                return True
+            elif isinstance(obj, Resource):
+                return True
+            elif isinstance(obj, type) and issubclass(obj, Resource):
+                return True
+            else:
+                return False
+
+        _, predicted_cls = cls.load_module_class(values, Resource, [_predicate])
+        resource_instances = []
+        resources = []
+        for o in predicted_cls:
+            if _is_function_tool(o) or isinstance(o, Resource):
+                resource_instances.append(o)
+            elif isinstance(o, type) and issubclass(o, Resource):
+                resources.append(o)
+        values["resource_instances"] = resource_instances
+        values["resources"] = resources
         return cls(**values)
 
 
@@ -173,6 +219,17 @@ def _get_classes_from_module(module):
     return classes
 
 
+def _get_from_module(module, predicates: Optional[List[str]] = None):
+    if not predicates:
+        return []
+    results = []
+    for predicate in predicates:
+        for name, obj in inspect.getmembers(module, predicate):
+            if obj.__module__ == module.__name__:
+                results.append(obj)
+    return results
+
+
 def _parse_package_metadata(package: InstalledPackage) -> BasePackage:
     with open(
         Path(package.root) / DBGPTS_METADATA_FILE, mode="r+", encoding="utf-8"
@@ -190,6 +247,9 @@ def _parse_package_metadata(package: InstalledPackage) -> BasePackage:
         elif key == "agent":
             pkg_dict = {k: v for k, v in value.items()}
             pkg_dict["package_type"] = "agent"
+        elif key == "resource":
+            pkg_dict = {k: v for k, v in value.items()}
+            pkg_dict["package_type"] = "resource"
         else:
             ext_metadata[key] = value
     pkg_dict["root"] = package.root
@@ -201,6 +261,8 @@ def _parse_package_metadata(package: InstalledPackage) -> BasePackage:
         return OperatorPackage.build_from(pkg_dict, ext_metadata)
     elif pkg_dict["package_type"] == "agent":
         return AgentPackage.build_from(pkg_dict, ext_metadata)
+    elif pkg_dict["package_type"] == "resource":
+        return ResourcePackage.build_from(pkg_dict, ext_metadata)
     else:
         raise ValueError(
             f"Unsupported package package_type: {pkg_dict['package_type']}"
@@ -316,3 +378,20 @@ class DBGPTsLoader(BaseComponent):
                         agent_manager.register_agent(agent_cls, ignore_duplicate=True)
                     except ValueError as e:
                         logger.warning(f"Register agent {agent_cls} error: {e}")
+        elif package.package_type == "resource":
+            from dbgpt.agent.resource import Resource
+            from dbgpt.agent.resource.manage import get_resource_manager
+
+            pkg = cast(ResourcePackage, package)
+            rm = get_resource_manager(self._system_app)
+            for inst in pkg.resource_instances:
+                try:
+                    rm.register_resource(resource_instance=inst, ignore_duplicate=True)
+                except ValueError as e:
+                    logger.warning(f"Register resource {inst} error: {e}")
+            for res in pkg.resources:
+                try:
+                    if issubclass(res, Resource):
+                        rm.register_resource(res, ignore_duplicate=True)
+                except ValueError as e:
+                    logger.warning(f"Register resource {res} error: {e}")

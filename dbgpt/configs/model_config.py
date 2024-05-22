@@ -178,12 +178,15 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/01-ai/Yi-1.5-6B-Chat
     "yi-1.5-6b-chat": os.path.join(MODEL_PATH, "Yi-1.5-6B-Chat"),
     "yi-1.5-9b-chat": os.path.join(MODEL_PATH, "Yi-1.5-9B-Chat"),
+    "yi-1.5-9b-chat-16k": os.path.join(MODEL_PATH, "Yi-1.5-9B-Chat-16K"),
     "yi-1.5-34b-chat": os.path.join(MODEL_PATH, "Yi-1.5-34B-Chat"),
+    "yi-1.5-34b-chat-16k": os.path.join(MODEL_PATH, "Yi-1.5-34B-Chat-16K"),
     # https://huggingface.co/google/gemma-7b-it
     "gemma-7b-it": os.path.join(MODEL_PATH, "gemma-7b-it"),
     # https://huggingface.co/google/gemma-2b-it
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
     "starling-lm-7b-beta": os.path.join(MODEL_PATH, "Starling-LM-7B-beta"),
+    "deepseek-v2-lite-chat": os.path.join(MODEL_PATH, "DeepSeek-V2-Lite-Chat"),
 }
 
 EMBEDDING_MODEL_CONFIG = {
@@ -210,6 +213,11 @@ EMBEDDING_MODEL_CONFIG = {
     "proxy_http_openapi": "proxy_http_openapi",
     "proxy_ollama": "proxy_ollama",
     "proxy_tongyi": "proxy_tongyi",
+    # Rerank model, rerank mode is a special embedding model
+    "bge-reranker-base": os.path.join(MODEL_PATH, "bge-reranker-base"),
+    "bge-reranker-large": os.path.join(MODEL_PATH, "bge-reranker-large"),
+    # Proxy rerank model
+    "rerank_proxy_http_openapi": "",
 }
 
 
