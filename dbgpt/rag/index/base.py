@@ -49,7 +49,7 @@ class IndexStoreBase(ABC):
 
     def __init__(self, executor: Optional[ThreadPoolExecutor] = None):
         """Init index store."""
-        self._executor = executor
+        self._executor = executor or ThreadPoolExecutor()
 
     @abstractmethod
     def load_document(self, chunks: List[Chunk]) -> List[str]:
