@@ -187,6 +187,16 @@ LLM_MODEL_CONFIG = {
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
     "starling-lm-7b-beta": os.path.join(MODEL_PATH, "Starling-LM-7B-beta"),
     "deepseek-v2-lite-chat": os.path.join(MODEL_PATH, "DeepSeek-V2-Lite-Chat"),
+    "sailor-14b-chat": os.path.join(MODEL_PATH, "Sailor-14B-Chat"),
+    # https://huggingface.co/microsoft/Phi-3-medium-128k-instruct
+    "phi-3-medium-128k-instruct": os.path.join(
+        MODEL_PATH, "Phi-3-medium-128k-instruct"
+    ),
+    "phi-3-medium-4k-instruct": os.path.join(MODEL_PATH, "Phi-3-medium-4k-instruct"),
+    "phi-3-small-128k-instruct": os.path.join(MODEL_PATH, "Phi-3-small-128k-instruct"),
+    "phi-3-small-8k-instruct": os.path.join(MODEL_PATH, "Phi-3-small-8k-instruct"),
+    "phi-3-mini-128k-instruct": os.path.join(MODEL_PATH, "Phi-3-mini-128k-instruct"),
+    "phi-3-mini-4k-instruct": os.path.join(MODEL_PATH, "Phi-3-mini-4k-instruct"),
 }
 
 EMBEDDING_MODEL_CONFIG = {

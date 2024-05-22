@@ -22,6 +22,7 @@ def huggingface_chat_generate_stream(
     max_new_tokens = int(params.get("max_new_tokens", 2048))
     stop_token_ids = params.get("stop_token_ids", [])
     do_sample = params.get("do_sample", None)
+    custom_stop_words = params.get("custom_stop_words", [])
 
     input_ids = tokenizer(prompt).input_ids
     # input_ids = input_ids.to(device)
@@ -62,4 +63,8 @@ def huggingface_chat_generate_stream(
     out = ""
     for new_text in streamer:
         out += new_text
+        if custom_stop_words:
+            for stop_word in custom_stop_words:
+                if out.endswith(stop_word):
+                    out = out[: -len(stop_word)]
         yield out
