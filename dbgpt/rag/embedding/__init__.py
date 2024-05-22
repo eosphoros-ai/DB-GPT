@@ -14,6 +14,7 @@ from .embeddings import (  # noqa: F401
     JinaEmbeddings,
     OllamaEmbeddings,
     OpenAPIEmbeddings,
+    TongYiEmbeddings,
 )
 
 __ALL__ = [
@@ -28,4 +29,5 @@ __ALL__ = [
     "DefaultEmbeddingFactory",
     "EmbeddingFactory",
     "WrappedEmbeddingFactory",
+    "TongYiEmbeddings",
 ]

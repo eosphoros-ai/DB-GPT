@@ -209,6 +209,7 @@ EMBEDDING_MODEL_CONFIG = {
     # Common HTTP embedding model
     "proxy_http_openapi": "proxy_http_openapi",
     "proxy_ollama": "proxy_ollama",
+    "proxy_tongyi": "proxy_tongyi",
 }
 
 
