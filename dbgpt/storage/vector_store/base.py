@@ -174,6 +174,4 @@ class VectorStoreBase(IndexStoreBase, ABC):
         Return:
             List[str]: chunk ids.
         """
-        return await blocking_func_to_async(
-            self._executor, self.load_document, chunks
-        )
+        return await blocking_func_to_async(self._executor, self.load_document, chunks)
