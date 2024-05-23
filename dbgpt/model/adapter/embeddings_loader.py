@@ -51,12 +51,15 @@ class EmbeddingLoader:
                     openapi_param["model_name"] = proxy_param.proxy_backend
                 return OpenAPIEmbeddings(**openapi_param)
             elif model_name in ["proxy_tongyi"]:
+                from dbgpt._private.config import Config
                 from dbgpt.rag.embedding import TongYiEmbeddings
 
+                CFG = Config()
+                proxy_param = cast(ProxyEmbeddingParameters, param)
                 tongyi_param = {}
-                tongyi_param["api_key"] = param.proxy_api_key
-                tongyi_param["model_name"] = param.proxy_backend
-
+                tongyi_param["api_key"] = CFG.tongyi_proxy_api_key
+                if proxy_param.proxy_backend:
+                    tongyi_param["model_name"] = proxy_param.proxy_backend
                 return TongYiEmbeddings(**tongyi_param)
             elif model_name in ["proxy_ollama"]:
                 from dbgpt.rag.embedding import OllamaEmbeddings

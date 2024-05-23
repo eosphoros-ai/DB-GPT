@@ -217,7 +217,7 @@ EMBEDDING_MODEL_CONFIG = {
     "bge-reranker-base": os.path.join(MODEL_PATH, "bge-reranker-base"),
     "bge-reranker-large": os.path.join(MODEL_PATH, "bge-reranker-large"),
     # Proxy rerank model
-    "rerank_proxy_http_openapi": "",
+    "rerank_proxy_http_openapi": "rerank_proxy_http_openapi",
 }
 
 
