@@ -27,6 +27,7 @@ from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
+from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
@@ -235,13 +236,30 @@ async def document_upload(
 
 
 @router.post("/knowledge/{space_name}/document/sync")
-def document_sync(space_name: str, request: DocumentSyncRequest):
+async def document_sync(
+    space_name: str,
+    request: DocumentSyncRequest,
+    service: Service = Depends(get_rag_service),
+):
     logger.info(f"Received params: {space_name}, {request}")
     try:
-        knowledge_space_service.sync_knowledge_document(
-            space_name=space_name, sync_request=request
+        space = service.get({"name": space_name})
+        if space is None:
+            return Result.failed(code="E000X", msg=f"space {space_name} not exist")
+        if request.doc_ids is None or len(request.doc_ids) == 0:
+            return Result.failed(code="E000X", msg="doc_ids is None")
+        sync_request = KnowledgeSyncRequest(
+            doc_id=request.doc_ids[0],
+            space_id=str(space.id),
+            model_name=request.model_name,
         )
-        return Result.succ([])
+        sync_request.chunk_parameters = ChunkParameters(
+            chunk_strategy="Automatic",
+            chunk_size=request.chunk_size or 512,
+            chunk_overlap=request.chunk_overlap or 50,
+        )
+        doc_ids = await service.sync_document(requests=[sync_request])
+        return Result.succ(doc_ids)
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document sync error {e}")
 

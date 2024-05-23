@@ -170,14 +170,22 @@ class VectorStoreConnector:
         )
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
-        """Load document in vector database.
+        """Async load document in vector database.
 
         Args:
             - chunks: document chunks.
         Return chunk ids.
         """
-        return await self.client.aload_document(
-            chunks,
+        max_chunks_once_load = (
+            self._index_store_config.max_chunks_once_load
+            if self._index_store_config
+            else 10
+        )
+        max_threads = (
+            self._index_store_config.max_threads if self._index_store_config else 1
+        )
+        return await self.client.aload_document_with_limit(
+            chunks, max_chunks_once_load, max_threads
         )
 
     def similar_search(
