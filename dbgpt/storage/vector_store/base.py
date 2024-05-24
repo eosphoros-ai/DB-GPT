@@ -2,6 +2,7 @@
 import logging
 import math
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -9,6 +10,7 @@ from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter
 from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
@@ -102,6 +104,10 @@ class VectorStoreConfig(IndexStoreConfig):
 class VectorStoreBase(IndexStoreBase, ABC):
     """Vector store base class."""
 
+    def __init__(self, executor: Optional[ThreadPoolExecutor] = None):
+        """Initialize vector store."""
+        super().__init__(executor)
+
     def filter_by_score_threshold(
         self, chunks: List[Chunk], score_threshold: float
     ) -> List[Chunk]:
@@ -160,7 +166,7 @@ class VectorStoreBase(IndexStoreBase, ABC):
         return 1.0 - distance / math.sqrt(2)
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:  # type: ignore
-        """Load document in index database.
+        """Async load document in index database.
 
         Args:
             chunks(List[Chunk]): document chunks.
@@ -168,4 +174,4 @@ class VectorStoreBase(IndexStoreBase, ABC):
         Return:
             List[str]: chunk ids.
         """
-        raise NotImplementedError
+        return await blocking_func_to_async(self._executor, self.load_document, chunks)

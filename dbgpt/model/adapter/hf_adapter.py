@@ -396,6 +396,61 @@ class DeepseekV2Adapter(NewHFChatModelAdapter):
         return model, tokenizer
 
 
+class SailorAdapter(QwenAdapter):
+    """
+    https://huggingface.co/sail/Sailor-14B-Chat
+    """
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "sailor" in lower_model_name_or_path
+            and "chat" in lower_model_name_or_path
+        )
+
+
+class PhiAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/microsoft/Phi-3-medium-128k-instruct
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+    support_system_message: bool = False
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "phi-3" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
+        )
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        if not from_pretrained_kwargs:
+            from_pretrained_kwargs = {}
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = True
+        return super().load(model_path, from_pretrained_kwargs)
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        str_prompt = super().get_str_prompt(
+            params,
+            messages,
+            tokenizer,
+            prompt_template,
+            convert_to_compatible_format,
+        )
+        params["custom_stop_words"] = ["<|end|>"]
+        return str_prompt
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(YiAdapter)
@@ -408,3 +463,5 @@ register_model_adapter(QwenAdapter)
 register_model_adapter(QwenMoeAdapter)
 register_model_adapter(Llama3Adapter)
 register_model_adapter(DeepseekV2Adapter)
+register_model_adapter(SailorAdapter)
+register_model_adapter(PhiAdapter)

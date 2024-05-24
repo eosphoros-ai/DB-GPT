@@ -62,6 +62,7 @@ class ChromaStore(VectorStoreBase):
         Args:
             vector_store_config(ChromaVectorConfig): vector store config.
         """
+        super().__init__()
         chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")

@@ -443,7 +443,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         space_id,
         doc_vo: DocumentVO,
         chunk_parameters: ChunkParameters,
-    ) -> List[Chunk]:
+    ) -> None:
         """sync knowledge document chunk into vector store"""
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
@@ -470,47 +470,45 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             datasource=doc.content,
             knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
         )
-        assembler = EmbeddingAssembler.load_from_knowledge(
-            knowledge=knowledge,
-            chunk_parameters=chunk_parameters,
-            vector_store_connector=vector_store_connector,
-        )
-        chunk_docs = assembler.get_chunks()
         doc.status = SyncStatus.RUNNING.name
-        doc.chunk_size = len(chunk_docs)
+
         doc.gmt_modified = datetime.now()
         self._document_dao.update_knowledge_document(doc)
-        # executor = CFG.SYSTEM_APP.get_component(
-        #     ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-        # ).create()
-        # executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
-        asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
+        # asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
+        asyncio.create_task(
+            self.async_doc_embedding(
+                knowledge, chunk_parameters, vector_store_connector, doc
+            )
+        )
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
-        return chunk_docs
+        # return chunk_docs
 
     @trace("async_doc_embedding")
-    async def async_doc_embedding(self, assembler, chunk_docs, doc):
+    async def async_doc_embedding(
+        self, knowledge, chunk_parameters, vector_store_connector, doc
+    ):
         """async document embedding into vector db
         Args:
-            - client: EmbeddingEngine Client
-            - chunk_docs: List[Document]
-            - doc: KnowledgeDocumentEntity
+            - knowledge: Knowledge
+            - chunk_parameters: ChunkParameters
+            - vector_store_connector: vector_store_connector
+            - doc: doc
         """
 
-        logger.info(
-            f"async doc embedding sync, doc:{doc.doc_name}, chunks length is {len(chunk_docs)}"
-        )
+        logger.info(f"async doc embedding sync, doc:{doc.doc_name}")
         try:
             with root_tracer.start_span(
                 "app.knowledge.assembler.persist",
-                metadata={"doc": doc.doc_name, "chunks": len(chunk_docs)},
+                metadata={"doc": doc.doc_name},
             ):
-                # vector_ids = assembler.persist()
-                space = self.get({"name": doc.space})
-                if space and space.vector_type == "KnowledgeGraph":
-                    vector_ids = await assembler.apersist()
-                else:
-                    vector_ids = assembler.persist()
+                assembler = await EmbeddingAssembler.aload_from_knowledge(
+                    knowledge=knowledge,
+                    chunk_parameters=chunk_parameters,
+                    vector_store_connector=vector_store_connector,
+                )
+                chunk_docs = assembler.get_chunks()
+                doc.chunk_size = len(chunk_docs)
+                vector_ids = await assembler.apersist()
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
             if vector_ids is not None:

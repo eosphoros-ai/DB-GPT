@@ -37,7 +37,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
     def __init__(self, config: BuiltinKnowledgeGraphConfig):
         """Create builtin knowledge graph instance."""
         self._config = config
-
+        super().__init__()
         self._llm_client = config.llm_client
         if not self._llm_client:
             raise ValueError("No llm client provided.")

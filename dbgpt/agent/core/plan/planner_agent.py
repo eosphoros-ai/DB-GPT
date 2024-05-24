@@ -1,6 +1,6 @@
 """Planner Agent."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import Field
 
@@ -159,6 +159,15 @@ assistants:[
                 resources.append(agent.resource)
         self.resource = ResourcePack(resources)
         return self
+
+    async def generate_resource_variables(
+        self, question: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Generate the resource variables."""
+        out_schema: Optional[str] = None
+        if self.actions and len(self.actions) > 0:
+            out_schema = self.actions[0].ai_out_schema
+        return {"out_schema": out_schema}
 
     def prepare_act_param(self) -> Dict[str, Any]:
         """Prepare the parameters for the act method."""
