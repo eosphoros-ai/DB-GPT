@@ -97,24 +97,22 @@ class VectorStoreConnector:
 
         logger.info(f"VectorStore:{self.connector_class}")
 
-        if vector_store_config is None:
-            vector_store_config = self.config_class()
+        vector_store_config = vector_store_config or self.config_class()
 
         self._vector_store_type = vector_store_type
-        self._embeddings = (
-            vector_store_config.embedding_fn if vector_store_config else None
-        )
+        self._embeddings = vector_store_config.embedding_fn
+
+        config_dict = copy.deepcopy(vector_store_config.__dict__)
+        for key, value in vector_store_config.model_extra.items():
+            if value:
+                config_dict[key] = value
+        config = self.config_class(**config_dict)
         try:
-            if (
-                vector_store_type in pools
-                and vector_store_config.name in pools[vector_store_type]
-            ):
-                self.client = pools[vector_store_type][vector_store_config.name]
+            if vector_store_type in pools and config.name in pools[vector_store_type]:
+                self.client = pools[vector_store_type][config.name]
             else:
-                client = self.connector_class(vector_store_config)
-                pools[vector_store_type][
-                    vector_store_config.name
-                ] = self.client = client
+                client = self.connector_class(config)
+                pools[vector_store_type][config.name] = self.client = client
         except Exception as e:
             logger.error("connect vector store failed: %s", e)
             raise e

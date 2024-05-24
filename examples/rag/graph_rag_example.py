@@ -33,7 +33,7 @@ def _create_kg_connector():
     """Create knowledge graph connector."""
     return VectorStoreConnector(
         vector_store_type="KnowledgeGraph",
-        vector_store_config=BuiltinKnowledgeGraphConfig(
+        vector_store_config=VectorStoreConfig(
             name="graph_rag_test",
             embedding_fn=None,
             llm_client=OpenAILLMClient(),
