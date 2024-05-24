@@ -87,6 +87,9 @@ class VectorStoreConnector:
             - vector_store_type: vector store type Milvus, Chroma, Weaviate
             - ctx: vector store config params.
         """
+        if vector_store_config is None:
+            raise Exception("vector_store_config is required")
+
         self._index_store_config = vector_store_config
         self._register()
 
@@ -97,12 +100,13 @@ class VectorStoreConnector:
 
         logger.info(f"VectorStore:{self.connector_class}")
 
-        vector_store_config = vector_store_config or self.config_class()
-
         self._vector_store_type = vector_store_type
         self._embeddings = vector_store_config.embedding_fn
 
-        config_dict = copy.deepcopy(vector_store_config.__dict__)
+        config_dict = {}
+        for key in vector_store_config.to_dict().keys():
+            config_dict[key] = getattr(vector_store_config, key)
+
         for key, value in vector_store_config.model_extra.items():
             if value:
                 config_dict[key] = value
