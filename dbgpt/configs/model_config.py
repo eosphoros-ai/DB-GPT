@@ -144,6 +144,7 @@ LLM_MODEL_CONFIG = {
     "openchat-3.5": os.path.join(MODEL_PATH, "openchat_3.5"),
     # https://huggingface.co/openchat/openchat-3.5-1210
     "openchat-3.5-1210": os.path.join(MODEL_PATH, "openchat-3.5-1210"),
+    "openchat-3.6-8b-20240522": os.path.join(MODEL_PATH, "openchat-3.6-8b-20240522"),
     # https://huggingface.co/hfl/chinese-alpaca-2-7b
     "chinese-alpaca-2-7b": os.path.join(MODEL_PATH, "chinese-alpaca-2-7b"),
     # https://huggingface.co/hfl/chinese-alpaca-2-13b
