@@ -1,7 +1,7 @@
 """BM25 retriever."""
 import json
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from dbgpt.app.base import logger
 from dbgpt.core import Chunk
@@ -13,7 +13,12 @@ from dbgpt.util.executor_utils import blocking_func_to_async
 
 
 class BM25Retriever(BaseRetriever):
-    """BM25 retriever."""
+    """BM25 retriever.
+    refer https://www.elastic.co/guide/en/elasticsearch/reference/8.9/index-
+    modules-similarity.html
+    TF/IDF based similarity that has built-in tf normalization and is supposed to
+    work better for short fields (like names). See Okapi_BM25 for more details.
+    This similarity has the following options:"""
 
     def __init__(
         self,
@@ -34,8 +39,10 @@ class BM25Retriever(BaseRetriever):
             es_client (Any): elasticsearch client
             query_rewrite (Optional[QueryRewrite]): query rewrite
             rerank (Ranker): rerank
-            k1 (Optional[float]): k1 parameter
-            b (Optional[float]): b parameter
+            k1 (Optional[float]): Controls non-linear term frequency normalization
+            (saturation). The default value is 2.0.
+            b (Optional[float]): Controls to what degree document length normalizes
+            tf values. The default value is 0.75.
             executor (Optional[Executor]): executor
 
         Returns:
@@ -173,47 +180,4 @@ class BM25Retriever(BaseRetriever):
         """
         return await blocking_func_to_async(
             self._executor, self.retrieve, query, filters
-        )
-
-    def load_document(self, chunks: List[Chunk], **kwargs: Dict[str, Any]) -> List[str]:
-        """Load document in elasticsearch database.
-
-        Args:
-            - chunks: document chunks.
-        Return chunk ids.
-        """
-        try:
-            from elasticsearch.helpers import bulk
-        except ImportError:
-            raise ValueError("Please install package `pip install elasticsearch`.")
-        es_requests = []
-        ids = []
-        contents = [chunk.content for chunk in chunks]
-        metadatas = [json.dumps(chunk.metadata) for chunk in self._chunks]
-        chunk_ids = [chunk.chunk_id for chunk in chunks]
-        for i, content in enumerate(contents):
-            es_request = {
-                "_op_type": "index",
-                "_index": self._index_name,
-                "content": content,
-                "metadata": metadatas[i],
-                "_id": chunk_ids[i],
-            }
-            ids.append(chunk_ids[i])
-            es_requests.append(es_request)
-        bulk(self._es_client, es_requests)
-        self._es_client.indices.refresh(index=self._index_name)
-        return ids
-
-    async def aload_document(
-        self, chunks: List[Chunk], **kwargs: Dict[str, Any]
-    ) -> List[str]:
-        """Async load document in elasticsearch database.
-
-        Args:
-            - chunks: document chunks.
-        Return chunk ids.
-        """
-        return await blocking_func_to_async(
-            self._executor, self.load_document, chunks, **kwargs
         )

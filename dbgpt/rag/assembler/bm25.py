@@ -1,4 +1,4 @@
-"""Embedding Assembler."""
+"""BM25 Assembler."""
 import json
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import Any, List, Optional
@@ -14,7 +14,12 @@ from ..retriever.bm25 import BM25Retriever
 
 
 class BM25Assembler(BaseAssembler):
-    """Embedding Assembler.
+    """BM25 Assembler.
+    refer https://www.elastic.co/guide/en/elasticsearch/reference/8.9/index-
+    modules-similarity.html
+    TF/IDF based similarity that has built-in tf normalization and is supposed to
+    work better for short fields (like names). See Okapi_BM25 for more details.
+    This similarity has the following options:
 
     Example:
     .. code-block:: python
@@ -45,13 +50,15 @@ class BM25Assembler(BaseAssembler):
         executor: Optional[Executor] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with Embedding Assembler arguments.
+        """Initialize with BM25 Assembler arguments.
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
             es_config: (ElasticsearchVectorConfig) Elasticsearch config.
-            k1: (Optional[float]) BM25 parameter k1.
-            b: (Optional[float]) BM25 parameter b.
+            k1 (Optional[float]): Controls non-linear term frequency normalization
+            (saturation). The default value is 2.0.
+            b (Optional[float]): Controls to what degree document length normalizes
+            tf values. The default value is 0.75.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
         """
@@ -120,7 +127,7 @@ class BM25Assembler(BaseAssembler):
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
     ) -> "BM25Assembler":
-        """Load document embedding into vector store from path.
+        """Load document full text into elasticsearch from path.
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
@@ -151,7 +158,7 @@ class BM25Assembler(BaseAssembler):
         chunk_parameters: Optional[ChunkParameters] = None,
         executor: Optional[ThreadPoolExecutor] = None,
     ) -> "BM25Assembler":
-        """Load document embedding into vector store from path.
+        """Load document full text into elasticsearch from path.
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
@@ -163,7 +170,7 @@ class BM25Assembler(BaseAssembler):
             executor: (Optional[ThreadPoolExecutor]) executor.
 
         Returns:
-             EmbeddingAssembler
+             BM25Assembler
         """
         return await blocking_func_to_async(
             executor,
@@ -176,7 +183,7 @@ class BM25Assembler(BaseAssembler):
         )
 
     def persist(self) -> List[str]:
-        """Persist chunks into vector store.
+        """Persist chunks into elasticsearch.
 
         Returns:
             List[str]: List of chunk ids.
@@ -205,7 +212,7 @@ class BM25Assembler(BaseAssembler):
         return ids
 
     async def apersist(self) -> List[str]:
-        """Persist chunks into store.
+        """Persist chunks into elasticsearch.
 
         Returns:
             List[str]: List of chunk ids.
@@ -217,13 +224,13 @@ class BM25Assembler(BaseAssembler):
         return []
 
     def as_retriever(self, top_k: int = 4, **kwargs) -> BM25Retriever:
-        """Create a retriever.
+        """Create a BM25Retriever.
 
         Args:
             top_k(int): default 4.
 
         Returns:
-            EmbeddingRetriever
+            BM25Retriever
         """
         return BM25Retriever(
             top_k=top_k, es_index=self._index_name, es_client=self._es_client
