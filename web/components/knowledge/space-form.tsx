@@ -68,7 +68,7 @@ export default function SpaceForm(props: IProps) {
         </Form.Item>
         <Form.Item<FieldType> label={t('Storage')} name="storage" rules={[{ required: true, message: t('Please_select_the_storage') }]}>
           <Select className="mb-5 h-12" placeholder={t('Please_select_the_storage')}>
-            <Select.Option value="Chroma">Vector Store</Select.Option>
+            <Select.Option value="VectorStore">Vector Store</Select.Option>
             <Select.Option value="KnowledgeGraph">Knowledge Graph</Select.Option>
           </Select>
         </Form.Item>

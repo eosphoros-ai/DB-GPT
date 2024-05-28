@@ -79,6 +79,8 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(
             name=request.name,
         )
+        if request.vector_type == "VectorStore":
+            request.vector_type = CFG.VECTOR_STORE_TYPE
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) > 0:
             raise Exception(f"space name:{request.name} have already named")
