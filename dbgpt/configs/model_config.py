@@ -144,6 +144,7 @@ LLM_MODEL_CONFIG = {
     "openchat-3.5": os.path.join(MODEL_PATH, "openchat_3.5"),
     # https://huggingface.co/openchat/openchat-3.5-1210
     "openchat-3.5-1210": os.path.join(MODEL_PATH, "openchat-3.5-1210"),
+    "openchat-3.6-8b-20240522": os.path.join(MODEL_PATH, "openchat-3.6-8b-20240522"),
     # https://huggingface.co/hfl/chinese-alpaca-2-7b
     "chinese-alpaca-2-7b": os.path.join(MODEL_PATH, "chinese-alpaca-2-7b"),
     # https://huggingface.co/hfl/chinese-alpaca-2-13b
@@ -197,6 +198,7 @@ LLM_MODEL_CONFIG = {
     "phi-3-small-8k-instruct": os.path.join(MODEL_PATH, "Phi-3-small-8k-instruct"),
     "phi-3-mini-128k-instruct": os.path.join(MODEL_PATH, "Phi-3-mini-128k-instruct"),
     "phi-3-mini-4k-instruct": os.path.join(MODEL_PATH, "Phi-3-mini-4k-instruct"),
+    "llama-3-sqlcoder-8b": os.path.join(MODEL_PATH, "llama-3-sqlcoder-8b"),
 }
 
 EMBEDDING_MODEL_CONFIG = {

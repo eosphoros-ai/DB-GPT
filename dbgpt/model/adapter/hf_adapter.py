@@ -451,6 +451,35 @@ class PhiAdapter(NewHFChatModelAdapter):
         return str_prompt
 
 
+class SQLCoderAdapter(Llama3Adapter):
+    """
+    https://huggingface.co/defog/llama-3-sqlcoder-8b
+    """
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "llama-3" in lower_model_name_or_path
+            and "sqlcoder" in lower_model_name_or_path
+        )
+
+
+class OpenChatAdapter(Llama3Adapter):
+    """
+    https://huggingface.co/openchat/openchat-3.6-8b-20240522
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "openchat" in lower_model_name_or_path
+            and "3.6" in lower_model_name_or_path
+        )
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(YiAdapter)
@@ -465,3 +494,5 @@ register_model_adapter(Llama3Adapter)
 register_model_adapter(DeepseekV2Adapter)
 register_model_adapter(SailorAdapter)
 register_model_adapter(PhiAdapter)
+register_model_adapter(SQLCoderAdapter)
+register_model_adapter(OpenChatAdapter)
