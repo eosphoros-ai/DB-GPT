@@ -105,8 +105,9 @@ class VectorStoreConnector:
 
         config_dict = {}
         for key in vector_store_config.to_dict().keys():
-            config_dict[key] = getattr(vector_store_config, key)
-
+            value = getattr(vector_store_config, key)
+            if value:
+                config_dict[key] = value
         for key, value in vector_store_config.model_extra.items():
             if value:
                 config_dict[key] = value
