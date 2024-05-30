@@ -1,4 +1,5 @@
 """Common operators of AWEL."""
+
 import asyncio
 import logging
 from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, Union
@@ -171,6 +172,8 @@ class MapOperator(BaseOperator, Generic[IN, OUT]):
 
 
 BranchFunc = Union[Callable[[IN], bool], Callable[[IN], Awaitable[bool]]]
+# Function that return the task name
+BranchTaskType = Union[str, Callable[[IN], str], Callable[[IN], Awaitable[str]]]
 
 
 class BranchOperator(BaseOperator, Generic[IN, OUT]):
@@ -187,7 +190,7 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
 
     def __init__(
         self,
-        branches: Optional[Dict[BranchFunc[IN], Union[BaseOperator, str]]] = None,
+        branches: Optional[Dict[BranchFunc[IN], BranchTaskType]] = None,
         **kwargs,
     ):
         """Create a BranchDAGNode with a branching function.
@@ -208,6 +211,10 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
                     if not value.node_name:
                         raise ValueError("branch node name must be set")
                     branches[branch_function] = value.node_name
+                elif callable(value):
+                    raise ValueError(
+                        "BranchTaskType must be str or BaseOperator on init"
+                    )
         self._branches = branches
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
@@ -234,14 +241,31 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
             branches = await self.branches()
 
         branch_func_tasks = []
-        branch_nodes: List[Union[BaseOperator, str]] = []
+        branch_name_tasks = []
+        # branch_nodes: List[Union[BaseOperator, str]] = []
         for func, node_name in branches.items():
-            branch_nodes.append(node_name)
+            # branch_nodes.append(node_name)
             branch_func_tasks.append(
                 curr_task_ctx.task_input.predicate_map(func, failed_value=None)
             )
+            if callable(node_name):
+
+                async def map_node_name(func) -> str:
+                    input_context = await curr_task_ctx.task_input.map(func)
+                    task_name = input_context.parent_outputs[0].task_output.output
+                    return task_name
+
+                branch_name_tasks.append(map_node_name(node_name))
+
+            else:
+
+                async def _tmp_map_node_name(task_name: str) -> str:
+                    return task_name
+
+                branch_name_tasks.append(_tmp_map_node_name(node_name))
 
         branch_input_ctxs: List[InputContext] = await asyncio.gather(*branch_func_tasks)
+        branch_nodes: List[str] = await asyncio.gather(*branch_name_tasks)
         parent_output = task_input.parent_outputs[0].task_output
         curr_task_ctx.set_task_output(parent_output)
         skip_node_names = []
@@ -258,7 +282,7 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
         curr_task_ctx.update_metadata("skip_node_names", skip_node_names)
         return parent_output
 
-    async def branches(self) -> Dict[BranchFunc[IN], Union[BaseOperator, str]]:
+    async def branches(self) -> Dict[BranchFunc[IN], BranchTaskType]:
         """Return branch logic based on input data."""
         raise NotImplementedError
 

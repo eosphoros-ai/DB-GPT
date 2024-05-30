@@ -138,7 +138,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         try:
             # Build DAG from request
-            dag = self._flow_factory.build(request)
+            if request.define_type == "json":
+                dag = self._flow_factory.build(request)
+            else:
+                dag = request.flow_dag
             request.dag_id = dag.dag_id
             # Save DAG to storage
             request.flow_category = self._parse_flow_category(dag)
@@ -149,7 +152,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 request.dag_id = ""
                 return self.dao.create(request)
             else:
-                raise e
+                raise ValueError(
+                    f"Create DAG {request.name} error, define_type: {request.define_type}, error: {str(e)}"
+                ) from e
         res = self.dao.create(request)
 
         state = request.state
@@ -193,6 +198,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         entities = self.dao.get_list({})
         for entity in entities:
             try:
+                if entity.define_type != "json":
+                    continue
                 dag = self._flow_factory.build(entity)
                 if entity.state in [State.DEPLOYED, State.RUNNING] or (
                     entity.version == "0.1.0" and entity.state == State.INITIALIZING
@@ -213,7 +220,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         flows = self.dbgpts_loader.get_flows()
         for flow in flows:
             try:
-                self._flow_factory.pre_load_requirements(flow)
+                if flow.define_type == "json":
+                    self._flow_factory.pre_load_requirements(flow)
             except Exception as e:
                 logger.warning(
                     f"Pre load requirements for DAG({flow.name}) from "
@@ -225,6 +233,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         flows = self.dbgpts_loader.get_flows()
         for flow in flows:
             try:
+                if flow.define_type == "python" and flow.flow_dag is None:
+                    continue
                 # Set state to DEPLOYED
                 flow.state = State.DEPLOYED
                 exist_inst = self.get({"name": flow.name})
@@ -260,7 +270,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         new_state = request.state
         try:
             # Try to build the dag from the request
-            dag = self._flow_factory.build(request)
+            if request.define_type == "json":
+                dag = self._flow_factory.build(request)
+            else:
+                dag = request.flow_dag
             request.flow_category = self._parse_flow_category(dag)
         except Exception as e:
             if save_failed_flow:
@@ -295,6 +308,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 raise HTTPException(
                     status_code=404, detail=f"Flow detail {request.uid} not found"
                 )
+            update_obj.flow_dag = request.flow_dag
             return self.create_and_save_dag(update_obj)
         except Exception as e:
             if old_data and old_data.state == State.RUNNING:
