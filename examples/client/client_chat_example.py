@@ -57,12 +57,12 @@ async def main():
     # initialize client
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
-
-    async for data in client.chat_stream(
-        model="chatgpt_proxyllm",
-        messages="hello",
-    ):
-        print(data)
+    data = await client.chat(model="chatgpt_proxyllm", messages="hello")
+    # async for data in client.chat_stream(
+    #     model="chatgpt_proxyllm",
+    #     messages="hello",
+    # ):
+    print(data)
 
     # res = await client.chat(model="chatgpt_proxyllm" ,messages="hello")
     # print(res)
