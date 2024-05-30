@@ -728,6 +728,8 @@ else:
             "dbgpt.core.*",
             "dbgpt.datasource",
             "dbgpt.datasource.*",
+            "dbgpt.experimental",
+            "dbgpt.experimental.*",
             "dbgpt.model",
             "dbgpt.model.proxy",
             "dbgpt.model.proxy.*",

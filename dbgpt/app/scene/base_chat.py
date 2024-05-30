@@ -257,13 +257,6 @@ class BaseChat(ABC):
     def stream_call_reinforce_fn(self, text):
         return text
 
-    async def check_iterator_end(iterator):
-        try:
-            await asyncio.anext(iterator)
-            return False  # 迭代器还有下一个元素
-        except StopAsyncIteration:
-            return True  # 迭代器已经执行结束
-
     def _get_span_metadata(self, payload: Dict) -> Dict:
         metadata = {k: v for k, v in payload.items()}
         del metadata["prompt"]

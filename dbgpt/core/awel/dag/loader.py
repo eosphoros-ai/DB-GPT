@@ -3,6 +3,7 @@
 DAGLoader will load DAGs from dag_dirs or other sources.
 Now only support load DAGs from local files.
 """
+
 import hashlib
 import logging
 import os
@@ -98,7 +99,7 @@ def _load_modules_from_file(
     return parse(mod_name, filepath)
 
 
-def _process_modules(mods) -> List[DAG]:
+def _process_modules(mods, show_log: bool = True) -> List[DAG]:
     top_level_dags = (
         (o, m) for m in mods for o in m.__dict__.values() if isinstance(o, DAG)
     )
@@ -106,7 +107,10 @@ def _process_modules(mods) -> List[DAG]:
     for dag, mod in top_level_dags:
         try:
             # TODO validate dag params
-            logger.info(f"Found dag {dag} from mod {mod} and model file {mod.__file__}")
+            if show_log:
+                logger.info(
+                    f"Found dag {dag} from mod {mod} and model file {mod.__file__}"
+                )
             found_dags.append(dag)
         except Exception:
             msg = traceback.format_exc()

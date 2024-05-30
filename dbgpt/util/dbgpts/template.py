@@ -97,9 +97,7 @@ def _create_flow_template(
     if definition_type == "json":
         _write_flow_define_json_file(working_directory, name, mod_name)
     else:
-        raise click.ClickException(
-            f"Unsupported definition type: {definition_type} for dbgpts type: {dbgpts_type}"
-        )
+        _write_flow_define_python_file(working_directory, name, mod_name)
 
 
 def _create_operator_template(
@@ -220,6 +218,16 @@ def _write_flow_define_json_file(working_directory: str, name: str, mod_name: st
     with open(def_file, "w") as f:
         f.write("")
         print("Please write your flow json to the file: ", def_file)
+
+
+def _write_flow_define_python_file(working_directory: str, name: str, mod_name: str):
+    """Write the flow define python file"""
+
+    init_file = Path(working_directory) / name / mod_name / "__init__.py"
+    content = ""
+
+    with open(init_file, "w") as f:
+        f.write(f'"""{name} flow package"""\n{content}')
 
 
 def _write_operator_init_file(working_directory: str, name: str, mod_name: str):

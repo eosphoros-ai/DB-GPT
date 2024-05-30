@@ -298,16 +298,24 @@ class ModelMessage(BaseModel):
         return str_msg
 
     @staticmethod
-    def messages_to_string(messages: List["ModelMessage"]) -> str:
+    def messages_to_string(
+        messages: List["ModelMessage"],
+        human_prefix: str = "Human",
+        ai_prefix: str = "AI",
+        system_prefix: str = "System",
+    ) -> str:
         """Convert messages to str.
 
         Args:
             messages (List[ModelMessage]): The messages
+            human_prefix (str): The human prefix
+            ai_prefix (str): The ai prefix
+            system_prefix (str): The system prefix
 
         Returns:
             str: The str messages
         """
-        return _messages_to_str(messages)
+        return _messages_to_str(messages, human_prefix, ai_prefix, system_prefix)
 
 
 _SingleRoundMessage = List[BaseMessage]
@@ -1211,9 +1219,11 @@ def _append_view_messages(messages: List[BaseMessage]) -> List[BaseMessage]:
                 content=ai_message.content,
                 index=ai_message.index,
                 round_index=ai_message.round_index,
-                additional_kwargs=ai_message.additional_kwargs.copy()
-                if ai_message.additional_kwargs
-                else {},
+                additional_kwargs=(
+                    ai_message.additional_kwargs.copy()
+                    if ai_message.additional_kwargs
+                    else {}
+                ),
             )
             current_round.append(view_message)
     return sum(messages_by_round, [])

@@ -1,6 +1,7 @@
 """This is an auto-generated model file
 You can define your own models and DAOs here
 """
+
 import json
 from datetime import datetime
 from typing import Any, Dict, Union
@@ -33,6 +34,12 @@ class ServeEntity(Model):
     source = Column(String(64), nullable=True, comment="Flow source")
     source_url = Column(String(512), nullable=True, comment="Flow source url")
     version = Column(String(32), nullable=True, comment="Flow version")
+    define_type = Column(
+        String(32),
+        default="json",
+        nullable=True,
+        comment="Flow define type(json or python)",
+    )
     editable = Column(
         Integer, nullable=True, comment="Editable, 0: editable, 1: not editable"
     )
@@ -103,6 +110,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "source": request_dict.get("source"),
             "source_url": request_dict.get("source_url"),
             "version": request_dict.get("version"),
+            "define_type": request_dict.get("define_type"),
             "editable": ServeEntity.parse_editable(request_dict.get("editable")),
             "description": request_dict.get("description"),
             "user_name": request_dict.get("user_name"),
@@ -133,6 +141,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             source=entity.source,
             source_url=entity.source_url,
             version=entity.version,
+            define_type=entity.define_type,
             editable=ServeEntity.to_bool_editable(entity.editable),
             description=entity.description,
             user_name=entity.user_name,
@@ -165,6 +174,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             source_url=entity.source_url,
             version=entity.version,
             editable=ServeEntity.to_bool_editable(entity.editable),
+            define_type=entity.define_type,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
@@ -203,6 +213,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             if update_request.version:
                 entry.version = update_request.version
             entry.editable = ServeEntity.parse_editable(update_request.editable)
+            if update_request.define_type:
+                entry.define_type = update_request.define_type
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:
