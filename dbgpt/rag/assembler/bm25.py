@@ -15,6 +15,7 @@ from ..retriever.bm25 import BM25Retriever
 
 class BM25Assembler(BaseAssembler):
     """BM25 Assembler.
+
     refer https://www.elastic.co/guide/en/elasticsearch/reference/8.9/index-
     modules-similarity.html
     TF/IDF based similarity that has built-in tf normalization and is supposed to
@@ -43,7 +44,7 @@ class BM25Assembler(BaseAssembler):
     def __init__(
         self,
         knowledge: Knowledge,
-        es_config: ElasticsearchVectorConfig = None,
+        es_config: ElasticsearchVectorConfig,
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -122,7 +123,7 @@ class BM25Assembler(BaseAssembler):
     def load_from_knowledge(
         cls,
         knowledge: Knowledge,
-        es_config: ElasticsearchVectorConfig = None,
+        es_config: ElasticsearchVectorConfig,
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -152,7 +153,7 @@ class BM25Assembler(BaseAssembler):
     async def aload_from_knowledge(
         cls,
         knowledge: Knowledge,
-        es_config: ElasticsearchVectorConfig = None,
+        es_config: ElasticsearchVectorConfig,
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,

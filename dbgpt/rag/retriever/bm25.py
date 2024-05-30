@@ -14,16 +14,17 @@ from dbgpt.util.executor_utils import blocking_func_to_async
 
 class BM25Retriever(BaseRetriever):
     """BM25 retriever.
-    refer https://www.elastic.co/guide/en/elasticsearch/reference/8.9/index-
-    modules-similarity.html
+
+    refer https://www.elastic.co/guide/en/elasticsearch/reference/8.9/
+    index-modules-similarity.html;
     TF/IDF based similarity that has built-in tf normalization and is supposed to
     work better for short fields (like names). See Okapi_BM25 for more details.
-    This similarity has the following options:"""
+    """
 
     def __init__(
         self,
         top_k: int = 4,
-        es_index: str = None,
+        es_index: str = "dbgpt",
         es_client: Any = None,
         query_rewrite: Optional[QueryRewrite] = None,
         rerank: Optional[Ranker] = None,
