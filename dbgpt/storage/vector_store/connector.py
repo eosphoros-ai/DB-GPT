@@ -106,10 +106,10 @@ class VectorStoreConnector:
         config_dict = {}
         for key in vector_store_config.to_dict().keys():
             value = getattr(vector_store_config, key)
-            if value:
+            if value is not None:
                 config_dict[key] = value
         for key, value in vector_store_config.model_extra.items():
-            if value:
+            if value is not None:
                 config_dict[key] = value
         config = self.config_class(**config_dict)
         try:
