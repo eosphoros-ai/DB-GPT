@@ -31,7 +31,6 @@ def async_db_summary(system_app: SystemApp):
 
 
 def server_init(param: "WebServerParameters", system_app: SystemApp):
-
     # logger.info(f"args: {args}")
     # init config
     cfg = Config()
