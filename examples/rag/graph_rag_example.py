@@ -6,6 +6,7 @@ from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt.storage.knowledge_graph.knowledge_graph import BuiltinKnowledgeGraphConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 

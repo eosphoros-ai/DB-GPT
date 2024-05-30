@@ -109,6 +109,10 @@ class IndexStoreBase(ABC):
             index_name(str): The name of index to delete.
         """
 
+    def vector_name_exists(self) -> bool:
+        """Whether name exists."""
+        return True
+
     def load_document_with_limit(
         self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
     ) -> List[str]:
