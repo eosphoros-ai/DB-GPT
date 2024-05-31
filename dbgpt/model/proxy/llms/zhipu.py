@@ -45,7 +45,10 @@ class ZhipuLLMClient(ProxyLLMClient):
             from zhipuai import ZhipuAI
 
         except ImportError as exc:
-            if "No module named" in str(exc) or "cannot find module" in str(exc).lower():
+            if (
+                "No module named" in str(exc)
+                or "cannot find module" in str(exc).lower()
+            ):
                 raise ValueError(
                     "The python package 'zhipuai' is not installed. "
                     "Please install it by running `pip install zhipuai`."
