@@ -45,10 +45,17 @@ class ZhipuLLMClient(ProxyLLMClient):
             from zhipuai import ZhipuAI
 
         except ImportError as exc:
-            raise ValueError(
-                "Could not import python package: zhipuai "
-                "Please install dashscope by command `pip install zhipuai"
-            ) from exc
+            if "No module named" in str(exc) or "cannot find module" in str(exc).lower():
+                raise ValueError(
+                    "The python package 'zhipuai' is not installed. "
+                    "Please install it by running `pip install zhipuai`."
+                ) from exc
+            else:
+                raise ValueError(
+                    "Could not import python package: zhipuai "
+                    "This may be due to a version that is too low. "
+                    "Please upgrade the zhipuai package by running `pip install --upgrade zhipuai`."
+                ) from exc
         if not model:
             model = CHATGLM_DEFAULT_MODEL
         self.api_key = api_key
