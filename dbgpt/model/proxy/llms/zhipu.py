@@ -42,7 +42,7 @@ class ZhipuLLMClient(ProxyLLMClient):
         executor: Optional[Executor] = None,
     ):
         try:
-            import zhipuai
+            from zhipuai import ZhipuAI
 
         except ImportError as exc:
             raise ValueError(
@@ -51,9 +51,9 @@ class ZhipuLLMClient(ProxyLLMClient):
             ) from exc
         if not model:
             model = CHATGLM_DEFAULT_MODEL
-        if api_key:
-            zhipuai.api_key = api_key
+        self.api_key = api_key
         self._model = model
+        self.client = ZhipuAI(api_key=api_key) if api_key else None
 
         super().__init__(
             model_names=[model, model_alias],
@@ -84,7 +84,6 @@ class ZhipuLLMClient(ProxyLLMClient):
         request: ModelRequest,
         message_converter: Optional[MessageConverter] = None,
     ) -> Iterator[ModelOutput]:
-        import zhipuai
 
         request = self.local_covert_message(request, message_converter)
 
@@ -92,18 +91,18 @@ class ZhipuLLMClient(ProxyLLMClient):
 
         model = request.model or self._model
         try:
-            res = zhipuai.model_api.sse_invoke(
+            response = self.client.chat.completions.create(
                 model=model,
-                prompt=messages,
+                messages=messages,
                 temperature=request.temperature,
                 # top_p=params.get("top_p"),
-                incremental=False,
+                stream=True,
             )
-            for r in res.events():
-                if r.event == "add":
-                    yield ModelOutput(text=r.data, error_code=0)
-                elif r.event == "error":
-                    yield ModelOutput(text=r.data, error_code=1)
+            partial_text = ""
+            for chunk in response:
+                delta_content = chunk.choices[0].delta.content
+                partial_text += delta_content
+                yield ModelOutput(text=partial_text, error_code=0)
         except Exception as e:
             return ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
