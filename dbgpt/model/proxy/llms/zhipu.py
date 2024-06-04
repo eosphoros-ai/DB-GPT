@@ -1,3 +1,4 @@
+import os
 from concurrent.futures import Executor
 from typing import Iterator, Optional
 
@@ -37,6 +38,7 @@ class ZhipuLLMClient(ProxyLLMClient):
         self,
         model: Optional[str] = None,
         api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
         model_alias: Optional[str] = "zhipu_proxyllm",
         context_length: Optional[int] = 8192,
         executor: Optional[Executor] = None,
@@ -61,9 +63,12 @@ class ZhipuLLMClient(ProxyLLMClient):
                 ) from exc
         if not model:
             model = CHATGLM_DEFAULT_MODEL
-        self.api_key = api_key
+        if not api_key:
+            # Compatible with DB-GPT's config
+            api_key = os.getenv("ZHIPU_PROXY_API_KEY")
+
         self._model = model
-        self.client = ZhipuAI(api_key=api_key) if api_key else None
+        self.client = ZhipuAI(api_key=api_key, base_url=api_base)
 
         super().__init__(
             model_names=[model, model_alias],
