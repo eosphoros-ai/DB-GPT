@@ -8,6 +8,8 @@ from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.rag.summary.gdbms_db_summary import GdbmsSummary
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
+from dbgpt.rag.text_splitter import PageTextSplitter
+from dbgpt.rag.chunk_manager import ChunkParameters
 
 logger = logging.getLogger(__name__)
 
@@ -100,8 +102,11 @@ class DBSummaryClient:
         if not vector_connector.vector_name_exists():
             from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
 
+            text_splitter = PageTextSplitter()
+            chunk_params = ChunkParameters(text_splitter=text_splitter)
+
             db_assembler = DBSchemaAssembler.load_from_connection(
-                connector=db_summary_client.db, vector_store_connector=vector_connector
+                connector=db_summary_client.db, vector_store_connector=vector_connector, chunk_parameters=chunk_params
             )
             if len(db_assembler.get_chunks()) > 0:
                 db_assembler.persist()
