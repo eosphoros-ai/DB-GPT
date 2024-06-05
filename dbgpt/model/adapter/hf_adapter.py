@@ -492,9 +492,6 @@ class GLM4Aapter(NewHFChatModelAdapter):
     https://huggingface.co/defog/glm-4-8b
     """
 
-    support_4bit: bool = True
-    support_8bit: bool = True
-
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
         return (
             lower_model_name_or_path
