@@ -87,6 +87,9 @@ class VectorStoreConnector:
             - vector_store_type: vector store type Milvus, Chroma, Weaviate
             - ctx: vector store config params.
         """
+        if vector_store_config is None:
+            raise Exception("vector_store_config is required")
+
         self._index_store_config = vector_store_config
         self._register()
 
@@ -96,36 +99,25 @@ class VectorStoreConnector:
             raise Exception(f"Vector store {vector_store_type} not supported")
 
         logger.info(f"VectorStore:{self.connector_class}")
+
         self._vector_store_type = vector_store_type
-        self._embeddings = (
-            vector_store_config.embedding_fn if vector_store_config else None
-        )
+        self._embeddings = vector_store_config.embedding_fn
 
+        config_dict = {}
+        for key in vector_store_config.to_dict().keys():
+            value = getattr(vector_store_config, key)
+            if value is not None:
+                config_dict[key] = value
+        for key, value in vector_store_config.model_extra.items():
+            if value is not None:
+                config_dict[key] = value
+        config = self.config_class(**config_dict)
         try:
-            if vector_store_config is not None:
-                config: IndexStoreConfig = self.config_class()
-                config.name = getattr(vector_store_config, "name", "default_name")
-                config.embedding_fn = getattr(vector_store_config, "embedding_fn", None)
-                config.max_chunks_once_load = getattr(
-                    vector_store_config, "max_chunks_once_load", 5
-                )
-                config.max_threads = getattr(vector_store_config, "max_threads", 4)
-                config.user = getattr(vector_store_config, "user", None)
-                config.password = getattr(vector_store_config, "password", None)
-
-                # extra
-                config_dict = vector_store_config.dict()
-                config.llm_client = config_dict.get("llm_client", None)
-                config.model_name = config_dict.get("model_name", None)
-                if (
-                    vector_store_type in pools
-                    and config.name in pools[vector_store_type]
-                ):
-                    self.client = pools[vector_store_type][config.name]
-                else:
-                    client = self.connector_class(config)
-                    pools[vector_store_type][config.name] = self.client = client
-                    self.client = client
+            if vector_store_type in pools and config.name in pools[vector_store_type]:
+                self.client = pools[vector_store_type][config.name]
+            else:
+                client = self.connector_class(config)
+                pools[vector_store_type][config.name] = self.client = client
         except Exception as e:
             logger.error("connect vector store failed: %s", e)
             raise e
@@ -170,14 +162,22 @@ class VectorStoreConnector:
         )
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
-        """Load document in vector database.
+        """Async load document in vector database.
 
         Args:
             - chunks: document chunks.
         Return chunk ids.
         """
-        return await self.client.aload_document(
-            chunks,
+        max_chunks_once_load = (
+            self._index_store_config.max_chunks_once_load
+            if self._index_store_config
+            else 10
+        )
+        max_threads = (
+            self._index_store_config.max_threads if self._index_store_config else 1
+        )
+        return await self.client.aload_document_with_limit(
+            chunks, max_chunks_once_load, max_threads
         )
 
     def similar_search(

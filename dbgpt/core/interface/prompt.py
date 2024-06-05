@@ -6,7 +6,7 @@ import dataclasses
 import json
 from abc import ABC, abstractmethod
 from string import Formatter
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Type, TypeVar, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, model_validator
 from dbgpt.core.interface.message import BaseMessage, HumanMessage, SystemMessage
@@ -18,6 +18,8 @@ from dbgpt.core.interface.storage import (
     StorageItem,
 )
 from dbgpt.util.formatting import formatter, no_strict_formatter
+
+T = TypeVar("T", bound="BasePromptTemplate")
 
 
 def _jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -34,9 +36,9 @@ def _jinja2_formatter(template: str, **kwargs: Any) -> str:
 
 
 _DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
-    "f-string": lambda is_strict: formatter.format
-    if is_strict
-    else no_strict_formatter.format,
+    "f-string": lambda is_strict: (
+        formatter.format if is_strict else no_strict_formatter.format
+    ),
     "jinja2": lambda is_strict: _jinja2_formatter,
 }
 
@@ -88,8 +90,8 @@ class PromptTemplate(BasePromptTemplate):
 
     @classmethod
     def from_template(
-        cls, template: str, template_format: str = "f-string", **kwargs: Any
-    ) -> BasePromptTemplate:
+        cls: Type[T], template: str, template_format: str = "f-string", **kwargs: Any
+    ) -> T:
         """Create a prompt template from a template string."""
         input_variables = get_template_vars(template, template_format)
         return cls(
@@ -116,14 +118,14 @@ class BaseChatPromptTemplate(BaseModel, ABC):
 
     @classmethod
     def from_template(
-        cls,
+        cls: Type[T],
         template: str,
         template_format: str = "f-string",
         response_format: Optional[str] = None,
         response_key: str = "response",
         template_is_strict: bool = True,
         **kwargs: Any,
-    ) -> BaseChatPromptTemplate:
+    ) -> T:
         """Create a prompt template from a template string."""
         prompt = PromptTemplate.from_template(
             template,

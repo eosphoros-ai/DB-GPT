@@ -1,4 +1,5 @@
 """Base classes for operators that can be executed within a workflow."""
+
 import asyncio
 import functools
 from abc import ABC, ABCMeta, abstractmethod
@@ -265,7 +266,16 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         out_ctx = await self._runner.execute_workflow(
             self, call_data, streaming_call=True, exist_dag_ctx=dag_ctx
         )
-        return out_ctx.current_task_context.task_output.output_stream
+
+        task_output = out_ctx.current_task_context.task_output
+        if task_output.is_stream:
+            return out_ctx.current_task_context.task_output.output_stream
+        else:
+
+            async def _gen():
+                yield task_output.output
+
+            return _gen()
 
     def _blocking_call_stream(
         self,

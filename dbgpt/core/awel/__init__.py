@@ -18,6 +18,7 @@ from .operators.base import BaseOperator, WorkflowRunner
 from .operators.common_operator import (
     BranchFunc,
     BranchOperator,
+    BranchTaskType,
     InputOperator,
     JoinOperator,
     MapOperator,
@@ -80,6 +81,7 @@ __all__ = [
     "BranchOperator",
     "InputOperator",
     "BranchFunc",
+    "BranchTaskType",
     "WorkflowRunner",
     "TaskState",
     "is_empty_data",

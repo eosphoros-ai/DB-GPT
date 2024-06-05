@@ -52,6 +52,8 @@ LLM_MODEL_CONFIG = {
     "chatglm2-6b-int4": os.path.join(MODEL_PATH, "chatglm2-6b-int4"),
     # https://huggingface.co/THUDM/chatglm3-6b
     "chatglm3-6b": os.path.join(MODEL_PATH, "chatglm3-6b"),
+    # https://huggingface.co/THUDM/glm-4-9b-chat
+    "glm-4-9b-chat": os.path.join(MODEL_PATH, "glm-4-9b-chat"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
@@ -144,6 +146,7 @@ LLM_MODEL_CONFIG = {
     "openchat-3.5": os.path.join(MODEL_PATH, "openchat_3.5"),
     # https://huggingface.co/openchat/openchat-3.5-1210
     "openchat-3.5-1210": os.path.join(MODEL_PATH, "openchat-3.5-1210"),
+    "openchat-3.6-8b-20240522": os.path.join(MODEL_PATH, "openchat-3.6-8b-20240522"),
     # https://huggingface.co/hfl/chinese-alpaca-2-7b
     "chinese-alpaca-2-7b": os.path.join(MODEL_PATH, "chinese-alpaca-2-7b"),
     # https://huggingface.co/hfl/chinese-alpaca-2-13b
@@ -187,6 +190,17 @@ LLM_MODEL_CONFIG = {
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
     "starling-lm-7b-beta": os.path.join(MODEL_PATH, "Starling-LM-7B-beta"),
     "deepseek-v2-lite-chat": os.path.join(MODEL_PATH, "DeepSeek-V2-Lite-Chat"),
+    "sailor-14b-chat": os.path.join(MODEL_PATH, "Sailor-14B-Chat"),
+    # https://huggingface.co/microsoft/Phi-3-medium-128k-instruct
+    "phi-3-medium-128k-instruct": os.path.join(
+        MODEL_PATH, "Phi-3-medium-128k-instruct"
+    ),
+    "phi-3-medium-4k-instruct": os.path.join(MODEL_PATH, "Phi-3-medium-4k-instruct"),
+    "phi-3-small-128k-instruct": os.path.join(MODEL_PATH, "Phi-3-small-128k-instruct"),
+    "phi-3-small-8k-instruct": os.path.join(MODEL_PATH, "Phi-3-small-8k-instruct"),
+    "phi-3-mini-128k-instruct": os.path.join(MODEL_PATH, "Phi-3-mini-128k-instruct"),
+    "phi-3-mini-4k-instruct": os.path.join(MODEL_PATH, "Phi-3-mini-4k-instruct"),
+    "llama-3-sqlcoder-8b": os.path.join(MODEL_PATH, "llama-3-sqlcoder-8b"),
 }
 
 EMBEDDING_MODEL_CONFIG = {

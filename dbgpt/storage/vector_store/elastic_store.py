@@ -125,6 +125,7 @@ class ElasticStore(VectorStoreBase):
         Args:
             vector_store_config (ElasticsearchVectorConfig): ElasticsearchStore config.
         """
+        super().__init__()
         connect_kwargs = {}
         elasticsearch_vector_config = vector_store_config.dict()
         self.uri = elasticsearch_vector_config.get("uri") or os.getenv(

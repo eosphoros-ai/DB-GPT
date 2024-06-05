@@ -20,6 +20,7 @@ else:
         PositiveInt,
         PrivateAttr,
         ValidationError,
+        WithJsonSchema,
         field_validator,
         model_validator,
         root_validator,
