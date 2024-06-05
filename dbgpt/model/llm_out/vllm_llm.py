@@ -61,9 +61,7 @@ async def generate_stream(
         **gen_params
     )
 
-    results_generator = model.generate(
-        prompt, sampling_params, request_id, prompt_token_ids=prompt_token_ids
-    )
+    results_generator = model.generate(prompt, sampling_params, request_id)
     async for request_output in results_generator:
         prompt = request_output.prompt
         if echo:
