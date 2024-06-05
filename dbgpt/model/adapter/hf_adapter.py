@@ -18,6 +18,8 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     prompt template for this model
     """
 
+    trust_remote_code: bool = True
+
     def new_adapter(self, **kwargs) -> "NewHFChatModelAdapter":
         return self.__class__()
 
@@ -77,13 +79,18 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
                 model_path,
                 use_fast=self.use_fast_tokenizer(),
                 revision=revision,
-                trust_remote_code=True,
+                trust_remote_code=self.trust_remote_code,
             )
         except TypeError:
             tokenizer = AutoTokenizer.from_pretrained(
-                model_path, use_fast=False, revision=revision, trust_remote_code=True
+                model_path,
+                use_fast=False,
+                revision=revision,
+                trust_remote_code=self.trust_remote_code,
             )
         try:
+            if "trust_remote_code" not in from_pretrained_kwargs:
+                from_pretrained_kwargs["trust_remote_code"] = self.trust_remote_code
             model = AutoModelForCausalLM.from_pretrained(
                 model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
             )
@@ -480,6 +487,19 @@ class OpenChatAdapter(Llama3Adapter):
         )
 
 
+class GLM4Aapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/defog/glm-4-8b
+    """
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "glm-4" in lower_model_name_or_path
+            and "chat" in lower_model_name_or_path
+        )
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(YiAdapter)
@@ -496,3 +516,4 @@ register_model_adapter(SailorAdapter)
 register_model_adapter(PhiAdapter)
 register_model_adapter(SQLCoderAdapter)
 register_model_adapter(OpenChatAdapter)
+register_model_adapter(GLM4Aapter)
