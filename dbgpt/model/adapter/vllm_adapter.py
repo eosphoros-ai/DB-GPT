@@ -40,7 +40,7 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
             help="local model path of the huggingface model to use",
         )
         parser.add_argument("--model_type", type=str, help="model type")
-        parser.add_argument("--device", type=str, default=None, help="device")
+        # parser.add_argument("--device", type=str, default=None, help="device")
         # TODO parse prompt templete from `model_name` and `model_path`
         parser.add_argument(
             "--prompt_template",
@@ -76,7 +76,11 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
         # Set the attributes from the parsed arguments.
         engine_args = AsyncEngineArgs(**vllm_engine_args_dict)
         engine = AsyncLLMEngine.from_engine_args(engine_args)
-        return engine, engine.engine.tokenizer
+        tokenizer = engine.engine.tokenizer
+        if hasattr(tokenizer, "tokenizer"):
+            # vllm >= 0.2.7
+            tokenizer = tokenizer.tokenizer
+        return engine, tokenizer
 
     def support_async(self) -> bool:
         return True
