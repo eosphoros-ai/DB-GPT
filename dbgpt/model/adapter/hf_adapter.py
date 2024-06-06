@@ -310,6 +310,20 @@ class QwenAdapter(NewHFChatModelAdapter):
             and "qwen" in lower_model_name_or_path
             and "1.5" in lower_model_name_or_path
             and "moe" not in lower_model_name_or_path
+            and "qwen2" not in lower_model_name_or_path
+        )
+
+
+class Qwen2Adapter(QwenAdapter):
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "qwen2" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
         )
 
 
@@ -517,3 +531,4 @@ register_model_adapter(PhiAdapter)
 register_model_adapter(SQLCoderAdapter)
 register_model_adapter(OpenChatAdapter)
 register_model_adapter(GLM4Aapter)
+register_model_adapter(Qwen2Adapter)
