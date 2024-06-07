@@ -1,6 +1,7 @@
-import { hasSubset, intersects } from '../advisor/utils';
-import { findNominalField, findOrdinalField, processDateEncode } from './util';
+import { hasSubset } from '../advisor/utils';
+import { findNominalField, findOrdinalField, getLineSize, processDateEncode } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
+import { Datum } from '@antv/ava';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
@@ -23,7 +24,11 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
           y: field.name,
           color: () => field.name,
           series: () => field.name,
+          size: (datum: Datum) => getLineSize(datum, data, { field4X: field4Nominal })
         },
+        legend: {
+          size: false
+        }
       };
       spec.children.push(singleLine);
     });

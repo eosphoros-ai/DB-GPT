@@ -1,6 +1,7 @@
 import { hasSubset, intersects } from '../advisor/utils';
-import { findOrdinalField, processDateEncode, findNominalField } from './util';
+import { findOrdinalField, processDateEncode, findNominalField, isUniqueXValue, getLineSize } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
+import type { Datum } from '@antv/ava';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   const ordinalField = findOrdinalField(dataProps);
@@ -27,7 +28,11 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
       encode: {
         x: processDateEncode(field4X.name as string, dataProps),
         y: field.name,
+        size: (datum: Datum) => getLineSize(datum, data, { field4Split: field4Nominal, field4X })
       },
+      legend: {
+        size: false
+      }
     };
     if (field4Nominal) {
       singleLine.encode.color = field4Nominal.name;
