@@ -1,3 +1,6 @@
+import { FieldInfo } from "@antv/ava";
+import { hasSubset, intersects } from "../advisor/utils";
+
 type BasicDataPropertyForAdvice = any;
 
 /**
@@ -13,4 +16,12 @@ export function processDateEncode(field: string, dataProps: BasicDataPropertyFor
     return (d: any) => new Date(d[field]);
   }
   return field;
+}
+
+export function findOrdinalField(fields: FieldInfo[]) {
+  return fields.find((field) => field.levelOfMeasurements && intersects(field.levelOfMeasurements,  ['Time', 'Ordinal']))
+}
+
+export function findNominalField(fields: FieldInfo[]) {
+  return fields.find((field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']))
 }

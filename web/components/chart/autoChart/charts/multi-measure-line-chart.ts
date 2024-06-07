@@ -1,15 +1,12 @@
 import { hasSubset, intersects } from '../advisor/utils';
-import { processDateEncode } from './util';
+import { findNominalField, findOrdinalField, processDateEncode } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
     // @ts-ignore
     const field4Y = dataProps?.filter((field) => hasSubset(field.levelOfMeasurements, ['Interval']));
-    const field4Nominal = dataProps?.find((field) =>
-      // @ts-ignore
-      hasSubset(field.levelOfMeasurements, ['Nominal']),
-    );
+    const field4Nominal = findNominalField(dataProps) ?? findOrdinalField(dataProps);
     if (!field4Nominal || !field4Y) return null;
 
     const spec: Specification = {

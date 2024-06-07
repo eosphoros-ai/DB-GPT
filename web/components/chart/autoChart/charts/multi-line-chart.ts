@@ -1,17 +1,16 @@
 import { hasSubset, intersects } from '../advisor/utils';
-import { processDateEncode } from './util';
+import { findOrdinalField, processDateEncode, findNominalField } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
-  const field4X = dataProps.find((field) =>
-    // @ts-ignore
-    intersects(field.levelOfMeasurements, ['Time', 'Ordinal']),
-  );
-  // @ts-ignore
-  const field4Y = dataProps.filter((field) => hasSubset(field.levelOfMeasurements, ['Interval']));
+  const ordinalField = findOrdinalField(dataProps);
+  const nominalField = findNominalField(dataProps)
+  // 放宽折线图的 x 轴条件，优先选择 time， ordinal 类型，没有的话使用 nominal 类型
+  const field4X = ordinalField ?? nominalField;
+
+  const field4Y = dataProps.filter((field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Interval']));
   const field4Nominal = dataProps.find((field) =>
-    // @ts-ignore
-    hasSubset(field.levelOfMeasurements, ['Nominal']),
+    field.name !== field4X?.name && field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']),
   );
   if (!field4X || !field4Y) return null;
 
