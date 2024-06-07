@@ -68,7 +68,6 @@ export const AutoChart = (props: AutoChartProps) => {
      const allAdvices = getMergedAdvices(avaAdvices)
       setAdvices(allAdvices);
       setRenderChartType(allAdvices[0]?.type as ChartType);
-      console.log('allAdvices', allAdvices)
     }
   }, [data, advisor, chartType]);
 
