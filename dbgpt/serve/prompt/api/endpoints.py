@@ -66,24 +66,24 @@ async def check_api_key(
     if request.url.path.startswith(f"/api/v1"):
         return None
 
-    if service.config.api_keys:
-        api_keys = _parse_api_keys(service.config.api_keys)
-        if auth is None or (token := auth.credentials) not in api_keys:
-            raise HTTPException(
-                status_code=401,
-                detail={
-                    "error": {
-                        "message": "",
-                        "type": "invalid_request_error",
-                        "param": None,
-                        "code": "invalid_api_key",
-                    }
-                },
-            )
-        return token
-    else:
-        # api_keys not set; allow all
-        return None
+    # if service.config.api_keys:
+    #     api_keys = _parse_api_keys(service.config.api_keys)
+    #     if auth is None or (token := auth.credentials) not in api_keys:
+    #         raise HTTPException(
+    #             status_code=401,
+    #             detail={
+    #                 "error": {
+    #                     "message": "",
+    #                     "type": "invalid_request_error",
+    #                     "param": None,
+    #                     "code": "invalid_api_key",
+    #                 }
+    #             },
+    #         )
+    #     return token
+    # else:
+    #     # api_keys not set; allow all
+    #     return None
 
 
 @router.get("/health")

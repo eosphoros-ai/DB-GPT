@@ -16,29 +16,27 @@ from typing import Dict, List
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge import KnowledgeType
 from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 CFG = Config()
 
 
-def _create_vector_connector() -> VectorStoreConnector:
+def _create_vector_connector():
     """Create vector connector."""
-    return VectorStoreConnector.from_default(
-        "Chroma",
-        vector_store_config=ChromaVectorConfig(
-            name="vector_name",
-            persist_path=os.path.join(PILOT_PATH, "data"),
-        ),
+    config = ChromaVectorConfig(
+        persist_path=PILOT_PATH,
+        name="embedding_rag_test",
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
     )
+
+    return ChromaStore(config)
 
 
 class TriggerReqBody(BaseModel):
@@ -75,10 +73,10 @@ with DAG("simple_sdk_rag_embedding_example") as dag:
     )
     request_handle_task = RequestHandleOperator()
     knowledge_operator = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
-    vector_connector = _create_vector_connector()
+    vector_store = _create_vector_connector()
     url_parser_operator = MapOperator(map_function=lambda x: x["url"])
     embedding_operator = EmbeddingAssemblerOperator(
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     output_task = ResultOperator()
     (

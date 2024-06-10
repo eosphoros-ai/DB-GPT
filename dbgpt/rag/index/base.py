@@ -63,7 +63,7 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
-    def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in index database.
 
         Args:

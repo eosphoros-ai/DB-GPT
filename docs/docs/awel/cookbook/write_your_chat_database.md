@@ -85,7 +85,7 @@ from dbgpt.core.awel import DAG, InputOperator
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.operators import DBSchemaAssemblerOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.serve.rag.connector import VectorStoreConnector
 
 # Delete old vector store directory(/tmp/awel_with_data_vector_store)
 shutil.rmtree("/tmp/awel_with_data_vector_store", ignore_errors=True)
@@ -457,7 +457,7 @@ from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.serve.rag.connector import VectorStoreConnector
 
 # Delete old vector store directory(/tmp/awel_with_data_vector_store)
 shutil.rmtree("/tmp/awel_with_data_vector_store", ignore_errors=True)
@@ -635,7 +635,6 @@ with DAG("load_schema_dag") as load_schema_dag:
 chunks = asyncio.run(assembler_task.call())
 print(chunks)
 
-
 with DAG("chat_data_dag") as chat_data_dag:
     input_task = InputOperator(input_source=InputSource.from_callable())
     retriever_task = DBSchemaRetrieverOperator(
@@ -653,11 +652,11 @@ with DAG("chat_data_dag") as chat_data_dag:
     db_query_task = DatasourceOperator(connector=db_conn)
 
     (
-        input_task
-        >> MapOperator(lambda x: x["user_input"])
-        >> retriever_task
-        >> content_task
-        >> merge_task
+            input_task
+            >> MapOperator(lambda x: x["user_input"])
+            >> retriever_task
+            >> content_task
+            >> merge_task
     )
     input_task >> merge_task
     merge_task >> prompt_task >> req_build_task >> llm_task >> sql_parse_task

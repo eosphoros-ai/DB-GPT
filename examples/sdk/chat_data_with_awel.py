@@ -4,6 +4,7 @@ import shutil
 
 import pandas as pd
 
+from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import (
     ChatPromptTemplate,
     HumanPromptTemplate,
@@ -27,8 +28,7 @@ from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 # Delete old vector store directory(/tmp/awel_with_data_vector_store)
 shutil.rmtree("/tmp/awel_with_data_vector_store", ignore_errors=True)
@@ -59,14 +59,12 @@ db_conn.create_temp_tables(
     }
 )
 
-vector_connector = VectorStoreConnector.from_default(
-    "Chroma",
-    vector_store_config=ChromaVectorConfig(
-        name="db_schema_vector_store",
-        persist_path="/tmp/awel_with_data_vector_store",
-    ),
+config = ChromaVectorConfig(
+    persist_path=PILOT_PATH,
+    name="db_schema_vector_store",
     embedding_fn=embeddings,
 )
+vector_store = ChromaStore(config)
 
 antv_charts = [
     {"response_line_chart": "used to display comparative trend analysis data"},
@@ -198,7 +196,7 @@ with DAG("load_schema_dag") as load_schema_dag:
     # Load database schema to vector store
     assembler_task = DBSchemaAssemblerOperator(
         connector=db_conn,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
         chunk_parameters=ChunkParameters(chunk_strategy="CHUNK_BY_SIZE"),
     )
     input_task >> assembler_task
@@ -211,7 +209,7 @@ with DAG("chat_data_dag") as chat_data_dag:
     input_task = InputOperator(input_source=InputSource.from_callable())
     retriever_task = DBSchemaRetrieverOperator(
         top_k=1,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     content_task = MapOperator(lambda cks: [c.content for c in cks])
     merge_task = JoinOperator(

@@ -29,12 +29,12 @@ from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
 from dbgpt.core import Chunk
-from dbgpt.core.awel import DAG, HttpTrigger, InputOperator, JoinOperator, MapOperator
+from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
 
