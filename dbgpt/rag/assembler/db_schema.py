@@ -1,12 +1,11 @@
 """DBSchemaAssembler."""
 from typing import Any, List, Optional
 
-from dbgpt.core import Chunk, Embeddings
+from dbgpt.core import Chunk
 from dbgpt.datasource.base import BaseConnector
 
 from ..assembler.base import BaseAssembler
 from ..chunk_manager import ChunkParameters
-from ..embedding.embedding_factory import DefaultEmbeddingFactory
 from ..index.base import IndexStoreBase
 from ..knowledge.datasource import DatasourceKnowledge
 from ..retriever.db_schema import DBSchemaRetriever
@@ -38,8 +37,6 @@ class DBSchemaAssembler(BaseAssembler):
         connector: BaseConnector,
         index_store: IndexStoreBase,
         chunk_parameters: Optional[ChunkParameters] = None,
-        embedding_model: Optional[str] = None,
-        embeddings: Optional[Embeddings] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with Embedding Assembler arguments.
@@ -55,17 +52,17 @@ class DBSchemaAssembler(BaseAssembler):
         self._connector = connector
         self._index_store = index_store
 
-        self._embedding_model = embedding_model
-        if self._embedding_model and not embeddings:
-            embeddings = DefaultEmbeddingFactory(
-                default_model_name=self._embedding_model
-            ).create(self._embedding_model)
-
-        if (
-            embeddings
-            and self._vector_store_connector.vector_store_config.embedding_fn is None
-        ):
-            self._vector_store_connector.vector_store_config.embedding_fn = embeddings
+        # self._embedding_model = embedding_model
+        # if self._embedding_model and not embeddings:
+        #     embeddings = DefaultEmbeddingFactory(
+        #         default_model_name=self._embedding_model
+        #     ).create(self._embedding_model)
+        #
+        # if (
+        #     embeddings
+        #     and self._index_store.vector_store_config.embedding_fn is None
+        # ):
+        #     self._vector_store_connector.vector_store_config.embedding_fn = embeddings
 
         super().__init__(
             knowledge=knowledge,
@@ -79,8 +76,6 @@ class DBSchemaAssembler(BaseAssembler):
         connector: BaseConnector,
         index_store: IndexStoreBase,
         chunk_parameters: Optional[ChunkParameters] = None,
-        embedding_model: Optional[str] = None,
-        embeddings: Optional[Embeddings] = None,
     ) -> "DBSchemaAssembler":
         """Load document embedding into vector store from path.
 
@@ -89,17 +84,13 @@ class DBSchemaAssembler(BaseAssembler):
             index_store: (IndexStoreBase) IndexStoreBase to use.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
-            embedding_model: (Optional[str]) Embedding model to use.
-            embeddings: (Optional[Embeddings]) Embeddings to use.
         Returns:
              DBSchemaAssembler
         """
         return cls(
             connector=connector,
             index_store=index_store,
-            embedding_model=embedding_model,
             chunk_parameters=chunk_parameters,
-            embeddings=embeddings,
         )
 
     def get_chunks(self) -> List[Chunk]:

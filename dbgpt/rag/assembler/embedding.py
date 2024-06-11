@@ -35,8 +35,6 @@ class EmbeddingAssembler(BaseAssembler):
         index_store: IndexStoreBase,
         chunk_parameters: Optional[ChunkParameters] = None,
         retrieve_strategy: Optional[RetrieverStrategy] = RetrieverStrategy.EMBEDDING,
-        embedding_model: Optional[str] = None,
-        embeddings: Optional[Embeddings] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with Embedding Assembler arguments.
@@ -80,6 +78,7 @@ class EmbeddingAssembler(BaseAssembler):
                 chunking.
             embedding_model: (Optional[str]) Embedding model to use.
             embeddings: (Optional[Embeddings]) Embeddings to use.
+            retrieve_strategy: (Optional[RetrieverStrategy]) Retriever strategy.
 
         Returns:
              EmbeddingAssembler
@@ -109,9 +108,8 @@ class EmbeddingAssembler(BaseAssembler):
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
             index_store: (IndexStoreBase) Index store to use.
-            embedding_model: (Optional[str]) Embedding model to use.
-            embeddings: (Optional[Embeddings]) Embeddings to use.
             executor: (Optional[ThreadPoolExecutor) ThreadPoolExecutor to use.
+            retrieve_strategy: (Optional[RetrieverStrategy]) Retriever strategy.
 
         Returns:
              EmbeddingAssembler

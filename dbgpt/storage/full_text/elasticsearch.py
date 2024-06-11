@@ -39,12 +39,12 @@ class ElasticDocumentStore(FullTextStoreBase):
 
         self._es_config = es_config
         self._es_url = es_config.uri or os.getenv("ELASTICSEARCH_URL", "localhost")
-        self._es_port = es_config.port or os.getenv("ELASTICSEARCH_PORT", 9200)
+        self._es_port = es_config.port or os.getenv("ELASTICSEARCH_PORT", "9200")
         self._es_username = es_config.user or os.getenv("ELASTICSEARCH_USER", "elastic")
         self._es_password = es_config.password or os.getenv(
             "ELASTICSEARCH_PASSWORD", "dbgpt"
         )
-        self._index_name = es_config.name
+        self._index_name = es_config.name.lower()
         if string_utils.contains_chinese(es_config.name):
             bytes_str = es_config.name.encode("utf-8")
             hex_str = bytes_str.hex()
@@ -202,17 +202,21 @@ class ElasticDocumentStore(FullTextStoreBase):
         """
         return await blocking_func_to_async(self._executor, self.load_document, chunks)
 
-    def delete_by_ids(self, ids: List[str]):
+    def delete_by_ids(self, ids: str) -> List[str]:
         """Delete document by ids.
 
         Args:
             ids(List[str]): document ids.
+        Return:
+            return ids.
         """
+        id_list = ids.split(",")
         bulk_body = [
-            {"delete": {"_index": self._index_name, "_id": doc_id}} for doc_id in ids
+            {"delete": {"_index": self._index_name, "_id": doc_id}}
+            for doc_id in id_list
         ]
         self._es_client.bulk(body=bulk_body)
-        return ids
+        return id_list
 
     def delete_vector_name(self, index_name: str):
         """Delete index by name.

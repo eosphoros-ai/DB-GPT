@@ -102,7 +102,7 @@ class DBSummaryClient:
 
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connector=db_summary_client.db,
-                index_store=vector_connector.index_client
+                index_store=vector_connector.index_client,
             )
             if len(db_assembler.get_chunks()) > 0:
                 db_assembler.persist()

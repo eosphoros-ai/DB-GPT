@@ -57,13 +57,13 @@ class FullTextStoreBase(IndexStoreBase):
             filters(Optional[MetadataFilters]): metadata filters.
         """
 
-    def delete_by_ids(self, ids: str):
+    @abstractmethod
+    def delete_by_ids(self, ids: str) -> List[str]:
         """Delete docs.
 
         Args:
             ids(str): The vector ids to delete, separated by comma.
         """
-        pass
 
     def delete_vector_name(self, index_name: str):
         """Delete name."""

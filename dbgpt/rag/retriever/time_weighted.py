@@ -8,8 +8,8 @@ from dbgpt.core import Chunk
 from dbgpt.rag.retriever.rerank import Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from ..index.base import IndexStoreBase
 
+from ..index.base import IndexStoreBase
 from .embedding import EmbeddingRetriever
 
 
@@ -125,7 +125,7 @@ class TimeWeightedEmbeddingRetriever(EmbeddingRetriever):
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Chunk, float]]:
         """Return documents that are salient to the query."""
         docs_and_scores: List[Chunk]
-        docs_and_scores = self._vector_store.similar_search_with_scores(
+        docs_and_scores = self._index_store.similar_search_with_scores(
             query, topk=self._top_k, score_threshold=0
         )
         results = {}

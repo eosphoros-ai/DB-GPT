@@ -18,8 +18,8 @@ class EmbeddingRetriever(BaseRetriever):
 
     def __init__(
         self,
+        index_store: IndexStoreBase,
         top_k: int = 4,
-        index_store: IndexStoreBase = None,
         query_rewrite: Optional[QueryRewrite] = None,
         rerank: Optional[Ranker] = None,
         retrieve_strategy: Optional[RetrieverStrategy] = RetrieverStrategy.EMBEDDING,
@@ -27,10 +27,10 @@ class EmbeddingRetriever(BaseRetriever):
         """Create EmbeddingRetriever.
 
         Args:
+            index_store(IndexStore): vector store connector
             top_k (int): top k
             query_rewrite (Optional[QueryRewrite]): query rewrite
             rerank (Ranker): rerank
-            index_store(IndexStore): vector store connector
 
         Examples:
             .. code-block:: python
