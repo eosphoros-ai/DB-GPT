@@ -82,11 +82,11 @@ export const getVisAdvices = (props: {
     : null;
   
   // 可根据需要选择是否使用全部 fields 进行推荐
-  const useAllFields = true
+  const useAllFields = false
   // 挑选出维值不只有一个的字段
   const allFieldsInfo = (new DataFrame(data)).info()
   const selectedFields = size(allFieldsInfo) > 2 ?  allFieldsInfo?.filter(field => {
-    if(field.recommendation === 'string' ||  field.recommendation === 'date') {
+    if (field.recommendation === 'string' ||  field.recommendation === 'date') {
       return field.distinct && field.distinct > 1
     }
     return true

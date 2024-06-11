@@ -20,7 +20,7 @@ export function processDateEncode(field: string, dataProps: BasicDataPropertyFor
 }
 
 export function findOrdinalField(fields: FieldInfo[]) {
-  return fields.find((field) => field.levelOfMeasurements && intersects(field.levelOfMeasurements,  ['Time', 'Ordinal']))
+  return fields.find((field) => field.levelOfMeasurements && intersects(field.levelOfMeasurements, ['Time', 'Ordinal']))
 }
 
 export function findNominalField(fields: FieldInfo[]) {
@@ -28,7 +28,7 @@ export function findNominalField(fields: FieldInfo[]) {
 }
 
 // 识别 x 轴是否只有一条数据（绘制的折线图是否只有一个点）
-export const isUniqueXValue = ({data, xField }: {
+export const isUniqueXValue = ({ data, xField }: {
   xField: string;
   data: Datum[];
 }): boolean => {
@@ -42,10 +42,10 @@ export const getLineSize = (datum: Datum, allData: Datum[], fields: {
   field4X?: FieldInfo;
 }) => {
   const { field4Split, field4X } = fields
-  if(field4Split?.name && field4X?.name) {
+  if (field4Split?.name && field4X?.name) {
     const seriesValue = datum[field4Split.name];
     const splitData = allData.filter((item) => field4Split.name && (item[field4Split.name] === seriesValue));
-    return isUniqueXValue({data: splitData, xField: field4X.name}) ? 5 : undefined
+    return isUniqueXValue({ data: splitData, xField: field4X.name }) ? 5 : undefined
   }
-  return (field4X?.name && isUniqueXValue({data: allData, xField: field4X.name})) ? 5 : undefined
+  return (field4X?.name && isUniqueXValue({ data: allData, xField: field4X.name })) ? 5 : undefined
 }
