@@ -79,6 +79,7 @@ async def test_api_health(client: AsyncClient, asystem_app, has_auth: bool):
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "client", [{"app_caller": client_init_caller}], indirect=["client"]
