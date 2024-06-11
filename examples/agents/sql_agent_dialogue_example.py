@@ -30,7 +30,6 @@ initialize_tracer("/tmp/agent_trace.jsonl", create_system_app=True)
 
 
 async def main():
-
     from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")

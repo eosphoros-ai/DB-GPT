@@ -45,6 +45,7 @@ export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> 
 
 export const dbMapper: Record<DBType, { label: string; icon: string; desc: string }> = {
   mysql: { label: 'MySQL', icon: '/icons/mysql.png', desc: 'Fast, reliable, scalable open-source relational database management system.' },
+  oceanbase: { label: 'OceanBase', icon: '/icons/oceanbase.png', desc: 'An Ultra-Fast & Cost-Effective Distributed SQL Database.' },
   mssql: { label: 'MSSQL', icon: '/icons/mssql.png', desc: 'Powerful, scalable, secure relational database system by Microsoft.' },
   duckdb: { label: 'DuckDB', icon: '/icons/duckdb.png', desc: 'In-memory analytical database with efficient query processing.' },
   sqlite: { label: 'Sqlite', icon: '/icons/sqlite.png', desc: 'Lightweight embedded relational database with simplicity and portability.' },
