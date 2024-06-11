@@ -52,6 +52,7 @@ class DatasourceKnowledge(Knowledge):
         return [
             ChunkStrategy.CHUNK_BY_SIZE,
             ChunkStrategy.CHUNK_BY_SEPARATOR,
+            ChunkStrategy.CHUNK_BY_PAGE,
         ]
 
     @classmethod
@@ -63,3 +64,12 @@ class DatasourceKnowledge(Knowledge):
     def document_type(cls) -> DocumentType:
         """Return document type."""
         return DocumentType.DATASOURCE
+
+    @classmethod
+    def default_chunk_strategy(cls) -> ChunkStrategy:
+        """Return default chunk strategy.
+
+        Returns:
+            ChunkStrategy: default chunk strategy
+        """
+        return ChunkStrategy.CHUNK_BY_PAGE
