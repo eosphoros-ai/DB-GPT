@@ -52,18 +52,6 @@ class DBSchemaAssembler(BaseAssembler):
         self._connector = connector
         self._index_store = index_store
 
-        # self._embedding_model = embedding_model
-        # if self._embedding_model and not embeddings:
-        #     embeddings = DefaultEmbeddingFactory(
-        #         default_model_name=self._embedding_model
-        #     ).create(self._embedding_model)
-        #
-        # if (
-        #     embeddings
-        #     and self._index_store.vector_store_config.embedding_fn is None
-        # ):
-        #     self._vector_store_connector.vector_store_config.embedding_fn = embeddings
-
         super().__init__(
             knowledge=knowledge,
             chunk_parameters=chunk_parameters,

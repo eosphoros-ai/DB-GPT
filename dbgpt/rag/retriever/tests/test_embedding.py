@@ -25,8 +25,8 @@ def mock_vector_store_connector():
 def embedding_retriever(top_k, mock_vector_store_connector):
     return EmbeddingRetriever(
         top_k=top_k,
-        query_rewrite=False,
-        vector_store_connector=mock_vector_store_connector,
+        query_rewrite=None,
+        index_store=mock_vector_store_connector,
     )
 
 
