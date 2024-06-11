@@ -124,7 +124,7 @@ def _initialize_db(
         )
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)
-    elif CFG.LOCAL_DB_TYPE == DBType.OCeanBase.value():
+    elif CFG.LOCAL_DB_TYPE == DBType.OceanBase.value():
         db_url = (
             f"mysql+ob://{quote(CFG.LOCAL_DB_USER)}:"
             f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
