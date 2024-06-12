@@ -114,7 +114,7 @@ def _initialize_db(
     db_name = CFG.LOCAL_DB_NAME
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     os.makedirs(default_meta_data_path, exist_ok=True)
-    if CFG.LOCAL_DB_TYPE == DBType.Mysql.value():
+    if CFG.LOCAL_DB_TYPE == DBType.MySQL.value():
         db_url = (
             f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:"
             f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
