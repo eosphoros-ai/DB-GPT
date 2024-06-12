@@ -194,7 +194,7 @@ class Config(metaclass=Singleton):
         self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "db")
 
         ### LLM Model Service Configuration
-        self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b-v1.5")
+        self.LLM_MODEL = os.getenv("LLM_MODEL", "glm-4-9b-chat")
         self.LLM_MODEL_PATH = os.getenv("LLM_MODEL_PATH")
 
         ### Proxy llm backend, this configuration is only valid when "LLM_MODEL=proxyllm"

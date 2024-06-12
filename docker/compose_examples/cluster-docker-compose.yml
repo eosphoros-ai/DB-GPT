@@ -19,7 +19,7 @@ services:
       - 8100:8100/tcp
   llm-worker:
     image: eosphorosai/dbgpt:latest
-    command: dbgpt start worker --model_name vicuna-13b-v1.5 --model_path /app/models/vicuna-13b-v1.5 --port 8001 --controller_addr http://controller:8000
+    command: dbgpt start worker --model_name glm-4-9b-chat --model_path /app/models/glm-4-9b-chat --port 8001 --controller_addr http://controller:8000
     environment:
       - DBGPT_LOG_LEVEL=DEBUG
     depends_on:
@@ -66,7 +66,7 @@ services:
       - LOCAL_DB_PATH=data/default_sqlite.db
       - LOCAL_DB_TYPE=sqlite
       - ALLOWLISTED_PLUGINS=db_dashboard
-      - LLM_MODEL=vicuna-13b-v1.5
+      - LLM_MODEL=glm-4-9b-chat
       - MODEL_SERVER=http://controller:8000
     depends_on:
       - controller
