@@ -5,13 +5,13 @@ import type { Datum } from '@antv/ava';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   const ordinalField = findOrdinalField(dataProps);
-  const nominalField = findNominalField(dataProps)
+  const nominalField = findNominalField(dataProps);
   // 放宽折线图的 x 轴条件，优先选择 time， ordinal 类型，没有的话使用 nominal 类型
   const field4X = ordinalField ?? nominalField;
 
   const field4Y = dataProps.filter((field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Interval']));
-  const field4Nominal = dataProps.find((field) =>
-    field.name !== field4X?.name && field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']),
+  const field4Nominal = dataProps.find(
+    (field) => field.name !== field4X?.name && field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']),
   );
   if (!field4X || !field4Y) return null;
 
@@ -28,11 +28,11 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
       encode: {
         x: processDateEncode(field4X.name as string, dataProps),
         y: field.name,
-        size: (datum: Datum) => getLineSize(datum, data, { field4Split: field4Nominal, field4X })
+        size: (datum: Datum) => getLineSize(datum, data, { field4Split: field4Nominal, field4X }),
       },
       legend: {
-        size: false
-      }
+        size: false,
+      },
     };
     if (field4Nominal) {
       singleLine.encode.color = field4Nominal.name;

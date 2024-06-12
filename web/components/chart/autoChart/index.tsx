@@ -27,7 +27,7 @@ export const AutoChart = (props: AutoChartProps) => {
       charts: input_charts,
       scopeOfCharts: {
         // 排除面积图
-        exclude: ['area_chart', 'stacked_area_chart', 'percent_stacked_area_chart']
+        exclude: ['area_chart', 'stacked_area_chart', 'percent_stacked_area_chart'],
       },
       ruleConfig,
     };
@@ -40,26 +40,35 @@ export const AutoChart = (props: AutoChartProps) => {
     const filteredAdvices = defaultAdvicesFilter({
       advices: avaAdvices,
     });
-    const allChartTypes = uniq(compact(concat(chartType, avaAdvices.map((item) => item.type))));
-    const allAdvices = allChartTypes.map((chartTypeItem) => {
-      const avaAdvice = filteredAdvices.find(item => item.type === chartTypeItem)
-      // 如果在 AVA 推荐列表中，直接采用推荐列表中的结果
-      if (avaAdvice) {
-        return avaAdvice
-      }
-      // 如果不在，则单独为其生成图表 spec
-      const dataAnalyzerOutput = advisor.dataAnalyzer.execute({ data })
-      if ('data' in dataAnalyzerOutput) {
-        const specGeneratorOutput = advisor.specGenerator.execute({
-          data: dataAnalyzerOutput.data,
-          dataProps: dataAnalyzerOutput.dataProps,
-          chartTypeRecommendations: [{ chartType: chartTypeItem, score: 1 }]
-        })
-        if ('advices' in specGeneratorOutput) return specGeneratorOutput.advices?.[0]
-      }
-    }).filter(advice => advice?.spec) as Advice[]
-    return allAdvices
-  }
+    const allChartTypes = uniq(
+      compact(
+        concat(
+          chartType,
+          avaAdvices.map((item) => item.type),
+        ),
+      ),
+    );
+    const allAdvices = allChartTypes
+      .map((chartTypeItem) => {
+        const avaAdvice = filteredAdvices.find((item) => item.type === chartTypeItem);
+        // 如果在 AVA 推荐列表中，直接采用推荐列表中的结果
+        if (avaAdvice) {
+          return avaAdvice;
+        }
+        // 如果不在，则单独为其生成图表 spec
+        const dataAnalyzerOutput = advisor.dataAnalyzer.execute({ data });
+        if ('data' in dataAnalyzerOutput) {
+          const specGeneratorOutput = advisor.specGenerator.execute({
+            data: dataAnalyzerOutput.data,
+            dataProps: dataAnalyzerOutput.dataProps,
+            chartTypeRecommendations: [{ chartType: chartTypeItem, score: 1 }],
+          });
+          if ('advices' in specGeneratorOutput) return specGeneratorOutput.advices?.[0];
+        }
+      })
+      .filter((advice) => advice?.spec) as Advice[];
+    return allAdvices;
+  };
 
   useEffect(() => {
     if (data && advisor) {
@@ -68,7 +77,7 @@ export const AutoChart = (props: AutoChartProps) => {
         myChartAdvisor: advisor,
       });
       // 合并模型推荐的图表类型和 ava 推荐的图表类型
-      const allAdvices = getMergedAdvices(avaAdvices)
+      const allAdvices = getMergedAdvices(avaAdvices);
       setAdvices(allAdvices);
       setRenderChartType(allAdvices[0]?.type as ChartType);
     }

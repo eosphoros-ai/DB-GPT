@@ -24,11 +24,11 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
           y: field.name,
           color: () => field.name,
           series: () => field.name,
-          size: (datum: Datum) => getLineSize(datum, data, { field4X: field4Nominal })
+          size: (datum: Datum) => getLineSize(datum, data, { field4X: field4Nominal }),
         },
         legend: {
-          size: false
-        }
+          size: false,
+        },
       };
       spec.children.push(singleLine);
     });

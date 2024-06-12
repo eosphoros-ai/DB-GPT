@@ -9,7 +9,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
     const field4Y = dataProps?.filter((field) => hasSubset(field.levelOfMeasurements, ['Interval']));
     const nominalField = findNominalField(dataProps);
     const ordinalField = findOrdinalField(dataProps);
-    const field4X = nominalField ?? ordinalField
+    const field4X = nominalField ?? ordinalField;
     if (!field4X || !field4Y) return null;
 
     const spec: Specification = {
