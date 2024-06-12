@@ -83,7 +83,7 @@ class LongTermMemory(Memory, Generic[T]):
         self.aggregate_importance: float = 0.0
         self._vector_store = vector_store
         self.memory_retriever = LongTermRetriever(
-            now=self.now, vector_store=vector_store
+            now=self.now, index_store=vector_store
         )
 
     @immutable
