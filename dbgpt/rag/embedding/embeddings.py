@@ -90,9 +90,9 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             ) from exc
 
         kwargs["client"] = sentence_transformers.SentenceTransformer(
-            kwargs.get("model_name"),
+            kwargs.get("model_name") or DEFAULT_MODEL_NAME,
             cache_folder=kwargs.get("cache_folder"),
-            **kwargs.get("model_kwargs"),
+            **(kwargs.get("model_kwargs") or {}),
         )
         super().__init__(**kwargs)
 

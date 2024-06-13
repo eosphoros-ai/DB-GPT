@@ -315,7 +315,6 @@ class QwenAdapter(NewHFChatModelAdapter):
 
 
 class Qwen2Adapter(QwenAdapter):
-
     support_4bit: bool = True
     support_8bit: bool = True
 
