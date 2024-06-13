@@ -17,7 +17,7 @@ class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
 
     client: Any  #: :meta private:
     model_name: str = "BAAI/bge-reranker-base"
-    max_length: int
+    max_length: int = None    # type: ignore
     """Max length for input sequences. Longer sequences will be truncated. If None, max
         length of the model will be used"""
     """Model name to use."""
