@@ -294,7 +294,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         kwargs["client"] = sentence_transformers.SentenceTransformer(
             kwargs.get("model_name"),
             cache_folder=kwargs.get("cache_folder"),
-            **kwargs.get("model_kwargs"),
+            **(kwargs.get("model_kwargs") or {}),
         )
 
         super().__init__(**kwargs)
