@@ -7,7 +7,7 @@ DB-GPT supports the installation and use of a variety of open source and closed 
 
 :::info note
 - Detailed installation and deployment tutorials can be found in [Installation](/docs/installation).
-- This page only introduces deployment based on ChatGPT proxy and local Vicuna model.
+- This page only introduces deployment based on ChatGPT proxy and local glm model.
 :::
 
 ## Environmental preparation
@@ -20,7 +20,7 @@ Download DB-GPT
 
 
 
-```python
+```bash
 git clone https://github.com/eosphoros-ai/DB-GPT.git
 ```
 
@@ -32,7 +32,7 @@ git clone https://github.com/eosphoros-ai/DB-GPT.git
 Create a Python virtual environment
 :::
 
-```python
+```bash
 python >= 3.10
 conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
@@ -44,7 +44,7 @@ pip install -e ".[default]"
 :::tip
 Copy environment variables
 :::
-```python
+```bash
 cp .env.template  .env
 ```
 
@@ -61,8 +61,8 @@ import TabItem from '@theme/TabItem';
 <Tabs
   defaultValue="openai"
   values={[
-    {label: 'Open AI', value: 'openai'},
-    {label: 'Vicuna', value: 'vicuna'},
+    {label: 'Open AI(Proxy LLM)', value: 'openai'},
+    {label: 'glm-4(Local LLM)', value: 'glm-4'},
   ]}>
 
   <TabItem value="openai" label="openai">
@@ -70,7 +70,7 @@ import TabItem from '@theme/TabItem';
 :::info note
 
 ⚠️  You need to ensure that git-lfs is installed
-```python
+```bash
 ● CentOS installation: yum install git-lfs
 ● Ubuntu installation: apt-get install git-lfs
 ● MacOS installation: brew install git-lfs
@@ -79,13 +79,13 @@ import TabItem from '@theme/TabItem';
 
 #### Install dependencies
 
-```python
+```bash
 pip install  -e ".[openai]"
 ```
 
 #### Download embedding model
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
@@ -93,7 +93,7 @@ git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
 
 #### Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
 
-```python
+```bash
 # .env
 LLM_MODEL=chatgpt_proxyllm
 PROXY_API_KEY={your-openai-sk}
@@ -101,35 +101,32 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 ```
   </TabItem>
 
-  <TabItem value="vicuna" label="vicuna">
+  <TabItem value="glm-4" label="glm-4">
 
 #### Hardware requirements description
-| Model    		                         |   Quantize   |  VRAM Size   	| 
-|:----------------------------------------:|--------------:|---------------|
-|Vicuna-7b     	                       |   4-bit      |  8GB         	|
-|Vicuna-7b  		                       |   8-bit	    |  12GB        	|
-|Vicuna-13b     	                     |   4-bit      |  12GB        	|
-|Vicuna-13b                            |   8-bit      |  20GB         |
+|  Model    		   | GPU VRAM Size   	 | 
+|:--------------:|-------------------|
+| glm-4-9b     	 | 16GB        	     |
 
 #### Download LLM
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 
 # embedding model
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-or
-git clone https://huggingface.co/moka-ai/m3e-large
+# also you can use m3e-large model, you can choose one of them according to your needs
+# git clone https://huggingface.co/moka-ai/m3e-large
 
-# llm model, if you use openai or Azure or tongyi llm api service, you don't need to download llm model
-git clone https://huggingface.co/lmsys/vicuna-13b-v1.5
+# LLM model, if you use openai or Azure or tongyi llm api service, you don't need to download llm model
+git clone https://huggingface.co/THUDM/glm-4-9b-chat
 
 ```
 #### Environment variable configuration, configure the LLM_MODEL parameter in the `.env` file
-```python
+```bash
 # .env
-LLM_MODEL=vicuna-13b-v1.5
+LLM_MODEL=glm-4-9b-chat
 ```
   </TabItem>
 
@@ -140,38 +137,49 @@ LLM_MODEL=vicuna-13b-v1.5
 Load default test data into SQLite database
 - **Linux**
 
-```python
+```bash
 bash ./scripts/examples/load_examples.sh
 ```
 - **Windows**
 
-```python
+```bash
 .\scripts\examples\load_examples.bat
 ```
 
 ## Run service
 
-```python
+```bash
 python dbgpt/app/dbgpt_server.py
 ```
 
 :::info NOTE
-### Run service
+### Run old service
 
 If you are running version v0.4.3 or earlier, please start with the following command:
 
-```python
+```bash
 python pilot/server/dbgpt_server.py
+```
+
+### Run DB-GPT with command `dbgpt`
+
+If you want to run DB-GPT with the command `dbgpt`:
+
+```bash
+dbgpt start webserver
 ```
 :::
 
 ## Visit website
 
-#### 1. Production model:
 Open the browser and visit [`http://localhost:5670`](http://localhost:5670)
 
-#### 2. Development mode:
-```
+
+### (Optional) Run web front-end separately
+
+On the other hand, you can also run the web front-end separately.
+
+```bash
 cd web & npm install
 cp .env.template .env
 // set the API_BASE_URL to your DB-GPT server address, it usually is http://localhost:5670

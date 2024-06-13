@@ -24,7 +24,7 @@ services:
       - LOCAL_DB_HOST=db
       - LOCAL_DB_PASSWORD=aa123456
       - ALLOWLISTED_PLUGINS=db_dashboard
-      - LLM_MODEL=vicuna-13b-v1.5
+      - LLM_MODEL=glm-4-9b-chat
     depends_on:
       - db
     volumes:
