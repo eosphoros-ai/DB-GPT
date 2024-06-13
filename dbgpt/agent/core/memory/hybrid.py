@@ -93,11 +93,9 @@ class HybridMemory(Memory, Generic[T]):
 
         vector_store = ChromaStore(
             ChromaVectorConfig(
+                name=vstore_name,
+                persist_path=vstore_path,
                 embedding_fn=embeddings,
-                vector_store_config=ChromaVectorConfig(
-                    name=vstore_name,
-                    persist_path=vstore_path,
-                ),
             )
         )
         return cls.from_vstore(
