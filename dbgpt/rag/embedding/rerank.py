@@ -35,7 +35,7 @@ class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
 
         kwargs["client"] = CrossEncoder(
             kwargs.get("model_name", "BAAI/bge-reranker-base"),
-            max_length=kwargs.get("max_length"),
+            max_length=kwargs.get("max_length"),  # type: ignore
             **(kwargs.get("model_kwargs") or {}),
         )
         super().__init__(**kwargs)
@@ -57,7 +57,7 @@ class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
         rank_scores = _model.predict(sentences=query_content_pairs)
         if isinstance(rank_scores, np.ndarray):
             rank_scores = rank_scores.tolist()
-        return rank_scores
+        return rank_scores  # type: ignore
 
 
 class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
