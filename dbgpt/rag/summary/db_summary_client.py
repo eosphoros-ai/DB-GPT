@@ -48,8 +48,8 @@ class DBSummaryClient:
 
     def get_db_summary(self, dbname, query, topk):
         """Get user query related tables info."""
+        from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         vector_store_config = VectorStoreConfig(name=dbname + "_profile")
         vector_connector = VectorStoreConnector.from_default(
@@ -60,7 +60,7 @@ class DBSummaryClient:
         from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 
         retriever = DBSchemaRetriever(
-            top_k=topk, vector_store_connector=vector_connector
+            top_k=topk, index_store=vector_connector.index_client
         )
         table_docs = retriever.retrieve(query)
         ans = [d.content for d in table_docs]
@@ -88,8 +88,8 @@ class DBSummaryClient:
         dbname(str): dbname
         """
         vector_store_name = dbname + "_profile"
+        from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         vector_store_config = VectorStoreConfig(name=vector_store_name)
         vector_connector = VectorStoreConnector.from_default(
@@ -102,7 +102,7 @@ class DBSummaryClient:
 
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connector=db_summary_client.db,
-                vector_store_connector=vector_connector,
+                index_store=vector_connector.index_client,
             )
 
             if len(db_assembler.get_chunks()) > 0:
@@ -114,8 +114,8 @@ class DBSummaryClient:
     def delete_db_profile(self, dbname):
         """Delete db profile."""
         vector_store_name = dbname + "_profile"
+        from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         vector_store_config = VectorStoreConfig(name=vector_store_name)
         vector_connector = VectorStoreConnector.from_default(

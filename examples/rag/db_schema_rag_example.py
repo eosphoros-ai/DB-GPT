@@ -4,8 +4,7 @@ from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.assembler import DBSchemaAssembler
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 """DB struct rag example.
     pre-requirements:
@@ -46,27 +45,27 @@ def _create_temporary_connection():
 
 def _create_vector_connector():
     """Create vector connector."""
-    return VectorStoreConnector.from_default(
-        "Chroma",
-        vector_store_config=ChromaVectorConfig(
-            name="db_schema_vector_store_name",
-            persist_path=os.path.join(PILOT_PATH, "data"),
-        ),
+    config = ChromaVectorConfig(
+        persist_path=PILOT_PATH,
+        name="dbschema_rag_test",
         embedding_fn=DefaultEmbeddingFactory(
             default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
     )
 
+    return ChromaStore(config)
+
 
 if __name__ == "__main__":
     connection = _create_temporary_connection()
-    vector_connector = _create_vector_connector()
+    index_store = _create_vector_connector()
     assembler = DBSchemaAssembler.load_from_connection(
         connector=connection,
-        vector_store_connector=vector_connector,
+        index_store=index_store,
     )
     assembler.persist()
     # get db schema retriever
     retriever = assembler.as_retriever(top_k=1)
     chunks = retriever.retrieve("show columns from user")
     print(f"db schema rag example results:{[chunk.content for chunk in chunks]}")
+    index_store.delete_vector_name("dbschema_rag_test")

@@ -15,8 +15,7 @@ from dbgpt.rag.evaluation.retriever import (
 )
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.operators import EmbeddingRetrieverOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 
 def _create_embeddings(
@@ -28,18 +27,15 @@ def _create_embeddings(
     ).create()
 
 
-def _create_vector_connector(
-    embeddings: Embeddings, space_name: str = "retriever_evaluation_example"
-) -> VectorStoreConnector:
+def _create_vector_connector(embeddings: Embeddings):
     """Create vector connector."""
-    return VectorStoreConnector.from_default(
-        "Chroma",
-        vector_store_config=ChromaVectorConfig(
-            name=space_name,
-            persist_path=os.path.join(PILOT_PATH, "data"),
-        ),
+    config = ChromaVectorConfig(
+        persist_path=PILOT_PATH,
+        name="embedding_rag_test",
         embedding_fn=embeddings,
     )
+
+    return ChromaStore(config)
 
 
 async def main():
@@ -52,7 +48,7 @@ async def main():
     assembler = EmbeddingAssembler.load_from_knowledge(
         knowledge=knowledge,
         chunk_parameters=chunk_parameters,
-        vector_store_connector=vector_connector,
+        index_store=vector_connector,
     )
     assembler.persist()
 

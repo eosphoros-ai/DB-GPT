@@ -60,20 +60,20 @@ def _load_vector_options() -> List[OptionValue]:
 class VectorStoreConnector:
     """The connector for vector store.
 
-    VectorStoreConnector, can connect different vector db provided load document api_v1
-    and similar search api_v1.
+        VectorStoreConnector, can connect different vector db provided load document api_v1
+        and similar search api_v1.
 
-    1.load_document:knowledge document source into vector store.(Chroma, Milvus,
-    Weaviate).
-    2.similar_search: similarity search from vector_store.
-    3.similar_search_with_scores: similarity search with similarity score from
-    vector_store
+        1.load_document:knowledge document source into vector store.(Chroma, Milvus,
+        Weaviate).
+        2.similar_search: similarity search from vector_store.
+        3.similar_search_with_scores: similarity search with similarity score from
+        vector_store
 
-    code example:
-    >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
-
-    >>> vector_store_config = VectorStoreConfig
-    >>> vector_store_connector = VectorStoreConnector(vector_store_type="Chroma")
+        code example:
+        >>> from dbgpt.serve.rag.connector import VectorStoreConnector
+    l
+        >>> vector_store_config = VectorStoreConfig
+        >>> vector_store_connector = VectorStoreConnector(vector_store_type="Chroma")
     """
 
     def __init__(
@@ -139,6 +139,10 @@ class VectorStoreConnector:
         vector_store_config.embedding_fn = embedding_fn
         real_vector_store_type = cast(str, vector_store_type)
         return cls(real_vector_store_type, vector_store_config)
+
+    @property
+    def index_client(self):
+        return self.client
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in vector database.

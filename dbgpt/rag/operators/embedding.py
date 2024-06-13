@@ -6,11 +6,11 @@ from typing import List, Optional, Union
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.i18n_utils import _
 
 from ..assembler.embedding import EmbeddingAssembler
 from ..chunk_manager import ChunkParameters
+from ..index.base import IndexStoreBase
 from ..knowledge import Knowledge
 from ..retriever.embedding import EmbeddingRetriever
 from ..retriever.rerank import Ranker
@@ -28,9 +28,9 @@ class EmbeddingRetrieverOperator(RetrieverOperator[Union[str, List[str]], List[C
         category=OperatorCategory.RAG,
         parameters=[
             Parameter.build_from(
-                _("Vector Store Connector"),
+                _("Storage Index Store"),
                 "vector_store_connector",
-                VectorStoreConnector,
+                IndexStoreBase,
                 description=_("The vector store connector."),
             ),
             Parameter.build_from(
@@ -88,7 +88,7 @@ class EmbeddingRetrieverOperator(RetrieverOperator[Union[str, List[str]], List[C
 
     def __init__(
         self,
-        vector_store_connector: VectorStoreConnector,
+        index_store: IndexStoreBase,
         top_k: int,
         score_threshold: float = 0.3,
         query_rewrite: Optional[QueryRewrite] = None,
@@ -99,7 +99,7 @@ class EmbeddingRetrieverOperator(RetrieverOperator[Union[str, List[str]], List[C
         super().__init__(**kwargs)
         self._score_threshold = score_threshold
         self._retriever = EmbeddingRetriever(
-            vector_store_connector=vector_store_connector,
+            index_store=index_store,
             top_k=top_k,
             query_rewrite=query_rewrite,
             rerank=rerank,
@@ -129,7 +129,7 @@ class EmbeddingAssemblerOperator(AssemblerOperator[Knowledge, List[Chunk]]):
             Parameter.build_from(
                 _("Vector Store Connector"),
                 "vector_store_connector",
-                VectorStoreConnector,
+                IndexStoreBase,
                 description=_("The vector store connector."),
             ),
             Parameter.build_from(
@@ -164,21 +164,21 @@ class EmbeddingAssemblerOperator(AssemblerOperator[Knowledge, List[Chunk]]):
 
     def __init__(
         self,
-        vector_store_connector: VectorStoreConnector,
+        index_store: IndexStoreBase,
         chunk_parameters: Optional[ChunkParameters] = None,
         **kwargs
     ):
         """Create a new EmbeddingAssemblerOperator.
 
         Args:
-            vector_store_connector (VectorStoreConnector): The vector store connector.
+            index_store (IndexStoreBase): The index storage.
             chunk_parameters (Optional[ChunkParameters], optional): The chunk
                 parameters. Defaults to ChunkParameters(chunk_strategy="CHUNK_BY_SIZE").
         """
         if not chunk_parameters:
             chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
         self._chunk_parameters = chunk_parameters
-        self._vector_store_connector = vector_store_connector
+        self._index_store = index_store
         super().__init__(**kwargs)
 
     def assemble(self, knowledge: Knowledge) -> List[Chunk]:
@@ -186,7 +186,7 @@ class EmbeddingAssemblerOperator(AssemblerOperator[Knowledge, List[Chunk]]):
         assembler = EmbeddingAssembler.load_from_knowledge(
             knowledge=knowledge,
             chunk_parameters=self._chunk_parameters,
-            vector_store_connector=self._vector_store_connector,
+            index_store=self._index_store,
         )
         assembler.persist()
         return assembler.get_chunks()

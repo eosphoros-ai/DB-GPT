@@ -2,7 +2,7 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
@@ -47,7 +47,7 @@ class IndexStoreConfig(BaseModel):
 class IndexStoreBase(ABC):
     """Index store base class."""
 
-    def __init__(self, executor: Optional[ThreadPoolExecutor] = None):
+    def __init__(self, executor: Optional[Executor] = None):
         """Init index store."""
         self._executor = executor or ThreadPoolExecutor()
 
@@ -63,7 +63,7 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
-    def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in index database.
 
         Args:
@@ -94,7 +94,7 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
-    def delete_by_ids(self, ids: str):
+    def delete_by_ids(self, ids: str) -> List[str]:
         """Delete docs.
 
         Args:

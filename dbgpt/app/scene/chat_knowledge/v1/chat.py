@@ -69,7 +69,7 @@ class ChatKnowledge(BaseChat):
             "embedding_factory", EmbeddingFactory
         )
         from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
+        from dbgpt.serve.rag.connector import VectorStoreConnector
 
         embedding_fn = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
@@ -116,7 +116,7 @@ class ChatKnowledge(BaseChat):
                 retriever_top_k = max(CFG.RERANK_TOP_K, 20)
         self.embedding_retriever = EmbeddingRetriever(
             top_k=retriever_top_k,
-            vector_store_connector=vector_store_connector,
+            index_store=vector_store_connector.index_client,
             query_rewrite=query_rewrite,
             rerank=reranker,
         )

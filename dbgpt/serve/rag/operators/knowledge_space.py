@@ -25,8 +25,8 @@ from dbgpt.core.awel.task.base import IN, OUT
 from dbgpt.core.interface.operators.prompt_operator import BasePromptBuilderOperator
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.function_utils import rearrange_args_by_type
 from dbgpt.util.i18n_utils import _
 

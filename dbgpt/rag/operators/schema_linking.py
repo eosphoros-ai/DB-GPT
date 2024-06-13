@@ -8,8 +8,8 @@ from typing import Any, Optional
 from dbgpt.core import LLMClient
 from dbgpt.core.awel import MapOperator
 from dbgpt.datasource.base import BaseConnector
+from dbgpt.rag.index.base import IndexStoreBase
 from dbgpt.rag.schemalinker.schema_linking import SchemaLinking
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 
 class SchemaLinkingOperator(MapOperator[Any, Any]):
@@ -21,7 +21,7 @@ class SchemaLinkingOperator(MapOperator[Any, Any]):
         model_name: str,
         llm: LLMClient,
         top_k: int = 5,
-        vector_store_connector: Optional[VectorStoreConnector] = None,
+        index_store: Optional[IndexStoreBase] = None,
         **kwargs
     ):
         """Create the schema linking operator.
@@ -37,7 +37,7 @@ class SchemaLinkingOperator(MapOperator[Any, Any]):
             connector=connector,
             llm=llm,
             model_name=model_name,
-            vector_store_connector=vector_store_connector,
+            index_store=index_store,
         )
 
     async def map(self, query: str) -> str:

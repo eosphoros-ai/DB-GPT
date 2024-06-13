@@ -6,9 +6,11 @@ from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.storage.knowledge_graph.knowledge_graph import BuiltinKnowledgeGraphConfig
-from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.rag.retriever import RetrieverStrategy
+from dbgpt.storage.knowledge_graph.knowledge_graph import (
+    BuiltinKnowledgeGraph,
+    BuiltinKnowledgeGraphConfig,
+)
 
 """GraphRAG example.
     pre-requirements:
@@ -31,9 +33,8 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 def _create_kg_connector():
     """Create knowledge graph connector."""
-    return VectorStoreConnector(
-        vector_store_type="KnowledgeGraph",
-        vector_store_config=VectorStoreConfig(
+    return BuiltinKnowledgeGraph(
+        config=BuiltinKnowledgeGraphConfig(
             name="graph_rag_test",
             embedding_fn=None,
             llm_client=OpenAILLMClient(),
@@ -45,22 +46,23 @@ def _create_kg_connector():
 async def main():
     file_path = os.path.join(ROOT_PATH, "examples/test_files/tranformers_story.md")
     knowledge = KnowledgeFactory.from_file_path(file_path)
-    vector_connector = _create_kg_connector()
+    graph_store = _create_kg_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     # get embedding assembler
-    assembler = EmbeddingAssembler.load_from_knowledge(
+    assembler = await EmbeddingAssembler.aload_from_knowledge(
         knowledge=knowledge,
         chunk_parameters=chunk_parameters,
-        vector_store_connector=vector_connector,
+        index_store=graph_store,
+        retrieve_strategy=RetrieverStrategy.GRAPH,
     )
-    assembler.persist()
+    await assembler.apersist()
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
     chunks = await retriever.aretrieve_with_scores(
         "What actions has Megatron taken ?", score_threshold=0.3
     )
     print(f"embedding rag example results:{chunks}")
-    vector_connector.delete_vector_name("graph_rag_test")
+    graph_store.delete_vector_name("graph_rag_test")
 
 
 if __name__ == "__main__":
