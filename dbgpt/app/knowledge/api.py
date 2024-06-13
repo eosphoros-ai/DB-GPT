@@ -33,9 +33,9 @@ from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.serve.rag.service.service import Service
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.tracer import SpanType, root_tracer
 
 logger = logging.getLogger(__name__)
@@ -310,7 +310,7 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
         vector_store_config=config,
     )
     retriever = EmbeddingRetriever(
-        top_k=query_request.top_k, vector_store_connector=vector_store_connector
+        top_k=query_request.top_k, index_store=vector_store_connector.index_client
     )
     chunks = retriever.retrieve(query_request.query)
     res = [

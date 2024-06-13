@@ -25,12 +25,12 @@ By default, `Model Server` will start on port `8000`
 ## Start Model Worker
 
 :::tip
-Start `chatglm2-6b` model Worker
+Start `glm-4-9b-chat` model Worker
 :::
 
 ```shell
-dbgpt start worker --model_name chatglm2-6b \
---model_path /app/models/chatglm2-6b \
+dbgpt start worker --model_name glm-4-9b-chat \
+--model_path /app/models/glm-4-9b-chat \
 --port 8001 \
 --controller_addr http://127.0.0.1:8000
 ```
@@ -92,7 +92,7 @@ $ dbgpt model list
 +-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
 |    Model Name     | Model Type |    Host    | Port | Healthy | Enabled | Prompt Template |       Last Heartbeat       |
 +-------------------+------------+------------+------+---------+---------+-----------------+----------------------------+
-|   chatglm2-6b     |    llm     | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.287654 |
+|   glm-4-9b-chat     |    llm     | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.287654 |
 |  WorkerManager    |  service   | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.286668 |
 |  WorkerManager    |  service   | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.845617 |
 |  WorkerManager    |  service   | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
@@ -124,7 +124,7 @@ MODEL_SERVER=http://127.0.0.1:8000
 
 Or it can be started directly by command to formulate the model.
 ```shell
-LLM_MODEL=chatglm2-6b dbgpt start webserver --light
+LLM_MODEL=glm-4-9b-chat dbgpt start webserver --light
 ```
 
 ## Command line usage

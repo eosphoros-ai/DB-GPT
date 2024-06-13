@@ -20,7 +20,7 @@ Download DB-GPT
 
 
 
-```python
+```bash
 git clone https://github.com/eosphoros-ai/DB-GPT.git
 ```
 
@@ -32,7 +32,7 @@ git clone https://github.com/eosphoros-ai/DB-GPT.git
 Create a Python virtual environment
 :::
 
-```python
+```bash
 python >= 3.10
 conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
@@ -44,7 +44,7 @@ pip install -e ".[default]"
 :::tip
 Copy environment variables
 :::
-```python
+```bash
 cp .env.template  .env
 ```
 
@@ -56,7 +56,7 @@ DB-GPT can be deployed on servers with lower hardware through proxy model, or as
 :::info note
 
 ⚠️  You need to ensure that git-lfs is installed
-```python
+```bash
 ● CentOS installation: yum install git-lfs
 ● Ubuntu installation: apt-get install git-lfs
 ● MacOS installation: brew install git-lfs
@@ -79,13 +79,13 @@ import TabItem from '@theme/TabItem';
   <TabItem value="openai" label="open ai">
   Install dependencies
 
-```python
+```bash
 pip install  -e ".[openai]"
 ```
 
 Download embedding model
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
@@ -93,7 +93,7 @@ git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
 
 Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
 
-```python
+```bash
 # .env
 LLM_MODEL=chatgpt_proxyllm
 PROXY_API_KEY={your-openai-sk}
@@ -105,13 +105,13 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
   <TabItem value="qwen" label="通义千问">
 Install dependencies
 
-```python
+```bash
 pip install dashscope
 ```
 
 Download embedding model
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 
@@ -123,7 +123,7 @@ git clone https://huggingface.co/moka-ai/m3e-large
 
 Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
 
-```python
+```bash
 # .env
 # Aliyun tongyiqianwen
 LLM_MODEL=tongyi_proxyllm
@@ -134,13 +134,13 @@ PROXY_SERVER_URL={your_service_url}
   <TabItem value="chatglm" label="chatglm" >
 Install dependencies
 
-```python
+```bash
 pip install zhipuai
 ```
 
 Download embedding model
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 
@@ -152,7 +152,7 @@ git clone https://huggingface.co/moka-ai/m3e-large
 
 Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
 
-```python
+```bash
 # .env
 LLM_MODEL=zhipu_proxyllm
 PROXY_SERVER_URL={your_service_url}
@@ -165,7 +165,7 @@ ZHIPU_PROXY_API_KEY={your-zhipu-sk}
 
 Download embedding model
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 
@@ -177,7 +177,7 @@ git clone https://huggingface.co/moka-ai/m3e-large
 
 Configure the proxy and modify LLM_MODEL, MODEL_VERSION, API_KEY and API_SECRET in the `.env`file
 
-```python
+```bash
 # .env
 LLM_MODEL=wenxin_proxyllm
 WEN_XIN_MODEL_VERSION={version} # ERNIE-Bot or ERNIE-Bot-turbo
@@ -190,7 +190,7 @@ WEN_XIN_API_SECRET={your-wenxin-sct}
 
 Yi's API is compatible with OpenAI's API, so you can use the same dependencies as OpenAI's API.
 
-```python
+```bash
 pip install  -e ".[openai]"
 ```
 
@@ -225,9 +225,9 @@ YI_API_KEY={your-yi-api-key}
 <Tabs
   defaultValue="vicuna"
   values={[
+    {label: 'ChatGLM', value: 'chatglm'},
     {label: 'Vicuna', value: 'vicuna'},
     {label: 'Baichuan', value: 'baichuan'},
-    {label: 'ChatGLM', value: 'chatglm'},
   ]}>
   <TabItem value="vicuna" label="vicuna">
 
@@ -241,7 +241,7 @@ YI_API_KEY={your-yi-api-key}
 
 ##### Download LLM
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 
@@ -255,7 +255,7 @@ git clone https://huggingface.co/lmsys/vicuna-13b-v1.5
 
 ```
 ##### Environment variable configuration, configure the LLM_MODEL parameter in the `.env` file
-```python
+```bash
 # .env
 LLM_MODEL=vicuna-13b-v1.5
 ```
@@ -274,7 +274,7 @@ LLM_MODEL=vicuna-13b-v1.5
 ##### Download LLM
 
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 
@@ -290,7 +290,7 @@ git clone https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat
 
 ```
 ##### Environment variable configuration, configure the LLM_MODEL parameter in the `.env` file
-```python
+```bash
 # .env
 LLM_MODEL=baichuan2-13b
 ```
@@ -299,16 +299,17 @@ LLM_MODEL=baichuan2-13b
   <TabItem value="chatglm" label="chatglm">
 
 ##### Hardware requirements description
-| Model    		    |   Quantize   |  VRAM Size   	| 
-|------------------ |--------------|----------------|
-|ChatGLM-6b     	|   4-bit      |  7GB         	|
-|ChatGLM-6b 	  	|   8-bit	   |  9GB           |
-|ChatGLM-6b       	|   FP16       |  14GB        	|
+| Model    		        | Quantize    | VRAM Size   	  | 
+|--------------------|-------------|----------------|
+| glm-4-9b-chat     	 | Not support | 16GB         	 |
+| ChatGLM-6b     	   | 4-bit       | 7GB         	  |
+| ChatGLM-6b 	  	    | 8-bit	      | 9GB            |
+| ChatGLM-6b       	 | FP16        | 14GB        	  |
 
 
 ##### Download LLM
 
-```python
+```bash
 cd DB-GPT
 mkdir models and cd models
 
@@ -318,13 +319,13 @@ or
 git clone https://huggingface.co/moka-ai/m3e-large
 
 # llm model
-git clone https://huggingface.co/THUDM/chatglm2-6b
+git clone https://huggingface.co/THUDM/glm-4-9b-chat
 
 ```
 ##### Environment variable configuration, configure the LLM_MODEL parameter in the `.env` file
-```python
+```bash
 # .env
-LLM_MODEL=chatglm2-6b
+LLM_MODEL=glm-4-9b-chat
 ```
   </TabItem>
 
@@ -347,7 +348,7 @@ Method 1: Download the converted model
 :::
 
 If you want to use [Vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5), you can download the converted file [TheBloke/vicuna-13B-v1.5-GGUF](https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF), only this one file is needed. Download the file and put it in the model path. You need to rename the model to: `ggml-model-q4_0.gguf`.
-```python
+```bash
 wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf
 ```
 
@@ -360,7 +361,7 @@ During use, you can also convert the model file yourself according to the instru
 #### Install dependencies
 llama.cpp is an optional installation item in DB-GPT. You can install it with the following command.
 
-```python
+```bash
 pip install -e ".[llama_cpp]"
 ```
 
@@ -410,13 +411,13 @@ After version 0.4.7, we removed the automatic generation of MySQL database Schem
 
 1. Frist, execute MySQL script to create database and tables.
 
-```python
+```bash
 $ mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql
 ```
 
 2. Second, set DB-GPT MySQL database settings in `.env` file.
 
-```python
+```bash
 LOCAL_DB_TYPE=mysql
 LOCAL_DB_USER= {your username}
 LOCAL_DB_PASSWORD={your_password}
@@ -432,19 +433,19 @@ LOCAL_DB_PORT=3306
 The DB-GPT project has a part of test data built-in by default, which can be loaded into the local database for testing through the following command
 - **Linux**
 
-```python
+```bash
 bash ./scripts/examples/load_examples.sh
 
 ```
 - **Windows**
 
-```python
+```bash
 .\scripts\examples\load_examples.bat
 ```
 
 ## Run service
 The DB-GPT service is packaged into a server, and the entire DB-GPT service can be started through the following command.
-```python
+```bash
 python dbgpt/app/dbgpt_server.py
 ```
 :::info NOTE
@@ -452,9 +453,17 @@ python dbgpt/app/dbgpt_server.py
 
 If you are running version v0.4.3 or earlier, please start with the following command:
 
-```python
+```bash
 python pilot/server/dbgpt_server.py
 ```
+### Run DB-GPT with command `dbgpt`
+
+If you want to run DB-GPT with the command `dbgpt`:
+
+```bash
+dbgpt start webserver
+```
+
 :::
 
 ## Visit website

@@ -62,6 +62,15 @@ def _import_openspg() -> Tuple[Type, Type]:
     return OpenSPG, OpenSPGConfig
 
 
+def _import_full_text() -> Tuple[Type, Type]:
+    from dbgpt.storage.full_text.elasticsearch import (
+        ElasticDocumentConfig,
+        ElasticDocumentStore,
+    )
+
+    return ElasticDocumentStore, ElasticDocumentConfig
+
+
 def __getattr__(name: str) -> Tuple[Type, Type]:
     if name == "Chroma":
         return _import_chroma()
@@ -79,6 +88,8 @@ def __getattr__(name: str) -> Tuple[Type, Type]:
         return _import_builtin_knowledge_graph()
     elif name == "OpenSPG":
         return _import_openspg()
+    elif name == "FullText":
+        return _import_full_text()
     else:
         raise AttributeError(f"Could not find: {name}")
 
@@ -94,4 +105,6 @@ __vector_store__ = [
 
 __knowledge_graph__ = ["KnowledgeGraph", "OpenSPG"]
 
-__all__ = __vector_store__ + __knowledge_graph__
+__document_store__ = ["FullText"]
+
+__all__ = __vector_store__ + __knowledge_graph__ + __document_store__

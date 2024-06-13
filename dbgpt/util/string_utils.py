@@ -9,6 +9,11 @@ def is_all_chinese(text):
     return match is not None
 
 
+def contains_chinese(text):
+    """Check if the text contains Chinese characters."""
+    return re.search(r"[\u4e00-\u9fa5]", text) is not None
+
+
 def is_number_chinese(text):
     ### Determine whether the string is numbers and Chinese
     pattern = re.compile(r"^[\d一-龥]+$")

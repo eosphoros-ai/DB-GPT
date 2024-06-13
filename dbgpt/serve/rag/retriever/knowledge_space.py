@@ -6,7 +6,7 @@ from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import Chunk
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.retriever.base import BaseRetriever
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 

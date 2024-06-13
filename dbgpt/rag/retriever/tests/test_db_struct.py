@@ -25,7 +25,7 @@ def mock_vector_store_connector():
 def dbstruct_retriever(mock_db_connection, mock_vector_store_connector):
     return DBSchemaRetriever(
         connector=mock_db_connection,
-        vector_store_connector=mock_vector_store_connector,
+        index_store=mock_vector_store_connector,
     )
 
 

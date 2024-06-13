@@ -11,7 +11,7 @@
     retriever_task = DBSchemaRetrieverOperator(
         connector=_create_temporary_connection()
         top_k=1,
-        vector_store_connector=vector_store_connector
+        index_store=vector_store_connector
     )
     ```
 
@@ -27,30 +27,28 @@ from typing import Dict, List
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
+from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import Chunk
-from dbgpt.core.awel import DAG, HttpTrigger, InputOperator, JoinOperator, MapOperator
+from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 CFG = Config()
 
 
 def _create_vector_connector():
     """Create vector connector."""
-    return VectorStoreConnector.from_default(
-        "Chroma",
-        vector_store_config=ChromaVectorConfig(
-            name="vector_name",
-            persist_path=os.path.join(PILOT_PATH, "data"),
-        ),
+    config = ChromaVectorConfig(
+        persist_path=os.path.join(PILOT_PATH, "data"),
+        name="vector_name",
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
     )
+
+    return ChromaStore(config)
 
 
 def _create_temporary_connection():
@@ -104,17 +102,17 @@ with DAG("simple_rag_db_schema_example") as dag:
     )
     request_handle_task = RequestHandleOperator()
     query_operator = MapOperator(lambda request: request["query"])
-    vector_store_connector = _create_vector_connector()
+    index_store = _create_vector_connector()
     connector = _create_temporary_connection()
     assembler_task = DBSchemaAssemblerOperator(
         connector=connector,
-        vector_store_connector=vector_store_connector,
+        index_store=index_store,
     )
     join_operator = JoinOperator(combine_function=_join_fn)
     retriever_task = DBSchemaRetrieverOperator(
         connector=_create_temporary_connection(),
         top_k=1,
-        vector_store_connector=vector_store_connector,
+        index_store=index_store,
     )
     result_parse_task = MapOperator(lambda chunks: [chunk.content for chunk in chunks])
     trigger >> assembler_task >> join_operator

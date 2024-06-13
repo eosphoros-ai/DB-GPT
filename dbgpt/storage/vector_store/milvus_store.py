@@ -174,7 +174,7 @@ class MilvusStore(VectorStoreBase):
         self.collection_name = (
             milvus_vector_config.get("name") or vector_store_config.name
         )
-        if string_utils.is_all_chinese(self.collection_name):
+        if string_utils.contains_chinese(self.collection_name):
             bytes_str = self.collection_name.encode("utf-8")
             hex_str = bytes_str.hex()
             self.collection_name = hex_str

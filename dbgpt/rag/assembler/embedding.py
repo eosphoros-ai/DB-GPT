@@ -3,13 +3,13 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 from ...util.executor_utils import blocking_func_to_async
 from ..assembler.base import BaseAssembler
 from ..chunk_manager import ChunkParameters
-from ..embedding.embedding_factory import DefaultEmbeddingFactory
+from ..index.base import IndexStoreBase
 from ..knowledge.base import Knowledge
+from ..retriever import BaseRetriever, RetrieverStrategy
 from ..retriever.embedding import EmbeddingRetriever
 
 
@@ -32,37 +32,26 @@ class EmbeddingAssembler(BaseAssembler):
     def __init__(
         self,
         knowledge: Knowledge,
-        vector_store_connector: VectorStoreConnector,
+        index_store: IndexStoreBase,
         chunk_parameters: Optional[ChunkParameters] = None,
-        embedding_model: Optional[str] = None,
-        embeddings: Optional[Embeddings] = None,
+        retrieve_strategy: Optional[RetrieverStrategy] = RetrieverStrategy.EMBEDDING,
         **kwargs: Any,
     ) -> None:
         """Initialize with Embedding Assembler arguments.
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            vector_store_connector: (VectorStoreConnector) VectorStoreConnector to use.
+            index_store: (IndexStoreBase) IndexStoreBase to use.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
+            keyword_store: (Optional[IndexStoreBase]) IndexStoreBase to use.
             embedding_model: (Optional[str]) Embedding model to use.
             embeddings: (Optional[Embeddings]) Embeddings to use.
         """
         if knowledge is None:
             raise ValueError("knowledge datasource must be provided.")
-        self._vector_store_connector = vector_store_connector
-
-        self._embedding_model = embedding_model
-        if self._embedding_model and not embeddings:
-            embeddings = DefaultEmbeddingFactory(
-                default_model_name=self._embedding_model
-            ).create(self._embedding_model)
-
-        if (
-            embeddings
-            and self._vector_store_connector.vector_store_config.embedding_fn is None
-        ):
-            self._vector_store_connector.vector_store_config.embedding_fn = embeddings
+        self._index_store = index_store
+        self._retrieve_strategy = retrieve_strategy
 
         super().__init__(
             knowledge=knowledge,
@@ -74,52 +63,53 @@ class EmbeddingAssembler(BaseAssembler):
     def load_from_knowledge(
         cls,
         knowledge: Knowledge,
-        vector_store_connector: VectorStoreConnector,
+        index_store: IndexStoreBase,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
+        retrieve_strategy: Optional[RetrieverStrategy] = RetrieverStrategy.EMBEDDING,
     ) -> "EmbeddingAssembler":
         """Load document embedding into vector store from path.
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            vector_store_connector: (VectorStoreConnector) VectorStoreConnector to use.
+            index_store: (IndexStoreBase) IndexStoreBase to use.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
             embedding_model: (Optional[str]) Embedding model to use.
             embeddings: (Optional[Embeddings]) Embeddings to use.
+            retrieve_strategy: (Optional[RetrieverStrategy]) Retriever strategy.
 
         Returns:
              EmbeddingAssembler
         """
         return cls(
             knowledge=knowledge,
-            vector_store_connector=vector_store_connector,
+            index_store=index_store,
             chunk_parameters=chunk_parameters,
             embedding_model=embedding_model,
             embeddings=embeddings,
+            retrieve_strategy=retrieve_strategy,
         )
 
     @classmethod
     async def aload_from_knowledge(
         cls,
         knowledge: Knowledge,
-        vector_store_connector: VectorStoreConnector,
+        index_store: IndexStoreBase,
         chunk_parameters: Optional[ChunkParameters] = None,
-        embedding_model: Optional[str] = None,
-        embeddings: Optional[Embeddings] = None,
         executor: Optional[ThreadPoolExecutor] = None,
+        retrieve_strategy: Optional[RetrieverStrategy] = RetrieverStrategy.EMBEDDING,
     ) -> "EmbeddingAssembler":
         """Load document embedding into vector store from path.
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            vector_store_connector: (VectorStoreConnector) VectorStoreConnector to use.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
-            embedding_model: (Optional[str]) Embedding model to use.
-            embeddings: (Optional[Embeddings]) Embeddings to use.
+            index_store: (IndexStoreBase) Index store to use.
             executor: (Optional[ThreadPoolExecutor) ThreadPoolExecutor to use.
+            retrieve_strategy: (Optional[RetrieverStrategy]) Retriever strategy.
 
         Returns:
              EmbeddingAssembler
@@ -129,19 +119,18 @@ class EmbeddingAssembler(BaseAssembler):
             executor,
             cls,
             knowledge,
-            vector_store_connector,
+            index_store,
             chunk_parameters,
-            embedding_model,
-            embeddings,
+            retrieve_strategy,
         )
 
     def persist(self) -> List[str]:
-        """Persist chunks into vector store.
+        """Persist chunks into store.
 
         Returns:
             List[str]: List of chunk ids.
         """
-        return self._vector_store_connector.load_document(self._chunks)
+        return self._index_store.load_document(self._chunks)
 
     async def apersist(self) -> List[str]:
         """Persist chunks into store.
@@ -149,13 +138,14 @@ class EmbeddingAssembler(BaseAssembler):
         Returns:
             List[str]: List of chunk ids.
         """
-        return await self._vector_store_connector.aload_document(self._chunks)
+        # persist chunks into vector store
+        return await self._index_store.aload_document(self._chunks)
 
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""
         return []
 
-    def as_retriever(self, top_k: int = 4, **kwargs) -> EmbeddingRetriever:
+    def as_retriever(self, top_k: int = 4, **kwargs) -> BaseRetriever:
         """Create a retriever.
 
         Args:
@@ -165,5 +155,7 @@ class EmbeddingAssembler(BaseAssembler):
             EmbeddingRetriever
         """
         return EmbeddingRetriever(
-            top_k=top_k, vector_store_connector=self._vector_store_connector
+            top_k=top_k,
+            index_store=self._index_store,
+            retrieve_strategy=self._retrieve_strategy,
         )

@@ -76,14 +76,12 @@ from dbgpt.core.awel import DAG
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.knowledge import KnowledgeType
 from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 # Delete old vector store directory(/tmp/awel_rag_test_vector_store)
 shutil.rmtree("/tmp/awel_rag_test_vector_store", ignore_errors=True)
 
-vector_connector = VectorStoreConnector.from_default(
-    "Chroma",
+vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
         name="test_vstore",
         persist_path="/tmp/awel_rag_test_vector_store",
@@ -95,7 +93,7 @@ with DAG("load_knowledge_dag") as knowledge_dag:
     # Load knowledge from URL
     knowledge_task = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
     assembler_task = EmbeddingAssemblerOperator(
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
         chunk_parameters=ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     )
     knowledge_task >> assembler_task
@@ -116,7 +114,7 @@ from dbgpt.rag.operators import EmbeddingRetrieverOperator
 with DAG("retriever_dag") as retriever_dag:
     retriever_task = EmbeddingRetrieverOperator(
         top_k=3,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     content_task = MapOperator(lambda cks: "\n".join(c.content for c in cks))
     retriever_task >> content_task
@@ -218,7 +216,7 @@ with DAG("llm_rag_dag") as rag_dag:
     input_task = InputOperator(input_source=InputSource.from_callable())
     retriever_task = EmbeddingRetrieverOperator(
         top_k=3,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     content_task = MapOperator(lambda cks: "\n".join(c.content for c in cks))
     
@@ -256,10 +254,10 @@ from dbgpt.core.awel import DAG, MapOperator, InputOperator, JoinOperator, Input
 from dbgpt.core.operators import PromptBuilderOperator, RequestBuilderOperator
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.knowledge import KnowledgeType
-from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator, EmbeddingRetrieverOperator
+from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator,
+    EmbeddingRetrieverOperator
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 from dbgpt.model.operators import LLMOperator
 from dbgpt.model.proxy import OpenAILLMClient
 
@@ -273,8 +271,7 @@ llm_client = OpenAILLMClient()
 # Delete old vector store directory(/tmp/awel_rag_test_vector_store)
 shutil.rmtree("/tmp/awel_rag_test_vector_store", ignore_errors=True)
 
-vector_connector = VectorStoreConnector.from_default(
-    "Chroma",
+vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
         name="test_vstore",
         persist_path="/tmp/awel_rag_test_vector_store",
@@ -286,14 +283,13 @@ with DAG("load_knowledge_dag") as knowledge_dag:
     # Load knowledge from URL
     knowledge_task = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
     assembler_task = EmbeddingAssemblerOperator(
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
         chunk_parameters=ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     )
     knowledge_task >> assembler_task
 
 chunks = asyncio.run(assembler_task.call("https://docs.dbgpt.site/docs/latest/awel/"))
 print(f"Chunk length: {len(chunks)}\n")
-
 
 prompt = """Based on the known information below, provide users with professional and concise answers to their questions. 
 If the answer cannot be obtained from the provided content, please say: 
@@ -305,17 +301,17 @@ It is forbidden to make up information randomly. When answering, it is best to s
           {question}
 """
 
-
 with DAG("llm_rag_dag") as rag_dag:
     input_task = InputOperator(input_source=InputSource.from_callable())
     retriever_task = EmbeddingRetrieverOperator(
         top_k=3,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     content_task = MapOperator(lambda cks: "\n".join(c.content for c in cks))
-    
-    merge_task = JoinOperator(lambda context, question: {"context": context, "question": question})
-    
+
+    merge_task = JoinOperator(
+        lambda context, question: {"context": context, "question": question})
+
     prompt_task = PromptBuilderOperator(prompt)
     # The model is gpt-3.5-turbo, you can replace it with other models.
     req_build_task = RequestBuilderOperator(model="gpt-3.5-turbo")

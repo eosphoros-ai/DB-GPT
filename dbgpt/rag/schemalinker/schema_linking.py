@@ -13,7 +13,7 @@ from dbgpt.core import (
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.schemalinker.base_linker import BaseSchemaLinker
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.util.chat_util import run_async_tasks
 
 INSTRUCTION = """

@@ -6,7 +6,7 @@ from typing import Generic, List, Optional
 
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.time_weighted import TimeWeightedEmbeddingRetriever
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.base import VectorStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.annotations import immutable, mutable
 from dbgpt.util.executor_utils import blocking_func_to_async
@@ -70,7 +70,7 @@ class LongTermMemory(Memory, Generic[T]):
     def __init__(
         self,
         executor: Executor,
-        vector_store_connector: VectorStoreConnector,
+        vector_store: VectorStoreBase,
         now: Optional[datetime] = None,
         reflection_threshold: Optional[float] = None,
     ):
@@ -81,9 +81,9 @@ class LongTermMemory(Memory, Generic[T]):
         self.forgetting: bool = False
         self.reflection_threshold: Optional[float] = reflection_threshold
         self.aggregate_importance: float = 0.0
-        self._vector_store_connector = vector_store_connector
+        self._vector_store = vector_store
         self.memory_retriever = LongTermRetriever(
-            now=self.now, vector_store_connector=vector_store_connector
+            now=self.now, index_store=vector_store
         )
 
     @immutable
@@ -97,7 +97,7 @@ class LongTermMemory(Memory, Generic[T]):
         m: LongTermMemory[T] = LongTermMemory(
             now=now,
             executor=self.executor,
-            vector_store_connector=self._vector_store_connector.new_connector(new_name),
+            vector_store=self._vector_store,
             reflection_threshold=self.reflection_threshold,
         )
         m._copy_from(self)

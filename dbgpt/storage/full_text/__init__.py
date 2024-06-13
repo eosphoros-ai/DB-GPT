@@ -1,0 +1,1 @@
+"""Full Text Store Module."""

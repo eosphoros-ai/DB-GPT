@@ -8,7 +8,7 @@ from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.text_splitter.text_splitter import CharacterTextSplitter
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def mock_embedding_factory():
 
 @pytest.fixture
 def mock_vector_store_connector():
-    return MagicMock(spec=VectorStoreConnector)
+    return MagicMock(spec=ChromaStore)
 
 
 @pytest.fixture
@@ -70,7 +70,7 @@ def test_load_knowledge(
         knowledge=mock_knowledge,
         chunk_parameters=mock_chunk_parameters,
         embeddings=mock_embedding_factory.create(),
-        vector_store_connector=mock_vector_store_connector,
+        index_store=mock_vector_store_connector,
     )
     assembler.load_knowledge(knowledge=mock_knowledge)
     assert len(assembler._chunks) == 0
