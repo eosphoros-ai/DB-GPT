@@ -1,6 +1,7 @@
-import { Advisor, CkbConfig } from '@antv/ava';
-import type { Advice, AdviseParams, AdvisorConfig, ChartKnowledgeBase } from '@antv/ava';
+import { Advisor, CkbConfig, DataFrame } from '@antv/ava';
+import type { Advice, AdviseParams, AdvisorConfig, ChartKnowledgeBase, Datum, FieldInfo } from '@antv/ava';
 import type { CustomAdvisorConfig, RuleConfig, Specification } from '../types';
+import { size } from 'lodash';
 
 export type CustomRecommendConfig = {
   customCKB?: Partial<AdvisorConfig['ckbCfg']>;
@@ -64,7 +65,7 @@ export const customizeAdvisor = (props: CustomAdvisorConfig): Advisor => {
 };
 
 /** 主推荐流程 */
-export const getVisAdvices = (props: any): Advice[] => {
+export const getVisAdvices = (props: { data: Datum[]; myChartAdvisor: Advisor; dataMetaMap?: Record<string, FieldInfo> }): Advice[] => {
   const { data, dataMetaMap, myChartAdvisor } = props;
   /**
    * 若输入中有信息能够获取列的类型（ Interval, Nominal, Time ）,则将这个 信息传给 Advisor
@@ -75,9 +76,26 @@ export const getVisAdvices = (props: any): Advice[] => {
         return { name: item, ...dataMetaMap[item] };
       })
     : null;
+
+  // 可根据需要选择是否使用全部 fields 进行推荐
+  const useAllFields = false;
+  // 挑选出维值不只有一个的字段
+  const allFieldsInfo = new DataFrame(data).info();
+  const selectedFields =
+    size(allFieldsInfo) > 2
+      ? allFieldsInfo?.filter((field) => {
+          if (field.recommendation === 'string' || field.recommendation === 'date') {
+            return field.distinct && field.distinct > 1;
+          }
+          return true;
+        })
+      : allFieldsInfo;
+
   const allAdvices = myChartAdvisor?.adviseWithLog({
     data,
     dataProps: customDataProps as AdviseParams['dataProps'],
+    // 不传 fields 参数，内部默认使用全部 fields，否则使用业务选择的字段
+    fields: useAllFields ? undefined : selectedFields?.map((field) => field.name),
   });
   return allAdvices?.advices ?? [];
 };
