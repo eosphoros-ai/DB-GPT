@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"POT-Creation-Date: 2024-06-17 00:05+0800\n"
 "PO-Revision-Date: 2024-03-24 11:24+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -19,93 +19,113 @@ msgstr ""
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:47
 msgid "Knowledge Space Operator"
-msgstr ""
+msgstr "知识空间算子"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:50
 msgid "knowledge space retriever operator."
-msgstr ""
+msgstr "知识空间检索算子。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:51
 msgid "Query"
-msgstr ""
+msgstr "查询"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:51
 msgid "user query"
-msgstr ""
+msgstr "用户查询"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:54
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:57
 msgid "related chunk content"
-msgstr ""
+msgstr "相关块内容"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:62
 msgid "Space Name"
-msgstr ""
+msgstr "空间名称"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:68
 msgid "space name."
-msgstr ""
+msgstr "空间名称。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:143
 msgid "Knowledge Space Prompt Builder Operator"
-msgstr ""
+msgstr "知识空间提示生成算子"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:145
 msgid "Build messages from prompt template and chat history."
-msgstr ""
+msgstr "从提示模板和聊天历史构建消息。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:150
 msgid "Chat Prompt Template"
-msgstr ""
+msgstr "聊天提示模板"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:153
 msgid "The chat prompt template."
-msgstr ""
+msgstr "聊天提示模板。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:156
 msgid "History Key"
-msgstr ""
+msgstr "历史键"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:161
 msgid "The key of history in prompt dict."
-msgstr ""
+msgstr "提示字典中历史的键。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:164
 msgid "String History"
-msgstr ""
+msgstr "字符串历史"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:169
 msgid "Whether to convert the history to string."
-msgstr ""
+msgstr "是否将历史转换为字符串。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:174
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:178
 msgid "user input"
-msgstr ""
+msgstr "用户输入"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:181
 msgid "space related context"
-msgstr ""
+msgstr "空间相关上下文"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:185
 msgid "context of knowledge space."
-msgstr ""
+msgstr "知识空间的上下文。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:188
 msgid "History"
-msgstr ""
+msgstr "历史"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:192
 msgid "The history."
-msgstr ""
+msgstr "历史。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:197
 msgid "Formatted Messages"
-msgstr ""
+msgstr "格式化消息"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:201
 msgid "The formatted messages."
-msgstr ""
+msgstr "格式化的消息。"
+
+#: ../dbgpt/serve/rag/connector.py:39
+msgid "Vector Store Connector"
+msgstr "向量存储连接器"
+
+#: ../dbgpt/serve/rag/connector.py:44
+msgid "Vector Store Type"
+msgstr "向量存储类型"
+
+#: ../dbgpt/serve/rag/connector.py:47
+msgid "The type of vector store."
+msgstr "向量存储的类型。"
+
+#: ../dbgpt/serve/rag/connector.py:51
+msgid "Vector Store Implementation"
+msgstr "向量存储实现"
+
+#: ../dbgpt/serve/rag/connector.py:54
+msgid "The vector store implementation."
+msgstr "向量存储的实现。"
 
 #: ../dbgpt/serve/conversation/operators.py:87
 msgid "Default Chat History Load Operator"
@@ -127,8 +147,8 @@ msgstr "这是模型请求。"
 
 #: ../dbgpt/serve/conversation/operators.py:105
 msgid "Stored Messages"
-msgstr ""
+msgstr "存储的消息"
 
 #: ../dbgpt/serve/conversation/operators.py:108
 msgid "The messages stored in the storage."
-msgstr ""
+msgstr "存储在存储中的消息。"

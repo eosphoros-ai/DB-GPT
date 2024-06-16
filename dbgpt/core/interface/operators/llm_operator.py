@@ -572,17 +572,17 @@ class LLMBranchJoinOperator(BranchJoinOperator[ModelOutput]):
         parameters=[],
         inputs=[
             IOField.build_from(
-                _("Non-Streaming Model Output"),
-                "not_stream_output",
-                ModelOutput,
-                description=_("The non-streaming output."),
-            ),
-            IOField.build_from(
                 _("Streaming Model Output"),
                 "stream_output",
                 ModelOutput,
                 is_list=True,
                 description=_("The streaming output."),
+            ),
+            IOField.build_from(
+                _("Non-Streaming Model Output"),
+                "not_stream_output",
+                ModelOutput,
+                description=_("The non-streaming output."),
             ),
         ],
         outputs=[
@@ -590,6 +590,52 @@ class LLMBranchJoinOperator(BranchJoinOperator[ModelOutput]):
                 _("Model Output"),
                 "output_value",
                 ModelOutput,
+                is_list=True,
+                description=_("The output value of the operator."),
+            ),
+        ],
+    )
+
+    def __init__(self, **kwargs):
+        """Create a new LLM branch join operator."""
+        super().__init__(**kwargs)
+
+
+class StringBranchJoinOperator(BranchJoinOperator[str]):
+    """The String Branch Join Operator.
+
+    Decide which output to keep(streaming or non-streaming).
+    """
+
+    streaming_operator = True
+    metadata = ViewMetadata(
+        label=_("String Branch Join Operator"),
+        name="string_branch_join_operator",
+        category=OperatorCategory.COMMON,
+        operator_type=OperatorType.JOIN,
+        description=_("Just keep the first non-empty output."),
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                _("Streaming String Output"),
+                "stream_output",
+                str,
+                is_list=True,
+                description=_("The streaming output."),
+            ),
+            IOField.build_from(
+                _("Non-Streaming String Output"),
+                "not_stream_output",
+                str,
+                description=_("The non-streaming output."),
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                _("String Output"),
+                "output_value",
+                str,
+                is_list=True,
                 description=_("The output value of the operator."),
             ),
         ],

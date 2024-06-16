@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"POT-Creation-Date: 2024-06-17 00:05+0800\n"
 "PO-Revision-Date: 2024-03-24 22:53+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -19,8 +19,37 @@ msgstr ""
 
 #: ../dbgpt/util/serialization/json_serialization.py:23
 msgid "Json Serializer"
-msgstr ""
+msgstr "JSON 序列化器"
 
 #: ../dbgpt/util/serialization/json_serialization.py:26
 msgid "The serializer for serializing data with json format."
-msgstr ""
+msgstr "用于以 JSON 格式序列化数据的序列化器。"
+
+#: ../dbgpt/util/dbgpts/repo.py:72
+msgid "Repos"
+msgstr "仓库"
+
+#: ../dbgpt/util/dbgpts/repo.py:73 ../dbgpt/util/dbgpts/repo.py:329
+#: ../dbgpt/util/dbgpts/repo.py:360
+msgid "Repository"
+msgstr "存储库"
+
+#: ../dbgpt/util/dbgpts/repo.py:74 ../dbgpt/util/dbgpts/repo.py:361
+msgid "Path"
+msgstr "路径"
+
+#: ../dbgpt/util/dbgpts/repo.py:327
+msgid "dbgpts In All Repos"
+msgstr "所有存储库中的 dbgpts"
+
+#: ../dbgpt/util/dbgpts/repo.py:330 ../dbgpt/util/dbgpts/repo.py:359
+msgid "Type"
+msgstr "类型"
+
+#: ../dbgpt/util/dbgpts/repo.py:331 ../dbgpt/util/dbgpts/repo.py:358
+msgid "Name"
+msgstr "名称"
+
+#: ../dbgpt/util/dbgpts/repo.py:356
+msgid "Installed dbgpts"
+msgstr "已安装的 dbgpts"

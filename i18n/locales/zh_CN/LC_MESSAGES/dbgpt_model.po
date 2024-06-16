@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-26 05:29+0800\n"
+"POT-Creation-Date: 2024-06-17 00:05+0800\n"
 "PO-Revision-Date: 2024-03-23 16:45+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -109,7 +109,7 @@ msgstr "这是模型的请求。"
 
 #: ../dbgpt/model/operators/llm_operator.py:90
 #: ../dbgpt/model/operators/llm_operator.py:138
-#: ../dbgpt/model/utils/chatgpt_utils.py:175
+#: ../dbgpt/model/utils/chatgpt_utils.py:178
 msgid "Model Output"
 msgstr "模型输出"
 
@@ -126,22 +126,22 @@ msgstr "流式 LLM 算子"
 msgid "The streaming LLM operator."
 msgstr "流式 LLM 算子。"
 
-#: ../dbgpt/model/utils/chatgpt_utils.py:158
+#: ../dbgpt/model/utils/chatgpt_utils.py:161
 msgid "OpenAI Streaming Output Operator"
 msgstr "OpenAI 流式输出算子"
 
-#: ../dbgpt/model/utils/chatgpt_utils.py:162
+#: ../dbgpt/model/utils/chatgpt_utils.py:165
 msgid "The OpenAI streaming LLM operator."
 msgstr "OpenAI 流式 LLM 算子。"
 
-#: ../dbgpt/model/utils/chatgpt_utils.py:166
+#: ../dbgpt/model/utils/chatgpt_utils.py:169
 msgid "Upstream Model Output"
 msgstr "上游模型输出"
 
-#: ../dbgpt/model/utils/chatgpt_utils.py:170
+#: ../dbgpt/model/utils/chatgpt_utils.py:173
 msgid "The model output of upstream."
 msgstr "上游模型的输出。"
 
-#: ../dbgpt/model/utils/chatgpt_utils.py:180
+#: ../dbgpt/model/utils/chatgpt_utils.py:183
 msgid "The model output after transformed to openai stream format."
 msgstr "转换为 OpenAI 流格式后的模型输出。"

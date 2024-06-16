@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"POT-Creation-Date: 2024-06-17 00:05+0800\n"
 "PO-Revision-Date: 2024-03-23 11:22+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,220 +17,240 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../dbgpt/storage/vector_store/chroma_store.py:21
+#: ../dbgpt/storage/vector_store/chroma_store.py:24
 #, fuzzy
 msgid "Chroma Vector Store"
 msgstr "Chroma 向量存储。"
 
-#: ../dbgpt/storage/vector_store/chroma_store.py:24
+#: ../dbgpt/storage/vector_store/chroma_store.py:27
 msgid "Chroma vector store."
 msgstr "Chroma 向量存储。"
 
-#: ../dbgpt/storage/vector_store/chroma_store.py:28
-#: ../dbgpt/storage/vector_store/weaviate_store.py:34
+#: ../dbgpt/storage/vector_store/chroma_store.py:31
+#: ../dbgpt/storage/vector_store/weaviate_store.py:35
 msgid "Persist Path"
 msgstr ""
 
-#: ../dbgpt/storage/vector_store/chroma_store.py:31
-#: ../dbgpt/storage/vector_store/weaviate_store.py:37
+#: ../dbgpt/storage/vector_store/chroma_store.py:34
+#: ../dbgpt/storage/vector_store/weaviate_store.py:38
 msgid "the persist path of vector store."
 msgstr "向量存储的持久化路径。"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:24
+#: ../dbgpt/storage/vector_store/milvus_store.py:25
 msgid "Milvus Vector Store"
 msgstr "Milvus 向量存储"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:30
+#: ../dbgpt/storage/vector_store/milvus_store.py:31
+#: ../dbgpt/storage/vector_store/elastic_store.py:31
 msgid "Uri"
 msgstr "URI"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:34
+#: ../dbgpt/storage/vector_store/milvus_store.py:35
 msgid "The uri of milvus store, if not set, will use the default uri."
 msgstr "Milvus 存储的 URI，如果未设置，将使用默认的 URI。"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:40
+#: ../dbgpt/storage/vector_store/milvus_store.py:41
+#: ../dbgpt/storage/vector_store/elastic_store.py:42
 msgid "Port"
 msgstr "端口"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:44
+#: ../dbgpt/storage/vector_store/milvus_store.py:45
 msgid "The port of milvus store, if not set, will use the default port."
 msgstr "Milvus 存储的端口，如果未设置，将使用默认端口。"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:50
+#: ../dbgpt/storage/vector_store/milvus_store.py:51
+#: ../dbgpt/storage/vector_store/elastic_store.py:53
 msgid "Alias"
 msgstr "别名"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:54
+#: ../dbgpt/storage/vector_store/milvus_store.py:55
 msgid "The alias of milvus store, if not set, will use the default alias."
 msgstr "Milvus 存储的别名，如果未设置，将使用默认别名。"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:60
+#: ../dbgpt/storage/vector_store/milvus_store.py:61
 msgid "Primary Field"
 msgstr "主字段"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:64
+#: ../dbgpt/storage/vector_store/milvus_store.py:65
 msgid ""
 "The primary field of milvus store, if not set, will use the default primary "
 "field."
 msgstr "Milvus 存储的主字段，如果未设置，将使用默认的主字段。"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:71
+#: ../dbgpt/storage/vector_store/milvus_store.py:72
 msgid "Text Field"
 msgstr "文本字段"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:75
+#: ../dbgpt/storage/vector_store/milvus_store.py:76
 msgid ""
 "The text field of milvus store, if not set, will use the default text field."
 msgstr "Milvus 存储的文本字段，如果未设置，将使用默认的文本字段。"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:82
+#: ../dbgpt/storage/vector_store/milvus_store.py:83
 msgid "Embedding Field"
 msgstr "嵌入字段"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:86
+#: ../dbgpt/storage/vector_store/milvus_store.py:87
 msgid ""
 "The embedding field of milvus store, if not set, will use the default "
 "embedding field."
 msgstr "Milvus 存储的嵌入字段，如果未设置，将使用默认的嵌入字段。"
 
-#: ../dbgpt/storage/vector_store/milvus_store.py:93
+#: ../dbgpt/storage/vector_store/milvus_store.py:94
 msgid "Milvus vector store."
 msgstr "Milvus 向量存储。"
 
-#: ../dbgpt/storage/vector_store/connector.py:30
-msgid "Vector Store Connector"
-msgstr "向量存储连接器"
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:634
+msgid "OceanBase Vector Store"
+msgstr "OceanBase 向量存储"
 
-#: ../dbgpt/storage/vector_store/connector.py:35
-msgid "Vector Store Type"
-msgstr "向量存储类型"
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:640
+msgid "OceanBase Host"
+msgstr "OceanBase 主机地址"
 
-#: ../dbgpt/storage/vector_store/connector.py:38
-msgid "The type of vector store."
-msgstr "向量存储的类型。"
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:643
+msgid "oceanbase host"
+msgstr "oceanbase 主机地址"
 
-#: ../dbgpt/storage/vector_store/connector.py:42
-msgid "Vector Store Implementation"
-msgstr "向量存储实现"
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:648
+msgid "OceanBase Port"
+msgstr "OceanBase 端口"
 
-#: ../dbgpt/storage/vector_store/connector.py:45
-msgid "The vector store implementation."
-msgstr "向量存储的实现。"
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:651
+msgid "oceanbase port"
+msgstr "oceanbase 端口"
 
-#: ../dbgpt/storage/vector_store/weaviate_store.py:17
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:656
+msgid "OceanBase User"
+msgstr "OceanBase 用户名"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:659
+msgid "user to login"
+msgstr "登录用户名"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:664
+msgid "OceanBase Password"
+msgstr "OceanBase 密码"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:667
+msgid "password to login"
+msgstr "登录密码"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:672
+msgid "OceanBase Database"
+msgstr "OceanBase 数据库名"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:675
+msgid "database for vector tables"
+msgstr "存放向量表的数据库名"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:18
 msgid "Weaviate Vector Store"
 msgstr "Weaviate 向量存储"
 
-#: ../dbgpt/storage/vector_store/weaviate_store.py:20
+#: ../dbgpt/storage/vector_store/weaviate_store.py:21
 msgid "Weaviate vector store."
 msgstr "Weaviate 向量存储。"
 
-#: ../dbgpt/storage/vector_store/weaviate_store.py:24
+#: ../dbgpt/storage/vector_store/weaviate_store.py:25
 msgid "Weaviate URL"
 msgstr "Weaviate URL"
 
-#: ../dbgpt/storage/vector_store/weaviate_store.py:28
+#: ../dbgpt/storage/vector_store/weaviate_store.py:29
 msgid "weaviate url address, if not set, will use the default url."
 msgstr "Weaviate 的 URL 地址，如果未设置，将使用默认的 URL。"
 
-#: ../dbgpt/storage/vector_store/pgvector_store.py:19
+#: ../dbgpt/storage/vector_store/elastic_store.py:25
+#, fuzzy
+msgid "ElasticSearch Vector Store"
+msgstr "Weaviate 向量存储"
+
+#: ../dbgpt/storage/vector_store/elastic_store.py:35
+#, fuzzy
+msgid "The uri of elasticsearch store, if not set, will use the default uri."
+msgstr "Milvus 存储的 URI，如果未设置，将使用默认的 URI。"
+
+#: ../dbgpt/storage/vector_store/elastic_store.py:46
+#, fuzzy
+msgid "The port of elasticsearch store, if not set, will use the default port."
+msgstr "Milvus 存储的端口，如果未设置，将使用默认端口。"
+
+#: ../dbgpt/storage/vector_store/elastic_store.py:57
+#, fuzzy
+msgid ""
+"The alias of elasticsearch store, if not set, will use the default alias."
+msgstr "Milvus 存储的别名，如果未设置，将使用默认别名。"
+
+#: ../dbgpt/storage/vector_store/elastic_store.py:64
+msgid "Index Name"
+msgstr ""
+
+#: ../dbgpt/storage/vector_store/elastic_store.py:68
+#, fuzzy
+msgid ""
+"The index name of elasticsearch store, if not set, will use the default "
+"index name."
+msgstr "向量存储的名称，如果未设置，将使用默认名称。"
+
+#: ../dbgpt/storage/vector_store/elastic_store.py:75
+#, fuzzy
+msgid "Elasticsearch vector store."
+msgstr "Weaviate 向量存储。"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:21
 msgid "PG Vector Store"
 msgstr "PG 向量存储"
 
-#: ../dbgpt/storage/vector_store/pgvector_store.py:25
+#: ../dbgpt/storage/vector_store/pgvector_store.py:27
 msgid "Connection String"
 msgstr "连接字符串"
 
-#: ../dbgpt/storage/vector_store/pgvector_store.py:29
+#: ../dbgpt/storage/vector_store/pgvector_store.py:31
 msgid ""
 "The connection string of vector store, if not set, will use the default "
 "connection string."
 msgstr "向量存储的连接字符串，如果未设置，将使用默认的连接字符串。"
 
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:542
-msgid "OceanBase Vector Store"
-msgstr "OceanBase 向量存储"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:548
-msgid "OceanBase Host"
-msgstr "OceanBase 主机地址"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:552
-msgid "oceanbase host"
-msgstr "oceanbase 主机地址"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:558
-msgid "OceanBase Port"
-msgstr "OceanBase 端口"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:562
-msgid "oceanbase port"
-msgstr "oceanbase 端口"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:568
-msgid "OceanBase User"
-msgstr "OceanBase 用户名"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:572
-msgid "user to login"
-msgstr "登录用户名"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:578
-msgid "OceanBase Password"
-msgstr "OceanBase 密码"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:582
-msgid "password to login"
-msgstr "登录密码"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:588
-msgid "OceanBase Database"
-msgstr "OceanBase 数据库名"
-
-#: ../dbgpt/storage/vector_store/oceanbase_store.py:592
-msgid "database for vector tables"
-msgstr "存放向量表的数据库名"
-
-#: ../dbgpt/storage/vector_store/base.py:19
+#: ../dbgpt/storage/vector_store/base.py:20
 msgid "Collection Name"
 msgstr "集合名称"
 
-#: ../dbgpt/storage/vector_store/base.py:23
+#: ../dbgpt/storage/vector_store/base.py:24
 msgid "The name of vector store, if not set, will use the default name."
 msgstr "向量存储的名称，如果未设置，将使用默认名称。"
 
-#: ../dbgpt/storage/vector_store/base.py:29
+#: ../dbgpt/storage/vector_store/base.py:30
 msgid "User"
 msgstr "用户"
 
-#: ../dbgpt/storage/vector_store/base.py:33
+#: ../dbgpt/storage/vector_store/base.py:34
 msgid "The user of vector store, if not set, will use the default user."
 msgstr "向量存储的用户，如果未设置，将使用默认用户。"
 
-#: ../dbgpt/storage/vector_store/base.py:39
+#: ../dbgpt/storage/vector_store/base.py:40
 msgid "Password"
 msgstr "密码"
 
-#: ../dbgpt/storage/vector_store/base.py:43
+#: ../dbgpt/storage/vector_store/base.py:44
 msgid ""
 "The password of vector store, if not set, will use the default password."
 msgstr "向量存储的密码，如果未设置，将使用默认密码。"
 
-#: ../dbgpt/storage/vector_store/base.py:50
+#: ../dbgpt/storage/vector_store/base.py:51
 msgid "Embedding Function"
 msgstr "嵌入函数"
 
-#: ../dbgpt/storage/vector_store/base.py:54
+#: ../dbgpt/storage/vector_store/base.py:55
 msgid ""
 "The embedding function of vector store, if not set, will use the default "
 "embedding function."
 msgstr "向量存储的嵌入函数，如果未设置，将使用默认的嵌入函数。"
 
-#: ../dbgpt/storage/vector_store/base.py:61
+#: ../dbgpt/storage/vector_store/base.py:62
 msgid "Max Chunks Once Load"
 msgstr "一次加载的最大块数"
 
-#: ../dbgpt/storage/vector_store/base.py:65
+#: ../dbgpt/storage/vector_store/base.py:66
 msgid ""
 "The max number of chunks to load at once. If your document is large, you can "
 "set this value to a larger number to speed up the loading process. Default "
@@ -239,14 +259,29 @@ msgstr ""
 "一次加载的最大块数。如果您的文档很大，可以将此值设置为较大的数字，以加快加载"
 "过程。默认值为 10。"
 
-#: ../dbgpt/storage/vector_store/base.py:73
+#: ../dbgpt/storage/vector_store/base.py:74
 msgid "Max Threads"
 msgstr "最大线程数"
 
-#: ../dbgpt/storage/vector_store/base.py:77
+#: ../dbgpt/storage/vector_store/base.py:78
 msgid ""
 "The max number of threads to use. Default is 1. If you set this bigger than "
 "1, please make sure your vector store is thread-safe."
 msgstr ""
 "要使用的最大线程数。默认值为 1。如果您将此值设置为大于 1，请确保您的向量存储"
 "是线程安全的。"
+
+#~ msgid "Vector Store Connector"
+#~ msgstr "向量存储连接器"
+
+#~ msgid "Vector Store Type"
+#~ msgstr "向量存储类型"
+
+#~ msgid "The type of vector store."
+#~ msgstr "向量存储的类型。"
+
+#~ msgid "Vector Store Implementation"
+#~ msgstr "向量存储实现"
+
+#~ msgid "The vector store implementation."
+#~ msgstr "向量存储的实现。"
