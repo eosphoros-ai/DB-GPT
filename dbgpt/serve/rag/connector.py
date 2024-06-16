@@ -56,6 +56,8 @@ def _load_vector_options() -> List[OptionValue]:
             default=None,
         ),
     ],
+    # Compatible with the old version
+    alias=["dbgpt.storage.vector_store.connector.VectorStoreConnector"],
 )
 class VectorStoreConnector:
     """The connector for vector store.
