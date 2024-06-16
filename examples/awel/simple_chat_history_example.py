@@ -55,6 +55,7 @@
 
 
 """
+
 import logging
 from typing import Dict, List, Optional, Union
 
@@ -69,7 +70,7 @@ from dbgpt.core import (
     ModelRequestContext,
     SystemPromptTemplate,
 )
-from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
+from dbgpt.core.awel import DAG, BranchJoinOperator, HttpTrigger, MapOperator
 from dbgpt.core.operators import (
     ChatComposerInput,
     ChatHistoryPromptComposerOperator,
@@ -150,9 +151,7 @@ with DAG("dbgpt_awel_simple_chat_history") as multi_round_dag:
     )
     model_parse_task = MapOperator(lambda out: out.to_dict())
     openai_format_stream_task = OpenAIStreamingOutputOperator()
-    result_join_task = JoinOperator(
-        combine_function=lambda not_stream_out, stream_out: not_stream_out or stream_out
-    )
+    result_join_task = BranchJoinOperator()
 
     req_handle_task = MapOperator(
         lambda req: ChatComposerInput(

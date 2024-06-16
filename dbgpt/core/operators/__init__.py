@@ -8,6 +8,7 @@ from dbgpt.core.interface.operators.llm_operator import (  # noqa: F401
     BaseLLM,
     BaseLLMOperator,
     BaseStreamingLLMOperator,
+    LLMBranchJoinOperator,
     LLMBranchOperator,
     RequestBuilderOperator,
 )
@@ -32,6 +33,7 @@ __ALL__ = [
     "BaseLLM",
     "LLMBranchOperator",
     "BaseLLMOperator",
+    "LLMBranchJoinOperator",
     "RequestBuilderOperator",
     "BaseStreamingLLMOperator",
     "BaseConversationOperator",

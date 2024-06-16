@@ -8,6 +8,7 @@ from dbgpt._private.pydantic import BaseModel
 from dbgpt.core.awel import (
     BaseOperator,
     BranchFunc,
+    BranchJoinOperator,
     BranchOperator,
     CommonLLMHttpRequestBody,
     CommonLLMHttpResponseBody,
@@ -553,3 +554,47 @@ class StringOutput2ModelOutputOperator(MapOperator[str, ModelOutput]):
             text=input_value,
             error_code=500,
         )
+
+
+class LLMBranchJoinOperator(BranchJoinOperator[ModelOutput]):
+    """The LLM Branch Join Operator.
+
+    Decide which output to keep(streaming or non-streaming).
+    """
+
+    streaming_operator = True
+    metadata = ViewMetadata(
+        label=_("LLM Branch Join Operator"),
+        name="llm_branch_join_operator",
+        category=OperatorCategory.LLM,
+        operator_type=OperatorType.JOIN,
+        description=_("Just keep the first non-empty output."),
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                _("Non-Streaming Model Output"),
+                "not_stream_output",
+                ModelOutput,
+                description=_("The non-streaming output."),
+            ),
+            IOField.build_from(
+                _("Streaming Model Output"),
+                "stream_output",
+                ModelOutput,
+                is_list=True,
+                description=_("The streaming output."),
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                _("Model Output"),
+                "output_value",
+                ModelOutput,
+                description=_("The output value of the operator."),
+            ),
+        ],
+    )
+
+    def __init__(self, **kwargs):
+        """Create a new LLM branch join operator."""
+        super().__init__(**kwargs)

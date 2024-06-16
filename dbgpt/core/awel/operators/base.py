@@ -137,6 +137,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         task_name: Optional[str] = None,
         dag: Optional[DAG] = None,
         runner: Optional[WorkflowRunner] = None,
+        can_skip_in_branch: bool = True,
         **kwargs,
     ) -> None:
         """Create a BaseOperator with an optional workflow runner.
@@ -157,6 +158,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         self._runner: WorkflowRunner = runner
         self._dag_ctx: Optional[DAGContext] = None
+        self._can_skip_in_branch = can_skip_in_branch
 
     @property
     def current_dag_context(self) -> DAGContext:
@@ -320,6 +322,10 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     def current_event_loop_task_id(self) -> int:
         """Get the current event loop task id."""
         return id(asyncio.current_task())
+
+    def can_skip_in_branch(self) -> bool:
+        """Check if the operator can be skipped in the branch."""
+        return self._can_skip_in_branch
 
 
 def initialize_runner(runner: WorkflowRunner):

@@ -562,7 +562,8 @@ class FlowFactory:
                     )
                 for i, param in enumerate(view_metadata.parameters):
                     downstream_key, _, _ = downstream[i]
-                    param.value = key_to_operator_nodes[downstream_key].data.name
+                    # param.value = key_to_operator_nodes[downstream_key].data.name
+                    param.value = downstream_key
 
             try:
                 runnable_params = metadata.get_runnable_parameters(
