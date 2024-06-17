@@ -440,6 +440,8 @@ def core_requires():
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         # TODO: remove pandas dependency
         "pandas==2.0.3",
+        # numpy should less than 2.0.0
+        "numpy>=1.21.0,<2.0.0",
     ]
 
     # Just use by DB-GPT internal, we should find the smallest dependency set for run
