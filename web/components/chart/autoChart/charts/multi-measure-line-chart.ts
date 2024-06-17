@@ -1,8 +1,9 @@
 import { hasSubset } from '../advisor/utils';
-import { findNominalField, findOrdinalField, getLineSize, processDateEncode } from './util';
+import { findNominalField, findOrdinalField, getLineSize, processDateEncode, sortData } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 import { Datum } from '@antv/ava';
 
+const MULTI_MEASURE_LINE_CHART = 'multi_measure_line_chart'
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
     // @ts-ignore
@@ -12,7 +13,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
 
     const spec: Specification = {
       type: 'view',
-      data,
+      data: sortData({ data, chartType: MULTI_MEASURE_LINE_CHART, xField: field4Nominal }),
       children: [],
     };
 
@@ -40,7 +41,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
 };
 
 const ckb: ChartKnowledge = {
-  id: 'multi_measure_line_chart',
+  id: MULTI_MEASURE_LINE_CHART,
   name: 'multi_measure_line_chart',
   alias: ['multi_measure_line_chart'],
   family: ['LineCharts'],

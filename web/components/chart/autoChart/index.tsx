@@ -9,6 +9,7 @@ import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specificat
 import { customCharts } from './charts';
 import { ChatContext } from '@/app/chat-context';
 import { compact, concat, uniq } from 'lodash';
+import { sortData } from './charts/util';
 
 const { Option } = Select;
 
@@ -81,7 +82,7 @@ export const AutoChart = (props: AutoChartProps) => {
       setAdvices(allAdvices);
       setRenderChartType(allAdvices[0]?.type as ChartType);
     }
-  }, [data, advisor, chartType]);
+  }, [JSON.stringify(data), advisor, chartType]);
 
   const visComponent = useMemo(() => {
     /* Advices exist, render the chart. */
@@ -89,6 +90,13 @@ export const AutoChart = (props: AutoChartProps) => {
       const chartTypeInput = renderChartType ?? advices[0].type;
       const spec: Specification = advices?.find((item: Advice) => item.type === chartTypeInput)?.spec ?? undefined;
       if (spec) {
+        if (spec.data && ['line_chart', 'step_line_chart'].includes(chartTypeInput)) {
+          // 处理 ava 内置折线图的排序问题
+          const dataAnalyzerOutput = advisor?.dataAnalyzer.execute({ data })
+          if (dataAnalyzerOutput && 'dataProps' in dataAnalyzerOutput) {
+            spec.data = sortData({ data: spec.data, xField: dataAnalyzerOutput.dataProps?.find(field => field.recommendation === 'date'), chartType: chartTypeInput });
+          }
+        }
         return (
           <Chart
             key={chartTypeInput}

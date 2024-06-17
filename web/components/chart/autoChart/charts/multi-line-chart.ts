@@ -1,8 +1,9 @@
-import { hasSubset, intersects } from '../advisor/utils';
-import { findOrdinalField, processDateEncode, findNominalField, isUniqueXValue, getLineSize } from './util';
+import { hasSubset } from '../advisor/utils';
+import { findOrdinalField, processDateEncode, findNominalField, getLineSize, sortData } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 import type { Datum } from '@antv/ava';
 
+const MULTI_LINE_CHART = 'multi_line_chart'
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   const ordinalField = findOrdinalField(dataProps);
   const nominalField = findNominalField(dataProps);
@@ -18,7 +19,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
   const spec: Specification = {
     type: 'view',
     autoFit: true,
-    data,
+    data: sortData({ data, chartType: MULTI_LINE_CHART, xField: field4X }),
     children: [],
   };
 
@@ -43,7 +44,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
 };
 
 const ckb: ChartKnowledge = {
-  id: 'multi_line_chart',
+  id: MULTI_LINE_CHART,
   name: 'multi_line_chart',
   alias: ['multi_line_chart'],
   family: ['LineCharts'],

@@ -1,8 +1,6 @@
-import { Datum, FieldInfo } from '@antv/ava';
-import { hasSubset, intersects } from '../advisor/utils';
-import { uniq } from 'lodash';
-
-type BasicDataPropertyForAdvice = any;
+import type { Datum, FieldInfo } from "@antv/ava";
+import { hasSubset, intersects } from "../advisor/utils";
+import { cloneDeep, uniq } from "lodash";
 
 /**
  * Process date column to new Date().
@@ -10,7 +8,7 @@ type BasicDataPropertyForAdvice = any;
  * @param dataProps
  * @returns
  */
-export function processDateEncode(field: string, dataProps: BasicDataPropertyForAdvice[]) {
+export function processDateEncode(field: string, dataProps: FieldInfo[]) {
   const dp = dataProps.find((dataProp) => dataProp.name === field);
 
   if (dp?.recommendation === 'date') {
@@ -50,3 +48,21 @@ export const getLineSize = (
   }
   return field4X?.name && isUniqueXValue({ data: allData, xField: field4X.name }) ? 5 : undefined;
 };
+
+export const sortData = ({ data, chartType, xField }: {
+  data: Datum[];
+  xField?: FieldInfo;
+  chartType: string;
+}) => {
+  const sortedData = cloneDeep(data)
+  try {
+    // 折线图绘制需要将数据点按照日期从小到大的顺序排序和连线
+    if (chartType.includes('line') && xField?.name && xField.recommendation === 'date') {
+      sortedData.sort((datum1, datum2) => new Date(datum1[xField.name as string]).getTime() - new Date(datum2[xField.name as string]).getTime())
+      return sortedData
+    }
+  } catch (err) {
+    console.error(err)
+  }
+  return sortedData
+}
