@@ -424,6 +424,8 @@ def core_requires():
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
         "httpx",
         "fastapi>=0.100.0",
+        # For retry, chromadb need tenacity<=8.3.0
+        "tenacity<=8.3.0",
     ]
     # Simple command line dependencies
     setup_spec.extras["cli"] = setup_spec.extras["client"] + [
