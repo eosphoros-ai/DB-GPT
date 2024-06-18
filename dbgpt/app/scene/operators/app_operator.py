@@ -13,8 +13,8 @@ from dbgpt.core import (
 from dbgpt.core.awel import (
     DAG,
     BaseOperator,
+    BranchJoinOperator,
     InputOperator,
-    JoinOperator,
     MapOperator,
     SimpleCallDataInputSource,
 )
@@ -195,9 +195,7 @@ def build_cached_chat_operator(
             cache_task_name=cache_task_name,
         )
         # Create a join node to merge outputs from the model and cache nodes, just keep the first not empty output
-        join_task = JoinOperator(
-            combine_function=lambda model_out, cache_out: cache_out or model_out
-        )
+        join_task = BranchJoinOperator()
 
         # Define the workflow structure using the >> operator
         input_task >> cache_check_branch_task

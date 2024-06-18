@@ -35,12 +35,13 @@
             }'
 
 """
+
 import logging
 from typing import Any, Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import LLMClient
-from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
+from dbgpt.core.awel import DAG, BranchJoinOperator, HttpTrigger, MapOperator
 from dbgpt.core.operators import LLMBranchOperator, RequestBuilderOperator
 from dbgpt.model.operators import (
     LLMOperator,
@@ -94,9 +95,7 @@ with DAG("dbgpt_awel_simple_llm_client_generate") as client_generate_dag:
     )
     model_parse_task = MapOperator(lambda out: out.to_dict())
     openai_format_stream_task = OpenAIStreamingOutputOperator()
-    result_join_task = JoinOperator(
-        combine_function=lambda not_stream_out, stream_out: not_stream_out or stream_out
-    )
+    result_join_task = BranchJoinOperator()
 
     trigger >> request_handle_task >> branch_task
     branch_task >> llm_task >> model_parse_task >> result_join_task

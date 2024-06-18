@@ -29,9 +29,10 @@ class EmbeddingRetrieverOperator(RetrieverOperator[Union[str, List[str]], List[C
         parameters=[
             Parameter.build_from(
                 _("Storage Index Store"),
-                "vector_store_connector",
+                "index_store",
                 IndexStoreBase,
                 description=_("The vector store connector."),
+                alias=["vector_store_connector"],
             ),
             Parameter.build_from(
                 _("Top K"),
@@ -128,9 +129,10 @@ class EmbeddingAssemblerOperator(AssemblerOperator[Knowledge, List[Chunk]]):
         parameters=[
             Parameter.build_from(
                 _("Vector Store Connector"),
-                "vector_store_connector",
+                "index_store",
                 IndexStoreBase,
                 description=_("The vector store connector."),
+                alias=["vector_store_connector"],
             ),
             Parameter.build_from(
                 _("Chunk Parameters"),

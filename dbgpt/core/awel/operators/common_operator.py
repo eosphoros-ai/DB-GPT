@@ -16,6 +16,7 @@ from ..task.base import (
     ReduceFunc,
     TaskContext,
     TaskOutput,
+    is_empty_data,
 )
 from .base import BaseOperator
 
@@ -28,13 +29,16 @@ class JoinOperator(BaseOperator, Generic[OUT]):
     This node type is useful for combining the outputs of upstream nodes.
     """
 
-    def __init__(self, combine_function: JoinFunc, **kwargs):
+    def __init__(
+        self, combine_function: JoinFunc, can_skip_in_branch: bool = True, **kwargs
+    ):
         """Create a JoinDAGNode with a combine function.
 
         Args:
             combine_function: A function that defines how to combine inputs.
+            can_skip_in_branch(bool): Whether the node can be skipped in a branch.
         """
-        super().__init__(**kwargs)
+        super().__init__(can_skip_in_branch=can_skip_in_branch, **kwargs)
         if not callable(combine_function):
             raise ValueError("combine_function must be callable")
         self.combine_function = combine_function
@@ -56,6 +60,12 @@ class JoinOperator(BaseOperator, Generic[OUT]):
         join_output = input_ctx.parent_outputs[0].task_output
         curr_task_ctx.set_task_output(join_output)
         return join_output
+
+    async def _return_first_non_empty(self, *inputs):
+        for data in inputs:
+            if not is_empty_data(data):
+                return data
+        raise ValueError("All inputs are empty")
 
 
 class ReduceStreamOperator(BaseOperator, Generic[IN, OUT]):
@@ -285,6 +295,32 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
     async def branches(self) -> Dict[BranchFunc[IN], BranchTaskType]:
         """Return branch logic based on input data."""
         raise NotImplementedError
+
+
+class BranchJoinOperator(JoinOperator, Generic[OUT]):
+    """Operator that joins inputs using a custom combine function.
+
+    This node type is useful for combining the outputs of upstream nodes.
+    """
+
+    def __init__(
+        self,
+        combine_function: Optional[JoinFunc] = None,
+        can_skip_in_branch: bool = False,
+        **kwargs,
+    ):
+        """Create a JoinDAGNode with a combine function.
+
+        Args:
+            combine_function: A function that defines how to combine inputs.
+            can_skip_in_branch(bool): Whether the node can be skipped in a branch(
+                default True).
+        """
+        super().__init__(
+            combine_function=combine_function or self._return_first_non_empty,
+            can_skip_in_branch=can_skip_in_branch,
+            **kwargs,
+        )
 
 
 class InputOperator(BaseOperator, Generic[OUT]):

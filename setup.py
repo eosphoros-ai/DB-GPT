@@ -424,6 +424,8 @@ def core_requires():
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
         "httpx",
         "fastapi>=0.100.0",
+        # For retry, chromadb need tenacity<=8.3.0
+        "tenacity<=8.3.0",
     ]
     # Simple command line dependencies
     setup_spec.extras["cli"] = setup_spec.extras["client"] + [
@@ -440,6 +442,8 @@ def core_requires():
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         # TODO: remove pandas dependency
         "pandas==2.0.3",
+        # numpy should less than 2.0.0
+        "numpy>=1.21.0,<2.0.0",
     ]
 
     # Just use by DB-GPT internal, we should find the smallest dependency set for run

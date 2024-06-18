@@ -555,14 +555,6 @@ class FlowFactory:
                 downstream = key_to_downstream.get(operator_key, [])
                 if not downstream:
                     raise ValueError("Branch operator should have downstream.")
-                if len(downstream) != len(view_metadata.parameters):
-                    raise ValueError(
-                        "Branch operator should have the same number of downstream as "
-                        "parameters."
-                    )
-                for i, param in enumerate(view_metadata.parameters):
-                    downstream_key, _, _ = downstream[i]
-                    param.value = key_to_operator_nodes[downstream_key].data.name
 
             try:
                 runnable_params = metadata.get_runnable_parameters(
