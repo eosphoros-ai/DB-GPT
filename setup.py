@@ -552,7 +552,7 @@ def quantization_requires():
         # 1. Compute Capability 7.5 (sm75). Turing and later architectures are supported.
         # 2. CUDA Toolkit 11.8 and later.
         cuda_version = get_cuda_version()
-        autoawq_latest_version = get_latest_version("autoawq", "", "0.2.4")
+        # autoawq_latest_version = get_latest_version("autoawq", "", "0.2.4")
         if cuda_version is None or cuda_version == "12.1":
             quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
         else:
