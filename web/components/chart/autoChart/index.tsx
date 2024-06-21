@@ -1,26 +1,31 @@
-import { Empty, Row, Col, Select, Tooltip } from 'antd';
-import { Advice, Advisor } from '@antv/ava';
-import { Chart } from '@berryv/g2-react';
+import { Empty, Row, Col, Select, Tooltip, Button, Space } from 'antd';
+import { Advice, Advisor, Datum } from '@antv/ava';
+import { Chart, ChartRef } from '@berryv/g2-react';
 import i18n, { I18nKeys } from '@/app/i18n';
 import { customizeAdvisor, getVisAdvices } from './advisor/pipeline';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { defaultAdvicesFilter } from './advisor/utils';
 import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
 import { customCharts } from './charts';
 import { ChatContext } from '@/app/chat-context';
 import { compact, concat, uniq } from 'lodash';
-import { sortData } from './charts/util';
+import { processNilData, sortData } from './charts/util';
+import { downloadImage } from '../helpers/downloadChartImage';;
+import { DownloadOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
 
 export const AutoChart = (props: AutoChartProps) => {
-  const { data, chartType, scopeOfCharts, ruleConfig } = props;
+  const { chartType, scopeOfCharts, ruleConfig, data: originalData } = props;
 
+  // 处理空值数据 (为'-'的数据)
+  const data = processNilData(originalData) as Datum[];
   const { mode } = useContext(ChatContext);
 
   const [advisor, setAdvisor] = useState<Advisor>();
   const [advices, setAdvices] = useState<Advice[]>([]);
   const [renderChartType, setRenderChartType] = useState<ChartType>();
+  const chartRef = useRef<ChartRef>()
 
   useEffect(() => {
     const input_charts: CustomChart[] = customCharts;
@@ -106,6 +111,7 @@ export const AutoChart = (props: AutoChartProps) => {
               autoFit: true,
               height: 300,
             }}
+            ref={chartRef}
           />
         );
       }
@@ -115,28 +121,38 @@ export const AutoChart = (props: AutoChartProps) => {
   if (renderChartType) {
     return (
       <div>
-        <Row justify="start" className="mb-2">
-          <Col>{i18n.t('Advices')}</Col>
-          <Col style={{ marginLeft: 24 }}>
-            <Select
-              className="w-52"
-              value={renderChartType}
-              placeholder={'Chart Switcher'}
-              onChange={(value) => setRenderChartType(value)}
-              size={'small'}
-            >
-              {advices?.map((item) => {
-                const name = i18n.t(item.type as I18nKeys);
-
-                return (
-                  <Option key={item.type} value={item.type}>
-                    <Tooltip title={name} placement={'right'}>
-                      <div>{name}</div>
-                    </Tooltip>
-                  </Option>
-                );
-              })}
-            </Select>
+        <Row justify='space-between' className="mb-2">
+          <Col>
+            <Space>
+              <span>{i18n.t('Advices')}</span>
+              <Select
+                className="w-52"
+                value={renderChartType}
+                placeholder={'Chart Switcher'}
+                onChange={(value) => setRenderChartType(value)}
+                size={'small'}
+              >
+                {advices?.map((item) => {
+                  const name = i18n.t(item.type as I18nKeys);
+                  return (
+                    <Option key={item.type} value={item.type}>
+                      <Tooltip title={name} placement={'right'}>
+                        <div>{name}</div>
+                      </Tooltip>
+                    </Option>
+                  );
+                })}
+              </Select>
+            </Space>
+          </Col>
+          <Col>
+            <Tooltip title={i18n.t('Download')}>
+              <Button
+                onClick={() => downloadImage(chartRef.current, i18n.t(renderChartType as I18nKeys))}
+                icon={<DownloadOutlined />}
+                type='text'
+              />
+            </Tooltip>
           </Col>
         </Row>
         <div className="auto-chart-content">{visComponent}</div>

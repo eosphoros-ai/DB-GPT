@@ -66,3 +66,12 @@ export const sortData = ({ data, chartType, xField }: {
   }
   return sortedData
 }
+
+/** 数据空值处理：后端返回的空数据为 '-', 在展示为图表时会有问题，修改为 null */
+export const processNilData = (data: Datum[], emptyValue = '-') => data.map((datum) => {
+  const processedDatum: Record<string, string | number | null> = {};
+  Object.keys(datum).forEach((key) => {
+    processedDatum[key] = datum[key] === emptyValue ? null : datum[key];
+  });
+  return processedDatum;
+});
