@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter
 
@@ -8,6 +8,7 @@ from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.model.base import ModelInstance
 from dbgpt.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
 from dbgpt.model.parameter import ModelControllerParameters
+from dbgpt.util.api_utils import APIMixin
 from dbgpt.util.api_utils import _api_remote as api_remote
 from dbgpt.util.api_utils import _sync_api_remote as sync_api_remote
 from dbgpt.util.fastapi import create_app
@@ -73,9 +74,25 @@ class LocalModelController(BaseModelController):
         return await self.registry.send_heartbeat(instance)
 
 
-class _RemoteModelController(BaseModelController):
-    def __init__(self, base_url: str) -> None:
-        self.base_url = base_url
+class _RemoteModelController(APIMixin, BaseModelController):
+    def __init__(
+        self,
+        urls: str,
+        health_check_interval_secs: int = 5,
+        health_check_timeout_secs: int = 30,
+        check_health: bool = True,
+        choice_type: Literal["latest_first", "random"] = "latest_first",
+    ) -> None:
+        APIMixin.__init__(
+            self,
+            urls=urls,
+            health_check_path="/api/health",
+            health_check_interval_secs=health_check_interval_secs,
+            health_check_timeout_secs=health_check_timeout_secs,
+            check_health=check_health,
+            choice_type=choice_type,
+        )
+        BaseModelController.__init__(self)
 
     @api_remote(path="/api/controller/models", method="POST")
     async def register_instance(self, instance: ModelInstance) -> bool:
@@ -160,6 +177,12 @@ def initialize_controller(
         app = create_app()
         app.include_router(router, prefix="/api", tags=["Model"])
         uvicorn.run(app, host=host, port=port, log_level="info")
+
+
+@router.get("/health")
+async def api_health_check():
+    """Health check API."""
+    return {"status": "ok"}
 
 
 @router.post("/controller/models")

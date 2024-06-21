@@ -15,3 +15,5 @@ pre-commit
 # Type checking
 mypy==1.7.0
 httpx==0.26.0
+# For testing httpx
+pytest-httpx

@@ -86,6 +86,10 @@ class ModelInstanceStorageItem(StorageItem):
 
     def __post_init__(self):
         """Post init method."""
+        # Convert last_heartbeat to datetime if it's a timestamp
+        if isinstance(self.last_heartbeat, (int, float)):
+            self.last_heartbeat = datetime.fromtimestamp(self.last_heartbeat)
+
         self._identifier = ModelInstanceIdentifier(
             model_name=self.model_name,
             host=self.host,
@@ -102,6 +106,7 @@ class ModelInstanceStorageItem(StorageItem):
         self.from_object(other)
 
     def to_dict(self) -> Dict:
+        last_heartbeat = self.last_heartbeat.timestamp()
         return {
             "model_name": self.model_name,
             "host": self.host,
@@ -111,7 +116,7 @@ class ModelInstanceStorageItem(StorageItem):
             "healthy": self.healthy,
             "enabled": self.enabled,
             "prompt_template": self.prompt_template,
-            "last_heartbeat": self.last_heartbeat,
+            "last_heartbeat": last_heartbeat,
         }
 
     def from_object(self, item: "ModelInstanceStorageItem") -> None:
@@ -161,7 +166,7 @@ class StorageModelRegistry(ModelRegistry):
         storage: StorageInterface,
         system_app: SystemApp | None = None,
         executor: Optional[Executor] = None,
-        heartbeat_interval_secs: int = 60,
+        heartbeat_interval_secs: float | int = 60,
         heartbeat_timeout_secs: int = 120,
     ):
         super().__init__(system_app)

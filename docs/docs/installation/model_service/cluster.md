@@ -124,7 +124,7 @@ MODEL_SERVER=http://127.0.0.1:8000
 
 Or it can be started directly by command to formulate the model.
 ```shell
-LLM_MODEL=glm-4-9b-chat dbgpt start webserver --light
+LLM_MODEL=glm-4-9b-chat dbgpt start webserver --light --remote_embedding
 ```
 
 ## Command line usage
