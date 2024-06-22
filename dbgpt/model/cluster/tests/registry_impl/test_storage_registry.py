@@ -212,7 +212,7 @@ async def test_heartbeat_checker(
     # First heartbeat should be successful
     await check_heartbeat(model_instance.model_name, True)
     # Wait heartbeat timeout
-    await asyncio.sleep(heartbeat_timeout_secs + 0.1)
+    await asyncio.sleep(heartbeat_timeout_secs + 0.5)
     await check_heartbeat(model_instance.model_name, False)
 
     # Send heartbeat again
