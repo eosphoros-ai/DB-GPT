@@ -1,4 +1,5 @@
 import functools
+import json
 import os
 import platform
 import re
@@ -753,6 +754,25 @@ else:
         ],
     )
 
+
+class PrintExtrasCommand(setuptools.Command):
+    description = "print extras_require"
+    user_options = [
+        ('output=', 'o', 'Path to output the extras_require JSON'),
+    ]
+
+    def initialize_options(self):
+        self.output = None
+
+    def finalize_options(self):
+        if self.output is None:
+            raise ValueError("output is not set")
+
+    def run(self):
+        with open(self.output, 'w') as f:
+            json.dump(setup_spec.unique_extras, f, indent=2)
+
+
 setuptools.setup(
     name="dbgpt",
     packages=packages,
@@ -770,6 +790,9 @@ setuptools.setup(
     license="https://opensource.org/license/mit/",
     python_requires=">=3.10",
     extras_require=setup_spec.unique_extras,
+    cmdclass={
+        'print_extras': PrintExtrasCommand,
+    },
     entry_points={
         "console_scripts": [
             "dbgpt=dbgpt.cli.cli_scripts:main",
