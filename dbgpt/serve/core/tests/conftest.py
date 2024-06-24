@@ -3,7 +3,7 @@ from typing import Dict
 import pytest
 import pytest_asyncio
 from fastapi.middleware.cors import CORSMiddleware
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 
 from dbgpt.component import SystemApp
 from dbgpt.util import AppConfig
@@ -56,7 +56,9 @@ async def client(request, asystem_app: SystemApp):
 
     test_app = asystem_app.app
 
-    async with AsyncClient(app=test_app, base_url=base_url, headers=headers) as client:
+    async with AsyncClient(
+        transport=ASGITransport(test_app), base_url=base_url, headers=headers
+    ) as client:
         for router in routers:
             test_app.include_router(router)
         if app_caller:

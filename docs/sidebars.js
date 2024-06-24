@@ -227,6 +227,10 @@ const sidebars = {
               type: 'doc',
               id: 'installation/model_service/cluster',
             },
+            {
+              type: 'doc',
+              id: 'installation/model_service/cluster_ha',
+            },
           ],
         },
         {

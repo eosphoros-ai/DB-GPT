@@ -26,6 +26,7 @@ from dbgpt.util.parameter_utils import (
     build_lazy_click_command,
 )
 
+# Your can set environment variable CONTROLLER_ADDRESS to set the default address
 MODEL_CONTROLLER_ADDRESS = "http://127.0.0.1:8000"
 
 logger = logging.getLogger("dbgpt_cli")

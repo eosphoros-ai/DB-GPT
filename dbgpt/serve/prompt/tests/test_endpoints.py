@@ -86,6 +86,7 @@ async def test_api_health(client: AsyncClient, asystem_app, has_auth: bool):
 )
 async def test_api_auth(client: AsyncClient):
     response = await client.get("/health")
+    response.raise_for_status()
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 

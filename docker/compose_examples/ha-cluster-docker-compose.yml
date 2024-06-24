@@ -1,0 +1,127 @@
+# An example of using docker-compose to start a HA model serving cluster with two controllers and one worker.
+# For simplicity, we use chatgpt_proxyllm as the model for the worker, and we build a new docker image named eosphorosai/dbgpt-openai:latest.
+# How to build the image:
+# run `bash ./docker/base/build_proxy_image.sh` in the root directory of the project.
+# If you want to use other pip index url, you can run command with `--pip-index-url` option.
+# For example, `bash ./docker/base/build_proxy_image.sh --pip-index-url https://pypi.tuna.tsinghua.edu.cn/simple`
+#
+# How to start the cluster:
+# 1. run `cd docker/compose_examples`
+# 2. run `OPENAI_API_KEY="{your api key}" OPENAI_API_BASE="https://api.openai.com/v1" docker compose -f ha-cluster-docker-compose.yml up -d`
+# Note: Make sure you have set the environment variables OPENAI_API_KEY.
+version: '3.10'
+
+services:
+  init:
+    image: busybox
+    volumes:
+      - ../examples/sqls:/sqls
+      - ../../assets/schema/dbgpt.sql:/dbgpt.sql
+      - dbgpt-init-scripts:/docker-entrypoint-initdb.d
+    command: /bin/sh -c "cp /dbgpt.sql /docker-entrypoint-initdb.d/ && cp /sqls/* /docker-entrypoint-initdb.d/ && ls /docker-entrypoint-initdb.d/"
+
+  db:
+    image: mysql/mysql-server
+    environment:
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'aa123456'
+    ports:
+      - 3306:3306
+    volumes:
+      - dbgpt-myql-db:/var/lib/mysql
+      - ../examples/my.cnf:/etc/my.cnf
+      - dbgpt-init-scripts:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    depends_on:
+      - init
+  controller-1:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start controller --registry_type database  --registry_db_type mysql --registry_db_name dbgpt --registry_db_host db --registry_db_port 3306 --registry_db_user root --registry_db_password aa123456
+    volumes:
+      - ../../:/app
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    depends_on:
+      - db
+  controller-2:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start controller --registry_type database  --registry_db_type mysql --registry_db_name dbgpt --registry_db_host db --registry_db_port 3306 --registry_db_user root --registry_db_password aa123456
+    volumes:
+      - ../../:/app
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    depends_on:
+      - db
+  llm-worker:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start worker --model_type proxy --model_name chatgpt_proxyllm --model_path chatgpt_proxyllm --proxy_server_url ${OPENAI_API_BASE}/chat/completions --proxy_api_key ${OPENAI_API_KEY} --controller_addr "http://controller-1:8000,http://controller-2:8000"
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+      # Your real openai model name, e.g. gpt-3.5-turbo, gpt-4o
+      - PROXYLLM_BACKEND=gpt-3.5-turbo
+    depends_on:
+      - controller-1
+      - controller-2
+    volumes:
+      - ../../:/app
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ipc: host
+  embedding-worker:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start worker --worker_type text2vec --model_name proxy_http_openapi --model_path proxy_http_openapi --proxy_server_url ${OPENAI_API_BASE}/embeddings --proxy_api_key ${OPENAI_API_KEY} --controller_addr "http://controller-1:8000,http://controller-2:8000"
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+      - proxy_http_openapi_proxy_backend=text-embedding-3-small
+    depends_on:
+      - controller-1
+      - controller-2
+    volumes:
+      - ../../:/app
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ipc: host
+  webserver:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start webserver --light --remote_embedding --controller_addr "http://controller-1:8000,http://controller-2:8000"
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+      - LOCAL_DB_TYPE=mysql
+      - LOCAL_DB_HOST=db
+      - LOCAL_DB_USER=root
+      - LOCAL_DB_PASSWORD=aa123456
+      - LLM_MODEL=chatgpt_proxyllm
+      - EMBEDDING_MODEL=proxy_http_openapi
+    depends_on:
+      - controller-1
+      - controller-2
+      - llm-worker
+      - embedding-worker
+    volumes:
+      - ../../:/app
+      - dbgpt-data:/app/pilot/data
+      - dbgpt-message:/app/pilot/message
+    # env_file:
+    #   - .env.template
+    ports:
+      - 5670:5670/tcp
+    # webserver may be failed, it must wait all sqls in /docker-entrypoint-initdb.d execute finish.
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+volumes:
+  dbgpt-init-scripts:
+  dbgpt-myql-db:
+  dbgpt-data:
+  dbgpt-message:
+networks:
+  dbgptnet:
+    driver: bridge
+    name: dbgptnet

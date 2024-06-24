@@ -172,7 +172,7 @@ def setup_http_service_logging(exclude_paths: Optional[List[str]] = None):
     """
     if not exclude_paths:
         # Not show heartbeat log
-        exclude_paths = ["/api/controller/heartbeat"]
+        exclude_paths = ["/api/controller/heartbeat", "/api/health"]
     uvicorn_logger = logging.getLogger("uvicorn.access")
     if uvicorn_logger:
         for path in exclude_paths:

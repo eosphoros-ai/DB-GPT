@@ -1059,6 +1059,10 @@ def initialize_worker_manager_in_client(
     if not app:
         raise Exception("app can't be None")
 
+    if system_app:
+        logger.info(f"Register WorkerManager {_DefaultWorkerManagerFactory.name}")
+        system_app.register(_DefaultWorkerManagerFactory, worker_manager)
+
     worker_params: ModelWorkerParameters = _parse_worker_params(
         model_name=model_name, model_path=model_path, controller_addr=controller_addr
     )
@@ -1104,8 +1108,6 @@ def initialize_worker_manager_in_client(
     if include_router and app:
         # mount WorkerManager router
         app.include_router(router, prefix="/api")
-    if system_app:
-        system_app.register(_DefaultWorkerManagerFactory, worker_manager)
 
 
 def run_worker_manager(
