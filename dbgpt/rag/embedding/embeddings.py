@@ -870,6 +870,7 @@ class TongYiEmbeddings(BaseModel, Embeddings):
             ) from exc
         dashscope.TextEmbedding.api_key = kwargs.get("api_key")
         super().__init__(**kwargs)
+        self._api_key = kwargs.get("api_key")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
@@ -884,7 +885,9 @@ class TongYiEmbeddings(BaseModel, Embeddings):
         from dashscope import TextEmbedding
 
         # 最多支持10条，每条最长支持2048tokens
-        resp = TextEmbedding.call(model=self.model_name, input=texts)
+        resp = TextEmbedding.call(
+            model=self.model_name, input=texts, api_key=self._api_key
+        )
         if "output" not in resp:
             raise RuntimeError(resp["message"])
 
