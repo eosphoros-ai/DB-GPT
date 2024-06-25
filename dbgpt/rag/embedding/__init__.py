@@ -14,6 +14,7 @@ from .embeddings import (  # noqa: F401
     JinaEmbeddings,
     OllamaEmbeddings,
     OpenAPIEmbeddings,
+    TongYiEmbeddings,
 )
 from .rerank import CrossEncoderRerankEmbeddings, OpenAPIRerankEmbeddings  # noqa: F401
 
@@ -29,6 +30,7 @@ __ALL__ = [
     "DefaultEmbeddingFactory",
     "EmbeddingFactory",
     "WrappedEmbeddingFactory",
+    "TongYiEmbeddings",
     "CrossEncoderRerankEmbeddings",
     "OpenAPIRerankEmbeddings",
 ]
