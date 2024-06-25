@@ -8,9 +8,10 @@ consolidates important information over time.
 import os.path
 from concurrent.futures import Executor, ThreadPoolExecutor
 from datetime import datetime
-from typing import TYPE_CHECKING, Generic, List, Optional, Tuple, Type
+from typing import Generic, List, Optional, Tuple, Type
 
 from dbgpt.core import Embeddings, LLMClient
+from dbgpt.storage.vector_store.base import VectorStoreBase
 from dbgpt.util.annotations import immutable, mutable
 
 from .base import (
@@ -25,9 +26,6 @@ from .base import (
 )
 from .long_term import LongTermMemory
 from .short_term import EnhancedShortTermMemory
-
-if TYPE_CHECKING:
-    from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 
 class HybridMemory(Memory, Generic[T]):
@@ -81,8 +79,10 @@ class HybridMemory(Memory, Generic[T]):
     ):
         """Create a hybrid memory from Chroma vector store."""
         from dbgpt.configs.model_config import DATA_DIR
-        from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
+        from dbgpt.storage.vector_store.chroma_store import (
+            ChromaStore,
+            ChromaVectorConfig,
+        )
 
         if not embeddings:
             from dbgpt.rag.embedding import DefaultEmbeddingFactory
@@ -91,16 +91,15 @@ class HybridMemory(Memory, Generic[T]):
 
         vstore_path = vstore_path or os.path.join(DATA_DIR, "agent_memory")
 
-        vector_store_connector = VectorStoreConnector.from_default(
-            vector_store_type="Chroma",
-            embedding_fn=embeddings,
-            vector_store_config=ChromaVectorConfig(
+        vector_store = ChromaStore(
+            ChromaVectorConfig(
                 name=vstore_name,
                 persist_path=vstore_path,
-            ),
+                embedding_fn=embeddings,
+            )
         )
         return cls.from_vstore(
-            vector_store_connector=vector_store_connector,
+            vector_store=vector_store,
             embeddings=embeddings,
             executor=executor,
             now=now,
@@ -113,7 +112,7 @@ class HybridMemory(Memory, Generic[T]):
     @classmethod
     def from_vstore(
         cls,
-        vector_store_connector: "VectorStoreConnector",
+        vector_store: "VectorStoreBase",
         embeddings: Optional[Embeddings] = None,
         executor: Optional[Executor] = None,
         now: Optional[datetime] = None,
@@ -124,7 +123,7 @@ class HybridMemory(Memory, Generic[T]):
     ):
         """Create a hybrid memory from vector store."""
         if not embeddings:
-            embeddings = vector_store_connector.current_embeddings
+            raise ValueError("embeddings is required.")
         if not executor:
             executor = ThreadPoolExecutor()
         if not now:
@@ -139,7 +138,7 @@ class HybridMemory(Memory, Generic[T]):
         if not long_term_memory:
             long_term_memory = LongTermMemory(
                 executor,
-                vector_store_connector,
+                vector_store,
                 now=now,
             )
         return cls(now, sensory_memory, short_term_memory, long_term_memory, **kwargs)

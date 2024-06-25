@@ -2,6 +2,7 @@
 
 This runner will run the workflow in the current process.
 """
+
 import asyncio
 import logging
 import traceback
@@ -11,7 +12,7 @@ from dbgpt.component import SystemApp
 
 from ..dag.base import DAGContext, DAGVar
 from ..operators.base import CALL_DATA, BaseOperator, WorkflowRunner
-from ..operators.common_operator import BranchOperator, JoinOperator
+from ..operators.common_operator import BranchOperator
 from ..task.base import SKIP_DATA, TaskContext, TaskState
 from ..task.task_impl import DefaultInputContext, DefaultTaskContext, SimpleTaskOutput
 from .job_manager import JobManager
@@ -184,14 +185,14 @@ def _skip_current_downstream_by_node_name(
         return
     for child in branch_node.downstream:
         child = cast(BaseOperator, child)
-        if child.node_name in skip_nodes:
+        if child.node_name in skip_nodes or child.node_id in skip_node_ids:
             logger.info(f"Skip node name {child.node_name}, node id {child.node_id}")
             _skip_downstream_by_id(child, skip_node_ids)
 
 
 def _skip_downstream_by_id(node: BaseOperator, skip_node_ids: Set[str]):
-    if isinstance(node, JoinOperator):
-        # Not skip join node
+    if not node.can_skip_in_branch():
+        # Current node can not skip, so skip its downstream
         return
     skip_node_ids.add(node.node_id)
     for child in node.downstream:

@@ -291,21 +291,13 @@ class MultiAgents(BaseComponent, ABC):
             else:
                 raise ValueError(f"Unknown Agent Team Mode!{team_mode}")
             manager = (
-                await manager.bind(context)
-                .bind(llm_config)
-                .bind(depend_resource)
-                .bind(agent_memory)
-                .build()
+                await manager.bind(context).bind(llm_config).bind(agent_memory).build()
             )
             manager.hire(employees)
             recipient = manager
 
         user_proxy: UserProxyAgent = (
-            await UserProxyAgent()
-            .bind(context)
-            .bind(depend_resource)
-            .bind(agent_memory)
-            .build()
+            await UserProxyAgent().bind(context).bind(agent_memory).build()
         )
         if is_retry_chat:
             # retry chat

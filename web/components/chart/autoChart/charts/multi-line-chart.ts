@@ -1,24 +1,25 @@
-import { hasSubset, intersects } from '../advisor/utils';
-import { processDateEncode } from './util';
+import { hasSubset } from '../advisor/utils';
+import { findOrdinalField, processDateEncode, findNominalField, getLineSize, sortData } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
+import type { Datum } from '@antv/ava';
 
+const MULTI_LINE_CHART = 'multi_line_chart'
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
-  const field4X = dataProps.find((field) =>
-    // @ts-ignore
-    intersects(field.levelOfMeasurements, ['Time', 'Ordinal']),
-  );
-  // @ts-ignore
-  const field4Y = dataProps.filter((field) => hasSubset(field.levelOfMeasurements, ['Interval']));
-  const field4Nominal = dataProps.find((field) =>
-    // @ts-ignore
-    hasSubset(field.levelOfMeasurements, ['Nominal']),
+  const ordinalField = findOrdinalField(dataProps);
+  const nominalField = findNominalField(dataProps);
+  // 放宽折线图的 x 轴条件，优先选择 time， ordinal 类型，没有的话使用 nominal 类型
+  const field4X = ordinalField ?? nominalField;
+
+  const field4Y = dataProps.filter((field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Interval']));
+  const field4Nominal = dataProps.find(
+    (field) => field.name !== field4X?.name && field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']),
   );
   if (!field4X || !field4Y) return null;
 
   const spec: Specification = {
     type: 'view',
     autoFit: true,
-    data,
+    data: sortData({ data, chartType: MULTI_LINE_CHART, xField: field4X }),
     children: [],
   };
 
@@ -28,6 +29,10 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
       encode: {
         x: processDateEncode(field4X.name as string, dataProps),
         y: field.name,
+        size: (datum: Datum) => getLineSize(datum, data, { field4Split: field4Nominal, field4X }),
+      },
+      legend: {
+        size: false,
       },
     };
     if (field4Nominal) {
@@ -39,7 +44,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
 };
 
 const ckb: ChartKnowledge = {
-  id: 'multi_line_chart',
+  id: MULTI_LINE_CHART,
   name: 'multi_line_chart',
   alias: ['multi_line_chart'],
   family: ['LineCharts'],

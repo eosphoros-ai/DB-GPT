@@ -130,7 +130,7 @@ async def test_branch_node(
         even_node = MapOperator(
             lambda x: 888, task_id="even_node", task_name="even_node_name"
         )
-        join_node = JoinOperator(join_func)
+        join_node = JoinOperator(join_func, can_skip_in_branch=False)
         branch_node = BranchOperator(
             {lambda x: x % 2 == 1: odd_node, lambda x: x % 2 == 0: even_node}
         )

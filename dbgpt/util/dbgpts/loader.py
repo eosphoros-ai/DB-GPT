@@ -10,6 +10,7 @@ import tomlkit
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_validator
 from dbgpt.component import BaseComponent, SystemApp
+from dbgpt.core.awel import DAG
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
 from dbgpt.util.dbgpts.base import (
     DBGPTS_METADATA_FILE,
@@ -77,7 +78,7 @@ class BasePackage(BaseModel):
         values: Dict[str, Any],
         expected_cls: Type[T],
         predicates: Optional[List[Callable[..., bool]]] = None,
-    ) -> Tuple[List[Type[T]], List[Any]]:
+    ) -> Tuple[List[Type[T]], List[Any], List[Any]]:
         import importlib.resources as pkg_resources
 
         from dbgpt.core.awel.dag.loader import _load_modules_from_file
@@ -101,7 +102,7 @@ class BasePackage(BaseModel):
                 for c in list_cls:
                     if issubclass(c, expected_cls):
                         module_cls.append(c)
-            return module_cls, all_predicate_results
+            return module_cls, all_predicate_results, mods
 
 
 class FlowPackage(BasePackage):
@@ -113,6 +114,24 @@ class FlowPackage(BasePackage):
     ) -> "FlowPackage":
         if values["definition_type"] == "json":
             return FlowJsonPackage.build_from(values, ext_dict)
+        return FlowPythonPackage.build_from(values, ext_dict)
+
+
+class FlowPythonPackage(FlowPackage):
+    dag: DAG = Field(..., description="The DAG of the package")
+
+    @classmethod
+    def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
+        from dbgpt.core.awel.dag.loader import _process_modules
+
+        _, _, mods = cls.load_module_class(values, DAG)
+
+        dags = _process_modules(mods, show_log=False)
+        if not dags:
+            raise ValueError("No DAGs found in the package")
+        if len(dags) > 1:
+            raise ValueError("Only support one DAG in the package")
+        values["dag"] = dags[0]
         return cls(**values)
 
 
@@ -144,7 +163,7 @@ class OperatorPackage(BasePackage):
     def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
         from dbgpt.core.awel import BaseOperator
 
-        values["operators"], _ = cls.load_module_class(values, BaseOperator)
+        values["operators"], _, _ = cls.load_module_class(values, BaseOperator)
         return cls(**values)
 
 
@@ -159,7 +178,7 @@ class AgentPackage(BasePackage):
     def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
         from dbgpt.agent import ConversableAgent
 
-        values["agents"], _ = cls.load_module_class(values, ConversableAgent)
+        values["agents"], _, _ = cls.load_module_class(values, ConversableAgent)
         return cls(**values)
 
 
@@ -190,7 +209,7 @@ class ResourcePackage(BasePackage):
             else:
                 return False
 
-        _, predicted_cls = cls.load_module_class(values, Resource, [_predicate])
+        _, predicted_cls, _ = cls.load_module_class(values, Resource, [_predicate])
         resource_instances = []
         resources = []
         for o in predicted_cls:
@@ -353,7 +372,7 @@ class DBGPTsLoader(BaseComponent):
         for package in self._packages.values():
             if package.package_type != "flow":
                 continue
-            package = cast(FlowJsonPackage, package)
+            package = cast(FlowPackage, package)
             dict_value = {
                 "name": package.name,
                 "label": package.label,
@@ -361,8 +380,24 @@ class DBGPTsLoader(BaseComponent):
                 "editable": False,
                 "description": package.description,
                 "source": package.repo,
-                "flow_data": package.read_definition_json(),
+                "define_type": "json",
             }
+            if isinstance(package, FlowJsonPackage):
+                dict_value["flow_data"] = package.read_definition_json()
+            elif isinstance(package, FlowPythonPackage):
+                dict_value["flow_data"] = {
+                    "nodes": [],
+                    "edges": [],
+                    "viewport": {
+                        "x": 213,
+                        "y": 269,
+                        "zoom": 0,
+                    },
+                }
+                dict_value["flow_dag"] = package.dag
+                dict_value["define_type"] = "python"
+            else:
+                raise ValueError(f"Unsupported package type: {package}")
             panels.append(FlowPanel(**dict_value))
         return panels
 

@@ -227,6 +227,10 @@ const sidebars = {
               type: 'doc',
               id: 'installation/model_service/cluster',
             },
+            {
+              type: 'doc',
+              id: 'installation/model_service/cluster_ha',
+            },
           ],
         },
         {
@@ -477,7 +481,10 @@ const sidebars = {
             {
               type: 'doc',
               id: 'cookbook/rag/graph_rag_app_develop',
-            }
+            },{
+              type: 'doc',
+              id: 'cookbook/rag/keyword_rag_app_develop',
+            },
           ],
         },
         {

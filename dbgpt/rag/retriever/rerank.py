@@ -244,8 +244,8 @@ class CrossEncoderRanker(Ranker):
         contents = [candidate.content for candidate in candidates_with_scores]
         query_content_pairs = [
             [
-                query,
-                content,
+                query if query is not None else "",
+                content if content is not None else "",
             ]
             for content in contents
         ]

@@ -17,7 +17,9 @@ from .dag.base import DAG, DAGContext, DAGVar
 from .operators.base import BaseOperator, WorkflowRunner
 from .operators.common_operator import (
     BranchFunc,
+    BranchJoinOperator,
     BranchOperator,
+    BranchTaskType,
     InputOperator,
     JoinOperator,
     MapOperator,
@@ -77,9 +79,11 @@ __all__ = [
     "ReduceStreamOperator",
     "TriggerOperator",
     "MapOperator",
+    "BranchJoinOperator",
     "BranchOperator",
     "InputOperator",
     "BranchFunc",
+    "BranchTaskType",
     "WorkflowRunner",
     "TaskState",
     "is_empty_data",

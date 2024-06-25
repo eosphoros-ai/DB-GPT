@@ -34,7 +34,7 @@ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
-    -d "{\"messages\":\"show space datas limit 5\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_datasource\", \"chat_param\": \"$DB_NAME\"}"
+    -d "{\"messages\":\"show space datas limit 5\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_data\", \"chat_param\": \"$DB_NAME\"}"
 
 ```
  </TabItem>

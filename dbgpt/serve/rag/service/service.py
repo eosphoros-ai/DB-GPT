@@ -22,7 +22,7 @@ from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
-from dbgpt.core import Chunk, LLMClient
+from dbgpt.core import LLMClient
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
@@ -31,12 +31,11 @@ from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeFactory, KnowledgeType
 from dbgpt.serve.core import BaseService
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.dbgpts.loader import DBGPTsLoader
-from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer, trace
 
@@ -443,7 +442,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         space_id,
         doc_vo: DocumentVO,
         chunk_parameters: ChunkParameters,
-    ) -> List[Chunk]:
+    ) -> None:
         """sync knowledge document chunk into vector store"""
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
@@ -470,52 +469,49 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             datasource=doc.content,
             knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
         )
-        assembler = EmbeddingAssembler.load_from_knowledge(
-            knowledge=knowledge,
-            chunk_parameters=chunk_parameters,
-            vector_store_connector=vector_store_connector,
-        )
-        chunk_docs = assembler.get_chunks()
         doc.status = SyncStatus.RUNNING.name
-        doc.chunk_size = len(chunk_docs)
+
         doc.gmt_modified = datetime.now()
         self._document_dao.update_knowledge_document(doc)
-        # executor = CFG.SYSTEM_APP.get_component(
-        #     ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-        # ).create()
-        # executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
-        asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
+        # asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
+        asyncio.create_task(
+            self.async_doc_embedding(
+                knowledge, chunk_parameters, vector_store_connector, doc
+            )
+        )
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
-        return chunk_docs
 
     @trace("async_doc_embedding")
-    async def async_doc_embedding(self, assembler, chunk_docs, doc):
+    async def async_doc_embedding(
+        self, knowledge, chunk_parameters, vector_store_connector, doc
+    ):
         """async document embedding into vector db
         Args:
-            - client: EmbeddingEngine Client
-            - chunk_docs: List[Document]
-            - doc: KnowledgeDocumentEntity
+            - knowledge: Knowledge
+            - chunk_parameters: ChunkParameters
+            - vector_store_connector: vector_store_connector
+            - doc: doc
         """
 
-        logger.info(
-            f"async doc embedding sync, doc:{doc.doc_name}, chunks length is {len(chunk_docs)}"
-        )
+        logger.info(f"async doc persist sync, doc:{doc.doc_name}")
         try:
             with root_tracer.start_span(
                 "app.knowledge.assembler.persist",
-                metadata={"doc": doc.doc_name, "chunks": len(chunk_docs)},
+                metadata={"doc": doc.doc_name},
             ):
-                # vector_ids = assembler.persist()
-                space = self.get({"name": doc.space})
-                if space and space.vector_type == "KnowledgeGraph":
-                    vector_ids = await assembler.apersist()
-                else:
-                    vector_ids = assembler.persist()
+                assembler = await EmbeddingAssembler.aload_from_knowledge(
+                    knowledge=knowledge,
+                    index_store=vector_store_connector.index_client,
+                    chunk_parameters=chunk_parameters,
+                )
+                chunk_docs = assembler.get_chunks()
+                doc.chunk_size = len(chunk_docs)
+                vector_ids = await assembler.apersist()
             doc.status = SyncStatus.FINISHED.name
-            doc.result = "document embedding success"
+            doc.result = "document persist into index store success"
             if vector_ids is not None:
                 doc.vector_ids = ",".join(vector_ids)
-            logger.info(f"async document embedding, success:{doc.doc_name}")
+            logger.info(f"async document persist index store success:{doc.doc_name}")
             # save chunk details
             chunk_entities = [
                 DocumentChunkEntity(

@@ -1,4 +1,5 @@
 """The mixin of DAGs."""
+
 import abc
 import dataclasses
 import inspect
@@ -337,6 +338,9 @@ class Parameter(TypeMetadata, Serializable):
     value: Optional[Any] = Field(
         None, description="The value of the parameter(Saved in the dag file)"
     )
+    alias: Optional[List[str]] = Field(
+        None, description="The alias of the parameter(Compatible with old version)"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -398,6 +402,7 @@ class Parameter(TypeMetadata, Serializable):
         description: Optional[str] = None,
         options: Optional[Union[BaseDynamicOptions, List[OptionValue]]] = None,
         resource_type: ResourceType = ResourceType.INSTANCE,
+        alias: Optional[List[str]] = None,
     ):
         """Build the parameter from the type."""
         type_name = type.__qualname__
@@ -419,6 +424,7 @@ class Parameter(TypeMetadata, Serializable):
             placeholder=placeholder,
             description=description or label,
             options=options,
+            alias=alias,
         )
 
     @classmethod
@@ -452,7 +458,7 @@ class Parameter(TypeMetadata, Serializable):
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        dict_value = model_to_dict(self, exclude={"options"})
+        dict_value = model_to_dict(self, exclude={"options", "alias"})
         if not self.options:
             dict_value["options"] = None
         elif isinstance(self.options, BaseDynamicOptions):
@@ -677,9 +683,18 @@ class BaseMetadata(BaseResource):
             for parameter in self.parameters
             if not parameter.optional
         }
-        current_parameters = {
-            parameter.name: parameter for parameter in self.parameters
-        }
+        current_parameters = {}
+        current_aliases_parameters = {}
+        for parameter in self.parameters:
+            current_parameters[parameter.name] = parameter
+            if parameter.alias:
+                for alias in parameter.alias:
+                    if alias in current_aliases_parameters:
+                        raise FlowMetadataException(
+                            f"Alias {alias} already exists in the metadata."
+                        )
+                    current_aliases_parameters[alias] = parameter
+
         if len(view_required_parameters) < len(current_required_parameters):
             # TODO, skip the optional parameters.
             raise FlowParameterMetadataException(
@@ -691,12 +706,16 @@ class BaseMetadata(BaseResource):
             )
         for view_param in view_parameters:
             view_param_key = view_param.name
-            if view_param_key not in current_parameters:
+            if view_param_key in current_parameters:
+                current_parameter = current_parameters[view_param_key]
+            elif view_param_key in current_aliases_parameters:
+                current_parameter = current_aliases_parameters[view_param_key]
+            else:
                 raise FlowParameterMetadataException(
                     f"Parameter {view_param_key} not in the metadata."
                 )
             runnable_parameters.update(
-                current_parameters[view_param_key].to_runnable_parameter(
+                current_parameter.to_runnable_parameter(
                     view_param.get_typed_value(), resources, key_to_resource_instance
                 )
             )

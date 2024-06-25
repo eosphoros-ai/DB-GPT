@@ -55,6 +55,84 @@ class ModelControllerParameters(BaseParameters):
     port: Optional[int] = field(
         default=8000, metadata={"help": "Model Controller deploy port"}
     )
+    registry_type: Optional[str] = field(
+        default="embedded",
+        metadata={
+            "help": "Registry type: embedded, database...",
+            "valid_values": ["embedded", "database"],
+        },
+    )
+    registry_db_type: Optional[str] = field(
+        default="mysql",
+        metadata={
+            "help": "Registry database type, now only support sqlite and mysql, it is "
+            "valid when registry_type is database",
+            "valid_values": ["mysql", "sqlite"],
+        },
+    )
+    registry_db_name: Optional[str] = field(
+        default="dbgpt",
+        metadata={
+            "help": "Registry database name, just for database, it is valid when "
+            "registry_type is database, please set to full database path for sqlite"
+        },
+    )
+    registry_db_host: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Registry database host, just for database, it is valid when "
+            "registry_type is database"
+        },
+    )
+    registry_db_port: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "Registry database port, just for database, it is valid when "
+            "registry_type is database"
+        },
+    )
+    registry_db_user: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Registry database user, just for database, it is valid when "
+            "registry_type is database"
+        },
+    )
+    registry_db_password: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Registry database password, just for database, it is valid when "
+            "registry_type is database. We recommend to use environment variable to "
+            "store password, you can set it in your environment variable like "
+            "export CONTROLLER_REGISTRY_DB_PASSWORD='your_password'"
+        },
+    )
+    registry_db_pool_size: Optional[int] = field(
+        default=5,
+        metadata={
+            "help": "Registry database pool size, just for database, it is valid when "
+            "registry_type is database"
+        },
+    )
+    registry_db_max_overflow: Optional[int] = field(
+        default=10,
+        metadata={
+            "help": "Registry database max overflow, just for database, it is valid "
+            "when registry_type is database"
+        },
+    )
+
+    heartbeat_interval_secs: Optional[int] = field(
+        default=20, metadata={"help": "The interval for checking heartbeats (seconds)"}
+    )
+    heartbeat_timeout_secs: Optional[int] = field(
+        default=60,
+        metadata={
+            "help": "The timeout for checking heartbeats (seconds), it will be set "
+            "unhealthy if the worker is not responding in this time"
+        },
+    )
+
     daemon: Optional[bool] = field(
         default=False, metadata={"help": "Run Model Controller in background"}
     )

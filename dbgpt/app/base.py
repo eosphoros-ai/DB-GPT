@@ -8,6 +8,7 @@ from typing import Optional
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
+from dbgpt.storage import DBType
 from dbgpt.util.parameter_utils import BaseParameters
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -31,7 +32,6 @@ def async_db_summary(system_app: SystemApp):
 
 
 def server_init(param: "WebServerParameters", system_app: SystemApp):
-
     # logger.info(f"args: {args}")
     # init config
     cfg = Config()
@@ -105,13 +105,16 @@ def _initialize_db(
     from urllib.parse import quote_plus as urlquote
 
     from dbgpt.configs.model_config import PILOT_PATH
+    from dbgpt.datasource.rdbms.dialect.oceanbase.ob_dialect import (  # noqa: F401
+        OBDialect,
+    )
     from dbgpt.storage.metadata.db_manager import initialize_db
 
     CFG = Config()
     db_name = CFG.LOCAL_DB_NAME
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     os.makedirs(default_meta_data_path, exist_ok=True)
-    if CFG.LOCAL_DB_TYPE == "mysql":
+    if CFG.LOCAL_DB_TYPE == DBType.MySQL.value():
         db_url = (
             f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:"
             f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
@@ -120,6 +123,15 @@ def _initialize_db(
             f"{db_name}?charset=utf8mb4"
         )
         # Try to create database, if failed, will raise exception
+        _create_mysql_database(db_name, db_url, try_to_create_db)
+    elif CFG.LOCAL_DB_TYPE == DBType.OceanBase.value():
+        db_url = (
+            f"mysql+ob://{quote(CFG.LOCAL_DB_USER)}:"
+            f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
+            f"{CFG.LOCAL_DB_HOST}:"
+            f"{str(CFG.LOCAL_DB_PORT)}/"
+            f"{db_name}?charset=utf8mb4"
+        )
         _create_mysql_database(db_name, db_url, try_to_create_db)
     else:
         sqlite_db_path = os.path.join(default_meta_data_path, f"{db_name}.db")

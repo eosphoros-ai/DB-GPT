@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.rerank import Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
+from ..index.base import IndexStoreBase
 from .embedding import EmbeddingRetriever
 
 
@@ -23,7 +23,7 @@ class TimeWeightedEmbeddingRetriever(EmbeddingRetriever):
 
     def __init__(
         self,
-        vector_store_connector: VectorStoreConnector,
+        index_store: IndexStoreBase,
         top_k: int = 100,
         query_rewrite: Optional[QueryRewrite] = None,
         rerank: Optional[Ranker] = None,
@@ -32,13 +32,13 @@ class TimeWeightedEmbeddingRetriever(EmbeddingRetriever):
         """Initialize TimeWeightedEmbeddingRetriever.
 
         Args:
-            vector_store_connector (VectorStoreConnector): vector store connector
+            index_store (IndexStoreBase): vector store connector
             top_k (int): top k
             query_rewrite (Optional[QueryRewrite]): query rewrite
             rerank (Ranker): rerank
         """
         super().__init__(
-            vector_store_connector=vector_store_connector,
+            index_store=index_store,
             top_k=top_k,
             query_rewrite=query_rewrite,
             rerank=rerank,
@@ -69,7 +69,7 @@ class TimeWeightedEmbeddingRetriever(EmbeddingRetriever):
                 doc.metadata["created_at"] = current_time
             doc.metadata["buffer_idx"] = len(self.memory_stream) + i
         self.memory_stream.extend(dup_docs)
-        return self._vector_store_connector.load_document(dup_docs)
+        return self._index_store.load_document(dup_docs)
 
     def _retrieve(
         self, query: str, filters: Optional[MetadataFilters] = None
@@ -125,7 +125,7 @@ class TimeWeightedEmbeddingRetriever(EmbeddingRetriever):
     def get_salient_docs(self, query: str) -> Dict[int, Tuple[Chunk, float]]:
         """Return documents that are salient to the query."""
         docs_and_scores: List[Chunk]
-        docs_and_scores = self._vector_store_connector.similar_search_with_scores(
+        docs_and_scores = self._index_store.similar_search_with_scores(
             query, topk=self._top_k, score_threshold=0
         )
         results = {}

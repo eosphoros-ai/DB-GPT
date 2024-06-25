@@ -31,8 +31,7 @@ from dbgpt.rag import ChunkParameters
 from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import OpenAPIEmbeddings
 from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 
 def _create_embeddings(
@@ -54,33 +53,32 @@ def _create_embeddings(
 
 def _create_vector_connector():
     """Create vector connector."""
-
-    return VectorStoreConnector.from_default(
-        "Chroma",
-        vector_store_config=ChromaVectorConfig(
-            name="example_embedding_api_vector_store_name",
-            persist_path=os.path.join(PILOT_PATH, "data"),
-        ),
+    config = ChromaVectorConfig(
+        persist_path=PILOT_PATH,
+        name="embedding_api_rag_test",
         embedding_fn=_create_embeddings(),
     )
+
+    return ChromaStore(config)
 
 
 async def main():
     file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")
     knowledge = KnowledgeFactory.from_file_path(file_path)
-    vector_connector = _create_vector_connector()
+    vector_store = _create_vector_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     # get embedding assembler
     assembler = EmbeddingAssembler.load_from_knowledge(
         knowledge=knowledge,
         chunk_parameters=chunk_parameters,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     assembler.persist()
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
     chunks = await retriever.aretrieve_with_scores("what is awel talk about", 0.3)
     print(f"embedding rag example results:{chunks}")
+    vector_store.delete_vector_name("embedding_api_rag_test")
 
 
 if __name__ == "__main__":

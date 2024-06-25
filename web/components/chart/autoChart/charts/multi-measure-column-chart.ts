@@ -1,16 +1,16 @@
 import { hasSubset } from '../advisor/utils';
 
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
+import { findNominalField, findOrdinalField } from './util';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
     // @ts-ignore
     const field4Y = dataProps?.filter((field) => hasSubset(field.levelOfMeasurements, ['Interval']));
-    const field4Nominal = dataProps?.find((field) =>
-      // @ts-ignore
-      hasSubset(field.levelOfMeasurements, ['Nominal']),
-    );
-    if (!field4Nominal || !field4Y) return null;
+    const nominalField = findNominalField(dataProps);
+    const ordinalField = findOrdinalField(dataProps);
+    const field4X = nominalField ?? ordinalField;
+    if (!field4X || !field4Y) return null;
 
     const spec: Specification = {
       type: 'view',
@@ -22,7 +22,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
       const singleLine: Specification = {
         type: 'interval',
         encode: {
-          x: field4Nominal.name,
+          x: field4X.name,
           y: field.name,
           color: () => field.name,
           series: () => field.name,

@@ -31,7 +31,7 @@ from typing import Dict, List
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
+from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import Chunk
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.model.proxy import OpenAILLMClient
@@ -41,8 +41,7 @@ from dbgpt.rag.operators import (
     QueryRewriteOperator,
     RerankOperator,
 )
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 CFG = Config()
 
@@ -78,21 +77,19 @@ def _context_join_fn(context_dict: Dict, chunks: List[Chunk]) -> Dict:
 
 def _create_vector_connector():
     """Create vector connector."""
-    model_name = os.getenv("EMBEDDING_MODEL", "text2vec")
-    return VectorStoreConnector.from_default(
-        "Chroma",
-        vector_store_config=ChromaVectorConfig(
-            name="vector_name",
-            persist_path=os.path.join(PILOT_PATH, "data"),
-        ),
+    config = ChromaVectorConfig(
+        persist_path=PILOT_PATH,
+        name="embedding_rag_test",
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
     )
 
+    return ChromaStore(config)
+
 
 with DAG("simple_sdk_rag_retriever_example") as dag:
-    vector_connector = _create_vector_connector()
+    vector_store = _create_vector_connector()
     trigger = HttpTrigger(
         "/examples/rag/retrieve", methods="POST", request_body=TriggerReqBody
     )
@@ -102,11 +99,11 @@ with DAG("simple_sdk_rag_retriever_example") as dag:
     rewrite_operator = QueryRewriteOperator(llm_client=OpenAILLMClient())
     retriever_context_operator = EmbeddingRetrieverOperator(
         top_k=3,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     retriever_operator = EmbeddingRetrieverOperator(
         top_k=3,
-        vector_store_connector=vector_connector,
+        index_store=vector_store,
     )
     rerank_operator = RerankOperator()
     model_parse_task = MapOperator(lambda out: out.to_dict())

@@ -2,12 +2,13 @@
 import logging
 import time
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt.util.executor_utils import blocking_func_to_async
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,10 @@ class IndexStoreConfig(BaseModel):
 class IndexStoreBase(ABC):
     """Index store base class."""
 
+    def __init__(self, executor: Optional[Executor] = None):
+        """Init index store."""
+        self._executor = executor or ThreadPoolExecutor()
+
     @abstractmethod
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in index database.
@@ -58,7 +63,7 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
-    def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in index database.
 
         Args:
@@ -89,7 +94,7 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
-    def delete_by_ids(self, ids: str):
+    def delete_by_ids(self, ids: str) -> List[str]:
         """Delete docs.
 
         Args:
@@ -103,6 +108,10 @@ class IndexStoreBase(ABC):
         Args:
             index_name(str): The name of index to delete.
         """
+
+    def vector_name_exists(self) -> bool:
+        """Whether name exists."""
+        return True
 
     def load_document_with_limit(
         self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
@@ -142,6 +151,27 @@ class IndexStoreBase(ABC):
             f"Loaded {len(chunks)} chunks in {time.time() - start_time} seconds"
         )
         return ids
+
+    async def aload_document_with_limit(
+        self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
+    ) -> List[str]:
+        """Load document in index database with specified limit.
+
+        Args:
+            chunks(List[Chunk]): Document chunks.
+            max_chunks_once_load(int): Max number of chunks to load at once.
+            max_threads(int): Max number of threads to use.
+
+        Return:
+            List[str]: Chunk ids.
+        """
+        return await blocking_func_to_async(
+            self._executor,
+            self.load_document_with_limit,
+            chunks,
+            max_chunks_once_load,
+            max_threads,
+        )
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

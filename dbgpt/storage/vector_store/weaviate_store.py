@@ -68,7 +68,7 @@ class WeaviateStore(VectorStoreBase):
                 "Could not import weaviate python package. "
                 "Please install it with `pip install weaviate-client`."
             )
-
+        super().__init__()
         self.weaviate_url = vector_store_config.weaviate_url
         self.embedding = vector_store_config.embedding_fn
         self.vector_name = vector_store_config.name

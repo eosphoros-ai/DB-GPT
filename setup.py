@@ -19,7 +19,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.6")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.8")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -424,6 +424,8 @@ def core_requires():
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
         "httpx",
         "fastapi>=0.100.0",
+        # For retry, chromadb need tenacity<=8.3.0
+        "tenacity<=8.3.0",
     ]
     # Simple command line dependencies
     setup_spec.extras["cli"] = setup_spec.extras["client"] + [
@@ -440,6 +442,8 @@ def core_requires():
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         # TODO: remove pandas dependency
         "pandas==2.0.3",
+        # numpy should less than 2.0.0
+        "numpy>=1.21.0,<2.0.0",
     ]
 
     # Just use by DB-GPT internal, we should find the smallest dependency set for run
@@ -548,7 +552,7 @@ def quantization_requires():
         # 1. Compute Capability 7.5 (sm75). Turing and later architectures are supported.
         # 2. CUDA Toolkit 11.8 and later.
         cuda_version = get_cuda_version()
-        autoawq_latest_version = get_latest_version("autoawq", "", "0.2.4")
+        # autoawq_latest_version = get_latest_version("autoawq", "", "0.2.4")
         if cuda_version is None or cuda_version == "12.1":
             quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
         else:
@@ -728,6 +732,8 @@ else:
             "dbgpt.core.*",
             "dbgpt.datasource",
             "dbgpt.datasource.*",
+            "dbgpt.experimental",
+            "dbgpt.experimental.*",
             "dbgpt.model",
             "dbgpt.model.proxy",
             "dbgpt.model.proxy.*",

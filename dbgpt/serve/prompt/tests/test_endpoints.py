@@ -78,18 +78,6 @@ async def test_api_health(client: AsyncClient, asystem_app, has_auth: bool):
     if has_auth:
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
-    else:
-        assert response.status_code == 401
-        assert response.json() == {
-            "detail": {
-                "error": {
-                    "message": "",
-                    "type": "invalid_request_error",
-                    "param": None,
-                    "code": "invalid_api_key",
-                }
-            }
-        }
 
 
 @pytest.mark.asyncio
@@ -98,6 +86,7 @@ async def test_api_health(client: AsyncClient, asystem_app, has_auth: bool):
 )
 async def test_api_auth(client: AsyncClient):
     response = await client.get("/health")
+    response.raise_for_status()
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 

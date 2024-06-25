@@ -27,14 +27,15 @@ from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
+from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.serve.rag.service.service import Service
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.tracer import SpanType, root_tracer
 
 logger = logging.getLogger(__name__)
@@ -235,13 +236,30 @@ async def document_upload(
 
 
 @router.post("/knowledge/{space_name}/document/sync")
-def document_sync(space_name: str, request: DocumentSyncRequest):
+async def document_sync(
+    space_name: str,
+    request: DocumentSyncRequest,
+    service: Service = Depends(get_rag_service),
+):
     logger.info(f"Received params: {space_name}, {request}")
     try:
-        knowledge_space_service.sync_knowledge_document(
-            space_name=space_name, sync_request=request
+        space = service.get({"name": space_name})
+        if space is None:
+            return Result.failed(code="E000X", msg=f"space {space_name} not exist")
+        if request.doc_ids is None or len(request.doc_ids) == 0:
+            return Result.failed(code="E000X", msg="doc_ids is None")
+        sync_request = KnowledgeSyncRequest(
+            doc_id=request.doc_ids[0],
+            space_id=str(space.id),
+            model_name=request.model_name,
         )
-        return Result.succ([])
+        sync_request.chunk_parameters = ChunkParameters(
+            chunk_strategy="Automatic",
+            chunk_size=request.chunk_size or 512,
+            chunk_overlap=request.chunk_overlap or 50,
+        )
+        doc_ids = await service.sync_document(requests=[sync_request])
+        return Result.succ(doc_ids)
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document sync error {e}")
 
@@ -292,7 +310,7 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
         vector_store_config=config,
     )
     retriever = EmbeddingRetriever(
-        top_k=query_request.top_k, vector_store_connector=vector_store_connector
+        top_k=query_request.top_k, index_store=vector_store_connector.index_client
     )
     chunks = retriever.retrieve(query_request.query)
     res = [

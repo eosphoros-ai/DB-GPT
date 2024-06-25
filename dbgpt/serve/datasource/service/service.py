@@ -13,10 +13,10 @@ from dbgpt.datasource.manages.connect_config_db import (
     ConnectConfigEntity,
 )
 from dbgpt.serve.core import BaseService
+from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.schema import DBType
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.executor_utils import ExecutorFactory
 
 from ..api.schemas import DatasourceServeRequest, DatasourceServeResponse
