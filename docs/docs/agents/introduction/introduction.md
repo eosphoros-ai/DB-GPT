@@ -20,7 +20,7 @@ a simple way, only a little change to the code when you need to deploy your agen
 
 Firstly, you need to install the `dbgpt` package with the following command:
 ```bash
-pip install "dbgpt[agent]>=0.5.8"
+pip install "dbgpt[agent]>=0.5.9rc0"
 ```
 
 Then, you can install the `openai` package with the following command:

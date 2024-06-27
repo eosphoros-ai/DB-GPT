@@ -9,7 +9,7 @@ the agent to the database.
 To use the database in the agent, you need to install the dependencies with the following command:
 
 ```bash
-pip install "dbgpt[simple_framework]>=0.5.8"
+pip install "dbgpt[simple_framework]>=0.5.9rc0"
 ```
 
 ## Create A Database Connector
