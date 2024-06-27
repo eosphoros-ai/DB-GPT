@@ -1,0 +1,50 @@
+name: Build Web Application
+
+# Triggered when the web directory or this file is changed
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - web/**
+      - .github/workflows/build-web.yml
+  push:
+    branches:
+      - main
+    paths:
+      - web/**
+      - .github/workflows/build-web.yml
+
+concurrency:
+  group: ${{ github.event.number || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Runs all jobs in the web directory
+    working-directory: ./web
+
+jobs:
+  build-web:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # FIXME: Add windows-latest support
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          yarn install
+
+      - name: Build web application
+        run: |
+          yarn build
