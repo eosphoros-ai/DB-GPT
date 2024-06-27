@@ -1,9 +1,8 @@
 """Role class for role-based conversation."""
 
 from abc import ABC
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
-from jinja2.meta import find_undeclared_variables
 from jinja2.sandbox import SandboxedEnvironment
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
@@ -45,43 +44,26 @@ class Role(ABC, BaseModel):
         Returns:
             str: The prompt template.
         """
-        prompt_template = (
-            self.system_prompt_template if is_system else self.user_prompt_template
-        )
-        template_vars = self._get_template_variables(prompt_template)
-        _sub_render_keys = {"role", "name", "goal", "expand_prompt", "constraints"}
-        pass_vars = {
-            "role": self.role,
-            "name": self.name,
-            "goal": self.goal,
-            "expand_prompt": self.expand_prompt,
-            "language": self.language,
-            "constraints": self.constraints,
-            "most_recent_memories": (
-                most_recent_memories if most_recent_memories else None
-            ),
-            "examples": self.examples,
-            # "out_schema": out_schema if out_schema else None,
-            # "resource_prompt": resource_prompt if resource_prompt else None,
-            "question": question,
-        }
         resource_vars = await self.generate_resource_variables(question)
-        pass_vars.update(resource_vars)
-        pass_vars.update(kwargs)
-        filtered_data = {
-            key: pass_vars[key] for key in template_vars if key in pass_vars
-        }
-        for key in filtered_data.keys():
-            value = filtered_data[key]
-            if key in _sub_render_keys and value:
-                if isinstance(value, str):
-                    # Render the sub-template
-                    filtered_data[key] = self._render_template(value, **pass_vars)
-                elif isinstance(value, list):
-                    for i, item in enumerate(value):
-                        if isinstance(item, str):
-                            value[i] = self._render_template(item, **pass_vars)
-        return self._render_template(prompt_template, **filtered_data)
+
+        if is_system:
+            return self.current_profile.format_system_prompt(
+                template_env=self.template_env,
+                question=question,
+                language=self.language,
+                most_recent_memories=most_recent_memories,
+                resource_vars=resource_vars,
+                **kwargs,
+            )
+        else:
+            return self.current_profile.format_user_prompt(
+                template_env=self.template_env,
+                question=question,
+                language=self.language,
+                most_recent_memories=most_recent_memories,
+                resource_vars=resource_vars,
+                **kwargs,
+            )
 
     async def generate_resource_variables(
         self, question: Optional[str] = None
@@ -109,11 +91,6 @@ class Role(ABC, BaseModel):
         return self.current_profile.get_name()
 
     @property
-    def examples(self) -> Optional[str]:
-        """Return the examples of the role."""
-        return self.current_profile.get_examples()
-
-    @property
     def role(self) -> str:
         """Return the role of the role."""
         return self.current_profile.get_role()
@@ -134,28 +111,9 @@ class Role(ABC, BaseModel):
         return self.current_profile.get_description()
 
     @property
-    def expand_prompt(self) -> Optional[str]:
-        """Return the expand prompt of the role."""
-        return self.current_profile.get_expand_prompt()
-
-    @property
-    def system_prompt_template(self) -> str:
-        """Return the current system prompt template."""
-        return self.current_profile.get_system_prompt_template()
-
-    @property
-    def user_prompt_template(self) -> str:
-        """Return the current user prompt template."""
-        return self.current_profile.get_user_prompt_template()
-
-    @property
-    def save_memory_template(self) -> str:
+    def write_memory_template(self) -> str:
         """Return the current save memory template."""
-        return self.current_profile.get_save_memory_template()
-
-    def _get_template_variables(self, template: str) -> Set[str]:
-        parsed_content = self.template_env.parse(template)
-        return find_undeclared_variables(parsed_content)
+        return self.current_profile.get_write_memory_template()
 
     def _render_template(self, template: str, **kwargs):
         r_template = self.template_env.from_string(template)
@@ -188,7 +146,7 @@ class Role(ABC, BaseModel):
         recent_messages = [m.raw_observation for m in memories]
         return "".join(recent_messages)
 
-    async def save_to_memory(
+    async def write_memories(
         self,
         question: str,
         ai_message: str,
@@ -196,13 +154,24 @@ class Role(ABC, BaseModel):
         check_pass: bool = True,
         check_fail_reason: Optional[str] = None,
     ) -> None:
-        """Save the role to the memory."""
+        """Write the memories to the memory.
+
+        We suggest you to override this method to save the conversation to memory
+        according to your needs.
+
+        Args:
+            question(str): The question received.
+            ai_message(str): The AI message, LLM output.
+            action_output(ActionOutput): The action output.
+            check_pass(bool): Whether the check pass.
+            check_fail_reason(str): The check fail reason.
+        """
         if not action_output:
             raise ValueError("Action output is required to save to memory.")
 
         mem_thoughts = action_output.thoughts or ai_message
-        observation = action_output.observations or action_output.content
-        if not check_pass and check_fail_reason:
+        observation = action_output.observations
+        if not check_pass and observation and check_fail_reason:
             observation += "\n" + check_fail_reason
 
         memory_map = {
@@ -211,7 +180,7 @@ class Role(ABC, BaseModel):
             "action": action_output.action,
             "observation": observation,
         }
-        save_memory_template = self.save_memory_template
-        memory_content = self._render_template(save_memory_template, **memory_map)
+        write_memory_template = self.write_memory_template
+        memory_content = self._render_template(write_memory_template, **memory_map)
         fragment = AgentMemoryFragment(memory_content)
         await self.memory.write(fragment)
