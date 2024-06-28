@@ -220,9 +220,14 @@ class KnowledgeService:
             document.status not in [SyncStatus.RUNNING.name]
             and len(chunk_entities) == 0
         ):
-            self._sync_knowledge_document(
-                space_name=document.space,
-                doc=document,
+            from dbgpt.serve.rag.service.service import Service
+
+            rag_service = Service.get_instance(CFG.SYSTEM_APP)
+            space = rag_service.get({"name": document.space})
+            document_vo = KnowledgeDocumentEntity.to_document_vo(documents)
+            await rag_service._sync_knowledge_document(
+                space_id=space.id,
+                doc_vo=document_vo[0],
                 chunk_parameters=chunk_parameters,
             )
         knowledge = KnowledgeFactory.create(
