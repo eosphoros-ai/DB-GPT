@@ -128,6 +128,7 @@ class KnowledgeService:
             res.id = space.id
             res.name = space.name
             res.vector_type = space.vector_type
+            res.field_type = space.field_type
             res.desc = space.desc
             res.owner = space.owner
             res.gmt_created = space.gmt_created

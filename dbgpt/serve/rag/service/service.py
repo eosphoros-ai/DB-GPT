@@ -27,9 +27,11 @@ from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.assembler import EmbeddingAssembler
+from dbgpt.rag.assembler.fin_report import FinReportAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeFactory, KnowledgeType
+from dbgpt.rag.knowledge.fin_report import FinReportKnowledge
 from dbgpt.serve.core import BaseService
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
@@ -499,11 +501,19 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 "app.knowledge.assembler.persist",
                 metadata={"doc": doc.doc_name},
             ):
-                assembler = await EmbeddingAssembler.aload_from_knowledge(
-                    knowledge=knowledge,
-                    index_store=vector_store_connector.index_client,
-                    chunk_parameters=chunk_parameters,
-                )
+                if isinstance(knowledge, FinReportKnowledge):
+                    assembler = await FinReportAssembler.aload_from_knowledge(
+                        knowledge=knowledge,
+                        index_store=vector_store_connector.index_client,
+                        chunk_parameters=chunk_parameters,
+                        connector_manager=CFG.local_db_manager,
+                    )
+                else:
+                    assembler = await EmbeddingAssembler.aload_from_knowledge(
+                        knowledge=knowledge,
+                        index_store=vector_store_connector.index_client,
+                        chunk_parameters=chunk_parameters,
+                    )
                 chunk_docs = assembler.get_chunks()
                 doc.chunk_size = len(chunk_docs)
                 vector_ids = await assembler.apersist()

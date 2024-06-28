@@ -2,6 +2,8 @@
 
 from typing import Any, Dict
 
+from dbgpt.rag.knowledge.factory import KnowledgeFactory
+
 _MODULE_CACHE: Dict[str, Any] = {}
 
 
@@ -55,4 +57,5 @@ __all__ = [
     "TXTKnowledge",
     "URLKnowledge",
     "ExcelKnowledge",
+    "FinReportKnowledge",
 ]

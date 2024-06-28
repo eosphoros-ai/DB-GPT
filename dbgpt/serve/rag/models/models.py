@@ -13,6 +13,7 @@ class KnowledgeSpaceEntity(Model):
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     vector_type = Column(String(100))
+    field_type = Column(String(100))
     desc = Column(String(100))
     owner = Column(String(100))
     context = Column(Text)
@@ -20,7 +21,7 @@ class KnowledgeSpaceEntity(Model):
     gmt_modified = Column(DateTime)
 
     def __repr__(self):
-        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', field_type='{self.field_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
 class KnowledgeSpaceDao(BaseDao):
@@ -30,6 +31,7 @@ class KnowledgeSpaceDao(BaseDao):
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=space.vector_type,
+            field_type=space.field_type,
             desc=space.desc,
             owner=space.owner,
             gmt_created=datetime.now(),
@@ -56,6 +58,10 @@ class KnowledgeSpaceDao(BaseDao):
         if query.vector_type is not None:
             knowledge_spaces = knowledge_spaces.filter(
                 KnowledgeSpaceEntity.vector_type == query.vector_type
+            )
+        if query.field_type is not None:
+            knowledge_spaces = knowledge_spaces.filter(
+                KnowledgeSpaceEntity.field_type == query.field_type
             )
         if query.desc is not None:
             knowledge_spaces = knowledge_spaces.filter(

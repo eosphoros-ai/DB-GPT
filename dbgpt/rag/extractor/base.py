@@ -1,6 +1,6 @@
 """Base Extractor Base class."""
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 from dbgpt.core import Chunk, LLMClient
 
@@ -12,7 +12,7 @@ class Extractor(ABC):
     Extractor, etc.
     """
 
-    def __init__(self, llm_client: LLMClient) -> None:
+    def __init__(self, llm_client: Optional[LLMClient] = None) -> None:
         """Initialize the Extractor."""
         self._llm_client = llm_client
 

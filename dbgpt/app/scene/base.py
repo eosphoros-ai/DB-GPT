@@ -93,13 +93,6 @@ class ChatScene(Enum):
         "Dialogue through natural language and private documents and knowledge bases.",
         ["Knowledge Space Select"],
     )
-    ExtractTriplet = Scene(
-        "extract_triplet",
-        "Extract Triplet",
-        "Extract Triplet",
-        ["Extract Select"],
-        True,
-    )
     ExtractSummary = Scene(
         "extract_summary",
         "Extract Summary",
@@ -114,8 +107,12 @@ class ChatScene(Enum):
         ["Extract Select"],
         True,
     )
-    ExtractEntity = Scene(
-        "extract_entity", "Extract Entity", "Extract Entity", ["Extract Select"], True
+    ChatFinReport = Scene(
+        "chat_fin_report",
+        "Chat Financial Report",
+        "Chat Financial Report",
+        ["Chat Financial Report"],
+        True,
     )
     QueryRewrite = Scene(
         "query_rewrite", "query_rewrite", "query_rewrite", ["query_rewrite"], True

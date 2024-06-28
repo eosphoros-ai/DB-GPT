@@ -385,6 +385,8 @@ async def chat_completions(
             metadata=model_to_dict(dialogue),
         ):
             chat: BaseChat = await get_chat_instance(dialogue)
+        if dialogue.chat_mode == ChatScene.ChatFinReport.value():
+            return chat.call()
 
         if not chat.prompt_template.stream_out:
             return StreamingResponse(

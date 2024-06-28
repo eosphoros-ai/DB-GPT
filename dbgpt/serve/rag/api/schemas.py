@@ -16,6 +16,8 @@ class SpaceServeRequest(BaseModel):
     name: str = Field(None, description="The space name")
     """vector_type: vector type"""
     vector_type: str = Field(None, description="The vector type")
+    """field_type: field type"""
+    field_type: str = Field(None, description="The field type")
     """desc: description"""
     desc: Optional[str] = Field(None, description="The description")
     """owner: owner"""

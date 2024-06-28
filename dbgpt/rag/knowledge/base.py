@@ -35,6 +35,7 @@ class KnowledgeType(Enum):
     DOCUMENT = "DOCUMENT"
     URL = "URL"
     TEXT = "TEXT"
+    FIN_REPORT = "FIN_REPORT"
 
     @property
     def type(self):
@@ -163,6 +164,10 @@ class Knowledge(ABC):
         documents = self._load()
         return self._postprocess(documents)
 
+    def extract(self, documents: List[Document]) -> List[Document]:
+        """Extract knowledge from text."""
+        return documents
+
     @classmethod
     @abstractmethod
     def type(cls) -> KnowledgeType:
@@ -176,6 +181,10 @@ class Knowledge(ABC):
     def _postprocess(self, docs: List[Document]) -> List[Document]:
         """Post process knowledge from data loader."""
         return docs
+
+    @property
+    def file_path(self):
+        return self._path
 
     @abstractmethod
     def _load(self) -> List[Document]:
