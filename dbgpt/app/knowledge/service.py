@@ -221,6 +221,7 @@ class KnowledgeService:
             and len(chunk_entities) == 0
         ):
             from dbgpt.serve.rag.service.service import Service
+
             rag_service = Service.get_instance(CFG.SYSTEM_APP)
             space = rag_service.get({"name": document.space})
             document_vo = KnowledgeDocumentEntity.to_document_vo(documents)
