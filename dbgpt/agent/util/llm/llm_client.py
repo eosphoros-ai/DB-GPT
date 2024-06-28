@@ -1,4 +1,5 @@
 """AIWrapper for LLM."""
+
 import json
 import logging
 import traceback
@@ -75,14 +76,16 @@ class AIWrapper:
         elif context and messages and isinstance(messages, list):
             # Instantiate the messages
             params["messages"] = [
-                {
-                    **m,
-                    "content": self.instantiate(
-                        m["content"], context, allow_format_str_template
-                    ),
-                }
-                if m.get("content")
-                else m
+                (
+                    {
+                        **m,
+                        "content": self.instantiate(
+                            m["content"], context, allow_format_str_template
+                        ),
+                    }
+                    if m.get("content")
+                    else m
+                )
                 for m in messages
             ]
         return params
@@ -110,7 +113,7 @@ class AIWrapper:
                 config.pop(key)
         return json.dumps(config, sort_keys=True, ensure_ascii=False)
 
-    async def create(self, **config) -> Optional[str]:
+    async def create(self, verbose: bool = False, **config) -> Optional[str]:
         """Create a response from the input config."""
         # merge the input config with the i-th config in the config list
         full_config = {**config}
@@ -123,7 +126,7 @@ class AIWrapper:
         context = extra_kwargs.get("context")
         llm_model = extra_kwargs.get("llm_model")
         try:
-            response = await self._completions_create(llm_model, params)
+            response = await self._completions_create(llm_model, params, verbose)
         except LLMChatError as e:
             logger.debug(f"{llm_model} generate failed!{str(e)}")
             raise e
@@ -151,7 +154,9 @@ class AIWrapper:
 
         return gpts_messages
 
-    async def _completions_create(self, llm_model, params) -> str:
+    async def _completions_create(
+        self, llm_model, params, verbose: bool = False
+    ) -> str:
         payload = {
             "model": llm_model,
             "prompt": params.get("prompt"),
@@ -169,10 +174,16 @@ class AIWrapper:
         payload["model_cache_enable"] = self.model_cache_enable
         try:
             model_request = _build_model_request(payload)
+            str_prompt = model_request.messages_to_string()
             model_output = await self._llm_client.generate(model_request.copy())
             parsed_output = self._output_parser.parse_model_nostream_resp(
                 model_output, "#########################"
             )
+            if verbose:
+                print("\n", "-" * 80, flush=True, sep="")
+                print(f"String Prompt[verbose]: \n{str_prompt}")
+                print(f"LLM Output[verbose]: \n{parsed_output}")
+                print("-" * 80, "\n", flush=True, sep="")
             return parsed_output
         except Exception as e:
             logger.error(

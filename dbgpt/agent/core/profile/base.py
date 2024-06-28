@@ -1,9 +1,11 @@
 """Profile module."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import cachetools
+from jinja2.meta import find_undeclared_variables
+from jinja2.sandbox import Environment, SandboxedEnvironment
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_validator
 from dbgpt.util.configure import ConfigInfo, DynConfig
@@ -22,50 +24,53 @@ VALID_TEMPLATE_KEYS = {
     "question",
 }
 
-_DEFAULT_SYSTEM_TEMPLATE = """
+_DEFAULT_SYSTEM_TEMPLATE = """\
 You are a {{ role }}, {% if name %}named {{ name }}, {% endif %}your goal is {{ goal }}.
 Please think step by step to achieve the goal. You can use the resources given below. 
 At the same time, please strictly abide by the constraints and specifications in IMPORTANT REMINDER.
-{% if resource_prompt %} {{ resource_prompt }} {% endif %}
-{% if expand_prompt %} {{ expand_prompt }} {% endif %}
+{% if resource_prompt %}\
+{{ resource_prompt }} 
+{% endif %}\
+{% if expand_prompt %}\
+{{ expand_prompt }} 
+{% endif %}\
 
 *** IMPORTANT REMINDER ***
-{% if language == 'zh' %}
+{% if language == 'zh' %}\
 Please answer in simplified Chinese.
-{% else %}
+{% else %}\
 Please answer in English.
-{% endif %}
+{% endif %}\
 
-{% if constraints %}
-{% for constraint in constraints %}
+{% if constraints %}\
+{% for constraint in constraints %}\
 {{ loop.index }}. {{ constraint }}
-{% endfor %}
-{% endif %}
+{% endfor %}\
+{% endif %}\
 
-{% if examples %}
+{% if examples %}\
 You can refer to the following examples:
-{{ examples }}
-{% endif %}
+{{ examples }}\
+{% endif %}\
 
-{% if out_schema %} {{ out_schema }} {% endif %}
+{% if out_schema %} {{ out_schema }} {% endif %}\
 """  # noqa
 
-_DEFAULT_USER_TEMPLATE = """
-{% if most_recent_memories %}
+_DEFAULT_USER_TEMPLATE = """\
+{% if most_recent_memories %}\
 Most recent observations:
 {{ most_recent_memories }}
-{% endif %}
+{% endif %}\
 
-{% if question %}
+{% if question %}\
 Question: {{ question }}
 {% endif %}
 """
 
-_DEFAULT_SAVE_MEMORY_TEMPLATE = """
+_DEFAULT_WRITE_MEMORY_TEMPLATE = """\
 {% if question %}Question: {{ question }} {% endif %}
 {% if thought %}Thought: {{ thought }} {% endif %}
 {% if action %}Action: {{ action }} {% endif %}
-{% if observation %}Observation: {{ observation }} {% endif %}
 """
 
 
@@ -112,8 +117,140 @@ class Profile(ABC):
         """Return the user prompt template of current agent."""
 
     @abstractmethod
-    def get_save_memory_template(self) -> str:
+    def get_write_memory_template(self) -> str:
         """Return the save memory template of current agent."""
+
+    def format_system_prompt(
+        self,
+        template_env: Optional[Environment] = None,
+        question: Optional[str] = None,
+        language: str = "en",
+        most_recent_memories: Optional[str] = None,
+        resource_vars: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ) -> str:
+        """Format the system prompt.
+
+        Args:
+            template_env(Optional[Environment]): The template environment for jinja2.
+            question(Optional[str]): The question.
+            language(str): The language of current context.
+            most_recent_memories(Optional[str]): The most recent memories, it reads
+                from memory.
+            resource_vars(Optional[Dict[str, Any]]): The resource variables.
+
+        Returns:
+            str: The formatted system prompt.
+        """
+        return self._format_prompt(
+            self.get_system_prompt_template(),
+            template_env=template_env,
+            question=question,
+            language=language,
+            most_recent_memories=most_recent_memories,
+            resource_vars=resource_vars,
+            **kwargs
+        )
+
+    def format_user_prompt(
+        self,
+        template_env: Optional[Environment] = None,
+        question: Optional[str] = None,
+        language: str = "en",
+        most_recent_memories: Optional[str] = None,
+        resource_vars: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ) -> str:
+        """Format the user prompt.
+
+        Args:
+            template_env(Optional[Environment]): The template environment for jinja2.
+            question(Optional[str]): The question.
+            language(str): The language of current context.
+            most_recent_memories(Optional[str]): The most recent memories, it reads
+                from memory.
+            resource_vars(Optional[Dict[str, Any]]): The resource variables.
+
+        Returns:
+            str: The formatted user prompt.
+        """
+        return self._format_prompt(
+            self.get_user_prompt_template(),
+            template_env=template_env,
+            question=question,
+            language=language,
+            most_recent_memories=most_recent_memories,
+            resource_vars=resource_vars,
+            **kwargs
+        )
+
+    @property
+    def _sub_render_keys(self) -> Set[str]:
+        """Return the sub render keys.
+
+        If the value is a string and the key is in the sub render keys, it will be
+            rendered.
+
+        Returns:
+            Set[str]: The sub render keys.
+        """
+        return {"role", "name", "goal", "expand_prompt", "constraints"}
+
+    def _format_prompt(
+        self,
+        template: str,
+        template_env: Optional[Environment] = None,
+        question: Optional[str] = None,
+        language: str = "en",
+        most_recent_memories: Optional[str] = None,
+        resource_vars: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ) -> str:
+        """Format the prompt."""
+        if not template_env:
+            template_env = SandboxedEnvironment()
+        pass_vars = {
+            "role": self.get_role(),
+            "name": self.get_name(),
+            "goal": self.get_goal(),
+            "expand_prompt": self.get_expand_prompt(),
+            "language": language,
+            "constraints": self.get_constraints(),
+            "most_recent_memories": (
+                most_recent_memories if most_recent_memories else None
+            ),
+            "examples": self.get_examples(),
+            "question": question,
+        }
+        if resource_vars:
+            # Merge resource variables
+            pass_vars.update(resource_vars)
+        pass_vars.update(kwargs)
+
+        # Parse the template to find all variables in the template
+        template_vars = find_undeclared_variables(template_env.parse(template))
+        # Just keep the valid template key variables
+        filtered_data = {
+            key: pass_vars[key] for key in template_vars if key in pass_vars
+        }
+
+        def _render_template(_template_env, _template: str, **_kwargs):
+            r_template = _template_env.from_string(_template)
+            return r_template.render(**_kwargs)
+
+        for key in filtered_data.keys():
+            value = filtered_data[key]
+            if key in self._sub_render_keys and value:
+                if isinstance(value, str):
+                    # Render the sub-template
+                    filtered_data[key] = _render_template(
+                        template_env, value, **pass_vars
+                    )
+                elif isinstance(value, list):
+                    for i, item in enumerate(value):
+                        if isinstance(item, str):
+                            value[i] = _render_template(template_env, item, **pass_vars)
+        return _render_template(template_env, template, **filtered_data)
 
 
 class DefaultProfile(BaseModel, Profile):
@@ -145,8 +282,8 @@ class DefaultProfile(BaseModel, Profile):
         _DEFAULT_USER_TEMPLATE, description="The user prompt template of the agent."
     )
 
-    save_memory_template: str = Field(
-        _DEFAULT_SAVE_MEMORY_TEMPLATE,
+    write_memory_template: str = Field(
+        _DEFAULT_WRITE_MEMORY_TEMPLATE,
         description="The save memory template of the agent.",
     )
 
@@ -189,9 +326,9 @@ class DefaultProfile(BaseModel, Profile):
         """Return the user prompt template of current agent."""
         return self.user_prompt_template
 
-    def get_save_memory_template(self) -> str:
+    def get_write_memory_template(self) -> str:
         """Return the save memory template of current agent."""
-        return self.save_memory_template
+        return self.write_memory_template
 
 
 class ProfileFactory:
@@ -316,8 +453,8 @@ class ProfileConfig(BaseModel):
     user_prompt_template: str | ConfigInfo | None = DynConfig(
         _DEFAULT_USER_TEMPLATE, description="The user prompt template."
     )
-    save_memory_template: str | ConfigInfo | None = DynConfig(
-        _DEFAULT_SAVE_MEMORY_TEMPLATE, description="The save memory template."
+    write_memory_template: str | ConfigInfo | None = DynConfig(
+        _DEFAULT_WRITE_MEMORY_TEMPLATE, description="The save memory template."
     )
     factory: ProfileFactory | None = Field(None, description="The profile factory.")
 
@@ -356,7 +493,7 @@ class ProfileConfig(BaseModel):
         expand_prompt = self.expand_prompt
         system_prompt_template = self.system_prompt_template
         user_prompt_template = self.user_prompt_template
-        save_memory_template = self.save_memory_template
+        write_memory_template = self.write_memory_template
         examples = self.examples
         call_args = {
             "prefer_prompt_language": prefer_prompt_language,
@@ -380,8 +517,8 @@ class ProfileConfig(BaseModel):
             system_prompt_template = system_prompt_template.query(**call_args)
         if isinstance(user_prompt_template, ConfigInfo):
             user_prompt_template = user_prompt_template.query(**call_args)
-        if isinstance(save_memory_template, ConfigInfo):
-            save_memory_template = save_memory_template.query(**call_args)
+        if isinstance(write_memory_template, ConfigInfo):
+            write_memory_template = write_memory_template.query(**call_args)
 
         if self.factory is not None:
             factory_profile = self.factory.create_profile(
@@ -405,7 +542,7 @@ class ProfileConfig(BaseModel):
             examples=examples,
             system_prompt_template=system_prompt_template,
             user_prompt_template=user_prompt_template,
-            save_memory_template=save_memory_template,
+            write_memory_template=write_memory_template,
         )
 
     def __hash__(self):

@@ -127,6 +127,10 @@ class BaseTool(Resource[ToolResourceParameters], ABC):
             parameters=parameters_string,
         )
 
+    def __str__(self) -> str:
+        """Return the string representation of the tool."""
+        return f"Tool: {self.name} ({self.description})"
+
 
 class FunctionTool(BaseTool):
     """Function tool.
