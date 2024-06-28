@@ -20,7 +20,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.8")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.9")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -758,7 +758,7 @@ else:
 class PrintExtrasCommand(setuptools.Command):
     description = "print extras_require"
     user_options = [
-        ('output=', 'o', 'Path to output the extras_require JSON'),
+        ("output=", "o", "Path to output the extras_require JSON"),
     ]
 
     def initialize_options(self):
@@ -769,7 +769,7 @@ class PrintExtrasCommand(setuptools.Command):
             raise ValueError("output is not set")
 
     def run(self):
-        with open(self.output, 'w') as f:
+        with open(self.output, "w") as f:
             json.dump(setup_spec.unique_extras, f, indent=2)
 
 
@@ -791,7 +791,7 @@ setuptools.setup(
     python_requires=">=3.10",
     extras_require=setup_spec.unique_extras,
     cmdclass={
-        'print_extras': PrintExtrasCommand,
+        "print_extras": PrintExtrasCommand,
     },
     entry_points={
         "console_scripts": [
