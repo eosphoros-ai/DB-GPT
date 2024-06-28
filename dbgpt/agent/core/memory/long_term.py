@@ -73,6 +73,7 @@ class LongTermMemory(Memory, Generic[T]):
         vector_store: VectorStoreBase,
         now: Optional[datetime] = None,
         reflection_threshold: Optional[float] = None,
+        _default_importance: Optional[float] = None,
     ):
         """Create a long-term memory."""
         self.now = now or datetime.now()
@@ -85,6 +86,7 @@ class LongTermMemory(Memory, Generic[T]):
         self.memory_retriever = LongTermRetriever(
             now=self.now, index_store=vector_store
         )
+        self._default_importance = _default_importance
 
     @immutable
     def structure_clone(
@@ -99,6 +101,7 @@ class LongTermMemory(Memory, Generic[T]):
             executor=self.executor,
             vector_store=self._vector_store,
             reflection_threshold=self.reflection_threshold,
+            _default_importance=self._default_importance,
         )
         m._copy_from(self)
         return m
@@ -112,6 +115,8 @@ class LongTermMemory(Memory, Generic[T]):
     ) -> Optional[DiscardedMemoryFragments[T]]:
         """Write a memory fragment to the memory."""
         importance = memory_fragment.importance
+        if importance is None:
+            importance = self._default_importance
         last_accessed_time = memory_fragment.last_accessed_time
         if importance is None:
             raise ValueError("importance is required.")

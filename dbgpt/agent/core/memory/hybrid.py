@@ -60,6 +60,8 @@ class HybridMemory(Memory, Generic[T]):
             sensory_memory=self._sensory_memory.structure_clone(now),
             short_term_memory=self._short_term_memory.structure_clone(now),
             long_term_memory=self._long_term_memory.structure_clone(now),
+            default_insight_extractor=self._default_insight_extractor,
+            default_importance_scorer=self._default_importance_scorer,
         )
         m._copy_from(self)
         return m

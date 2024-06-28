@@ -63,7 +63,7 @@ class TimeWeightedEmbeddingRetriever(EmbeddingRetriever):
         # Avoid mutating input documents
         dup_docs = [deepcopy(d) for d in chunks]
         for i, doc in enumerate(dup_docs):
-            if "last_accessed_at" not in doc.metadata:
+            if doc.metadata.get("last_accessed_at") is None:
                 doc.metadata["last_accessed_at"] = current_time
             if "created_at" not in doc.metadata:
                 doc.metadata["created_at"] = current_time

@@ -187,6 +187,7 @@ class AgentContext:
     max_new_tokens: int = 1024
     temperature: float = 0.5
     allow_format_str_template: Optional[bool] = False
+    verbose: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         """Return a dictionary representation of the AgentContext."""
