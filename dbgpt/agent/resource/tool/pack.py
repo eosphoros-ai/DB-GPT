@@ -63,6 +63,31 @@ class ToolPack(ResourcePack):
         typed_tools = [cast(BaseTool, t) for t in tools]
         return [ToolPack(typed_tools)]  # type: ignore
 
+    async def get_prompt(
+        self,
+        *,
+        lang: str = "en",
+        prompt_type: str = "default",
+        question: Optional[str] = None,
+        resource_name: Optional[str] = None,
+        **kwargs,
+    ) -> str:
+        """Get the prompt for the resources."""
+        prompt_list = []
+        for name, resource in self._resources.items():
+            prompt = await resource.get_prompt(
+                lang=lang,
+                prompt_type=prompt_type,
+                question=question,
+                resource_name=resource_name,
+                **kwargs,
+            )
+            prompt_list.append(prompt)
+        head_prompt = (
+            "You have access to the following APIs:" if lang == "en" else "您可以使用以下API："
+        )
+        return head_prompt + "\n" + self._prompt_separator.join(prompt_list)
+
     def add_command(
         self,
         command_label: str,

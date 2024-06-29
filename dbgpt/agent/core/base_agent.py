@@ -21,6 +21,7 @@ from .agent import Agent, AgentContext, AgentMessage, AgentReviewInfo
 from .memory.agent_memory import AgentMemory
 from .memory.gpts.base import GptsMessage
 from .memory.gpts.gpts_memory import GptsMemory
+from .profile.base import ProfileConfig
 from .role import Role
 
 logger = logging.getLogger(__name__)
@@ -170,6 +171,10 @@ class ConversableAgent(Role, Agent):
             self.resource = target
         elif isinstance(target, AgentMemory):
             self.memory = target
+        elif isinstance(target, ProfileConfig):
+            self.profile = target
+        elif isinstance(target, type) and issubclass(target, Action):
+            self.actions.append(target())
         return self
 
     async def send(
@@ -228,13 +233,26 @@ class ConversableAgent(Role, Agent):
             await self._a_process_received_message(message, sender)
             if request_reply is False or request_reply is None:
                 return
+            if self.is_human:
+                # Not generating a reply for human agents now
+                return
 
-            if not self.is_human:
+            if (
+                self.consecutive_auto_reply_counter
+                <= self.not_null_agent_context.max_chat_round
+            ):
+                # If reply count is less than the maximum chat round, generate a reply
                 reply = await self.generate_reply(
                     received_message=message, sender=sender, reviewer=reviewer
                 )
                 if reply is not None:
                     await self.send(reply, sender)
+            else:
+                logger.info(
+                    f"Current round {self.consecutive_auto_reply_counter} "
+                    f"exceeds the maximum chat round "
+                    f"{self.not_null_agent_context.max_chat_round}!"
+                )
 
     def prepare_act_param(self) -> Dict[str, Any]:
         """Prepare the parameters for the act method."""
@@ -381,7 +399,7 @@ class ConversableAgent(Role, Agent):
                             reply_message, sender, reviewer, request_reply=False
                         )
                     fail_reason = reason
-                    await self.save_to_memory(
+                    await self.write_memories(
                         question=question,
                         ai_message=ai_message,
                         action_output=act_out,
@@ -389,7 +407,7 @@ class ConversableAgent(Role, Agent):
                         check_fail_reason=fail_reason,
                     )
                 else:
-                    await self.save_to_memory(
+                    await self.write_memories(
                         question=question,
                         ai_message=ai_message,
                         action_output=act_out,
@@ -437,6 +455,7 @@ class ConversableAgent(Role, Agent):
                     llm_model=llm_model,
                     max_new_tokens=self.not_null_agent_context.max_new_tokens,
                     temperature=self.not_null_agent_context.temperature,
+                    verbose=self.not_null_agent_context.verbose,
                 )
                 return response, llm_model
             except LLMChatError as e:

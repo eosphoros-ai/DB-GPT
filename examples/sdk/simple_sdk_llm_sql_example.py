@@ -23,8 +23,8 @@ from dbgpt.rag.operators.datasource import DatasourceRetrieverOperator
 
 def _create_temporary_connection():
     """Create a temporary database connection for testing."""
-    connect = SQLiteTempConnector.create_temporary_db()
-    connect.create_temp_tables(
+    conn = SQLiteTempConnector.create_temporary_db()
+    conn.create_temp_tables(
         {
             "user": {
                 "columns": {
@@ -42,7 +42,7 @@ def _create_temporary_connection():
             }
         }
     )
-    return connect
+    return conn
 
 
 def _sql_prompt() -> str:

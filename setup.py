@@ -1,4 +1,5 @@
 import functools
+import json
 import os
 import platform
 import re
@@ -19,7 +20,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.8")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.9")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -753,6 +754,25 @@ else:
         ],
     )
 
+
+class PrintExtrasCommand(setuptools.Command):
+    description = "print extras_require"
+    user_options = [
+        ("output=", "o", "Path to output the extras_require JSON"),
+    ]
+
+    def initialize_options(self):
+        self.output = None
+
+    def finalize_options(self):
+        if self.output is None:
+            raise ValueError("output is not set")
+
+    def run(self):
+        with open(self.output, "w") as f:
+            json.dump(setup_spec.unique_extras, f, indent=2)
+
+
 setuptools.setup(
     name="dbgpt",
     packages=packages,
@@ -770,6 +790,9 @@ setuptools.setup(
     license="https://opensource.org/license/mit/",
     python_requires=">=3.10",
     extras_require=setup_spec.unique_extras,
+    cmdclass={
+        "print_extras": PrintExtrasCommand,
+    },
     entry_points={
         "console_scripts": [
             "dbgpt=dbgpt.cli.cli_scripts:main",

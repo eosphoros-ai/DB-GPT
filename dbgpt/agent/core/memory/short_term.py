@@ -121,10 +121,11 @@ class EnhancedShortTermMemory(ShortTermMemory[T]):
                 # do not repeatedly add observation memory to summary, so use [:-1].
                 for enhance_memory in self.enhance_memories[idx][:-1]:
                     content.append(enhance_memory)
+                # Append the current observation memory
                 content.append(memory_fragment)
                 # Merge the enhanced memories to single memory
                 merged_enhance_memory: T = memory.reduce(
-                    content, merged_memory=memory.importance
+                    content, importance=memory.importance
                 )
                 to_get_insight_memories.append(merged_enhance_memory)
                 enhance_memories.append(merged_enhance_memory)

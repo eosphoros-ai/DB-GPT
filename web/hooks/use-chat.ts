@@ -52,6 +52,13 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
             if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
               return;
             }
+            if (response.headers.get('content-type') === 'application/json') {
+              response.json().then((data) => {
+                onMessage?.(data);
+                onDone?.();
+                ctrl.abort();
+              });
+            }
           },
           onclose() {
             ctrl.abort();

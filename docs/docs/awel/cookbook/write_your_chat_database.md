@@ -91,11 +91,9 @@ shutil.rmtree("/tmp/awel_with_data_vector_store", ignore_errors=True)
 
 vector_store = ChromaStore(
     ChromaVectorConfig(
+        persist_path="/tmp/tmp_ltm_vector_store",
+        name="ltm_vector_store",
         embedding_fn=embeddings,
-        vector_store_config=ChromaVectorConfig(
-            name="db_schema_vector_store",
-            persist_path="/tmp/awel_with_data_vector_store",
-        ),
     )
 )
 
@@ -490,10 +488,8 @@ db_conn.create_temp_tables(
 vector_store = ChromaStore(
     ChromaVectorConfig(
         embedding_fn=embeddings,
-        vector_store_config=ChromaVectorConfig(
-            name="db_schema_vector_store",
-            persist_path="/tmp/awel_with_data_vector_store",
-        ),
+        name="db_schema_vector_store",
+        persist_path="/tmp/awel_with_data_vector_store",
     )
 )
 

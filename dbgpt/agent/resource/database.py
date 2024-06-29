@@ -3,15 +3,17 @@
 import dataclasses
 import logging
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import Any, Generic, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Generic, List, Optional, Tuple, Union
 
 import cachetools
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.cache_utils import cached
 from dbgpt.util.executor_utils import blocking_func_to_async
 
 from .base import P, Resource, ResourceParameters, ResourceType
+
+if TYPE_CHECKING:
+    from dbgpt.datasource.rdbms.base import RDBMSConnector
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +145,7 @@ class RDBMSConnectorResource(DBResource[DBParameters]):
     def __init__(
         self,
         name: str,
-        connector: Optional[RDBMSConnector] = None,
+        connector: Optional["RDBMSConnector"] = None,
         db_name: Optional[str] = None,
         db_type: Optional[str] = None,
         dialect: Optional[str] = None,
@@ -168,7 +170,7 @@ class RDBMSConnectorResource(DBResource[DBParameters]):
         )
 
     @property
-    def connector(self) -> RDBMSConnector:
+    def connector(self) -> "RDBMSConnector":
         """Return the connector."""
         if not self._connector:
             raise ValueError("Connector is not set.")

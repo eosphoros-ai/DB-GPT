@@ -745,6 +745,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     The default model name is "llama2".
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
+
     api_url: str = Field(
         default="http://localhost:11434",
         description="The URL of the embeddings API.",

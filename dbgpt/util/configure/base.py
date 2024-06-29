@@ -68,7 +68,7 @@ class PromptManagerConfigProvider(ConfigProvider):
         try:
             from dbgpt.serve.prompt.serve import Serve
         except ImportError:
-            logger.warning("Prompt manager is not available.")
+            logger.debug("Prompt manager is not available.")
             return None
 
         cfg = Config()

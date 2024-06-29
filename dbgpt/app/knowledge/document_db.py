@@ -219,6 +219,7 @@ class KnowledgeDocumentDao(BaseDao):
         )
 
         results = counts_query.all()
+        session.close()
         docs_count = {result.space: result.document_count for result in results}
         return docs_count
 
@@ -253,7 +254,9 @@ class KnowledgeDocumentDao(BaseDao):
         session = self.get_raw_session()
         updated_space = session.merge(document)
         session.commit()
-        return updated_space.id
+        update_space_id = updated_space.id
+        session.close()
+        return update_space_id
 
     #
     def raw_delete(self, query: KnowledgeDocumentEntity):

@@ -116,7 +116,9 @@ class DefaultModelWorker(ModelWorker):
             self.model, self.tokenizer = self.ml.loader_with_params(
                 model_params, self.llm_adapter
             )
-            model_max_length = _parse_model_max_length(self.model, self.tokenizer)
+            model_max_length = self.llm_adapter.parse_max_length(
+                self.model, self.tokenizer
+            )
             if model_max_length:
                 logger.info(
                     f"Parse model max length {model_max_length} from model {self.model_name}."
