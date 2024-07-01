@@ -133,9 +133,9 @@ export type IChunkList = {
 };
 
 export type GraphVisResult = {
-  nodes:Array<any>,
-  edges:Array<any>
-}
+  nodes: Array<any>;
+  edges: Array<any>;
+};
 
 export type ArgumentsParams = {
   argument: string;
@@ -146,6 +146,7 @@ export type StepChangeParams = {
   spaceName?: string;
   docType?: string;
   files?: Array<File>;
+  pace?: number;
 };
 
 export type File = {

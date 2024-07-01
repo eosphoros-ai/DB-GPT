@@ -34,7 +34,7 @@ const Knowledge = () => {
     getSpaces();
   }, []);
 
-  const handleStepChange = ({ label, spaceName, docType, files }: StepChangeParams) => {
+  const handleStepChange = ({ label, spaceName, docType, files, pace = 1 }: StepChangeParams) => {
     if (label === 'finish') {
       setIsAddShow(false);
       getSpaces();
@@ -43,9 +43,9 @@ const Knowledge = () => {
       getSpaces();
     } else if (label === 'forward') {
       activeStep === 0 && getSpaces();
-      setActiveStep((step) => step + 1);
+      setActiveStep((step) => step + pace);
     } else {
-      setActiveStep((step) => step - 1);
+      setActiveStep((step) => step - pace);
     }
     files && setFiles(files);
     spaceName && setSpaceName(spaceName);

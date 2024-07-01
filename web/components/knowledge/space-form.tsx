@@ -1,6 +1,6 @@
 import { addSpace, apiInterceptors } from '@/client/api';
 import { StepChangeParams } from '@/types/knowledge';
-import { Button, Form, Input, Spin,Select } from 'antd';
+import { Button, Form, Input, Spin, Select } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,7 +8,7 @@ type FieldType = {
   spaceName: string;
   owner: string;
   description: string;
-  storage:string;
+  storage: string;
 };
 
 type IProps = {
@@ -21,9 +21,9 @@ export default function SpaceForm(props: IProps) {
   const [spinning, setSpinning] = useState<boolean>(false);
 
   const handleFinish = async (fieldsValue: FieldType) => {
-    const { spaceName, owner, description,storage } = fieldsValue;
+    const { spaceName, owner, description, storage } = fieldsValue;
     setSpinning(true);
-    let vector_type = storage
+    let vector_type = storage;
     const [_, data, res] = await apiInterceptors(
       addSpace({
         name: spaceName,
@@ -33,8 +33,10 @@ export default function SpaceForm(props: IProps) {
       }),
     );
     setSpinning(false);
-    res?.success && handleStepChange({ label: 'forward', spaceName });
+
+    res?.success && handleStepChange({ label: 'forward', spaceName, pace: vector_type === 'financial' ? 2 : 1 });
   };
+
   return (
     <Spin spinning={spinning}>
       <Form
