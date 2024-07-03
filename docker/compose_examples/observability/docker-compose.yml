@@ -13,7 +13,7 @@ version: '3.10'
 
 services:
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.58
     restart: unless-stopped
     networks:
       - dbgptnet
