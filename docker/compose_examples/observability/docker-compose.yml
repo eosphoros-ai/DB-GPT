@@ -37,7 +37,7 @@ services:
       - TRACER_TO_OPEN_TELEMETRY=True
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
     volumes:
-      - ../../:/app
+      - ../../../:/app
     networks:
       - dbgptnet
   llm-worker:
@@ -51,7 +51,7 @@ services:
     depends_on:
       - controller
     volumes:
-      - ../../:/app
+      - ../../../:/app
     restart: unless-stopped
     networks:
       - dbgptnet
@@ -66,7 +66,7 @@ services:
     depends_on:
       - controller
     volumes:
-      - ../../:/app
+      - ../../../:/app
     restart: unless-stopped
     networks:
       - dbgptnet
@@ -84,7 +84,7 @@ services:
       - llm-worker
       - embedding-worker
     volumes:
-      - ../../:/app
+      - ../../../:/app
       - dbgpt-data:/app/pilot/data
       - dbgpt-message:/app/pilot/message
     # env_file:
