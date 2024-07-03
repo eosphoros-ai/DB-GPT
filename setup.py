@@ -32,6 +32,7 @@ BUILD_FROM_SOURCE_URL_FAST_CHAT = os.getenv(
 )
 BUILD_VERSION_OPENAI = os.getenv("BUILD_VERSION_OPENAI")
 INCLUDE_QUANTIZATION = os.getenv("INCLUDE_QUANTIZATION", "true").lower() == "true"
+INCLUDE_OBSERVABILITY = os.getenv("INCLUDE_OBSERVABILITY", "true").lower() == "true"
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -629,6 +630,9 @@ def openai_requires():
     else:
         setup_spec.extras["openai"].append("openai")
 
+    if INCLUDE_OBSERVABILITY:
+        setup_spec.extras["openai"] += setup_spec.extras["observability"]
+
     setup_spec.extras["openai"] += setup_spec.extras["framework"]
     setup_spec.extras["openai"] += setup_spec.extras["rag"]
 
@@ -654,6 +658,19 @@ def cache_requires():
     setup_spec.extras["cache"] = ["rocksdict"]
 
 
+def observability_requires():
+    """
+    pip install "dbgpt[observability]"
+
+    Send DB-GPT traces to OpenTelemetry compatible backends.
+    """
+    setup_spec.extras["observability"] = [
+        "opentelemetry-api",
+        "opentelemetry-sdk",
+        "opentelemetry-exporter-otlp",
+    ]
+
+
 def default_requires():
     """
     pip install "dbgpt[default]"
@@ -672,10 +689,12 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["rag"]
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
+    setup_spec.extras["default"] += setup_spec.extras["cache"]
     if INCLUDE_QUANTIZATION:
         # Add quantization extra to default, default is True
         setup_spec.extras["default"] += setup_spec.extras["quantization"]
-    setup_spec.extras["default"] += setup_spec.extras["cache"]
+    if INCLUDE_OBSERVABILITY:
+        setup_spec.extras["default"] += setup_spec.extras["observability"]
 
 
 def all_requires():
@@ -699,11 +718,12 @@ quantization_requires()
 all_vector_store_requires()
 all_datasource_requires()
 knowledge_requires()
-openai_requires()
 gpt4all_requires()
 vllm_requires()
 cache_requires()
+observability_requires()
 
+openai_requires()
 # must be last
 default_requires()
 all_requires()

@@ -1,4 +1,5 @@
 """Http trigger for AWEL."""
+
 import json
 import logging
 from enum import Enum
@@ -24,6 +25,7 @@ from dbgpt._private.pydantic import (
     model_to_dict,
 )
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.tracer import root_tracer
 
 from ..dag.base import DAG
 from ..flow import (
@@ -650,12 +652,21 @@ async def _trigger_dag(
     from fastapi import BackgroundTasks
     from fastapi.responses import StreamingResponse
 
+    span_id = root_tracer._parse_span_id(body)
+
     leaf_nodes = dag.leaf_nodes
     if len(leaf_nodes) != 1:
         raise ValueError("HttpTrigger just support one leaf node in dag")
     end_node = cast(BaseOperator, leaf_nodes[0])
+    metadata = {
+        "awel_node_id": end_node.node_id,
+        "awel_node_name": end_node.node_name,
+    }
     if not streaming_response:
-        return await end_node.call(call_data=body)
+        with root_tracer.start_span(
+            "dbgpt.core.trigger.http.run_dag", span_id, metadata=metadata
+        ):
+            return await end_node.call(call_data=body)
     else:
         headers = response_headers
         media_type = response_media_type if response_media_type else "text/event-stream"
@@ -666,7 +677,10 @@ async def _trigger_dag(
                 "Connection": "keep-alive",
                 "Transfer-Encoding": "chunked",
             }
-        generator = await end_node.call_stream(call_data=body)
+        _generator = await end_node.call_stream(call_data=body)
+        trace_generator = root_tracer.wrapper_async_stream(
+            _generator, "dbgpt.core.trigger.http.run_dag", span_id, metadata=metadata
+        )
 
         async def _after_dag_end():
             await dag._after_dag_end(end_node.current_event_loop_task_id)
@@ -674,7 +688,7 @@ async def _trigger_dag(
         background_tasks = BackgroundTasks()
         background_tasks.add_task(_after_dag_end)
         return StreamingResponse(
-            generator,
+            trace_generator,
             headers=headers,
             media_type=media_type,
             background=background_tasks,

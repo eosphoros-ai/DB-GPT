@@ -111,10 +111,15 @@ add_exception_handler(app)
 def _get_webserver_params(args: List[str] = None):
     from dbgpt.util.parameter_utils import EnvArgumentParser
 
-    parser: argparse.ArgumentParser = EnvArgumentParser.create_argparse_option(
-        WebServerParameters
+    parser = EnvArgumentParser()
+
+    env_prefix = "webserver_"
+    webserver_params: WebServerParameters = parser.parse_args_into_dataclass(
+        WebServerParameters,
+        env_prefixes=[env_prefix],
+        command_args=args,
     )
-    return WebServerParameters(**vars(parser.parse_args(args=args)))
+    return webserver_params
 
 
 def initialize_app(param: WebServerParameters = None, args: List[str] = None):
@@ -245,6 +250,10 @@ def run_webserver(param: WebServerParameters = None):
         os.path.join(LOGDIR, param.tracer_file),
         system_app=system_app,
         tracer_storage_cls=param.tracer_storage_cls,
+        enable_open_telemetry=param.tracer_to_open_telemetry,
+        otlp_endpoint=param.otel_exporter_otlp_traces_endpoint,
+        otlp_insecure=param.otel_exporter_otlp_traces_insecure,
+        otlp_timeout=param.otel_exporter_otlp_traces_timeout,
     )
 
     with root_tracer.start_span(

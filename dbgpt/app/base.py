@@ -9,7 +9,7 @@ from typing import Optional
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.storage import DBType
-from dbgpt.util.parameter_utils import BaseParameters
+from dbgpt.util.parameter_utils import BaseServerParameters
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -199,7 +199,7 @@ def _create_mysql_database(db_name: str, db_url: str, try_to_create_db: bool = F
 
 
 @dataclass
-class WebServerParameters(BaseParameters):
+class WebServerParameters(BaseServerParameters):
     host: Optional[str] = field(
         default="0.0.0.0", metadata={"help": "Webserver deploy host"}
     )
@@ -247,21 +247,7 @@ class WebServerParameters(BaseParameters):
             "text2vec --rerank --model_name xxx --model_path xxx`"
         },
     )
-    log_level: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Logging level",
-            "valid_values": [
-                "FATAL",
-                "ERROR",
-                "WARNING",
-                "WARNING",
-                "INFO",
-                "DEBUG",
-                "NOTSET",
-            ],
-        },
-    )
+
     light: Optional[bool] = field(default=False, metadata={"help": "enable light mode"})
     log_file: Optional[str] = field(
         default="dbgpt_webserver.log",
