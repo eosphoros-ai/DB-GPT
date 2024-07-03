@@ -5,6 +5,7 @@ from typing import Dict, Iterator, List
 from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.parameter import ModelParameters
+from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ class RemoteModelWorker(ModelWorker):
             async with client.stream(
                 "POST",
                 url,
-                headers=self.headers,
+                headers=self._get_trace_headers(),
                 json=params,
                 timeout=self.timeout,
             ) as response:
@@ -84,7 +85,7 @@ class RemoteModelWorker(ModelWorker):
             logger.debug(f"Send async_generate to url {url}, params: {params}")
             response = await client.post(
                 url,
-                headers=self.headers,
+                headers=self._get_trace_headers(),
                 json=params,
                 timeout=self.timeout,
             )
@@ -101,7 +102,7 @@ class RemoteModelWorker(ModelWorker):
             logger.debug(f"Send async_count_token to url {url}, params: {prompt}")
             response = await client.post(
                 url,
-                headers=self.headers,
+                headers=self._get_trace_headers(),
                 json={"prompt": prompt},
                 timeout=self.timeout,
             )
@@ -118,7 +119,7 @@ class RemoteModelWorker(ModelWorker):
             )
             response = await client.post(
                 url,
-                headers=self.headers,
+                headers=self._get_trace_headers(),
                 json=params,
                 timeout=self.timeout,
             )
@@ -136,7 +137,7 @@ class RemoteModelWorker(ModelWorker):
         logger.debug(f"Send embeddings to url {url}, params: {params}")
         response = requests.post(
             url,
-            headers=self.headers,
+            headers=self._get_trace_headers(),
             json=params,
             timeout=self.timeout,
         )
@@ -151,8 +152,14 @@ class RemoteModelWorker(ModelWorker):
             logger.debug(f"Send async_embeddings to url {url}")
             response = await client.post(
                 url,
-                headers=self.headers,
+                headers=self._get_trace_headers(),
                 json=params,
                 timeout=self.timeout,
             )
             return response.json()
+
+    def _get_trace_headers(self):
+        span_id = root_tracer.get_current_span_id()
+        headers = self.headers.copy()
+        headers.update({DBGPT_TRACER_SPAN_ID: span_id})
+        return headers

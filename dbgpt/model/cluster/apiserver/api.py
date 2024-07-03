@@ -601,7 +601,7 @@ def initialize_apiserver(
         initialize_tracer(
             os.path.join(LOGDIR, apiserver_params.tracer_file),
             system_app=system_app,
-            root_operation_name="DB-GPT-APIServer-Entry",
+            root_operation_name="DB-GPT-APIServer",
             tracer_storage_cls=apiserver_params.tracer_storage_cls,
             enable_open_telemetry=apiserver_params.tracer_to_open_telemetry,
             otlp_endpoint=apiserver_params.otel_exporter_otlp_traces_endpoint,

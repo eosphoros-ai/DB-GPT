@@ -836,6 +836,9 @@ def _setup_fastapi(
         app = create_app()
         setup_http_service_logging()
 
+        if system_app:
+            system_app._asgi_app = app
+
     if worker_params.standalone:
         from dbgpt.model.cluster.controller.controller import initialize_controller
         from dbgpt.model.cluster.controller.controller import (
@@ -1145,16 +1148,17 @@ def run_worker_manager(
 
     embedded_mod = True
     logger.info(f"Worker params: {worker_params}")
-    system_app = SystemApp(app)
+    system_app = SystemApp()
     if not app:
         # Run worker manager independently
         embedded_mod = False
         app = _setup_fastapi(worker_params, system_app=system_app)
+    system_app._asgi_app = app
 
     initialize_tracer(
         os.path.join(LOGDIR, worker_params.tracer_file),
         system_app=system_app,
-        root_operation_name="DB-GPT-WorkerManager-Entry",
+        root_operation_name="DB-GPT-ModelWorker",
         tracer_storage_cls=worker_params.tracer_storage_cls,
         enable_open_telemetry=worker_params.tracer_to_open_telemetry,
         otlp_endpoint=worker_params.otel_exporter_otlp_traces_endpoint,

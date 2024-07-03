@@ -7,7 +7,7 @@
 #
 # How to start the cluster:
 # 1. run `cd docker/compose_examples`
-# 2. run `OPENAI_API_KEY="{your api key}" OPENAI_API_BASE="https://api.openai.com/v1" docker compose -f observability-docker-compose.yml up -d`
+# 2. run `OPENAI_API_KEY="{your api key}" OPENAI_API_BASE="https://api.openai.com/v1" docker compose up -d`
 # Note: Make sure you have set the environment variables OPENAI_API_KEY.
 version: '3.10'
 
@@ -29,6 +29,14 @@ services:
       - "14268:14268"
     environment:
       - LOG_LEVEL=debug
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    volumes:
+      # Set the uid and gid to the same as the user in the container
+      - jaeger-badger:/badger:uid=10001,gid=10001
+    user: root
   controller:
     image: eosphorosai/dbgpt-openai:latest
     command: dbgpt start controller
@@ -36,6 +44,7 @@ services:
     environment:
       - TRACER_TO_OPEN_TELEMETRY=True
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
+      - DBGPT_LOG_LEVEL=DEBUG
     volumes:
       - ../../../:/app
     networks:
@@ -48,6 +57,7 @@ services:
       - PROXYLLM_BACKEND=gpt-3.5-turbo
       - TRACER_TO_OPEN_TELEMETRY=True
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
+      - DBGPT_LOG_LEVEL=DEBUG
     depends_on:
       - controller
     volumes:
@@ -63,6 +73,7 @@ services:
       - proxy_http_openapi_proxy_backend=text-embedding-3-small
       - TRACER_TO_OPEN_TELEMETRY=True
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
+      - DBGPT_LOG_LEVEL=DEBUG
     depends_on:
       - controller
     volumes:
@@ -100,6 +111,7 @@ volumes:
   dbgpt-myql-db:
   dbgpt-data:
   dbgpt-message:
+  jaeger-badger:
 networks:
   dbgptnet:
     driver: bridge

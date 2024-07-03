@@ -182,6 +182,8 @@ class TracerManager:
     ) -> AsyncIterator[Any]:
         """Wrap an async generator with a span"""
 
+        parent_span_id = parent_span_id or self.get_current_span_id()
+
         async def wrapper():
             span = self.start_span(operation_name, parent_span_id, span_type, metadata)
             try:
@@ -234,7 +236,7 @@ def _parse_operation_name(func, *args):
 
 def initialize_tracer(
     tracer_filename: str,
-    root_operation_name: str = "DB-GPT-Web-Entry",
+    root_operation_name: str = "DB-GPT-Webserver",
     system_app: Optional[SystemApp] = None,
     tracer_storage_cls: Optional[str] = None,
     create_system_app: bool = False,

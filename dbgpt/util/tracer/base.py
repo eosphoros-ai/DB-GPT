@@ -7,11 +7,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
-DBGPT_TRACER_SPAN_ID = "DBGPT_TRACER_SPAN_ID"
+DBGPT_TRACER_SPAN_ID = "DB-GPT-Trace-Span-Id"
 
 # Compatibility with OpenTelemetry API
 _TRACE_ID_MAX_VALUE = 2**128 - 1
@@ -69,7 +69,7 @@ class Span:
         # Timestamp when this span ended, initially None
         self.end_time = None
         # Additional metadata associated with the span
-        self.metadata = metadata
+        self.metadata = metadata or {}
         self._end_callers = []
         if end_caller:
             self._end_callers.append(end_caller)
@@ -110,7 +110,7 @@ class Span:
                 if not self.end_time
                 else self.end_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             ),
-            "metadata": _clean_for_json(self.metadata),
+            "metadata": _clean_for_json(self.metadata) if self.metadata else None,
         }
 
     def copy(self) -> Span:

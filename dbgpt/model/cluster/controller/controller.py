@@ -188,7 +188,7 @@ def initialize_controller(
             raise ValueError("Controller parameters are required.")
         initialize_tracer(
             os.path.join(LOGDIR, controller_params.tracer_file),
-            root_operation_name="DB-GPT-ModelController-Entry",
+            root_operation_name="DB-GPT-ModelController",
             system_app=system_app,
             tracer_storage_cls=controller_params.tracer_storage_cls,
             enable_open_telemetry=controller_params.tracer_to_open_telemetry,
