@@ -184,6 +184,7 @@ class Knowledge(ABC):
 
     @property
     def file_path(self):
+        """Get file path."""
         return self._path
 
     @abstractmethod

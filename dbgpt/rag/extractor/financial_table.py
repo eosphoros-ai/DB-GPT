@@ -1,37 +1,42 @@
+"""FinTableExtractor."""
 import json
+import logging
 import os
 import re
 
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+
 
 class FinTableProcessor:
+    """FinTableProcessor."""
+
     def __init__(self, txt_path):
+        """FinTableProcessor."""
         self.txt_path = txt_path
         self.all_data = []
         self.all_table = []
         self.all_title = []
 
     def read_file(self):
-        # 读取txt文件中的内容并将其存储在self.all_data列表中
+        """Read file and store data in self.all_data."""
         with open(self.txt_path, "r") as file:
             for line in file:
                 data = eval(line)
                 print(data)
-                # 忽略页眉和页脚，并且内容不为空的部分
+                # ignore页眉 and 页脚
                 if data and data["type"] not in ["页眉", "页脚"] and data["inside"] != "":
                     self.all_data.append(data)
 
     def process_text_data(self):
-        """
-        处理文本数据，提取一级标题、二级标题和表格数据
-        """
+        """Text data processing to level 1 and level 2 titles."""
         for i in range(len(self.all_data)):
             data = self.all_data[i]
             inside_content = data.get("inside")
             content_type = data.get("type")
             if content_type == "text":
-                # 使用正则表达式匹配一级标题、二级标题和一级标题数字的格式
+                # use regex to match the first level title
                 first_level_match = re.match(
                     r"§(\d+)+([\u4e00-\u9fa5]+)", inside_content.strip()
                 )
@@ -39,7 +44,7 @@ class FinTableProcessor:
                     r"(\d+\.\d+)([\u4e00-\u9fa5]+)", inside_content.strip()
                 )
                 first_num_match = re.match(r"^§(\d+)$", inside_content.strip())
-                # 遍历标题列表，获取所有一级标题
+                # get all level 1 titles
                 title_name = [
                     dictionary["first_title"]
                     for dictionary in self.all_title
@@ -49,19 +54,19 @@ class FinTableProcessor:
                     first_title_text = first_level_match.group(2)
                     first_title_num = first_level_match.group(1)
                     first_title = first_title_num + first_title_text
-                    # 如果一级标题不在已有标题列表中，则添加到标题列表中
-                    if first_title not in title_name:
-                        if (
-                            int(first_title_num) == 1
-                            or int(first_title_num) - int(self.all_title[-1]["id"]) == 1
-                        ):
-                            current_entry = {
-                                "id": first_title_num,
-                                "first_title": first_title,
-                                "second_title": [],
-                                "table": [],
-                            }
-                            self.all_title.append(current_entry)
+                    # the title does not contain "..." and is not in the title list
+                    # , add it to the title list
+                    if first_title not in title_name and (
+                        int(first_title_num) == 1
+                        or int(first_title_num) - int(self.all_title[-1]["id"]) == 1
+                    ):
+                        current_entry = {
+                            "id": first_title_num,
+                            "first_title": first_title,
+                            "second_title": [],
+                            "table": [],
+                        }
+                        self.all_title.append(current_entry)
 
                 elif second_level_match:
                     second_title_name = second_level_match.group(0)
@@ -86,24 +91,25 @@ class FinTableProcessor:
                     first_num = first_num_match.group(1)
                     first_text = self.all_data[i + 1].get("inside")
                     first_title = first_num_match.group(1) + first_text
-                    # 如果标题不含有"..."，且不在已有标题列表中，则添加到标题列表中
-                    if "..." not in first_text and first_title not in title_name:
-                        if (
+                    # if the title does not contain "..." and is not in the title list
+                    if (
+                        "..." not in first_text
+                        and first_title not in title_name
+                        and (
                             int(first_num) == 1
                             or int(first_num) - int(self.all_title[-1]["id"]) == 1
-                        ):
-                            current_entry = {
-                                "id": first_num,
-                                "first_title": first_title,
-                                "second_title": [],
-                                "table": [],
-                            }
-                            self.all_title.append(current_entry)
+                        )
+                    ):
+                        current_entry = {
+                            "id": first_num,
+                            "first_title": first_title,
+                            "second_title": [],
+                            "table": [],
+                        }
+                        self.all_title.append(current_entry)
 
     def process_excel_data(self):
-        """
-        处理表格数据，提取表格内容和标题
-        """
+        """Process excel data."""
         temp_table = []
         temp_title = None
 
@@ -130,9 +136,7 @@ class FinTableProcessor:
                 temp_table = []
 
     def process_tables(self):
-        """
-        处理表格数据，将其与标题对应
-        """
+        """Process table data."""
         for table in self.all_table:
             title = table["title"]
             table_content = table["table"]
@@ -146,19 +150,17 @@ class FinTableProcessor:
                         "table_name": text_part,
                         "table_content": table_content,
                     }
-                    # 遍历self.all_title列表
+                    # self.all_title
                     for item in self.all_title:
-                        # 如果找到'id'为10的字典，则向其'second_title'列表中添加新的字典
+                        # if the title is in the title list, add the table to the title
                         if item["id"] == first_title:
                             item["table"].append(table_pair)
                             break
 
                 elif second_match:
-                    index = 0
-                    for char in title:
+                    for index, char in enumerate(title):
                         if not char.isdigit() and char != ".":
                             break
-                        index += 1
                     table_name = title[index:]
                     first_title, second_title = (
                         second_match.group(1),
@@ -173,12 +175,17 @@ class FinTableProcessor:
                             item["second_title"][second_title]["table"].append(
                                 table_pair
                             )
-            except:
-                # 错误处理：打印错误信息并终止循环
-                print("Error: 文件{}中的标题{}有误，截断处理".format(self.txt_path, title))
+            except Exception:
+                # if the title is not in the title list, print an error message
+                print(
+                    "Error: file exist title error, file,{} title, {}".format(
+                        self.txt_path, title
+                    )
+                )
                 break
 
     def create_excel_files(self, output_folder):
+        """Create excel files."""
         for item in self.all_title:
             first_title = item["first_title"]
             second_title = item["second_title"]
@@ -193,12 +200,20 @@ class FinTableProcessor:
                         excel_path = os.path.join(folder_path, excel_name)
                         table_content = table_item["table_content"]
                         table_content = [eval(item) for item in table_content]
-                        # 将第一个子列表作为列名，其余子列表作为数据行
-                        max_cols = len(table_content[0])  # 第一行的列数即为最大列数
+                        # Use the first sublist as column names and
+                        # the remaining sublists as data rows
+
+                        # The number of columns in the first row is
+                        # the maximum number of columns
+                        max_cols = len(table_content[0])
                         for row in table_content:
-                            if len(row) > max_cols:  # 如果当前行的列数超过了最大列数
+                            # If the number of columns in the current row exceeds
+                            # the maximum number of columns
+                            if len(row) > max_cols:
                                 for i in range(max_cols, len(row)):
-                                    row[max_cols - 1] += "," + row[i]  # 合并多余的值到当前行的最大列数
+                                    # Merge excess values ​​into the maximum
+                                    # number of columns of the current row
+                                    row[max_cols - 1] += "," + row[i]
                                 del row[max_cols:]
 
                         # 创建 DataFrame
@@ -216,35 +231,44 @@ class FinTableProcessor:
                             table_content = [eval(item) for item in table_content]
                             excel_name = f"{table_name}.xlsx"
                             excel_path = os.path.join(second_folder_path, excel_name)
-                            max_cols = len(table_content[0])  # 第一行的列数即为最大列数
+                            # The number of columns in the first row is the maximum
+                            # number of columns
+                            max_cols = len(table_content[0])
                             for row in table_content:
-                                if len(row) > max_cols:  # 如果当前行的列数超过了最大列数
+                                # If the number of columns in the current row exceeds
+                                # the maximum number of columns
+                                if len(row) > max_cols:
+                                    # Merge excess values ​​into the maximum
+                                    # number of columns of the current row
                                     for i in range(max_cols, len(row)):
-                                        row[max_cols - 1] += (
-                                            "," + row[i]
-                                        )  # 合并多余的值到当前行的最大列数
+                                        row[max_cols - 1] += "," + row[i]
                                     del row[max_cols:]
-                            # 创建 DataFrame
+                            # create DataFrame
                             df = pd.DataFrame(
                                 table_content[1:], columns=table_content[0]
                             )
                             df.to_excel(excel_path, index=False)
-            except:
-                # 匹配含有年月日的列名
-                print("Error: 文件<{}>中的表格<{}>有误，拆分处理".format(self.txt_path, table_name))
+            except Exception:
+                # match column contains year, month, date.
+                logger.error(
+                    "Error: 文件<{}>中的表格<{}>有误，拆分处理".format(self.txt_path, table_name)
+                )
                 pattern = r"\d{4}年\d{1,2}月\d{1,2}日"
-                # 遍历第一行的列名
+                # Iterate through the column names of the first row
                 for i, column_name in enumerate(table_content[0]):
-                    # 如果列名匹配到含有年月日的格式
+                    # If the column name matches the format containing year,
+                    # month and day
                     if re.search(pattern, column_name):
-                        # 合并当前列名和左右相邻的列名
+                        # Merge the current column name and the adjacent column
+                        # names on the left and right
                         table_content[0][i - 1] = " ".join(
                             [column_name, table_content[0][i - 1]]
                         )
                         table_content[0][i + 1] = " ".join(
                             [column_name, table_content[0][i + 1]]
                         )
-                        # 删除当前列及左右相邻的列
+                        # Delete the current column and adjacent columns to the
+                        # left and right
                         del table_content[0][i]
                 print(table_content)
                 df = pd.DataFrame(table_content[1:], columns=table_content[0])
@@ -259,14 +283,19 @@ class FinTableProcessor:
 
 
 class FinTableExtractor:
+    """Fin Report Table Extractor."""
+
     def __init__(self, file_name):
+        """Fin Report Table Extractor."""
         self.file_name = file_name
 
-    # 提取check_re_1-check_re_2之间的文本
+    # extract text between check_re_1-check_re_2
+
     def cut_all_text(self, check, check_re_1, check_re_2, all_text, line_dict, text):
-        if check == False and re.search(check_re_1, all_text):
+        """Cut all text."""
+        if check is False and re.search(check_re_1, all_text):
             check = True
-        if check == True and line_dict["type"] not in ["页眉", "页脚"]:
+        if check and line_dict["type"] not in ["页眉", "页脚"]:
             if not re.search(check_re_2, all_text):
                 if line_dict["inside"] != "":
                     text = text + line_dict["inside"] + "\n"
@@ -274,15 +303,8 @@ class FinTableExtractor:
                 check = False
         return text, check
 
-    # 提取基础列
     def extract_base_col(self):
-        """
-        Args:
-            file_name:
-
-        Returns:
-
-        """
+        """Extract base info col."""
         allname = self.file_name.split("\\")[-1]
         date, name, stock, short_name, year, else1 = allname.split("__")
         stock2, short_name2, mail, address1, address2 = "", "", "", "", ""
@@ -341,14 +363,21 @@ class FinTableExtractor:
                                     short_name2 = _answer
                                     break
 
-                        def check_answers(answer, keywords_re, check_chinese):
+                        def check_answers(
+                            answer,
+                            keywords_re,
+                            check_chinese,
+                            _answer=_answer,
+                            line_dict=line_dict,
+                            answer_list=answer_list,
+                        ):
                             if answer == "" and re.search(
                                 keywords_re, line_dict["inside"]
                             ):
                                 answer_list = eval(line_dict["inside"])
                                 for _answer in answer_list:
                                     keywords_re = keywords_re.replace("'", "")
-                                    if check_chinese == True:
+                                    if check_chinese:
                                         if (
                                             not re.search(keywords_re, _answer)
                                             and not re.search(
@@ -367,7 +396,13 @@ class FinTableExtractor:
                             return answer
 
                         def check_person_answers(
-                            answer, all_answer, keywords_re, check_chinese
+                            answer,
+                            all_answer,
+                            keywords_re,
+                            check_chinese,
+                            _answer=_answer,
+                            line_dict=line_dict,
+                            answer_list=answer_list,
                         ):
                             if (
                                 answer == ""
@@ -377,7 +412,7 @@ class FinTableExtractor:
                                 answer_list = eval(line_dict["inside"])
                                 for _answer in answer_list:
                                     keywords_re = keywords_re.replace("'", "")
-                                    if check_chinese == True:
+                                    if check_chinese:
                                         if (
                                             not re.search(keywords_re, _answer)
                                             and not re.search(
@@ -409,7 +444,9 @@ class FinTableExtractor:
                             english_name, "'公司的外文名称|公司的外文名称(?:（如有）)？'", True
                         )
                         english_name2 = check_answers(
-                            english_name2, "'公司的外文名称缩写|公司的外文名称缩写(?:（如有）)？'", True
+                            english_name2,
+                            "'公司的外文名称缩写|公司的外文名称缩写(?:（如有）)？" "" "" "'",
+                            True,
                         )
                         web = check_answers(
                             web, "'公司(?:国际互联网)?网址|公司(?:国际互联网)?网址'", True
@@ -417,7 +454,8 @@ class FinTableExtractor:
                         boss = check_answers(boss, "'公司的法定代表人|公司的法定代表人'", False)
                         all_person = check_answers(
                             all_person,
-                            "'(?:报告期末)?在职员工的数量合计(?:（人）)?|(?:报告期末)?在职员工的数量合计(?:（人）)?'",
+                            "'(?:报告期末)?在职员工的数量合计(?:（人）)?|(?:报告期末)?在职员工"
+                            "的数量合计(?:（人）)?'",
                             True,
                         )
                         person11 = check_person_answers(
@@ -483,7 +521,7 @@ class FinTableExtractor:
                             and person27 != ""
                         ):
                             break
-                except:
+                except Exception:
                     print(line_dict)
         new_row = {
             "文件名": allname,
@@ -519,18 +557,16 @@ class FinTableExtractor:
             "研发人数": person27,
             "全文": str(lines),
         }
-        print("结束 " + self.file_name)
+        print("finish " + self.file_name)
         return new_row
 
     # 提取指定文本
     def extract_fin_data(self):
+        """Extract financial data."""
         allname = self.file_name.split("\\")[-1]
         date, name, stock, short_name, year, else1 = allname.split("__")
         all_text = ""
-        text1, text2, text3, text4, text5, text6, text7, text8 = (
-            "",
-            "",
-            "",
+        text1, text2, text3, text4, text5 = (
             "",
             "",
             "",
@@ -538,10 +574,7 @@ class FinTableExtractor:
             "",
         )
 
-        check1, check2, check3, check4, check5, check6, check7, check8 = (
-            False,
-            False,
-            False,
+        check1, check2, check3, check4, check5 = (
             False,
             False,
             False,
@@ -830,14 +863,14 @@ class FinTableExtractor:
                     if re.search("(?:负责人.{0,15}|6、)(?:母公司现金流量表)$", all_text):
                         break
 
-                except:
+                except Exception:
                     print(line_dict)
                     pass
 
             cut1_len = len(text1.split("合并资产负债表")[0])
-            cut2_len = len(text2.split("母公司资产负债表")[0])
+            # cut2_len = len(text2.split("母公司资产负债表")[0])
             cut3_len = len(text3.split("合并利润表")[0])
-            cut4_len = len(text4.split("母公司利润表")[0])
+            # cut4_len = len(text4.split("母公司利润表")[0])
             cut5_len = len(text5.split("合并现金流量表")[0])
 
             # cut6_len = len(text6.split('母公司现金流量表')[0])
@@ -867,7 +900,8 @@ class FinTableExtractor:
                                 .replace("／", "/")
                             )
                             cut_re = re.match(
-                                "(?:[一二三四五六七八九十]、|（[一二三四五六七八九十]）|\d\.|加：|减：|其中：|（元/股）)",
+                                "(?:[一二三四五六七八九十]、|（[一二三四五六七八九十]）|\d\.|"
+                                "加：|减：|其中：|（元/股）)",
                                 text_l[0],
                             )
                             if cut_re:
@@ -879,7 +913,7 @@ class FinTableExtractor:
                                 and re.search("[\u4e00-\u9fa5]", text_l[0])
                             ):
                                 data.append(text_l)
-                        except:
+                        except Exception:
                             print(_t)
                     if data != [] and re.search(stop_re, _t):
                         break
@@ -893,12 +927,11 @@ class FinTableExtractor:
                         for key in answer_dict:
                             try:
                                 match_answer = df[df["项目"] == key]
-                                if not match_answer.empty:
-                                    if answer_dict[key] == "":
-                                        answer_dict[key] = match_answer[
-                                            year + addwords
-                                        ].values[0]
-                            except:
+                                if not match_answer.empty and answer_dict[key] == "":
+                                    answer_dict[key] = match_answer[
+                                        year + addwords
+                                    ].values[0]
+                            except Exception:
                                 print(key)
                 return answer_dict
 
@@ -920,18 +953,12 @@ class FinTableExtractor:
             }
             for key in answer_dict:
                 new_row[key] = answer_dict[key]
-            print("结束 " + self.file_name)
+            print("finish " + self.file_name)
             return new_row
 
     # 提取其他列
     def extract_other_col(self):
-        """
-        Args:
-            file_name:
-
-        Returns:
-
-        """
+        """Extract other col."""
         allname = self.file_name.split("\\")[-1]
         date, name, stock, short_name, year, else1 = allname.split("__")
         cut1, cut2, cut3, cut4, cut5, cut6, cut7, cut8, cut9, cut10 = (
@@ -982,10 +1009,7 @@ class FinTableExtractor:
             check_cut19,
             check_cut20,
         ) = (False, False, False, False, False, False, False, False, False, False)
-        cut21, cut22, cut23, cut24, cut25, cut26, cut27, cut28, cut29, cut30 = (
-            "",
-            "",
-            "",
+        cut21, cut22, cut23, cut24, cut25, cut26, cut27 = (
             "",
             "",
             "",
@@ -1002,10 +1026,7 @@ class FinTableExtractor:
             check_cut25,
             check_cut26,
             check_cut27,
-            check_cut28,
-            check_cut29,
-            check_cut30,
-        ) = (False, False, False, False, False, False, False, False, False, False)
+        ) = (False, False, False, False, False, False, False)
         with open(self.file_name, "r", encoding="utf-8") as file:
 
             lines = file.readlines()
@@ -1018,10 +1039,14 @@ class FinTableExtractor:
                     if line_dict["type"] not in ["页眉", "页脚"]:
 
                         def check_answers(
-                            answer, keywords_re, keywords_stop_re, check_cut
+                            answer,
+                            keywords_re,
+                            keywords_stop_re,
+                            check_cut,
+                            line_dict=line_dict,
                         ):
                             if (
-                                check_cut == False
+                                check_cut is False
                                 and answer == ""
                                 and re.search(keywords_re, line_dict["inside"])
                             ):
@@ -1036,7 +1061,7 @@ class FinTableExtractor:
                                 >= 2
                             ):
                                 check_cut = False
-                            elif check_cut == True:
+                            elif check_cut:
                                 answer = (
                                     answer
                                     + "\n"
@@ -1045,10 +1070,14 @@ class FinTableExtractor:
                             return answer, check_cut
 
                         def check_answers2(
-                            answer, keywords_re, keywords_stop_re, check_cut
+                            answer,
+                            keywords_re,
+                            keywords_stop_re,
+                            check_cut,
+                            line_dict=line_dict,
                         ):
                             if (
-                                check_cut == False
+                                check_cut is False
                                 and answer == ""
                                 and re.search(keywords_re, line_dict["inside"])
                             ):
@@ -1061,7 +1090,7 @@ class FinTableExtractor:
                                 >= 2
                             ):
                                 check_cut = False
-                            elif check_cut == True:
+                            elif check_cut:
                                 answer = (
                                     answer
                                     + "\n"
@@ -1162,7 +1191,7 @@ class FinTableExtractor:
                         cut25, check_cut25 = check_answers(
                             cut25,
                             "对会计师事务所本报告期“非标准审计报告”的说明",
-                            "董事会对该事项的意见|独立董事意见|监事会意见|消除有关事项及其影响的具体措施",
+                            "董事会对该事项的意见|独立董事意见|监事会意见|消除有关事项及其影响的" "具体措施",
                             check_cut25,
                         )
                         cut26, check_cut26 = check_answers(
@@ -1174,14 +1203,9 @@ class FinTableExtractor:
                             "审计报告正文|(?:\.|、|\)|）)(?:审计意见|保留意见)$",
                             check_cut27,
                         )
-                        # 核心竞争力分析
-                        # 主营业务分析
-                        # 费用
-                        # 股东和实际控制人情况  公司股东数量及持股情况 公司控股股东情况 公司实际控制人及其一致行动人 其他持股在10%以上的法人股东
-                        # 同业竞争情况
 
-                except:
-                    print(line_dict)
+                except Exception:
+                    logger.error(line_dict)
         new_row = {
             "文件名": allname,
             "日期": date,
@@ -1219,5 +1243,5 @@ class FinTableExtractor:
             "审计报告": cut27,
             "全文": str(lines),
         }
-        print("结束 " + self.file_name)
+        print("finished " + self.file_name)
         return new_row

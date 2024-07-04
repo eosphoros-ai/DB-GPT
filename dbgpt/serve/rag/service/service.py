@@ -21,6 +21,7 @@ from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
+    PILOT_PATH,
 )
 from dbgpt.core import LLMClient
 from dbgpt.core.awel.dag.dag_manager import DAGManager
@@ -507,6 +508,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                         index_store=vector_store_connector.index_client,
                         chunk_parameters=chunk_parameters,
                         connector_manager=CFG.local_db_manager,
+                        tmp_dir_path=f"{PILOT_PATH}/{doc.space}",
                     )
                 else:
                     assembler = await EmbeddingAssembler.aload_from_knowledge(

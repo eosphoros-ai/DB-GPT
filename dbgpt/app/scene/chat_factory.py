@@ -17,6 +17,8 @@ class ChatFactory(metaclass=Singleton):
         from dbgpt.app.scene.chat_db.auto_execute.prompt import prompt
         from dbgpt.app.scene.chat_db.professional_qa.chat import ChatWithDbQA
         from dbgpt.app.scene.chat_db.professional_qa.prompt import prompt
+        from dbgpt.app.scene.chat_knowledge.financial.chat import ChatFinReport
+        from dbgpt.app.scene.chat_knowledge.financial.prompt import prompt
         from dbgpt.app.scene.chat_knowledge.refine_summary.chat import (
             ExtractRefineSummary,
         )

@@ -70,7 +70,6 @@ class KnowledgeFactory:
             case KnowledgeType.FIN_REPORT:
                 return cls.from_fin_report(
                     file_path=datasource,
-                    knowledge_type=knowledge_type,
                     metadata=metadata,
                 )
             case _:
@@ -151,7 +150,6 @@ class KnowledgeFactory:
     @staticmethod
     def from_fin_report(
         file_path: str = "",
-        knowledge_type: Optional[KnowledgeType] = KnowledgeType.FIN_REPORT,
         metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
     ) -> Knowledge:
         """Create knowledge from text.
@@ -161,7 +159,9 @@ class KnowledgeFactory:
             param knowledge_type: type of knowledge
         """
         return FinReportKnowledge(
-            file_path=file_path, knowledge_type=knowledge_type, metadata=metadata
+            file_path=file_path,
+            knowledge_type=KnowledgeType.FIN_REPORT,
+            metadata=metadata,
         )
 
     def _select_document_knowledge(self, **kwargs):

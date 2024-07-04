@@ -31,6 +31,7 @@ from dbgpt.core.schema.api import (
 from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
+from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.rag.summary.db_summary_client import DBSummaryClient
 from dbgpt.serve.agent.agents.controller import multi_agents
 from dbgpt.serve.flow.service.service import Service as FlowService
@@ -378,15 +379,22 @@ async def chat_completions(
             headers=headers,
             media_type="text/event-stream",
         )
+    elif is_fin_report_chat(dialogue):
+        chat: BaseChat = await get_chat_instance(dialogue)
+        return StreamingResponse(
+            chat.fin_call(),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+
     else:
         with root_tracer.start_span(
             "get_chat_instance",
             span_type=SpanType.CHAT,
             metadata=model_to_dict(dialogue),
         ):
+
             chat: BaseChat = await get_chat_instance(dialogue)
-        if dialogue.chat_mode == ChatScene.ChatFinReport.value():
-            return chat.call()
 
         if not chat.prompt_template.stream_out:
             return StreamingResponse(
@@ -486,3 +494,22 @@ def message2Vo(message: dict, order, model_name) -> MessageVo:
         order=order,
         model_name=model_name,
     )
+
+
+def is_fin_report_chat(dialogue: ConversationVo):
+    if dialogue.chat_mode == ChatScene.ChatKnowledge.value():
+        space_name = dialogue.select_param
+        spaces = knowledge_service.get_knowledge_space(
+            KnowledgeSpaceRequest(name=space_name)
+        )
+        if len(spaces) == 0:
+            return Result.failed(
+                code="E000X", msg=f"Knowledge space {space_name} not found"
+            )
+        if spaces[0].field_type and spaces[0].field_type == "FinancialReport":
+            dialogue.chat_mode = ChatScene.ChatFinReport.value()
+            # chat: BaseChat = await get_chat_instance(dialogue)
+            return True
+    return False
+    # chat: BaseChat = await get_chat_instance(dialogue)
+    # return chat

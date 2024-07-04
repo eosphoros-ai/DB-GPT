@@ -329,8 +329,8 @@ class BaseChat(ABC):
         )
         return self.current_ai_response()
 
-    async def call(self):
-        """chat call"""
+    async def fin_call(self):
+        """fin chat call"""
         pass
 
     @async_retry(

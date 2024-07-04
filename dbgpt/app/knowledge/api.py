@@ -29,7 +29,7 @@ from dbgpt.configs.model_config import (
 )
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.knowledge.base import ChunkStrategy
+from dbgpt.rag.knowledge.base import ChunkStrategy, KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
@@ -225,6 +225,9 @@ async def document_upload(
                         owner="dbgpt",
                     )
                 )
+            space = space_res[0]
+            if space.field_type and space.field_type == "FinancialReport":
+                request.doc_type = KnowledgeType.FIN_REPORT.name
             return Result.succ(
                 knowledge_space_service.create_knowledge_document(
                     space=space_name, request=request
