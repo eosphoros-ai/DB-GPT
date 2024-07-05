@@ -29,6 +29,7 @@ from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.serve.agent.model import PagenationFilter, PluginHubFilter
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
 from dbgpt.util.json_utils import serialize
+from dbgpt.util.tracer import root_tracer
 
 from ..db.gpts_app import GptsApp, GptsAppDao, GptsAppQuery
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
@@ -158,7 +159,12 @@ class MultiAgents(BaseComponent, ABC):
 
         task = asyncio.create_task(
             multi_agents.agent_team_chat_new(
-                user_query, agent_conv_id, gpt_app, is_retry_chat, agent_memory
+                user_query,
+                agent_conv_id,
+                gpt_app,
+                is_retry_chat,
+                agent_memory,
+                span_id=root_tracer.get_current_span_id(),
             )
         )
 
@@ -241,6 +247,7 @@ class MultiAgents(BaseComponent, ABC):
         gpts_app: GptsApp,
         is_retry_chat: bool = False,
         agent_memory: Optional[AgentMemory] = None,
+        span_id: Optional[str] = None,
     ):
         employees: List[Agent] = []
         rm = get_resource_manager()
@@ -304,10 +311,13 @@ class MultiAgents(BaseComponent, ABC):
             self.gpts_conversations.update(conv_uid, Status.RUNNING.value)
 
         try:
-            await user_proxy.initiate_chat(
-                recipient=recipient,
-                message=user_query,
-            )
+            with root_tracer.start_span(
+                "dbgpt.serve.agent.run_agent", parent_span_id=span_id
+            ):
+                await user_proxy.initiate_chat(
+                    recipient=recipient,
+                    message=user_query,
+                )
         except Exception as e:
             logger.error(f"chat abnormal termination！{str(e)}", e)
             self.gpts_conversations.update(conv_uid, Status.FAILED.value)

@@ -1,7 +1,8 @@
 # Debugging
 DB-GPT provides a series of tools to help developers troubleshoot and solve some problems they may encounter.
 
-## Trace log
+## View Trace Logs With Command
+
 DB-GPT writes some key system runtime information to trace logs. By default, they are located in `logs/dbgpt*.jsonl`.
 
 

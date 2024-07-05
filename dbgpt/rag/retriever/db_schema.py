@@ -1,4 +1,5 @@
 """DBSchema retriever."""
+
 from functools import reduce
 from typing import List, Optional, cast
 
@@ -10,6 +11,8 @@ from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.chat_util import run_async_tasks
+from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
+from dbgpt.util.tracer import root_tracer
 
 
 class DBSchemaRetriever(BaseRetriever):
@@ -155,7 +158,12 @@ class DBSchemaRetriever(BaseRetriever):
         """
         if self._need_embeddings:
             queries = [query]
-            candidates = [self._similarity_search(query, filters) for query in queries]
+            candidates = [
+                self._similarity_search(
+                    query, filters, root_tracer.get_current_span_id()
+                )
+                for query in queries
+            ]
             result_candidates = await run_async_tasks(
                 tasks=candidates, concurrency_limit=1
             )
@@ -166,7 +174,8 @@ class DBSchemaRetriever(BaseRetriever):
             )
 
             table_summaries = await run_async_tasks(
-                tasks=[self._aparse_db_summary()], concurrency_limit=1
+                tasks=[self._aparse_db_summary(root_tracer.get_current_span_id())],
+                concurrency_limit=1,
             )
             return [Chunk(content=table_summary) for table_summary in table_summaries]
 
@@ -186,15 +195,33 @@ class DBSchemaRetriever(BaseRetriever):
         return await self._aretrieve(query, filters)
 
     async def _similarity_search(
-        self, query, filters: Optional[MetadataFilters] = None
+        self,
+        query,
+        filters: Optional[MetadataFilters] = None,
+        parent_span_id: Optional[str] = None,
     ) -> List[Chunk]:
         """Similar search."""
-        return self._index_store.similar_search(query, self._top_k, filters)
+        with root_tracer.start_span(
+            "dbgpt.rag.retriever.db_schema._similarity_search",
+            parent_span_id,
+            metadata={"query": query},
+        ):
+            return await blocking_func_to_async_no_executor(
+                self._index_store.similar_search, query, self._top_k, filters
+            )
 
-    async def _aparse_db_summary(self) -> List[str]:
+    async def _aparse_db_summary(
+        self, parent_span_id: Optional[str] = None
+    ) -> List[str]:
         """Similar search."""
         from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 
         if not self._connector:
             raise RuntimeError("RDBMSConnector connection is required.")
-        return _parse_db_summary(self._connector)
+        with root_tracer.start_span(
+            "dbgpt.rag.retriever.db_schema._aparse_db_summary",
+            parent_span_id,
+        ):
+            return await blocking_func_to_async_no_executor(
+                _parse_db_summary, self._connector
+            )

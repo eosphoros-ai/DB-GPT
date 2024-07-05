@@ -8,6 +8,7 @@ import requests
 
 from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
 from dbgpt.core import RerankEmbeddings
+from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
 
 class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
@@ -78,6 +79,9 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
     timeout: int = Field(
         default=60, description="The timeout for the request in seconds."
     )
+    pass_trace_id: bool = Field(
+        default=True, description="Whether to pass the trace ID to the API."
+    )
 
     session: Optional[requests.Session] = None
 
@@ -112,9 +116,13 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
         """
         if not candidates:
             return []
+        headers = {}
+        if self.pass_trace_id:
+            # Set the trace ID if available
+            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
         data = {"model": self.model_name, "query": query, "documents": candidates}
         response = self.session.post(  # type: ignore
-            self.api_url, json=data, timeout=self.timeout
+            self.api_url, json=data, timeout=self.timeout, headers=headers
         )
         response.raise_for_status()
         return response.json()["data"]
@@ -122,6 +130,9 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
     async def apredict(self, query: str, candidates: List[str]) -> List[float]:
         """Predict the rank scores of the candidates asynchronously."""
         headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self.pass_trace_id:
+            # Set the trace ID if available
+            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
         async with aiohttp.ClientSession(
             headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
         ) as session:

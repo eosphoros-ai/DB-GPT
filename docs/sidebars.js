@@ -347,6 +347,10 @@ const sidebars = {
             },
             {
               type: 'doc',
+              id: 'application/advanced_tutorial/observability',
+            },
+            {
+              type: 'doc',
               id: 'application/advanced_tutorial/debugging',
             },
           ],

@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import List, Literal, Optional
 
@@ -13,6 +14,7 @@ from dbgpt.util.api_utils import _api_remote as api_remote
 from dbgpt.util.api_utils import _sync_api_remote as sync_api_remote
 from dbgpt.util.fastapi import create_app
 from dbgpt.util.parameter_utils import EnvArgumentParser
+from dbgpt.util.tracer.tracer_impl import initialize_tracer, root_tracer
 from dbgpt.util.utils import setup_http_service_logging, setup_logging
 
 logger = logging.getLogger(__name__)
@@ -159,7 +161,10 @@ def initialize_controller(
     host: str = None,
     port: int = None,
     registry: Optional[ModelRegistry] = None,
+    controller_params: Optional[ModelControllerParameters] = None,
+    system_app: Optional[SystemApp] = None,
 ):
+
     global controller
     if remote_controller_addr:
         controller.backend = _RemoteModelController(remote_controller_addr)
@@ -173,8 +178,25 @@ def initialize_controller(
     else:
         import uvicorn
 
+        from dbgpt.configs.model_config import LOGDIR
+
         setup_http_service_logging()
         app = create_app()
+        if not system_app:
+            system_app = SystemApp(app)
+        if not controller_params:
+            raise ValueError("Controller parameters are required.")
+        initialize_tracer(
+            os.path.join(LOGDIR, controller_params.tracer_file),
+            root_operation_name="DB-GPT-ModelController",
+            system_app=system_app,
+            tracer_storage_cls=controller_params.tracer_storage_cls,
+            enable_open_telemetry=controller_params.tracer_to_open_telemetry,
+            otlp_endpoint=controller_params.otel_exporter_otlp_traces_endpoint,
+            otlp_insecure=controller_params.otel_exporter_otlp_traces_insecure,
+            otlp_timeout=controller_params.otel_exporter_otlp_traces_timeout,
+        )
+
         app.include_router(router, prefix="/api", tags=["Model"])
         uvicorn.run(app, host=host, port=port, log_level="info")
 
@@ -187,13 +209,19 @@ async def api_health_check():
 
 @router.post("/controller/models")
 async def api_register_instance(request: ModelInstance):
-    return await controller.register_instance(request)
+    with root_tracer.start_span(
+        "dbgpt.model.controller.register_instance", metadata=request.to_dict()
+    ):
+        return await controller.register_instance(request)
 
 
 @router.delete("/controller/models")
 async def api_deregister_instance(model_name: str, host: str, port: int):
     instance = ModelInstance(model_name=model_name, host=host, port=port)
-    return await controller.deregister_instance(instance)
+    with root_tracer.start_span(
+        "dbgpt.model.controller.deregister_instance", metadata=instance.to_dict()
+    ):
+        return await controller.deregister_instance(instance)
 
 
 @router.get("/controller/models")
@@ -303,7 +331,10 @@ def run_model_controller():
     registry = _create_registry(controller_params)
 
     initialize_controller(
-        host=controller_params.host, port=controller_params.port, registry=registry
+        host=controller_params.host,
+        port=controller_params.port,
+        registry=registry,
+        controller_params=controller_params,
     )
 
 
