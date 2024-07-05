@@ -106,7 +106,10 @@ class FinQueryRewriteOperator(MapOperator[ModelRequest, ModelRequest]):
     """The Rewrite Operator."""
 
     def __init__(
-        self, intent: FinReportIntent = None, nums: Optional[int] = 1, **kwargs
+        self,
+        intent: Optional[FinReportIntent] = None,
+        nums: Optional[int] = 1,
+        **kwargs
     ):
         """Init the query rewrite operator.
 
@@ -126,7 +129,7 @@ class FinQueryRewriteOperator(MapOperator[ModelRequest, ModelRequest]):
         """Rewrite the query."""
         if not request.messages:
             raise ValueError("messages is required")
-        raw_query = request.messages[0].text
+        raw_query = request.messages[0].text  # type: ignore
         # context = query_context.get("context")
         if not raw_query:
             raise ValueError("query is required")
@@ -147,5 +150,5 @@ class FinQueryRewriteOperator(MapOperator[ModelRequest, ModelRequest]):
             if confidence > 60:  # fuzzy match
                 hit_company = best_match
             new_query = raw_query.replace(self._intent.company, hit_company)
-            request.messages[0].text = new_query
+            request.messages[0].text = new_query  # type: ignore
         return request  # type ignore

@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict
@@ -25,6 +26,13 @@ class KnowledgeSpaceRequest(BaseModel):
     desc: str = None
     """owner: owner"""
     owner: str = None
+
+
+class SpaceFieldType(Enum):
+    """SpaceFieldType"""
+
+    NORMAL = "Normal"
+    FINANCIAL_REPORT = "FinancialReport"
 
 
 class KnowledgeDocumentRequest(BaseModel):

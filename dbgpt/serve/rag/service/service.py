@@ -25,6 +25,8 @@ from dbgpt.configs.model_config import (
 )
 from dbgpt.core import LLMClient
 from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.datasource.db_conn_info import DBConfig
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnector
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.assembler import EmbeddingAssembler
@@ -503,22 +505,36 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 metadata={"doc": doc.doc_name},
             ):
                 if isinstance(knowledge, FinReportKnowledge):
+                    tmp_dir_path = f"{PILOT_PATH}/data/{doc.space}"
+                    conn_database = SQLiteConnector.from_file_path(
+                        f"{tmp_dir_path}/fin_report.db"
+                    )
                     assembler = await FinReportAssembler.aload_from_knowledge(
                         knowledge=knowledge,
                         index_store=vector_store_connector.index_client,
                         chunk_parameters=chunk_parameters,
                         connector_manager=CFG.local_db_manager,
-                        tmp_dir_path=f"{PILOT_PATH}/{doc.space}",
+                        conn_database=conn_database,
+                        tmp_dir_path=tmp_dir_path,
                     )
+                    chunk_docs = assembler.get_chunks()
+                    doc.chunk_size = len(chunk_docs)
+                    db_config = DBConfig(
+                        db_name=f"{doc.space}_fin_report",
+                        db_type=conn_database.db_type,
+                        file_path=f"{tmp_dir_path}/fin_report.db",
+                    )
+                    vector_ids = await assembler.apersist(db_config, conn_database)
                 else:
                     assembler = await EmbeddingAssembler.aload_from_knowledge(
                         knowledge=knowledge,
                         index_store=vector_store_connector.index_client,
                         chunk_parameters=chunk_parameters,
                     )
-                chunk_docs = assembler.get_chunks()
-                doc.chunk_size = len(chunk_docs)
-                vector_ids = await assembler.apersist()
+
+                    chunk_docs = assembler.get_chunks()
+                    doc.chunk_size = len(chunk_docs)
+                    vector_ids = await assembler.apersist()
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document persist into index store success"
             if vector_ids is not None:

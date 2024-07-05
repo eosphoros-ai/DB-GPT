@@ -18,6 +18,7 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
+    SpaceFieldType,
 )
 from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
 from dbgpt.app.knowledge.service import KnowledgeService
@@ -226,7 +227,10 @@ async def document_upload(
                     )
                 )
             space = space_res[0]
-            if space.field_type and space.field_type == "FinancialReport":
+            if (
+                space.field_type
+                and space.field_type == SpaceFieldType.FINANCIAL_REPORT.value
+            ):
                 request.doc_type = KnowledgeType.FIN_REPORT.name
             return Result.succ(
                 knowledge_space_service.create_knowledge_document(

@@ -15,6 +15,7 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeDocumentRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
+    SpaceFieldType,
 )
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
@@ -295,6 +296,10 @@ class KnowledgeService:
             llm_client=self.llm_client,
             model_name=None,
         )
+        if space.field_type == SpaceFieldType.FINANCIAL_REPORT.value:
+            conn_manager = CFG.local_db_manager
+            conn_manager.delete_db(f"{space.name}_fin_report")
+
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type, vector_store_config=config
         )
