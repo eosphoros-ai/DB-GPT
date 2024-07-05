@@ -146,6 +146,7 @@ export type StepChangeParams = {
   spaceName?: string;
   docType?: string;
   files?: Array<File>;
+  pace?: number;
 };
 
 export type File = {

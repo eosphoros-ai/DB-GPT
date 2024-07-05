@@ -7,7 +7,12 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import Document
-from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge, KnowledgeType
+from dbgpt.rag.knowledge.base import (
+    ChunkStrategy,
+    DocumentType,
+    Knowledge,
+    KnowledgeType,
+)
 
 logger = logging.getLogger()
 
@@ -87,6 +92,11 @@ class FinReportKnowledge(Knowledge):
     def type(cls) -> KnowledgeType:
         """Return knowledge type."""
         return KnowledgeType.FIN_REPORT
+
+    @classmethod
+    def document_type(cls) -> Any:
+        """Return document type."""
+        return DocumentType.PDF
 
 
 class PDFProcessor:

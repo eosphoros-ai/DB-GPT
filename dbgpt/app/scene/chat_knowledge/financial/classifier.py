@@ -135,9 +135,7 @@ class QuestionClassifierBranchOperator(BranchOperator[ModelRequest, ModelRequest
                 classifier = r.context.extra.get("classifier")
                 if not classifier:
                     return False
-                if classifier == FinQuestionClassifierType.BASE_INFO:
-                    return outer_task_name == "chat_database"
-                elif classifier == FinQuestionClassifierType.FINANCIAL_INDICATOR:
+                if classifier == FinQuestionClassifierType.FINANCIAL_INDICATOR:
                     return outer_task_name == "chat_indicator"
                 else:
                     return outer_task_name == "chat_knowledge"

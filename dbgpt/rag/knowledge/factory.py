@@ -158,6 +158,12 @@ class KnowledgeFactory:
             param text: text to convert
             param knowledge_type: type of knowledge
         """
+        extension = file_path.rsplit(".", 1)[-1]
+        if extension != FinReportKnowledge.document_type().value:
+            raise Exception(
+                f"fin_report knowledge only support "
+                f"{FinReportKnowledge.document_type().value} file"
+            )
         return FinReportKnowledge(
             file_path=file_path,
             knowledge_type=KnowledgeType.FIN_REPORT,
