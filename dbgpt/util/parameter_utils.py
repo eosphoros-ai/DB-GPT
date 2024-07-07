@@ -108,6 +108,99 @@ class BaseParameters:
         return asdict(self)
 
 
+@dataclass
+class BaseServerParameters(BaseParameters):
+    host: Optional[str] = field(
+        default="0.0.0.0", metadata={"help": "The host IP address to bind to."}
+    )
+    port: Optional[int] = field(
+        default=None, metadata={"help": "The port number to bind to."}
+    )
+    daemon: Optional[bool] = field(
+        default=False, metadata={"help": "Run the server as a daemon."}
+    )
+    log_level: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Logging level",
+            "valid_values": [
+                "FATAL",
+                "ERROR",
+                "WARNING",
+                "WARNING",
+                "INFO",
+                "DEBUG",
+                "NOTSET",
+            ],
+        },
+    )
+    log_file: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The filename to store log",
+        },
+    )
+    tracer_file: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The filename to store tracer span records",
+        },
+    )
+    tracer_to_open_telemetry: Optional[bool] = field(
+        default=os.getenv("TRACER_TO_OPEN_TELEMETRY", "False").lower() == "true",
+        metadata={
+            "help": "Whether send tracer span records to OpenTelemetry",
+        },
+    )
+    otel_exporter_otlp_traces_endpoint: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` target to which the span "
+            "exporter is going to send spans. The endpoint MUST be a valid URL host, "
+            "and MAY contain a scheme (http or https), port and path. A scheme of https"
+            " indicates a secure connection and takes precedence over this "
+            "configuration setting.",
+        },
+    )
+    otel_exporter_otlp_traces_insecure: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": "OTEL_EXPORTER_OTLP_TRACES_INSECURE` represents whether to enable "
+            "client transport security for gRPC requests for spans. A scheme of https "
+            "takes precedence over the this configuration setting. Default: False"
+        },
+    )
+    otel_exporter_otlp_traces_certificate: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "`OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE` stores the path to the "
+            "certificate file for TLS credentials of gRPC client for traces. "
+            "Should only be used for a secure connection for tracing",
+        },
+    )
+    otel_exporter_otlp_traces_headers: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "`OTEL_EXPORTER_OTLP_TRACES_HEADERS` contains the key-value pairs "
+            "to be used as headers for spans associated with gRPC or HTTP requests.",
+        },
+    )
+    otel_exporter_otlp_traces_timeout: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "`OTEL_EXPORTER_OTLP_TRACES_TIMEOUT` is the maximum time the OTLP "
+            "exporter will wait for each batch export for spans.",
+        },
+    )
+    otel_exporter_otlp_traces_compression: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "`OTEL_EXPORTER_OTLP_COMPRESSION` but only for the span exporter. "
+            "If both are present, this takes higher precedence.",
+        },
+    )
+
+
 def _get_dataclass_print_str(obj):
     class_name = obj.__class__.__name__
     parameters = [

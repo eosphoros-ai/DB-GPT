@@ -192,7 +192,7 @@ class ConversableAgent(Role, Agent):
                 "sender": self.name,
                 "recipient": recipient.name,
                 "reviewer": reviewer.name if reviewer else None,
-                "agent_message": message.to_dict(),
+                "agent_message": json.dumps(message.to_dict(), ensure_ascii=False),
                 "request_reply": request_reply,
                 "is_recovery": is_recovery,
                 "conv_uid": self.not_null_agent_context.conv_id,
@@ -222,7 +222,7 @@ class ConversableAgent(Role, Agent):
                 "sender": sender.name,
                 "recipient": self.name,
                 "reviewer": reviewer.name if reviewer else None,
-                "agent_message": message.to_dict(),
+                "agent_message": json.dumps(message.to_dict(), ensure_ascii=False),
                 "request_reply": request_reply,
                 "silent": silent,
                 "is_recovery": is_recovery,
@@ -276,7 +276,7 @@ class ConversableAgent(Role, Agent):
                 "sender": sender.name,
                 "recipient": self.name,
                 "reviewer": reviewer.name if reviewer else None,
-                "received_message": received_message.to_dict(),
+                "received_message": json.dumps(received_message.to_dict()),
                 "conv_uid": self.not_null_agent_context.conv_id,
                 "rely_messages": (
                     [msg.to_dict() for msg in rely_messages] if rely_messages else None
@@ -287,9 +287,6 @@ class ConversableAgent(Role, Agent):
         try:
             with root_tracer.start_span(
                 "agent.generate_reply._init_reply_message",
-                metadata={
-                    "received_message": received_message.to_dict(),
-                },
             ) as span:
                 # initialize reply message
                 reply_message: AgentMessage = self._init_reply_message(
@@ -324,9 +321,10 @@ class ConversableAgent(Role, Agent):
                 with root_tracer.start_span(
                     "agent.generate_reply.thinking",
                     metadata={
-                        "thinking_messages": [
-                            msg.to_dict() for msg in thinking_messages
-                        ],
+                        "thinking_messages": json.dumps(
+                            [msg.to_dict() for msg in thinking_messages],
+                            ensure_ascii=False,
+                        )
                     },
                 ) as span:
                     # 1.Think about how to do things
@@ -574,7 +572,9 @@ class ConversableAgent(Role, Agent):
                 "sender": self.name,
                 "recipient": recipient.name,
                 "reviewer": reviewer.name if reviewer else None,
-                "agent_message": agent_message.to_dict(),
+                "agent_message": json.dumps(
+                    agent_message.to_dict(), ensure_ascii=False
+                ),
                 "conv_uid": self.not_null_agent_context.conv_id,
             },
         ):

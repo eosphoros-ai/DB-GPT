@@ -300,6 +300,9 @@ const sidebars = {
             {
               type: 'doc',
               id: 'application/started_tutorial/chat_dashboard',
+            },{
+              type: 'doc',
+              id: 'application/started_tutorial/chat_financial_report',
             },
             {
               type: "category",
@@ -344,6 +347,10 @@ const sidebars = {
             {
               type: 'doc',
               id: 'application/advanced_tutorial/api',
+            },
+            {
+              type: 'doc',
+              id: 'application/advanced_tutorial/observability',
             },
             {
               type: 'doc',

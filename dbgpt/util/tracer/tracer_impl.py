@@ -3,7 +3,7 @@ import inspect
 import logging
 from contextvars import ContextVar
 from functools import wraps
-from typing import Dict, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.util.module_utils import import_from_checked_string
@@ -46,9 +46,12 @@ class DefaultTracer(Tracer):
         metadata: Dict = None,
     ) -> Span:
         trace_id = (
-            self._new_uuid() if parent_span_id is None else parent_span_id.split(":")[0]
+            self._new_random_trace_id()
+            if parent_span_id is None
+            else parent_span_id.split(":")[0]
         )
-        span_id = f"{trace_id}:{self._new_uuid()}"
+        span_id = f"{trace_id}:{self._new_random_span_id()}"
+
         span = Span(
             trace_id,
             span_id,
@@ -164,6 +167,33 @@ class TracerManager:
         current_span = self.get_current_span()
         return current_span.span_type if current_span else None
 
+    def _parse_span_id(self, body: Any) -> Optional[str]:
+        from .base import _parse_span_id
+
+        return _parse_span_id(body)
+
+    def wrapper_async_stream(
+        self,
+        generator: AsyncIterator[Any],
+        operation_name: str,
+        parent_span_id: str = None,
+        span_type: SpanType = None,
+        metadata: Dict = None,
+    ) -> AsyncIterator[Any]:
+        """Wrap an async generator with a span"""
+
+        parent_span_id = parent_span_id or self.get_current_span_id()
+
+        async def wrapper():
+            span = self.start_span(operation_name, parent_span_id, span_type, metadata)
+            try:
+                async for item in generator:
+                    yield item
+            finally:
+                span.end()
+
+        return wrapper()
+
 
 root_tracer: TracerManager = TracerManager()
 
@@ -206,10 +236,14 @@ def _parse_operation_name(func, *args):
 
 def initialize_tracer(
     tracer_filename: str,
-    root_operation_name: str = "DB-GPT-Web-Entry",
+    root_operation_name: str = "DB-GPT-Webserver",
     system_app: Optional[SystemApp] = None,
     tracer_storage_cls: Optional[str] = None,
     create_system_app: bool = False,
+    enable_open_telemetry: bool = False,
+    otlp_endpoint: Optional[str] = None,
+    otlp_insecure: Optional[bool] = None,
+    otlp_timeout: Optional[int] = None,
 ):
     """Initialize the tracer with the given filename and system app."""
     from dbgpt.util.tracer.span_storage import FileSpanStorage, SpanStorageContainer
@@ -227,6 +261,17 @@ def initialize_tracer(
 
     storage_container = SpanStorageContainer(system_app)
     storage_container.append_storage(FileSpanStorage(tracer_filename))
+    if enable_open_telemetry:
+        from dbgpt.util.tracer.opentelemetry import OpenTelemetrySpanStorage
+
+        storage_container.append_storage(
+            OpenTelemetrySpanStorage(
+                service_name=root_operation_name,
+                otlp_endpoint=otlp_endpoint,
+                otlp_insecure=otlp_insecure,
+                otlp_timeout=otlp_timeout,
+            )
+        )
 
     if tracer_storage_cls:
         logger.info(f"Begin parse storage class {tracer_storage_cls}")

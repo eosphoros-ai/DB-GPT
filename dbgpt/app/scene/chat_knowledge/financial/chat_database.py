@@ -282,6 +282,20 @@ class ChatDatabaseChartOperator(MapOperator[dict, str]):
         cfg = Config()
         database: RDBMSConnector = cfg.local_db_manager.get_connector(db_name)
         sql = input_value.get("sql")
-        data_df = await self.blocking_func_to_async(database.run_to_df, sql)
+        data_df = None
+        try:
+            data_df = await self.blocking_func_to_async(database.run_to_df, sql)
+        except Exception as e:
+            if "no such table" in str(e):
+                import re
+
+                table_regex = re.compile(r"FROM\s+([^\s;]+)", re.IGNORECASE)
+                matches = table_regex.finditer(sql)
+                raw_table = None
+                for match in matches:
+                    raw_table = match.group(1)
+                if raw_table:
+                    sql = sql.replace(raw_table, "fin_report")
+                data_df = await self.blocking_func_to_async(database.run_to_df, sql)
         view = await vis.display(chart=input_value, data_df=data_df)
         return view

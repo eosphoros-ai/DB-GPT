@@ -179,12 +179,12 @@ class PDFProcessor:
         if len(tables) >= 1:
             count = len(tables)
             for table in tables:
-                # 处理越界的表格
+                # process text before table
                 if table.bbox[3] < buttom:
                     pass
                 else:
                     count -= 1
-                    # 处理表格上方的文本
+                    # process text before table
                     top = table.bbox[1]
                     text = self.check_lines(page, top, buttom)
                     text_list = text.split("\n")
@@ -245,15 +245,17 @@ class PDFProcessor:
                                     # current name = left name + right name
                                     end_table[0][i] = left_column + right_column
                                 else:
-                                    # 当前列为空且位于首列，赋值为右列名
-                                    # 当前列为空且位于末尾列，赋值为左列名
+                                    # if current column is empty and is the first
+                                    # column, assign the right column name.
+                                    # if current column is empty and is the
+                                    # last column, assign the left column name.
                                     end_table[0][i] = (
                                         end_table[0][i - 1]
                                         if i == len(end_table[0]) - 1
                                         else end_table[0][i + 1]
                                     )
 
-                    # 处理列值为空的情况, 取左边的列
+                    # if the first row is empty, assign the value of the previous row
                     for i in range(1, len(end_table)):
                         for j in range(len(end_table[i])):
                             if end_table[i][j] == "":
@@ -266,9 +268,6 @@ class PDFProcessor:
                             "type": "excel",
                             "inside": str(row),
                         }
-                        # self.all_text[self.allrow] = {'page': page.page_number,
-                        # 'allrow': self.allrow, 'type': 'excel',
-                        #                               'inside': ' '.join(row)}
                         self.allrow += 1
 
                     if count == 0:

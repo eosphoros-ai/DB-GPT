@@ -9,6 +9,7 @@ from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -655,6 +656,9 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
     timeout: int = Field(
         default=60, description="The timeout for the request in seconds."
     )
+    pass_trace_id: bool = Field(
+        default=True, description="Whether to pass the trace ID to the API."
+    )
 
     session: Optional[requests.Session] = None
 
@@ -688,10 +692,15 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
                 corresponds to a single input text.
         """
         # Call OpenAI Embedding API
+        headers = {}
+        if self.pass_trace_id:
+            # Set the trace ID if available
+            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
         res = self.session.post(  # type: ignore
             self.api_url,
             json={"input": texts, "model": self.model_name},
             timeout=self.timeout,
+            headers=headers,
         )
         return _handle_request_result(res)
 
@@ -717,6 +726,9 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
                 List[float] corresponds to a single input text.
         """
         headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self.pass_trace_id:
+            # Set the trace ID if available
+            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
         async with aiohttp.ClientSession(
             headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
         ) as session:

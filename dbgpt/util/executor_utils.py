@@ -3,7 +3,7 @@ import contextvars
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
 from functools import partial
-from typing import Any, Awaitable, Callable
+from typing import Any, Callable, Optional
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
@@ -65,6 +65,11 @@ async def blocking_func_to_async(
 
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(executor, run_with_context)
+
+
+async def blocking_func_to_async_no_executor(func: BlockingFunction, *args, **kwargs):
+    """Run a potentially blocking function within an executor."""
+    return await blocking_func_to_async(None, func, *args, **kwargs)  # type: ignore
 
 
 class AsyncToSyncIterator:
