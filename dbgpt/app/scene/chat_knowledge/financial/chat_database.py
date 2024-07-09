@@ -296,6 +296,7 @@ class ChatDatabaseChartOperator(MapOperator[dict, str]):
                     raw_table = match.group(1)
                 if raw_table:
                     sql = sql.replace(raw_table, "fin_report")
+                    input_value["sql"] = sql
                 data_df = await self.blocking_func_to_async(database.run_to_df, sql)
         view = await vis.display(chart=input_value, data_df=data_df)
         return view

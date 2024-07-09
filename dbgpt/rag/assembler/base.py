@@ -52,7 +52,7 @@ class BaseAssembler(ABC):
         with root_tracer.start_span("BaseAssembler.load_knowledge", metadata=metadata):
             self.load_knowledge(self._knowledge)
 
-    def load_knowledge(self, knowledge: Optional[Knowledge] = None) -> None:
+    def load_knowledge(self, knowledge: Knowledge) -> None:
         """Load knowledge Pipeline."""
         if not knowledge:
             raise ValueError("knowledge must be provided.")

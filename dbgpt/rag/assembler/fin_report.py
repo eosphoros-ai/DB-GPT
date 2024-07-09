@@ -180,7 +180,7 @@ class FinReportAssembler(BaseAssembler):
         )
 
     def load_knowledge(
-        self, knowledge: Optional[FinReportKnowledge] = None
+        self, knowledge: FinReportKnowledge  # type: ignore
     ) -> None:  # type: ignore
         """Load knowledge Pipeline."""
         if not knowledge:
@@ -208,9 +208,9 @@ class FinReportAssembler(BaseAssembler):
         with root_tracer.start_span("FinReportAssembler.chunk_manager.split"):
             self._chunks = self._chunk_manager.split(page_documents)
 
-    def persist(
+    def persist(  # type: ignore
         self, db_config: DBConfig, conn_database: RDBMSConnector
-    ) -> List[str]:  # type: ignore
+    ) -> List[str]:
         """Persist chunks into store.
 
         Returns:
