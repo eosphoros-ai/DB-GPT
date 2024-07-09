@@ -8,7 +8,10 @@ from typing import Any, Dict, List, Optional
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt.util.executor_utils import blocking_func_to_async
+from dbgpt.util.executor_utils import (
+    blocking_func_to_async,
+    blocking_func_to_async_no_executor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -195,4 +198,6 @@ class IndexStoreBase(ABC):
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         """Aynsc similar_search_with_score in vector database."""
-        return self.similar_search_with_scores(doc, topk, score_threshold, filters)
+        return await blocking_func_to_async_no_executor(
+            self.similar_search_with_scores, doc, topk, score_threshold, filters
+        )
