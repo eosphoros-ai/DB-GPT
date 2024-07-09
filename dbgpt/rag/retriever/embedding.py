@@ -267,10 +267,6 @@ class EmbeddingRetriever(BaseRetriever):
                 "score_threshold": score_threshold,
             },
         ):
-            return await blocking_func_to_async_no_executor(
-                self._index_store.similar_search_with_scores,
-                query,
-                self._top_k,
-                score_threshold,
-                filters,
+            return await self._index_store.asimilar_search_with_scores(
+                query, self._top_k, score_threshold, filters
             )
