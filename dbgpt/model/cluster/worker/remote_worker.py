@@ -161,5 +161,6 @@ class RemoteModelWorker(ModelWorker):
     def _get_trace_headers(self):
         span_id = root_tracer.get_current_span_id()
         headers = self.headers.copy()
-        headers.update({DBGPT_TRACER_SPAN_ID: span_id})
+        if span_id:
+            headers.update({DBGPT_TRACER_SPAN_ID: span_id})
         return headers

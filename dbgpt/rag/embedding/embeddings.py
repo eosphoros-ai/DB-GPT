@@ -693,9 +693,10 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         """
         # Call OpenAI Embedding API
         headers = {}
-        if self.pass_trace_id:
+        current_span_id = root_tracer.get_current_span_id()
+        if self.pass_trace_id and current_span_id:
             # Set the trace ID if available
-            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
+            headers[DBGPT_TRACER_SPAN_ID] = current_span_id
         res = self.session.post(  # type: ignore
             self.api_url,
             json={"input": texts, "model": self.model_name},
@@ -726,9 +727,10 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
                 List[float] corresponds to a single input text.
         """
         headers = {"Authorization": f"Bearer {self.api_key}"}
-        if self.pass_trace_id:
+        current_span_id = root_tracer.get_current_span_id()
+        if self.pass_trace_id and current_span_id:
             # Set the trace ID if available
-            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
+            headers[DBGPT_TRACER_SPAN_ID] = current_span_id
         async with aiohttp.ClientSession(
             headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
         ) as session:
