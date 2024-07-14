@@ -55,6 +55,8 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/THUDM/glm-4-9b-chat
     "glm-4-9b-chat": os.path.join(MODEL_PATH, "glm-4-9b-chat"),
     "glm-4-9b-chat-1m": os.path.join(MODEL_PATH, "glm-4-9b-chat-1m"),
+    # https://huggingface.co/THUDM/codegeex4-all-9b
+    "codegeex4-all-9b": os.path.join(MODEL_PATH, "codegeex4-all-9b"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
