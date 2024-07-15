@@ -233,7 +233,7 @@ const extraComponents: MarkdownComponent = {
     const DataItem = {
       key: 'data',
       label: 'Data',
-      children: <Table dataSource={data?.data} columns={columns} />,
+      children: <Table dataSource={data?.data} columns={columns}  scroll={{x:true}} />,
     };
     const TabItems: TabsProps['items'] = data?.type === 'response_table' ? [DataItem, SqlItem] : [ChartItem, SqlItem, DataItem];
 
