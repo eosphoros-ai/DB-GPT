@@ -1,10 +1,7 @@
-import logging
 import os
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
-from openai._streaming import Stream
-
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
+from dbgpt.core import ModelRequest, ModelRequestContext
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 from .chatgpt import OpenAILLMClient
@@ -16,8 +13,6 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 _MOONSHOT_DEFAULT_MODEL = "moonshot-v1-8k"
-
-logger = logging.getLogger(__name__)
 
 
 async def moonshot_generate_stream(
@@ -104,26 +99,3 @@ class MoonshotLLMClient(OpenAILLMClient):
         if not model:
             model = _MOONSHOT_DEFAULT_MODEL
         return model
-
-    async def generate_stream(
-        self,
-        request: ModelRequest,
-        message_converter: Optional[MessageConverter] = None,
-    ) -> AsyncIterator[ModelOutput]:
-        request = self.local_covert_message(request, message_converter)
-        messages = request.to_common_messages()
-        payload = self._build_request(request, stream=True)
-        logger.info(
-            f"Send request to moonshot({self._openai_version}), payload: {payload}\n\n messages:\n{messages}"
-        )
-        chat_completion: Stream = self.client.chat.completions.create(
-            messages=messages, **payload
-        )
-        text = ""
-        for r in chat_completion:
-            if len(r.choices) == 0:
-                continue
-            if r.choices[0].delta.content is not None:
-                content = r.choices[0].delta.content
-                text += content
-                yield ModelOutput(text=text, error_code=0)
