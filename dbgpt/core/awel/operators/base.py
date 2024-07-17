@@ -69,6 +69,15 @@ class WorkflowRunner(ABC, Generic[T]):
 default_runner: Optional[WorkflowRunner] = None
 
 
+def _dev_mode() -> bool:
+    """Check if the operator is in dev mode.
+
+    In production mode, the default runner is not None, and the operator will run in
+    the same process with the DB-GPT webserver.
+    """
+    return default_runner is None
+
+
 class BaseOperatorMeta(ABCMeta):
     """Metaclass of BaseOperator."""
 
@@ -86,7 +95,9 @@ class BaseOperatorMeta(ABCMeta):
             if not executor:
                 if system_app:
                     executor = system_app.get_component(
-                        ComponentType.EXECUTOR_DEFAULT, DefaultExecutorFactory
+                        ComponentType.EXECUTOR_DEFAULT,
+                        DefaultExecutorFactory,
+                        default_component=DefaultExecutorFactory(),
                     ).create()  # type: ignore
                 else:
                     executor = DefaultExecutorFactory().create()
@@ -173,13 +184,14 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     def dev_mode(self) -> bool:
         """Whether the operator is in dev mode.
 
-        In production mode, the default runner is not None.
+        In production mode, the default runner is not None, and the operator will run in
+        the same process with the DB-GPT webserver.
 
         Returns:
             bool: Whether the operator is in dev mode. True if the
                 default runner is None.
         """
-        return default_runner is None
+        return _dev_mode()
 
     async def _run(self, dag_ctx: DAGContext, task_log_id: str) -> TaskOutput[OUT]:
         if not self.node_id:

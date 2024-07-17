@@ -18,6 +18,7 @@ from dbgpt._private.pydantic import (
     model_validator,
 )
 from dbgpt.core.awel.dag.base import DAG, DAGNode
+from dbgpt.core.awel.dag.dag_manager import DAGMetadata
 
 from .base import (
     OperatorType,
@@ -351,6 +352,9 @@ class FlowPanel(BaseModel):
         None,
         description="The flow panel modified time.",
         examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
+    )
+    metadata: Optional[Union[DAGMetadata, Dict[str, Any]]] = Field(
+        default=None, description="The metadata of the flow"
     )
 
     @model_validator(mode="before")

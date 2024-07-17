@@ -2,15 +2,16 @@
 
 After DB-GPT started, the trigger manager will be initialized and register all triggers
 """
+
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
 from ..util.http_util import join_paths
-from .base import Trigger
+from .base import Trigger, TriggerMetadata
 
 if TYPE_CHECKING:
     from fastapi import APIRouter
@@ -23,7 +24,9 @@ class TriggerManager(ABC):
     """Base class for trigger manager."""
 
     @abstractmethod
-    def register_trigger(self, trigger: Any, system_app: SystemApp) -> None:
+    def register_trigger(
+        self, trigger: Any, system_app: SystemApp
+    ) -> Optional[TriggerMetadata]:
         """Register a trigger to current manager."""
 
     @abstractmethod
@@ -65,10 +68,12 @@ class HttpTriggerManager(TriggerManager):
         self._inited = False
         self._router_prefix = router_prefix
         self._router = router
-        self._trigger_map: Dict[str, Trigger] = {}
+        self._trigger_map: Dict[str, Tuple[Trigger, TriggerMetadata]] = {}
         self._router_tables: Dict[str, Set[str]] = defaultdict(set)
 
-    def register_trigger(self, trigger: Any, system_app: SystemApp) -> None:
+    def register_trigger(
+        self, trigger: Any, system_app: SystemApp
+    ) -> Optional[TriggerMetadata]:
         """Register a trigger to current manager."""
         from .http_trigger import HttpTrigger
 
@@ -86,13 +91,17 @@ class HttpTriggerManager(TriggerManager):
                     if not app:
                         raise ValueError("System app not initialized")
                     # Mount to app, support dynamic route.
-                    trigger.mount_to_app(app, self._router_prefix)
+                    trigger_metadata = trigger.mount_to_app(app, self._router_prefix)
                 else:
-                    trigger.mount_to_router(self._router, self._router_prefix)
-                self._trigger_map[trigger_id] = trigger
+                    trigger_metadata = trigger.mount_to_router(
+                        self._router, self._router_prefix
+                    )
+                self._trigger_map[trigger_id] = (trigger, trigger_metadata)
+                return trigger_metadata
             except Exception as e:
                 self._unregister_route_tables(path, methods)
                 raise e
+        return None
 
     def unregister_trigger(self, trigger: Any, system_app: SystemApp) -> None:
         """Unregister a trigger to current manager."""
@@ -183,7 +192,9 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
         if system_app and self.system_app.app:
             self._http_trigger = HttpTriggerManager()
 
-    def register_trigger(self, trigger: Any, system_app: SystemApp) -> None:
+    def register_trigger(
+        self, trigger: Any, system_app: SystemApp
+    ) -> Optional[TriggerMetadata]:
         """Register a trigger to current manager."""
         from .http_trigger import HttpTrigger
 
@@ -191,7 +202,9 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
             logger.info(f"Register trigger {trigger}")
             if not self._http_trigger:
                 raise ValueError("Http trigger manager not initialized")
-            self._http_trigger.register_trigger(trigger, system_app)
+            return self._http_trigger.register_trigger(trigger, system_app)
+        else:
+            return None
 
     def unregister_trigger(self, trigger: Any, system_app: SystemApp) -> None:
         """Unregister a trigger to current manager."""

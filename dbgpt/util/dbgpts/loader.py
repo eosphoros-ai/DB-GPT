@@ -320,6 +320,51 @@ def _load_package_from_path(path: str):
     return parsed_packages
 
 
+def _load_flow_package_from_path(name: str, path: str = INSTALL_DIR) -> FlowPackage:
+    raw_packages = _load_installed_package(path)
+    new_name = name.replace("_", "-")
+    packages = [p for p in raw_packages if p.package == name or p.name == name]
+    if not packages:
+        packages = [
+            p for p in raw_packages if p.package == new_name or p.name == new_name
+        ]
+    if not packages:
+        raise ValueError(f"Can't find the package {name} or {new_name}")
+    flow_package = _parse_package_metadata(packages[0])
+    if flow_package.package_type != "flow":
+        raise ValueError(f"Unsupported package type: {flow_package.package_type}")
+    return cast(FlowPackage, flow_package)
+
+
+def _flow_package_to_flow_panel(package: FlowPackage) -> FlowPanel:
+    dict_value = {
+        "name": package.name,
+        "label": package.label,
+        "version": package.version,
+        "editable": False,
+        "description": package.description,
+        "source": package.repo,
+        "define_type": "json",
+    }
+    if isinstance(package, FlowJsonPackage):
+        dict_value["flow_data"] = package.read_definition_json()
+    elif isinstance(package, FlowPythonPackage):
+        dict_value["flow_data"] = {
+            "nodes": [],
+            "edges": [],
+            "viewport": {
+                "x": 213,
+                "y": 269,
+                "zoom": 0,
+            },
+        }
+        dict_value["flow_dag"] = package.dag
+        dict_value["define_type"] = "python"
+    else:
+        raise ValueError(f"Unsupported package type: {package}")
+    return FlowPanel(**dict_value)
+
+
 class DBGPTsLoader(BaseComponent):
     """The loader of the dbgpts packages"""
 
@@ -373,32 +418,8 @@ class DBGPTsLoader(BaseComponent):
             if package.package_type != "flow":
                 continue
             package = cast(FlowPackage, package)
-            dict_value = {
-                "name": package.name,
-                "label": package.label,
-                "version": package.version,
-                "editable": False,
-                "description": package.description,
-                "source": package.repo,
-                "define_type": "json",
-            }
-            if isinstance(package, FlowJsonPackage):
-                dict_value["flow_data"] = package.read_definition_json()
-            elif isinstance(package, FlowPythonPackage):
-                dict_value["flow_data"] = {
-                    "nodes": [],
-                    "edges": [],
-                    "viewport": {
-                        "x": 213,
-                        "y": 269,
-                        "zoom": 0,
-                    },
-                }
-                dict_value["flow_dag"] = package.dag
-                dict_value["define_type"] = "python"
-            else:
-                raise ValueError(f"Unsupported package type: {package}")
-            panels.append(FlowPanel(**dict_value))
+            flow_panel = _flow_package_to_flow_panel(package)
+            panels.append(flow_panel)
         return panels
 
     def _register_packages(self, package: BasePackage):
