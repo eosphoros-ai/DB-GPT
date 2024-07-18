@@ -1,0 +1,50 @@
+FROM node:lts-alpine as build
+
+RUN apk add --no-cache git
+
+ARG NPM_REGISTRY=https://registry.npmjs.org
+ENV NPM_REGISTRY=$NPM_REGISTRY
+
+# Set github CI environment variable
+ARG CI=true
+ENV CI=$CI
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY docs/package*.json ./docs/
+
+# Install dependencies
+RUN cd docs && \
+    npm config set registry $NPM_REGISTRY && \
+    npm ci
+
+# Copy the rest of the application
+COPY . .
+
+# Make sure we have the latest version of the repository
+RUN if [ "$CI" = "true" ]; then \
+        git fetch --prune --unshallow; \
+    fi
+
+
+RUN cd docs && ./build_versions.sh
+
+# For production
+FROM nginx:alpine
+
+# Copy the nginx configuration file
+# COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy the build output to replace the default nginx contents.
+COPY --from=build /app/docs/build /usr/share/nginx/html
+
+RUN echo '#!/bin/sh' > /usr/share/nginx/html/versions.sh && \
+    echo 'echo "Available versions:"' >> /usr/share/nginx/html/versions.sh && \
+    echo 'cat /usr/share/nginx/html/versions.txt' >> /usr/share/nginx/html/versions.sh && \
+    chmod +x /usr/share/nginx/html/versions.sh
+
+EXPOSE 80
+
+# Start Nginx server
+CMD ["nginx", "-g", "daemon off;"]

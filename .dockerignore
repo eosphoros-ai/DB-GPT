@@ -3,3 +3,8 @@ plugins/
 pilot/data
 pilot/message
 logs/
+venv/
+web/node_modules/
+docs/node_modules/
+build/
+docs/build/
