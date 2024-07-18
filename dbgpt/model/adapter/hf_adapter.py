@@ -581,6 +581,26 @@ class Codegeex4Adapter(GLM4Adapter):
         return super().load(model_path, from_pretrained_kwargs)
 
 
+class Internlm2Adapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/internlm/internlm2_5-7b-chat
+    """
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "internlm2" in lower_model_name_or_path
+            and "chat" in lower_model_name_or_path
+        )
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        if not from_pretrained_kwargs:
+            from_pretrained_kwargs = {}
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = True
+        return super().load(model_path, from_pretrained_kwargs)
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(YiAdapter)
@@ -602,3 +622,4 @@ register_model_adapter(OpenChatAdapter)
 register_model_adapter(GLM4Adapter)
 register_model_adapter(Codegeex4Adapter)
 register_model_adapter(Qwen2Adapter)
+register_model_adapter(Internlm2Adapter)

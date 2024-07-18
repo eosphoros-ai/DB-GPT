@@ -171,6 +171,8 @@ LLM_MODEL_CONFIG = {
     "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b"),
     "internlm-7b-8k": os.path.join(MODEL_PATH, "internlm-chat-7b-8k"),
     "internlm-20b": os.path.join(MODEL_PATH, "internlm-chat-20b"),
+    "internlm2_5-7b-chat": os.path.join(MODEL_PATH, "internlm2_5-7b-chat"),
+    "internlm2_5-7b-chat-1m": os.path.join(MODEL_PATH, "internlm2_5-7b-chat-1m"),
     "codellama-7b": os.path.join(MODEL_PATH, "CodeLlama-7b-Instruct-hf"),
     "codellama-7b-sql-sft": os.path.join(MODEL_PATH, "codellama-7b-sql-sft"),
     "codellama-13b": os.path.join(MODEL_PATH, "CodeLlama-13b-Instruct-hf"),
