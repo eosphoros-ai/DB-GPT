@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import (
+    BusinessFieldType,
     ChunkQueryRequest,
     DocumentQueryRequest,
     DocumentSummaryRequest,
@@ -18,7 +19,6 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
-    SpaceFieldType,
 )
 from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
 from dbgpt.app.knowledge.service import KnowledgeService
@@ -229,7 +229,7 @@ async def document_upload(
             space = space_res[0]
             if (
                 space.field_type
-                and space.field_type == SpaceFieldType.FINANCIAL_REPORT.value
+                and space.field_type == BusinessFieldType.FINANCIAL_REPORT.value
             ):
                 request.doc_type = KnowledgeType.FIN_REPORT.name
             return Result.succ(

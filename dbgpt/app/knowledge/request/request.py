@@ -28,8 +28,8 @@ class KnowledgeSpaceRequest(BaseModel):
     owner: str = None
 
 
-class SpaceFieldType(Enum):
-    """SpaceFieldType"""
+class BusinessFieldType(Enum):
+    """BusinessFieldType"""
 
     NORMAL = "Normal"
     FINANCIAL_REPORT = "FinancialReport"

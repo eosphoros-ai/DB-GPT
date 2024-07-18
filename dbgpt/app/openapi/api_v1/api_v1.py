@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import model_to_dict, model_to_json
-from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt.app.knowledge.request.request import BusinessFieldType, KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_view_model import (
     ChatSceneVo,
@@ -35,6 +35,7 @@ from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.rag.summary.db_summary_client import DBSummaryClient
 from dbgpt.serve.agent.agents.controller import multi_agents
 from dbgpt.serve.flow.service.service import Service as FlowService
+from dbgpt.serve.flow.service.service import _chat_stream_with_dag_task
 from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
     ExecutorFactory,
@@ -380,9 +381,8 @@ async def chat_completions(
             media_type="text/event-stream",
         )
     elif is_fin_report_chat(dialogue):
-        chat: BaseChat = await get_chat_instance(dialogue)
         return StreamingResponse(
-            chat.fin_call(),
+            chat_with_business_flow(dialogue),
             headers=headers,
             media_type="text/event-stream",
         )
@@ -506,10 +506,44 @@ def is_fin_report_chat(dialogue: ConversationVo):
             return Result.failed(
                 code="E000X", msg=f"Knowledge space {space_name} not found"
             )
-        if spaces[0].field_type and spaces[0].field_type == "FinancialReport":
-            dialogue.chat_mode = ChatScene.ChatFinReport.value()
-            # chat: BaseChat = await get_chat_instance(dialogue)
+        if (
+            spaces[0].field_type
+            and spaces[0].field_type == BusinessFieldType.FINANCIAL_REPORT.value
+        ):
             return True
     return False
-    # chat: BaseChat = await get_chat_instance(dialogue)
-    # return chat
+
+
+async def chat_with_business_flow(dialogue: ConversationVo):
+    """Call the chat module"""
+    space = dialogue.select_param
+    connector_manager = CFG.local_db_manager
+    db_list = [item["db_name"] for item in connector_manager.get_db_list()]
+    db_names = [item for item in db_list if space in item]
+    if len(db_names) == 0:
+        raise ValueError(f"fin repost dbname {space}_fin_report not found.")
+    flow_ctx = {"space": space, "db_name": db_names[0]}
+    request = CommonLLMHttpRequestBody(
+        model=dialogue.model_name,
+        messages=dialogue.user_input,
+        stream=True,
+        extra=flow_ctx,
+        conv_uid=dialogue.conv_uid,
+        span_id=root_tracer.get_current_span_id(),
+        chat_mode=dialogue.chat_mode,
+        chat_param=dialogue.select_param,
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        incremental=dialogue.incremental,
+    )
+    flow_service = FlowService.get_instance(CFG.SYSTEM_APP)
+    task = await flow_service._get_callable_task("51166a4d-f59a-448f-994e-8f21b05ba1f9")
+    async for output in _chat_stream_with_dag_task(task, request, False):
+        text = output.text
+        if text:
+            text = text.replace("\n", "\\n")
+        if output.error_code != 0:
+            yield f"data:[SERVER_ERROR]{text}\n\n"
+            break
+        else:
+            yield f"data:{text}\n\n"

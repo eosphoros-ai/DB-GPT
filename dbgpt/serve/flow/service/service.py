@@ -515,11 +515,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 status_code=404, detail=f"Flow {flow_uid}'s dag id not found"
             )
         dag = self.dag_manager.dag_map[dag_id]
-        if (
-            flow.flow_category != FlowCategory.CHAT_FLOW
-            and self._parse_flow_category(dag) != FlowCategory.CHAT_FLOW
-        ):
-            raise ValueError(f"Flow {flow_uid} is not a chat flow")
+        # if (
+        #     flow.flow_category != FlowCategory.CHAT_FLOW
+        #     and self._parse_flow_category(dag) != FlowCategory.CHAT_FLOW
+        # ):
+        #     raise ValueError(f"Flow {flow_uid} is not a chat flow")
         leaf_nodes = dag.leaf_nodes
         if len(leaf_nodes) != 1:
             raise ValueError("Chat Flow just support one leaf node in dag")

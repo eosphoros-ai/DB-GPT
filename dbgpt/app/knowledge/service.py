@@ -9,13 +9,13 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentEntity,
 )
 from dbgpt.app.knowledge.request.request import (
+    BusinessFieldType,
     ChunkQueryRequest,
     DocumentQueryRequest,
     DocumentSummaryRequest,
     KnowledgeDocumentRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
-    SpaceFieldType,
 )
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
@@ -296,7 +296,7 @@ class KnowledgeService:
             llm_client=self.llm_client,
             model_name=None,
         )
-        if space.field_type == SpaceFieldType.FINANCIAL_REPORT.value:
+        if space.field_type == BusinessFieldType.FINANCIAL_REPORT.value:
             conn_manager = CFG.local_db_manager
             conn_manager.delete_db(f"{space.name}_fin_report")
 

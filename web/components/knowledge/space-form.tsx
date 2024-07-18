@@ -49,7 +49,7 @@ export default function SpaceForm(props: IProps) {
         name="basic"
         initialValues={{ remember: true }}
         autoComplete="off"
-        onFinish={handleFinish}
+        onFinish={handleFypeinish}
       >
         <Form.Item<FieldType>
           label={t('Knowledge_Space_Name')}
@@ -78,7 +78,7 @@ export default function SpaceForm(props: IProps) {
             <Select.Option value="FullText">Full Text</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item<FieldType> label={t('Field Type')} name="field" rules={[{ required: true, message: t('Please_select_the_field_type') }]}>
+        <Form.Item<FieldType> label={t('Business Field')} name="field" rules={[{ required: true, message: t('Please_select_the_field_type') }]}>
           <Select className="mb-5 h-12" placeholder={t('Please_select_the_field_type')}>
             <Select.Option value="Normal">Normal</Select.Option>
             <Select.Option value="FinancialReport">Financial Report</Select.Option>

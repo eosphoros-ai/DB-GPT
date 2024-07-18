@@ -99,6 +99,8 @@ class SpaceServeResponse(BaseModel):
     owner: Optional[str] = Field(None, description="The owner")
     """sys code"""
     sys_code: Optional[str] = Field(None, description="The sys code")
+    """field type"""
+    field_type: Optional[str] = Field(None, description="field_type")
 
     # TODO define your own fields here
 

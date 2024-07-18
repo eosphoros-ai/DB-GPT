@@ -2,7 +2,7 @@
 from typing import Dict, List, Optional, Type, Union
 
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
-from dbgpt.rag.knowledge.fin_report import FinReportKnowledge
+
 from dbgpt.rag.knowledge.string import StringKnowledge
 from dbgpt.rag.knowledge.url import URLKnowledge
 
@@ -66,11 +66,6 @@ class KnowledgeFactory:
             case KnowledgeType.TEXT:
                 return cls.from_text(
                     text=datasource, knowledge_type=knowledge_type, metadata=metadata
-                )
-            case KnowledgeType.FIN_REPORT:
-                return cls.from_fin_report(
-                    file_path=datasource,
-                    metadata=metadata,
                 )
             case _:
                 raise Exception(f"Unsupported knowledge type '{knowledge_type}'")
@@ -144,29 +139,6 @@ class KnowledgeFactory:
         return StringKnowledge(
             text=text,
             knowledge_type=knowledge_type,
-            metadata=metadata,
-        )
-
-    @staticmethod
-    def from_fin_report(
-        file_path: str = "",
-        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
-    ) -> Knowledge:
-        """Create knowledge from text.
-
-        Args:
-            param text: text to convert
-            param knowledge_type: type of knowledge
-        """
-        extension = file_path.rsplit(".", 1)[-1]
-        if extension != FinReportKnowledge.document_type().value:
-            raise Exception(
-                f"fin_report knowledge only support "
-                f"{FinReportKnowledge.document_type().value} file"
-            )
-        return FinReportKnowledge(
-            file_path=file_path,
-            knowledge_type=KnowledgeType.FIN_REPORT,
             metadata=metadata,
         )
 

@@ -8,6 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
+import httpx
 from fastapi import HTTPException
 
 from dbgpt._private.config import Config
@@ -16,7 +17,7 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
-from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt.app.knowledge.request.request import BusinessFieldType, KnowledgeSpaceRequest
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
@@ -25,16 +26,12 @@ from dbgpt.configs.model_config import (
 )
 from dbgpt.core import LLMClient
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.datasource.db_conn_info import DBConfig
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnector
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.assembler import EmbeddingAssembler
-from dbgpt.rag.assembler.fin_report import FinReportAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeFactory, KnowledgeType
-from dbgpt.rag.knowledge.fin_report import FinReportKnowledge
 from dbgpt.serve.core import BaseService
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
@@ -387,7 +384,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
 
     def get_document_list(
         self, request: QUERY_SPEC, page: int, page_size: int
-    ) -> PaginationResult[SpaceServeResponse]:
+    ) -> PaginationResult[DocumentServeResponse]:
         """Get a list of Flow entities by page
 
         Args:
@@ -470,25 +467,26 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type, vector_store_config=config
         )
-        knowledge = KnowledgeFactory.create(
-            datasource=doc.content,
-            knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
-        )
+        knowledge = None
+        if not space.field_type or (space.field_type == BusinessFieldType.NORMAL.value):
+            knowledge = KnowledgeFactory.create(
+                datasource=doc.content,
+                knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
+            )
         doc.status = SyncStatus.RUNNING.name
 
         doc.gmt_modified = datetime.now()
         self._document_dao.update_knowledge_document(doc)
-        # asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
         asyncio.create_task(
             self.async_doc_embedding(
-                knowledge, chunk_parameters, vector_store_connector, doc
+                knowledge, chunk_parameters, vector_store_connector, doc, space
             )
         )
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
 
     @trace("async_doc_embedding")
     async def async_doc_embedding(
-        self, knowledge, chunk_parameters, vector_store_connector, doc
+        self, knowledge, chunk_parameters, vector_store_connector, doc, space
     ):
         """async document embedding into vector db
         Args:
@@ -504,27 +502,18 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 "app.knowledge.assembler.persist",
                 metadata={"doc": doc.doc_name},
             ):
-                if isinstance(knowledge, FinReportKnowledge):
-                    tmp_dir_path = f"{PILOT_PATH}/data/{doc.space}"
-                    conn_database = SQLiteConnector.from_file_path(
-                        f"{tmp_dir_path}/fin_report.db"
+                from dbgpt.serve.flow.service.service import Service as FlowService
+
+                if BusinessFieldType.FINANCIAL_REPORT.value == space.field_type:
+                    flow_service = FlowService.get_instance(CFG.SYSTEM_APP)
+                    task = await flow_service._get_callable_task(
+                        "8389961a-af54-4bf2-98f5-5f5c84835121"
                     )
-                    assembler = await FinReportAssembler.aload_from_knowledge(
-                        knowledge=knowledge,
-                        index_store=vector_store_connector.index_client,
-                        chunk_parameters=chunk_parameters,
-                        connector_manager=CFG.local_db_manager,
-                        conn_database=conn_database,
-                        tmp_dir_path=tmp_dir_path,
+                    db_name, chunk_docs = await task.call(
+                        {"file_path": doc.content, "space": doc.space}
                     )
-                    chunk_docs = assembler.get_chunks()
                     doc.chunk_size = len(chunk_docs)
-                    db_config = DBConfig(
-                        db_name=f"{doc.space}_fin_report",
-                        db_type=conn_database.db_type,
-                        file_path=f"{tmp_dir_path}/fin_report.db",
-                    )
-                    vector_ids = await assembler.apersist(db_config, conn_database)
+                    vector_ids = [chunk.chunk_id for chunk in chunk_docs]
                 else:
                     assembler = await EmbeddingAssembler.aload_from_knowledge(
                         knowledge=knowledge,
