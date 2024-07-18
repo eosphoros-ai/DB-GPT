@@ -2,6 +2,7 @@
 
 DAG is the core component of AWEL, it is used to define the relationship between tasks.
 """
+
 import asyncio
 import contextvars
 import logging
@@ -613,10 +614,14 @@ class DAG:
     """
 
     def __init__(
-        self, dag_id: str, resource_group: Optional[ResourceGroup] = None
+        self,
+        dag_id: str,
+        resource_group: Optional[ResourceGroup] = None,
+        tags: Optional[Dict[str, str]] = None,
     ) -> None:
         """Initialize a DAG."""
         self._dag_id = dag_id
+        self._tags: Dict[str, str] = tags or {}
         self.node_map: Dict[str, DAGNode] = {}
         self.node_name_to_node: Dict[str, DAGNode] = {}
         self._root_nodes: List[DAGNode] = []
@@ -650,6 +655,22 @@ class DAG:
     def dag_id(self) -> str:
         """Return the dag id of current DAG."""
         return self._dag_id
+
+    @property
+    def tags(self) -> Dict[str, str]:
+        """Return the tags of current DAG."""
+        return self._tags
+
+    @property
+    def dev_mode(self) -> bool:
+        """Whether the current DAG is in dev mode.
+
+        Returns:
+            bool: Whether the current DAG is in dev mode
+        """
+        from ..operators.base import _dev_mode
+
+        return _dev_mode()
 
     def _build(self) -> None:
         from ..operators.common_operator import TriggerOperator

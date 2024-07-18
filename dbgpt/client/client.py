@@ -1,4 +1,5 @@
 """This module contains the client for the DB-GPT API."""
+
 import atexit
 import json
 import os
@@ -101,6 +102,15 @@ class Client:
             headers=headers, timeout=timeout if timeout else httpx.Timeout(None)
         )
         atexit.register(self.close)
+
+    def _base_url(self):
+        parsed_url = urlparse(self._api_url)
+        host = parsed_url.hostname
+        scheme = parsed_url.scheme
+        port = parsed_url.port
+        if port:
+            return f"{scheme}://{host}:{port}"
+        return f"{scheme}://{host}"
 
     async def chat(
         self,

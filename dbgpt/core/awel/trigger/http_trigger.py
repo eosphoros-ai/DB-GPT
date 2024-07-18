@@ -43,7 +43,7 @@ from ..operators.base import BaseOperator
 from ..operators.common_operator import MapOperator
 from ..util._typing_util import _parse_bool
 from ..util.http_util import join_paths
-from .base import Trigger
+from .base import Trigger, TriggerMetadata
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
@@ -80,6 +80,17 @@ def _default_streaming_predict_func(body: "CommonRequestType") -> bool:
         return False
     streaming = body.get("streaming") or body.get("stream")
     return _parse_bool(streaming)
+
+
+class HttpTriggerMetadata(TriggerMetadata):
+    """Trigger metadata."""
+
+    path: str = Field(..., description="The path of the trigger")
+    methods: List[str] = Field(..., description="The methods of the trigger")
+
+    trigger_type: Optional[str] = Field(
+        default="http", description="The type of the trigger"
+    )
 
 
 class BaseHttpBody(BaseModel):
@@ -444,7 +455,7 @@ class HttpTrigger(Trigger):
 
     def mount_to_router(
         self, router: "APIRouter", global_prefix: Optional[str] = None
-    ) -> None:
+    ) -> HttpTriggerMetadata:
         """Mount the trigger to a router.
 
         Args:
@@ -466,8 +477,11 @@ class HttpTrigger(Trigger):
         )(dynamic_route_function)
 
         logger.info(f"Mount http trigger success, path: {path}")
+        return HttpTriggerMetadata(path=path, methods=self._methods)
 
-    def mount_to_app(self, app: "FastAPI", global_prefix: Optional[str] = None) -> None:
+    def mount_to_app(
+        self, app: "FastAPI", global_prefix: Optional[str] = None
+    ) -> HttpTriggerMetadata:
         """Mount the trigger to a FastAPI app.
 
         TODO: The performance of this method is not good, need to be optimized.
@@ -498,6 +512,7 @@ class HttpTrigger(Trigger):
         app.openapi_schema = None
         app.middleware_stack = None
         logger.info(f"Mount http trigger success, path: {path}")
+        return HttpTriggerMetadata(path=path, methods=self._methods)
 
     def remove_from_app(
         self, app: "FastAPI", global_prefix: Optional[str] = None
