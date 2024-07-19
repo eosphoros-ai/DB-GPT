@@ -102,6 +102,10 @@ export const AutoChart = (props: AutoChartProps) => {
             spec.data = sortData({ data: spec.data, xField: dataAnalyzerOutput.dataProps?.find(field => field.recommendation === 'date'), chartType: chartTypeInput });
           }
         }
+        if (chartTypeInput === 'pie_chart' && spec?.encode?.color) {
+          // 补充饼图的 tooltip title 展示
+          spec.tooltip = { title: { field: spec.encode.color } }
+        }
         return (
           <Chart
             key={chartTypeInput}

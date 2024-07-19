@@ -117,9 +117,10 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
         if not candidates:
             return []
         headers = {}
-        if self.pass_trace_id:
+        current_span_id = root_tracer.get_current_span_id()
+        if self.pass_trace_id and current_span_id:
             # Set the trace ID if available
-            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
+            headers[DBGPT_TRACER_SPAN_ID] = current_span_id
         data = {"model": self.model_name, "query": query, "documents": candidates}
         response = self.session.post(  # type: ignore
             self.api_url, json=data, timeout=self.timeout, headers=headers
@@ -130,9 +131,10 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
     async def apredict(self, query: str, candidates: List[str]) -> List[float]:
         """Predict the rank scores of the candidates asynchronously."""
         headers = {"Authorization": f"Bearer {self.api_key}"}
-        if self.pass_trace_id:
+        current_span_id = root_tracer.get_current_span_id()
+        if self.pass_trace_id and current_span_id:
             # Set the trace ID if available
-            headers[DBGPT_TRACER_SPAN_ID] = root_tracer.get_current_span_id()
+            headers[DBGPT_TRACER_SPAN_ID] = current_span_id
         async with aiohttp.ClientSession(
             headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
         ) as session:

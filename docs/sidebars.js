@@ -624,6 +624,16 @@ const sidebars = {
             }
           ],
         },
+        {
+          type: "category",
+          label: "dbgpts",
+          items: [
+            {
+              type: "doc",
+              id: 'dbgpts/introduction',
+            }
+          ]
+        }
       ],
 
     },

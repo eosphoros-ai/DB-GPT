@@ -164,5 +164,6 @@ class KnowledgeSpaceDao(BaseDao):
             vector_type=entity.vector_type,
             desc=entity.desc,
             owner=entity.owner,
+            context=entity.context,
             field_type=entity.field_type,
         )

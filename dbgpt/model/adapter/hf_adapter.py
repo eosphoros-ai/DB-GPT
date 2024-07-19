@@ -552,9 +552,9 @@ class OpenChatAdapter(Llama3Adapter):
         )
 
 
-class GLM4Aapter(NewHFChatModelAdapter):
+class GLM4Adapter(NewHFChatModelAdapter):
     """
-    https://huggingface.co/defog/glm-4-8b
+    https://huggingface.co/THUDM/glm-4-9b-chat
     """
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
@@ -563,6 +563,42 @@ class GLM4Aapter(NewHFChatModelAdapter):
             and "glm-4" in lower_model_name_or_path
             and "chat" in lower_model_name_or_path
         )
+
+
+class Codegeex4Adapter(GLM4Adapter):
+    """
+    https://huggingface.co/THUDM/codegeex4-all-9b
+    """
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path and "codegeex4" in lower_model_name_or_path
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        if not from_pretrained_kwargs:
+            from_pretrained_kwargs = {}
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = True
+        return super().load(model_path, from_pretrained_kwargs)
+
+
+class Internlm2Adapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/internlm/internlm2_5-7b-chat
+    """
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "internlm2" in lower_model_name_or_path
+            and "chat" in lower_model_name_or_path
+        )
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        if not from_pretrained_kwargs:
+            from_pretrained_kwargs = {}
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = True
+        return super().load(model_path, from_pretrained_kwargs)
 
 
 # The following code is used to register the model adapter
@@ -583,5 +619,7 @@ register_model_adapter(SailorAdapter)
 register_model_adapter(PhiAdapter)
 register_model_adapter(SQLCoderAdapter)
 register_model_adapter(OpenChatAdapter)
-register_model_adapter(GLM4Aapter)
+register_model_adapter(GLM4Adapter)
+register_model_adapter(Codegeex4Adapter)
 register_model_adapter(Qwen2Adapter)
+register_model_adapter(Internlm2Adapter)

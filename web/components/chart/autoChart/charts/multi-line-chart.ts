@@ -7,12 +7,13 @@ const MULTI_LINE_CHART = 'multi_line_chart'
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   const ordinalField = findOrdinalField(dataProps);
   const nominalField = findNominalField(dataProps);
-  // 放宽折线图的 x 轴条件，优先选择 time， ordinal 类型，没有的话使用 nominal 类型
-  const field4X = ordinalField ?? nominalField;
+  // 放宽折线图的 x 轴条件，优先选择 time， ordinal, nominal 类型，没有的话使用第一个字段作兜底
+  const field4X = ordinalField ?? nominalField ?? dataProps[0];
+  const remainFields = dataProps.filter((field) => field.name !== field4X?.name);
 
-  const field4Y = dataProps.filter((field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Interval']));
-  const field4Nominal = dataProps.find(
-    (field) => field.name !== field4X?.name && field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']),
+  const field4Y = remainFields.filter((field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Interval'])) ?? [remainFields[0]];
+  const field4Nominal = remainFields.filter(field => !field4Y.find(y => y.name === field.name)).find(
+    (field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']),
   );
   if (!field4X || !field4Y) return null;
 

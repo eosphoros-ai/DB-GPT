@@ -61,6 +61,11 @@ export const sortData = ({ data, chartType, xField }: {
       sortedData.sort((datum1, datum2) => new Date(datum1[xField.name as string]).getTime() - new Date(datum2[xField.name as string]).getTime())
       return sortedData
     }
+    // 如果折线图横轴是数值类型，则按照数值大小排序
+    if (chartType.includes('line') && xField?.name && ['float', 'integer'].includes(xField.recommendation)) {
+      sortedData.sort((datum1, datum2) => (datum1[xField.name as string] as number) - (datum2[xField.name as string] as number))
+      return sortedData
+    }
   } catch (err) {
     console.error(err)
   }
