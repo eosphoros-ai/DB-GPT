@@ -2,7 +2,6 @@
 from typing import Dict, List, Optional, Type, Union
 
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
-
 from dbgpt.rag.knowledge.string import StringKnowledge
 from dbgpt.rag.knowledge.url import URLKnowledge
 

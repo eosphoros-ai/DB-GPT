@@ -31,11 +31,9 @@ from dbgpt.core.schema.api import (
 from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
-from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.rag.summary.db_summary_client import DBSummaryClient
 from dbgpt.serve.agent.agents.controller import multi_agents
 from dbgpt.serve.flow.service.service import Service as FlowService
-from dbgpt.serve.flow.service.service import _chat_stream_with_dag_task
 from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
     ExecutorFactory,
@@ -537,13 +535,10 @@ async def chat_with_business_flow(dialogue: ConversationVo):
         incremental=dialogue.incremental,
     )
     flow_service = FlowService.get_instance(CFG.SYSTEM_APP)
-    task = await flow_service._get_callable_task("51166a4d-f59a-448f-994e-8f21b05ba1f9")
-    async for output in _chat_stream_with_dag_task(task, request, False):
-        text = output.text
+    async for output in flow_service.chat_stream_flow_str(
+        "51166a4d-f59a-448f-994e-8f21b05ba1f9", request
+    ):
+        text = output
         if text:
             text = text.replace("\n", "\\n")
-        if output.error_code != 0:
-            yield f"data:[SERVER_ERROR]{text}\n\n"
-            break
-        else:
             yield f"data:{text}\n\n"
