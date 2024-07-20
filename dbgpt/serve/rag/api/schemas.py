@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import File, UploadFile
 
@@ -132,3 +132,24 @@ class DocumentVO(BaseModel):
     summary: Optional[str] = Field(None, description="document summary")
     gmt_created: str = Field(..., description="document create time")
     gmt_modified: str = Field(..., description="document modify time")
+
+
+class KnowledgeDomainType(BaseModel):
+    """Knowledge domain type"""
+
+    name: str = Field(..., description="The domain type name")
+    desc: str = Field(..., description="The domain type description")
+
+
+class KnowledgeStorageType(BaseModel):
+    """Knowledge storage type"""
+
+    name: str = Field(..., description="The storage type name")
+    desc: str = Field(..., description="The storage type description")
+    domain_types: List[KnowledgeDomainType] = Field(..., description="The domain types")
+
+
+class KnowledgeConfigResponse(BaseModel):
+    """Knowledge config response"""
+
+    storage: List[KnowledgeStorageType] = Field(..., description="The storage types")

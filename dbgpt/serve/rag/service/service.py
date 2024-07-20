@@ -35,7 +35,6 @@ from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer, trace
 

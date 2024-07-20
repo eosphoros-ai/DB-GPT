@@ -35,6 +35,7 @@ class KnowledgeType(Enum):
     DOCUMENT = "DOCUMENT"
     URL = "URL"
     TEXT = "TEXT"
+    # TODO: Remove this type
     FIN_REPORT = "FIN_REPORT"
 
     @property
