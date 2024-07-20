@@ -49,7 +49,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._system_app = None
         self._serve_config: ServeConfig = None
         self._dao: ServeDao = dao
-        self._dag_manager: Optional[DAGManager] = None
         self._flow_factory: FlowFactory = FlowFactory()
         self._dbgpts_loader: Optional[DBGPTsLoader] = None
 
@@ -61,6 +60,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Args:
             system_app (SystemApp): The system app
         """
+        super().init_app(system_app)
+
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
@@ -75,7 +76,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
     def before_start(self):
         """Execute before the application starts"""
-        self._dag_manager = DAGManager.get_instance(self._system_app)
+        super().before_start()
         self._pre_load_dag_from_db()
         self._pre_load_dag_from_dbgpts()
 
@@ -91,13 +92,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
         """Returns the internal DAO."""
         return self._dao
-
-    @property
-    def dag_manager(self) -> DAGManager:
-        """Returns the internal DAGManager."""
-        if self._dag_manager is None:
-            raise ValueError("DAGManager is not initialized")
-        return self._dag_manager
 
     @property
     def dbgpts_loader(self) -> DBGPTsLoader:

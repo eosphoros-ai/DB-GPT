@@ -6,9 +6,8 @@ import shutil
 import tempfile
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, cast
 
-import httpx
 from fastapi import HTTPException
 
 from dbgpt._private.config import Config
@@ -19,13 +18,12 @@ from dbgpt.app.knowledge.document_db import (
 )
 from dbgpt.app.knowledge.request.request import BusinessFieldType, KnowledgeSpaceRequest
 from dbgpt.component import ComponentType, SystemApp
+from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
-    PILOT_PATH,
 )
 from dbgpt.core import LLMClient
-from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.assembler import EmbeddingAssembler
@@ -79,8 +77,6 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._dao: KnowledgeSpaceDao = dao
         self._document_dao: KnowledgeDocumentDao = document_dao
         self._chunk_dao: DocumentChunkDao = chunk_dao
-        self._dag_manager: Optional[DAGManager] = None
-        self._dbgpts_loader: Optional[DBGPTsLoader] = None
 
         super().__init__(system_app)
 
@@ -90,6 +86,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         Args:
             system_app (SystemApp): The system app
         """
+        super().init_app(system_app)
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
@@ -97,12 +94,6 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._document_dao = self._document_dao or KnowledgeDocumentDao()
         self._chunk_dao = self._chunk_dao or DocumentChunkDao()
         self._system_app = system_app
-
-    def before_start(self):
-        """Execute before the application starts"""
-
-    def after_start(self):
-        """Execute after the application starts"""
 
     @property
     def dao(
@@ -502,14 +493,19 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 "app.knowledge.assembler.persist",
                 metadata={"doc": doc.doc_name},
             ):
+                from dbgpt.core.awel import BaseOperator
                 from dbgpt.serve.flow.service.service import Service as FlowService
 
-                if BusinessFieldType.FINANCIAL_REPORT.value == space.field_type:
-                    flow_service = FlowService.get_instance(CFG.SYSTEM_APP)
-                    task = await flow_service._get_callable_task(
-                        "8389961a-af54-4bf2-98f5-5f5c84835121"
+                dags = self.dag_manager.get_dags_by_tag(
+                    TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE, space.field_type
+                )
+                if dags and dags[0].leaf_nodes:
+                    end_task = cast(BaseOperator, dags[0].leaf_nodes[0])
+                    logger.info(
+                        f"Found dag by tag key: {TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE}"
+                        f" and value: {space.field_type}, dag: {dags[0]}"
                     )
-                    db_name, chunk_docs = await task.call(
+                    db_name, chunk_docs = await end_task.call(
                         {"file_path": doc.content, "space": doc.space}
                     )
                     doc.chunk_size = len(chunk_docs)

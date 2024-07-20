@@ -172,6 +172,8 @@ class DAGManager(BaseComponent):
 
     def get_dags_by_tag(self, tag_key: str, tag_value) -> List[DAG]:
         """Get all DAGs with the given tag."""
+        if not tag_value:
+            return []
         with self.lock:
             dag_ids = self._tags_to_dag_ids.get(tag_key, {}).get(tag_value, set())
             return [self.dag_map[dag_id] for dag_id in dag_ids]

@@ -52,6 +52,8 @@ class Service(
         Args:
             system_app (SystemApp): The system app
         """
+        super().init_app(system_app)
+
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
@@ -62,6 +64,7 @@ class Service(
         """Execute before the application starts"""
         from dbgpt.rag.summary.db_summary_client import DBSummaryClient
 
+        super().before_start()
         self._db_summary_client = DBSummaryClient(self._system_app)
 
     def after_start(self):

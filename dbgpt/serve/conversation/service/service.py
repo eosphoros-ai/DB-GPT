@@ -44,6 +44,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Args:
             system_app (SystemApp): The system app
         """
+        super().init_app(system_app)
+
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
