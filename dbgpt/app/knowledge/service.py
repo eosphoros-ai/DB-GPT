@@ -82,9 +82,7 @@ class KnowledgeService:
             request.vector_type = CFG.VECTOR_STORE_TYPE
         if request.vector_type == "KnowledgeGraph":
             knowledge_space_name_pattern = r"^[a-zA-Z0-9\u4e00-\u9fa5]+$"
-            if re.match(knowledge_space_name_pattern, request.name):
-                return True
-            else:
+            if not re.match(knowledge_space_name_pattern, request.name):
                 raise Exception(f"space name:{request.name} invalid")
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) > 0:
