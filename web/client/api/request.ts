@@ -31,6 +31,7 @@ import {
   ISpace,
   ISyncBatchParameter,
   ISyncBatchResponse,
+  SpaceConfig,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
 import { IFlow, IFlowNode, IFlowResponse, IFlowUpdateParam } from '@/types/flow';
@@ -331,4 +332,8 @@ export const getAppStrategy = () => {
 
 export const getAppStrategyValues = (type: string) => {
   return GET<string, []>(`/api/v1/llm-strategy/value/list?type=${type}`);
+};
+
+export const getSpaceConfig = () => {
+  return GET<string, SpaceConfig>(`/knowledge/space/config`);
 };

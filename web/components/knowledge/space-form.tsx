@@ -1,7 +1,7 @@
 import { addSpace, apiInterceptors } from '@/client/api';
-import { StepChangeParams } from '@/types/knowledge';
+import { IStorage, StepChangeParams } from '@/types/knowledge';
 import { Button, Form, Input, Spin, Select } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type FieldType = {
@@ -14,12 +14,25 @@ type FieldType = {
 
 type IProps = {
   handleStepChange: (params: StepChangeParams) => void;
+  spaceConfig: IStorage | null;
 };
 
 export default function SpaceForm(props: IProps) {
   const { t } = useTranslation();
-  const { handleStepChange } = props;
+  const { handleStepChange, spaceConfig } = props;
   const [spinning, setSpinning] = useState<boolean>(false);
+  const [storage, setStorage] = useState<string>();
+
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    form.setFieldValue('storage', spaceConfig?.[0].name);
+    setStorage(spaceConfig?.[0].name);
+  }, [spaceConfig]);
+
+  const handleStorageChange = (data: string) => {
+    setStorage(data);
+  };
 
   const handleFinish = async (fieldsValue: FieldType) => {
     const { spaceName, owner, description, storage, field } = fieldsValue;
@@ -36,20 +49,21 @@ export default function SpaceForm(props: IProps) {
       }),
     );
     setSpinning(false);
-    const is_financial = field_type === 'FinancialReport'
-    res?.success && handleStepChange({ label: 'forward', spaceName, pace: is_financial ? 2 : 1, docType: is_financial && "DOCUMENT" });
+    const is_financial = field_type === 'FinancialReport';
+    res?.success && handleStepChange({ label: 'forward', spaceName, pace: is_financial ? 2 : 1, docType: is_financial ? 'DOCUMENT' : '' });
   };
 
   return (
     <Spin spinning={spinning}>
       <Form
+        form={form}
         size="large"
         className="mt-4"
         layout="vertical"
         name="basic"
         initialValues={{ remember: true }}
         autoComplete="off"
-        onFinish={handleFypeinish}
+        onFinish={handleFinish}
       >
         <Form.Item<FieldType>
           label={t('Knowledge_Space_Name')}
@@ -72,16 +86,19 @@ export default function SpaceForm(props: IProps) {
           <Input className="mb-5  h-12" placeholder={t('Please_input_the_owner')} />
         </Form.Item>
         <Form.Item<FieldType> label={t('Storage')} name="storage" rules={[{ required: true, message: t('Please_select_the_storage') }]}>
-          <Select className="mb-5 h-12" placeholder={t('Please_select_the_storage')}>
-            <Select.Option value="VectorStore">Vector Store</Select.Option>
-            <Select.Option value="KnowledgeGraph">Knowledge Graph</Select.Option>
-            <Select.Option value="FullText">Full Text</Select.Option>
+          <Select className="mb-5 h-12" placeholder={t('Please_select_the_storage')} onChange={handleStorageChange}>
+            {spaceConfig?.map((item) => {
+              return <Select.Option value={item.name}>{item.desc}</Select.Option>;
+            })}
           </Select>
         </Form.Item>
         <Form.Item<FieldType> label={t('Business Field')} name="field" rules={[{ required: true, message: t('Please_select_the_field_type') }]}>
           <Select className="mb-5 h-12" placeholder={t('Please_select_the_field_type')}>
-            <Select.Option value="Normal">Normal</Select.Option>
-            <Select.Option value="FinancialReport">Financial Report</Select.Option>
+            {spaceConfig
+              ?.find((item) => item.name === storage)
+              ?.domain_types.map((item) => {
+                return <Select.Option value={item.name}>{item.desc}</Select.Option>;
+              })}
           </Select>
         </Form.Item>
         <Form.Item<FieldType> label={t('Description')} name="description" rules={[{ required: true, message: t('Please_input_the_description') }]}>
