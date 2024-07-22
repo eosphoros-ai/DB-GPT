@@ -34,6 +34,6 @@ jobs:
         with:
           context: .
           file: ./docs/Dockerfile-deploy
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64
           push: true
           tags: eosphorosai/dbgpt-docs:${{ github.ref_name }},eosphorosai/dbgpt-docs:latest
