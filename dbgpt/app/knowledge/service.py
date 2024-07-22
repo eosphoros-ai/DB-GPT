@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from datetime import datetime
 
 from dbgpt._private.config import Config
@@ -79,6 +80,10 @@ class KnowledgeService:
         )
         if request.vector_type == "VectorStore":
             request.vector_type = CFG.VECTOR_STORE_TYPE
+        if request.vector_type == "KnowledgeGraph":
+            knowledge_space_name_pattern = r"^[a-zA-Z0-9\u4e00-\u9fa5]+$"
+            if not re.match(knowledge_space_name_pattern, request.name):
+                raise Exception(f"space name:{request.name} invalid")
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) > 0:
             raise Exception(f"space name:{request.name} have already named")
