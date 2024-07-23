@@ -38,18 +38,18 @@ export default function SpaceForm(props: IProps) {
     const { spaceName, owner, description, storage, field } = fieldsValue;
     setSpinning(true);
     let vector_type = storage;
-    let field_type = field;
+    let domain_type = field;
     const [_, data, res] = await apiInterceptors(
       addSpace({
         name: spaceName,
         vector_type: vector_type,
         owner,
         desc: description,
-        field_type: field_type,
+        domain_type: domain_type,
       }),
     );
     setSpinning(false);
-    const is_financial = field_type === 'FinancialReport';
+    const is_financial = domain_type === 'FinancialReport';
     res?.success && handleStepChange({ label: 'forward', spaceName, pace: is_financial ? 2 : 1, docType: is_financial ? 'DOCUMENT' : '' });
   };
 
@@ -92,8 +92,8 @@ export default function SpaceForm(props: IProps) {
             })}
           </Select>
         </Form.Item>
-        <Form.Item<FieldType> label={t('Business Field')} name="field" rules={[{ required: true, message: t('Please_select_the_field_type') }]}>
-          <Select className="mb-5 h-12" placeholder={t('Please_select_the_field_type')}>
+        <Form.Item<FieldType> label={t('Business Field')} name="field" rules={[{ required: true, message: t('Please_select_the_domain_type') }]}>
+          <Select className="mb-5 h-12" placeholder={t('Please_select_the_domain_type')}>
             {spaceConfig
               ?.find((item) => item.name === storage)
               ?.domain_types.map((item) => {

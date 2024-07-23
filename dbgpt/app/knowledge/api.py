@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import (
-    BusinessFieldType,
     ChunkQueryRequest,
     DocumentQueryRequest,
     DocumentSummaryRequest,
@@ -32,7 +31,7 @@ from dbgpt.configs.model_config import (
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.knowledge.base import ChunkStrategy, KnowledgeType
+from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.api.schemas import (
@@ -192,6 +191,7 @@ async def space_config() -> Result[KnowledgeConfigResponse]:
                 domain_types=[KnowledgeDomainType(name="Normal", desc="Normal")],
             )
         )
+        # Full Text
         storage_list.append(
             KnowledgeStorageType(
                 name="FullText",
@@ -287,12 +287,6 @@ async def document_upload(
                         owner="dbgpt",
                     )
                 )
-            space = space_res[0]
-            if (
-                space.field_type
-                and space.field_type == BusinessFieldType.FINANCIAL_REPORT.value
-            ):
-                request.doc_type = KnowledgeType.FIN_REPORT.name
             return Result.succ(
                 knowledge_space_service.create_knowledge_document(
                     space=space_name, request=request
@@ -418,27 +412,3 @@ async def document_summary(request: DocumentSummaryRequest):
             )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document summary error {e}")
-
-
-@router.post("/knowledge/entity/extract")
-async def entity_extract(request: EntityExtractRequest):
-    logger.info(f"Received params: {request}")
-    try:
-        import uuid
-
-        from dbgpt.app.scene import ChatScene
-        from dbgpt.util.chat_util import llm_chat_response_nostream
-
-        chat_param = {
-            "chat_session_id": uuid.uuid1(),
-            "current_user_input": request.text,
-            "select_param": "entity",
-            "model_name": request.model_name,
-        }
-
-        res = await llm_chat_response_nostream(
-            ChatScene.ExtractEntity.value(), **{"chat_param": chat_param}
-        )
-        return Result.succ(res)
-    except Exception as e:
-        return Result.failed(code="E000X", msg=f"entity extract error {e}")

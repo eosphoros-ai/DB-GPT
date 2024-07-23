@@ -10,14 +10,14 @@ export interface ISpace {
   name: string;
   owner: string;
   vector_type: string;
-  field_type: string;
+  domain_type: string;
 }
 export type AddKnowledgeParams = {
   name: string;
   vector_type: string;
   owner: string;
   desc: string;
-  field_type: string;
+  domain_type: string;
 };
 
 export type BaseDocumentParams = {

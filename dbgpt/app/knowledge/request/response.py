@@ -34,7 +34,7 @@ class SpaceQueryResponse(BaseModel):
     """vector_type: vector type"""
     vector_type: str = None
     """field_type: field type"""
-    field_type: str = None
+    domain_type: str = None
     """desc: description"""
     desc: str = None
     """context: context"""

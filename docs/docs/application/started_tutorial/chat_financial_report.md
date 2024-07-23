@@ -15,7 +15,7 @@ Step 1: upgrade `knowledge_space`
 ```sql
 USE dbgpt;
 ALTER TABLE  knowledge_space
-    ADD COLUMN `field_type` varchar(50) null comment 'space field type' after `vector_type`;
+    ADD COLUMN `domain_type` varchar(50) null comment 'space domain type' after `vector_type`;
 ```
 Step 2: upgrade python dependencies
 ```

@@ -35,6 +35,7 @@ from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer, trace
 
@@ -458,7 +459,9 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             vector_store_type=space.vector_type, vector_store_config=config
         )
         knowledge = None
-        if not space.field_type or (space.field_type == BusinessFieldType.NORMAL.value):
+        if not space.domain_type or (
+            space.domain_type == BusinessFieldType.NORMAL.value
+        ):
             knowledge = KnowledgeFactory.create(
                 datasource=doc.content,
                 knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
@@ -496,17 +499,25 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 from dbgpt.serve.flow.service.service import Service as FlowService
 
                 dags = self.dag_manager.get_dags_by_tag(
-                    TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE, space.field_type
+                    TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE, space.domain_type
                 )
                 if dags and dags[0].leaf_nodes:
                     end_task = cast(BaseOperator, dags[0].leaf_nodes[0])
                     logger.info(
                         f"Found dag by tag key: {TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE}"
-                        f" and value: {space.field_type}, dag: {dags[0]}"
+                        f" and value: {space.domain_type}, dag: {dags[0]}"
                     )
-                    db_name, chunk_docs = await end_task.call(
-                        {"file_path": doc.content, "space": doc.space}
+                    executor = CFG.SYSTEM_APP.get_component(
+                        ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+                    ).create()
+                    db_name, chunk_docs = await blocking_func_to_async(
+                        executor,
+                        end_task._blocking_call,
+                        {"file_path": doc.content, "space": doc.space},
                     )
+                    # db_name, chunk_docs = await end_task.call(
+                    #     {"file_path": doc.content, "space": doc.space}
+                    # )
                     doc.chunk_size = len(chunk_docs)
                     vector_ids = [chunk.chunk_id for chunk in chunk_docs]
                 else:

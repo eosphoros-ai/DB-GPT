@@ -145,9 +145,9 @@ export const getSpaceList = () => {
 export const getDocumentList = (spaceName: string, data: Record<string, number | Array<number>>) => {
   return POST<Record<string, number | Array<number>>, IDocumentResponse>(`/knowledge/${spaceName}/document/list`, data);
 };
-export const getGraphVis = (spaceName: string, data:{limit: number}) => {
+export const getGraphVis = (spaceName: string, data: { limit: number }) => {
   return POST<Record<string, number>, GraphVisResult>(`/knowledge/${spaceName}/graphvis`, data);
-}
+};
 
 export const addDocument = (knowledgeName: string, data: DocumentParams) => {
   return POST<DocumentParams, number>(`/knowledge/${knowledgeName}/document/add`, data);

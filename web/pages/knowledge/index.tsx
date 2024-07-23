@@ -63,9 +63,13 @@ const Knowledge = () => {
   };
 
   function onAddDoc(spaceName: string) {
+    const space = spaceList?.find((item) => item?.name === spaceName);
     setSpaceName(spaceName);
-    setActiveStep(spaceList?.find((item) => item?.name === spaceName)?.field_type === 'FinancialReport' ? 2 : 1);
+    setActiveStep(space?.domain_type === 'FinancialReport' ? 2 : 1);
     setIsAddShow(true);
+    if (space?.domain_type === 'FinancialReport') {
+      setDocType('DOCUMENT');
+    }
   }
 
   return (

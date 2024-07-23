@@ -514,8 +514,8 @@ def _parse_domain_type(dialogue: ConversationVo) -> Optional[str]:
             return Result.failed(
                 code="E000X", msg=f"Knowledge space {space_name} not found"
             )
-        if spaces[0].field_type:
-            return spaces[0].field_type
+        if spaces[0].domain_type:
+            return spaces[0].domain_type
     else:
         return None
 

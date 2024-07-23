@@ -16,8 +16,8 @@ class SpaceServeRequest(BaseModel):
     name: str = Field(None, description="The space name")
     """vector_type: vector type"""
     vector_type: str = Field(None, description="The vector type")
-    """field_type: field type"""
-    field_type: str = Field(None, description="The field type")
+    """domain_type: domain type"""
+    domain_type: str = Field(None, description="The domain type")
     """desc: description"""
     desc: Optional[str] = Field(None, description="The description")
     """owner: owner"""
@@ -99,8 +99,8 @@ class SpaceServeResponse(BaseModel):
     owner: Optional[str] = Field(None, description="The owner")
     """sys code"""
     sys_code: Optional[str] = Field(None, description="The sys code")
-    """field type"""
-    field_type: Optional[str] = Field(None, description="field_type")
+    """domain type"""
+    domain_type: Optional[str] = Field(None, description="domain_type")
 
     # TODO define your own fields here
 

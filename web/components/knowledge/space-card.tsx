@@ -73,7 +73,7 @@ export default function SpaceCard(props: IProps) {
             title={space.name}
             desc={space.desc}
             icon={
-              space.field_type === 'FinancialReport'
+              space.domain_type === 'FinancialReport'
                 ? '/models/fin_report.jpg'
                 : space.vector_type === 'KnowledgeGraph'
                 ? '/models/knowledge-graph.png'
