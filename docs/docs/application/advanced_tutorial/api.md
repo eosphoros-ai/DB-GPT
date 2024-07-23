@@ -7,7 +7,7 @@ Model API mainly means that DB-GPT adapts to various models and is uniformly pac
 ## Model API
 
 In the DB-GPT project, we defined a service-oriented multi-model management framework (SMMF). Through the capabilities of SMMF, we can deploy multiple models, and these models provide external services through services. In order to allow clients to achieve seamless switching, we uniformly support the OpenAI SDK standards.
-- Detail useage tutorial: [OpenAI SDK calls local multi-model ](/docs/installation/advanced_usage/OpenAI_SDK_call.md)
+- Detail useage tutorial: [OpenAI SDK calls local multi-model ](../../installation/advanced_usage/OpenAI_SDK_call.md)
 
 **Example:** The following is an example of calling through openai sdk
 

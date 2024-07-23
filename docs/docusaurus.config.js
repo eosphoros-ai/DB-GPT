@@ -8,6 +8,33 @@ const path = require("path");
 const {themes} = require('prism-react-renderer');
 const lightCodeTheme = themes.github;
 const darkCodeTheme = themes.dracula;
+const isDev = process.env.NODE_ENV === "development";
+const isBuildFast = !!process.env.BUILD_FAST;
+const isVersioningDisabled = !!process.env.DISABLE_VERSIONING;
+const versions = require("./versions.json");
+
+console.log("versions", versions)
+
+function isPrerelease(version) {
+  return (
+    version.includes('-') ||
+    version.includes('alpha') ||
+    version.includes('beta') ||
+    version.includes('rc')
+  );
+}
+
+function getLastStableVersion() {
+  const lastStableVersion = versions.find((version) => !isPrerelease(version));
+  if (!lastStableVersion) {
+    throw new Error('unexpected, no stable Docusaurus version?');
+  }
+  return lastStableVersion;
+}
+
+function getNextVersionName() {
+  return 'dev';
+}
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -26,8 +53,8 @@ const config = {
   organizationName: 'eosphoros-ai', // Usually your GitHub org/user name.
   projectName: 'DB-GPT', // Usually your repo name.
 
-  onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: isDev ? 'throw' : 'warn',
+  onBrokenMarkdownLinks: isDev ? 'throw' : 'warn',
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -48,7 +75,10 @@ const config = {
     mermaid: true,
   },
 
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: [
+    '@docusaurus/theme-mermaid',
+    '@easyops-cn/docusaurus-search-local',
+  ],
 
   plugins: [
     () => ({
@@ -100,6 +130,22 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
+          includeCurrentVersion: true,
+          // lastVersion: "current",
+          lastVersion: isDev || isBuildFast || isVersioningDisabled ? "current" : getLastStableVersion(),
+          onlyIncludeVersions: (() => {
+            if (isBuildFast) {
+                return ['current'];
+            } else if (!isVersioningDisabled && (isDev)) {
+              return ['current', ...versions.slice(0, 2)];
+            }
+            return undefined;
+          })(),
+          versions: {
+            current: {
+              label: `${getNextVersionName()}`,
+            },
+          },
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           ],
@@ -110,11 +156,11 @@ const config = {
           }){
             const sidebarItems = await defaultSidebarItemsGenerator(args);
             sidebarItems.forEach((subItem) => {
-              // This allows breaking long sidebar labels into multiple lines 
+              // This allows breaking long sidebar labels into multiple lines
               // by inserting a zero-width space after each slash.
               if (
-                "label" in subItem && 
-                subItem.label && 
+                "label" in subItem &&
+                subItem.label &&
                 subItem.label.includes("/")
               ){
                 subItem.label = subItem.label.replace("/\//g", "\u200B");
@@ -125,11 +171,11 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
         },
-        
+
         pages: {
           remarkPlugins: [require("@docusaurus/remark-plugin-npm2yarn")],
         },
-      
+
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
@@ -143,6 +189,7 @@ const config = {
       defaultClassicDocs: '/docs/get_started',
       // Replace with your project's social card
       navbar: {
+        hideOnScroll: true,
         logo: {
           alt: 'DB-GPT Logo',
           src: 'img/dbgpt_logo.svg',
@@ -177,6 +224,13 @@ const config = {
             position: 'left',
             label: "Community",
             className: 'header-community-link',
+
+          },
+          {
+            type: "docsVersionDropdown",
+            position: "right",
+            dropdownItemsAfter: [{to: '/versions', label: 'All versions'}],
+            dropdownActiveClassDisabled: true,
           },
           {
             href: 'https://github.com/eosphoros-ai/DB-GPT',

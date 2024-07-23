@@ -6,7 +6,7 @@ The following is a systematic introduction to the use of related command line to
 
 ## Preparation
 
-Before using the dbgpt command, you first need to complete the installation of the project. For detailed installation tutorial, please refer to: [Source code installation](/docs/installation/sourcecode.md)
+Before using the dbgpt command, you first need to complete the installation of the project. For detailed installation tutorial, please refer to: [Source code installation](../../installation/sourcecode.md)
 
 
 ## Usage
@@ -143,7 +143,7 @@ Options:
 
 
 ## Model command
-Model related commands are mainly used when deploying multiple models. For model cluster deployment, you can view the [cluster deployment mode](/docs/installation/cluster.md).
+Model related commands are mainly used when deploying multiple models. For model cluster deployment, you can view the [cluster deployment mode](../../installation/model_service/cluster.md).
 
 ```python
 ~ dbgpt model --help
@@ -417,8 +417,10 @@ Options:
 </p>
 
 #### worker command
-`dbgpt start worker` is mainly used to start the working model. For detailed usage, [cluster deployment](/docs/installation/model_service/cluster.md)
+
+`dbgpt start worker` is mainly used to start the working model. For detailed usage, [cluster deployment](../../installation/model_service/cluster.md)
 
 
 ## Debugging
-The dbgpt project provides a wealth of debug commands. For detailed usage, [debugging](/docs/application/advanced_tutorial/debugging.md)
+
+The dbgpt project provides a wealth of debug commands. For detailed usage, [debugging](./debugging.md)

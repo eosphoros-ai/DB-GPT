@@ -3,7 +3,7 @@ The call of multi-model services is compatible with the OpenAI interface, and th
 
 :::info note
 
-⚠️ Before using this project, you must first deploy the model service, which can be deployed through the [cluster deployment tutorial](/docs/latest/installation/model_service/cluster/).
+⚠️ Before using this project, you must first deploy the model service, which can be deployed through the [cluster deployment tutorial](../model_service/cluster.md).
 :::
 
 

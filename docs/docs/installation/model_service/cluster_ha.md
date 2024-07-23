@@ -4,7 +4,7 @@
 ## Architecture
 
 Here is the architecture of the high availability cluster, more details can be found in 
-the [cluster deployment](/docs/latest/installation/model_service/cluster) mode and [SMMF](/docs/latest/modules/smmf) module.
+the [cluster deployment](./cluster.md) mode and [SMMF](../../modules/smmf.md) module.
 
 <p align="center">
   <img src={'/img/module/smmf.png'} width="600px" />
