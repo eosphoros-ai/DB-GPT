@@ -507,17 +507,9 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                         f"Found dag by tag key: {TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE}"
                         f" and value: {space.domain_type}, dag: {dags[0]}"
                     )
-                    executor = CFG.SYSTEM_APP.get_component(
-                        ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-                    ).create()
-                    db_name, chunk_docs = await blocking_func_to_async(
-                        executor,
-                        end_task._blocking_call,
-                        {"file_path": doc.content, "space": doc.space},
+                    db_name, chunk_docs = await end_task.call(
+                        {"file_path": doc.content, "space": doc.space}
                     )
-                    # db_name, chunk_docs = await end_task.call(
-                    #     {"file_path": doc.content, "space": doc.space}
-                    # )
                     doc.chunk_size = len(chunk_docs)
                     vector_ids = [chunk.chunk_id for chunk in chunk_docs]
                 else:
