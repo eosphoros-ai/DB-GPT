@@ -72,23 +72,25 @@ def add_add_common_options(func):
 
 @click.command(name="install")
 @add_add_common_options
-@click.argument("name", type=str)
-def install(repo: str | None, update: bool, name: str):
+@click.argument("names", type=str, nargs=-1)
+def install(repo: str | None, update: bool, names: list[str]):
     """Install your dbgpts(operators,agents,workflows or apps)"""
     from .repo import _install_default_repos_if_no_repos, install
 
     check_poetry_installed()
     _install_default_repos_if_no_repos()
-    install(name, repo, with_update=update)
+    for name in names:
+        install(name, repo, with_update=update)
 
 
 @click.command(name="uninstall")
-@click.argument("name", type=str)
-def uninstall(name: str):
+@click.argument("names", type=str, nargs=-1)
+def uninstall(names: list[str]):
     """Uninstall your dbgpts(operators,agents,workflows or apps)"""
     from .repo import uninstall
 
-    uninstall(name)
+    for name in names:
+        uninstall(name)
 
 
 @click.command(name="list-remote")
