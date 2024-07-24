@@ -175,7 +175,9 @@ const config = {
         pages: {
           remarkPlugins: [require("@docusaurus/remark-plugin-npm2yarn")],
         },
-
+        blog: {
+          showReadingTime: true,
+        },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
@@ -248,6 +250,7 @@ const config = {
             position: 'left',
             label: "中文文档",
           },
+          {to: '/blog', label: 'Blog', position: 'left'},
         ],
       },
       footer: {

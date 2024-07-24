@@ -38,6 +38,7 @@ def baidu_search(
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:112.0) "
         "Gecko/20100101 Firefox/112.0"
     }
+    num_results = int(num_results)
     if num_results < 8:
         num_results = 8
     url = f"https://www.baidu.com/s?wd={query}&rn={num_results}"

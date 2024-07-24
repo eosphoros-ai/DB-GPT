@@ -403,7 +403,12 @@ class Llama3Adapter(NewHFChatModelAdapter):
     support_8bit: bool = True
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path and "llama-3" in lower_model_name_or_path
+        return (
+            lower_model_name_or_path
+            and "llama-3" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
+            and "3.1" not in lower_model_name_or_path
+        )
 
     def get_str_prompt(
         self,
@@ -429,6 +434,22 @@ class Llama3Adapter(NewHFChatModelAdapter):
         # TODO(fangyinc): We should modify the params in the future
         params["stop_token_ids"] = terminators
         return str_prompt
+
+
+class Llama31Adapter(Llama3Adapter):
+    def check_transformer_version(self, current_version: str) -> None:
+        logger.info(f"Checking transformers version: Current version {current_version}")
+        if not current_version >= "4.43.0":
+            raise ValueError(
+                "Llama-3.1 require transformers.__version__>=4.43.0, please upgrade your transformers package."
+            )
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "llama-3.1" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
+        )
 
 
 class DeepseekV2Adapter(NewHFChatModelAdapter):
@@ -613,6 +634,7 @@ register_model_adapter(StarlingLMAdapter)
 register_model_adapter(QwenAdapter)
 register_model_adapter(QwenMoeAdapter)
 register_model_adapter(Llama3Adapter)
+register_model_adapter(Llama31Adapter)
 register_model_adapter(DeepseekV2Adapter)
 register_model_adapter(DeepseekCoderV2Adapter)
 register_model_adapter(SailorAdapter)
