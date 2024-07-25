@@ -329,10 +329,6 @@ class BaseChat(ABC):
         )
         return self.current_ai_response()
 
-    async def fin_call(self):
-        """fin chat call"""
-        pass
-
     @async_retry(
         retries=CFG.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE,
         parallel_executions=CFG.DBGPT_APP_SCENE_NON_STREAMING_PARALLELISM_BASE,

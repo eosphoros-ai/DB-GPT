@@ -107,13 +107,6 @@ class ChatScene(Enum):
         ["Extract Select"],
         True,
     )
-    ChatFinReport = Scene(
-        "chat_fin_report",
-        "Chat Financial Report",
-        "Chat Financial Report",
-        ["Chat Financial Report"],
-        True,
-    )
     QueryRewrite = Scene(
         "query_rewrite", "query_rewrite", "query_rewrite", ["query_rewrite"], True
     )
