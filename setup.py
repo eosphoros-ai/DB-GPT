@@ -513,7 +513,6 @@ def knowledge_requires():
         "python-docx",
         "pypdf",
         "pdfplumber",
-        "fuzzywuzzy",
         "python-multipart",
         "sentence-transformers",
     ]
