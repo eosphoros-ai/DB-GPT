@@ -37,8 +37,8 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ## Getting Started
 
- - [Quickstart](/docs/quickstart)
- - [Installation](/docs/installation)
+ - [Quickstart](./quickstart.md)
+ - [Installation](./installation)
 
 
 ## Terminology
@@ -59,32 +59,32 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ## Use Cases
 
-- [Use Cases](/docs/use_cases)
+- [Use Cases](./use_cases.md)
 
 ## Modules
 
-#### [SMMF](/docs/modules/smmf)
+#### [SMMF](./modules/smmf.md)
 Service-oriented Multi-model Management Framework 
 
-#### [Retrieval](/docs/modules/rag)
+#### [Retrieval](./modules/rag.md)
 Multi-Knowledge Enhanced Retrieval-Augmented Generation Framework
 
-#### [Agents](/docs/modules/agent)
+#### [Agents](./modules/agent.md)
 Data Driven Multi-Agents
 
-#### [Fine-tuning](/docs/modules/fine_tuning)
+#### [Fine-tuning](./modules/fine_tuning.md)
 Fine-tuning module for Text2SQL/Text2DSL
 
 
 ## More
 
-- [Connections](/docs/modules/connections) 
+- [Connections](./modules/connections.md) 
 Connect various data sources
 
-- [Obvervablity](/docs/operation/advanced_tutorial/debugging)
+- [Obvervablity](./application/advanced_tutorial/observability.md)
 Observing & monitoring
 
-- [Evaluation](/docs/modules/eval)
+- [Evaluation](./modules/eval.md)
 Evaluate framework performance and accuracy
 
 ## Community

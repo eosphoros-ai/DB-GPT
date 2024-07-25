@@ -366,7 +366,7 @@ pip install -e ".[llama_cpp]"
 ```
 
 #### Modify configuration file
-Modify the `.env` file to use llama.cpp, and then you can start the service by running the [command](/docs/quickstart.mdx)
+Modify the `.env` file to use llama.cpp, and then you can start the service by running the [command](../quickstart.md)
 
 
 #### More descriptions

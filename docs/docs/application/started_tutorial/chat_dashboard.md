@@ -25,7 +25,7 @@ python docker/examples/dashboard/test_case_mysql_data.py
 
 ### Add data source
 
-The steps to add a data source are the same as [Chat Data](/docs/operation_manual/started_tutorial/chat_data.mdx). Select the corresponding database type in the data source management tab, then create it. Fill in the necessary information to complete the creation.
+The steps to add a data source are the same as [Chat Data](./chat_data.md). Select the corresponding database type in the data source management tab, then create it. Fill in the necessary information to complete the creation.
 
 <p align="left">
   <img src={'/img/chat_dashboard/add_data.png'} width="720px" />
