@@ -57,5 +57,4 @@ __all__ = [
     "TXTKnowledge",
     "URLKnowledge",
     "ExcelKnowledge",
-    "FinReportKnowledge",
 ]

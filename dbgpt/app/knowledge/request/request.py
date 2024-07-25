@@ -32,7 +32,6 @@ class BusinessFieldType(Enum):
     """BusinessFieldType"""
 
     NORMAL = "Normal"
-    FINANCIAL_REPORT = "FinancialReport"
 
 
 class KnowledgeDocumentRequest(BaseModel):

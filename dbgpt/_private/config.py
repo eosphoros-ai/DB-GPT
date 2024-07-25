@@ -314,7 +314,6 @@ class Config(metaclass=Singleton):
         )
         # experimental financial report model configuration
         self.FIN_REPORT_MODEL = os.getenv("FIN_REPORT_MODEL", None)
-        self.FIN_CLASSIFIER_PKL = os.getenv("FIN_CLASSIFIER_PKL", None)
 
     @property
     def local_db_manager(self) -> "ConnectorManager":

@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import model_to_dict, model_to_json
-from dbgpt.app.knowledge.request.request import BusinessFieldType, KnowledgeSpaceRequest
+from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_view_model import (
     ChatSceneVo,

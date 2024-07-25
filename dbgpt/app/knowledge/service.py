@@ -9,7 +9,6 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentEntity,
 )
 from dbgpt.app.knowledge.request.request import (
-    BusinessFieldType,
     ChunkQueryRequest,
     DocumentQueryRequest,
     DocumentSummaryRequest,
