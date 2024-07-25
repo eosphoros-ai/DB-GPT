@@ -28,11 +28,7 @@ scene3:analyze financial report
 
 # How to Install
 
-Step 1: upgrade `knowledge_space`
-```sql
-USE dbgpt;
-ALTER TABLE  knowledge_space
-    ADD COLUMN `domain_type` varchar(50) null comment 'space domain type' after `vector_type`;
+Step 1: make sure your dbgpt version is >=0.5.10
 ```
 Step 2: upgrade python dependencies
 ```
@@ -43,11 +39,10 @@ Step 3: install financial report app from dbgpts
 ```
 # install poetry
 pip install poetry
-# install financial report knowledge process pipeline workflow
-dbgpt app install financial-report-knowledge-factory
 
-# install financial report  chat  pipeline workflow
-dbgpt app install financial-robot-app
+# install financial report knowledge process pipeline workflow and financial-robot-app workflow
+dbgpt app install financial-robot-app financial-report-knowledge-factory
+
 ```
 
 Step4: 
@@ -62,16 +57,15 @@ git clone https://www.modelscope.cn/models/AI-ModelScope/bge-large-zh-v1.5
 #*******************************************************************#
 FIN_REPORT_MODEL=/app/DB-GPT/models/bge-large-zh-v1.5
 ```
-Step 4: restart dbgpt_server
 
-Step 5: create FinancialReport knowledge space
+Step 4: create FinancialReport knowledge space
 ![image](https://github.com/user-attachments/assets/90d938f0-e09f-49f2-8f8b-fa69ef6f8ae6)
 
-Step 6: upload financial report from `docker/examples/fin_report`
+Step 5: upload financial report from `docker/examples/fin_report`
 ![upload_report](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4630f226-4bd6-4645-858a-bd3cde4e4789)
-Step 7:  automatic segment and wait for a while
+Step 6:  automatic segment and wait for a while
 ![process_log](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0506dd86-4089-4ba4-8589-b617afc0eafe)
-Step 8:  chat with financial report
+Step 7:  chat with financial report
 
 
 
