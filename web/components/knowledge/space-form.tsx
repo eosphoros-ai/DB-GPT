@@ -92,8 +92,8 @@ export default function SpaceForm(props: IProps) {
             })}
           </Select>
         </Form.Item>
-        <Form.Item<FieldType> label={t('Domain Type')} name="field" rules={[{ required: true, message: t('Please select the domain type') }]}>
-          <Select className="mb-5 h-12" placeholder={t('Please select the domain type')}>
+        <Form.Item<FieldType> label={t('Domain')} name="field" rules={[{ required: true, message: t('Please_select_the_domain_type') }]}>
+          <Select className="mb-5 h-12" placeholder={t('Please_select_the_domain_type')}>
             {spaceConfig
               ?.find((item) => item.name === storage)
               ?.domain_types.map((item) => {
