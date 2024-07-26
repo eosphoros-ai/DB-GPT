@@ -23,19 +23,27 @@ from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
 from dbgpt.app.openapi.api_view_model import Result
+from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
+from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
+from dbgpt.serve.rag.api.schemas import (
+    KnowledgeConfigResponse,
+    KnowledgeDomainType,
+    KnowledgeStorageType,
+    KnowledgeSyncRequest,
+)
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.serve.rag.service.service import Service
 from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import SpanType, root_tracer
 
 logger = logging.getLogger(__name__)
@@ -50,6 +58,11 @@ knowledge_space_service = KnowledgeService()
 def get_rag_service() -> Service:
     """Get Rag Service."""
     return Service.get_instance(CFG.SYSTEM_APP)
+
+
+def get_dag_manager() -> DAGManager:
+    """Get DAG Manager."""
+    return DAGManager.get_instance(CFG.SYSTEM_APP)
 
 
 @router.post("/knowledge/space/add")
@@ -145,6 +158,55 @@ def chunk_strategies():
         )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"chunk strategies error {e}")
+
+
+@router.get("/knowledge/space/config", response_model=Result[KnowledgeConfigResponse])
+async def space_config() -> Result[KnowledgeConfigResponse]:
+    """Get space config"""
+    try:
+        storage_list: List[KnowledgeStorageType] = []
+        dag_manager: DAGManager = get_dag_manager()
+        # Vector Storage
+        vs_domain_types = [KnowledgeDomainType(name="Normal", desc="Normal")]
+        dag_map = dag_manager.get_dags_by_tag_key(TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE)
+        for domain_type, dags in dag_map.items():
+            vs_domain_types.append(
+                KnowledgeDomainType(
+                    name=domain_type, desc=dags[0].description or domain_type
+                )
+            )
+
+        storage_list.append(
+            KnowledgeStorageType(
+                name="VectorStore",
+                desc=_("Vector Store"),
+                domain_types=vs_domain_types,
+            )
+        )
+        # Graph Storage
+        storage_list.append(
+            KnowledgeStorageType(
+                name="KnowledgeGraph",
+                desc=_("Knowledge Graph"),
+                domain_types=[KnowledgeDomainType(name="Normal", desc="Normal")],
+            )
+        )
+        # Full Text
+        storage_list.append(
+            KnowledgeStorageType(
+                name="FullText",
+                desc=_("Full Text"),
+                domain_types=[KnowledgeDomainType(name="Normal", desc="Normal")],
+            )
+        )
+
+        return Result.succ(
+            KnowledgeConfigResponse(
+                storage=storage_list,
+            )
+        )
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"space config error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/list")
@@ -350,27 +412,3 @@ async def document_summary(request: DocumentSummaryRequest):
             )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document summary error {e}")
-
-
-@router.post("/knowledge/entity/extract")
-async def entity_extract(request: EntityExtractRequest):
-    logger.info(f"Received params: {request}")
-    try:
-        import uuid
-
-        from dbgpt.app.scene import ChatScene
-        from dbgpt.util.chat_util import llm_chat_response_nostream
-
-        chat_param = {
-            "chat_session_id": uuid.uuid1(),
-            "current_user_input": request.text,
-            "select_param": "entity",
-            "model_name": request.model_name,
-        }
-
-        res = await llm_chat_response_nostream(
-            ChatScene.ExtractEntity.value(), **{"chat_param": chat_param}
-        )
-        return Result.succ(res)
-    except Exception as e:
-        return Result.failed(code="E000X", msg=f"entity extract error {e}")

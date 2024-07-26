@@ -183,7 +183,7 @@ class BM25Assembler(BaseAssembler):
             chunk_parameters=chunk_parameters,
         )
 
-    def persist(self) -> List[str]:
+    def persist(self, **kwargs) -> List[str]:
         """Persist chunks into elasticsearch.
 
         Returns:
@@ -212,7 +212,7 @@ class BM25Assembler(BaseAssembler):
         self._es_client.indices.refresh(index=self._index_name)
         return ids
 
-    async def apersist(self) -> List[str]:
+    async def apersist(self, **kwargs) -> List[str]:
         """Persist chunks into elasticsearch.
 
         Returns:

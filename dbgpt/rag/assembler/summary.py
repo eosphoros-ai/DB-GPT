@@ -118,7 +118,7 @@ class SummaryAssembler(BaseAssembler):
         """Generate summary."""
         return await self._extractor.aextract(self._chunks)
 
-    def persist(self) -> List[str]:
+    def persist(self, **kwargs: Any) -> List[str]:
         """Persist chunks into store."""
         raise NotImplementedError
 

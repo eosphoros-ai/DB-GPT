@@ -21,6 +21,7 @@ export default function SpaceCard(props: IProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { space, getSpaces } = props;
+
   const showDeleteConfirm = () => {
     confirm({
       title: t('Tips'),
@@ -71,7 +72,15 @@ export default function SpaceCard(props: IProps) {
           <GptCard
             title={space.name}
             desc={space.desc}
-            icon={space.vector_type === 'KnowledgeGraph'?"/models/knowledge-graph.png":space.vector_type === 'FullText'?"/models/knowledge-full-text.jpg":"/models/knowledge-default.jpg"}
+            icon={
+              space.domain_type === 'FinancialReport'
+                ? '/models/fin_report.jpg'
+                : space.vector_type === 'KnowledgeGraph'
+                ? '/models/knowledge-graph.png'
+                : space.vector_type === 'FullText'
+                ? '/models/knowledge-full-text.jpg'
+                : '/models/knowledge-default.jpg'
+            }
             iconBorder={false}
             tags={[
               {

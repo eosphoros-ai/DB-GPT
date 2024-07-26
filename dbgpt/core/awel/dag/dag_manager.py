@@ -172,9 +172,20 @@ class DAGManager(BaseComponent):
 
     def get_dags_by_tag(self, tag_key: str, tag_value) -> List[DAG]:
         """Get all DAGs with the given tag."""
+        if not tag_value:
+            return []
         with self.lock:
             dag_ids = self._tags_to_dag_ids.get(tag_key, {}).get(tag_value, set())
             return [self.dag_map[dag_id] for dag_id in dag_ids]
+
+    def get_dags_by_tag_key(self, tag_key: str) -> Dict[str, List[DAG]]:
+        """Get all DAGs with the given tag key."""
+        with self.lock:
+            value_dict = self._tags_to_dag_ids.get(tag_key, {})
+            result = {}
+            for k, v in value_dict.items():
+                result[k] = [self.dag_map[dag_id] for dag_id in v]
+            return result
 
     def get_dag_metadata(
         self, dag_id: Optional[str] = None, alias_name: Optional[str] = None

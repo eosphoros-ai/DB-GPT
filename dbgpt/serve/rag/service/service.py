@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from fastapi import HTTPException
 
@@ -16,14 +16,14 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
-from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt.app.knowledge.request.request import BusinessFieldType, KnowledgeSpaceRequest
 from dbgpt.component import ComponentType, SystemApp
+from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core import LLMClient
-from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.assembler import EmbeddingAssembler
@@ -35,7 +35,7 @@ from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.util.dbgpts.loader import DBGPTsLoader
+from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer, trace
 
@@ -77,8 +77,6 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._dao: KnowledgeSpaceDao = dao
         self._document_dao: KnowledgeDocumentDao = document_dao
         self._chunk_dao: DocumentChunkDao = chunk_dao
-        self._dag_manager: Optional[DAGManager] = None
-        self._dbgpts_loader: Optional[DBGPTsLoader] = None
 
         super().__init__(system_app)
 
@@ -88,6 +86,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         Args:
             system_app (SystemApp): The system app
         """
+        super().init_app(system_app)
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
@@ -95,12 +94,6 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._document_dao = self._document_dao or KnowledgeDocumentDao()
         self._chunk_dao = self._chunk_dao or DocumentChunkDao()
         self._system_app = system_app
-
-    def before_start(self):
-        """Execute before the application starts"""
-
-    def after_start(self):
-        """Execute after the application starts"""
 
     @property
     def dao(
@@ -382,7 +375,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
 
     def get_document_list(
         self, request: QUERY_SPEC, page: int, page_size: int
-    ) -> PaginationResult[SpaceServeResponse]:
+    ) -> PaginationResult[DocumentServeResponse]:
         """Get a list of Flow entities by page
 
         Args:
@@ -465,25 +458,28 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type, vector_store_config=config
         )
-        knowledge = KnowledgeFactory.create(
-            datasource=doc.content,
-            knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
-        )
+        knowledge = None
+        if not space.domain_type or (
+            space.domain_type == BusinessFieldType.NORMAL.value
+        ):
+            knowledge = KnowledgeFactory.create(
+                datasource=doc.content,
+                knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
+            )
         doc.status = SyncStatus.RUNNING.name
 
         doc.gmt_modified = datetime.now()
         self._document_dao.update_knowledge_document(doc)
-        # asyncio.create_task(self.async_doc_embedding(assembler, chunk_docs, doc))
         asyncio.create_task(
             self.async_doc_embedding(
-                knowledge, chunk_parameters, vector_store_connector, doc
+                knowledge, chunk_parameters, vector_store_connector, doc, space
             )
         )
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
 
     @trace("async_doc_embedding")
     async def async_doc_embedding(
-        self, knowledge, chunk_parameters, vector_store_connector, doc
+        self, knowledge, chunk_parameters, vector_store_connector, doc, space
     ):
         """async document embedding into vector db
         Args:
@@ -499,14 +495,33 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 "app.knowledge.assembler.persist",
                 metadata={"doc": doc.doc_name},
             ):
-                assembler = await EmbeddingAssembler.aload_from_knowledge(
-                    knowledge=knowledge,
-                    index_store=vector_store_connector.index_client,
-                    chunk_parameters=chunk_parameters,
+                from dbgpt.core.awel import BaseOperator
+                from dbgpt.serve.flow.service.service import Service as FlowService
+
+                dags = self.dag_manager.get_dags_by_tag(
+                    TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE, space.domain_type
                 )
-                chunk_docs = assembler.get_chunks()
-                doc.chunk_size = len(chunk_docs)
-                vector_ids = await assembler.apersist()
+                if dags and dags[0].leaf_nodes:
+                    end_task = cast(BaseOperator, dags[0].leaf_nodes[0])
+                    logger.info(
+                        f"Found dag by tag key: {TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE}"
+                        f" and value: {space.domain_type}, dag: {dags[0]}"
+                    )
+                    db_name, chunk_docs = await end_task.call(
+                        {"file_path": doc.content, "space": doc.space}
+                    )
+                    doc.chunk_size = len(chunk_docs)
+                    vector_ids = [chunk.chunk_id for chunk in chunk_docs]
+                else:
+                    assembler = await EmbeddingAssembler.aload_from_knowledge(
+                        knowledge=knowledge,
+                        index_store=vector_store_connector.index_client,
+                        chunk_parameters=chunk_parameters,
+                    )
+
+                    chunk_docs = assembler.get_chunks()
+                    doc.chunk_size = len(chunk_docs)
+                    vector_ids = await assembler.apersist()
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document persist into index store success"
             if vector_ids is not None:

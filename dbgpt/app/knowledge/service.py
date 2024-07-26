@@ -23,6 +23,7 @@ from dbgpt.app.knowledge.request.response import (
     SpaceQueryResponse,
 )
 from dbgpt.component import ComponentType
+from dbgpt.configs import DOMAIN_TYPE_FINANCIAL_REPORT
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
@@ -133,6 +134,7 @@ class KnowledgeService:
             res.id = space.id
             res.name = space.name
             res.vector_type = space.vector_type
+            res.domain_type = space.domain_type
             res.desc = space.desc
             res.owner = space.owner
             res.gmt_created = space.gmt_created
@@ -299,6 +301,10 @@ class KnowledgeService:
             llm_client=self.llm_client,
             model_name=None,
         )
+        if space.domain_type == DOMAIN_TYPE_FINANCIAL_REPORT:
+            conn_manager = CFG.local_db_manager
+            conn_manager.delete_db(f"{space.name}_fin_report")
+
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type, vector_store_config=config
         )

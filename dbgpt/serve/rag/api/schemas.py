@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import File, UploadFile
 
@@ -16,6 +16,8 @@ class SpaceServeRequest(BaseModel):
     name: str = Field(None, description="The space name")
     """vector_type: vector type"""
     vector_type: str = Field(None, description="The vector type")
+    """domain_type: domain type"""
+    domain_type: str = Field(None, description="The domain type")
     """desc: description"""
     desc: Optional[str] = Field(None, description="The description")
     """owner: owner"""
@@ -97,6 +99,8 @@ class SpaceServeResponse(BaseModel):
     owner: Optional[str] = Field(None, description="The owner")
     """sys code"""
     sys_code: Optional[str] = Field(None, description="The sys code")
+    """domain type"""
+    domain_type: Optional[str] = Field(None, description="domain_type")
 
     # TODO define your own fields here
 
@@ -128,3 +132,24 @@ class DocumentVO(BaseModel):
     summary: Optional[str] = Field(None, description="document summary")
     gmt_created: str = Field(..., description="document create time")
     gmt_modified: str = Field(..., description="document modify time")
+
+
+class KnowledgeDomainType(BaseModel):
+    """Knowledge domain type"""
+
+    name: str = Field(..., description="The domain type name")
+    desc: str = Field(..., description="The domain type description")
+
+
+class KnowledgeStorageType(BaseModel):
+    """Knowledge storage type"""
+
+    name: str = Field(..., description="The storage type name")
+    desc: str = Field(..., description="The storage type description")
+    domain_types: List[KnowledgeDomainType] = Field(..., description="The domain types")
+
+
+class KnowledgeConfigResponse(BaseModel):
+    """Knowledge config response"""
+
+    storage: List[KnowledgeStorageType] = Field(..., description="The storage types")

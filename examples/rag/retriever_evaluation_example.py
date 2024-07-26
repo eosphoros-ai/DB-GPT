@@ -72,7 +72,7 @@ async def main():
         embeddings=embeddings,
         operator_kwargs={
             "top_k": 5,
-            "vector_store_connector": vector_connector,
+            "index_store": vector_connector,
         },
     )
     metrics = [

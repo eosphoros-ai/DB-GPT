@@ -166,6 +166,11 @@ class ChunkManager:
         """Split a document into chunks and summary."""
         raise NotImplementedError
 
+    def extract(self, chunks: List[Chunk]) -> None:
+        """Extract metadata from chunks."""
+        if self._extractor:
+            self._extractor.extract(chunks)
+
     @property
     def chunk_parameters(self) -> ChunkParameters:
         """Get chunk parameters."""

@@ -31,6 +31,7 @@ import {
   ISpace,
   ISyncBatchParameter,
   ISyncBatchResponse,
+  SpaceConfig,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
 import { IFlow, IFlowNode, IFlowResponse, IFlowUpdateParam } from '@/types/flow';
@@ -144,9 +145,9 @@ export const getSpaceList = () => {
 export const getDocumentList = (spaceName: string, data: Record<string, number | Array<number>>) => {
   return POST<Record<string, number | Array<number>>, IDocumentResponse>(`/knowledge/${spaceName}/document/list`, data);
 };
-export const getGraphVis = (spaceName: string, data:{limit: number}) => {
+export const getGraphVis = (spaceName: string, data: { limit: number }) => {
   return POST<Record<string, number>, GraphVisResult>(`/knowledge/${spaceName}/graphvis`, data);
-}
+};
 
 export const addDocument = (knowledgeName: string, data: DocumentParams) => {
   return POST<DocumentParams, number>(`/knowledge/${knowledgeName}/document/add`, data);
@@ -331,4 +332,8 @@ export const getAppStrategy = () => {
 
 export const getAppStrategyValues = (type: string) => {
   return GET<string, []>(`/api/v1/llm-strategy/value/list?type=${type}`);
+};
+
+export const getSpaceConfig = () => {
+  return GET<string, SpaceConfig>(`/knowledge/space/config`);
 };

@@ -1,5 +1,4 @@
 from dbgpt.app.scene.base_chat import BaseChat
-from dbgpt.core import PromptTemplate
 from dbgpt.util.singleton import Singleton
 from dbgpt.util.tracer import root_tracer
 
@@ -17,10 +16,6 @@ class ChatFactory(metaclass=Singleton):
         from dbgpt.app.scene.chat_db.auto_execute.prompt import prompt
         from dbgpt.app.scene.chat_db.professional_qa.chat import ChatWithDbQA
         from dbgpt.app.scene.chat_db.professional_qa.prompt import prompt
-        from dbgpt.app.scene.chat_knowledge.extract_entity.chat import ExtractEntity
-        from dbgpt.app.scene.chat_knowledge.extract_entity.prompt import prompt
-        from dbgpt.app.scene.chat_knowledge.extract_triplet.chat import ExtractTriplet
-        from dbgpt.app.scene.chat_knowledge.extract_triplet.prompt import prompt
         from dbgpt.app.scene.chat_knowledge.refine_summary.chat import (
             ExtractRefineSummary,
         )

@@ -618,10 +618,12 @@ class DAG:
         dag_id: str,
         resource_group: Optional[ResourceGroup] = None,
         tags: Optional[Dict[str, str]] = None,
+        description: Optional[str] = None,
     ) -> None:
         """Initialize a DAG."""
         self._dag_id = dag_id
         self._tags: Dict[str, str] = tags or {}
+        self._description = description
         self.node_map: Dict[str, DAGNode] = {}
         self.node_name_to_node: Dict[str, DAGNode] = {}
         self._root_nodes: List[DAGNode] = []
@@ -660,6 +662,11 @@ class DAG:
     def tags(self) -> Dict[str, str]:
         """Return the tags of current DAG."""
         return self._tags
+
+    @property
+    def description(self) -> Optional[str]:
+        """Return the description of current DAG."""
+        return self._description
 
     @property
     def dev_mode(self) -> bool:
