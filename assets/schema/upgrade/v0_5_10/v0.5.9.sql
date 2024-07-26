@@ -1,4 +1,4 @@
--- Full SQL of v0.5.8, please not modify this file(It must be same as the file in the release package)
+-- Full SQL of v0.5.9, please not modify this file(It must be same as the file in the release package)
 
 CREATE
 DATABASE IF NOT EXISTS dbgpt;
@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS `knowledge_space`
     `id`           int          NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
     `name`         varchar(100) NOT NULL COMMENT 'knowledge space name',
     `vector_type`  varchar(50)  NOT NULL COMMENT 'vector type',
-    `field_type`  varchar(50)  NOT NULL COMMENT 'field type',
     `desc`         varchar(500) NOT NULL COMMENT 'description',
     `owner`        varchar(100) DEFAULT NULL COMMENT 'owner',
     `context`      TEXT         DEFAULT NULL COMMENT 'context argument',
