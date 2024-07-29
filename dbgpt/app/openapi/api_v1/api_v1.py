@@ -387,7 +387,7 @@ async def chat_completions(
             headers=headers,
             media_type="text/event-stream",
         )
-    elif domain_type is not None:
+    elif domain_type is not None and domain_type != "Normal":
         return StreamingResponse(
             chat_with_domain_flow(dialogue, domain_type),
             headers=headers,
