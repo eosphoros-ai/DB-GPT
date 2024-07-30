@@ -44,3 +44,14 @@ class FlowDAGMetadataException(FlowMetadataException):
     def __init__(self, message: str, error_type="build_dag_metadata_error"):
         """Create a new FlowDAGMetadataException."""
         super().__init__(message, error_type)
+
+
+class FlowUIComponentException(FlowException):
+    """The exception for UI parameter failed."""
+
+    def __init__(
+        self, message: str, component_name: str, error_type="build_ui_component_error"
+    ):
+        """Create a new FlowUIParameterException."""
+        new_message = f"{component_name}: {message}"
+        super().__init__(new_message, error_type)
