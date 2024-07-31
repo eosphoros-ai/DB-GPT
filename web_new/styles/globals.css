@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: var(--joy-fontFamily-body, var(--joy-Josefin Sans, sans-serif));
+  line-height: var(--joy-lineHeight-md, 1.5);
+  --antd-primary-color: #0069fe;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-appearance: none;
+}
+
+.light {
+  color: #333;
+  background-color: #f7f7f7;
+}
+
+.dark {
+  color: #f7f7f7;
+  background-color: #151622;
+}
+
+.dark-sub-bg {
+  background-color: rgb(35, 38, 44);
+}
+
+.ant-btn-primary {
+  background-color: var(--antd-primary-color);
+}
+
+.ant-pagination .ant-pagination-prev * {
+  color: var(--antd-primary-color) !important;
+}
+
+.ant-pagination .ant-pagination-next * {
+  color: var(--antd-primary-color) !important;
+}
+
+.ant-pagination .ant-pagination-item a {
+  color: rgb(176, 176, 191);
+}
+
+.ant-pagination .ant-pagination-item.ant-pagination-item-active {
+  background-color: var(--antd-primary-color) !important;
+}
+
+.ant-pagination .ant-pagination-item.ant-pagination-item-active a {
+  color: white !important;
+}
+
+.scrollbar-default::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+
+.dark :where(.css-dev-only-do-not-override-18iikkb).ant-tabs .ant-tabs-tab-btn {
+  color: white;
+}
+
+:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label>label {
+  height: 36px;
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.react-flow__panel {
+  display: none !important;
+}
+
+#home-container .ant-tabs-tab-active {
+  font-size: 16px;
+}
+
+#home-container .ant-tabs-tab {
+  font-size: 16px;
+}
+
+#home-container .ant-card-body {
+  padding: 12px 24px;
+}
+
+pre {
+  width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding-left: 0.5rem;
+}
+
+table {
+  display: block;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.rc-md-editor {
+  height: inherit;
+}
+
+.rc-md-editor .editor-container>.section {
+  border-right: none !important;
+}
