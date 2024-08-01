@@ -532,16 +532,17 @@ class RDBMSConnector(BaseConnector):
         ans = cursor.fetchall()
         return ans[0][1]
 
-    def get_fields(self, table_name) -> List[Tuple]:
+    def get_fields(self, table_name, db_name=None) -> List[Tuple]:
         """Get column fields about specified table."""
         session = self._db_sessions()
-        cursor = session.execute(
-            text(
-                "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, "
-                "COLUMN_COMMENT  from information_schema.COLUMNS where "
-                f"table_name='{table_name}'".format(table_name)
-            )
+        query = (
+            "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, "
+            "COLUMN_COMMENT  from information_schema.COLUMNS where "
+            f"table_name='{table_name}'"
         )
+        if db_name is not None:
+            query += f" AND table_schema='{db_name}'"
+        cursor = session.execute(text(query))
         fields = cursor.fetchall()
         return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
 
