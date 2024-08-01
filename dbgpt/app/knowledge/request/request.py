@@ -21,7 +21,7 @@ class KnowledgeSpaceRequest(BaseModel):
     """vector_type: vector type"""
     vector_type: str = None
     """vector_type: vector type"""
-    domain_type: str = "normal"
+    domain_type: str = "Normal"
     """desc: description"""
     desc: str = None
     """owner: owner"""
