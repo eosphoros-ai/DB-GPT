@@ -198,6 +198,16 @@ class Mixtral8x7BAdapter(NewHFChatModelAdapter):
         )
 
 
+class MistralNemo(NewHFChatModelAdapter):
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "mistral" in lower_model_name_or_path
+            and "nemo" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
+        )
+
+
 class SOLARAdapter(NewHFChatModelAdapter):
     """
     https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0
@@ -627,6 +637,7 @@ class Internlm2Adapter(NewHFChatModelAdapter):
 register_model_adapter(YiAdapter)
 register_model_adapter(Yi15Adapter)
 register_model_adapter(Mixtral8x7BAdapter)
+register_model_adapter(MistralNemo)
 register_model_adapter(SOLARAdapter)
 register_model_adapter(GemmaAdapter)
 register_model_adapter(Gemma2Adapter)

@@ -211,6 +211,9 @@ LLM_MODEL_CONFIG = {
     "mixtral-8x7b-instruct-v0.1": os.path.join(
         MODEL_PATH, "Mixtral-8x7B-Instruct-v0.1"
     ),
+    "mistral-nemo-instruct-2407": os.path.join(
+        MODEL_PATH, "Mistral-Nemo-Instruct-2407"
+    ),
     # https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0
     "solar-10.7b-instruct-v1.0": os.path.join(MODEL_PATH, "SOLAR-10.7B-Instruct-v1.0"),
     # https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca
@@ -238,6 +241,7 @@ LLM_MODEL_CONFIG = {
     "gemma-7b-it": os.path.join(MODEL_PATH, "gemma-7b-it"),
     # https://huggingface.co/google/gemma-2b-it
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
+    "gemma-2-2b-it": os.path.join(MODEL_PATH, "gemma-2-2b-it"),
     "gemma-2-9b-it": os.path.join(MODEL_PATH, "gemma-2-9b-it"),
     "gemma-2-27b-it": os.path.join(MODEL_PATH, "gemma-2-27b-it"),
     "starling-lm-7b-beta": os.path.join(MODEL_PATH, "Starling-LM-7B-beta"),
