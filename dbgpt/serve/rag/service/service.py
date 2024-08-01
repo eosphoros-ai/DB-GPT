@@ -460,7 +460,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         )
         knowledge = None
         if not space.domain_type or (
-            space.domain_type == BusinessFieldType.NORMAL.value
+            space.domain_type.lower() == BusinessFieldType.NORMAL.value.lower()
         ):
             knowledge = KnowledgeFactory.create(
                 datasource=doc.content,

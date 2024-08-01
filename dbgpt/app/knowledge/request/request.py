@@ -16,12 +16,12 @@ class KnowledgeSpaceRequest(BaseModel):
     """name: knowledge space name"""
 
     """vector_type: vector type"""
-    id: int = None
+    id: Optional[int] = None
     name: str = None
     """vector_type: vector type"""
     vector_type: str = None
     """vector_type: vector type"""
-    domain_type: str = "normal"
+    domain_type: str = "Normal"
     """desc: description"""
     desc: str = None
     """owner: owner"""
