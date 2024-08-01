@@ -2,7 +2,6 @@ import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional
 from urllib.parse import urljoin
 
 import requests
@@ -121,7 +120,6 @@ def knowledge_init(
     space.desc = "DB-GPT cli"
     space.vector_type = vector_store_type
     space.owner = "DB-GPT"
-    space.id = Optional[int]
 
     # Create space
     logger.info(f"Create space: {space}")
