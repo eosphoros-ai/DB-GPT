@@ -1,12 +1,12 @@
 import FloatHelper from '@/ant-components/layout/FloatHelper';
 import { ChatContext, ChatContextProvider } from '@/app/chat-context';
-import SideBar from '@/components/layout/side-bar';
 import { STORAGE_LANG_KEY } from '@/utils/constants/index';
 import { App, ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
 import classNames from 'classnames';
 import type { AppProps } from 'next/app';
+import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import React, { useContext, useEffect } from 'react';
@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import '../app/i18n';
 import '../nprogress.css';
 import '../styles/globals.css';
+
+const SideBar = dynamic(() => import('@/components/layout/side-bar'), { ssr: false });
 
 const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
   return {

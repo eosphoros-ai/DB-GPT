@@ -1,9 +1,10 @@
-import { apiInterceptors, getDialogueList, getUsableModels, queryAdminList } from '@/client/api';
+import { apiInterceptors, getUsableModels, queryAdminList } from '@/client/api';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { UserInfoResponse } from '@/types/userinfo';
+import { STORAGE_THEME_KEY } from '@/utils/constants/index';
 import { useRequest } from 'ahooks';
 import { useSearchParams } from 'next/navigation';
-import { createContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 
 type ThemeMode = 'dark' | 'light';
 
