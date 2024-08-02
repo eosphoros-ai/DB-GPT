@@ -262,7 +262,7 @@ class OpenAILLMClient(ProxyLLMClient):
         async for r in chat_completion:
             if len(r.choices) == 0:
                 continue
-            # Azure gpt-4o响应内容中出现空choices的问题判断
+            # Check for empty 'choices' issue in Azure GPT-4o responses
             if r.choices[0] is not None and r.choices[0].delta is None:
                 continue
             if r.choices[0].delta.content is not None:
