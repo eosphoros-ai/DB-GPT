@@ -85,8 +85,8 @@ vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
         name="test_vstore",
         persist_path="/tmp/awel_rag_test_vector_store",
-    ),
-    embedding_fn=embeddings
+        embedding_fn=embeddings
+    )
 )
 
 with DAG("load_knowledge_dag") as knowledge_dag:
@@ -275,8 +275,8 @@ vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
         name="test_vstore",
         persist_path="/tmp/awel_rag_test_vector_store",
+        embedding_fn=embeddings
     ),
-    embedding_fn=embeddings
 )
 
 with DAG("load_knowledge_dag") as knowledge_dag:
