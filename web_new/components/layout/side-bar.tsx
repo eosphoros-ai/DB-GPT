@@ -1,13 +1,10 @@
+import UserBar from '@/ant-components/layout/UserBar';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delDialogue } from '@/client/api';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY, STORAGE_USERINFO_KEY } from '@/utils/constants/index';
-import cls from 'classnames';
-import 'moment/locale/zh-cn';
-
 import Icon, {
-  AppstoreAddOutlined,
   AppstoreOutlined,
   BuildOutlined,
   ConsoleSqlOutlined,
@@ -16,18 +13,19 @@ import Icon, {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MessageOutlined,
-  PartitionOutlined,
+  PartitionOutlined
 } from '@ant-design/icons';
-import { ConfigProvider, Dropdown, Modal, Popover, Tooltip, message } from 'antd';
+import { Modal, Popover, Tooltip, message } from 'antd';
 import { ItemType } from 'antd/es/menu/hooks/useItems';
+import cls from 'classnames';
 import copy from 'copy-to-clipboard';
+import moment from 'moment';
+import 'moment/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import UserBar from '@/ant-components/layout/UserBar';
-import moment from 'moment';
 
 type SettingItem = {
   key: string;
@@ -72,6 +70,7 @@ function SideBar() {
     const { user_id } = JSON.parse(localStorage.getItem(STORAGE_USERINFO_KEY) || '{}');
     return adminList.some((admin) => admin.user_id === user_id);
   }, [adminList]);
+  
   const routes = useMemo(() => {
     const items: RouteItem[] = [
       {
