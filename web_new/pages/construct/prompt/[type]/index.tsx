@@ -3,6 +3,8 @@ import { ChatContext } from '@/app/chat-context';
 import { addPrompt, apiInterceptors, llmOutVerify, promptTemplateLoad, promptTypeTarget, updatePrompt } from '@/client/api';
 import useUser from '@/hooks/use-user';
 import { DebugParams, OperatePromptParams } from '@/types/prompt';
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import { LeftOutlined } from '@ant-design/icons';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import JsonView from '@uiw/react-json-view';
@@ -238,6 +240,7 @@ const AddOrEditPrompt: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            [HEADER_USER_ID_KEY]: getUserId() ?? '',
           },
           body: JSON.stringify(params),
           openWhenHidden: true,

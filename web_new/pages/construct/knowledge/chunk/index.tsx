@@ -1,8 +1,11 @@
-import { apiInterceptors, getChunkList } from '@/client/api';
-import DocIcon from '@/components/knowledge/doc-icon';
-import { DoubleRightOutlined } from '@ant-design/icons';
-import { Breadcrumb, Card, Empty, Pagination, Space, Spin } from 'antd';
+import MarkDownContext from '@/ant-components/common/MarkdownContext';
+import { apiInterceptors, getChunkList, chunkAddQuestion } from '@/client/api';
+import MenuModal from '@/components/MenuModal';
+import { MinusCircleOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { useRequest } from 'ahooks';
+import { App, Breadcrumb, Button, Card, Empty, Form, Input, Pagination, Space, Spin, Tag } from 'antd';
 import cls from 'classnames';
+import { debounce } from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +18,17 @@ function ChunkList() {
   const [chunkList, setChunkList] = useState<any>([]);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
-  const [isExpand, setIsExpand] = useState<boolean>(false);
+  // const [isExpand, setIsExpand] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentChunkInfo, setCurrentChunkInfo] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  const [form] = Form.useForm();
+
+  const { message } = App.useApp();
+
   const {
     query: { id, spaceName },
   } = useRouter();
@@ -35,6 +48,7 @@ function ChunkList() {
   };
 
   const loaderMore = async (page: number, page_size: number) => {
+    setPageSize(page_size);
     setLoading(true);
     const [_, data] = await apiInterceptors(
       getChunkList(spaceName as string, {
@@ -45,12 +59,42 @@ function ChunkList() {
     );
     setChunkList(data?.data || []);
     setLoading(false);
+    setCurrentPage(page);
   };
 
   useEffect(() => {
     spaceName && id && fetchChunks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, spaceName]);
+
+  const onSearch = async (e: any) => {
+    const content = e.target.value;
+    if (!content) {
+      return;
+    }
+    const [_, data] = await apiInterceptors(
+      getChunkList(spaceName as string, {
+        document_id: id as string,
+        page: currentPage,
+        page_size: pageSize,
+        content,
+      }),
+    );
+    setChunkList(data?.data || []);
+  };
+
+  // 添加问题
+  const { run: addQuestionRun, loading: addLoading } = useRequest(
+    async (questions: string[]) => apiInterceptors(chunkAddQuestion({ chunk_id: currentChunkInfo.id, questions })),
+    {
+      manual: true,
+      onSuccess: async () => {
+        message.success('添加成功');
+        setIsModalOpen(false);
+        await fetchChunks();
+      },
+    },
+  );
 
   return (
     <div className="flex flex-col h-full w-full px-6 pb-6">
@@ -69,33 +113,50 @@ function ChunkList() {
           },
         ]}
       />
+      <div className="flex items-center gap-4">
+        <Input
+          className="w-1/5 h-10 mb-4"
+          prefix={<SearchOutlined />}
+          placeholder={t('please_enter_the_keywords')}
+          onChange={debounce(onSearch, 300)}
+          allowClear
+        />
+      </div>
       {chunkList?.length > 0 ? (
         <div className="h-full grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4  grid-flow-row auto-rows-max gap-x-6 gap-y-10 overflow-y-auto relative">
           <Spin className="flex flex-col items-center justify-center absolute bottom-0 top-0 left-0 right-0" spinning={loading} />
-          {chunkList?.map((chunk: any) => {
+          {chunkList?.map((chunk: any, index: number) => {
             return (
               <Card
+                hoverable
                 key={chunk.id}
                 title={
-                  <Space>
-                    <DocIcon type={chunk.doc_type} />
-                    <span>{chunk.doc_name}</span>
+                  <Space className="flex justify-between">
+                    <Tag color="blue"># {index + (currentPage - 1) * DEDAULT_PAGE_SIZE}</Tag>
+                    {/* <DocIcon type={chunk.doc_type} /> */}
+                    <span className="text-sm">{chunk.doc_name}</span>
                   </Space>
                 }
                 className={cls('h-96 rounded-xl overflow-hidden', {
-                  'h-auto': isExpand,
+                  // 'h-auto': isExpand,
+                  'h-auto': true,
                 })}
+                onClick={() => {
+                  setIsModalOpen(true);
+                  setCurrentChunkInfo(chunk);
+                  console.log(chunk);
+                }}
               >
                 <p className="font-semibold">{t('Content')}:</p>
                 <p>{chunk?.content}</p>
                 <p className="font-semibold">{t('Meta_Data')}: </p>
                 <p>{chunk?.meta_info}</p>
-                <Space
+                {/* <Space
                   className="absolute bottom-0 right-0 left-0 flex items-center justify-center cursor-pointer text-[#1890ff] bg-[rgba(255,255,255,0.8)] z-30"
                   onClick={() => setIsExpand(!isExpand)}
                 >
                   <DoubleRightOutlined rotate={isExpand ? -90 : 90} /> {isExpand ? '收起' : '展开'}
-                </Space>
+                </Space> */}
               </Card>
             );
           })}
@@ -112,6 +173,105 @@ function ChunkList() {
         total={total}
         showTotal={(total) => `Total ${total} items`}
         onChange={loaderMore}
+      />
+      <MenuModal
+        modal={{
+          title: '手动录入',
+          width: '70%',
+          open: isModalOpen,
+          footer: false,
+          onCancel: () => setIsModalOpen(false),
+          afterOpenChange: (open) => {
+            if (open) {
+              form.setFieldValue(
+                'questions',
+                JSON.parse(currentChunkInfo?.questions || '[]')?.map((item: any) => ({ question: item })),
+              );
+            }
+          },
+        }}
+        items={[
+          {
+            key: 'edit',
+            label: '数据内容',
+            children: (
+              <div className="flex gap-4">
+                <Card size="small" title="主要内容" className="w-2/3 flex-wrap overflow-y-auto">
+                  <MarkDownContext>{currentChunkInfo?.content}</MarkDownContext>
+                </Card>
+                <Card size="small" title="辅助数据" className="w-1/3">
+                  <MarkDownContext>{currentChunkInfo?.meta_info}</MarkDownContext>
+                </Card>
+              </div>
+            ),
+          },
+          {
+            key: 'delete',
+            label: '添加问题',
+            children: (
+              <Card
+                size="small"
+                extra={
+                  <Button
+                    size="small"
+                    type="primary"
+                    onClick={async () => {
+                      const formVal = form.getFieldsValue();
+                      if (!formVal.questions) {
+                        message.warning('请先输入问题');
+                        return;
+                      }
+                      if (formVal.questions?.filter(Boolean).length === 0) {
+                        message.warning('请先输入问题');
+                        return;
+                      }
+                      const questions = formVal.questions?.filter(Boolean).map((item: any) => item.question);
+                      await addQuestionRun(questions);
+                    }}
+                    loading={addLoading}
+                  >
+                    保存
+                  </Button>
+                }
+              >
+                <Form form={form}>
+                  <Form.List name="questions">
+                    {(fields, { add, remove }) => (
+                      <>
+                        {fields.map(({ key, name }) => (
+                          <div key={key} className={cls('flex flex-1 items-center gap-8')}>
+                            <Form.Item label="" name={[name, 'question']} className="grow">
+                              <Input placeholder="请输入" />
+                            </Form.Item>
+                            <Form.Item>
+                              <MinusCircleOutlined
+                                onClick={() => {
+                                  remove(name);
+                                }}
+                              />
+                            </Form.Item>
+                          </div>
+                        ))}
+                        <Form.Item>
+                          <Button
+                            type="dashed"
+                            onClick={() => {
+                              add();
+                            }}
+                            block
+                            icon={<PlusOutlined />}
+                          >
+                            添加问题
+                          </Button>
+                        </Form.Item>
+                      </>
+                    )}
+                  </Form.List>
+                </Form>
+              </Card>
+            ),
+          },
+        ]}
       />
     </div>
   );

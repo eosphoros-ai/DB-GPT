@@ -114,6 +114,7 @@ export type ChunkListParams = {
   document_id?: string | number;
   page: number;
   page_size: number;
+  content?: string;
 };
 
 export type IChunk = {
@@ -156,6 +157,10 @@ export type SummaryParams = {
   conv_uid: string;
 };
 
+export interface SearchDocumentParams {
+  doc_name?: string;
+  status?: string;
+}
 export interface AddYuqueProps {
   doc_name: string;
   content: string;
@@ -163,4 +168,18 @@ export interface AddYuqueProps {
   doc_type: string;
   space_name: string;
   questions?: string[];
+}
+
+export interface RecallTestChunk {
+  chunk_id: number;
+  content: string;
+  metadata: Record<string, any>;
+  score: number;
+}
+
+export interface RecallTestProps {
+  question: string;
+  recall_score_threshold?: number;
+  recall_top_k?: number;
+  recall_retrievers: string[];
 }

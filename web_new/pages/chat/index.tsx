@@ -68,7 +68,7 @@ export const ChatContentContext = createContext<ChatContentProps>({
 
 const Chat: React.FC = () => {
   const { model, currentDialogInfo } = useContext(ChatContext);
-  const { chat, ctrl } = useChat({});
+  const { chat, ctrl } = useChat({ app_code: currentDialogInfo.app_code || '' });
 
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';

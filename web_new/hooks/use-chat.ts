@@ -1,10 +1,13 @@
 import i18n from '@/app/i18n';
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type Props = {
   queryAgentURL?: string;
+  app_code?: string;
 };
 
 type ChatParams = {
@@ -18,7 +21,7 @@ type ChatParams = {
   onError?: (content: string, error?: Error) => void;
 };
 
-const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
+const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code = '' }: Props) => {
   const [ctrl, setCtrl] = useState<AbortController>({} as AbortController);
   const chat = useCallback(
     async ({ data, chatId, onMessage, onClose, onDone, onError, ctrl }: ChatParams) => {
@@ -31,6 +34,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
       const params = {
         ...data,
         conv_uid: chatId,
+        app_code,
       };
 
       if (!params.conv_uid) {
@@ -43,6 +47,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            [HEADER_USER_ID_KEY]: getUserId() ?? '',
           },
           body: JSON.stringify(params),
           signal: ctrl.signal,

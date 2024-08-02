@@ -3,6 +3,8 @@ import { apiInterceptors, getAppInfo, getChatHistory, getDialogueList, postChatM
 import useUser from '@/hooks/use-user';
 import { IApp } from '@/types/app';
 import { ChatHistoryResponse } from '@/types/chat';
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { useRequest } from 'ahooks';
 import { Spin } from 'antd';
@@ -225,6 +227,7 @@ const MobileChat: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          [HEADER_USER_ID_KEY]: getUserId() ?? '',
         },
         signal: ctrl.current.signal,
         body: JSON.stringify(params),

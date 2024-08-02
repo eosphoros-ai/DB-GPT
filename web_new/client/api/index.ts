@@ -1,3 +1,5 @@
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 
 export type ResponseType<T = any> = {
@@ -41,6 +43,7 @@ ins.interceptors.request.use((request) => {
   if (!request.timeout) {
     request.timeout = isLongTimeApi ? 60000 : 100000;
   }
+  request.headers.set(HEADER_USER_ID_KEY, getUserId());
   return request;
 });
 

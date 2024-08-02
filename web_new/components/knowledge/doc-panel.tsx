@@ -13,16 +13,17 @@ import {
   DeleteOutlined,
   EditOutlined,
   EllipsisOutlined,
+  ExperimentOutlined,
   EyeOutlined,
   LoadingOutlined,
+  MinusCircleOutlined,
   PlusOutlined,
   SearchOutlined,
   SyncOutlined,
   ToolFilled,
   WarningOutlined,
-  MinusCircleOutlined,
 } from '@ant-design/icons';
-import { useFavicon, useRequest } from 'ahooks';
+import { useRequest } from 'ahooks';
 import { Button, Card, Divider, Dropdown, Empty, Form, Input, Modal, Select, Space, Spin, Tag, Tooltip, message, notification } from 'antd';
 import cls from 'classnames';
 import moment from 'moment';
@@ -31,6 +32,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import ArgumentsModal from './arguments-modal';
 import DocIcon from './doc-icon';
+import RecallTestModal from './RecallTestModal';
 
 interface IProps {
   space: ISpace;
@@ -83,6 +85,9 @@ export default function DocPanel(props: IProps) {
 
   const [editOpen, setEditOpen] = useState<boolean>(false);
   const [curDoc, setCurDoc] = useState<IDocument>();
+
+  // 召回测试弹窗
+  const [recallTestOpen, setRecallTestOpen] = useState<boolean>(false);
 
   const currentPageRef = useRef(1);
 
@@ -440,6 +445,9 @@ export default function DocPanel(props: IProps) {
         <Button size="middle" className="flex items-center mx-2" icon={<ToolFilled />} onClick={handleArguments}>
           Arguments
         </Button>
+        <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
+          召回测试
+        </Button>
       </Space>
       <Divider />
       <Spin spinning={isLoading}>{renderDocumentCard()}</Spin>
@@ -517,6 +525,8 @@ export default function DocPanel(props: IProps) {
           </Form.Item>
         </Form>
       </Modal>
+      {/* 召回测试弹窗 */}
+      <RecallTestModal open={recallTestOpen} setOpen={setRecallTestOpen} space={space} />
     </div>
   );
 }

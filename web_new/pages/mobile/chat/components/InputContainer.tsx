@@ -1,5 +1,7 @@
 import { apiInterceptors, clearChatHistory } from '@/client/api';
 import { ChatHistoryResponse } from '@/types/chat';
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import { ClearOutlined, LoadingOutlined, PauseCircleOutlined, RedoOutlined, SendOutlined } from '@ant-design/icons';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { useRequest } from 'ahooks';
@@ -71,6 +73,7 @@ const InputContainer: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          [HEADER_USER_ID_KEY]: getUserId() ?? '',
         },
         signal: ctrl.current.signal,
         body: JSON.stringify(params),

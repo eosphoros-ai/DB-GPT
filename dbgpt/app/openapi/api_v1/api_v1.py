@@ -400,7 +400,6 @@ async def chat_completions(
             span_type=SpanType.CHAT,
             metadata=model_to_dict(dialogue),
         ):
-
             chat: BaseChat = await get_chat_instance(dialogue)
 
         if not chat.prompt_template.stream_out:

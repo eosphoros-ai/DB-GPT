@@ -20,7 +20,7 @@ function UserBar({ onlyAvatar = false }) {
 
   const logout = () => {
     localStorage.removeItem(STORAGE_USERINFO_KEY);
-    window.location.href = `${process.env.ANT_BUC_LOGOUT_URL}&goto=${encodeURIComponent(window.location.href)}`;
+    window.location.href = `${process.env.LOGOUT_URL}&goto=${encodeURIComponent(window.location.href)}`;
   };
 
   return (

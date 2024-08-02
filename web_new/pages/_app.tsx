@@ -1,19 +1,22 @@
-import FloatHelper from '@/ant-components/layout/FloatHelper';
 import { ChatContext, ChatContextProvider } from '@/app/chat-context';
+import { addUser, apiInterceptors } from '@/client/api';
 import SideBar from '@/components/layout/side-bar';
-import { STORAGE_LANG_KEY } from '@/utils/constants/index';
+import TopProgressBar from '@/components/layout/top-progress-bar';
+import { STORAGE_LANG_KEY, STORAGE_USERINFO_KEY, STORAGE_USERINFO_VALID_TIME_KEY } from '@/utils/constants/index';
 import { App, ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
 import classNames from 'classnames';
 import type { AppProps } from 'next/app';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import FloatHelper from '@/ant-components/layout/FloatHelper';
 import '../app/i18n';
 import '../nprogress.css';
 import '../styles/globals.css';
+import Head from 'next/head';
 
 const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
   return {
@@ -54,8 +57,41 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { isMenuExpand, mode } = useContext(ChatContext);
   const { i18n } = useTranslation();
+  const [isLogin, setIsLogin] = useState(false);
 
   const router = useRouter();
+
+
+  // 登录检测
+  const handleAuth = async () => {
+    setIsLogin(false);
+    // 如果已有登录信息，直接展示首页
+    if (localStorage.getItem(STORAGE_USERINFO_KEY)) {
+      setIsLogin(true);
+      return;
+    }
+    const get_user_url = process.env.GET_USER_URL || '';
+    var user_not_login_url = process.env.LOGIN_URL;
+    // MOCK User info
+    var user = {
+          user_channel: `sys`,
+          user_no: `dbgpt`,
+          nick_name: ` `,
+        }
+    if (user) {
+        localStorage.setItem(STORAGE_USERINFO_KEY, JSON.stringify(user));
+        localStorage.setItem(STORAGE_USERINFO_VALID_TIME_KEY, Date.now().toString());
+        setIsLogin(true);
+    }
+  };
+
+  useEffect(() => {
+    handleAuth();
+  }, []);
+
+  if (!isLogin) {
+    return null;
+  }
 
   const renderContent = () => {
     if (router.pathname.includes('mobile')) {
