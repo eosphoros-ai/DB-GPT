@@ -19,6 +19,7 @@ from dbgpt.core.awel.util.parameter_util import BaseDynamicOptions, OptionValue
 from dbgpt.core.interface.serialization import Serializable
 
 from .exceptions import FlowMetadataException, FlowParameterMetadataException
+from .ui import UIComponent
 
 _TYPE_REGISTRY: Dict[str, Type] = {}
 
@@ -136,6 +137,7 @@ _OPERATOR_CATEGORY_DETAIL = {
     "agent": _CategoryDetail("Agent", "The agent operator"),
     "rag": _CategoryDetail("RAG", "The RAG operator"),
     "experimental": _CategoryDetail("EXPERIMENTAL", "EXPERIMENTAL operator"),
+    "example": _CategoryDetail("Example", "Example operator"),
 }
 
 
@@ -151,6 +153,7 @@ class OperatorCategory(str, Enum):
     AGENT = "agent"
     RAG = "rag"
     EXPERIMENTAL = "experimental"
+    EXAMPLE = "example"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -193,6 +196,7 @@ _RESOURCE_CATEGORY_DETAIL = {
     "embeddings": _CategoryDetail("Embeddings", "The embeddings resource"),
     "rag": _CategoryDetail("RAG", "The  resource"),
     "vector_store": _CategoryDetail("Vector Store", "The vector store resource"),
+    "example": _CategoryDetail("Example", "The example resource"),
 }
 
 
@@ -209,6 +213,7 @@ class ResourceCategory(str, Enum):
     EMBEDDINGS = "embeddings"
     RAG = "rag"
     VECTOR_STORE = "vector_store"
+    EXAMPLE = "example"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -343,6 +348,9 @@ class Parameter(TypeMetadata, Serializable):
     alias: Optional[List[str]] = Field(
         None, description="The alias of the parameter(Compatible with old version)"
     )
+    ui: Optional[UIComponent] = Field(
+        None, description="The UI component of the parameter"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -398,6 +406,7 @@ class Parameter(TypeMetadata, Serializable):
         label: str,
         name: str,
         type: Type,
+        is_list: bool = False,
         optional: bool = False,
         default: Optional[Union[DefaultParameterType, _MISSING_TYPE]] = _MISSING_VALUE,
         placeholder: Optional[DefaultParameterType] = None,
@@ -405,6 +414,7 @@ class Parameter(TypeMetadata, Serializable):
         options: Optional[Union[BaseDynamicOptions, List[OptionValue]]] = None,
         resource_type: ResourceType = ResourceType.INSTANCE,
         alias: Optional[List[str]] = None,
+        ui: Optional[UIComponent] = None,
     ):
         """Build the parameter from the type."""
         type_name = type.__qualname__
@@ -419,6 +429,7 @@ class Parameter(TypeMetadata, Serializable):
             name=name,
             type_name=type_name,
             type_cls=type_cls,
+            is_list=is_list,
             category=category.value,
             resource_type=resource_type,
             optional=optional,
@@ -427,6 +438,7 @@ class Parameter(TypeMetadata, Serializable):
             description=description or label,
             options=options,
             alias=alias,
+            ui=ui,
         )
 
     @classmethod
@@ -456,11 +468,12 @@ class Parameter(TypeMetadata, Serializable):
             description=data["description"],
             options=data["options"],
             value=data["value"],
+            ui=data.get("ui"),
         )
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        dict_value = model_to_dict(self, exclude={"options", "alias"})
+        dict_value = model_to_dict(self, exclude={"options", "alias", "ui"})
         if not self.options:
             dict_value["options"] = None
         elif isinstance(self.options, BaseDynamicOptions):
@@ -468,6 +481,9 @@ class Parameter(TypeMetadata, Serializable):
             dict_value["options"] = [value.to_dict() for value in values]
         else:
             dict_value["options"] = [value.to_dict() for value in self.options]
+
+        if self.ui:
+            dict_value["ui"] = self.ui.to_dict()
         return dict_value
 
     def get_dict_options(self) -> Optional[List[Dict]]:

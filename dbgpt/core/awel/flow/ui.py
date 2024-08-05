@@ -1,8 +1,9 @@
 """UI components for AWEL flow."""
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
+from dbgpt.core.interface.serialization import Serializable
 
 from .exceptions import FlowUIComponentException
 
@@ -36,77 +37,12 @@ class RefreshableMixin(BaseModel):
     )
 
 
-class UIComponent(RefreshableMixin, BaseModel):
-    """UI component."""
-
-    class UIRange(BaseModel):
-        """UI range."""
-
-        min: int | float | str | None = Field(None, description="Minimum value")
-        max: int | float | str | None = Field(None, description="Maximum value")
-        step: int | float | str | None = Field(None, description="Step value")
-        format: str | None = Field(None, description="Format")
-
-    ui_type: _UI_TYPE = Field(..., description="UI component type")
-
-    disabled: bool = Field(
-        False,
-        description="Whether the component is disabled",
-    )
-
-    def check_parameter(self, parameter_dict: Dict[str, Any]):
-        """Check parameter.
-
-        Raises:
-            FlowUIParameterException: If the parameter is invalid.
-        """
-
-    def _check_options(self, options: Dict[str, Any]):
-        """Check options."""
-        if not options:
-            raise FlowUIComponentException("options is required", self.ui_type)
-
-
 class StatusMixin(BaseModel):
     """Status mixin."""
 
     status: Optional[Literal["error", "warning"]] = Field(
         None,
         description="Status of the input",
-    )
-
-
-class RangeMixin(BaseModel):
-    """Range mixin."""
-
-    ui_range: Optional[UIComponent.UIRange] = Field(
-        None,
-        description="Range for the component",
-    )
-
-
-class InputMixin(BaseModel):
-    """Input mixin."""
-
-    class Count(BaseModel):
-        """Count."""
-
-        show: Optional[bool] = Field(
-            None,
-            description="Whether to show count",
-        )
-        max: Optional[int] = Field(
-            None,
-            description="The maximum count",
-        )
-        exceed_strategy: Optional[Literal["cut", "warning"]] = Field(
-            None,
-            description="The strategy when the count exceeds",
-        )
-
-    count: Optional[Count] = Field(
-        None,
-        description="Count configuration",
     )
 
 
@@ -126,19 +62,62 @@ class PanelEditorMixin(BaseModel):
         )
 
     editor: Optional[Editor] = Field(
-        None,
+        default_factory=lambda: PanelEditorMixin.Editor(width=800, height=400),
         description="The editor configuration",
     )
 
 
-class UICascader(StatusMixin, UIComponent):
+class UIComponent(RefreshableMixin, Serializable, BaseModel):
+    """UI component."""
+
+    class UIAttribute(StatusMixin, BaseModel):
+        """Base UI attribute."""
+
+        disabled: bool = Field(
+            False,
+            description="Whether the component is disabled",
+        )
+
+    ui_type: _UI_TYPE = Field(..., description="UI component type")
+
+    attr: Optional[UIAttribute] = Field(
+        None,
+        description="The attributes of the component",
+    )
+
+    def check_parameter(self, parameter_dict: Dict[str, Any]):
+        """Check parameter.
+
+        Raises:
+            FlowUIParameterException: If the parameter is invalid.
+        """
+
+    def _check_options(self, options: Dict[str, Any]):
+        """Check options."""
+        if not options:
+            raise FlowUIComponentException("options is required", self.ui_type)
+
+    def to_dict(self) -> Dict:
+        """Convert current metadata to json dict."""
+        return model_to_dict(self)
+
+
+class UICascader(UIComponent):
     """Cascader component."""
+
+    class UIAttribute(UIComponent.UIAttribute):
+        """Cascader attribute."""
+
+        show_search: bool = Field(
+            False,
+            description="Whether to show search input",
+        )
 
     ui_type: Literal["cascader"] = Field("cascader", frozen=True)
 
-    show_search: bool = Field(
-        False,
-        description="Whether to show search input",
+    attr: Optional[UIAttribute] = Field(
+        None,
+        description="The attributes of the component",
     )
 
     def check_parameter(self, parameter_dict: Dict[str, Any]):
@@ -163,52 +142,80 @@ class UICheckbox(UIComponent):
         self._check_options(parameter_dict.get("options", {}))
 
 
-class UIDatePicker(StatusMixin, RangeMixin, UIComponent):
+class UIDatePicker(UIComponent):
     """Date picker component."""
+
+    class UIAttribute(UIComponent.UIAttribute):
+        """Date picker attribute."""
+
+        placement: Optional[
+            Literal["topLeft", "topRight", "bottomLeft", "bottomRight"]
+        ] = Field(
+            None,
+            description="The position of the picker panel, None means bottomLeft",
+        )
 
     ui_type: Literal["date_picker"] = Field("date_picker", frozen=True)
 
-    placement: Optional[
-        Literal["topLeft", "topRight", "bottomLeft", "bottomRight"]
-    ] = Field(
+    attr: Optional[UIAttribute] = Field(
         None,
-        description="The position of the picker panel, None means bottomLeft",
+        description="The attributes of the component",
     )
 
 
-class UIInput(StatusMixin, InputMixin, UIComponent):
+class UIInput(UIComponent):
     """Input component."""
+
+    class UIAttribute(UIComponent.UIAttribute):
+        """Input attribute."""
+
+        prefix: Optional[str] = Field(
+            None,
+            description="The prefix, icon or text",
+            examples=["$", "icon:UserOutlined"],
+        )
+        suffix: Optional[str] = Field(
+            None,
+            description="The suffix, icon or text",
+            examples=["$", "icon:SearchOutlined"],
+        )
+        show_count: Optional[bool] = Field(
+            None,
+            description="Whether to show count",
+        )
+        maxlength: Optional[int] = Field(
+            None,
+            description="The maximum length of the input",
+        )
 
     ui_type: Literal["input"] = Field("input", frozen=True)
 
-    prefix: Optional[str] = Field(
+    attr: Optional[UIAttribute] = Field(
         None,
-        description="The prefix, icon or text",
-        examples=["$", "icon:UserOutlined"],
-    )
-    suffix: Optional[str] = Field(
-        None,
-        description="The suffix, icon or text",
-        examples=["$", "icon:SearchOutlined"],
+        description="The attributes of the component",
     )
 
 
 class UITextArea(PanelEditorMixin, UIInput):
     """Text area component."""
 
+    class AutoSize(BaseModel):
+        """Auto size configuration."""
+
+        min_rows: Optional[int] = Field(
+            None,
+            description="The minimum number of rows",
+        )
+        max_rows: Optional[int] = Field(
+            None,
+            description="The maximum number of rows",
+        )
+
     ui_type: Literal["text_area"] = Field("text_area", frozen=True)  # type: ignore
-    auto_size: Optional[bool] = Field(
+    autosize: Optional[Union[bool, AutoSize]] = Field(
         None,
         description="Whether the height of the textarea automatically adjusts based "
         "on the content",
-    )
-    min_rows: Optional[int] = Field(
-        None,
-        description="The minimum number of rows",
-    )
-    max_rows: Optional[int] = Field(
-        None,
-        description="The maximum number of rows",
     )
 
 
@@ -220,8 +227,24 @@ class UIAutoComplete(UIInput):
     )
 
 
-class UISlider(RangeMixin, UIComponent):
+class UISlider(UIComponent):
     """Slider component."""
+
+    class UIAttribute(UIComponent.UIAttribute):
+        """Slider attribute."""
+
+        min: Optional[int | float] = Field(
+            None,
+            description="The minimum value",
+        )
+        max: Optional[int | float] = Field(
+            None,
+            description="The maximum value",
+        )
+        step: Optional[int | float] = Field(
+            None,
+            description="The step of the slider",
+        )
 
     ui_type: Literal["slider"] = Field("slider", frozen=True)
 
@@ -229,35 +252,48 @@ class UISlider(RangeMixin, UIComponent):
         False, description="Whether to display the value in a input component"
     )
 
+    attr: Optional[UIAttribute] = Field(
+        None,
+        description="The attributes of the component",
+    )
 
-class UITimePicker(StatusMixin, UIComponent):
+
+class UITimePicker(UIComponent):
     """Time picker component."""
+
+    class UIAttribute(UIComponent.UIAttribute):
+        """Time picker attribute."""
+
+        format: Optional[str] = Field(
+            None,
+            description="The format of the time",
+            examples=["HH:mm:ss", "HH:mm"],
+        )
+        hour_step: Optional[int] = Field(
+            None,
+            description="The step of the hour input",
+        )
+        minute_step: Optional[int] = Field(
+            None,
+            description="The step of the minute input",
+        )
+        second_step: Optional[int] = Field(
+            None,
+            description="The step of the second input",
+        )
 
     ui_type: Literal["time_picker"] = Field("time_picker", frozen=True)
 
-    format: Optional[str] = Field(
+    attr: Optional[UIAttribute] = Field(
         None,
-        description="The format of the time",
-        examples=["HH:mm:ss", "HH:mm"],
-    )
-    hour_step: Optional[int] = Field(
-        None,
-        description="The step of the hour input",
-    )
-    minute_step: Optional[int] = Field(
-        None,
-        description="The step of the minute input",
-    )
-    second_step: Optional[int] = Field(
-        None,
-        description="The step of the second input",
+        description="The attributes of the component",
     )
 
 
-class UITreeSelect(StatusMixin, UIComponent):
+class UITreeSelect(UICascader):
     """Tree select component."""
 
-    ui_type: Literal["tree_select"] = Field("tree_select", frozen=True)
+    ui_type: Literal["tree_select"] = Field("tree_select", frozen=True)  # type: ignore
 
     def check_parameter(self, parameter_dict: Dict[str, Any]):
         """Check parameter."""
@@ -271,8 +307,16 @@ class UITreeSelect(StatusMixin, UIComponent):
             )
 
 
-class UIUpload(StatusMixin, UIComponent):
+class UIUpload(UIComponent):
     """Upload component."""
+
+    class UIAttribute(UIComponent.UIAttribute):
+        """Upload attribute."""
+
+        max_count: Optional[int] = Field(
+            None,
+            description="The maximum number of files that can be uploaded",
+        )
 
     ui_type: Literal["upload"] = Field("upload", frozen=True)
 
@@ -280,10 +324,7 @@ class UIUpload(StatusMixin, UIComponent):
         None,
         description="The maximum size of the file, in bytes",
     )
-    max_count: Optional[int] = Field(
-        None,
-        description="The maximum number of files that can be uploaded",
-    )
+
     file_types: Optional[List[str]] = Field(
         None,
         description="The file types that can be accepted",
@@ -345,4 +386,14 @@ class UICodeEditor(UITextArea):
     language: Optional[str] = Field(
         "python",
         description="The language of the code",
+    )
+
+
+class DefaultUITextArea(UITextArea):
+    """Default text area component."""
+
+    autosize: Union[bool, UITextArea.AutoSize] = Field(
+        default_factory=lambda: UITextArea.AutoSize(min_rows=2, max_rows=40),
+        description="Whether the height of the textarea automatically adjusts based "
+        "on the content",
     )

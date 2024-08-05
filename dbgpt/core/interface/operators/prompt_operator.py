@@ -1,4 +1,5 @@
 """The prompt operator."""
+
 from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
@@ -18,6 +19,7 @@ from dbgpt.core.awel.flow import (
     ResourceCategory,
     ViewMetadata,
     register_resource,
+    ui,
 )
 from dbgpt.core.interface.message import BaseMessage
 from dbgpt.core.interface.operators.llm_operator import BaseLLM
@@ -48,6 +50,7 @@ from dbgpt.util.i18n_utils import _
             optional=True,
             default="You are a helpful AI Assistant.",
             description=_("The system message."),
+            ui=ui.DefaultUITextArea(),
         ),
         Parameter.build_from(
             label=_("Message placeholder"),
@@ -65,6 +68,7 @@ from dbgpt.util.i18n_utils import _
             default="{user_input}",
             placeholder="{user_input}",
             description=_("The human message."),
+            ui=ui.DefaultUITextArea(),
         ),
     ],
 )

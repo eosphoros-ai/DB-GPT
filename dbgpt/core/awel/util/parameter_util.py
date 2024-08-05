@@ -2,7 +2,7 @@
 
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field, model_validator
 from dbgpt.core.interface.serialization import Serializable
@@ -16,6 +16,9 @@ class OptionValue(Serializable, BaseModel):
     label: str = Field(..., description="The label of the option")
     name: str = Field(..., description="The name of the option")
     value: Any = Field(..., description="The value of the option")
+    children: Optional[List["OptionValue"]] = Field(
+        None, description="The children of the option"
+    )
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""

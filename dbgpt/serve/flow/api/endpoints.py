@@ -209,7 +209,7 @@ async def query_page(
 
 
 @router.get("/nodes", dependencies=[Depends(check_api_key)])
-async def get_nodes() -> Result[List[Union[ViewMetadata, ResourceMetadata]]]:
+async def get_nodes():
     """Get the operator or resource nodes
 
     Returns:
@@ -218,7 +218,8 @@ async def get_nodes() -> Result[List[Union[ViewMetadata, ResourceMetadata]]]:
     """
     from dbgpt.core.awel.flow.base import _OPERATOR_REGISTRY
 
-    return Result.succ(_OPERATOR_REGISTRY.metadata_list())
+    metadata_list = _OPERATOR_REGISTRY.metadata_list()
+    return Result.succ(metadata_list)
 
 
 def init_endpoints(system_app: SystemApp) -> None:
