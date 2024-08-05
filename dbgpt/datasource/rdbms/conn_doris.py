@@ -100,7 +100,7 @@ class DorisConnector(RDBMSConnector):
             for field in fields
         ]
 
-    def get_fields(self, table_name) -> List[Tuple]:
+    def get_fields(self, table_name, db_name=None) -> List[Tuple]:
         """Get column fields about specified table."""
         cursor = self.get_session().execute(
             text(
