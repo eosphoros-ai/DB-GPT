@@ -11,7 +11,7 @@ from dbgpt.util import PaginationResult
 
 from ..config import APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
-from .schemas import ServeRequest, ServerResponse
+from .schemas import RefreshNodeRequest, ServeRequest, ServerResponse
 
 router = APIRouter()
 
@@ -220,6 +220,23 @@ async def get_nodes():
 
     metadata_list = _OPERATOR_REGISTRY.metadata_list()
     return Result.succ(metadata_list)
+
+
+@router.post("/nodes/refresh", dependencies=[Depends(check_api_key)])
+async def refresh_nodes(refresh_request: RefreshNodeRequest):
+    """Refresh the operator or resource nodes
+
+    Returns:
+        Result[None]: The response
+    """
+    from dbgpt.core.awel.flow.base import _OPERATOR_REGISTRY
+
+    new_metadata = _OPERATOR_REGISTRY.refresh(
+        key=refresh_request.id,
+        is_operator=refresh_request.flow_type == "operator",
+        request=refresh_request.refresh,
+    )
+    return Result.succ(new_metadata)
 
 
 def init_endpoints(system_app: SystemApp) -> None:
