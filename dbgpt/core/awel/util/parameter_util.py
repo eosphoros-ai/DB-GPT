@@ -10,6 +10,27 @@ from dbgpt.core.interface.serialization import Serializable
 _DEFAULT_DYNAMIC_REGISTRY = {}
 
 
+class RefreshOptionDependency(BaseModel):
+    """The refresh dependency."""
+
+    name: str = Field(..., description="The name of the refresh dependency")
+    value: Optional[Any] = Field(
+        None, description="The value of the refresh dependency"
+    )
+    has_value: bool = Field(
+        False, description="Whether the refresh dependency has value"
+    )
+
+
+class RefreshOptionRequest(BaseModel):
+    """The refresh option request."""
+
+    name: str = Field(..., description="The name of parameter to refresh")
+    depends: Optional[List[RefreshOptionDependency]] = Field(
+        None, description="The depends of the refresh config"
+    )
+
+
 class OptionValue(Serializable, BaseModel):
     """The option value of the parameter."""
 
@@ -28,24 +49,31 @@ class OptionValue(Serializable, BaseModel):
 class BaseDynamicOptions(Serializable, BaseModel, ABC):
     """The base dynamic options."""
 
-    @abstractmethod
     def option_values(self) -> List[OptionValue]:
         """Return the option values of the parameter."""
+        return self.refresh(None)
+
+    @abstractmethod
+    def refresh(self, request: Optional[RefreshOptionRequest]) -> List[OptionValue]:
+        """Refresh the dynamic options."""
 
 
 class FunctionDynamicOptions(BaseDynamicOptions):
     """The function dynamic options."""
 
-    func: Callable[[], List[OptionValue]] = Field(
+    func: Callable[..., List[OptionValue]] = Field(
         ..., description="The function to generate the dynamic options"
     )
     func_id: str = Field(
         ..., description="The unique id of the function to generate the dynamic options"
     )
 
-    def option_values(self) -> List[OptionValue]:
-        """Return the option values of the parameter."""
-        return self.func()
+    def refresh(self, request: Optional[RefreshOptionRequest]) -> List[OptionValue]:
+        """Refresh the dynamic options."""
+        if not request or not request.depends:
+            return self.func()
+        kwargs = {dep.name: dep.value for dep in request.depends if dep.has_value}
+        return self.func(**kwargs)
 
     @model_validator(mode="before")
     @classmethod
