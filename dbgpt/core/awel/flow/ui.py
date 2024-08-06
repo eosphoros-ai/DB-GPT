@@ -8,6 +8,7 @@ from dbgpt.core.interface.serialization import Serializable
 from .exceptions import FlowUIComponentException
 
 _UI_TYPE = Literal[
+    "select",
     "cascader",
     "checkbox",
     "date_picker",
@@ -100,6 +101,38 @@ class UIComponent(RefreshableMixin, Serializable, BaseModel):
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
         return model_to_dict(self)
+
+
+class UISelect(UIComponent):
+    """Select component."""
+
+    class UIAttribute(UIComponent.UIAttribute):
+        """Select attribute."""
+
+        show_search: bool = Field(
+            False,
+            description="Whether to show search input",
+        )
+        mode: Optional[Literal["tags"]] = Field(
+            None,
+            description="The mode of the select",
+        )
+        placement: Optional[
+            Literal["topLeft", "topRight", "bottomLeft", "bottomRight"]
+        ] = Field(
+            None,
+            description="The position of the picker panel, None means bottomLeft",
+        )
+
+    ui_type: Literal["select"] = Field("select", frozen=True)
+    attr: Optional[UIAttribute] = Field(
+        None,
+        description="The attributes of the component",
+    )
+
+    def check_parameter(self, parameter_dict: Dict[str, Any]):
+        """Check parameter."""
+        self._check_options(parameter_dict.get("options", {}))
 
 
 class UICascader(UIComponent):
