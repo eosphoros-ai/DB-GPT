@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import (
+    FunctionDynamicOptions,
     IOField,
     OperatorCategory,
     OptionValue,
@@ -14,6 +15,59 @@ from dbgpt.core.awel.flow import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ExampleFlowSelectOperator(MapOperator[str, str]):
+    """An example flow operator that includes a select as parameter."""
+
+    metadata = ViewMetadata(
+        label="Example Flow Select",
+        name="example_flow_select",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes a select as parameter.",
+        parameters=[
+            Parameter.build_from(
+                "Fruits Selector",
+                "fruits",
+                type=str,
+                optional=True,
+                default=None,
+                placeholder="Select the fruits",
+                description="The fruits you like.",
+                options=[
+                    OptionValue(label="Apple", name="apple", value="apple"),
+                    OptionValue(label="Banana", name="banana", value="banana"),
+                    OptionValue(label="Orange", name="orange", value="orange"),
+                    OptionValue(label="Pear", name="pear", value="pear"),
+                ],
+                ui=ui.UISelect(attr=ui.UISelect.UIAttribute(show_search=True)),
+            )
+        ],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Fruits",
+                "fruits",
+                str,
+                description="User's favorite fruits.",
+            )
+        ],
+    )
+
+    def __init__(self, fruits: Optional[str] = None, **kwargs):
+        super().__init__(**kwargs)
+        self.fruits = fruits
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the fruits."""
+        return "Your name is %s, and you like %s." % (user_name, self.fruits)
 
 
 class ExampleFlowCascaderOperator(MapOperator[str, str]):
@@ -580,4 +634,86 @@ class ExampleFlowTreeSelectOperator(MapOperator[str, str]):
         return "Your name is %s, and your address is %s." % (
             user_name,
             full_address_str,
+        )
+
+
+def get_recent_3_times(time_interval: int = 1) -> List[OptionValue]:
+    """Get the recent times."""
+    from datetime import datetime, timedelta
+
+    now = datetime.now()
+    recent_times = [now - timedelta(hours=time_interval * i) for i in range(3)]
+    formatted_times = [time.strftime("%Y-%m-%d %H:%M:%S") for time in recent_times]
+    option_values = [
+        OptionValue(label=formatted_time, name=f"time_{i + 1}", value=formatted_time)
+        for i, formatted_time in enumerate(formatted_times)
+    ]
+
+    return option_values
+
+
+class ExampleFlowRefreshOperator(MapOperator[str, str]):
+    """An example flow operator that includes a refresh option."""
+
+    metadata = ViewMetadata(
+        label="Example Refresh Operator",
+        name="example_refresh_operator",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes a refresh option.",
+        parameters=[
+            Parameter.build_from(
+                "Time Interval",
+                "time_interval",
+                type=int,
+                optional=True,
+                default=1,
+                placeholder="Set the time interval",
+                description="The time interval to fetch the times",
+            ),
+            Parameter.build_from(
+                "Recent Time",
+                "recent_time",
+                type=str,
+                optional=True,
+                default=None,
+                placeholder="Select the recent time",
+                description="The recent time to choose.",
+                options=FunctionDynamicOptions(func=get_recent_3_times),
+                ui=ui.UISelect(
+                    refresh=True,
+                    refresh_depends=["time_interval"],
+                    attr=ui.UISelect.UIAttribute(show_search=True),
+                ),
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Time",
+                "time",
+                str,
+                description="User's selected time.",
+            )
+        ],
+    )
+
+    def __init__(
+        self, time_interval: int = 1, recent_time: Optional[str] = None, **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.time_interval = time_interval
+        self.recent_time = recent_time
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the time."""
+        return "Your name is %s, and you choose the time %s." % (
+            user_name,
+            self.recent_time,
         )
