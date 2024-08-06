@@ -1,12 +1,11 @@
-"""Agent Plans Vis Protocol."""
-
+"""VisDbgptsFlow."""
 from ..base import Vis
 
 
 class VisDbgptsFlow(Vis):
-    """DBGPts Flow Vis Protocol."""
+    """VisDbgptsFlow."""
 
     @classmethod
-    def vis_tag(cls) -> str:
-        """Return the tag name of the vis protocol module."""
+    def vis_tag(cls):
+        """VIS Flow."""
         return "dbgpts-flow"

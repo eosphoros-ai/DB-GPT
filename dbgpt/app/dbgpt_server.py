@@ -91,6 +91,16 @@ def mount_routers(app: FastAPI):
 
     app.include_router(knowledge_router, tags=["Knowledge"])
 
+    from dbgpt.app.openapi.open_api_v1 import router as openapi_v1
+
+    app.include_router(openapi_v1, prefix="/openapi", tags=["OpenApi"])
+
+    from dbgpt.serve.agent.app.recommend_question.controller import (
+        router as recommend_question_v1,
+    )
+
+    app.include_router(recommend_question_v1, prefix="/api", tags=["RecommendQuestion"])
+
 
 def mount_static_files(app: FastAPI):
     os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
@@ -266,6 +276,18 @@ def run_webserver(param: WebServerParameters = None):
         },
     ):
         param = initialize_app(param)
+
+        # TODO
+        from dbgpt.serve.agent.agents.expand.app_link_assisant_agent import (  # noqa: F401
+            LinkAppAssistantAgent,
+        )
+        from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (  # noqa: F401
+            StartAppAssistantAgent,
+        )
+        from dbgpt.serve.agent.agents.expand.intent_recognition_agent import (  # noqa: F401
+            IntentRecognitionAgent,
+        )
+
         run_uvicorn(param)
 
 

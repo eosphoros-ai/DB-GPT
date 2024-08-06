@@ -31,6 +31,8 @@ class ConnectConfigEntity(Model):
     db_pwd = Column(String(255), nullable=True, comment="db password")
     comment = Column(Text, nullable=True, comment="db comment")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
+    user_id = Column(String(128), index=True, nullable=True, comment="User id")
+    user_name = Column(String(128), index=True, nullable=True, comment="User name")
 
     __table_args__ = (
         UniqueConstraint("db_name", name="uk_db"),
@@ -58,7 +60,8 @@ class ConnectConfigDao(BaseDao):
         db_port: int,
         db_user: str,
         db_pwd: str,
-        comment: str = "",
+        comment: Optional[str] = None,
+        user_id: Optional[str] = None,
     ):
         """Add db connect info.
 
@@ -80,8 +83,8 @@ class ConnectConfigDao(BaseDao):
                 """
                 INSERT INTO connect_config (
                     db_name, db_type, db_path, db_host, db_port, db_user, db_pwd,
-                    comment) VALUES (:db_name, :db_type, :db_path, :db_host, :db_port
-                    , :db_user, :db_pwd, :comment
+                    comment, user_id) VALUES (:db_name, :db_type, :db_path, :db_host,
+                    :db_port, :db_user, :db_pwd, :comment, :user_id
                 )
             """
             )
@@ -94,9 +97,50 @@ class ConnectConfigDao(BaseDao):
                 "db_port": db_port,
                 "db_user": db_user,
                 "db_pwd": db_pwd,
-                "comment": comment,
+                "comment": comment if comment else "",
+                "user_id": user_id if user_id else "",
             }
             session.execute(insert_statement, params)
+            session.commit()
+            session.close()
+        except Exception as e:
+            logger.warning("add db connect info error！" + str(e))
+
+    def add_file_db(
+        self,
+        db_name,
+        db_type,
+        db_path: str,
+        comment: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ):
+        """Add file db connect info."""
+        try:
+            session = self.get_raw_session()
+            insert_statement = text(
+                """
+                INSERT INTO connect_config(
+                    db_name, db_type, db_path, db_host, db_port, db_user, db_pwd,
+                    comment, user_id) VALUES (
+                    :db_name, :db_type, :db_path, :db_host, :db_port, :db_user, :db_pwd
+                    , :comment, :user_id
+                )
+            """
+            )
+            params = {
+                "db_name": db_name,
+                "db_type": db_type,
+                "db_path": db_path,
+                "db_host": "",
+                "db_port": 0,
+                "db_user": "",
+                "db_pwd": "",
+                "comment": comment if comment else "",
+                "user_id": user_id if user_id else "",
+            }
+
+            session.execute(insert_statement, params)
+
             session.commit()
             session.close()
         except Exception as e:
@@ -139,38 +183,6 @@ class ConnectConfigDao(BaseDao):
             return True
         raise ValueError(f"{db_name} not have config info!")
 
-    def add_file_db(self, db_name, db_type, db_path: str, comment: str = ""):
-        """Add file db connect info."""
-        try:
-            session = self.get_raw_session()
-            insert_statement = text(
-                """
-                INSERT INTO connect_config(
-                    db_name, db_type, db_path, db_host, db_port, db_user, db_pwd,
-                    comment) VALUES (
-                    :db_name, :db_type, :db_path, :db_host, :db_port, :db_user, :db_pwd
-                    , :comment
-                )
-            """
-            )
-            params = {
-                "db_name": db_name,
-                "db_type": db_type,
-                "db_path": db_path,
-                "db_host": "",
-                "db_port": 0,
-                "db_user": "",
-                "db_pwd": "",
-                "comment": comment,
-            }
-
-            session.execute(insert_statement, params)
-
-            session.commit()
-            session.close()
-        except Exception as e:
-            logger.warning("add db connect info error！" + str(e))
-
     def get_db_config(self, db_name):
         """Return db connect info by name."""
         session = self.get_raw_session()
@@ -199,14 +211,17 @@ class ConnectConfigDao(BaseDao):
             row_dict[field] = row_1[i]
         return row_dict
 
-    def get_db_list(self):
+    def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
         """Get db list."""
         session = self.get_raw_session()
-        result = session.execute(text("SELECT *  FROM connect_config"))
-
-        fields = [field[0] for field in result.cursor.description]
+        if db_name:
+            sql = f"SELECT * FROM connect_config where (user_id='{user_id}' or user_id='' or user_id IS NULL) and db_name='{db_name}'"  # noqa
+        else:
+            sql = f"SELECT * FROM connect_config where user_id='{user_id}' or user_id='' or user_id IS NULL"  # noqa
+        result = session.execute(text(sql))
+        fields = [field[0] for field in result.cursor.description]  # type: ignore
         data = []
-        for row in result.cursor.fetchall():
+        for row in result.cursor.fetchall():  # type: ignore
             row_dict = {}
             for i, field in enumerate(fields):
                 row_dict[field] = row[i]

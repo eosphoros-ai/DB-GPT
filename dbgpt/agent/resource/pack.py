@@ -5,7 +5,7 @@ together.
 """
 
 import dataclasses
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .base import Resource, ResourceParameters, ResourceType
 
@@ -55,11 +55,12 @@ class ResourcePack(Resource[PackResourceParameters]):
         question: Optional[str] = None,
         resource_name: Optional[str] = None,
         **kwargs,
-    ) -> str:
+    ) -> Tuple[str, Optional[Dict]]:
         """Get the prompt."""
         prompt_list = []
+        info_map = {}
         for name, resource in self._resources.items():
-            prompt = await resource.get_prompt(
+            prompt, resource_reference = await resource.get_prompt(
                 lang=lang,
                 prompt_type=prompt_type,
                 question=question,
@@ -67,7 +68,9 @@ class ResourcePack(Resource[PackResourceParameters]):
                 **kwargs,
             )
             prompt_list.append(prompt)
-        return self._prompt_separator.join(prompt_list)
+            if resource_reference is not None:
+                info_map.update(resource_reference)
+        return self._prompt_separator.join(prompt_list), info_map
 
     def append(self, resource: Resource, overwrite: bool = False):
         """Append a resource to the pack."""

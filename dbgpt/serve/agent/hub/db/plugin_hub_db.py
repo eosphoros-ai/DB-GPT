@@ -13,9 +13,8 @@ from sqlalchemy import (
     func,
 )
 
+from dbgpt.serve.agent.hub.model.model import PluginHubVO
 from dbgpt.storage.metadata import BaseDao, Model
-
-from ..model import PluginHubVO
 
 # TODO We should consider that the production environment does not have permission to execute the DDL
 char_set_sql = DDL("ALTER TABLE plugin_hub CONVERT TO CHARACTER SET utf8mb4")
@@ -36,7 +35,10 @@ class PluginHubEntity(Model):
     storage_url = Column(String(255), comment="plugin download url")
     download_param = Column(String(255), comment="plugin download param")
     gmt_created = Column(
-        DateTime, default=datetime.utcnow, comment="plugin upload time"
+        DateTime,
+        default=datetime.utcnow,
+        comment="plugin upload time",
+        name="created_at",
     )
     installed = Column(Integer, default=False, comment="plugin already installed count")
 

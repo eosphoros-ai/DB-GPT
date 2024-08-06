@@ -3,9 +3,8 @@ from typing import List
 
 from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint, func
 
+from dbgpt.serve.agent.hub.model.model import MyPluginVO
 from dbgpt.storage.metadata import BaseDao, Model
-
-from ..model import MyPluginVO
 
 
 class MyPluginEntity(Model):
@@ -26,7 +25,10 @@ class MyPluginEntity(Model):
     )
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(
-        DateTime, default=datetime.utcnow, comment="plugin install time"
+        DateTime,
+        default=datetime.utcnow,
+        comment="plugin install time",
+        name="created_at",
     )
     UniqueConstraint("user_code", "name", name="uk_name")
 

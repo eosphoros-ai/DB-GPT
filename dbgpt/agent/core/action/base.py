@@ -45,6 +45,10 @@ class ActionOutput(BaseModel):
     action: Optional[str] = None
     thoughts: Optional[str] = None
     observations: Optional[str] = None
+    have_retry: Optional[bool] = True
+    ask_user: Optional[bool] = False
+    # 如果当前agent能确定下个发言者，需要在这里指定
+    next_speakers: Optional[List[str]] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -101,7 +105,7 @@ class Action(ABC, Generic[T]):
 
     def _create_example(
         self,
-        model_type: Union[Type[BaseModel], List[Type[BaseModel]]],
+        model_type,
     ) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         if model_type is None:
             return None
@@ -134,9 +138,18 @@ class Action(ABC, Generic[T]):
             )
 
     @property
-    def out_model_type(self) -> Optional[Union[Type[T], List[Type[T]]]]:
+    def out_model_type(self):
         """Return the output model type."""
         return None
+
+    @property
+    def ai_out_schema_json(self) -> Optional[str]:
+        """Return the AI output json schema."""
+        if self.out_model_type is None:
+            return None
+        return json.dumps(
+            self._create_example(self.out_model_type), indent=2, ensure_ascii=False
+        )
 
     @property
     def ai_out_schema(self) -> Optional[str]:

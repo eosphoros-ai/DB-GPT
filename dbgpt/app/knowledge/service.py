@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from datetime import datetime
+from typing import List
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
@@ -20,6 +21,7 @@ from dbgpt.app.knowledge.request.request import (
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
     DocumentQueryResponse,
+    DocumentResponse,
     SpaceQueryResponse,
 )
 from dbgpt.component import ComponentType
@@ -182,23 +184,36 @@ class KnowledgeService:
         Returns:
             - res DocumentQueryResponse
         """
-
-        total = None
-        page = request.page
+        res = DocumentQueryResponse()
         if request.doc_ids and len(request.doc_ids) > 0:
-            data = knowledge_document_dao.documents_by_ids(request.doc_ids)
+            documents: List[
+                KnowledgeDocumentEntity
+            ] = knowledge_document_dao.documents_by_ids(request.doc_ids)
+            res.data = [item.to_dict() for item in documents]
         else:
-            query = KnowledgeDocumentEntity(
-                doc_name=request.doc_name,
-                doc_type=request.doc_type,
-                space=space,
-                status=request.status,
-            )
-            data = knowledge_document_dao.get_knowledge_documents(
-                query, page=request.page, page_size=request.page_size
-            )
-            total = knowledge_document_dao.get_knowledge_documents_count(query)
-        return DocumentQueryResponse(data=data, total=total, page=page)
+            query = {
+                "doc_type": request.doc_type,
+                "space_id": space,
+                "status": request.status,
+            }
+            if request.doc_name:
+                docs = knowledge_document_dao.get_list({"space_id": space})
+                docs = [DocumentResponse.serve_to_response(doc) for doc in docs]
+                res.data = [
+                    doc
+                    for doc in docs
+                    if doc.doc_name and request.doc_name in doc.doc_name
+                ]
+            else:
+                result = knowledge_document_dao.get_list_page(
+                    query, page=request.page, page_size=request.page_size
+                )
+                docs = result.items
+                docs = [DocumentResponse.serve_to_response(doc) for doc in docs]
+                res.data = docs
+                res.total = result.total_count
+                res.page = result.page
+        return res
 
     async def document_summary(self, request: DocumentSummaryRequest):
         """get document summary
@@ -258,6 +273,59 @@ class KnowledgeService:
         return await self._llm_extract_summary(
             summary, request.conv_uid, request.model_name
         )
+
+    def get_space_context_by_space_id(self, space_id):
+        """get space contect
+        Args:
+           - space_id: space name
+        """
+        spaces = self.get_knowledge_space_by_ids([space_id])
+        if len(spaces) != 1:
+            raise Exception(
+                f"have not found {space_id} space or found more than one space called {space_id}"
+            )
+        space = spaces[0]
+        if space.context is not None:
+            return json.loads(spaces[0].context)
+        return None
+
+    def get_knowledge_space_by_ids(self, ids):
+        """
+        get knowledge space by ids.
+        """
+        return knowledge_space_dao.get_knowledge_space_by_ids(ids)
+
+    def get_knowledge_space(self, request: KnowledgeSpaceRequest):
+        """get knowledge space
+        Args:
+           - request: KnowledgeSpaceRequest
+        """
+        query = KnowledgeSpaceEntity(
+            name=request.name,
+            vector_type=request.vector_type,
+            owner=request.owner,
+            user_id=request.user_id,
+        )
+        spaces = knowledge_space_dao.get_knowledge_space(query)
+        # 获取所有space名称
+        space_ids = [space.id for space in spaces]
+        docs_count = knowledge_document_dao.get_knowledge_documents_count_bulk_by_ids(
+            space_ids
+        )
+        responses = []
+        for space in spaces:
+            res = SpaceQueryResponse()
+            res.id = space.id
+            res.name = space.name
+            res.vector_type = space.vector_type
+            res.desc = space.desc
+            res.owner = space.owner
+            res.gmt_created = space.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+            res.gmt_modified = space.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+            res.context = space.context
+            res.docs = docs_count.get(space.id, 0)
+            responses.append(res)
+        return responses
 
     def update_knowledge_space(
         self, space_id: int, space_request: KnowledgeSpaceRequest

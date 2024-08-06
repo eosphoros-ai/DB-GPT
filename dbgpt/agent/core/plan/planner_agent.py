@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from dbgpt._private.pydantic import Field
 
 from ...resource.pack import ResourcePack
-from ..agent import AgentMessage
+from ..agent import Agent, AgentMessage
 from ..base_agent import ConversableAgent
 from ..plan.plan_action import PlanAction
 from ..profile import DynConfig, ProfileConfig
@@ -143,7 +143,11 @@ assistants:[
         super().__init__(**kwargs)
         self._init_actions([PlanAction])
 
-    def _init_reply_message(self, received_message: AgentMessage):
+    def _init_reply_message(
+        self,
+        received_message: AgentMessage,
+        rely_messages: Optional[List[AgentMessage]] = None,
+    ) -> AgentMessage:
         reply_message = super()._init_reply_message(received_message)
         reply_message.context = {
             "agents": "\n".join([f"- {item.role}:{item.desc}" for item in self.agents]),
@@ -160,16 +164,12 @@ assistants:[
         self.resource = ResourcePack(resources)
         return self
 
-    async def generate_resource_variables(
-        self, question: Optional[str] = None
+    def prepare_act_param(
+        self,
+        received_message: Optional[AgentMessage],
+        sender: Agent,
+        rely_messages: Optional[List[AgentMessage]] = None,
     ) -> Dict[str, Any]:
-        """Generate the resource variables."""
-        out_schema: Optional[str] = None
-        if self.actions and len(self.actions) > 0:
-            out_schema = self.actions[0].ai_out_schema
-        return {"out_schema": out_schema}
-
-    def prepare_act_param(self) -> Dict[str, Any]:
         """Prepare the parameters for the act method."""
         return {
             "context": self.not_null_agent_context,

@@ -11,6 +11,7 @@ from sqlalchemy import (
     desc,
     func,
 )
+from sqlalchemy.orm import Query
 
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -68,6 +69,18 @@ class GptsConversationsDao(BaseDao):
             gpts_conv = gpts_conv.filter(GptsConversationsEntity.conv_id == conv_id)
         result = gpts_conv.first()
         session.close()
+        return result
+
+    def get_like_conv_id_asc(self, conv_id: str):
+        session = self.get_raw_session()
+        try:
+            gpts_conv_qry: Query = session.query(GptsConversationsEntity)
+            gpts_conv_qry: Query = gpts_conv_qry.filter(
+                GptsConversationsEntity.conv_id.like(f"{conv_id}%")
+            ).order_by(GptsConversationsEntity.id.asc())
+            result = gpts_conv_qry.all()
+        finally:
+            session.close()
         return result
 
     def get_convs(self, user_code: str = None, system_app: str = None):

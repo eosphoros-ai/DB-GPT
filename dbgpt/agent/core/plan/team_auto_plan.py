@@ -153,11 +153,13 @@ class AutoPlanChatManager(ManagerAgent):
 
     async def act(
         self,
-        message: Optional[str],
-        sender: Optional[Agent] = None,
+        message: AgentMessage,
+        sender: Agent,
         reviewer: Optional[Agent] = None,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
         **kwargs,
-    ) -> Optional[ActionOutput]:
+    ) -> ActionOutput:
         """Perform an action based on the received message."""
         if not sender:
             return ActionOutput(
@@ -165,7 +167,7 @@ class AutoPlanChatManager(ManagerAgent):
                 content="The sender cannot be empty!",
             )
         speaker: Agent = sender
-        final_message = message
+        final_message = message.content
         for i in range(self.max_round):
             if not self.memory:
                 return ActionOutput(

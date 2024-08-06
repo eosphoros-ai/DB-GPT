@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Dict, Generic, Iterator, List, Optional, TypeVar, Union
 
+from sqlalchemy import desc
 from sqlalchemy.orm.session import Session
 
 from dbgpt._private.pydantic import model_to_dict
@@ -232,7 +233,11 @@ class BaseDao(Generic[T, REQ, RES]):
         return result_list
 
     def get_list_page(
-        self, query_request: QUERY_SPEC, page: int, page_size: int
+        self,
+        query_request: QUERY_SPEC,
+        page: int,
+        page_size: int,
+        desc_order_column: Optional[str] = None,
     ) -> PaginationResult[RES]:
         """Get a page of entity objects.
 
@@ -245,7 +250,7 @@ class BaseDao(Generic[T, REQ, RES]):
             PaginationResult: The pagination result.
         """
         with self.session() as session:
-            query = self._create_query_object(session, query_request)
+            query = self._create_query_object(session, query_request, desc_order_column)
             total_count = query.count()
             items = query.offset((page - 1) * page_size).limit(page_size)
             res_items = [self.to_response(item) for item in items]
@@ -260,7 +265,10 @@ class BaseDao(Generic[T, REQ, RES]):
             )
 
     def _create_query_object(
-        self, session: Session, query_request: QUERY_SPEC
+        self,
+        session: Session,
+        query_request: QUERY_SPEC,
+        desc_order_column: Optional[str] = None,
     ) -> BaseQuery:
         """Create a query object.
 
@@ -282,4 +290,7 @@ class BaseDao(Generic[T, REQ, RES]):
                 if isinstance(value, (list, tuple, dict, set)):
                     continue
                 query = query.filter(getattr(model_cls, key) == value)
+
+        if desc_order_column:
+            query = query.order_by(desc(getattr(model_cls, desc_order_column)))
         return query  # type: ignore

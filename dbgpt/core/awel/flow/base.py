@@ -135,7 +135,6 @@ _OPERATOR_CATEGORY_DETAIL = {
     "common": _CategoryDetail("Common", "The common operator"),
     "agent": _CategoryDetail("Agent", "The agent operator"),
     "rag": _CategoryDetail("RAG", "The RAG operator"),
-    "experimental": _CategoryDetail("EXPERIMENTAL", "EXPERIMENTAL operator"),
 }
 
 

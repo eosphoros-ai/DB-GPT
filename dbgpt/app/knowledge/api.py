@@ -211,12 +211,13 @@ async def space_config() -> Result[KnowledgeConfigResponse]:
 
 @router.post("/knowledge/{space_name}/document/list")
 def document_list(space_name: str, query_request: DocumentQueryRequest):
-    print(f"/document/list params: {space_name}, {query_request}")
+    logger.info(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
             knowledge_space_service.get_knowledge_documents(space_name, query_request)
         )
     except Exception as e:
+        logger.exception(f"document list error!{str(e)}")
         return Result.failed(code="E000X", msg=f"document list error {e}")
 
 
@@ -343,6 +344,7 @@ async def batch_document_sync(
         # )
         return Result.succ({"tasks": doc_ids})
     except Exception as e:
+        logger.exception("document sync batch error!")
         return Result.failed(code="E000X", msg=f"document sync batch error {e}")
 
 

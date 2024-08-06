@@ -71,8 +71,12 @@ class DataScientistAgent(ConversableAgent):
         super().__init__(**kwargs)
         self._init_actions([ChartAction])
 
-    def _init_reply_message(self, received_message: AgentMessage) -> AgentMessage:
-        reply_message = super()._init_reply_message(received_message)
+    def _init_reply_message(
+        self,
+        received_message: AgentMessage,
+        rely_messages: Optional[List[AgentMessage]] = None,
+    ) -> AgentMessage:
+        reply_message = super()._init_reply_message(received_message, rely_messages)
         reply_message.context = {
             "display_type": self.actions[0].render_prompt(),
             "dialect": self.database.dialect,
