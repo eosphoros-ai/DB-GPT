@@ -222,7 +222,7 @@ class AppModel(BaseModel):
 class SpaceModel(BaseModel):
     """Space model."""
 
-    id: str = Field(
+    id: int = Field(
         default=None,
         description="space id",
     )
