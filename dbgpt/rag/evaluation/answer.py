@@ -17,7 +17,7 @@ from dbgpt.core.interface.llm import LLMClient, ModelRequest
 logger = logging.getLogger(__name__)
 
 ANSWER_RELEVANCY_EVALUATE_PROMPT_TEMPLATE = """
-你是一个DBA智能答疑专家, 你的任务是根据用户的问题和已经相关的文档给问答的答案进行严格的打分.
+你是一个智能答疑专家, 你的任务是根据用户的问题和已经相关的文档给问答的答案进行严格的打分.
 
 你将会得到以下输入信息:
 - 用户的问题
@@ -69,17 +69,18 @@ class LLMEvaluationMetric(EvaluationMetric):
         self._model_name = model_name
         self._prompt_template = prompt_template
 
-    async def compute(  # type: ignore # noqa
+    async def compute(
         self,
-        query: str,
         prediction: str,
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> EvaluationResult:
         """Compute the evaluation metric.
 
         Args:
             prediction(List[str]): The retrieved chunks from the retriever.
             contexts(Sequence[str]): The contexts from dataset.
+            query:(Optional[str]) The query text.
 
         Returns:
             BaseEvaluationResult: The evaluation result.
