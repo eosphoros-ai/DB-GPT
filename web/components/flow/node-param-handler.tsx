@@ -19,7 +19,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
     data.value = value;
   }
 
-  // 基于AWEL1.0的流程设计器，对节点参数的渲染
+  // render node parameters based on AWEL1.0
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
 
@@ -99,7 +99,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
     }
   }
 
-  // 基于AWEL2.0的流程设计器，对节点参数的渲染
+  // render node parameters based on AWEL2.0
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
 
