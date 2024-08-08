@@ -28,12 +28,14 @@ class AppLinkMetric(EvaluationMetric[str, str], ABC):
         self,
         prediction: Optional[str] = None,
         contexts: Optional[str] = None,
+        query: Optional[str] = None,
         **kwargs: Any,
     ) -> BaseEvaluationResult:
         """Compute Intent metric.
         Args:
             prediction(Optional[str]): The retrieved chunks from the retriever.
             contexts(Optional[str]): The contexts from dataset.
+            query:(Optional[str]) The query text.
         Returns:
             BaseEvaluationResult: The evaluation result.
         """
@@ -78,12 +80,14 @@ class IntentMetric(EvaluationMetric[str, str], ABC):
         self,
         prediction: Optional[str] = None,
         contexts: Optional[str] = None,
+        query: Optional[str] = None,
         **kwargs: Any,
     ) -> BaseEvaluationResult:
         """Compute Intent metric.
         Args:
             prediction(Optional[str]): The retrieved chunks from the retriever.
             contexts(Optional[str]): The contexts from dataset.
+            query:(Optional[str]) The query text.
         Returns:
             BaseEvaluationResult: The evaluation result.
         """

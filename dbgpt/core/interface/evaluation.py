@@ -92,30 +92,34 @@ class EvaluationMetric(ABC, Generic[P, C]):
         self,
         prediction: P,
         contexts: Optional[Sequence[C]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric.
 
         Args:
             prediction(P): The prediction data.
             contexts(Optional[Sequence[C]]): The context data.
+            query:(Optional[str]) The query text.
 
         Returns:
             BaseEvaluationResult: The evaluation result.
         """
         return await asyncio.get_running_loop().run_in_executor(
-            None, self.sync_compute, prediction, contexts
+            None, self.sync_compute, prediction, contexts, query
         )
 
     def sync_compute(
         self,
         prediction: P,
         contexts: Optional[Sequence[C]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric.
 
         Args:
             prediction(P): The prediction data.
             contexts(Optional[Sequence[C]]): The factual data.
+            query:(Optional[str]) The query text.
 
         Returns:
             BaseEvaluationResult: The evaluation result.
@@ -151,6 +155,7 @@ class FunctionMetric(EvaluationMetric[P, C], Generic[P, C]):
         self,
         prediction: P,
         context: Optional[Sequence[C]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric."""
         return self.func(prediction, context)
@@ -171,6 +176,7 @@ class ExactMatchMetric(EvaluationMetric[str, str]):
         self,
         prediction: str,
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric."""
         if self._ignore_case:
@@ -208,6 +214,7 @@ class SimilarityMetric(EvaluationMetric[str, str]):
         self,
         prediction: str,
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric."""
         if not contexts:
