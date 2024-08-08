@@ -81,6 +81,7 @@ def space_list(request: KnowledgeSpaceRequest):
     try:
         return Result.succ(knowledge_space_service.get_knowledge_space(request))
     except Exception as e:
+        logger.exception(f"Space list error!{str(e)}")
         return Result.failed(code="E000X", msg=f"space list error {e}")
 
 

@@ -240,17 +240,17 @@ class KnowledgeDocumentDao(BaseDao):
         # 构建一个查询，聚合每个知识空间的文档数量
         counts_query = (
             session.query(
-                KnowledgeDocumentEntity.space_id,
+                KnowledgeDocumentEntity.id,
                 func.count(KnowledgeDocumentEntity.id).label("document_count"),
             )
-            .filter(KnowledgeDocumentEntity.space_id.in_(space_ids))
-            .group_by(KnowledgeDocumentEntity.space_id)
+            .filter(KnowledgeDocumentEntity.id.in_(space_ids))
+            .group_by(KnowledgeDocumentEntity.id)
         )
 
         # 执行查询并获取结果
         results = counts_query.all()
         # 将结果转换为字典
-        docs_count = {result.space_id: result.document_count for result in results}
+        docs_count = {result.id: result.document_count for result in results}
         session.close()
         return docs_count
 
@@ -263,7 +263,7 @@ class KnowledgeDocumentDao(BaseDao):
             )
         if query.space_id is not None:
             knowledge_documents = knowledge_documents.filter(
-                KnowledgeDocumentEntity.space_id == query.space_id
+                KnowledgeDocumentEntity.id == query.space_id
             )
         if query.doc_name is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -290,10 +290,8 @@ class KnowledgeDocumentDao(BaseDao):
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if space is not None:
             knowledge_documents.filter(KnowledgeDocumentEntity.space == space).filter(
-                KnowledgeDocumentEntity.space_id == None
-            ).update(
-                {KnowledgeDocumentEntity.space_id: space_id}, synchronize_session=False
-            )
+                KnowledgeDocumentEntity.id == None
+            ).update({KnowledgeDocumentEntity.id: space_id}, synchronize_session=False)
             session.commit()
         session.close()
 
@@ -319,7 +317,7 @@ class KnowledgeDocumentDao(BaseDao):
             )
         if query.space_id is not None:
             knowledge_documents = knowledge_documents.filter(
-                KnowledgeDocumentEntity.space_id == query.space_id
+                KnowledgeDocumentEntity.id == query.space_id
             )
         if query.space is not None:
             knowledge_documents = knowledge_documents.filter(
