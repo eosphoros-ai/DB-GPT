@@ -4,6 +4,7 @@ import React from 'react';
 import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
 import { InfoCircleOutlined } from '@ant-design/icons';
+import { RenderSelect, RenderCascader } from './node-renderer';
 
 interface NodeParamHandlerProps {
   node: IFlowNode;
@@ -14,14 +15,14 @@ interface NodeParamHandlerProps {
 
 // render node parameters item
 const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, index }) => {
-  function handleChange(value: any) {
+  function onChange(value: any) {
     data.value = value;
   }
 
-  if (data.category === 'resource') {
-    return <NodeHandler node={node} data={data} type="target" label={label} index={index} />;
-  } else if (data.category === 'common') {
+  // 基于AWEL1.0的流程设计器，对节点参数的渲染
+  function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
+
     switch (data.type_name) {
       case 'int':
       case 'float':
@@ -39,7 +40,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
               className="w-full"
               defaultValue={defaultValue}
               onChange={(value: number | null) => {
-                handleChange(value);
+                onChange(value);
               }}
             />
           </div>
@@ -60,20 +61,20 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
                 className="w-full nodrag"
                 defaultValue={defaultValue}
                 options={data.options.map((item: any) => ({ label: item.label, value: item.value }))}
-                onChange={handleChange}
+                onChange={onChange}
               />
             ) : (
               <Input
                 className="w-full"
                 defaultValue={defaultValue}
                 onChange={(e) => {
-                  handleChange(e.target.value);
+                  onChange(e.target.value);
                 }}
               />
             )}
           </div>
         );
-      case 'bool':
+      case 'checkbox':
         defaultValue = defaultValue === 'False' ? false : defaultValue;
         defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
@@ -89,13 +90,30 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
                 className="ml-2"
                 defaultChecked={defaultValue}
                 onChange={(e) => {
-                  handleChange(e.target.checked);
+                  onChange(e.target.checked);
                 }}
               />
             </p>
           </div>
         );
     }
+  }
+
+  // 基于AWEL2.0的流程设计器，对节点参数的渲染
+  function renderNodeWithUiParam(data: IFlowNodeParameter) {
+    let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
+
+    // TODO: 根据ui_type渲染不同的组件
+    switch (data?.ui?.ui_type) {
+      case 'select':
+        return <RenderSelect  data={data} defaultValue={defaultValue} onChange={onChange} />;
+    }
+  }
+
+  if (data.category === 'resource') {
+    return <NodeHandler node={node} data={data} type="target" label={label} index={index} />;
+  } else if (data.category === 'common') {
+    return data?.ui ? renderNodeWithUiParam(data) : renderNodeWithoutUiParam(data);
   }
 };
 

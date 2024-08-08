@@ -49,6 +49,15 @@ export type IFlowNodeParameter = {
   options?: any;
   value: any;
   is_list?: boolean;
+  ui: IFlowNodeParameterUI;
+};
+
+export type IFlowNodeParameterUI = {
+  ui_type: string;
+  attr: {
+    disabled: boolean;
+    [key: string]: any;
+  };
 };
 
 export type IFlowNodeInput = {
