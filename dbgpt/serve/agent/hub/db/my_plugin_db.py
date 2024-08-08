@@ -25,10 +25,7 @@ class MyPluginEntity(Model):
     )
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(
-        DateTime,
-        default=datetime.utcnow,
-        comment="plugin install time",
-        name="created_at",
+        DateTime, default=datetime.utcnow, comment="plugin install time"
     )
     UniqueConstraint("user_code", "name", name="uk_name")
 

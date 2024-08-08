@@ -285,12 +285,16 @@ class GptsMemory:
 
     async def app_link_chat_message(self, conv_id: str):
         """Get app link chat message."""
-        messages_cache = self.messages_cache[conv_id]
-        if messages_cache and len(messages_cache) > 0:
-            start_round = (
-                self.start_round_map[conv_id] if conv_id in self.start_round_map else 0
-            )
-            messages = messages_cache[start_round:]
+        messages = []
+        if conv_id in self.messages_cache:
+            messages_cache = self.messages_cache[conv_id]
+            if messages_cache and len(messages_cache) > 0:
+                start_round = (
+                    self.start_round_map[conv_id]
+                    if conv_id in self.start_round_map
+                    else 0
+                )
+                messages = messages_cache[start_round:]
         else:
             messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
 

@@ -908,7 +908,7 @@ class GptsAppDao(BaseDao):
                 raise Exception(f"app_code is None, don't allow to edit!")
             app_qry = app_qry.filter(GptsAppEntity.app_code == gpts_app.app_code)
             app_entity = app_qry.one()
-            GptsAppDao.check_permission(gpts_app.user_code, app_entity)
+
             app_entity.app_name = gpts_app.app_name
             app_entity.app_describe = gpts_app.app_describe
             app_entity.language = gpts_app.language
@@ -974,17 +974,6 @@ class GptsAppDao(BaseDao):
             session.add_all(recommend_questions)
             return True
 
-    @staticmethod
-    def check_permission(user_code, app_entity):
-        """
-        check if user_code is the owner or admin of app {app_code}
-        """
-        if not (
-            user_code == app_entity.user_code
-            or (app_entity.admins and user_code in app_entity.admins)
-        ):
-            raise Exception(f"No permission to operate app.")
-
     def update_admins(self, app_code: str, user_nos: Optional[list[str]] = None):
         """
         update admins by app_code
@@ -1025,7 +1014,6 @@ class GptsAppDao(BaseDao):
             app_qry = app_qry.filter(GptsAppEntity.app_code == app_code)
             app_entity = app_qry.one()
             if app_entity is not None:
-                # GptsAppDao.check_permission(user_code, app_entity)
                 app_entity.published = "true"
                 session.merge(app_entity)
                 app_collect_qry = session.query(GptsAppCollectionEntity).filter(
@@ -1049,7 +1037,6 @@ class GptsAppDao(BaseDao):
             app_qry = app_qry.filter(GptsAppEntity.app_code == app_code)
             app_entity = app_qry.one()
             if app_entity is not None:
-                # GptsAppDao.check_permission(user_code, app_entity)
                 app_entity.published = "false"
                 session.merge(app_entity)
                 app_collect_qry = session.query(GptsAppCollectionEntity).filter(

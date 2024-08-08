@@ -125,8 +125,8 @@ async def query(
 )
 async def dialogue_new(
     chat_mode: str = "chat_normal",
+    app_code: str = None,
     user_name: str = None,
-    # TODO remove user id
     user_id: str = None,
     sys_code: str = None,
 ):
@@ -136,6 +136,7 @@ async def dialogue_new(
         user_input="",
         conv_uid=str(unique_id),
         chat_mode=chat_mode,
+        app_code=app_code,
         user_name=user_name,
         sys_code=sys_code,
     )
@@ -154,6 +155,24 @@ async def delete(con_uid: str, service: Service = Depends(get_service)):
         service (Service): The service
     """
     service.delete(ServeRequest(conv_uid=con_uid))
+    return Result.succ(None)
+
+
+@router.post(
+    "/clear",
+    dependencies=[Depends(check_api_key)],
+)
+async def clear(
+    con_uid: str,
+    service: Service = Depends(get_service),
+):
+    """Clear a Conversation entity
+
+    Args:
+        con_uid (str): The conversation UID
+        service (Service): The service
+    """
+    service.clear(ServeRequest(conv_uid=con_uid))
     return Result.succ(None)
 
 

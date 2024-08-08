@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Type, Union
 
 from dbgpt.core import Embeddings, LLMClient
-from dbgpt.core.awel import JoinOperator, MapOperator
+from dbgpt.core.awel import IteratorTrigger, JoinOperator, MapOperator
 from dbgpt.core.awel.task.base import IN, OUT
 from dbgpt.core.interface.evaluation import (
     EVALUATE_FILE_COL_ANSWER,
@@ -17,8 +17,6 @@ from dbgpt.core.interface.evaluation import (
     EvaluationResult,
     Evaluator,
 )
-from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.core.trigger.iterator_trigger import IteratorTrigger
 from dbgpt.rag.evaluation import RetrieverSimilarityMetric
 from dbgpt.serve.agent.agents.controller import multi_agents
 

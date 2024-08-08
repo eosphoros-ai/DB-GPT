@@ -34,59 +34,12 @@ class KnowledgeDocumentEntity(Model):
     summary = Column(Text)
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
+    space_id = Column(Integer)
+    oss_file_key = Column(String(255))
     questions = Column(Text)
 
     def __repr__(self):
-        return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', summary='{self.summary}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}', questions='{self.questions}')"
-
-    @classmethod
-    def to_document_vo(
-        cls, entity_list: List["KnowledgeDocumentEntity"]
-    ) -> List[DocumentVO]:
-        vo_results = []
-        for item in entity_list:
-            vo_results.append(
-                DocumentVO(
-                    id=item.id,
-                    doc_name=item.doc_name,
-                    doc_type=item.doc_type,
-                    space=item.space,
-                    chunk_size=item.chunk_size,
-                    status=item.status,
-                    last_sync=item.last_sync.strftime("%Y-%m-%d %H:%M:%S"),
-                    content=item.content,
-                    result=item.result,
-                    vector_ids=item.vector_ids,
-                    summary=item.summary,
-                    gmt_created=item.gmt_created.strftime("%Y-%m-%d %H:%M:%S"),
-                    gmt_modified=item.gmt_modified.strftime("%Y-%m-%d %H:%M:%S"),
-                )
-            )
-        return vo_results
-
-    @classmethod
-    def from_document_vo(cls, vo: DocumentVO) -> "KnowledgeDocumentEntity":
-        entity = KnowledgeDocumentEntity(
-            id=vo.id,
-            doc_name=vo.doc_name,
-            doc_type=vo.doc_type,
-            space=vo.space,
-            chunk_size=vo.chunk_size,
-            status=vo.status,
-            content=vo.content,
-            result=vo.result,
-            vector_ids=vo.vector_ids,
-            summary=vo.summary,
-        )
-        # if vo.last_sync:
-        #     entity.last_sync = datetime.strptime(vo.last_sync, "%Y-%m-%d %H:%M:%S")
-        # if vo.gmt_created:
-        #     entity.gmt_created = datetime.strptime(vo.gmt_created, "%Y-%m-%d %H:%M:%S")
-        # if vo.gmt_modified:
-        #     entity.gmt_modified = datetime.strptime(
-        #         vo.gmt_modified, "%Y-%m-%d %H:%M:%S"
-        #     )
-        return entity
+        return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', summary='{self.summary}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}', space_id='{self.space_id}', oss_file_key='{self.oss_file_key}, questions='{self.questions}')"
 
     def to_dict(self):
         return {
@@ -105,6 +58,8 @@ class KnowledgeDocumentEntity(Model):
             "summary": self.summary,
             "gmt_create": self.gmt_created,
             "gmt_modified": self.gmt_modified,
+            "space_id": self.space_id,
+            "oss_file_key": self.oss_file_key,
             "questions": self.questions,
         }
 
@@ -126,6 +81,8 @@ class KnowledgeDocumentDao(BaseDao):
             vector_ids=document.vector_ids,
             gmt_created=datetime.now(),
             gmt_modified=datetime.now(),
+            space_id=document.space_id,
+            oss_file_key=document.oss_file_key,
             questions=document.questions,
         )
         session.add(knowledge_document)
@@ -148,7 +105,10 @@ class KnowledgeDocumentDao(BaseDao):
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.id == query.id
             )
-
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
+            )
         if query.doc_name is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.doc_name == query.doc_name
@@ -211,7 +171,10 @@ class KnowledgeDocumentDao(BaseDao):
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.id == query.id
             )
-
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
+            )
         if query.doc_name is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.doc_name == query.doc_name
@@ -277,17 +240,17 @@ class KnowledgeDocumentDao(BaseDao):
         # 构建一个查询，聚合每个知识空间的文档数量
         counts_query = (
             session.query(
-                KnowledgeDocumentEntity.id,
+                KnowledgeDocumentEntity.space_id,
                 func.count(KnowledgeDocumentEntity.id).label("document_count"),
             )
-            .filter(KnowledgeDocumentEntity.id.in_(space_ids))
-            .group_by(KnowledgeDocumentEntity.id)
+            .filter(KnowledgeDocumentEntity.space_id.in_(space_ids))
+            .group_by(KnowledgeDocumentEntity.space_id)
         )
 
         # 执行查询并获取结果
         results = counts_query.all()
         # 将结果转换为字典
-        docs_count = {result.id: result.document_count for result in results}
+        docs_count = {result.space_id: result.document_count for result in results}
         session.close()
         return docs_count
 
@@ -298,7 +261,10 @@ class KnowledgeDocumentDao(BaseDao):
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.id == query.id
             )
-
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
+            )
         if query.doc_name is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.doc_name == query.doc_name
@@ -318,6 +284,18 @@ class KnowledgeDocumentDao(BaseDao):
         count = knowledge_documents.scalar()
         session.close()
         return count
+
+    def update_set_space_id(self, space, space_id):
+        session = self.get_raw_session()
+        knowledge_documents = session.query(KnowledgeDocumentEntity)
+        if space is not None:
+            knowledge_documents.filter(KnowledgeDocumentEntity.space == space).filter(
+                KnowledgeDocumentEntity.space_id == None
+            ).update(
+                {KnowledgeDocumentEntity.space_id: space_id}, synchronize_session=False
+            )
+            session.commit()
+        session.close()
 
     def update_knowledge_document(self, document: KnowledgeDocumentEntity):
         try:
@@ -339,7 +317,10 @@ class KnowledgeDocumentDao(BaseDao):
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.doc_name == query.doc_name
             )
-
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
+            )
         if query.space is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.space == query.space
@@ -392,9 +373,7 @@ class KnowledgeDocumentDao(BaseDao):
             T: The entity
         """
         request_dict = (
-            model_to_dict(request)
-            if isinstance(request, DocumentServeRequest)
-            else request
+            request.dict() if isinstance(request, DocumentServeRequest) else request
         )
         entity = KnowledgeDocumentEntity(**request_dict)
         return entity

@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends
 
@@ -234,9 +235,9 @@ async def llm_strategy_values(
 @router.get("/v1/app/resources/list", response_model=Result)
 async def app_resources(
     type: str,
-    name: str = None,
-    user_code: str = None,
-    sys_code: str = None,
+    name: Optional[str] = None,
+    user_code: Optional[str] = None,
+    sys_code: Optional[str] = None,
     user_info: UserRequest = Depends(get_user_from_headers),
 ):
     """
@@ -244,7 +245,7 @@ async def app_resources(
     """
     try:
         resources = get_resource_manager().get_supported_resources(
-            version="v1", type=type, user_id=user_info.user_id
+            version="v1", type=type, user_id=None
         )
         results = resources.get(type, [])
         return Result.succ(results)

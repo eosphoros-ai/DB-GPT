@@ -429,7 +429,7 @@ class MultiAgents(BaseComponent, ABC):
                 recipient = employees[0]
             else:
                 if TeamMode.AUTO_PLAN == team_mode:
-                    if not gpts_app.details or len(gpts_app.details) > 0:
+                    if not gpts_app.details or len(gpts_app.details) < 0:
                         raise ValueError("APP exception no available agent！")
                     llm_config = employees[0].llm_config
                     manager = AutoPlanChatManager()

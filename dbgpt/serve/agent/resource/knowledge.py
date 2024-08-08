@@ -63,8 +63,11 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
 class KnowledgeSpaceRetrieverResource(RetrieverResource):
     """Knowledge Space retriever resource."""
 
-    def __init__(self, name: str, space_name: str):
-        retriever = KnowledgeSpaceRetriever(space_name=space_name)
+    def __init__(self, name: str, space_name: str, context: Optional[dict] = None):
+        retriever = KnowledgeSpaceRetriever(
+            space_name=space_name,
+            top_k=context.get("top_k", None) if context else 4,
+        )
         super().__init__(name, retriever=retriever)
 
     @classmethod

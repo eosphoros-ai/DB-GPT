@@ -4,11 +4,7 @@ from typing import Any, Dict, List, Union
 from sqlalchemy import Column, DateTime, Integer, String, Text, func, not_
 
 from dbgpt._private.config import Config
-from dbgpt.serve.rag.api.schemas import (
-    ChunkServeRequest,
-    ChunkServeResponse,
-    DocumentChunkVO,
-)
+from dbgpt.serve.rag.api.schemas import ChunkServeRequest, ChunkServeResponse
 from dbgpt.storage.metadata import BaseDao, Model
 
 CFG = Config()
@@ -28,22 +24,6 @@ class DocumentChunkEntity(Model):
 
     def __repr__(self):
         return f"DocumentChunkEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', document_id='{self.document_id}', content='{self.content}', questions='{self.questions}', meta_info='{self.meta_info}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
-
-    @classmethod
-    def to_to_document_chunk_vo(cls, entity_list: List["DocumentChunkEntity"]):
-        return [
-            DocumentChunkVO(
-                id=entity.id,
-                document_id=entity.document_id,
-                doc_name=entity.doc_name,
-                doc_type=entity.doc_type,
-                content=entity.content,
-                meta_info=entity.meta_info,
-                gmt_created=entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S"),
-                gmt_modified=entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S"),
-            )
-            for entity in entity_list
-        ]
 
     def to_dict(self):
         return {
@@ -80,7 +60,7 @@ class DocumentChunkDao(BaseDao):
 
     def get_document_chunks(
         self, query: DocumentChunkEntity, page=1, page_size=20, document_ids=None
-    ) -> List[DocumentChunkVO]:
+    ):
         session = self.get_raw_session()
         document_chunks = session.query(DocumentChunkEntity)
         if query.id is not None:
@@ -116,7 +96,7 @@ class DocumentChunkDao(BaseDao):
         )
         result = document_chunks.all()
         session.close()
-        return DocumentChunkEntity.to_to_document_chunk_vo(result)
+        return result
 
     def get_chunks_with_questions(self, query: DocumentChunkEntity, document_ids=None):
         session = self.get_raw_session()

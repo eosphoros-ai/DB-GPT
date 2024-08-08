@@ -36,15 +36,12 @@ class GptsPlansEntity(Model):
     state = Column(String(255), nullable=True, comment="subtask status")
     result = Column(Text(length=2**31 - 1), nullable=True, comment="subtask result")
 
-    created_at = Column(
-        DateTime, default=datetime.utcnow, comment="create time", name="gmt_created"
-    )
+    created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
     updated_at = Column(
         DateTime,
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         comment="last update time",
-        name="gmt_modified",
     )
     __table_args__ = (UniqueConstraint("conv_id", "sub_task_num", name="uk_sub_task"),)
 

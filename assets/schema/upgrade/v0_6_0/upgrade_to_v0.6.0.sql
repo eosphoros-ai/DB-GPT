@@ -52,3 +52,18 @@ CREATE TABLE `recommend_question` (
   PRIMARY KEY (`id`),
   KEY `idx_app_code` (`app_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="AI application related recommendation issues";
+
+--dbgpt.user_recent_apps definition
+CREATE TABLE `user_recent_apps` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+  `gmt_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
+  `app_code` varchar(255) DEFAULT NULL COMMENT 'AI assistant code',
+  `last_accessed` timestamp NULL DEFAULT NULL COMMENT 'User recent usage time',
+  `user_code` varchar(255) DEFAULT NULL COMMENT 'user code',
+  `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app code',
+  PRIMARY KEY (`id`),
+  KEY `idx_app_code` (`app_code`),
+  KEY `idx_last_accessed` (`last_accessed`),
+  KEY `idx_user_code` (`user_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User recently used apps'

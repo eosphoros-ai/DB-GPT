@@ -988,6 +988,7 @@ class ConversableAgent(Role, Agent):
                 observation, is_retry_chat=is_retry_chat
             )
         except Exception as e:
+            logger.exception(f"Load resource error！{str(e)}")
             raise ValueError(f"Load resource error！{str(e)}")
 
         resource_vars = await self.generate_resource_variables(resource_prompt_str)

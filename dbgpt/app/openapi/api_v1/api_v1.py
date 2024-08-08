@@ -252,7 +252,6 @@ async def dialogue_scenes(user_info: UserRequest = Depends(get_user_from_headers
         ChatScene.ChatKnowledge,
         # ChatScene.ChatDashboard,
         # ChatScene.ChatAgent,
-        ChatScene.ProfessionalDBA,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(

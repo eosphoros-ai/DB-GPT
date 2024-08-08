@@ -292,7 +292,7 @@ def _agent_resource_option_values() -> List[OptionValue]:
         Parameter.build_from(
             label="Agent Resource",
             name="agent_resource",
-            type=AWELAgentResource,
+            type=AgentResource,
             optional=True,
             default=None,
             description="The agent resource.",

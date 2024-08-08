@@ -149,6 +149,15 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         conv: StorageConversation = self.create_storage_conv(request)
         conv.delete()
 
+    def clear(self, request: ServeRequest) -> None:
+        """Clear current conversation and its messages
+
+        Args:
+            request (ServeRequest): The request
+        """
+        conv: StorageConversation = self.create_storage_conv(request)
+        conv.clear()
+
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:
         """Get a list of Conversation entities
 

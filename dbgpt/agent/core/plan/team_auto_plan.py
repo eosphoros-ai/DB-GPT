@@ -196,7 +196,7 @@ class AutoPlanChatManager(ManagerAgent):
 
                 plan_message = await planner.generate_reply(
                     received_message=AgentMessage.from_llm_message(
-                        {"content": message}
+                        {"content": message.content}
                     ),
                     sender=self,
                     reviewer=reviewer,
@@ -271,8 +271,8 @@ class AutoPlanChatManager(ManagerAgent):
                             if reply_message:
                                 action_report = agent_reply_message.action_report
                                 if action_report:
-                                    plan_result = action_report.get("content", "")
-                                    final_message = action_report["view"]
+                                    plan_result = action_report.content
+                                    final_message = action_report.view
 
                             # The current planned Agent generation verification is
                             # successful

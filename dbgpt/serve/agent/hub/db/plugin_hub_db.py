@@ -38,7 +38,6 @@ class PluginHubEntity(Model):
         DateTime,
         default=datetime.utcnow,
         comment="plugin upload time",
-        name="created_at",
     )
     installed = Column(Integer, default=False, comment="plugin already installed count")
 
