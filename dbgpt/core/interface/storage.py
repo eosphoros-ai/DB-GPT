@@ -3,12 +3,13 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 
-from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.core.interface.serialization import Serializable, Serializer
 from dbgpt.util.annotations import PublicAPI
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.serialization.json_serialization import JsonSerializer
+
+from ..awel.flow import Parameter, ResourceCategory, register_resource
 
 
 @PublicAPI(stability="beta")

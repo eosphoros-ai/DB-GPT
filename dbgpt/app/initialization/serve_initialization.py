@@ -7,6 +7,8 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
     system_app.config.set("dbgpt.app.global.language", cfg.LANGUAGE)
     if cfg.API_KEYS:
         system_app.config.set("dbgpt.app.global.api_keys", cfg.API_KEYS)
+    if cfg.ENCRYPT_KEY:
+        system_app.config.set("dbgpt.app.global.encrypt_key", cfg.ENCRYPT_KEY)
 
     # ################################ Prompt Serve Register Begin ######################################
     from dbgpt.serve.prompt.serve import (

@@ -498,6 +498,8 @@ def core_requires():
         "GitPython",
         # For AWEL dag visualization, graphviz is a small package, also we can move it to default.
         "graphviz",
+        # For security
+        "cryptography",
     ]
 
 

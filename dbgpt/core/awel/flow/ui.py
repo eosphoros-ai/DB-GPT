@@ -71,7 +71,7 @@ class PanelEditorMixin(BaseModel):
 class UIComponent(RefreshableMixin, Serializable, BaseModel):
     """UI component."""
 
-    class UIAttribute(StatusMixin, BaseModel):
+    class UIAttribute(BaseModel):
         """Base UI attribute."""
 
         disabled: bool = Field(
@@ -106,7 +106,7 @@ class UIComponent(RefreshableMixin, Serializable, BaseModel):
 class UISelect(UIComponent):
     """Select component."""
 
-    class UIAttribute(UIComponent.UIAttribute):
+    class UIAttribute(StatusMixin, UIComponent.UIAttribute):
         """Select attribute."""
 
         show_search: bool = Field(
@@ -138,7 +138,7 @@ class UISelect(UIComponent):
 class UICascader(UIComponent):
     """Cascader component."""
 
-    class UIAttribute(UIComponent.UIAttribute):
+    class UIAttribute(StatusMixin, UIComponent.UIAttribute):
         """Cascader attribute."""
 
         show_search: bool = Field(
@@ -178,7 +178,7 @@ class UICheckbox(UIComponent):
 class UIDatePicker(UIComponent):
     """Date picker component."""
 
-    class UIAttribute(UIComponent.UIAttribute):
+    class UIAttribute(StatusMixin, UIComponent.UIAttribute):
         """Date picker attribute."""
 
         placement: Optional[
@@ -199,7 +199,7 @@ class UIDatePicker(UIComponent):
 class UIInput(UIComponent):
     """Input component."""
 
-    class UIAttribute(UIComponent.UIAttribute):
+    class UIAttribute(StatusMixin, UIComponent.UIAttribute):
         """Input attribute."""
 
         prefix: Optional[str] = Field(
@@ -216,7 +216,7 @@ class UIInput(UIComponent):
             None,
             description="Whether to show count",
         )
-        maxlength: Optional[int] = Field(
+        max_length: Optional[int] = Field(
             None,
             description="The maximum length of the input",
         )
@@ -294,7 +294,7 @@ class UISlider(UIComponent):
 class UITimePicker(UIComponent):
     """Time picker component."""
 
-    class UIAttribute(UIComponent.UIAttribute):
+    class UIAttribute(StatusMixin, UIComponent.UIAttribute):
         """Time picker attribute."""
 
         format: Optional[str] = Field(
@@ -377,14 +377,19 @@ class UIUpload(UIComponent):
     )
 
 
-class UIVariableInput(UIInput):
-    """Variable input component."""
+class UIVariablesInput(UIInput):
+    """Variables input component."""
 
-    ui_type: Literal["variable"] = Field("variable", frozen=True)  # type: ignore
+    ui_type: Literal["variable"] = Field("variables", frozen=True)  # type: ignore
     key: str = Field(..., description="The key of the variable")
     key_type: Literal["common", "secret"] = Field(
         "common",
         description="The type of the key",
+    )
+    scope: str = Field("global", description="The scope of the variables")
+    scope_key: Optional[str] = Field(
+        None,
+        description="The key of the scope",
     )
     refresh: Optional[bool] = Field(
         True,
@@ -396,7 +401,7 @@ class UIVariableInput(UIInput):
         self._check_options(parameter_dict.get("options", {}))
 
 
-class UIPasswordInput(UIVariableInput):
+class UIPasswordInput(UIVariablesInput):
     """Password input component."""
 
     ui_type: Literal["password"] = Field("password", frozen=True)  # type: ignore
