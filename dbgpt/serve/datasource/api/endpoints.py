@@ -167,18 +167,14 @@ async def query(
 @router.get(
     "/datasources",
     dependencies=[Depends(check_api_key)],
-    response_model=Result[PaginationResult[DatasourceServeResponse]],
+    response_model=Result[List[DatasourceServeResponse]],
 )
-async def query_page(
-    page: int = Query(default=1, description="current page"),
-    page_size: int = Query(default=20, description="page size"),
+async def query_list(
     service: Service = Depends(get_service),
-) -> Result[PaginationResult[DatasourceServeResponse]]:
+) -> Result[List[DatasourceServeResponse]]:
     """Query Space entities
 
     Args:
-        page (int): The page number
-        page_size (int): The page size
         service (Service): The service
     Returns:
         ServerResponse: The response
