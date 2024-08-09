@@ -7,10 +7,10 @@ from dbgpt.rag import ChunkParameters
 from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
-from dbgpt.storage.knowledge_graph.knowledge_graph import (
-    BuiltinKnowledgeGraph,
-    BuiltinKnowledgeGraphConfig,
+from dbgpt.storage.knowledge_graph.community_summary import (
+    CommunitySummaryKnowledgeGraph,
 )
+from dbgpt.storage.knowledge_graph.knowledge_graph import BuiltinKnowledgeGraphConfig
 
 """GraphRAG example.
     pre-requirements:
@@ -33,7 +33,7 @@ from dbgpt.storage.knowledge_graph.knowledge_graph import (
 
 def _create_kg_connector():
     """Create knowledge graph connector."""
-    return BuiltinKnowledgeGraph(
+    return CommunitySummaryKnowledgeGraph(
         config=BuiltinKnowledgeGraphConfig(
             name="graph_rag_test",
             embedding_fn=None,
