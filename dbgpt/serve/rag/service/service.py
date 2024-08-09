@@ -123,13 +123,11 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         Returns:
             SpaceServeResponse: The response
         """
-        query = KnowledgeSpaceEntity(
-            name=request.name,
-        )
-
-        spaces = self._dao.get_knowledge_space(query)
-
-        if len(spaces) > 0:
+        query = {
+            "name": request.name
+        }
+        space = self.get(query)
+        if space is not None:
             raise HTTPException(
                 status_code=400,
                 detail=f"space name:{request.name} have already named",
