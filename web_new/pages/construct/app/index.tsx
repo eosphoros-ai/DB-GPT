@@ -349,31 +349,31 @@ export default function AppContent() {
                                     const { user_id } = JSON.parse(localStorage.getItem(STORAGE_USERINFO_KEY) || '{}');
                                     console.log(user_id, adminList);
                                     const hasAdmin = adminList.some((admin) => admin.user_id === user_id);
-//                                     if (!hasAdmin) {
-//                                       modal.warning({
-//                                         title: '温馨提示',
-//                                         content: (
-//                                           <>
-//                                             您暂时还没有发布应用权限，如需发布应用，请联系
-//                                             {adminList?.map((admin, index) => {
-//                                               return (
-//                                                 <Space key={admin.user_id}>
-//                                                   <span className="text-default">
-//                                                     {admin.nick_name}(
-//                                                     <Typography.Text copyable className="text-default">
-//                                                       {admin.user_no}
-//                                                     </Typography.Text>
-//                                                     )
-//                                                   </span>
-//                                                   {index < adminList.length - 1 && <span>，</span>}
-//                                                 </Space>
-//                                               );
-//                                             })}
-//                                           </>
-//                                         ),
-//                                       });
-//                                       return;
-//                                     }
+                                    if (!hasAdmin) {
+                                      modal.warning({
+                                        title: '温馨提示',
+                                        content: (
+                                          <>
+                                            您暂时还没有发布应用权限，如需发布应用，请联系
+                                            {adminList?.map((admin, index) => {
+                                              return (
+                                                <Space key={admin.user_id}>
+                                                  <span className="text-default">
+                                                    {admin.nick_name}(
+                                                    <Typography.Text copyable className="text-default">
+                                                      {admin.user_no}
+                                                    </Typography.Text>
+                                                    )
+                                                  </span>
+                                                  {index < adminList.length - 1 && <span>，</span>}
+                                                </Space>
+                                              );
+                                            })}
+                                          </>
+                                        ),
+                                      });
+                                      return;
+                                    }
                                     operate(item);
                                   }}
                                 >

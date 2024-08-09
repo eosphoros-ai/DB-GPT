@@ -1,5 +1,5 @@
-import { format } from 'sql-formatter';
 import { CodePreview } from './code-preview';
+import { formatSql } from '@/utils';
 
 interface Props {
   data: {
@@ -15,7 +15,7 @@ function VisConvertError({ data }: Props) {
       <div className="p-3 text-white bg-red-500 whitespace-normal">{data.display_type}</div>
       <div className="p-3 bg-red-50">
         <div className="mb-2 whitespace-normal">{data.thought}</div>
-        <CodePreview code={format(data.sql)} language="sql" />
+        <CodePreview code={formatSql(data.sql)} language="sql" />
       </div>
     </div>
   );

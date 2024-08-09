@@ -14,7 +14,10 @@ export const CommonEn = {
   Please_input_the_owner: 'Please input the owner',
   Please_select_file: 'Please select one file',
   Description: 'Description',
+  Storage: 'Storage',
   Please_input_the_description: 'Please input the description',
+  Please_select_the_storage:'Please select the storage',
+  Please_select_the_domain_type: 'Please select the domain type',
   Next: 'Next',
   the_name_can_only_contain: 'the name can only contain numbers, letters, Chinese characters, "-" and "_"',
   Text: 'Text',
@@ -35,6 +38,7 @@ export const CommonEn = {
   Documents: 'Documents',
   Chat: 'Chat',
   Add_Datasource: 'Add Datasource',
+  View_Graph: 'View Graph',
   Arguments: 'Arguments',
   Type: 'Type',
   Size: 'Size',
@@ -236,4 +240,6 @@ export const CommonEn = {
   create_flow: 'Create flow',
   update: 'Update',
   native_type: 'App type',
+  refreshSuccess: 'Refresh Success',
+  Download: 'Download'
 } as const;

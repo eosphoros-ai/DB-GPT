@@ -61,6 +61,7 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, placeholde
           if (!userInput.trim()) return;
           if (e.keyCode === 13) {
             if (e.shiftKey) {
+              e.preventDefault()
               setUserInput((state) => state + '\n');
               return;
             }

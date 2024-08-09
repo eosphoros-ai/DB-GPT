@@ -3,7 +3,8 @@ import { getUserId } from '@/utils';
 import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { ChatContext } from '@/app/chat-context';
 
 type Props = {
   queryAgentURL?: string;
@@ -12,8 +13,8 @@ type Props = {
 
 type ChatParams = {
   chatId: string;
-  ctrl: AbortController;
-  data?: Record<string, any>;
+  ctrl?: AbortController;
+  data?: any;
   query?: Record<string, string>;
   onMessage: (message: string) => void;
   onClose?: () => void;
@@ -23,9 +24,10 @@ type ChatParams = {
 
 const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code = '' }: Props) => {
   const [ctrl, setCtrl] = useState<AbortController>({} as AbortController);
+  const { scene } = useContext(ChatContext);
   const chat = useCallback(
     async ({ data, chatId, onMessage, onClose, onDone, onError, ctrl }: ChatParams) => {
-      setCtrl(ctrl);
+      ctrl && setCtrl(ctrl);
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));
         return;
@@ -50,15 +52,22 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code = '' }: 
             [HEADER_USER_ID_KEY]: getUserId() ?? '',
           },
           body: JSON.stringify(params),
-          signal: ctrl.signal,
+          signal: ctrl ? ctrl.signal : null,
           openWhenHidden: true,
           async onopen(response) {
             if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
               return;
             }
+            if (response.headers.get('content-type') === 'application/json') {
+              response.json().then((data) => {
+                onMessage?.(data);
+                onDone?.();
+                ctrl && ctrl.abort();
+              });
+            }
           },
           onclose() {
-            ctrl.abort();
+            ctrl && ctrl.abort();
             onClose?.();
           },
           onerror(err) {
@@ -67,21 +76,30 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code = '' }: 
           onmessage: (event) => {
             let message = event.data;
             try {
-              message = JSON.parse(message).vis;
+              if (scene === 'chat_agent') {
+                message = JSON.parse(message).vis;
+              } else {
+                message = JSON.parse(message);
+              }
             } catch (e) {
               message.replaceAll('\\n', '\n');
             }
-            if (message === '[DONE]') {
-              onDone?.();
-            } else if (message?.startsWith('[ERROR]')) {
-              onError?.(message?.replace('[ERROR]', ''));
+            if (typeof message === 'string') {
+              if (message === '[DONE]') {
+                onDone?.();
+              } else if (message?.startsWith('[ERROR]')) {
+                onError?.(message?.replace('[ERROR]', ''));
+              } else {
+                onMessage?.(message);
+              }
             } else {
               onMessage?.(message);
+              onDone?.();
             }
           },
         });
       } catch (err) {
-        ctrl.abort();
+        ctrl && ctrl.abort();
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }
     },

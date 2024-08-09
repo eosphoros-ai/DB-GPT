@@ -42,6 +42,13 @@ export type IApp = {
   conv_uid?: string;
 };
 
+export type IAppData = {
+  app_list: IApp[];
+  current_page: number;
+  total_count: number;
+  total_page: number;
+};
+
 // agent
 export type AgentParams = {
   agent_name: string;
@@ -68,7 +75,7 @@ export type IAgent = {
   describe?: string;
   name: string;
   system_message?: string;
-  label: string;
+  label?: string;
   desc?: string;
 };
 

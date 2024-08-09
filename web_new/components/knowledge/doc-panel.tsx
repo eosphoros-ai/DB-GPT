@@ -22,6 +22,7 @@ import {
   SyncOutlined,
   ToolFilled,
   WarningOutlined,
+  DeploymentUnitOutlined,
 } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Button, Card, Divider, Dropdown, Empty, Form, Input, Modal, Select, Space, Spin, Tag, Tooltip, message, notification } from 'antd';
@@ -36,7 +37,7 @@ import RecallTestModal from './RecallTestModal';
 
 interface IProps {
   space: ISpace;
-  addStatus: string;
+  addStatus?: string;
   onAddDoc: (spaceName: string) => void;
   onDeleteDoc: () => void;
 }
@@ -160,6 +161,9 @@ export default function DocPanel(props: IProps) {
   const handleArguments = () => {
     setArgumentsShow(true);
   };
+  const openGraphVisualPage = () => {
+    router.push(`/knowledge/graph/?spaceName=${space.name}`);
+  }
 
   const renderResultTag = (status: string, result: string) => {
     let color;
@@ -445,6 +449,9 @@ export default function DocPanel(props: IProps) {
         <Button size="middle" className="flex items-center mx-2" icon={<ToolFilled />} onClick={handleArguments}>
           Arguments
         </Button>
+        {
+          space.vector_type === 'KnowledgeGraph' && (<Button size="middle" className="flex items-center mx-2" icon={<DeploymentUnitOutlined />} onClick={openGraphVisualPage}>{t('View_Graph')}</Button>)
+        }
         <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
           召回测试
         </Button>
