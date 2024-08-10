@@ -144,6 +144,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
   }, []);
 
   useEffect(() => {
+    refreshDialogList();
     setTimeout(() => {
       scrollableRef.current?.scrollTo(0, scrollableRef.current.scrollHeight);
     }, 50);
