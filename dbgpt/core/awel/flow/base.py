@@ -380,27 +380,40 @@ class Parameter(TypeMetadata, Serializable):
         return values
 
     @classmethod
-    def _covert_to_real_type(cls, type_cls: str, v: Any):
+    def _covert_to_real_type(cls, type_cls: str, v: Any) -> Any:
         if type_cls and v is not None:
+            typed_value: Any = v
             try:
                 # Try to convert the value to the type.
                 if type_cls == "builtins.str":
-                    return str(v)
+                    typed_value = str(v)
                 elif type_cls == "builtins.int":
-                    return int(v)
+                    typed_value = int(v)
                 elif type_cls == "builtins.float":
-                    return float(v)
+                    typed_value = float(v)
                 elif type_cls == "builtins.bool":
                     if str(v).lower() in ["false", "0", "", "no", "off"]:
                         return False
-                    return bool(v)
+                    typed_value = bool(v)
+                return typed_value
             except ValueError:
                 raise ValidationError(f"Value '{v}' is not valid for type {type_cls}")
         return v
 
     def get_typed_value(self) -> Any:
-        """Get the typed value."""
-        return self._covert_to_real_type(self.type_cls, self.value)
+        """Get the typed value.
+
+        Returns:
+            Any: The typed value. VariablesPlaceHolder if the value is a variable
+                string. Otherwise, the real type value.
+        """
+        from ...interface.variables import VariablesPlaceHolder, is_variable_string
+
+        is_variables = is_variable_string(self.value) if self.value else False
+        if is_variables and self.value is not None and isinstance(self.value, str):
+            return VariablesPlaceHolder(self.name, self.value)
+        else:
+            return self._covert_to_real_type(self.type_cls, self.value)
 
     def get_typed_default(self) -> Any:
         """Get the typed default."""
