@@ -19,7 +19,7 @@ _UI_TYPE = Literal[
     "time_picker",
     "tree_select",
     "upload",
-    "variable",
+    "variables",
     "password",
     "code_editor",
 ]
