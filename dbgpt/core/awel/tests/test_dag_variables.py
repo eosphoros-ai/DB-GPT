@@ -54,7 +54,7 @@ async def _create_variables(**kwargs):
                     id, value, value_type, label="", category=category
                 )
             )
-            variables[param_key] = VariablesPlaceHolder(param_key, key, value_type)
+            variables[param_key] = VariablesPlaceHolder(param_key, key)
     else:
         raise ValueError("vars is required.")
 
@@ -85,17 +85,17 @@ async def test_default_dag(default_dag: DAG):
             {
                 "vars": {
                     "int_var": {
-                        "key": "int_key@my_int_var@global",
+                        "key": "${int_key:my_int_var@global}",
                         "value": 0,
                         "value_type": "int",
                     },
                     "str_var": {
-                        "key": "str_key@my_str_var@global",
+                        "key": "${str_key:my_str_var@global}",
                         "value": "1",
                         "value_type": "str",
                     },
                     "secret": {
-                        "key": "secret_key@my_secret_var@global",
+                        "key": "${secret_key:my_secret_var@global}",
                         "value": "2131sdsdf",
                         "value_type": "str",
                         "category": "secret",

@@ -380,6 +380,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         if not self._variables_provider:
             return
+        # TODO: Resolve variables parallel
         for attr, value in self.__dict__.items():
             if isinstance(value, VariablesPlaceHolder):
                 resolved_value = await self.blocking_func_to_async(

@@ -182,36 +182,18 @@ class VariablesIdentifier(ResourceIdentifier):
         if not self.key or not self.name or not self.scope:
             raise ValueError("Key, name, and scope are required.")
 
-        if any(
-            self.identifier_split in key
-            for key in [
-                self.key,
-                self.name,
-                self.scope,
-                self.scope_key,
-                self.sys_code,
-                self.user_name,
-            ]
-            if key is not None
-        ):
-            raise ValueError(
-                f"identifier_split {self.identifier_split} is not allowed in "
-                f"key, name, scope, scope_key, sys_code, user_name."
-            )
-
     @property
     def str_identifier(self) -> str:
         """Return the string identifier of the identifier."""
-        return self.identifier_split.join(
-            key or ""
-            for key in [
-                self.key,
-                self.name,
-                self.scope,
-                self.scope_key,
-                self.sys_code,
-                self.user_name,
-            ]
+        return build_variable_string(
+            {
+                "key": self.key,
+                "name": self.name,
+                "scope": self.scope,
+                "scope_key": self.scope_key,
+                "sys_code": self.sys_code,
+                "user_name": self.user_name,
+            }
         )
 
     def to_dict(self) -> Dict:
@@ -230,33 +212,30 @@ class VariablesIdentifier(ResourceIdentifier):
         }
 
     @classmethod
-    def from_str_identifier(
-        cls, str_identifier: str, identifier_split: str = "@"
-    ) -> "VariablesIdentifier":
+    def from_str_identifier(cls, str_identifier: str) -> "VariablesIdentifier":
         """Create a VariablesIdentifier from a string identifier.
 
         Args:
             str_identifier (str): The string identifier.
-            identifier_split (str): The identifier split.
 
         Returns:
             VariablesIdentifier: The VariablesIdentifier.
         """
-        keys = str_identifier.split(identifier_split)
-        if not keys:
+        variable_dict = parse_variable(str_identifier)
+        if not variable_dict:
             raise ValueError("Invalid string identifier.")
-        if len(keys) < 2:
+        if not variable_dict.get("key"):
+            raise ValueError("Invalid string identifier, must have key")
+        if not variable_dict.get("name"):
             raise ValueError("Invalid string identifier, must have name")
-        if len(keys) < 3:
-            raise ValueError("Invalid string identifier, must have scope")
 
         return cls(
-            key=keys[0],
-            name=keys[1],
-            scope=keys[2],
-            scope_key=keys[3] if len(keys) > 3 else None,
-            sys_code=keys[4] if len(keys) > 4 else None,
-            user_name=keys[5] if len(keys) > 5 else None,
+            key=variable_dict["key"],
+            name=variable_dict["name"],
+            scope=variable_dict.get("scope", "global"),
+            scope_key=variable_dict.get("scope_key"),
+            sys_code=variable_dict.get("sys_code"),
+            user_name=variable_dict.get("user_name"),
         )
 
 
@@ -402,6 +381,26 @@ class VariablesProvider(BaseComponent, ABC):
         """Whether the variables provider support async."""
         return False
 
+    def _convert_to_value_type(self, var: StorageVariables):
+        """Convert the variable to the value type."""
+        if var.value is None:
+            return None
+        if var.value_type == "str":
+            return str(var.value)
+        elif var.value_type == "int":
+            return int(var.value)
+        elif var.value_type == "float":
+            return float(var.value)
+        elif var.value_type == "bool":
+            if var.value.lower() in ["true", "1"]:
+                return True
+            elif var.value.lower() in ["false", "0"]:
+                return False
+            else:
+                return bool(var.value)
+        else:
+            return var.value
+
 
 class VariablesPlaceHolder:
     """The variables place holder."""
@@ -410,46 +409,20 @@ class VariablesPlaceHolder:
         self,
         param_name: str,
         full_key: str,
-        value_type: str,
         default_value: Any = _EMPTY_DEFAULT_VALUE,
     ):
         """Initialize the variables place holder."""
         self.param_name = param_name
         self.full_key = full_key
-        self.value_type = value_type
         self.default_value = default_value
 
     def parse(self, variables_provider: VariablesProvider) -> Any:
         """Parse the variables."""
-        value = variables_provider.get(self.full_key, self.default_value)
-        if value:
-            return self._cast_to_type(value)
-        else:
-            return value
-
-    def _cast_to_type(self, value: Any) -> Any:
-        if self.value_type == "str":
-            return str(value)
-        elif self.value_type == "int":
-            return int(value)
-        elif self.value_type == "float":
-            return float(value)
-        elif self.value_type == "bool":
-            if value.lower() in ["true", "1"]:
-                return True
-            elif value.lower() in ["false", "0"]:
-                return False
-            else:
-                return bool(value)
-        else:
-            return value
+        return variables_provider.get(self.full_key, self.default_value)
 
     def __repr__(self):
         """Return the representation of the variables place holder."""
-        return (
-            f"<VariablesPlaceHolder "
-            f"{self.param_name} {self.full_key} {self.value_type}>"
-        )
+        return f"<VariablesPlaceHolder " f"{self.param_name} {self.full_key}>"
 
 
 class StorageVariablesProvider(VariablesProvider):
@@ -493,7 +466,7 @@ class StorageVariablesProvider(VariablesProvider):
             and variable.salt
         ):
             variable.value = self.encryption.decrypt(variable.value, variable.salt)
-        return variable.value
+        return self._convert_to_value_type(variable)
 
     def save(self, variables_item: StorageVariables) -> None:
         """Save variables to storage."""
@@ -676,3 +649,287 @@ class BuiltinVariablesProvider(VariablesProvider, ABC):
     def save(self, variables_item: StorageVariables) -> None:
         """Save variables to storage."""
         raise NotImplementedError("BuiltinVariablesProvider does not support save.")
+
+
+def parse_variable(
+    variable_str: str,
+    enable_escape: bool = True,
+) -> Dict[str, Any]:
+    """Parse the variable string.
+
+    Examples:
+        .. code-block:: python
+
+            cases = [
+                {
+                    "full_key": "${test_key:test_name@test_scope:test_scope_key}",
+                    "expected": {
+                        "key": "test_key",
+                        "name": "test_name",
+                        "scope": "test_scope",
+                        "scope_key": "test_scope_key",
+                        "sys_code": None,
+                        "user_name": None,
+                    },
+                },
+                {
+                    "full_key": "${test_key#test_sys_code}",
+                    "expected": {
+                        "key": "test_key",
+                        "name": None,
+                        "scope": None,
+                        "scope_key": None,
+                        "sys_code": "test_sys_code",
+                        "user_name": None,
+                    },
+                },
+                {
+                    "full_key": "${test_key@:test_scope_key}",
+                    "expected": {
+                        "key": "test_key",
+                        "name": None,
+                        "scope": None,
+                        "scope_key": "test_scope_key",
+                        "sys_code": None,
+                        "user_name": None,
+                    },
+                },
+            ]
+            for case in cases:
+                assert parse_variable(case["full_key"]) == case["expected"]
+    Args:
+        variable_str (str): The variable string.
+        enable_escape (bool): Whether to handle escaped characters.
+    Returns:
+        Dict[str, Any]: The parsed variable.
+    """
+    if not variable_str.startswith("${") or not variable_str.endswith("}"):
+        raise ValueError(
+            "Invalid variable format, must start with '${' and end with '}'"
+        )
+
+    # Remove the surrounding ${ and }
+    content = variable_str[2:-1]
+
+    # Define placeholders for escaped characters
+    placeholders = {
+        r"\@": "__ESCAPED_AT__",
+        r"\#": "__ESCAPED_HASH__",
+        r"\%": "__ESCAPED_PERCENT__",
+        r"\:": "__ESCAPED_COLON__",
+    }
+
+    if enable_escape:
+        # Replace escaped characters with placeholders
+        for original, placeholder in placeholders.items():
+            content = content.replace(original, placeholder)
+
+    # Initialize the result dictionary
+    result: Dict[str, Optional[str]] = {
+        "key": None,
+        "name": None,
+        "scope": None,
+        "scope_key": None,
+        "sys_code": None,
+        "user_name": None,
+    }
+
+    # Split the content by special characters
+    parts = content.split("@")
+
+    # Parse key and name
+    key_name = parts[0].split("#")[0].split("%")[0]
+    if ":" in key_name:
+        result["key"], result["name"] = key_name.split(":", 1)
+    else:
+        result["key"] = key_name
+
+    # Parse scope and scope_key
+    if len(parts) > 1:
+        scope_part = parts[1].split("#")[0].split("%")[0]
+        if ":" in scope_part:
+            result["scope"], result["scope_key"] = scope_part.split(":", 1)
+        else:
+            result["scope"] = scope_part
+
+    # Parse sys_code
+    if "#" in content:
+        result["sys_code"] = content.split("#", 1)[1].split("%")[0]
+
+    # Parse user_name
+    if "%" in content:
+        result["user_name"] = content.split("%", 1)[1]
+
+    if enable_escape:
+        # Replace placeholders back with escaped characters
+        reverse_placeholders = {v: k[1:] for k, v in placeholders.items()}
+        for key, value in result.items():
+            if value:
+                for placeholder, original in reverse_placeholders.items():
+                    result[key] = result[key].replace(  # type: ignore
+                        placeholder, original
+                    )
+
+    # Replace empty strings with None
+    for key, value in result.items():
+        if value == "":
+            result[key] = None
+
+    return result
+
+
+def _is_variable_format(value: str) -> bool:
+    if not value.startswith("${") or not value.endswith("}"):
+        return False
+    return True
+
+
+def is_variable_string(variable_str: str) -> bool:
+    """Check if the given string is a variable string.
+
+    A valid variable string should start with "${" and end with "}", and contain key
+    and name
+
+    Args:
+        variable_str (str): The string to check.
+
+    Returns:
+        bool: True if the string is a variable string, False otherwise.
+    """
+    if not _is_variable_format(variable_str):
+        return False
+    try:
+        variable_dict = parse_variable(variable_str)
+        if not variable_dict.get("key"):
+            return False
+        if not variable_dict.get("name"):
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def is_variable_list_string(variable_str: str) -> bool:
+    """Check if the given string is a variable string.
+
+    A valid variable list string should start with "${" and end with "}", and contain
+    key and not contain name
+
+    A valid variable list string means that the variable is a list of variables with the
+    same key.
+
+    Args:
+        variable_str (str): The string to check.
+
+    Returns:
+        bool: True if the string is a variable string, False otherwise.
+    """
+    if not _is_variable_format(variable_str):
+        return False
+    try:
+        variable_dict = parse_variable(variable_str)
+        if not variable_dict.get("key"):
+            return False
+        if variable_dict.get("name"):
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def build_variable_string(
+    variable_dict: Dict[str, Any],
+    scope_sig: str = "@",
+    sys_code_sig: str = "#",
+    user_sig: str = "%",
+    kv_sig: str = ":",
+    enable_escape: bool = True,
+) -> str:
+    """Build a variable string from the given dictionary.
+
+    Args:
+        variable_dict (Dict[str, Any]): The dictionary containing the variable details.
+        scope_sig (str): The scope signature.
+        sys_code_sig (str): The sys code signature.
+        user_sig (str): The user signature.
+        kv_sig (str): The key-value split signature.
+        enable_escape (bool): Whether to escape special characters
+
+    Returns:
+        str: The formatted variable string.
+
+    Examples:
+        >>> build_variable_string(
+        ...     {
+        ...         "key": "test_key",
+        ...         "name": "test_name",
+        ...         "scope": "test_scope",
+        ...         "scope_key": "test_scope_key",
+        ...         "sys_code": "test_sys_code",
+        ...         "user_name": "test_user",
+        ...     }
+        ... )
+        '${test_key:test_name@test_scope:test_scope_key#test_sys_code%test_user}'
+
+        >>> build_variable_string({"key": "test_key", "scope_key": "test_scope_key"})
+        '${test_key@:test_scope_key}'
+
+        >>> build_variable_string({"key": "test_key", "sys_code": "test_sys_code"})
+        '${test_key#test_sys_code}'
+
+        >>> build_variable_string({"key": "test_key"})
+        '${test_key}'
+    """
+    special_chars = {scope_sig, sys_code_sig, user_sig, kv_sig}
+    # Replace None with ""
+    new_variable_dict = {key: value or "" for key, value in variable_dict.items()}
+
+    # Check if the variable_dict contains any special characters
+    for key, value in new_variable_dict.items():
+        if value != "" and any(char in value for char in special_chars):
+            if enable_escape:
+                # Escape special characters
+                new_variable_dict[key] = (
+                    value.replace("@", "\\@")
+                    .replace("#", "\\#")
+                    .replace("%", "\\%")
+                    .replace(":", "\\:")
+                )
+            else:
+                raise ValueError(
+                    f"{key} contains special characters, error value: {value}, special "
+                    f"characters: {special_chars}"
+                )
+
+    key = new_variable_dict.get("key", "")
+    name = new_variable_dict.get("name", "")
+    scope = new_variable_dict.get("scope", "")
+    scope_key = new_variable_dict.get("scope_key", "")
+    sys_code = new_variable_dict.get("sys_code", "")
+    user_name = new_variable_dict.get("user_name", "")
+
+    # Construct the base of the variable string
+    variable_str = f"${{{key}"
+
+    # Add name if present
+    if name:
+        variable_str += f":{name}"
+
+    # Add scope and scope_key if present
+    if scope or scope_key:
+        variable_str += f"@{scope}"
+        if scope_key:
+            variable_str += f":{scope_key}"
+
+    # Add sys_code if present
+    if sys_code:
+        variable_str += f"#{sys_code}"
+
+    # Add user_name if present
+    if user_name:
+        variable_str += f"%{user_name}"
+
+    # Close the variable string
+    variable_str += "}"
+
+    return variable_str
