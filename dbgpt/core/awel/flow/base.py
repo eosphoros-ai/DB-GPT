@@ -1145,9 +1145,40 @@ class FlowRegistry:
         """Get the registry item by the key."""
         return self._registry.get(key)
 
-    def metadata_list(self):
-        """Get the metadata list."""
-        return [item.metadata.to_dict() for item in self._registry.values()]
+    def metadata_list(
+        self,
+        tags: Optional[Dict[str, str]] = None,
+        user_name: Optional[str] = None,
+        sys_code: Optional[str] = None,
+    ) -> List[Dict]:
+        """Get the metadata list.
+
+        TODO: Support the user and system code filter.
+
+        Args:
+            tags (Optional[Dict[str, str]], optional): The tags. Defaults to None.
+            user_name (Optional[str], optional): The user name. Defaults to None.
+            sys_code (Optional[str], optional): The system code. Defaults to None.
+
+        Returns:
+            List[Dict]: The metadata list.
+        """
+        if not tags:
+            return [item.metadata.to_dict() for item in self._registry.values()]
+        else:
+            results = []
+            for item in self._registry.values():
+                node_tags = item.metadata.tags
+                is_match = True
+                if not node_tags or not isinstance(node_tags, dict):
+                    continue
+                for k, v in tags.items():
+                    if node_tags.get(k) != v:
+                        is_match = False
+                        break
+                if is_match:
+                    results.append(item.metadata.to_dict())
+            return results
 
     async def refresh(
         self,
