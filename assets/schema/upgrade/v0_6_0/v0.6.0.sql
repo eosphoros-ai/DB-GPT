@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS `prompt_manage`
     `prompt_language` varchar(32) DEFAULT NULL COMMENT 'Prompt language(eg:en, zh-cn)',
     `prompt_format` varchar(32) DEFAULT 'f-string' COMMENT 'Prompt format(eg: f-string, jinja2)',
     `prompt_desc`    varchar(512) DEFAULT NULL COMMENT 'Prompt description',
-    `user_id`     varchar(128) DEFAULT NULL COMMENT 'User id',
+    `user_code`     varchar(128) DEFAULT NULL COMMENT 'User code',
     `user_name`      varchar(128) DEFAULT NULL COMMENT 'User name',
     `sys_code`       varchar(128)                            DEFAULT NULL COMMENT 'System code',
     `gmt_created`    timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',

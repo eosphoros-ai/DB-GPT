@@ -84,7 +84,7 @@ class ServeRequest(BaseModel):
         description="The prompt language.",
         examples=["en", "zh"],
     )
-    user_id: Optional[str] = Field(
+    user_code: Optional[str] = Field(
         None,
         description="The user id.",
         examples=[""],

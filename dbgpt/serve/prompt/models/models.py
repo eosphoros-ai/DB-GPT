@@ -52,7 +52,7 @@ class ServeEntity(Model):
         comment="Prompt format(eg: f-string, jinja2)",
     )
     prompt_desc = Column(String(512), nullable=True, comment="Prompt description")
-    user_id = Column(String(128), index=True, nullable=True, comment="User id")
+    user_code = Column(String(128), index=True, nullable=True, comment="User code")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -62,7 +62,7 @@ class ServeEntity(Model):
         return (
             f"ServeEntity(id={self.id}, chat_scene='{self.chat_scene}', sub_chat_scene='{self.sub_chat_scene}', "
             f"prompt_type='{self.prompt_type}', prompt_name='{self.prompt_name}', content='{self.content}',"
-            f"user_id='{self.user_id}', user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+            f"user_code='{self.user_code}', user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
         )
 
 
@@ -105,7 +105,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             promt_code=entity.prompt_code,
             content=entity.content,
             prompt_desc=entity.prompt_desc,
-            user_id=entity.user_id,
+            user_code=entity.user_code,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
         )
@@ -132,7 +132,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             content=entity.content,
             prompt_desc=entity.prompt_desc,
             user_name=entity.user_name,
-            user_id=entity.user_id,
+            user_code=entity.user_code,
             model=entity.model,
             input_variables=entity.input_variables,
             prompt_language=entity.prompt_language,

@@ -68,7 +68,7 @@ class ConversationVo(BaseModel):
     """
     chat scene select param 
     """
-    select_param: Optional[str] = Field(None, description="chat scene select param")
+    select_param: Optional[Any] = Field(None, description="chat scene select param")
     """
     llm model name
     """

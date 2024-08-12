@@ -34,7 +34,7 @@ ALTER TABLE  gpts_messages ADD COLUMN `resource_info` text DEFAULT NULL  COMMENT
 --prompt_manage
 ALTER TABLE  prompt_manage ADD COLUMN `prompt_code` varchar(255) NULL COMMENT 'Prompt code';
 ALTER TABLE  prompt_manage ADD COLUMN `response_schema` text  NULL COMMENT 'Prompt response schema';
-ALTER TABLE  prompt_manage ADD COLUMN `user_id` varchar(128)  NULL COMMENT 'User id';
+ALTER TABLE  prompt_manage ADD COLUMN `user_code` varchar(128)  NULL COMMENT 'User code';
 
 -- dbgpt.recommend_question definition
 CREATE TABLE `recommend_question` (
