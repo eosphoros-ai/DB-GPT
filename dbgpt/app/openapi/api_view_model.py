@@ -5,13 +5,12 @@ from enum import Enum
 from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
-from dbgpt.core.awel import CommonLLMHttpResponseBody
 
 T = TypeVar("T")
 
 
 class Result(BaseModel, Generic[T]):
-    success: Optional[bool]
+    success: bool
     err_code: Optional[str] = None
     err_msg: Optional[str] = None
     data: Optional[T] = None
@@ -42,19 +41,20 @@ class ChatSceneVo(BaseModel):
 
 class ConversationVo(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
+
     """
     dialogue_uid
     """
 
-    conv_uid: Optional[str] = ""
+    conv_uid: str = ""
     """ 
     user input 
     """
-    user_input: Optional[str] = ""
+    user_input: str = ""
     """
     user
     """
-    user_name: Optional[str] = None
+    user_name: Optional[str] = Field(None, description="user name")
     """ 
     the scene of chat 
     """
@@ -68,46 +68,49 @@ class ConversationVo(BaseModel):
     """
     chat scene select param 
     """
-    select_param: Optional[Any] = None
+    select_param: Optional[str] = Field(None, description="chat scene select param")
     """
     llm model name
     """
-    model_name: Optional[str] = None
+    model_name: Optional[str] = Field(None, description="llm model name")
 
     """Used to control whether the content is returned incrementally or in full each time. 
     If this parameter is not provided, the default is full return.
     """
-    incremental: Optional[bool] = False
+    incremental: bool = False
 
-    sys_code: Optional[str] = None
+    sys_code: Optional[str] = Field(None, description="System code")
 
     ext_info: Optional[dict] = {}
 
 
 class MessageVo(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
+
     """
     role that sends out the current message
     """
 
-    role: Optional[str]
+    role: str
     """
     current message 
     """
-    context: Optional[str]
+    context: str
 
     """ message postion order """
-    order: Optional[int]
+    order: int
 
     """
     time the current message was sent 
     """
-    time_stamp: Optional[Any] = None
+    time_stamp: Optional[Any] = Field(
+        None, description="time the current message was sent"
+    )
 
     """
     model_name
     """
-    model_name: Optional[str]
+    model_name: str
 
 
 class DeltaMessage(BaseModel):

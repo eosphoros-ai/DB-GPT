@@ -17,9 +17,9 @@ class DataNode(BaseModel):
 
 class SqlRunData(BaseModel):
     result_info: Optional[str]
-    run_cost: Optional[str]
-    colunms: Optional[List[str]]
-    values: Optional[List]
+    run_cost: float
+    colunms: Optional[List[str]] = []
+    values: Optional[List] = []
 
 
 class ChartRunData(BaseModel):

@@ -70,7 +70,7 @@ class EditorService(BaseComponent):
 
     def get_editor_sql_by_round(
         self, conv_uid: str, round_index: int
-    ) -> Optional[Dict]:
+    ) -> Optional[List[Dict]]:
         storage_conv: StorageConversation = self.get_storage_conv(conv_uid)
         messages_by_round = _split_messages_by_round(storage_conv.messages)
         for one_round_message in messages_by_round:

@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import List
+from typing import Dict, List
 
 from fastapi import APIRouter, Body, Depends
 
@@ -44,7 +44,7 @@ def get_edit_service() -> EditorService:
     return EditorService.get_instance(CFG.SYSTEM_APP)
 
 
-@router.get("/v1/editor/db/tables", response_model=Result[DbTable])
+@router.get("/v1/editor/db/tables", response_model=Result[DataNode])
 async def get_editor_tables(
     db_name: str, page_index: int, page_size: int, search_str: str = ""
 ):
@@ -71,15 +71,20 @@ async def get_editor_tables(
     return Result.succ(db_node)
 
 
-@router.get("/v1/editor/sql/rounds", response_model=Result[ChatDbRounds])
+@router.get("/v1/editor/sql/rounds", response_model=Result[List[ChatDbRounds]])
 async def get_editor_sql_rounds(
     con_uid: str, editor_service: EditorService = Depends(get_edit_service)
 ):
     logger.info("get_editor_sql_rounds:{con_uid}")
-    return Result.succ(editor_service.get_editor_sql_rounds(con_uid))
+    try:
+        chat_rounds = editor_service.get_editor_sql_rounds(con_uid)
+        return Result.succ(data=chat_rounds)
+    except Exception as e:
+        logger.exception("Get editor sql rounds failed!")
+        return Result.failed(msg=str(e))
 
 
-@router.get("/v1/editor/sql", response_model=Result[dict])
+@router.get("/v1/editor/sql", response_model=Result[List[Dict]])
 async def get_editor_sql(
     con_uid: str, round: int, editor_service: EditorService = Depends(get_edit_service)
 ):
@@ -183,7 +188,7 @@ async def editor_chart_run(run_param: dict = Body()):
             result_info="",
             run_cost=(end_time - start_time) / 1000,
             colunms=colunms,
-            values=sql_result,
+            values=[list(row) for row in sql_result],
         )
         return Result.succ(
             ChartRunData(
@@ -191,6 +196,7 @@ async def editor_chart_run(run_param: dict = Body()):
             )
         )
     except Exception as e:
+        logger.exception("Chart sql run failed!")
         sql_result = SqlRunData(result_info=str(e), run_cost=0, colunms=[], values=[])
         return Result.succ(
             ChartRunData(sql_data=sql_result, chart_values=[], chart_type=chart_type)

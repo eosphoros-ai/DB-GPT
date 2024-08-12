@@ -1051,7 +1051,7 @@ class GptsAppDao(BaseDao):
         """
         chat_normal_ctx = NativeTeamContext(
             chat_scene="chat_normal",
-            scene_name="LLM Dialogue",
+            scene_name="Chat Normal",
             scene_describe="Native LLM dialogue",
             param_title="",
             show_disable=False,
