@@ -271,7 +271,10 @@ const Canvas: React.FC<Props> = () => {
           <Form.Item label="Description" initialValue={flowInfo?.description} name="description">
             <TextArea rows={3} />
           </Form.Item>
-          <Form.Item label="Editable" name="editable" initialValue={flowInfo?.editable} valuePropName="checked">
+          <Form.Item label="Editable" name="editable" initialValue={id ? flowInfo?.editable : true} valuePropName="checked">
+            <Checkbox></Checkbox>
+          </Form.Item>
+          <Form.Item label="Deploy" name="deploy" initialValue={id ? flowInfo?.deploy : true} valuePropName="checked">
             <Checkbox></Checkbox>
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>

@@ -143,9 +143,12 @@ const Resource: React.FC<{
     case 'knowledge':
     case 'plugin':
     case 'awel_flow':
+      if (!resourceValue) {
+        setResourceValue(dbOpts?.[0]?.value);
+      }
       return (
         <Select
-          value={resourceValue || dbOpts?.[0]?.value}
+          value={resourceValue}
           className="w-52 h-8 rounded-3xl"
           onChange={(val) => {
             setResourceValue(val);

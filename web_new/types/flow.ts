@@ -6,6 +6,7 @@ export type IFlowUpdateParam = {
   name: string;
   label: string;
   editable: boolean;
+  deploy?: boolean;
   description: string;
   uid?: string;
   flow_data?: IFlowData;

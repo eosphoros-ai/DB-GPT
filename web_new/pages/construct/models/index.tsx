@@ -81,12 +81,11 @@ function Models() {
 
           <div className="flex items-center gap-4">
             <Button
-              className="border-none text-white bg-button-gradient opacity-40"
+              className="border-none text-white bg-button-gradient"
               icon={<PlusOutlined />}
               onClick={() => {
                 setIsModalOpen(true);
               }}
-              disabled
             >
               {t('create_model')}
             </Button>

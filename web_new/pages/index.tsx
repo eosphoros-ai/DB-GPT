@@ -22,7 +22,7 @@ const Playground: NextPage = () => {
 
   const { setAgent, setCurrentDialogInfo, model } = useContext(ChatContext);
 
-  const [activeKey, setActiveKey] = useState<string>('recommend');
+  const [activeKey, setActiveKey] = useState<string>('all');
   const preActiveKey = useDeferredValue(activeKey);
   const [apps, setApps] = useState<any>({
     app_list: [],
