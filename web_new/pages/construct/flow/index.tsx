@@ -1,12 +1,12 @@
 import BlurredCard, { ChatButton, InnerDropdown } from '@/ant-components/common/blurredCard';
 import ConstructLayout from '@/ant-components/layout/Construct';
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, deleteFlowById, getFlows, newDialogue, updateFlowAdmins } from '@/client/api';
+import { apiInterceptors, deleteFlowById, getFlows, newDialogue, updateFlowAdmins, addFlow } from '@/client/api';
 import MyEmpty from '@/components/common/MyEmpty';
-import { IFlow } from '@/types/flow';
+import { IFlow, IFlowUpdateParam } from '@/types/flow';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Button, Modal, Popconfirm, Select, Spin, Tag, message } from 'antd';
+import { Button, Modal, Popconfirm, Select, Spin, Tag, message, Form, Input, Checkbox } from 'antd';
 import { t } from 'i18next';
 import { concat, debounce } from 'lodash';
 import moment from 'moment';
@@ -18,11 +18,19 @@ import { useTranslation } from 'react-i18next';
 function Flow() {
   const router = useRouter();
   const { model } = useContext(ChatContext);
+  const [messageApi, contextHolder] = message.useMessage();
 
   const [flowList, setFlowList] = useState<Array<IFlow>>([]);
   const [adminOpen, setAdminOpen] = useState<boolean>(false);
   const [curFlow, setCurFLow] = useState<IFlow>();
   const [admins, setAdmins] = useState<string[]>([]);
+  const copyFlowTemp = useRef<IFlow>();
+  const [showModal, setShowModal] = useState(false);
+  const [deploy, setDeploy] = useState(false);
+  const [editable, setEditable] = useState(false);
+
+  const [form] = Form.useForm<Pick<IFlow, 'label' | 'name'>>();
+
   // 分页信息
   const totalRef = useRef<{
     current_page: number;
@@ -147,6 +155,32 @@ function Flow() {
     },
   );
 
+  const handleCopy = (flow: IFlow) => {
+    copyFlowTemp.current = flow;
+    form.setFieldValue('label', `${flow.label} Copy`);
+    form.setFieldValue('name', `${flow.name}_copy`);
+    setDeploy(true);
+    setEditable(true);
+    setShowModal(true);
+  };
+
+  const onFinish = async (val: { name: string; label: string }) => {
+    if (!copyFlowTemp.current) return;
+    const { source, uid, dag_id, gmt_created, gmt_modified, state, ...params } = copyFlowTemp.current;
+    const data: IFlowUpdateParam = {
+      ...params,
+      editable,
+      state: deploy ? 'deployed' : 'developing',
+      ...val,
+    };
+    const [err] = await apiInterceptors(addFlow(data));
+    if (!err) {
+      messageApi.success(t('save_flow_success'));
+      setShowModal(false);
+      getFlowListRun({});
+    }
+  };
+
   const handleChange = async (value: string[]) => {
     setAdmins(value);
     await updateAdmins(value);
@@ -196,16 +230,28 @@ function Flow() {
                   <InnerDropdown
                     menu={{
                       items: [
+                        // {
+                        //   key: 'edit',
+                        //   label: (
+                        //     <span
+                        //       onClick={() => {
+                        //         setAdminOpen(true);
+                        //         setCurFLow(flow);
+                        //       }}
+                        //     >
+                        //       权限管理
+                        //     </span>
+                        //   ),
+                        // },
                         {
-                          key: 'edit',
+                          key: 'copy',
                           label: (
                             <span
                               onClick={() => {
-                                setAdminOpen(true);
-                                setCurFLow(flow);
+                                handleCopy(flow);
                               }}
                             >
-                              权限管理
+                              {t('copy')}
                             </span>
                           ),
                         },
@@ -261,6 +307,48 @@ function Flow() {
             loading={adminLoading}
           />
         </div>
+      </Modal>
+      <Modal
+        open={showModal}
+        title="Copy AWEL Flow"
+        onCancel={() => {
+          setShowModal(false);
+        }}
+        footer={false}
+      >
+        <Form form={form} onFinish={onFinish} className="mt-6">
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="label" label="Label" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="editable">
+            <Checkbox
+              value={editable}
+              checked={editable}
+              onChange={(e) => {
+                const val = e.target.checked;
+                setEditable(val);
+              }}
+            />
+          </Form.Item>
+          <Form.Item label="deploy">
+            <Checkbox
+              value={deploy}
+              checked={deploy}
+              onChange={(e) => {
+                const val = e.target.checked;
+                setDeploy(val);
+              }}
+            />
+          </Form.Item>
+          <div className="flex justify-end">
+            <Button type="primary" htmlType="submit">
+              {t('Submit')}
+            </Button>
+          </div>
+        </Form>
       </Modal>
     </ConstructLayout>
   );
