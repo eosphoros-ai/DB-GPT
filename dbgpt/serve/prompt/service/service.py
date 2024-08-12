@@ -14,7 +14,7 @@ from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
-from dbgpt.util.json_utils import find_json_objects
+from dbgpt.util.json_utils import compare_json_properties_ex, find_json_objects
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer
 
@@ -99,7 +99,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             ServerResponse: The response
         """
-        # TODO: implement your own logic here
         # Build the query request from the request
         query_request = request
         return self.dao.get_one(query_request)
@@ -191,14 +190,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         else:
             return None
 
-    def get_template(self, prompt_code: str) -> PromptTemplate:
+    def get_template(self, prompt_code: str) -> Optional[PromptTemplate]:
         if not prompt_code:
             return None
-        query_request = {
-            "prompt_code": prompt_code,
-        }
+        query_request = ServeRequest(prompt_code=prompt_code)
         template = self.get(query_request)
-
+        if not template:
+            return None
         return PromptTemplate(
             template=template.content,
             template_scene=template.chat_scene,

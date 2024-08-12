@@ -6,7 +6,7 @@ import time
 import uuid
 from concurrent.futures import Executor
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import aiofiles
 import chardet
@@ -28,8 +28,11 @@ from dbgpt.app.openapi.api_view_model import (
 )
 from dbgpt.app.scene import BaseChat, ChatFactory, ChatScene
 from dbgpt.component import ComponentType
+from dbgpt.configs import TAG_KEY_KNOWLEDGE_CHAT_DOMAIN_TYPE
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
-from dbgpt.core.awel import CommonLLMHttpRequestBody
+from dbgpt.core.awel import BaseOperator, CommonLLMHttpRequestBody
+from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.core.awel.util.chat_util import safe_chat_stream_with_dag_task
 from dbgpt.core.interface.message import OnceConversation
 from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
@@ -148,6 +151,16 @@ def get_worker_manager() -> WorkerManager:
     return worker_manager
 
 
+def get_dag_manager() -> DAGManager:
+    """Get the global default DAGManager"""
+    return DAGManager.get_instance(CFG.SYSTEM_APP)
+
+
+def get_chat_flow() -> FlowService:
+    """Get Chat Flow Service."""
+    return FlowService.get_instance(CFG.SYSTEM_APP)
+
+
 def get_executor() -> Executor:
     """Get the global default executor"""
     return CFG.SYSTEM_APP.get_component(
@@ -199,11 +212,19 @@ async def db_connect_edit(
     return Result.succ(CFG.local_db_manager.edit_db(db_config))
 
 
-@router.post("/v1/chat/db/delete", response_model=Result)
-async def db_connect_delete(
-    db_name: str = None, user_token: UserRequest = Depends(get_user_from_headers)
-):
+@router.post("/v1/chat/db/delete", response_model=Result[bool])
+async def db_connect_delete(db_name: str = None):
+    CFG.local_db_manager.db_summary_client.delete_db_profile(db_name)
     return Result.succ(CFG.local_db_manager.delete_db(db_name))
+
+
+@router.post("/v1/chat/db/refresh", response_model=Result[bool])
+async def db_connect_refresh(db_config: DBConfig = Body()):
+    CFG.local_db_manager.db_summary_client.delete_db_profile(db_config.db_name)
+    success = await CFG.local_db_manager.async_db_summary_embedding(
+        db_config.db_name, db_config.db_type
+    )
+    return Result.succ(success)
 
 
 async def async_db_summary_embedding(db_name, db_type):
@@ -297,18 +318,17 @@ async def file_upload(
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(f"file_upload:{conv_uid},{doc_file.filename}")
-    oss_file_client = FileClient()
-    file_content = await doc_file.read()
+    file_client = FileClient()
     file_name = doc_file.filename
-    is_oss, oss_key = await oss_file_client.write_file(
-        conv_uid=conv_uid, file_name=file_name, content=file_content
+    is_oss, file_key = await file_client.write_file(
+        conv_uid=conv_uid, doc_file=doc_file
     )
 
     _, file_extension = os.path.splitext(file_name)
     if file_extension.lower() in [".xls", ".xlsx", ".csv"]:
         file_param = {
             "is_oss": is_oss,
-            "file_path": oss_key,
+            "file_path": file_key,
             "file_name": file_name,
             "file_learning": True,
         }
@@ -330,7 +350,7 @@ async def file_upload(
         return Result.succ(
             {
                 "is_oss": is_oss,
-                "file_path": oss_key,
+                "file_path": file_key,
                 "file_learning": False,
                 "file_name": file_name,
             }
@@ -362,8 +382,8 @@ async def file_read(
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(f"file_read:{conv_uid},{file_key}")
-    oss_file_client = FileClient()
-    res = await oss_file_client.read_file(conv_uid=conv_uid, file_key=file_key)
+    file_client = FileClient()
+    res = await file_client.read_file(conv_uid=conv_uid, file_key=file_key)
     df = pd.read_excel(res, index_col=False)
     return Result.succ(df.to_json(orient="records", date_format="iso", date_unit="s"))
 
@@ -642,3 +662,61 @@ def message2Vo(message: dict, order, model_name) -> MessageVo:
         order=order,
         model_name=model_name,
     )
+
+
+def _parse_domain_type(dialogue: ConversationVo) -> Optional[str]:
+    if dialogue.chat_mode == ChatScene.ChatKnowledge.value():
+        # Supported in the knowledge chat
+        space_name = dialogue.select_param
+        spaces = knowledge_service.get_knowledge_space(
+            KnowledgeSpaceRequest(name=space_name)
+        )
+        if len(spaces) == 0:
+            return Result.failed(
+                code="E000X", msg=f"Knowledge space {space_name} not found"
+            )
+        if spaces[0].domain_type:
+            return spaces[0].domain_type
+    else:
+        return None
+
+
+async def chat_with_domain_flow(dialogue: ConversationVo, domain_type: str):
+    """Chat with domain flow"""
+    dag_manager = get_dag_manager()
+    dags = dag_manager.get_dags_by_tag(TAG_KEY_KNOWLEDGE_CHAT_DOMAIN_TYPE, domain_type)
+    if not dags or not dags[0].leaf_nodes:
+        raise ValueError(f"Cant find the DAG for domain type {domain_type}")
+
+    end_task = cast(BaseOperator, dags[0].leaf_nodes[0])
+
+    space = dialogue.select_param
+    connector_manager = CFG.local_db_manager
+    # TODO: Some flow maybe not connector
+    db_list = [item["db_name"] for item in connector_manager.get_db_list()]
+    db_names = [item for item in db_list if space in item]
+    if len(db_names) == 0:
+        raise ValueError(f"fin repost dbname {space}_fin_report not found.")
+    flow_ctx = {"space": space, "db_name": db_names[0]}
+    request = CommonLLMHttpRequestBody(
+        model=dialogue.model_name,
+        messages=dialogue.user_input,
+        stream=True,
+        extra=flow_ctx,
+        conv_uid=dialogue.conv_uid,
+        span_id=root_tracer.get_current_span_id(),
+        chat_mode=dialogue.chat_mode,
+        chat_param=dialogue.select_param,
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        incremental=dialogue.incremental,
+    )
+    async for output in safe_chat_stream_with_dag_task(end_task, request, False):
+        text = output.text
+        if text:
+            text = text.replace("\n", "\\n")
+        if output.error_code != 0:
+            yield f"data:[SERVER_ERROR]{text}\n\n"
+            break
+        else:
+            yield f"data:{text}\n\n"

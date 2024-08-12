@@ -27,7 +27,7 @@ class Role(ABC, BaseModel):
 
     fixed_subgoal: Optional[str] = Field(None, description="Fixed subgoal")
 
-    language: str = "zh"
+    language: str = "en"
     is_human: bool = False
     is_team: bool = False
 
@@ -85,6 +85,7 @@ class Role(ABC, BaseModel):
         self,
         template_format: str = "f-string",
         language: str = "en",
+        is_retry_chat: bool = False,
     ) -> str:
         """Get agent prompt template."""
         self.language = language
@@ -105,6 +106,7 @@ class Role(ABC, BaseModel):
             "constraints": self.constraints,
             "retry_constraints": self.retry_constraints,
             "examples": self.examples,
+            "is_retry_chat": is_retry_chat,
         }
         param = role_params.copy()
         runtime_param_names = []
@@ -232,13 +234,11 @@ class Role(ABC, BaseModel):
 
         mem_thoughts = action_output.thoughts or ai_message
         observation = action_output.observations
-        if not check_pass and observation and check_fail_reason:
-            observation += "\n" + check_fail_reason
 
         memory_map = {
             "question": question,
             "thought": mem_thoughts,
-            "action": action_output.action,
+            "action": check_fail_reason,
             "observation": observation,
         }
         write_memory_template = self.write_memory_template

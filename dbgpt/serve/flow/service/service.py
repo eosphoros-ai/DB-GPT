@@ -258,7 +258,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             ServerResponse: The response
         """
-        new_state = request.state
+        new_state = State.DEPLOYED
         try:
             # Try to build the dag from the request
             if request.define_type == "json":

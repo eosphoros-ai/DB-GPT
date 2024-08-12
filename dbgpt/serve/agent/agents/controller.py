@@ -84,6 +84,9 @@ class MultiAgents(BaseComponent, ABC):
     def init_app(self, system_app: SystemApp):
         system_app.app.include_router(router, prefix="/api", tags=["Multi-Agents"])
         self.system_app = system_app
+        from dbgpt.serve.agent.app.controller import gpts_dao
+
+        gpts_dao.init_native_apps()
 
     def __init__(self, system_app: SystemApp):
         self.gpts_conversations = GptsConversationsDao()
@@ -434,6 +437,10 @@ class MultiAgents(BaseComponent, ABC):
                     llm_config = employees[0].llm_config
                     manager = AutoPlanChatManager()
                 elif TeamMode.AWEL_LAYOUT == team_mode:
+                    if not gpts_app.team_context:
+                        raise ValueError(
+                            "Your APP has not been developed yet, please bind Flow!"
+                        )
                     manager = DefaultAWELLayoutManager(dag=gpts_app.team_context)
                     llm_config = LLMConfig(
                         llm_client=self.llm_provider,
@@ -480,7 +487,7 @@ class MultiAgents(BaseComponent, ABC):
                 )
 
             if user_proxy:
-                ## 检测用户是否收到提问...
+                # Check if the user has received a question.
                 if user_proxy.have_ask_user():
                     gpts_status = Status.WAITING.value
             if not app_link_start:

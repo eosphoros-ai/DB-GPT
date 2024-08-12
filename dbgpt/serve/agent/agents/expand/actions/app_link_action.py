@@ -79,21 +79,22 @@ class LinkAppAction(Action[LinkAppInput]):
         else:
             if not param.app_code or len(param.app_code) <= 0:
                 app_link_param = {
-                    "app_code": "kevin",
-                    "app_name": "kevin",
+                    "app_code": "Personal assistant",
+                    "app_name": "Personal assistant",
                     "app_desc": "",
                     "app_logo": "",
                     "status": "TODO",
                 }
-                from dbgpt.ant.agent.agents.kevin_assisant_agent import (
-                    KevinAssistantAgent,
+
+                from dbgpt.agent.expand.summary_assistant_agent import (
+                    SummaryAssistantAgent,
                 )
 
                 return ActionOutput(
                     is_exe_success=True,
                     content=json.dumps(app_link_param, ensure_ascii=False),
                     view=await self.render_protocal.display(content=app_link_param),
-                    next_speakers=[KevinAssistantAgent().role],
+                    next_speakers=[SummaryAssistantAgent().role],
                 )
             else:
                 app_link_param = {
@@ -103,7 +104,8 @@ class LinkAppAction(Action[LinkAppInput]):
                     "app_logo": "",
                     "status": "TODO",
                 }
-                from dbgpt.ant.agent.agents.app_start_assisant_agent import (
+
+                from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (
                     StartAppAssistantAgent,
                 )
 

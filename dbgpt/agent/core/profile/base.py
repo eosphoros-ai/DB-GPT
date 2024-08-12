@@ -26,7 +26,7 @@ VALID_TEMPLATE_KEYS = {
 
 _DEFAULT_SYSTEM_TEMPLATE = """\
 You are a {{ role }}, {% if name %}named {{ name }}.
-{% endif %}your goal is {% if is_retry_chat %}{{retry_goal}}{% else %}{{ goal }}{% endif %}\
+{% endif %}your goal is {% if is_retry_chat %}{{ retry_goal }}{% else %}{{ goal }}{% endif %}.\
 Please think step-by-step to achieve your goals based on user input. You can use the resources given below.
 At the same time, please strictly abide by the constraints and specifications in the "IMPORTANT REMINDER" below.
 {% if resource_prompt %}\
@@ -67,7 +67,7 @@ You can refer to the following examples:
 
 _DEFAULT_SYSTEM_TEMPLATE_ZH = """\
 你是一个 {{ role }}, {% if name %}名字叫 {{ name }}.
-{% endif %}你的目标是 {% if is_retry_chat %}{{retry_goal}}{% else %}{{ goal }}{% endif %}\
+{% endif %}你的目标是 {% if is_retry_chat %}{{ retry_goal }}{% else %}{{ goal }}{% endif %}.\
 请一步一步思考完根据下面给出的已知信息和用户问题完成目标，同时请严格遵守下面"重要提醒"中的约束和规范。
 {% if resource_prompt %}\
 已知资源信息：

@@ -1,5 +1,5 @@
 """Agent Operator for AWEL."""
-
+import logging
 from abc import ABC
 from typing import Dict, List, Optional, Type
 
@@ -32,6 +32,8 @@ from ...agent import Agent, AgentGenerateContext, AgentMessage
 from ...agent_manage import get_agent_manager
 from ...base_agent import ConversableAgent
 from .agent_operator_resource import AWELAgent
+
+logger = logging.getLogger()
 
 
 class BaseAgentOperator:
@@ -228,6 +230,8 @@ class AWELAgentOperator(
             is_retry_chat=is_retry_chat,
             last_speaker_name=input_value.begin_agent,
         )
+        if not isinstance(agent_reply_message, AgentMessage):
+            raise ValueError(agent_reply_message)
 
         already_failed = False
         is_success = agent_reply_message.success

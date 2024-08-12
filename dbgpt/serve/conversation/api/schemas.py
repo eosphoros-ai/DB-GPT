@@ -74,6 +74,13 @@ class ServerResponse(BaseModel):
             "chat_normal",
         ],
     )
+    app_code: Optional[str] = Field(
+        default=None,
+        description="The chat app code.",
+        examples=[
+            "app_code_xxx",
+        ],
+    )
     select_param: Optional[str] = Field(
         default=None,
         description="The select param.",

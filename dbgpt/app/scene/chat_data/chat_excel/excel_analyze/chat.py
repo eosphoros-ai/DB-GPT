@@ -32,19 +32,15 @@ class ChatExcel(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) file path
         """
-        chat_mode = ChatScene.ChatExcel
 
         self.select_param = chat_param["select_param"]
         self.model_name = chat_param["model_name"]
         chat_param["chat_mode"] = ChatScene.ChatExcel
-        if has_path(self.select_param):
-            self.excel_reader = ExcelReader(self.select_param)
-        else:
-            self.excel_reader = ExcelReader(
-                os.path.join(
-                    KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), self.select_param
-                )
-            )
+        self.chat_param = chat_param
+        self.excel_reader = ExcelReader(
+            chat_param["chat_session_id"], self.select_param
+        )
+
         self.api_call = ApiCall()
         super().__init__(chat_param=chat_param)
 
@@ -65,9 +61,10 @@ class ChatExcel(BaseChat):
             "chat_session_id": self.chat_session_id,
             "user_input": "[" + self.excel_reader.excel_file_name + "]" + " Analyze！",
             "parent_mode": self.chat_mode,
-            "select_param": self.excel_reader.excel_file_name,
+            "select_param": self.select_param,
             "excel_reader": self.excel_reader,
             "model_name": self.model_name,
+            "user_name": self.chat_param.get("user_name", None),
         }
         learn_chat = ExcelLearning(**chat_param)
         result = await learn_chat.nostream_call()
