@@ -1,6 +1,6 @@
 import { IFlowNodeParameter } from '@/types/flow';
-import { Select } from 'antd';
 import { convertKeysToCamelCase } from '@/utils/flow';
+import { Radio } from 'antd';
 
 type Props = {
   data: IFlowNodeParameter;
@@ -8,18 +8,18 @@ type Props = {
   onChange: (value: any) => void;
 };
 
-export const RenderSelect = (params: Props) => {
+export const RenderRadio = (params: Props) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
-    <Select
+    <Radio.Group
       {...attr}
-      className="w-full nodrag"
-      placeholder="Please select" 
-      defaultValue={defaultValue}
       options={data.options}
-      onChange={onChange}
+      onChange={(e) => {
+        onChange(e.target.checked);
+      }}
+      defaultValue={defaultValue}
     />
   );
 };

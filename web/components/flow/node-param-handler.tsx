@@ -4,7 +4,7 @@ import React from 'react';
 import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { RenderSelect, RenderCascader } from './node-renderer';
+import { RenderSelect, RenderCheckbox, RenderRadio, RenderCascader, RenderDataPicker, RenderInput } from './node-renderer';
 
 interface NodeParamHandlerProps {
   node: IFlowNode;
@@ -101,12 +101,24 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
 
   // render node parameters based on AWEL2.0
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
-    let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
+    let defaultValue = data.value ?? data.default;
+    const props = { data, defaultValue, onChange };
 
-    // TODO: 根据ui_type渲染不同的组件
     switch (data?.ui?.ui_type) {
       case 'select':
-        return <RenderSelect  data={data} defaultValue={defaultValue} onChange={onChange} />;
+        return <RenderSelect {...props} />;
+      case 'cascader':
+        return <RenderCascader {...props} />;
+      case 'checkbox':
+        return <RenderCheckbox {...props} />;
+      case 'radio':
+        return <RenderRadio {...props} />;
+      case 'data_picker':
+        return <RenderDataPicker {...props} />;
+      case 'input':
+        return <RenderInput {...props} />;
+      default:
+        return null;
     }
   }
 

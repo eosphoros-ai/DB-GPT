@@ -1,6 +1,6 @@
 import { IFlowNodeParameter } from '@/types/flow';
-import { Select } from 'antd';
 import { convertKeysToCamelCase } from '@/utils/flow';
+import { Checkbox } from 'antd';
 
 type Props = {
   data: IFlowNodeParameter;
@@ -8,18 +8,19 @@ type Props = {
   onChange: (value: any) => void;
 };
 
-export const RenderSelect = (params: Props) => {
+export const RenderCheckbox = (params: Props) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
-    <Select
-      {...attr}
-      className="w-full nodrag"
-      placeholder="Please select" 
-      defaultValue={defaultValue}
-      options={data.options}
-      onChange={onChange}
-    />
+    data.options?.length > 0 && (
+      <Checkbox.Group
+        {...attr}
+        options={data.options}
+        disabled
+        defaultValue={defaultValue}
+        onChange={onChange}
+      />
+    )
   );
 };

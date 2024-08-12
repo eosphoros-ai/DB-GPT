@@ -32,6 +32,7 @@
     "copy-to-clipboard": "^3.3.3",
     "cytoscape": "^3.29.2",
     "cytoscape-euler": "^1.2.2",
+    "dayjs": "^1.11.12",
     "i18next": "^23.4.5",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",

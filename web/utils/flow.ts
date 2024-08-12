@@ -98,3 +98,19 @@ export const checkFlowDataRequied = (flowData: IFlowData) => {
   }
   return result;
 };
+
+export const convertKeysToCamelCase = (obj: Record<string, any>): Record<string, any> => {
+  function toCamelCase(str: string): string {
+    return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
+  const newObj: Record<string, any> = {};
+
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const newKey = toCamelCase(key);
+      newObj[newKey] = obj[key];
+    }
+  }
+
+  return newObj;
+};
