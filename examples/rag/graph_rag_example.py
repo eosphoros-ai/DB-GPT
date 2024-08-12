@@ -8,7 +8,7 @@ from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
 from dbgpt.storage.knowledge_graph.community_summary import (
-    CommunitySummaryKnowledgeGraph,
+    CommunitySummaryKnowledgeGraph, CommunitySummaryKnowledgeGraphConfig,
 )
 from dbgpt.storage.knowledge_graph.knowledge_graph import BuiltinKnowledgeGraphConfig
 
@@ -34,7 +34,7 @@ from dbgpt.storage.knowledge_graph.knowledge_graph import BuiltinKnowledgeGraphC
 def _create_kg_connector():
     """Create knowledge graph connector."""
     return CommunitySummaryKnowledgeGraph(
-        config=BuiltinKnowledgeGraphConfig(
+        config=CommunitySummaryKnowledgeGraphConfig(
             name="graph_rag_test",
             embedding_fn=None,
             llm_client=OpenAILLMClient(),
