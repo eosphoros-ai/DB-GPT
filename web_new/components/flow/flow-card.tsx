@@ -1,7 +1,15 @@
 import { apiInterceptors, deleteFlowById, newDialogue } from '@/client/api';
 import { IFlow } from '@/types/flow';
-import { DeleteFilled, EditFilled, MessageFilled, WarningOutlined } from '@ant-design/icons';
-import { Modal } from 'antd';
+import {
+  CopyFilled,
+  DeleteFilled,
+  EditFilled,
+  ExclamationCircleFilled,
+  ExclamationCircleOutlined,
+  MessageFilled,
+  WarningOutlined,
+} from '@ant-design/icons';
+import { Modal, Tooltip } from 'antd';
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import FlowPreview from './preview-flow';
@@ -13,9 +21,10 @@ import qs from 'querystring';
 interface FlowCardProps {
   flow: IFlow;
   deleteCallback: (uid: string) => void;
+  onCopy: (flow: IFlow) => void;
 }
 
-const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
+const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => {
   console.log(flow, 'flow');
 
   const { model } = useContext(ChatContext);
@@ -65,12 +74,28 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
     <>
       {contextHolder}
       <GptCard
-        className="w-96"
+        className="w-[26rem] max-w-full"
         title={flow.name}
         desc={flow.description}
         tags={[
           { text: flow.source, border: true, color: flow.source === 'DBGPT-WEB' ? 'green' : 'blue' },
           { text: flow.editable ? 'Editable' : 'Can not Edit', color: flow.editable ? 'green' : 'gray' },
+          {
+            text: (
+              <>
+                {flow.error_message ? (
+                  <Tooltip placement="bottom" title={flow.error_message}>
+                    {flow.state}
+                    <ExclamationCircleOutlined className="ml-1" />
+                  </Tooltip>
+                ) : (
+                  flow.state
+                )}
+              </>
+            ),
+            color: flow.state === 'load_failed' ? 'red' : flow.state === 'running' ? 'green' : 'blue',
+            border: true,
+          },
         ]}
         operations={[
           {
@@ -82,6 +107,13 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
             label: t('Edit'),
             children: <EditFilled />,
             onClick: cardClick,
+          },
+          {
+            label: t('Copy'),
+            children: <CopyFilled />,
+            onClick: () => {
+              onCopy(flow);
+            },
           },
           {
             label: t('Delete'),

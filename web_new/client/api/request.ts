@@ -5,7 +5,7 @@ import {
   PostAgentPluginResponse,
   PostAgentQueryParams,
 } from '@/types/agent';
-import { GetAppInfoParams, IApp } from '@/types/app';
+import { GetAppInfoParams, IApp, IAgent, IAppData } from '@/types/app';
 import {
   ChatHistoryResponse,
   DialogueListResponse,
@@ -17,7 +17,7 @@ import {
   UserParam,
   UserParamResponse,
 } from '@/types/chat';
-import { ChatFeedBackSchema, DbListResponse, DbSupportTypeResponse, PostDbParams } from '@/types/db';
+import { ChatFeedBackSchema, DbListResponse, DbSupportTypeResponse, PostDbParams, PostDbRefreshParams } from '@/types/db';
 import {
   GetEditorSQLRoundRequest,
   GetEditorySqlParams,
@@ -26,7 +26,7 @@ import {
   PostEditorSQLRunParams,
   PostSQLEditorSubmitParams,
 } from '@/types/editor';
-import { IFlow, IFlowNode, IFlowUpdateParam } from '@/types/flow';
+import { IFlow, IFlowNode, IFlowUpdateParam, IFlowResponse } from '@/types/flow';
 import {
   AddKnowledgeParams,
   ArgumentsParams,
@@ -34,15 +34,18 @@ import {
   DocumentParams,
   IArguments,
   IChunkList,
+  GraphVisResult,
   IChunkStrategyResponse,
   IDocumentResponse,
   ISpace,
   ISyncBatchParameter,
   ISyncBatchResponse,
+  SpaceConfig,
 } from '@/types/knowledge';
 import { BaseModelParams, IModelData, StartModelParams, SupportModel } from '@/types/model';
 import { AxiosRequestConfig } from 'axios';
 import { DELETE, GET, POST, PUT } from '.';
+
 
 /** App */
 export const postScenes = () => {
@@ -74,6 +77,9 @@ export const postDbAdd = (data: PostDbParams) => {
 };
 export const postDbTestConnect = (data: PostDbParams) => {
   return POST<PostDbParams, null>('/api/v1/chat/db/test/connect', data);
+};
+export const postDbRefresh = (data: PostDbRefreshParams) => {
+  return POST<PostDbRefreshParams, boolean>('/api/v1/chat/db/refresh', data);
 };
 
 /** Chat Page */
@@ -161,6 +167,9 @@ export const getSpaceList = (data: any) => {
 export const getDocumentList = (spaceName: number, data: Record<string, number | Array<number>>) => {
   return POST<Record<string, number | Array<number>>, IDocumentResponse>(`/knowledge/${spaceName}/document/list`, data);
 };
+export const getGraphVis = (spaceName: string, data: { limit: number }) => {
+  return POST<Record<string, number>, GraphVisResult>(`/knowledge/${spaceName}/graphvis`, data);
+};
 
 export const addDocument = (knowledgeName: string, data: DocumentParams) => {
   return POST<DocumentParams, number>(`/knowledge/${knowledgeName}/document/add`, data);
@@ -190,8 +199,8 @@ export const getChunkList = (spaceName: string, data: ChunkListParams) => {
   return POST<ChunkListParams, IChunkList>(`/knowledge/${spaceName}/chunk/list`, data);
 };
 
-export const delDocument = (spaceName: string, data: Record<string, string>) => {
-  return POST<Record<string, string>, null>(`/knowledge/${spaceName}/document/delete`, data);
+export const delDocument = (spaceName: string, data: Record<string, number>) => {
+  return POST<Record<string, number>, null>(`/knowledge/${spaceName}/document/delete`, data);
 };
 
 export const delSpace = (data: Record<string, string>) => {
@@ -293,10 +302,6 @@ export const unCollectApp = (data: Record<string, string>) => {
   return POST<Record<string, string>, []>('/api/v1/app/uncollect', data);
 };
 
-export const delApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>('/api/v1/app/remove', data);
-};
-
 export const getResourceType = () => {
   return GET<null, string[]>('/api/v1/resource-type/list');
 };
@@ -335,4 +340,15 @@ export const getKnowledgeAdmins = (spaceId: string) => {
 };
 export const updateKnowledgeAdmins = (data: Record<string, string>) => {
   return POST<Record<string, any>, any[]>(`/knowledge/users/update`, data);
+};
+
+/** AWEL Flow */
+
+/** app */
+export const delApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/v1/app/remove', data);
+};
+
+export const getSpaceConfig = () => {
+  return GET<string, SpaceConfig>(`/knowledge/space/config`);
 };

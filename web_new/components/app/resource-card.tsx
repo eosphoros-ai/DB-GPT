@@ -61,8 +61,9 @@ export default function ResourceCard(props: IProps) {
   }, [resourceType]);
 
   useEffect(() => {
-    updateResource(editResource.value || resourceValueOptions[0]?.value, 'value');
-    setResource({ ...resource, value: editResource.value || resourceValueOptions[0]?.value });
+    // fix bug ：Resolve the issue of incorrect parameter echo for resources under app editing
+    updateResource(editResource.value || resourceValueOptions[0]?.label, 'value');
+    setResource({ ...resource, value: editResource.value || resourceValueOptions[0]?.label });
   }, [resourceValueOptions]);
 
   return (

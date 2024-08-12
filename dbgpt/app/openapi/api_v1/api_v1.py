@@ -267,12 +267,12 @@ async def db_support_types():
 async def dialogue_scenes(user_info: UserRequest = Depends(get_user_from_headers)):
     scene_vos: List[ChatSceneVo] = []
     new_modes: List[ChatScene] = [
-        # ChatScene.ChatWithDbExecute,
-        # ChatScene.ChatWithDbQA,
+        ChatScene.ChatWithDbExecute,
+        ChatScene.ChatWithDbQA,
         ChatScene.ChatExcel,
         ChatScene.ChatKnowledge,
-        # ChatScene.ChatDashboard,
-        # ChatScene.ChatAgent,
+        ChatScene.ChatDashboard,
+        ChatScene.ChatAgent,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(

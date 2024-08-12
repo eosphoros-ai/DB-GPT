@@ -44,7 +44,7 @@ type RouteItem = {
   name: string;
   icon: ReactNode;
   path: string;
-  isActive: boolean;
+  isActive?: boolean;
 };
 
 function menuItemStyle(active?: boolean) {

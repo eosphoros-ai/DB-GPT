@@ -8,6 +8,7 @@ export type DBType =
   | 'clickhouse'
   | 'oracle'
   | 'postgresql'
+  | 'vertica'
   | 'db2'
   | 'access'
   | 'mongodb'
@@ -60,4 +61,9 @@ export type PromptProps = {
   prompt_name: string;
   gmt_created: string;
   gmt_modified: string;
+};
+
+export type PostDbRefreshParams = {
+  db_name: string;
+  db_type: DBType;
 };

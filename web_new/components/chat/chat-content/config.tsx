@@ -5,7 +5,6 @@ import { Image, Table, Tabs, TabsProps, Tag } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
-import { format } from 'sql-formatter';
 
 import AgentMessages from './agent-messages';
 import AgentPlans from './agent-plans';
@@ -19,6 +18,7 @@ import VisPlugin from './vis-plugin';
 import VisAppLink from './VisAppLink';
 import VisChatLink from './VisChatLink';
 import VisResponse from './VisResponse';
+import { formatSql } from '@/utils';
 
 type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
 
@@ -283,12 +283,12 @@ const extraComponents: MarkdownComponent = {
     const SqlItem = {
       key: 'sql',
       label: 'SQL',
-      children: <CodePreview code={format(returnSqlVal(data?.sql), { language: 'mysql' }) as string} language={'sql'} />,
+      children: <CodePreview code={formatSql(returnSqlVal(data?.sql), 'mysql') as string} language={'sql'} />,
     };
     const DataItem = {
       key: 'data',
       label: 'Data',
-      children: <Table dataSource={data?.data} columns={columns} scroll={{ x: 'max-content' }} virtual={true} />,
+      children: <Table dataSource={data?.data} columns={columns} scroll={{x:true}} virtual={true} />,
     };
     const TabItems: TabsProps['items'] = data?.type === 'response_table' ? [DataItem, SqlItem] : [ChartItem, SqlItem, DataItem];
 

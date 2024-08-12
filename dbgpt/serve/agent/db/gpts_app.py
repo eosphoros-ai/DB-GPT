@@ -1079,7 +1079,7 @@ class GptsAppDao(BaseDao):
         )
         chat_dashboard_ctx = NativeTeamContext(
             chat_scene="chat_dashboard",
-            scene_name="AI Dashboard",
+            scene_name="Chat Dashboard",
             scene_describe="Provide you with professional data analysis reports through natural language",
             param_title="",
             show_disable=False,

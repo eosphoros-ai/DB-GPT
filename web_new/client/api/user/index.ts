@@ -9,10 +9,5 @@ interface Props {
  * 查询管理员列表
  */
 export const queryAdminList = (data: Props) => {
-  return [{
-      nick_name: "dbgpt",
-      role: "admin",
-      user_id: "001",
-      user_no: "001",
-      }];
+  return GET<Props, UserInfoResponse[]>(`/api/v1/users`, data);
 };

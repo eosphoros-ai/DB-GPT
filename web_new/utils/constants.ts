@@ -24,6 +24,11 @@ export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> 
   wenxin_proxyllm: { label: 'wenxin_proxyllm', icon: '' },
   tongyi_proxyllm: { label: 'tongyi_proxyllm', icon: '/models/qwen2.png' },
   zhipu_proxyllm: { label: 'zhipu_proxyllm', icon: '/models/zhipu.png' },
+  yi_proxyllm: { label: 'yi_proxyllm', icon: '/models/yi.svg' },
+  "yi-34b-chat": { label: 'yi-34b-chat', icon: '/models/yi.svg' },
+  "yi-34b-chat-8bits": { label: 'yi-34b-chat-8bits', icon: '/models/yi.svg' },
+  "yi-34b-chat-4bits": { label: 'yi-34b-chat-4bits', icon: '/models/yi.svg' },
+  "yi-6b-chat": { label: 'yi-6b-chat', icon: '/models/yi.svg' },
   bailing_proxyllm: { label: 'bailing_proxyllm', icon: '/models/bailing.svg' },
   antglm_proxyllm: { label: 'antglm_proxyllm', icon: '/models/huggingface.svg' },
   chatglm_proxyllm: { label: 'chatglm_proxyllm', icon: '/models/chatglm.png' },
@@ -70,10 +75,6 @@ export const MODEL_ICON_DICT: Record<string, string> = {
   solar:'/models/solar_logo.png'
 };
 
-export const VECTOR_ICON_MAP: Record<string, string> = {
-  Chroma: '/models/chroma-logo.png',
-};
-
 export const dbMapper: Record<DBType, { label: string; icon: string; desc: string }> = {
   mysql: { label: 'MySQL', icon: '/icons/mysql.png', desc: 'Fast, reliable, scalable open-source relational database management system.' },
   oceanbase: { label: 'OceanBase', icon: '/icons/oceanbase.png', desc: 'An Ultra-Fast & Cost-Effective Distributed SQL Database.' },
@@ -97,6 +98,13 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
     icon: '/icons/postgresql.png',
     desc: 'Powerful open-source relational database with extensibility and SQL standards.',
   },
+  vertica: {
+    label: 'Vertica',
+    icon: '/icons/vertica.png',
+    desc: 'Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built for the scale and complexity of today’s data-driven world.',
+  },
   spark: { label: 'Spark', icon: '/icons/spark.png', desc: 'Unified engine for large-scale data analytics.' },
+  hive: { label: 'Hive', icon: '/icons/hive.png', desc: 'A distributed fault-tolerant data warehouse system.' },
   space: { label: 'Space', icon: '/icons/knowledge.png', desc: 'knowledge analytics.' },
+  tugraph:{label: 'TuGraph', icon: '/icons/tugraph.png', desc: 'TuGraph is a high-performance graph database jointly developed by Ant Group and Tsinghua University.' }
 };

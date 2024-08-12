@@ -8,12 +8,14 @@ export interface ISpace {
   name: string;
   owner: string;
   vector_type: string;
+  domain_type: string;
 }
 export type AddKnowledgeParams = {
   name: string;
   vector_type: string;
   owner: string;
   desc: string;
+  domain_type: string;
 };
 
 export type BaseDocumentParams = {
@@ -134,6 +136,11 @@ export type IChunkList = {
   total: number;
 };
 
+export type GraphVisResult = {
+  nodes: Array<any>,
+  edges: Array<any>
+};
+
 export type ArgumentsParams = {
   argument: string;
 };
@@ -143,6 +150,7 @@ export type StepChangeParams = {
   spaceName?: string;
   docType?: string;
   files?: Array<File>;
+  pace?: number;
 };
 
 export type File = {
@@ -183,3 +191,13 @@ export interface RecallTestProps {
   recall_top_k?: number;
   recall_retrievers: string[];
 }
+
+export type SpaceConfig = {
+  storage: IStorage;
+};
+
+export type IStorage = Array<{
+  name: string;
+  desc: string;
+  domain_types: Array<{ name: string; desc: string }>;
+}>;

@@ -6,7 +6,7 @@ import { STORAGE_INIT_MESSAGE_KET, getInitMessage } from '@/utils';
 import { CopyOutlined, RedoOutlined } from '@ant-design/icons';
 import { Button, IconButton } from '@mui/joy';
 import { useAsyncEffect } from 'ahooks';
-import { Empty, Modal, Tooltip, message } from 'antd';
+import { Modal, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import copy from 'copy-to-clipboard';
 import { cloneDeep } from 'lodash';
@@ -20,6 +20,7 @@ import ChatContent from './chat-content';
 import ChatFeedback from './chat-feedback';
 import { renderModelIcon } from './header/model-selector';
 import MonacoEditor from './monaco-editor';
+import MyEmpty from '../common/MyEmpty';
 
 type Props = {
   messages: IChatDialogueMessageSchema[];
@@ -200,12 +201,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
               );
             })
           ) : (
-            <Empty
-              image="/empty.png"
-              imageStyle={{ width: 320, height: 320, margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
-              className="flex items-center justify-center flex-col h-full w-full"
-              description="Start a conversation"
-            />
+            <MyEmpty description="Start a conversation" />
           )}
         </div>
       </div>
