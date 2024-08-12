@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+const CopyPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const path = require('path');
 const nextConfig = {

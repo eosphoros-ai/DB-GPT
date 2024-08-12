@@ -38,6 +38,7 @@ interface IChatContext {
   };
   setCurrentDialogInfo: (val: { chat_scene: string; app_code: string }) => void;
   adminList: UserInfoResponse[];
+  refreshDialogList?: any;
 }
 
 function getDefaultTheme(): ThemeMode {
@@ -71,6 +72,7 @@ const ChatContext = createContext<IChatContext>({
   },
   setCurrentDialogInfo: () => {},
   adminList: [],
+  refreshDialogList: () => {},
 });
 
 const ChatContextProvider = ({ children }: { children: React.ReactElement }) => {
