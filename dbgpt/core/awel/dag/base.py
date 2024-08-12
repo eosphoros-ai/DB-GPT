@@ -11,7 +11,18 @@ import uuid
 from abc import ABC, abstractmethod
 from collections import deque
 from concurrent.futures import Executor
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 from dbgpt.component import SystemApp
 
@@ -22,6 +33,9 @@ from ..task.base import TaskContext, TaskOutput
 logger = logging.getLogger(__name__)
 
 DependencyType = Union["DependencyMixin", Sequence["DependencyMixin"]]
+
+if TYPE_CHECKING:
+    from ...interface.variables import VariablesProvider
 
 
 def _is_async_context():
@@ -128,6 +142,8 @@ class DAGVar:
     # The executor for current DAG, this is used run some sync tasks in async DAG
     _executor: Optional[Executor] = None
 
+    _variables_provider: Optional["VariablesProvider"] = None
+
     @classmethod
     def enter_dag(cls, dag) -> None:
         """Enter a DAG context.
@@ -220,6 +236,24 @@ class DAGVar:
             executor (Executor): The executor to set
         """
         cls._executor = executor
+
+    @classmethod
+    def get_variables_provider(cls) -> Optional["VariablesProvider"]:
+        """Get the current variables provider.
+
+        Returns:
+            Optional[VariablesProvider]: The current variables provider
+        """
+        return cls._variables_provider
+
+    @classmethod
+    def set_variables_provider(cls, variables_provider: "VariablesProvider") -> None:
+        """Set the current variables provider.
+
+        Args:
+            variables_provider (VariablesProvider): The variables provider to set
+        """
+        cls._variables_provider = variables_provider
 
 
 class DAGLifecycle:

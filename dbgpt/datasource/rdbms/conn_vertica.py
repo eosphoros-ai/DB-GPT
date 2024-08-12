@@ -88,7 +88,7 @@ table name should keep its schema name in "
             logger.warning(f"vertica get users error: {str(e)}")
             return []
 
-    def get_fields(self, table_name) -> List[Tuple]:
+    def get_fields(self, table_name, db_name=None) -> List[Tuple]:
         """Get column fields about specified table."""
         session = self._db_sessions()
         cursor = session.execute(

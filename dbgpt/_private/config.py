@@ -303,6 +303,7 @@ class Config(metaclass=Singleton):
         )
         # global dbgpt api key
         self.API_KEYS = os.getenv("API_KEYS", None)
+        self.ENCRYPT_KEY = os.getenv("ENCRYPT_KEY", "your_secret_key")
 
         # Non-streaming scene retries
         self.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE = int(
