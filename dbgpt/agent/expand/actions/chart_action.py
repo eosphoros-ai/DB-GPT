@@ -66,8 +66,7 @@ class ChartAction(Action[SqlInput]):
             logger.exception(f"{str(e)}! \n {ai_message}")
             return ActionOutput(
                 is_exe_success=False,
-                content="Error:The requested correctly structured "
-                "answer could not be found.",
+                content="Error:The answer is not output in the required format.",
             )
         try:
             if not self.resource_need:
