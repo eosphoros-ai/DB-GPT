@@ -7,6 +7,7 @@ from ..util.parameter_util import (  # noqa: F401
     BaseDynamicOptions,
     FunctionDynamicOptions,
     OptionValue,
+    VariablesDynamicOptions,
 )
 from .base import (  # noqa: F401
     IOField,
@@ -35,4 +36,5 @@ __ALL__ = [
     "IOField",
     "BaseDynamicOptions",
     "FunctionDynamicOptions",
+    "VariablesDynamicOptions",
 ]

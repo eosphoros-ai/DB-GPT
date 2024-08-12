@@ -54,7 +54,7 @@ async def get_editor_tables(
     for table in tables:
         table_node: DataNode = DataNode(title=table, key=table, type="table")
         db_node.children.append(table_node)
-        fields = db_conn.get_fields(table)
+        fields = db_conn.get_fields(table, db_name)
         for field in fields:
             table_node.children.append(
                 DataNode(

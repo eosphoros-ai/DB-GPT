@@ -1,17 +1,33 @@
+import json
 from functools import cache
-from typing import List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata, ViewMetadata
-from dbgpt.serve.core import Result
+from dbgpt.core.interface.variables import (
+    BUILTIN_VARIABLES_CORE_FLOW_NODES,
+    BUILTIN_VARIABLES_CORE_FLOWS,
+    BUILTIN_VARIABLES_CORE_SECRETS,
+    BUILTIN_VARIABLES_CORE_VARIABLES,
+    BuiltinVariablesProvider,
+    StorageVariables,
+)
+from dbgpt.serve.core import Result, blocking_func_to_async
 from dbgpt.util import PaginationResult
 
 from ..config import APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
-from .schemas import RefreshNodeRequest, ServeRequest, ServerResponse
+from ..service.variables_service import VariablesService
+from .schemas import (
+    RefreshNodeRequest,
+    ServeRequest,
+    ServerResponse,
+    VariablesRequest,
+    VariablesResponse,
+)
 
 router = APIRouter()
 
@@ -22,7 +38,12 @@ global_system_app: Optional[SystemApp] = None
 
 def get_service() -> Service:
     """Get the service instance"""
-    return global_system_app.get_component(SERVE_SERVICE_COMPONENT_NAME, Service)
+    return Service.get_instance(global_system_app)
+
+
+def get_variable_service() -> VariablesService:
+    """Get the service instance"""
+    return VariablesService.get_instance(global_system_app)
 
 
 get_bearer_token = HTTPBearer(auto_error=False)
@@ -209,8 +230,17 @@ async def query_page(
 
 
 @router.get("/nodes", dependencies=[Depends(check_api_key)])
-async def get_nodes():
+async def get_nodes(
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    tags: Optional[str] = Query(default=None, description="tags"),
+):
     """Get the operator or resource nodes
+
+    Args:
+        user_name (Optional[str]): The username
+        sys_code (Optional[str]): The system code
+        tags (Optional[str]): The tags encoded in JSON format
 
     Returns:
         Result[List[Union[ViewMetadata, ResourceMetadata]]]:
@@ -218,7 +248,20 @@ async def get_nodes():
     """
     from dbgpt.core.awel.flow.base import _OPERATOR_REGISTRY
 
-    metadata_list = _OPERATOR_REGISTRY.metadata_list()
+    tags_dict: Optional[Dict[str, str]] = None
+    if tags:
+        try:
+            tags_dict = json.loads(tags)
+        except json.JSONDecodeError:
+            return Result.fail("Invalid JSON format for tags")
+
+    metadata_list = await blocking_func_to_async(
+        global_system_app,
+        _OPERATOR_REGISTRY.metadata_list,
+        tags_dict,
+        user_name,
+        sys_code,
+    )
     return Result.succ(metadata_list)
 
 
@@ -231,16 +274,80 @@ async def refresh_nodes(refresh_request: RefreshNodeRequest):
     """
     from dbgpt.core.awel.flow.base import _OPERATOR_REGISTRY
 
-    new_metadata = _OPERATOR_REGISTRY.refresh(
-        key=refresh_request.id,
-        is_operator=refresh_request.flow_type == "operator",
-        request=refresh_request.refresh,
+    # Make sure the variables provider is initialized
+    _ = get_variable_service().variables_provider
+
+    new_metadata = await _OPERATOR_REGISTRY.refresh(
+        refresh_request.id,
+        refresh_request.flow_type == "operator",
+        refresh_request.refresh,
+        "http",
+        global_system_app,
     )
     return Result.succ(new_metadata)
 
 
+@router.post(
+    "/variables",
+    response_model=Result[VariablesResponse],
+    dependencies=[Depends(check_api_key)],
+)
+async def create_variables(
+    variables_request: VariablesRequest,
+) -> Result[VariablesResponse]:
+    """Create a new Variables entity
+
+    Args:
+        variables_request (VariablesRequest): The request
+    Returns:
+        VariablesResponse: The response
+    """
+    res = await blocking_func_to_async(
+        global_system_app, get_variable_service().create, variables_request
+    )
+    return Result.succ(res)
+
+
+@router.put(
+    "/variables/{v_id}",
+    response_model=Result[VariablesResponse],
+    dependencies=[Depends(check_api_key)],
+)
+async def update_variables(
+    v_id: int, variables_request: VariablesRequest
+) -> Result[VariablesResponse]:
+    """Update a Variables entity
+
+    Args:
+        v_id (int): The variable id
+        variables_request (VariablesRequest): The request
+    Returns:
+        VariablesResponse: The response
+    """
+    res = await blocking_func_to_async(
+        global_system_app, get_variable_service().update, v_id, variables_request
+    )
+    return Result.succ(res)
+
+
 def init_endpoints(system_app: SystemApp) -> None:
     """Initialize the endpoints"""
+    from .variables_provider import (
+        BuiltinAllSecretVariablesProvider,
+        BuiltinAllVariablesProvider,
+        BuiltinEmbeddingsVariablesProvider,
+        BuiltinFlowVariablesProvider,
+        BuiltinLLMVariablesProvider,
+        BuiltinNodeVariablesProvider,
+    )
+
     global global_system_app
     system_app.register(Service)
+    system_app.register(VariablesService)
+    system_app.register(BuiltinFlowVariablesProvider)
+    system_app.register(BuiltinNodeVariablesProvider)
+    system_app.register(BuiltinAllVariablesProvider)
+    system_app.register(BuiltinAllSecretVariablesProvider)
+    system_app.register(BuiltinLLMVariablesProvider)
+    system_app.register(BuiltinEmbeddingsVariablesProvider)
     global_system_app = system_app

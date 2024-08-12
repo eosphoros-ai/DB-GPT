@@ -155,16 +155,17 @@ class ClickhouseConnector(RDBMSConnector):
         """Return string representation of dialect to use."""
         return ""
 
-    def get_fields(self, table_name) -> List[Tuple]:
+    def get_fields(self, table_name, db_name=None) -> List[Tuple]:
         """Get column fields about specified table."""
         session = self.client
-
         _query_sql = f"""
             SELECT name, type, default_expression, is_in_primary_key, comment
                 from system.columns where table='{table_name}'
         """.format(
             table_name
         )
+        if db_name is not None:
+            _query_sql += f" AND database='{db_name}'"
         with session.query_row_block_stream(_query_sql) as stream:
             fields = [block for block in stream]  # noqa
             return fields
