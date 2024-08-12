@@ -39,7 +39,7 @@ Given resources information:
 
 *** IMPORTANT REMINDER ***
 Please answer in English.
-The current time is{{now_time}}.
+The current time is:{{now_time}}.
 
 {% if is_retry_chat %}\
 {% if retry_constraints %}\

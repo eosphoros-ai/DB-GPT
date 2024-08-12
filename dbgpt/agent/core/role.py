@@ -1,6 +1,7 @@
 """Role class for role-based conversation."""
 
 from abc import ABC
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from jinja2 import Environment, Template, meta
@@ -107,6 +108,7 @@ class Role(ABC, BaseModel):
             "retry_constraints": self.retry_constraints,
             "examples": self.examples,
             "is_retry_chat": is_retry_chat,
+            "now_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
         param = role_params.copy()
         runtime_param_names = []
