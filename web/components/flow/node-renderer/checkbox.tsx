@@ -14,13 +14,9 @@ export const RenderCheckbox = (params: Props) => {
 
   return (
     data.options?.length > 0 && (
-      <Checkbox.Group
-        {...attr}
-        options={data.options}
-        disabled
-        defaultValue={defaultValue}
-        onChange={onChange}
-      />
+      <div className="p-2 text-sm">
+        <Checkbox.Group {...attr} options={data.options} defaultValue={defaultValue} onChange={onChange} />
+      </div>
     )
   );
 };

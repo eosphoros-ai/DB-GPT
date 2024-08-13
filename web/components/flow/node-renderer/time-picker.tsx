@@ -11,15 +11,15 @@ type TextAreaProps = {
 };
 export const RenderTimePicker = (params: TextAreaProps) => {
   const { data, defaultValue, onChange } = params;
-  const [value, setValue] = useState(defaultValue);
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
-
-  // dayjs.extend(customParseFormat);
 
   const onChangeTime: TimePickerProps['onChange'] = (time, timeString) => {
     onChange(timeString);
-    setValue(time);
   };
 
-  return <TimePicker {...attr} style={{ width: '100%' }} value={value} onChange={onChangeTime} />;
+  return (
+    <div className="p-2 text-sm">
+      <TimePicker {...attr} className="w-full" defaultValue={defaultValue} onChange={onChangeTime} />
+    </div>
+  );
 };

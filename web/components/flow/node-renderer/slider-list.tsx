@@ -19,14 +19,15 @@ export const RenderSlider = (params: TextAreaProps) => {
     setInputValue(newValue as number);
     onChange(newValue as number);
   };
-  
+
   return (
-    <>
+    <div className="p-2 text-sm">
       {data?.ui?.show_input ? (
         <Row>
           <Col span={12}>
             <Slider {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
           </Col>
+
           <Col span={4}>
             <InputNumber {...attr} style={{ margin: '0 16px' }} value={inputValue} onChange={onChangeSlider} />
           </Col>
@@ -34,6 +35,6 @@ export const RenderSlider = (params: TextAreaProps) => {
       ) : (
         <Slider {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
       )}
-    </>
+    </div>
   );
 };

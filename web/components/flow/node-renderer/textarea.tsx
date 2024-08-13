@@ -15,12 +15,8 @@ export const RenderTextArea = (params: TextAreaProps) => {
   convertKeysToCamelCase(data?.ui?.attr?.autosize || {});
 
   return (
-    <TextArea 
-      {...data.ui.attr} 
-      defaultValue={defaultValue} 
-      onChange={(e) => onChange(e.target.value)} 
-      {...data.ui.attr.autosize} 
-      rows={4} 
-    />
-  )
+    <div className="p-2 text-sm">
+      <TextArea {...data.ui.attr} defaultValue={defaultValue} onChange={(e) => onChange(e.target.value)} {...data.ui.attr.autosize} rows={4} />
+    </div>
+  );
 };

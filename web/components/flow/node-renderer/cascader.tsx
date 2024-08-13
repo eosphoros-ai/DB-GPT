@@ -13,13 +13,15 @@ export const RenderCascader = (params: Props) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
-    <Cascader 
-      {...attr}
-      options={data.options} 
-      defaultValue={defaultValue}
-      placeholder="Please select" 
-      className="w-full nodrag"
-      onChange={onChange} 
-    />
+    <div className="p-2 text-sm">
+      <Cascader
+        {...attr}
+        options={data.options}
+        defaultValue={defaultValue}
+        placeholder="please select"
+        className="w-full nodrag"
+        onChange={onChange}
+      />
+    </div>
   );
 };

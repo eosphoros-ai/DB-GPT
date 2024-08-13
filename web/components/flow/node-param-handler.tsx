@@ -9,7 +9,7 @@ import {
   RenderCheckbox,
   RenderRadio,
   RenderCascader,
-  RenderDataPicker,
+  RenderDatePicker,
   RenderInput,
   RenderSlider,
   RenderTreeSelect,
@@ -28,7 +28,6 @@ interface NodeParamHandlerProps {
 // render node parameters item
 const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, index }) => {
   function onChange(value: any) {
-    console.log(value);
     data.value = value;
   }
 
@@ -116,7 +115,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
     const props = { data, defaultValue, onChange };
-
+    
     switch (data?.ui?.ui_type) {
       case 'select':
         return <RenderSelect {...props} />;
@@ -134,8 +133,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderTextArea {...props} />;
       case 'slider':
         return <RenderSlider {...props} />;
-      case 'data_picker':
-        return <RenderDataPicker {...props} />;
+      case 'date_picker':
+        return <RenderDatePicker {...props} />;
       case 'time_picker':
         return <RenderTimePicker {...props} />;
       case 'tree_select':

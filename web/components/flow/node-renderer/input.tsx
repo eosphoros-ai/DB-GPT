@@ -13,13 +13,16 @@ export const RenderInput = (params: Props) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
-    <Input
-      {...attr}
-      className="w-full"
-      defaultValue={defaultValue}
-      onChange={(e) => {
-        onChange(e.target.value);
-      }}
-    />
+    <div className="p-2 text-sm">
+      <Input
+        {...attr}
+        className="w-full"
+        placeholder="please input"
+        defaultValue={defaultValue}
+        onChange={(e) => {
+          onChange(e.target.value);
+        }}
+      />
+    </div>
   );
 };
