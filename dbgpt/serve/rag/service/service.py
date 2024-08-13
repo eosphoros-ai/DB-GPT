@@ -123,9 +123,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         Returns:
             SpaceServeResponse: The response
         """
-        query = {
-            "name": request.name
-        }
+        query = {"name": request.name}
         space = self.get(query)
         if space is not None:
             raise HTTPException(
