@@ -558,6 +558,13 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
             "help": "The api type of current proxy the current embedding model(OPENAI_API_TYPE), if you use Azure, it can be: azure"
         },
     )
+    proxy_api_secret: str = field(
+        default=None,
+        metadata={
+            "tags": "privacy",
+            "help": "The api secret of the current embedding model(OPENAI_API_SECRET)",
+        }
+    )
     proxy_api_version: Optional[str] = field(
         default=None,
         metadata={
@@ -603,7 +610,7 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
 
 
 _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {
-    ProxyEmbeddingParameters: "proxy_openai,proxy_azure,proxy_http_openapi,proxy_ollama,proxy_tongyi,rerank_proxy_http_openapi",
+    ProxyEmbeddingParameters: "proxy_openai,proxy_azure,proxy_http_openapi,proxy_ollama,proxy_tongyi,proxy_qianfan,rerank_proxy_http_openapi",
 }
 
 EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG = {}
