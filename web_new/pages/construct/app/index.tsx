@@ -382,21 +382,6 @@ export default function AppContent() {
                               ),
                             },
                             {
-                              key: 'admin',
-                              label: (
-                                <span
-                                  className="flex flex-1"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setAdminOpen(true);
-                                    setCurApp(item);
-                                  }}
-                                >
-                                  权限管理
-                                </span>
-                              ),
-                            },
-                            {
                               key: 'del',
                               label: (
                                 <span
