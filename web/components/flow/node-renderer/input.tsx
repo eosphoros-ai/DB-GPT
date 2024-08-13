@@ -1,6 +1,6 @@
 import { IFlowNodeParameter } from '@/types/flow';
-import { Select } from 'antd';
 import { convertKeysToCamelCase } from '@/utils/flow';
+import { Input } from 'antd';
 
 type Props = {
   data: IFlowNodeParameter;
@@ -8,18 +8,18 @@ type Props = {
   onChange: (value: any) => void;
 };
 
-export const RenderSelect = (params: Props) => {
+export const RenderInput = (params: Props) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
-    <Select
+    <Input
       {...attr}
-      className="w-full nodrag"
-      placeholder="Please select" 
+      className="w-full"
       defaultValue={defaultValue}
-      options={data.options}
-      onChange={onChange}
+      onChange={(e) => {
+        onChange(e.target.value);
+      }}
     />
   );
 };

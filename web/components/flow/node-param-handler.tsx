@@ -4,8 +4,20 @@ import React from 'react';
 import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { RenderSelect, RenderSlider, RenderTreeSelect, RenderTimePicker, RenderTextArea, RenderCascader } from './node-renderer';
-import { uiAtrrtUnderlineToHump } from '@/utils/flow';
+import {
+  RenderSelect,
+  RenderCheckbox,
+  RenderRadio,
+  RenderCascader,
+  RenderDataPicker,
+  RenderInput,
+  RenderSlider,
+  RenderTreeSelect,
+  RenderTimePicker,
+  RenderTextArea,
+} from './node-renderer';
+import { convertKeysToCamelCase } from '@/utils/flow';
+
 interface NodeParamHandlerProps {
   node: IFlowNode;
   data: IFlowNodeParameter;
@@ -22,7 +34,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
 
   // render node parameters based on AWEL1.0
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
-    let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
+    let defaultValue = data.value ?? data.default;
 
     switch (data.type_name) {
       case 'int':
@@ -102,22 +114,34 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
 
   // render node parameters based on AWEL2.0
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
-    let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
-    if (data?.ui?.attr) {
-      uiAtrrtUnderlineToHump(data.ui.attr);
-    }
-    // TODO: 根据ui_type渲染不同的组件
+    let defaultValue = data.value ?? data.default;
+    const props = { data, defaultValue, onChange };
+
     switch (data?.ui?.ui_type) {
       case 'select':
-        return <RenderSelect data={data} defaultValue={defaultValue} onChange={onChange} />;
+        return <RenderSelect {...props} />;
+      case 'cascader':
+        return <RenderCascader {...props} />;
+      case 'checkbox':
+        return <RenderCheckbox {...props} />;
+      case 'radio':
+        return <RenderRadio {...props} />;
+      case 'input':
+        return <RenderInput {...props} />;
+      case 'select':
+        return <RenderSelect {...props} />;
       case 'text_area':
-        return <RenderTextArea data={data} defaultValue={defaultValue} onChange={onChange} />;
+        return <RenderTextArea {...props} />;
       case 'slider':
-        return <RenderSlider data={data} defaultValue={defaultValue} onChange={onChange} />;
+        return <RenderSlider {...props} />;
+      case 'data_picker':
+        return <RenderDataPicker {...props} />;
       case 'time_picker':
-        return <RenderTimePicker data={data} defaultValue={defaultValue} onChange={onChange} />;
+        return <RenderTimePicker {...props} />;
       case 'tree_select':
-        return <RenderTreeSelect data={data} defaultValue={defaultValue} onChange={onChange} />;
+        return <RenderTreeSelect {...props} />;
+      default:
+        return null;
     }
   }
 

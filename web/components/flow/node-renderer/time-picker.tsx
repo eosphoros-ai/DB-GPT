@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { TimePickerProps } from 'antd';
 import { TimePicker } from 'antd';
 import { IFlowNodeParameter } from '@/types/flow';
+import { convertKeysToCamelCase } from '@/utils/flow';
 
 type TextAreaProps = {
   data: IFlowNodeParameter;
@@ -11,6 +12,7 @@ type TextAreaProps = {
 export const RenderTimePicker = (params: TextAreaProps) => {
   const { data, defaultValue, onChange } = params;
   const [value, setValue] = useState(defaultValue);
+  const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   // dayjs.extend(customParseFormat);
 
@@ -19,5 +21,5 @@ export const RenderTimePicker = (params: TextAreaProps) => {
     setValue(time);
   };
 
-  return <TimePicker style={{ width: '100%' }} {...data.ui.attr} value={value} onChange={onChangeTime} />;
+  return <TimePicker {...attr} style={{ width: '100%' }} value={value} onChange={onChangeTime} />;
 };

@@ -1,6 +1,6 @@
 import { IFlowNodeParameter } from '@/types/flow';
 import { Input } from 'antd';
-import { uiAtrrtUnderlineToHump } from '@/utils/flow';
+import { convertKeysToCamelCase } from '@/utils/flow';
 
 const { TextArea } = Input;
 
@@ -12,7 +12,15 @@ type TextAreaProps = {
 
 export const RenderTextArea = (params: TextAreaProps) => {
   const { data, defaultValue, onChange } = params;
-  uiAtrrtUnderlineToHump(data?.ui?.attr?.autosize || {});
+  convertKeysToCamelCase(data?.ui?.attr?.autosize || {});
 
-  return <TextArea {...data.ui.attr} defaultValue={defaultValue} onChange={(e) => onChange(e.target.value)} {...data.ui.autosize} rows={4} />;
+  return (
+    <TextArea 
+      {...data.ui.attr} 
+      defaultValue={defaultValue} 
+      onChange={(e) => onChange(e.target.value)} 
+      {...data.ui.attr.autosize} 
+      rows={4} 
+    />
+  )
 };
