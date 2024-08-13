@@ -6,5 +6,5 @@ export * from './checkbox';
 export * from './radio';
 export * from './textarea';
 export * from './slider';
-export * from './timePicker';
-export * from './treeSelect';
+export * from './time-picker';
+export * from './tree-select';
