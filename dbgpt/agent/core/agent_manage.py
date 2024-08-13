@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Set, Tuple, Type, cast
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
 from ..expand.Indicator_assistant_agent import IndicatorAssistantAgent
+from ..expand.simple_assistant_agent import SimpleAssistantAgent
 from .agent import Agent
 from .base_agent import ConversableAgent
 
@@ -79,6 +80,7 @@ class AgentManager(BaseComponent):
         core_agents.add(self.register_agent(SummaryAssistantAgent))
         core_agents.add(self.register_agent(ToolAssistantAgent))
         core_agents.add(self.register_agent(IndicatorAssistantAgent))
+        core_agents.add(self.register_agent(SimpleAssistantAgent))
 
         self._core_agents = core_agents
 
