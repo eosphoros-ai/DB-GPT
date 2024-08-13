@@ -257,6 +257,7 @@ const AddOrEditPrompt: React.FC = () => {
           },
           onmessage: (event) => {
             let message = event.data;
+            if (!message) return;
             try {
               message = JSON.parse(message).vis;
             } catch (e) {

@@ -12,6 +12,9 @@ import { useAsyncEffect, useRequest } from 'ahooks';
 import { Flex, Layout, Spin } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+const DbEditor = dynamic(() => import('@/components/chat/db-editor'), { ssr: false });
+const ChatContainer = dynamic(() => import('@/components/chat/chat-container'), { ssr: false });
 
 const { Content } = Layout;
 
@@ -68,6 +71,7 @@ export const ChatContentContext = createContext<ChatContentProps>({
 
 const Chat: React.FC = () => {
   const { model, currentDialogInfo } = useContext(ChatContext);
+  const { isContract, setIsContract, setIsMenuExpand } = useContext(ChatContext);
   const { chat, ctrl } = useChat({ app_code: currentDialogInfo.app_code || '' });
 
   const searchParams = useSearchParams();
@@ -94,6 +98,15 @@ const Chat: React.FC = () => {
     setModelValue(appInfo?.param_need?.filter((item) => item.type === 'model')[0]?.value || model);
     setResourceValue(Number(knowledgeId) || dbName || appInfo?.param_need?.filter((item) => item.type === 'resource')[0]?.bind_value);
   }, [appInfo, dbName, knowledgeId, model]);
+
+  useEffect(() => {
+    // 仅初始化执行，防止dashboard页面无法切换状态
+    setIsMenuExpand(scene !== 'chat_dashboard');
+    // 路由变了要取消Editor模式，再进来是默认的Preview模式
+    if (chatId && scene) {
+      setIsContract(false);
+    }
+  }, [chatId, scene]);
 
   // 是否是默认小助手
   const isChatDefault = useMemo(() => {
@@ -237,6 +250,10 @@ const Chat: React.FC = () => {
       setHistory([]);
     }
   }, [isChatDefault]);
+  
+  if (scene === 'chat_dashboard') {
+    return <>{isContract ? <DbEditor /> : <ChatContainer />}</>;
+  }
 
   return (
     <ChatContentContext.Provider
