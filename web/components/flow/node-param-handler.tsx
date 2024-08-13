@@ -4,7 +4,19 @@ import React from 'react';
 import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { RenderSelect, RenderCheckbox, RenderRadio, RenderCascader, RenderDataPicker, RenderInput } from './node-renderer';
+import {
+  RenderSelect,
+  RenderCheckbox,
+  RenderRadio,
+  RenderCascader,
+  RenderDataPicker,
+  RenderInput,
+  RenderSlider,
+  RenderTreeSelect,
+  RenderTimePicker,
+  RenderTextArea,
+} from './node-renderer';
+import { convertKeysToCamelCase } from '@/utils/flow';
 
 interface NodeParamHandlerProps {
   node: IFlowNode;
@@ -16,12 +28,13 @@ interface NodeParamHandlerProps {
 // render node parameters item
 const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, index }) => {
   function onChange(value: any) {
+    console.log(value);
     data.value = value;
   }
 
   // render node parameters based on AWEL1.0
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
-    let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
+    let defaultValue = data.value ?? data.default;
 
     switch (data.type_name) {
       case 'int':
@@ -113,10 +126,20 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderCheckbox {...props} />;
       case 'radio':
         return <RenderRadio {...props} />;
-      case 'data_picker':
-        return <RenderDataPicker {...props} />;
       case 'input':
         return <RenderInput {...props} />;
+      case 'select':
+        return <RenderSelect {...props} />;
+      case 'text_area':
+        return <RenderTextArea {...props} />;
+      case 'slider':
+        return <RenderSlider {...props} />;
+      case 'data_picker':
+        return <RenderDataPicker {...props} />;
+      case 'time_picker':
+        return <RenderTimePicker {...props} />;
+      case 'tree_select':
+        return <RenderTreeSelect {...props} />;
       default:
         return null;
     }

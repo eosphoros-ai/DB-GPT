@@ -10,6 +10,26 @@ export const getUniqueNodeId = (nodeData: IFlowNode, nodes: Node[]) => {
   });
   return `${nodeData.id}_${count}`;
 };
+/**
+ * 
+ * 下划线转驼峰 
+ */
+export const uiAtrrtUnderlineToHump = (obj: any) => {
+  for(let key in obj){
+    if(key.indexOf('_') !== -1){
+      let newKey = key.replace(/_(\w)/g, (all, letter) => {
+        return letter.toUpperCase();
+      });
+
+      obj[newKey] = obj[key];
+      delete obj[key];
+      // 判断是否为对象
+      if(typeof obj[newKey] === 'object'){
+        uiAtrrtUnderlineToHump(obj[newKey]);
+      }
+    }
+  }
+};
 
 // 驼峰转下划线，接口协议字段命名规范
 export const mapHumpToUnderline = (flowData: IFlowData) => {

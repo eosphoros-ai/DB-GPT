@@ -58,6 +58,7 @@ export type IFlowNodeParameterUI = {
     disabled: boolean;
     [key: string]: any;
   };
+  show_input: boolean;
 };
 
 export type IFlowNodeInput = {

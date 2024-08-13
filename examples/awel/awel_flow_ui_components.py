@@ -1,5 +1,6 @@
 """Some UI components for the AWEL flow."""
 
+import json
 import logging
 from typing import List, Optional
 
@@ -10,8 +11,17 @@ from dbgpt.core.awel.flow import (
     OperatorCategory,
     OptionValue,
     Parameter,
+    VariablesDynamicOptions,
     ViewMetadata,
     ui,
+)
+from dbgpt.core.interface.variables import (
+    BUILTIN_VARIABLES_CORE_EMBEDDINGS,
+    BUILTIN_VARIABLES_CORE_FLOW_NODES,
+    BUILTIN_VARIABLES_CORE_FLOWS,
+    BUILTIN_VARIABLES_CORE_LLMS,
+    BUILTIN_VARIABLES_CORE_SECRETS,
+    BUILTIN_VARIABLES_CORE_VARIABLES,
 )
 
 logger = logging.getLogger(__name__)
@@ -717,3 +727,193 @@ class ExampleFlowRefreshOperator(MapOperator[str, str]):
             user_name,
             self.recent_time,
         )
+
+
+class ExampleFlowVariablesOperator(MapOperator[str, str]):
+    """An example flow operator that includes a variables option."""
+
+    metadata = ViewMetadata(
+        label="Example Variables Operator",
+        name="example_variables_operator",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes a variables option.",
+        parameters=[
+            Parameter.build_from(
+                "OpenAI API Key",
+                "openai_api_key",
+                type=str,
+                placeholder="Please select the OpenAI API key",
+                description="The OpenAI API key to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIPasswordInput(
+                    key="dbgpt.model.openai.api_key",
+                ),
+            ),
+            Parameter.build_from(
+                "Model",
+                "model",
+                type=str,
+                placeholder="Please select the model",
+                description="The model to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key="dbgpt.model.openai.model",
+                ),
+            ),
+            Parameter.build_from(
+                "Builtin Flows",
+                "builtin_flow",
+                type=str,
+                placeholder="Please select the builtin flows",
+                description="The builtin flows to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key=BUILTIN_VARIABLES_CORE_FLOWS,
+                ),
+            ),
+            Parameter.build_from(
+                "Builtin Flow Nodes",
+                "builtin_flow_node",
+                type=str,
+                placeholder="Please select the builtin flow nodes",
+                description="The builtin flow nodes to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key=BUILTIN_VARIABLES_CORE_FLOW_NODES,
+                ),
+            ),
+            Parameter.build_from(
+                "Builtin Variables",
+                "builtin_variable",
+                type=str,
+                placeholder="Please select the builtin variables",
+                description="The builtin variables to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key=BUILTIN_VARIABLES_CORE_VARIABLES,
+                ),
+            ),
+            Parameter.build_from(
+                "Builtin Secrets",
+                "builtin_secret",
+                type=str,
+                placeholder="Please select the builtin secrets",
+                description="The builtin secrets to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key=BUILTIN_VARIABLES_CORE_SECRETS,
+                ),
+            ),
+            Parameter.build_from(
+                "Builtin LLMs",
+                "builtin_llm",
+                type=str,
+                placeholder="Please select the builtin LLMs",
+                description="The builtin LLMs to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key=BUILTIN_VARIABLES_CORE_LLMS,
+                ),
+            ),
+            Parameter.build_from(
+                "Builtin Embeddings",
+                "builtin_embedding",
+                type=str,
+                placeholder="Please select the builtin embeddings",
+                description="The builtin embeddings to use.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key=BUILTIN_VARIABLES_CORE_EMBEDDINGS,
+                ),
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model info",
+                "model",
+                str,
+                description="The model info.",
+            ),
+        ],
+    )
+
+    def __init__(
+        self,
+        openai_api_key: str,
+        model: str,
+        builtin_flow: str,
+        builtin_flow_node: str,
+        builtin_variable: str,
+        builtin_secret: str,
+        builtin_llm: str,
+        builtin_embedding: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.openai_api_key = openai_api_key
+        self.model = model
+        self.builtin_flow = builtin_flow
+        self.builtin_flow_node = builtin_flow_node
+        self.builtin_variable = builtin_variable
+        self.builtin_secret = builtin_secret
+        self.builtin_llm = builtin_llm
+        self.builtin_embedding = builtin_embedding
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the model."""
+        dict_dict = {
+            "openai_api_key": self.openai_api_key,
+            "model": self.model,
+            "builtin_flow": self.builtin_flow,
+            "builtin_flow_node": self.builtin_flow_node,
+            "builtin_variable": self.builtin_variable,
+            "builtin_secret": self.builtin_secret,
+            "builtin_llm": self.builtin_llm,
+            "builtin_embedding": self.builtin_embedding,
+        }
+        json_data = json.dumps(dict_dict, ensure_ascii=False)
+        return "Your name is %s, and your model info is %s." % (user_name, json_data)
+
+
+class ExampleFlowTagsOperator(MapOperator[str, str]):
+    """An example flow operator that includes a tags option."""
+
+    metadata = ViewMetadata(
+        label="Example Tags Operator",
+        name="example_tags_operator",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes a tags",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Tags",
+                "tags",
+                str,
+                description="The tags to use.",
+            ),
+        ],
+        tags={"order": "higher-order", "type": "example"},
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the tags."""
+        return "Your name is %s, and your tags are %s." % (user_name, "higher-order")
