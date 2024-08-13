@@ -22,7 +22,7 @@ type ChatParams = {
   onError?: (content: string, error?: Error) => void;
 };
 
-const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code = '' }: Props) => {
+const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props) => {
   const [ctrl, setCtrl] = useState<AbortController>({} as AbortController);
   const { scene } = useContext(ChatContext);
   const chat = useCallback(
@@ -103,7 +103,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code = '' }: 
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }
     },
-    [queryAgentURL],
+    [queryAgentURL, app_code],
   );
 
   return { chat, ctrl };

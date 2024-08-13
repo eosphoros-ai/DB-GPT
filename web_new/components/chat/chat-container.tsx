@@ -107,12 +107,12 @@ const ChatContainer = () => {
   return (
     <>
       <MuiLoading visible={loading} />
-      {/* <Header
+      <Header
         refreshHistory={getHistory}
         modelChange={(newModel: string) => {
           setModel(newModel);
         }}
-      /> */}
+      />
       <div className="px-4 flex flex-1 flex-wrap overflow-hidden relative">
         {!!chartsData?.length && (
           <div className="w-full pb-4 xl:w-3/4 h-1/2 xl:pr-4 xl:h-full overflow-y-auto">
