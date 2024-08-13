@@ -1,6 +1,7 @@
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
-import { Radio } from 'antd';
+import { DatePicker, DatePickerProps } from 'antd';
+import dayjs from 'dayjs';
 
 type Props = {
   data: IFlowNodeParameter;
@@ -8,20 +9,17 @@ type Props = {
   onChange: (value: any) => void;
 };
 
-export const RenderRadio = (params: Props) => {
+export const RenderDatePicker = (params: Props) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
+  const onChangeDate: DatePickerProps['onChange'] = (date, dateString) => {
+    onChange(dateString);
+  };
+
   return (
     <div className="p-2 text-sm">
-      <Radio.Group
-        {...attr}
-        options={data.options}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-        defaultValue={defaultValue}
-      />
+      <DatePicker {...attr} className="w-full" defaultValue={dayjs(defaultValue)} onChange={onChangeDate} />
     </div>
   );
 };

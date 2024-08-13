@@ -13,13 +13,15 @@ export const RenderSelect = (params: Props) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
-    <Select
-      {...attr}
-      className="w-full nodrag"
-      placeholder="Please select" 
-      defaultValue={defaultValue}
-      options={data.options}
-      onChange={onChange}
-    />
+    <div className="p-2 text-sm">
+      <Select
+        {...attr}
+        className="w-full nodrag"
+        placeholder="please select"
+        defaultValue={defaultValue}
+        options={data.options}
+        onChange={onChange}
+      />
+    </div>
   );
 };

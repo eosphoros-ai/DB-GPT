@@ -79,16 +79,18 @@ export const RenderTreeSelect = (params: TextAreaProps) => {
   };
 
   return (
-    <TreeSelect
-      fieldNames={{ label: 'label', value: 'value', children: 'children' }}
-      {...data.ui.attr}
-      style={{ width: '100%' }}
-      value={defaultValue}
-      treeDefaultExpandAll
-      onChange={onChange}
-      treeData={data.options}
-      onDropdownVisibleChange={handleDropdownVisibleChange}
-    />
+    <div className="p-2 text-sm">
+      <TreeSelect
+        fieldNames={{ label: 'label', value: 'value', children: 'children' }}
+        {...data.ui.attr}
+        style={{ width: '100%' }}
+        value={defaultValue}
+        treeDefaultExpandAll
+        onChange={onChange}
+        treeData={data.options}
+        onDropdownVisibleChange={handleDropdownVisibleChange}
+      />
+    </div>
 
     // TODO: Implement the TreeSelect component
     //   <TreeSelect
