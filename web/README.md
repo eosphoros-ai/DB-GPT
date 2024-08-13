@@ -48,7 +48,7 @@ yarn install
 
 ### Usage
 ```sh
-cp .env.example .env
+cp .env.template .env
 ```
 edit the `API_BASE_URL` to the real address
 
