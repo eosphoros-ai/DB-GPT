@@ -155,7 +155,7 @@ const ChatSider: React.FC<{
 }> = ({ dialogueList = [], refresh, historyLoading, listLoading, order }) => {
   const { t } = useTranslation();
   const { mode } = useContext(ChatContext);
-  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [collapsed, setCollapsed] = useState<boolean>(true);
 
   // 展开或收起列表按钮样式
   const triggerStyle: React.CSSProperties = useMemo(() => {
@@ -194,6 +194,7 @@ const ChatSider: React.FC<{
       theme={mode}
       width={280}
       collapsible={true}
+      collapsed={collapsed}
       collapsedWidth={0}
       trigger={collapsed ? <CaretRightOutlined className="text-base" /> : <CaretLeftOutlined className="text-base" />}
       zeroWidthTriggerStyle={triggerStyle}
