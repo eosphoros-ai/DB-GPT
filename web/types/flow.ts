@@ -58,12 +58,6 @@ export type IFlowNodeParameterUI = {
     disabled: boolean;
     [key: string]: any;
   };
-  autosize: {
-    minRows: number;
-    maxRows: number; 
-    min_rows: number;
-    max_rows: number;
-  };
   show_input: boolean;
 };
 
