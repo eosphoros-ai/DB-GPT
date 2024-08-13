@@ -1,7 +1,7 @@
 """TuGraph Connector."""
 
 import json
-from typing import Dict, List, cast
+from typing import Dict, List, cast, Union, Generator
 
 from .base import BaseConnector
 
@@ -88,15 +88,18 @@ class TuGraphConnector(BaseConnector):
         """Close the Neo4j driver."""
         self._driver.close()
 
-    def run(self, query: str, fetch: str = "all") -> List:
+    def run(self, query: str, stream: bool = False) -> Union[List, Generator]:
         """Run GQL."""
         with self._driver.session(database=self._graph) as session:
             result = session.run(query)
-            return list(result)
+            if(stream):
+                for record in result:
+                    yield record
+            else:
+                return list(result)
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get fields about specified graph.
-
         Args:
             table_name (str): table name (graph name)
             table_type (str): table type (vertex or edge)
