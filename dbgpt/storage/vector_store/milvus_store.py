@@ -98,7 +98,7 @@ class MilvusVectorConfig(VectorStoreConfig):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    uri: str = Field(
+    uri: Optional[str] = Field(
         default=None,
         description="The uri of milvus store, if not set, will use the default uri.",
     )
