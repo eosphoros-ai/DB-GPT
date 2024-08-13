@@ -251,9 +251,20 @@ const Chat: React.FC = () => {
     }
   }, [isChatDefault]);
   
-  if (scene === 'chat_dashboard') {
-    return <>{isContract ? <DbEditor /> : <ChatContainer />}</>;
-  }
+  // if (scene === 'chat_dashboard') {
+  //   return (
+  //     <div>
+  //       <ChatSider
+  //         refresh={refreshDialogList}
+  //         dialogueList={dialogueList}
+  //         listLoading={listLoading}
+  //         historyLoading={historyLoading}
+  //         order={order}
+  //       />
+  //       {isContract ? <DbEditor /> : <ChatContainer />}
+  //     </div>
+  //   );
+  // }
 
   return (
     <ChatContentContext.Provider
@@ -293,7 +304,8 @@ const Chat: React.FC = () => {
             order={order}
           />
           <Layout className="bg-transparent">
-            {isChatDefault ? (
+            {scene === 'chat_dashboard' ? (isContract ? <DbEditor /> : <ChatContainer />) : null}
+            {scene !== 'chat_dashboard' ? (isChatDefault ? (
               <Content>
                 <ChatDefault />
               </Content>
@@ -304,7 +316,7 @@ const Chat: React.FC = () => {
                   <ChatInputPanel ctrl={ctrl} />
                 </Content>
               </Spin>
-            )}
+            )) : null}
           </Layout>
         </Layout>
       </Flex>

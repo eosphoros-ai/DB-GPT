@@ -474,184 +474,186 @@ function DbEditor() {
   return (
     <div className="flex flex-col w-full h-full overflow-hidden">
       <Header />
-      <div className="relative flex flex-1 overflow-hidden">
-        <div
-          className={classNames('h-full relative transition-[width] overflow-hidden', {
-            'w-0': isMenuExpand,
-            'w-64': !isMenuExpand,
-          })}
-        >
-          <div className="relative w-64 h-full overflow-hidden flex flex-col rounded bg-white dark:bg-theme-dark-container p-4">
-            <Select
-              size="middle"
-              className="w-full mb-2"
-              value={currentRound}
-              options={rounds?.data?.map((item: RoundProps) => {
-                return {
-                  label: item.round_name,
-                  value: item.round,
-                };
-              })}
-              onChange={(e) => {
-                setCurrentRound(e);
-              }}
-            />
-            <Search className="mb-2" placeholder="Search" onChange={onChange} />
-            {treeData && treeData.length > 0 && (
-              <div className="flex-1 overflow-y-auto">
-                <Tree
-                  onExpand={(newExpandedKeys: Key[]) => {
-                    setExpandedKeys(newExpandedKeys);
-                    setAutoExpandParent(false);
-                  }}
-                  expandedKeys={expandedKeys}
-                  autoExpandParent={autoExpandParent}
-                  treeData={treeData}
-                  fieldNames={{
-                    title: 'showTitle',
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="absolute right-0 top-0 translate-x-full h-full flex items-center justify-center opacity-0 hover:opacity-100 group-hover/side:opacity-100 transition-opacity">
+      <div className="relative flex flex-1 p-4 pt-0 overflow-hidden">
+        <div className="relative flex overflow-hidden mr-4">
           <div
-            className="bg-white w-4 h-10 flex items-center justify-center dark:bg-theme-dark-container rounded-tr rounded-br z-10 text-xs cursor-pointer shadow-[4px_0_10px_rgba(0,0,0,0.06)] text-opacity-80"
-            onClick={() => {
-              setIsMenuExpand(!isMenuExpand);
-            }}
+            className={classNames('h-full relative transition-[width] overflow-hidden', {
+              'w-0': isMenuExpand,
+              'w-64': !isMenuExpand,
+            })}
           >
-            {!isMenuExpand ? <LeftOutlined /> : <RightOutlined />}
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col flex-1 max-w-full overflow-hidden">
-        {/* Actions */}
-        <div className="mb-2 bg-white dark:bg-theme-dark-container p-2 flex justify-between items-center">
-          <div className="flex gap-2">
-            <Button
-              className="text-xs rounded-none"
-              size="small"
-              type="primary"
-              icon={<CaretRightOutlined />}
-              loading={runLoading || runChartsLoading}
-              onClick={async () => {
-                if (scene === 'chat_dashboard') {
-                  runCharts();
-                } else {
-                  runSql();
-                }
-              }}
-            >
-              Run
-            </Button>
-            <Button
-              className="text-xs rounded-none"
-              type="primary"
-              size="small"
-              loading={submitLoading || submitChartLoading}
-              icon={<SaveFilled />}
-              onClick={async () => {
-                if (scene === 'chat_dashboard') {
-                  await submitChart();
-                } else {
-                  await submitSql();
-                }
-              }}
-            >
-              Save
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Icon
-              className={classNames('flex items-center justify-center w-6 h-6 text-lg rounded', {
-                'bg-theme-primary bg-opacity-10': layout === 'TB',
-              })}
-              component={SplitScreenWeight}
-              onClick={() => {
-                setLayout('TB');
-              }}
-            />
-            <Icon
-              className={classNames('flex items-center justify-center w-6 h-6 text-lg rounded', {
-                'bg-theme-primary bg-opacity-10': layout === 'LR',
-              })}
-              component={SplitScreenHeight}
-              onClick={() => {
-                setLayout('LR');
-              }}
-            />
-          </div>
-        </div>
-        {/* Panel */}
-        {Array.isArray(editorValue) ? (
-          <div className="flex flex-col h-full overflow-hidden">
-            <div className="w-full whitespace-nowrap overflow-x-auto bg-white dark:bg-theme-dark-container mb-2 text-[0px]">
-              {editorValue.map((item, index) => (
-                <Tooltip className="inline-block" key={item.title} title={item.title}>
-                  <div
-                    className={classNames(
-                      'max-w-[240px] px-3 h-10 text-ellipsis overflow-hidden whitespace-nowrap text-sm leading-10 cursor-pointer font-semibold hover:text-theme-primary transition-colors mr-2 last-of-type:mr-0',
-                      {
-                        'border-b-2 border-solid border-theme-primary text-theme-primary': currentTabIndex === index,
-                      },
-                    )}
-                    onClick={() => {
-                      setCurrentTabIndex(index);
-                      setNewEditorValue(editorValue?.[index]);
+            <div className="relative w-64 h-full overflow-hidden flex flex-col rounded bg-white dark:bg-theme-dark-container p-4">
+              <Select
+                size="middle"
+                className="w-full mb-2"
+                value={currentRound}
+                options={rounds?.data?.map((item: RoundProps) => {
+                  return {
+                    label: item.round_name,
+                    value: item.round,
+                  };
+                })}
+                onChange={(e) => {
+                  setCurrentRound(e);
+                }}
+              />
+              <Search className="mb-2" placeholder="Search" onChange={onChange} />
+              {treeData && treeData.length > 0 && (
+                <div className="flex-1 overflow-y-auto">
+                  <Tree
+                    onExpand={(newExpandedKeys: Key[]) => {
+                      setExpandedKeys(newExpandedKeys);
+                      setAutoExpandParent(false);
                     }}
-                  >
-                    {item.title}
-                  </div>
-                </Tooltip>
-              ))}
-            </div>
-            <div className="flex flex-1 overflow-hidden">
-              {editorValue.map((item, index) => (
-                <div
-                  key={item.title}
-                  className={classNames('w-full overflow-hidden', {
-                    hidden: index !== currentTabIndex,
-                    'block flex-1': index === currentTabIndex,
-                  })}
-                >
-                  <DbEditorContent
-                    editorValue={item}
-                    handleChange={(value) => {
-                      const { sql, thoughts } = resolveSqlAndThoughts(value);
-                      setNewEditorValue((old) => {
-                        return Object.assign({}, old, {
-                          sql,
-                          thoughts,
-                        });
-                      });
+                    expandedKeys={expandedKeys}
+                    autoExpandParent={autoExpandParent}
+                    treeData={treeData}
+                    fieldNames={{
+                      title: 'showTitle',
                     }}
-                    tableData={tableData}
-                    chartData={chartData}
                   />
                 </div>
-              ))}
+              )}
             </div>
           </div>
-        ) : (
-          <DbEditorContent
-            layout={layout}
-            editorValue={editorValue}
-            handleChange={(value) => {
-              const { sql, thoughts } = resolveSqlAndThoughts(value);
-              setNewEditorValue((old) => {
-                return Object.assign({}, old, {
-                  sql,
-                  thoughts,
+          <div className="absolute right-0 top-0 translate-x-full h-full flex items-center justify-center opacity-0 hover:opacity-100 group-hover/side:opacity-100 transition-opacity">
+            <div
+              className="bg-white w-4 h-10 flex items-center justify-center dark:bg-theme-dark-container rounded-tr rounded-br z-10 text-xs cursor-pointer shadow-[4px_0_10px_rgba(0,0,0,0.06)] text-opacity-80"
+              onClick={() => {
+                setIsMenuExpand(!isMenuExpand);
+              }}
+            >
+              {!isMenuExpand ? <LeftOutlined /> : <RightOutlined />}
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col flex-1 max-w-full overflow-hidden">
+          {/* Actions */}
+          <div className="mb-2 bg-white dark:bg-theme-dark-container p-2 flex justify-between items-center">
+            <div className="flex gap-2">
+              <Button
+                className="text-xs rounded-none"
+                size="small"
+                type="primary"
+                icon={<CaretRightOutlined />}
+                loading={runLoading || runChartsLoading}
+                onClick={async () => {
+                  if (scene === 'chat_dashboard') {
+                    runCharts();
+                  } else {
+                    runSql();
+                  }
+                }}
+              >
+                Run
+              </Button>
+              <Button
+                className="text-xs rounded-none"
+                type="primary"
+                size="small"
+                loading={submitLoading || submitChartLoading}
+                icon={<SaveFilled />}
+                onClick={async () => {
+                  if (scene === 'chat_dashboard') {
+                    await submitChart();
+                  } else {
+                    await submitSql();
+                  }
+                }}
+              >
+                Save
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Icon
+                className={classNames('flex items-center justify-center w-6 h-6 text-lg rounded', {
+                  'bg-theme-primary bg-opacity-10': layout === 'TB',
+                })}
+                component={SplitScreenWeight}
+                onClick={() => {
+                  setLayout('TB');
+                }}
+              />
+              <Icon
+                className={classNames('flex items-center justify-center w-6 h-6 text-lg rounded', {
+                  'bg-theme-primary bg-opacity-10': layout === 'LR',
+                })}
+                component={SplitScreenHeight}
+                onClick={() => {
+                  setLayout('LR');
+                }}
+              />
+            </div>
+          </div>
+          {/* Panel */}
+          {Array.isArray(editorValue) ? (
+            <div className="flex flex-col h-full overflow-hidden">
+              <div className="w-full whitespace-nowrap overflow-x-auto bg-white dark:bg-theme-dark-container mb-2 text-[0px]">
+                {editorValue.map((item, index) => (
+                  <Tooltip className="inline-block" key={item.title} title={item.title}>
+                    <div
+                      className={classNames(
+                        'max-w-[240px] px-3 h-10 text-ellipsis overflow-hidden whitespace-nowrap text-sm leading-10 cursor-pointer font-semibold hover:text-theme-primary transition-colors mr-2 last-of-type:mr-0',
+                        {
+                          'border-b-2 border-solid border-theme-primary text-theme-primary': currentTabIndex === index,
+                        },
+                      )}
+                      onClick={() => {
+                        setCurrentTabIndex(index);
+                        setNewEditorValue(editorValue?.[index]);
+                      }}
+                    >
+                      {item.title}
+                    </div>
+                  </Tooltip>
+                ))}
+              </div>
+              <div className="flex flex-1 overflow-hidden">
+                {editorValue.map((item, index) => (
+                  <div
+                    key={item.title}
+                    className={classNames('w-full overflow-hidden', {
+                      hidden: index !== currentTabIndex,
+                      'block flex-1': index === currentTabIndex,
+                    })}
+                  >
+                    <DbEditorContent
+                      editorValue={item}
+                      handleChange={(value) => {
+                        const { sql, thoughts } = resolveSqlAndThoughts(value);
+                        setNewEditorValue((old) => {
+                          return Object.assign({}, old, {
+                            sql,
+                            thoughts,
+                          });
+                        });
+                      }}
+                      tableData={tableData}
+                      chartData={chartData}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <DbEditorContent
+              layout={layout}
+              editorValue={editorValue}
+              handleChange={(value) => {
+                const { sql, thoughts } = resolveSqlAndThoughts(value);
+                setNewEditorValue((old) => {
+                  return Object.assign({}, old, {
+                    sql,
+                    thoughts,
+                  });
                 });
-              });
-            }}
-            tableData={tableData}
-            chartData={undefined}
-            tables={tables}
-          />
-        )}
+              }}
+              tableData={tableData}
+              chartData={undefined}
+              tables={tables}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
