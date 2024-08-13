@@ -57,13 +57,20 @@ type TextAreaProps = {
     },
   ];
   export const RenderTreeSelect = (params: TextAreaProps) => {
-    // const { data, defaultValue, onChange } = params;
+    const { data, defaultValue, onChange } = params;
     // console.log(data.options);
-    const [value, setValue] = useState<string>();
+    // const [value, setValue] = useState<string>();
 
-    const onChange = (newValue: string) => {
-      setValue(newValue);
-    };
+    // const onChange = (newValue: string) => {
+    //   setValue(newValue);
+    // };
+    const [dropdownVisible, setDropdownVisible] = useState(false);  
+  
+    const handleDropdownVisibleChange = (visible) => {  
+      setDropdownVisible(visible);  
+      // 你可以在这里执行更多的逻辑，比如发送请求、更新状态等  
+      console.log('Dropdown is now:', visible ? 'visible' : 'hidden');  
+    };  
     const focuss = ()=>{
         console.log('focus==========');
         
@@ -77,6 +84,8 @@ type TextAreaProps = {
           treeDefaultExpandAll
           onChange={onChange}
           treeData={data.options}
+          onDropdownVisibleChange={handleDropdownVisibleChange}  
+
         />
 
     //     <TreeSelect
