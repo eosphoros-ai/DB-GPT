@@ -13,7 +13,7 @@ export const RenderRadio = (params: Props) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
-    <div className="p-2 text-sm">
+    <div className="bg-white p-2 rounded">
       <Radio.Group
         {...attr}
         options={data.options}

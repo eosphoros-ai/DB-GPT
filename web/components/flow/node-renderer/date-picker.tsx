@@ -17,9 +17,5 @@ export const RenderDatePicker = (params: Props) => {
     onChange(dateString);
   };
 
-  return (
-    <div className="p-2 text-sm">
-      <DatePicker {...attr} className="w-full" defaultValue={dayjs(defaultValue)} onChange={onChangeDate} />
-    </div>
-  );
+  return <DatePicker {...attr} className="w-full" defaultValue={dayjs(defaultValue)} onChange={onChangeDate} />;
 };

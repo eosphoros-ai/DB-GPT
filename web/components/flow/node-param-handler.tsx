@@ -39,7 +39,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'int':
       case 'float':
         return (
-          <div className="p-2 text-sm">
+          <div className="text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
               {data.description && (
@@ -59,7 +59,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         );
       case 'str':
         return (
-          <div className="p-2 text-sm">
+          <div className="text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
               {data.description && (
@@ -86,11 +86,11 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
             )}
           </div>
         );
-      case 'checkbox':
+      case 'bool':
         defaultValue = defaultValue === 'False' ? false : defaultValue;
         defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
-          <div className="p-2 text-sm">
+          <div className="text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
               {data.description && (
