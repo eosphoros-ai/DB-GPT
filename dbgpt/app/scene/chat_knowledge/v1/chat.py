@@ -21,6 +21,7 @@ from dbgpt.core import (
 )
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
+from dbgpt.serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 from dbgpt.util.tracer import root_tracer, trace
 
 CFG = Config()
@@ -77,7 +78,6 @@ class ChatKnowledge(BaseChat):
         )
         from dbgpt.serve.rag.models.models import (
             KnowledgeSpaceDao,
-            KnowledgeSpaceEntity,
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
@@ -113,12 +113,19 @@ class ChatKnowledge(BaseChat):
                 # We use reranker, so if the top_k is less than 20,
                 # we need to set it to 20
                 retriever_top_k = max(CFG.RERANK_TOP_K, 20)
-        self.embedding_retriever = EmbeddingRetriever(
+        # self.embedding_retriever = EmbeddingRetriever(
+        #     top_k=retriever_top_k,
+        #     index_store=vector_store_connector.index_client,
+        #     query_rewrite=query_rewrite,
+        #     rerank=reranker,
+        # )
+        self._space_retriever = KnowledgeSpaceRetriever(
+            space_id=self.knowledge_space,
             top_k=retriever_top_k,
-            index_store=vector_store_connector.index_client,
             query_rewrite=query_rewrite,
             rerank=reranker,
         )
+
         self.prompt_template.template_is_strict = False
         self.relations = None
         self.chunk_dao = DocumentChunkDao()
@@ -275,6 +282,6 @@ class ChatKnowledge(BaseChat):
         with root_tracer.start_span(
             "execute_similar_search", metadata={"query": query}
         ):
-            return await self.embedding_retriever.aretrieve_with_scores(
+            return await self._space_retriever.aretrieve_with_scores(
                 query, self.recall_score
             )
