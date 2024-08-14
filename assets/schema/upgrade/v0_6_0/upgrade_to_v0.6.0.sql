@@ -19,11 +19,11 @@ ALTER TABLE  knowledge_space ADD COLUMN `user_ids` text DEFAULT NULL COMMENT 'kn
 
 
 -- document_chunk
-ALTER TABLE  document_chunk ADD COLUMN `questions` text DEFAULT NULL COMMENT 'chunk bind questions';
+ALTER TABLE  document_chunk ADD COLUMN `questions` text DEFAULT NULL COMMENT 'chunk related questions';
 
 -- knowledge_document
 ALTER TABLE  knowledge_document ADD COLUMN `doc_token` varchar(100) DEFAULT NULL COMMENT 'doc token';
-ALTER TABLE  knowledge_document ADD COLUMN `questions` text DEFAULT NULL COMMENT 'knowledge questions';
+ALTER TABLE  knowledge_document ADD COLUMN `questions` text DEFAULT NULL COMMENT 'document related questions';
 
 --gpts_messages
 ALTER TABLE  gpts_messages ADD COLUMN `is_success` int(4)  NULL DEFAULT 0 COMMENT 'agent message is success';

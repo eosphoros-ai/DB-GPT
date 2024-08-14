@@ -22,8 +22,6 @@ class SpaceServeRequest(BaseModel):
     desc: Optional[str] = Field(None, description="The description")
     """owner: owner"""
     owner: Optional[str] = Field(None, description="The owner")
-    """user_id: user_id, unique user info"""
-    user_id: str = None
     """context: argument context"""
     context: Optional[str] = Field(None, description="The context")
     """gmt_created: created time"""
@@ -41,14 +39,12 @@ class DocumentServeRequest(BaseModel):
     content: Optional[str] = Field(None, description="content")
     """doc file"""
     doc_file: Union[UploadFile, str] = File(None)
-    """doc_source: doc source"""
-    doc_source: Optional[str] = Field(None, description="doc source")
     """space id: space id"""
     space_id: Optional[str] = Field(None, description="space id")
     """space name: space name"""
     space_name: Optional[str] = Field(None, description="space name")
-    """user_id: user id"""
-    user_id: Optional[str] = Field(None, description="user id")
+    """questions: questions"""
+    questions: Optional[List[str]] = Field(None, description="questions")
 
 
 class DocumentServeResponse(BaseModel):
@@ -60,12 +56,8 @@ class DocumentServeResponse(BaseModel):
     content: Optional[str] = Field(None, description="content")
     """vector ids"""
     vector_ids: Optional[str] = Field(None, description="vector ids")
-    """doc_source: doc source"""
-    doc_source: Optional[str] = Field(None, description="doc source")
     """space: space name"""
     space: Optional[str] = Field(None, description="space name")
-    """space_id: space id"""
-    space_id: Optional[int] = Field(None, description="space id")
     """status: status"""
     status: Optional[str] = Field(None, description="status")
     """last_sync: last sync time"""
@@ -91,6 +83,7 @@ class ChunkServeRequest(BaseModel):
     doc_type: Optional[str] = Field(None, description="document type")
     content: Optional[str] = Field(None, description="chunk content")
     meta_info: Optional[str] = Field(None, description="chunk meta info")
+    questions: Optional[List[str]] = Field(None, description="chunk questions")
     gmt_created: Optional[str] = Field(None, description="chunk create time")
     gmt_modified: Optional[str] = Field(None, description="chunk modify time")
 
@@ -102,6 +95,7 @@ class ChunkServeResponse(BaseModel):
     doc_type: Optional[str] = Field(None, description="document type")
     content: Optional[str] = Field(None, description="chunk content")
     meta_info: Optional[str] = Field(None, description="chunk meta info")
+    questions: Optional[str] = Field(None, description="chunk questions")
 
 
 class KnowledgeSyncRequest(BaseModel):

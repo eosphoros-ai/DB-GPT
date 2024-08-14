@@ -47,16 +47,6 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item<IArguments>
-            tooltip="控制L2距离的衰减参数"
-            rules={[{ required: true }]}
-            label="lambda_value"
-            name={['embedding', 'lambda_value']}
-          >
-            <Input className="mb-5  h-12" placeholder="请输入" />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
           <Form.Item<IArguments> tooltip={t(`recall_type`)} rules={[{ required: true }]} label={t('recall_type')} name={['embedding', 'recall_type']}>
             <Input className="mb-5  h-12" />
           </Form.Item>

@@ -146,35 +146,32 @@ class KnowledgeService:
             responses.append(res)
         return responses
 
-    def arguments(self, space_name):
+    def arguments(self, space):
         """show knowledge space arguments
         Args:
             - space_name: Knowledge Space Name
         """
-        query = KnowledgeSpaceEntity(name=space_name)
-        spaces = knowledge_space_dao.get_knowledge_space(query)
-        if len(spaces) != 1:
-            raise Exception(f"there are no or more than one space called {space_name}")
-        space = spaces[0]
-        if space.context is None:
+        ks = knowledge_space_dao.get_one({"id": space})
+        if ks is None:
+            raise Exception(f"there are no or more than one space called {ks}")
+        if ks.context is None:
             context = self._build_default_context()
         else:
-            context = space.context
+            context = ks.context
         return json.loads(context)
 
-    def argument_save(self, space_name, argument_request: SpaceArgumentRequest):
+    def argument_save(self, space, argument_request: SpaceArgumentRequest):
         """save argument
         Args:
             - space_name: Knowledge Space Name
             - argument_request: SpaceArgumentRequest
         """
-        query = KnowledgeSpaceEntity(name=space_name)
-        spaces = knowledge_space_dao.get_knowledge_space(query)
-        if len(spaces) != 1:
-            raise Exception(f"there are no or more than one space called {space_name}")
-        space = spaces[0]
-        space.context = argument_request.argument
-        return knowledge_space_dao.update_knowledge_space(space)
+        ks = knowledge_space_dao.get_one({"id": space})
+        if ks is None:
+            raise Exception(f"there are no or more than one space called {ks}")
+        ks.context = argument_request.argument
+        return knowledge_space_dao.update_knowledge_space(ks)
+
 
     def get_knowledge_documents(self, space, request: DocumentQueryRequest):
         """get knowledge documents
@@ -184,6 +181,9 @@ class KnowledgeService:
         Returns:
             - res DocumentQueryResponse
         """
+        ks = knowledge_space_dao.get_one({"id": space})
+        if ks is None:
+            raise Exception(f"there is no space id called {space}")
         res = DocumentQueryResponse()
         if request.doc_ids and len(request.doc_ids) > 0:
             documents: List[
@@ -191,13 +191,14 @@ class KnowledgeService:
             ] = knowledge_document_dao.documents_by_ids(request.doc_ids)
             res.data = [item.to_dict() for item in documents]
         else:
+            space_name = ks.name
             query = {
                 "doc_type": request.doc_type,
-                "space_id": space,
+                "space": space_name,
                 "status": request.status,
             }
             if request.doc_name:
-                docs = knowledge_document_dao.get_list({"space_id": space})
+                docs = knowledge_document_dao.get_list({"space": space_name})
                 docs = [DocumentResponse.serve_to_response(doc) for doc in docs]
                 res.data = [
                     doc
@@ -304,13 +305,11 @@ class KnowledgeService:
             name=request.name,
             vector_type=request.vector_type,
             owner=request.owner,
-            user_id=request.user_id,
         )
         spaces = knowledge_space_dao.get_knowledge_space(query)
-        # 获取所有space名称
-        space_ids = [space.id for space in spaces]
+        space_names = [space.name for space in spaces]
         docs_count = knowledge_document_dao.get_knowledge_documents_count_bulk_by_ids(
-            space_ids
+            space_names
         )
         responses = []
         for space in spaces:
@@ -320,10 +319,18 @@ class KnowledgeService:
             res.vector_type = space.vector_type
             res.desc = space.desc
             res.owner = space.owner
-            res.gmt_created = space.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
-            res.gmt_modified = space.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+            res.gmt_created = (
+                space.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+                if space.gmt_created
+                else None
+            )
+            res.gmt_modified = (
+                space.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+                if space.gmt_modified
+                else None
+            )
             res.context = space.context
-            res.docs = docs_count.get(space.id, 0)
+            res.docs = docs_count.get(space.name, 0)
             responses.append(res)
         return responses
 
@@ -439,18 +446,13 @@ class KnowledgeService:
             doc_name=request.doc_name,
             doc_type=request.doc_type,
         )
-        document_query = KnowledgeDocumentEntity(id=request.document_id)
-        documents = knowledge_document_dao.get_documents(document_query)
-
-        data = document_chunk_dao.get_document_chunks(
-            query, page=request.page, page_size=request.page_size
-        )
-        res = ChunkQueryResponse(
-            data=data,
-            summary=documents[0].summary,
-            total=document_chunk_dao.get_document_chunks_count(query),
-            page=request.page,
-        )
+        res = ChunkQueryResponse()
+        res.data = [
+            chunk.to_dict()
+            for chunk in document_chunk_dao.get_document_chunks(
+                query, page=request.page, page_size=request.page_size
+            )
+        ]
         return res
 
     @trace("async_doc_embedding")

@@ -31,7 +31,6 @@ export type Embedding = {
   recall_score: string | number;
   recall_type: string;
   topk: string;
-  lambda_value: string | number;
 };
 
 export type Prompt = {

@@ -81,9 +81,6 @@ class ChatKnowledge(BaseChat):
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        # spaces = KnowledgeSpaceDao().get_knowledge_space(
-        #     KnowledgeSpaceEntity(name=self.knowledge_space)
-        # )
         spaces = KnowledgeSpaceDao().get_knowledge_space_by_ids([self.knowledge_space])
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{self.knowledge_space}")
@@ -127,7 +124,7 @@ class ChatKnowledge(BaseChat):
         self.chunk_dao = DocumentChunkDao()
         document_dao = KnowledgeDocumentDao()
         documents = document_dao.get_documents(
-            query=KnowledgeDocumentEntity(space=self.knowledge_space)
+            query=KnowledgeDocumentEntity(space=space.name)
         )
         if len(documents) > 0:
             self.document_ids = [document.id for document in documents]

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import (
+    ChunkEditRequest,
     ChunkQueryRequest,
     DocumentQueryRequest,
     DocumentSummaryRequest,
@@ -19,7 +20,10 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
 )
-from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
+from dbgpt.app.knowledge.request.response import (
+    ChunkQueryResponse,
+    KnowledgeQueryResponse,
+)
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
 from dbgpt.app.openapi.api_view_model import Result
@@ -35,6 +39,8 @@ from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.api.schemas import (
+    ChunkServeRequest,
+    DocumentServeRequest,
     KnowledgeConfigResponse,
     KnowledgeDomainType,
     KnowledgeStorageType,
@@ -94,21 +100,21 @@ def space_delete(request: KnowledgeSpaceRequest):
         return Result.failed(code="E000X", msg=f"space delete error {e}")
 
 
-@router.post("/knowledge/{space_name}/arguments")
-def arguments(space_name: str):
+@router.post("/knowledge/{space_id}/arguments")
+def arguments(space_id: str):
     print(f"/knowledge/space/arguments params:")
     try:
-        return Result.succ(knowledge_space_service.arguments(space_name))
+        return Result.succ(knowledge_space_service.arguments(space_id))
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space arguments error {e}")
 
 
-@router.post("/knowledge/{space_name}/argument/save")
-def arguments_save(space_name: str, argument_request: SpaceArgumentRequest):
+@router.post("/knowledge/{space_id}/argument/save")
+def arguments_save(space_id: str, argument_request: SpaceArgumentRequest):
     print(f"/knowledge/space/argument/save params:")
     try:
         return Result.succ(
-            knowledge_space_service.argument_save(space_name, argument_request)
+            knowledge_space_service.argument_save(space_id, argument_request)
         )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space save error {e}")
@@ -126,6 +132,27 @@ def document_add(space_name: str, request: KnowledgeDocumentRequest):
         # return Result.succ([])
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document add error {e}")
+
+
+@router.post("/knowledge/{space_name}/document/edit")
+def document_edit(
+    space_name: str,
+    request: KnowledgeDocumentRequest,
+    service: Service = Depends(get_rag_service),
+):
+    print(f"/document/edit params: {space_name}, {request}")
+    space = service.get({"name": space_name})
+    if space is None:
+        return Result.failed(
+            code="E000X",
+            msg=f"knowledge_space {space_name} can not be found",
+        )
+    serve_request = DocumentServeRequest(**request.dict())
+    serve_request.id = request.doc_id
+    try:
+        return Result.succ(service.update_document(request=serve_request))
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"document edit error {e}")
 
 
 @router.get("/knowledge/document/chunkstrategies")
@@ -350,12 +377,46 @@ async def batch_document_sync(
 
 
 @router.post("/knowledge/{space_name}/chunk/list")
-def document_list(space_name: str, query_request: ChunkQueryRequest):
-    print(f"/document/list params: {space_name}, {query_request}")
+def chunk_list(
+    space_name: str,
+    query_request: ChunkQueryRequest,
+    service: Service = Depends(get_rag_service),
+):
+    print(f"/chunk/list params: {space_name}, {query_request}")
     try:
-        return Result.succ(knowledge_space_service.get_document_chunks(query_request))
+        query = {
+            "id": query_request.id,
+            "document_id": query_request.document_id,
+            "doc_name": query_request.doc_name,
+            "doc_type": query_request.doc_type,
+            "content": query_request.content,
+        }
+        chunk_res = service.get_chunk_list(
+            query, query_request.page, query_request.page_size
+        )
+        res = ChunkQueryResponse(
+            data=chunk_res.items,
+            total=chunk_res.total_count,
+            page=chunk_res.page,
+        )
+        return Result.succ(res)
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document chunk list error {e}")
+
+
+@router.post("/knowledge/{space_name}/chunk/edit")
+def chunk_edit(
+    space_name: str,
+    edit_request: ChunkEditRequest,
+    service: Service = Depends(get_rag_service),
+):
+    print(f"/chunk/edit params: {space_name}, {edit_request}")
+    try:
+        serve_request = ChunkServeRequest(**edit_request.dict())
+        serve_request.id = edit_request.chunk_id
+        return Result.succ(service.update_chunk(request=serve_request))
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"document chunk edit error {e}")
 
 
 @router.post("/knowledge/{vector_name}/query")

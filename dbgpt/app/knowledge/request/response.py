@@ -4,6 +4,7 @@ from typing import List, Optional
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.app.knowledge.document_db import KnowledgeDocumentEntity
 from dbgpt.serve.rag.api.schemas import (
+    ChunkServeResponse,
     DocumentChunkVO,
     DocumentServeResponse,
     DocumentVO,
@@ -13,7 +14,7 @@ from dbgpt.serve.rag.api.schemas import (
 class ChunkQueryResponse(BaseModel):
     """data: data"""
 
-    data: List[DocumentChunkVO] = Field(None, description="document chunk list")
+    data: List[ChunkServeResponse] = Field(None, description="document chunk list")
     """summary: document summary"""
     summary: Optional[str] = Field(None, description="document summary")
     """total: total size"""
