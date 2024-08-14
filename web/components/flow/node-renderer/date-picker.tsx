@@ -11,11 +11,21 @@ type Props = {
 
 export const RenderDatePicker = (params: Props) => {
   const { data, defaultValue, onChange } = params;
+  console.log('data', data);
+
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   const onChangeDate: DatePickerProps['onChange'] = (date, dateString) => {
     onChange(dateString);
   };
 
-  return <DatePicker {...attr} className="w-full" defaultValue={dayjs(defaultValue)} onChange={onChangeDate} />;
+  return (
+    <DatePicker
+      {...attr}
+      className="w-full"
+      placeholder="please select a date"
+      defaultValue={defaultValue ? dayjs(defaultValue) : null}
+      onChange={onChangeDate}
+    />
+  );
 };
