@@ -153,9 +153,11 @@ const ChatSider: React.FC<{
   listLoading: boolean;
   order: React.MutableRefObject<number>;
 }> = ({ dialogueList = [], refresh, historyLoading, listLoading, order }) => {
+  const searchParams = useSearchParams();
+  const scene = searchParams?.get('scene') ?? '';
   const { t } = useTranslation();
   const { mode } = useContext(ChatContext);
-  const [collapsed, setCollapsed] = useState<boolean>(true);
+  const [collapsed, setCollapsed] = useState<boolean>(scene === 'chat_dashboard');
 
   // 展开或收起列表按钮样式
   const triggerStyle: React.CSSProperties = useMemo(() => {
@@ -207,7 +209,7 @@ const ChatSider: React.FC<{
             item={{
               label: t('assistant'),
               key: 'default',
-              icon: <Image src="/logo_s_latest.png" alt="default" width={24} height={24} />,
+              icon: <Image src="/LOGO_SMALL.png" alt="default" width={24} height={24} className='flex-1' />,
               default: true,
             }}
             order={order}
