@@ -177,10 +177,18 @@ const Canvas: React.FC<Props> = () => {
   }
 
   async function handleSaveFlow() {
-    const { name, label, description = '', editable = false } = form.getFieldsValue();
+    const { name, label, description = '', editable = false, deploy = false } = form.getFieldsValue();
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
-      const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject }));
+      const [, , res] = await apiInterceptors(updateFlowById(id, {
+        name,
+        label,
+        description,
+        editable,
+        uid: id,
+        flow_data: reactFlowObject,
+        state: deploy ? 'deployed' : 'developing',
+      }));
       setIsModalVisible(false);
       if (res?.success) {
         message.success('编辑成功');
@@ -190,7 +198,7 @@ const Canvas: React.FC<Props> = () => {
         message.error(res?.err_msg);
       }
     } else {
-      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject }));
+      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject, state: deploy ? 'deployed' : 'developing' }));
       setIsModalVisible(false);
       replace('/construct/flow');
       message.success('创建成功');
@@ -274,7 +282,7 @@ const Canvas: React.FC<Props> = () => {
           <Form.Item label="Editable" name="editable" initialValue={id ? flowInfo?.editable : true} valuePropName="checked">
             <Checkbox></Checkbox>
           </Form.Item>
-          <Form.Item label="Deploy" name="deploy" initialValue={id ? flowInfo?.deploy : true} valuePropName="checked">
+          <Form.Item label="Deploy" name="deploy" initialValue={id ? (flowInfo?.state === 'deployed' || flowInfo?.state === 'running') : true} valuePropName="checked">
             <Checkbox></Checkbox>
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
