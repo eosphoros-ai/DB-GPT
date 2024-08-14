@@ -101,7 +101,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
         isValidConnection={(connection) => isValidConnection(connection)}
       />
       <Typography
-        className={classNames('bg-white w-full px-2 py-1 rounded text-neutral-500',{
+        className={classNames('bg-white dark:bg-[#232734] w-full px-2 py-1 rounded text-neutral-500',{
           'text-right': label === 'outputs',
         })}
       >

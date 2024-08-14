@@ -74,7 +74,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   function renderOutput(data: IFlowNode) {
     if (flowType === 'operator' && outputs?.length > 0) {
       return (
-        <div className="bg-zinc-100 rounded p-2">
+        <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
           <TypeLabel label="Outputs" />
           <div className="text-sm flex flex-col space-y-3">
             {outputs?.map((output, index) => (
@@ -86,7 +86,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     } else if (flowType === 'resource') {
       // resource nodes show output default
       return (
-        <div className="bg-zinc-100 rounded p-2">
+        <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
           <TypeLabel label="Outputs" />
           <div className="text-sm">
             <NodeHandler key={`${data.id}_input_0`} node={data} data={data} type="source" label="outputs" index={0} />
@@ -126,7 +126,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     >
       <div
         className={classNames(
-          'w-72 h-auto rounded-xl shadow-md px-2 py-4 border bg-white dark:bg-zinc-800 cursor-grab flex flex-col space-y-2 text-sm',
+          'w-80 h-auto rounded-xl shadow-md px-2 py-4 border bg-white dark:bg-zinc-800 cursor-grab flex flex-col space-y-2 text-sm',
           {
             'border-blue-500': node.selected || isHovered,
             'border-stone-400 dark:border-white': !node.selected && !isHovered,
@@ -144,7 +144,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         </div>
 
         {inputs?.length > 0 && (
-          <div className="bg-zinc-100 rounded p-2">
+          <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Inputs" />
             <div className="text-sm flex flex-col space-y-2">
               {inputs?.map((input, index) => (
@@ -155,7 +155,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         )}
 
         {parameters?.length > 0 && (
-          <div className="bg-zinc-100 rounded p-2">
+          <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Parameters" />
             <div className="text-sm flex flex-col space-y-3 text-neutral-500">
               {parameters?.map((parameter, index) => (
