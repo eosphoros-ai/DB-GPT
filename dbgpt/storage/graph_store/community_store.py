@@ -1,12 +1,13 @@
 """Define the CommunityStore class"""
 
 import asyncio
-import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Generator, List
 
 from openai import OpenAI
+from sqlalchemy import text
 
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import MemoryGraph, Vertex
 
@@ -15,54 +16,49 @@ client = OpenAI(api_key="")
 
 class SQLiteORM:
     def __init__(self, db_path: str = "communities.db"):
-        self.db_path = db_path
-        self.conn = None
-        self.cursor = None
+        self.connector = SQLiteConnector.from_file_path(db_path)
         self._init_db()
 
     def _init_db(self):
         """Initialize the SQL database."""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS communities (
-                    cluster_id TEXT PRIMARY KEY,
-                    details TEXT
-                )
-                """
-            )
-
-    def _get_connection(self):
-        if not self.conn:
-            self.conn = sqlite3.connect(self.db_path)
-            self.cursor = self.conn.cursor()
-        return self.conn, self.cursor
+        create_table_sql = """
+        CREATE TABLE IF NOT EXISTS communities (
+            cluster_id TEXT PRIMARY KEY,
+            details TEXT
+        )
+        """
+        self.connector._write(create_table_sql)
 
     def save_community_info(self, community_info: Dict[str, List[str]]):
         """Save community info to the SQL database."""
-        conn, cursor = self._get_connection()
-        with conn:
-            cursor.executemany(
-                "INSERT OR REPLACE INTO communities (cluster_id, details) VALUES (?, ?)",
-                [(k, " ".join(v)) for k, v in community_info.items()],
-            )
+        insert_sql = """
+        INSERT OR REPLACE INTO communities (cluster_id, details) VALUES (:cluster_id, :details)
+        """
+        params = [
+            {"cluster_id": k, "details": " ".join(v)} for k, v in community_info.items()
+        ]
+        self.connector.session.execute(text(insert_sql), params)
+        self.connector.session.commit()
 
     def update_community_summary(self, community_id: str, summary: str):
         """Update community summary in the SQL database."""
-
-        conn, cursor = self._get_connection()
-        with conn:
-            cursor.execute(
-                "UPDATE communities SET details=? WHERE cluster_id=?",
-                (summary, community_id),
-            )
+        update_sql = """
+        UPDATE communities SET details = :details WHERE cluster_id = :cluster_id
+        """
+        params = {"details": summary, "cluster_id": community_id}
+        self.connector.session.execute(text(update_sql), params)
+        self.connector.session.commit()
 
     def fetch_all_communities(self) -> Dict[str, str]:
         """Fetch all communities from SQL database."""
+        select_sql = "SELECT cluster_id, details FROM communities"
+        result = self.connector.session.execute(text(select_sql))
+        return dict(result.fetchall())
 
-        conn, cursor = self._get_connection()
-        cursor.execute("SELECT cluster_id, details FROM communities")
-        return dict(cursor.fetchall())
+    def __del__(self):
+        """Close the connection when the object is deleted."""
+        if self.connector:
+            self.connector.close()
 
 
 class CommunityStore:
