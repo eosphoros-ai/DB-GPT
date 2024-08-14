@@ -1,13 +1,13 @@
 import BlurredCard, { ChatButton, InnerDropdown } from '@/ant-components/common/blurredCard';
 import ConstructLayout from '@/ant-components/layout/Construct';
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, delSpace, getSpaceList, newDialogue } from '@/client/api';
+import { apiInterceptors, delSpace, getSpaceList, newDialogue, getSpaceConfig } from '@/client/api';
 import DocPanel from '@/components/knowledge/doc-panel';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
 import Segmentation from '@/components/knowledge/segmentation';
 import SpaceForm from '@/components/knowledge/space-form';
-import { File, ISpace, StepChangeParams } from '@/types/knowledge';
+import { File, ISpace, StepChangeParams, IStorage } from '@/types/knowledge';
 import { PlusOutlined, ReadOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
 import { Button, Input, Modal, Spin, Steps, Tag } from 'antd';
 import classNames from 'classnames';
@@ -30,6 +30,7 @@ const Knowledge = () => {
   const [docType, setDocType] = useState<string>('');
   const [addStatus, setAddStatus] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [spaceConfig, setSpaceConfig] = useState<IStorage | null>(null);
 
   const { t } = useTranslation();
   const addKnowledgeSteps = [
@@ -46,8 +47,16 @@ const Knowledge = () => {
     setLoading(false);
     setSpaceList(data);
   }
+
+  async function getSpaceConfigs() {
+    const [_, data] = await apiInterceptors(getSpaceConfig());
+    if (!data) return null;
+    setSpaceConfig(data.storage);
+  }
+
   useEffect(() => {
     getSpaces();
+    getSpaceConfigs();
   }, []);
 
   const handleChat = async (space: ISpace) => {
@@ -238,7 +247,7 @@ const Knowledge = () => {
           footer={null}
         >
           <Steps current={activeStep} items={addKnowledgeSteps} />
-          {activeStep === 0 && <SpaceForm handleStepChange={handleStepChange} />}
+          {activeStep === 0 && <SpaceForm handleStepChange={handleStepChange} spaceConfig={spaceConfig} />}
           {activeStep === 1 && <DocTypeForm handleStepChange={handleStepChange} />}
           <DocUploadForm
             className={classNames({ hidden: activeStep !== 2 })}

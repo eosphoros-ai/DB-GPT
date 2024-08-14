@@ -3,7 +3,7 @@ import {
   delDocument,
   editChunk,
   getDocumentList,
-  getKnowledgeAdmins,
+  // getKnowledgeAdmins,
   searchDocumentList,
   syncDocument,
   updateKnowledgeAdmins,
@@ -190,18 +190,18 @@ export default function DocPanel(props: IProps) {
       </Tooltip>
     );
   };
-  const getAdmins = useCallback(async () => {
-    const [err, data] = await apiInterceptors(getKnowledgeAdmins(space.id as string));
+  // const getAdmins = useCallback(async () => {
+  //   const [err, data] = await apiInterceptors(getKnowledgeAdmins(space.id as string));
 
-    if (!data || !data.length) return;
-    setAdmins(data as string[]);
-  }, [space.id]);
+  //   if (!data || !data.length) return;
+  //   setAdmins(data as string[]);
+  // }, [space.id]);
 
   useEffect(() => {
     fetchDocuments();
-    getAdmins();
+    // getAdmins();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getAdmins]);
+  }, []);
 
   useEffect(() => {
     if (addStatus === 'finish') {
@@ -217,14 +217,14 @@ export default function DocPanel(props: IProps) {
         user_nos: options as any,
       });
       if (!data.success) {
-        getAdmins();
+        // getAdmins();
         notification.error({ description: data.err_msg, message: 'Update Error' });
       } else {
         message.success(t('Edit_Success'));
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [space.id, getAdmins],
+    [space.id],
   );
   const handleChange = (value: string[]) => {
     updateAdmins(value);
@@ -272,16 +272,16 @@ export default function DocPanel(props: IProps) {
     return (
       <div className="w-full h-full">
         <div className="mb-4">
-          <div className="mb-1">管理员（工号，去前缀0）：</div>
-          <div className="flex w-full justify-between">
-            <Select
+          {/* <div className="mb-1">管理员（工号，去前缀0）：</div> */}
+          <div className="flex w-full justify-end">
+            {/* <Select
               mode="tags"
               value={admins}
               style={{ width: '50%' }}
               onChange={handleChange}
               tokenSeparators={[',']}
               options={admins.map((item: string) => ({ label: item, value: item }))}
-            />
+            /> */}
             <Button
               type="primary"
               onClick={async () => {
