@@ -26,7 +26,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const { inputs, outputs, parameters, flow_type: flowType } = node;
   const [isHovered, setIsHovered] = useState(false);
   const reactFlow = useReactFlow();
-  
+
   function onHover() {
     setIsHovered(true);
   }
@@ -76,7 +76,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       return (
         <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
           <TypeLabel label="Outputs" />
-          <div className="text-sm flex flex-col space-y-3">
+          <div className="flex flex-col space-y-3">
             {outputs?.map((output, index) => (
               <NodeHandler key={`${data.id}_input_${index}`} node={data} data={output} type="source" label="outputs" index={index} />
             ))}
@@ -88,9 +88,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       return (
         <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
           <TypeLabel label="Outputs" />
-          <div className="text-sm">
-            <NodeHandler key={`${data.id}_input_0`} node={data} data={data} type="source" label="outputs" index={0} />
-          </div>
+          <NodeHandler key={`${data.id}_input_0`} node={data} data={data} type="source" label="outputs" index={0} />
         </div>
       );
     }
@@ -146,7 +144,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         {inputs?.length > 0 && (
           <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Inputs" />
-            <div className="text-sm flex flex-col space-y-2">
+            <div className="flex flex-col space-y-2">
               {inputs?.map((input, index) => (
                 <NodeHandler key={`${node.id}_input_${index}`} node={node} data={input} type="target" label="inputs" index={index} />
               ))}
@@ -157,7 +155,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         {parameters?.length > 0 && (
           <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Parameters" />
-            <div className="text-sm flex flex-col space-y-3 text-neutral-500">
+            <div className="flex flex-col space-y-3 text-neutral-500">
               {parameters?.map((parameter, index) => (
                 <NodeParamHandler key={`${node.id}_param_${index}`} node={node} data={parameter} label="parameters" index={index} />
               ))}
