@@ -15,7 +15,11 @@ import {
   RenderTreeSelect,
   RenderTimePicker,
   RenderTextArea,
+  RenderUpdata,
+  RenderCodeEditor,
 } from './node-renderer';
+import MonacoEditor from '@/components/chat/monaco-editor'
+// C:\Users\Administrator\Desktop\ai\DB-GPT\web\components\chat\monaco-editor.tsx
 import { convertKeysToCamelCase } from '@/utils/flow';
 
 interface NodeParamHandlerProps {
@@ -130,7 +134,9 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'select':
         return <RenderSelect {...props} />;
       case 'text_area':
-        return <RenderTextArea {...props} />;
+        return <RenderCodeEditor {...props} />;
+
+        // return <RenderTextArea {...props} />;
       case 'slider':
         return <RenderSlider {...props} />;
       case 'date_picker':
@@ -139,6 +145,10 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderTimePicker {...props} />;
       case 'tree_select':
         return <RenderTreeSelect {...props} />;
+      case 'upload':
+        return <RenderUpdata {...props} />;
+      case 'code_editor':
+        return <RenderCodeEditor {...props} />;
       default:
         return null;
     }
