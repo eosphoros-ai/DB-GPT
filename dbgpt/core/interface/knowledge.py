@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 
@@ -61,6 +61,7 @@ class Chunk(Document):
         default="\n",
         description="Separator between metadata fields when converting to string.",
     )
+    retriever: Optional[str] = Field(default=None, description="retriever name")
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         """Convert Chunk to dict."""

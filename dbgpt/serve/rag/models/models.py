@@ -3,6 +3,7 @@ from typing import Any, Dict, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, or_
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.serve.rag.api.schemas import SpaceServeRequest, SpaceServeResponse
 from dbgpt.storage.metadata import BaseDao, Model
@@ -19,11 +20,9 @@ class KnowledgeSpaceEntity(Model):
     context = Column(Text)
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
-    user_id = Column(String(100))
-    user_ids = Column(Text)
 
     def __repr__(self):
-        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}', user_ids='{self.user_ids}')"
+        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
 class KnowledgeSpaceDao(BaseDao):
@@ -37,14 +36,11 @@ class KnowledgeSpaceDao(BaseDao):
             owner=space.owner,
             gmt_created=datetime.now(),
             gmt_modified=datetime.now(),
-            user_id=space.user_id,
         )
         session.add(knowledge_space)
         session.commit()
         session.close()
-        ks = self.get_knowledge_space(
-            KnowledgeSpaceEntity(user_id=space.user_id, name=space.name)
-        )
+        ks = self.get_knowledge_space(KnowledgeSpaceEntity(name=space.name))
         if ks is not None and len(ks) == 1:
             return ks[0].id
         raise Exception(f"create space error, find more than 1 or 0 space.")
@@ -67,13 +63,6 @@ class KnowledgeSpaceDao(BaseDao):
         if query.id is not None:
             knowledge_spaces = knowledge_spaces.filter(
                 KnowledgeSpaceEntity.id == query.id
-            )
-        if query.user_id is not None:
-            knowledge_spaces = knowledge_spaces.filter(
-                or_(
-                    KnowledgeSpaceEntity.user_id == query.user_id,
-                    KnowledgeSpaceEntity.user_ids.like(f"%{query.user_id}%"),
-                )
             )
         if query.name is not None:
             knowledge_spaces = knowledge_spaces.filter(
@@ -166,8 +155,6 @@ class KnowledgeSpaceDao(BaseDao):
             desc=entity.desc,
             owner=entity.owner,
             context=entity.context,
-            user_id=entity.user_id,
-            user_ids=entity.user_ids,
         )
 
     def to_response(self, entity: KnowledgeSpaceEntity) -> SpaceServeResponse:
@@ -186,6 +173,4 @@ class KnowledgeSpaceDao(BaseDao):
             desc=entity.desc,
             owner=entity.owner,
             context=entity.context,
-            user_id=entity.user_id,
-            user_ids=entity.user_ids,
         )

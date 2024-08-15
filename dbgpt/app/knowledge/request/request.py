@@ -32,9 +32,6 @@ class KnowledgeSpaceRequest(BaseModel):
     """owner: owner"""
     owner: Optional[str] = None
 
-    """user_id: user_id, unique user info"""
-    user_id: Optional[str] = None
-    user_nos: List[str] = Field(default_factory=list)
     space_id: Optional[Union[int, str]] = None
 
 
