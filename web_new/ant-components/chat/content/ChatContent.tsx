@@ -168,7 +168,7 @@ const ChatContent: React.FC<{
     <div className="flex flex-1 gap-3 mt-6">
       {/* icon */}
       <div className="flex flex-shrink-0 items-start">{isRobot ? <RobotIcon model={model_name} /> : <UserIcon />}</div>
-      <div className={`flex ${scene === 'chat_agent' && !thinking ? 'flex-1' : ''}`}>
+      <div className={`flex ${scene === 'chat_agent' && !thinking ? 'flex-1' : ''} overflow-hidden`}>
         {/* 用户提问 */}
         {!isRobot && <div className="flex flex-1 items-center text-sm text-[#1c2533] dark:text-white">{typeof context === 'string' && context}</div>}
         {/* ai回答 */}
