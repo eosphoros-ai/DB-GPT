@@ -13,10 +13,11 @@ type TextAreaProps = {
 export const RenderTextArea = (params: TextAreaProps) => {
   const { data, defaultValue, onChange } = params;
   convertKeysToCamelCase(data?.ui?.attr?.autosize || {});
+  const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
     <div className="p-2 text-sm">
-      <TextArea {...data.ui.attr} defaultValue={defaultValue} onChange={(e) => onChange(e.target.value)} {...data.ui.attr.autosize} rows={4} />
+      <TextArea {...attr} defaultValue={defaultValue} onChange={(e) => onChange(e.target.value)} {...data.ui.attr.autosize} rows={4} />
     </div>
   );
 };
