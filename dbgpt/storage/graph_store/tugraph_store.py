@@ -44,10 +44,6 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="label",
         description="The label of edge name, `label` by default.",
     )
-    summary_enabled: bool = Field(
-        default=False,
-        description=""
-    )
 
 
 class TuGraphStore(GraphStoreBase):
@@ -55,6 +51,7 @@ class TuGraphStore(GraphStoreBase):
 
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
+        self._config = config
         self._host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
         self._port = int(os.getenv("TUGRAPH_PORT", 7687)) or config.port
         self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
@@ -119,6 +116,10 @@ class TuGraphStore(GraphStoreBase):
                     'edge', '{self._edge_label}', '[["{self._node_label}",
                     "{self._node_label}"]]', ["id",STRING,false],["description",STRING,true])"""
             self.conn.run(create_edge_gql)   
+
+    def get_config(self):
+        """Get the graph store config."""
+        return self._config
 
     def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""

@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.graph_store.graph import MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import Vertex, Graph
 
 client = OpenAI(api_key="")
 
@@ -61,32 +61,39 @@ class SQLiteORM:
             self.connector.close()
 
 
+class Community:
+    id: str
+    level: str
+    data: Graph
+    summary: str = None
+
+
 class CommunityStore:
     def __init__(self, graph_store: GraphStoreBase, enable_persistence: bool = True):
         # Initialize with a graph store and maximum hierarchical level for Leiden algorithm
         self._graph_store = graph_store
-        self._max_hierarchical_level = 3
-        self._community_summary = {}
+        self._max_hierarchy_level = 3
         self._enable_persistence = enable_persistence
         self._orm = SQLiteORM() if enable_persistence else None
         self._executor = ThreadPoolExecutor(max_workers=10)
 
     async def build_communities(self):
-        # Build hierarchical communities using the Leiden algorithm
-        LEIDEN_QUERY = ""  # TODO: create leiden query in TuGraph
-        community_hierarchical_clusters = self._graph_store.stream_query(LEIDEN_QUERY)
-        community_info = await self._retrieve_community_info(
-            community_hierarchical_clusters
-        )
-        await self._summarize_communities(community_info)
+        # discover communities
+        graph_name = self._graph_store.get_config().name
+        query = f"CALL {graph_name}.leiden({self._max_hierarchy_level})"
+        communities_metadata = self._graph_store.stream_query(query)
 
-    async def _retrieve_community_info(
-        self, clusters: Generator[MemoryGraph, None, None]
-    ) -> Dict[str, List[str]]:
+        # summarize communities
+        communities = await self._retrieve_communities(communities_metadata)
+        await self._summarize_communities(communities)
+
+    async def _retrieve_communities(
+        self, communities_metadata: Generator[Graph, None, None]
+    ) -> List[Community]:
         """Collect detailed information for each node based on their community.
 
-        # community_hierarchical_clusters structure: Generator[MemoryGraph, None, None]
-        Each MemoryGraph contains:
+        # community_hierarchical_clusters structure: Generator[Graph, None, None]
+        Each Graph contains:
             vertices: A set of Vertex objects, each representing a node in the graph.
             edges: A set of Edge objects, each representing an edge in the graph.
             Vertex objects may include the following attributes:
@@ -113,10 +120,10 @@ class CommunityStore:
 
         """
 
-        community_info: Dict[str, List[str]] = {}
+        community_info: List[Community] = []
         tasks = []
 
-        for memory_graph in clusters:
+        for memory_graph in communities_metadata:
             for vertex in memory_graph.vertices:
                 task = asyncio.create_task(
                     self._process_vertex(memory_graph, vertex, community_info)
@@ -134,51 +141,52 @@ class CommunityStore:
 
     async def _process_vertex(
         self,
-        memory_graph: MemoryGraph,
+        memory_graph: Graph,
         vertex: Vertex,
-        community_info: Dict[str, List[str]],
+        communities: List[Community],
     ):
         cluster_id = vertex.properties.get("community_id", "unknown")
-        if cluster_id not in community_info:
-            community_info[cluster_id] = []
+        if cluster_id not in communities:
+            communities[cluster_id] = []
 
         for edge in memory_graph.edges:
             if edge.src_id == vertex.id:
                 neighbor_vertex = memory_graph.get_vertex(edge.dst_id)
                 if neighbor_vertex:
                     detail = f"{vertex.id} -> {neighbor_vertex.id} -> {edge.label} -> {edge.properties.get('description', 'No description')}"
-                    community_info[cluster_id].append(detail)
+                    communities[cluster_id].append(detail)
 
-    async def _summarize_communities(self, community_info: Dict[str, List[str]]):
+    async def _summarize_communities(self, communities: List[Community]):
         """Generate and store summaries for each community."""
         tasks = []
-        for community_id, details in community_info.items():
-            task = asyncio.create_task(self._summarize_community(community_id, details))
+        for community in communities:
+            task = asyncio.create_task(self._summarize_community(community))
             tasks.append(task)
         await asyncio.gather(*tasks)
 
-    async def _summarize_community(self, community_id: str, details: List[str]):
-        details_text = f"{' '.join(details)}."
-        summary = await self._generate_community_summary(details_text)
-        self._community_summary[community_id] = summary
+    async def _summarize_community(self, community: Community):
+        summary = await self._generate_community_summary(community.data)
+        community.summary = summary
 
         if self._enable_persistence and self._orm:
             await asyncio.get_event_loop().run_in_executor(
                 self._executor,
                 self._orm.update_community_summary,
-                community_id,
+                community.id,
                 summary,
             )
 
-    async def summarize_communities(self) -> Dict[str, str]:
+    async def search_communities(self, query: str) -> List[Community]:
+        # TODO: search communities relevant with query (by RDB / Vector / index)
         if self._enable_persistence and self._orm:
             return await asyncio.get_event_loop().run_in_executor(
                 self._executor, self._orm.fetch_all_communities
             )
         else:
-            return self._community_summary
+            # TODO: in-memory search cache can be used here
+            return
 
-    async def _generate_community_summary(self, text):
+    async def _generate_community_summary(self, graph: Graph):
         """Generate summary for a given text using an LLM."""
         response = client.chat.completions.create(
             model="gpt-4o",
@@ -195,7 +203,7 @@ class CommunityStore:
                         """
                     ),
                 },
-                {"role": "user", "content": text},
+                {"role": "user", "content": graph},
             ],
         )
         return response.choices[0].message.content

@@ -1,7 +1,7 @@
 """Graph store base class."""
 import json
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Generator
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
@@ -26,8 +26,13 @@ class MemoryGraphStore(GraphStoreBase):
 
     def __init__(self, graph_store_config: MemoryGraphStoreConfig):
         """Initialize MemoryGraphStore with a memory graph."""
+        self._graph_store_config = graph_store_config
         self._edge_name_key = graph_store_config.edge_name_key
         self._graph = MemoryGraph(edge_label=self._edge_name_key)
+
+    def get_config(self):
+        """Get the graph store config."""
+        return self._graph_store_config
 
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Insert a triplet into the graph."""
@@ -79,3 +84,7 @@ class MemoryGraphStore(GraphStoreBase):
     def query(self, query: str, **args) -> Graph:
         """Execute a query on graph."""
         raise NotImplementedError("Query memory graph not allowed")
+
+    def stream_query(self, query: str) -> Generator[Graph, None, None]:
+        """Execute stream query."""
+        raise NotImplementedError("Stream query memory graph not allowed")
