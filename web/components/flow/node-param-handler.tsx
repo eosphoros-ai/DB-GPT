@@ -15,7 +15,7 @@ import {
   RenderTreeSelect,
   RenderTimePicker,
   RenderTextArea,
-  RenderUpdata,
+  RenderUpload,
   RenderCodeEditor,
 } from './node-renderer';
 import MonacoEditor from '@/components/chat/monaco-editor'
@@ -144,7 +144,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'tree_select':
         return <RenderTreeSelect {...props} />;
       case 'upload':
-        return <RenderUpdata {...props} />;
+        return <RenderUpload {...props} />;
       case 'code_editor':
         return <RenderCodeEditor {...props} />;
       default:

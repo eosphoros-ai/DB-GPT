@@ -2,6 +2,7 @@ import React from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { Button, message, Upload } from 'antd';
+import { convertKeysToCamelCase } from '@/utils/flow';
 
 const props: UploadProps = {
   name: 'file',
@@ -21,12 +22,19 @@ const props: UploadProps = {
   },
 };
 
-export const RenderUpdata: React.FC = () => (
-    <div style={{textAlign:'center'}} className="p-2 text-sm">
-        <Upload   {...props}>
-            <Button    icon={<UploadOutlined />}>上传数据</Button>
-        </Upload>
-    </div>
+export const RenderUpload: React.FC = (params) => (
+    const { data, defaultValue, onChange } = params;
+
+const attr = convertKeysToCamelCase(data.ui?.attr || {});
+
+return (
+  <div style={{ textAlign: 'center' }} className="p-2 text-sm">
+    <Upload {...attr}   {...props}>
+      <Button icon={<UploadOutlined />}>上传数据</Button>
+    </Upload>
+  </div>
+)
+    
 
 );
 
