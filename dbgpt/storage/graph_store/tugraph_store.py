@@ -44,7 +44,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="label",
         description="The label of edge name, `label` by default.",
     )
-    summary_enabled: str = Field(
+    summary_enabled: bool = Field(
         default=False,
         description=""
     )
@@ -59,7 +59,7 @@ class TuGraphStore(GraphStoreBase):
         self._port = int(os.getenv("TUGRAPH_PORT", 7687)) or config.port
         self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
         self._password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
-        self._summary_enabled = os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED") or config.summary_enabled
+        self._summary_enabled = os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", False) or config.summary_enabled
         self._node_label = (
             os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
         )
@@ -86,28 +86,39 @@ class TuGraphStore(GraphStoreBase):
             return self._node_label in result["vertex_tables"]
         if elem_type == "edge":
             return self._edge_label in result["edge_tables"]
-
+    def _add_vertex_index(self, field_name):
+        gql = f"CALL db.addIndex('{self._node_label}', '{field_name}', false)"
+        self.conn.run(gql)
     def _create_schema(self):
         if not self._check_label("vertex"):
-            if(self._summary_enabled):
-                # call function create label
-                pass
-            else:
-                create_vertex_gql = (
+            create_vertex_gql = (
                     f"CALL db.createLabel("
                     f"'vertex', '{self._node_label}', "
                     f"'id', ['id',string,false])"
                 )
-            self.conn.run(create_vertex_gql)
-        if not self._check_label("edge"):
             if(self._summary_enabled):
-                # call function create label
-                pass
-            else:
-                create_edge_gql = f"""CALL db.createLabel(
+                create_vertex_gql = (
+                        f"CALL db.createLabel("
+                        f"'vertex', '{self._node_label}', "
+                        f"'id', ['id',string,false],"
+                        f"['_document_id',string,false],"
+                        f"['_community_id',int32,true],"
+                        f"['_level_id',int32,true],"
+                        f"['_weight',int32,true],"
+                        f"['description',string,true])"
+                    )   
+            self.conn.run(create_vertex_gql)
+            self._add_vertex_index('_community_id')
+
+        if not self._check_label("edge"):
+            create_edge_gql = f"""CALL db.createLabel(
                     'edge', '{self._edge_label}', '[["{self._node_label}",
                     "{self._node_label}"]]', ["id",STRING,false])"""
-            self.conn.run(create_edge_gql)
+            if(self._summary_enabled):
+                create_edge_gql = f"""CALL db.createLabel(
+                    'edge', '{self._edge_label}', '[["{self._node_label}",
+                    "{self._node_label}"]]', ["id",STRING,false],["description",STRING,true])"""
+            self.conn.run(create_edge_gql)   
 
     def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""
@@ -142,17 +153,29 @@ class TuGraphStore(GraphStoreBase):
 
     def insert_graph(self, graph:Graph) -> None:
         """Add triplet."""
-        nodes:Iterator[Vertex] = MemoryGraph.vertices()
-        edges:Iterator[Edge] = MemoryGraph.edges()
+        nodes:Iterator[Vertex] = graph.vertices()
+        edges:Iterator[Edge] = graph.edges()
         node_list = []
         edge_list = []
         for node in nodes:
-            node_list.append({'id':node.vid(),'description':node.get_prop('description')})    
-        node_query = f"""CALL db.upsertVertex("{self._node_label}", {node_list})"""
+            node_list.append({
+                'id': f"'{node.vid}'",
+                'description': f"'{node.get_prop('description')}'",
+                '_document_id': f"'{node.get_prop('_document_id')}'",
+                '_community_id': 1,
+                '_level_id': 1,
+                '_weight_id': 1
+            })
+        node_query = f"""CALL db.upsertVertex("{self._node_label}", [{', '.join(['{' + ', '.join([f"{k}: {v}" for k, v in node.items()]) + '}' for node in node_list])}])"""
         for edge in edges:
-            edge_list.append({'id':edge.sid(),'id':edge.tid(),'description':edge.get_prop('description')})    
-        edge_query = f"""CALL db.upsertEdge('{self._edge_label}', '{{"type":"{self._node_label}","key":"id"}}', '{{"type":"{self._node_label}","key":"id"}}', {edge_list})"""
-        
+            edge_list.append({
+                'sid':edge.sid,
+                'tid':edge.tid,
+                'id':edge.get_prop('label'),
+                'description':f"{edge.get_prop('description')}"
+            })    
+        edge_list_str = ', '.join([f'{{sid:"{edge["sid"]}", tid: "{edge["tid"]}",id: "{edge["id"]}", description: "{edge["description"]}"}}' for edge in edge_list])
+        edge_query = f"""CALL db.upsertEdge('{self._edge_label}', {{type:"{self._node_label}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{edge_list_str}])"""
         self.conn.run(query=node_query)
         self.conn.run(query=edge_query)
 
@@ -269,32 +292,45 @@ class TuGraphStore(GraphStoreBase):
     def stream_query(self, query: str) -> Generator[MemoryGraph, None, None]:
         """Execute a stream query."""
         from neo4j import graph
-        for record in self.conn.run(query, stream=True):
+        for record in self.conn.run_stream(query):
             mg = MemoryGraph()
             for key in record.keys():
                 value = record[key]
                 if isinstance(value, graph.Node):
                     node_id = value._properties["id"]
-                    node = Vertex(node_id)
-                    MemoryGraph.upsert_vertex(node)
+                    description = value._properties["description"]
+                    community_id = value._properties["_community_id"]
+                    level_id = value._properties["_level_id"]
+                    vertex = Vertex(node_id,description=description,community_id=community_id,level_id=level_id)
+                    mg.upsert_vertex(vertex)
                 elif isinstance(value, graph.Relationship):
                     rel_nodes = value.nodes
                     prop_id = value._properties["id"]
                     src_id = rel_nodes[0]._properties["id"]
                     dst_id = rel_nodes[1]._properties["id"]
-                    edge = Edge(src_id, dst_id, label=prop_id)
+                    description = value._properties["description"]
+                    edge = Edge(src_id, dst_id, label=prop_id, description = description)
                     mg.append_edge(edge)
                 elif isinstance(value, graph.Path):
                     nodes = list(record["p"].nodes)
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append(nodes[i]._properties["id"])
+                        formatted_path.append({
+                            id:nodes[i]._properties["id"],
+                            community_id:nodes[i]._properties["_community_id"],
+                            description:nodes[i]._properties["description"],
+                            level_id:nodes[i]._properties["_level_id"],
+                        })
                     if i < len(rels):
-                        formatted_path.append(rels[i]._properties["id"])
+                        formatted_path.append({
+                            id:rels[i]._properties["id"],
+                            description:rels[i]._properties["description"],
+                        })
                     for path in formatted_path:
-                            for i in range(0, len(path), 2):
-                                mg.upsert_vertex(Vertex(path[i]))
-                                if i + 2 < len(path):
-                                    mg.append_edge(Edge(path[i], path[i + 2], path[i + 1]))
+                            print(path)
+                            # for i in range(0, len(path), 2):
+                            #     mg.upsert_vertex(Vertex(path[i]['id'],description=path[i]['description'],community_id=path[i]['community_id'],level_id=path[i]['level_id']))
+                            #     if i + 2 < len(path):
+                            #         mg.append_edge(Edge(path[i][id], path[i + 2][id], label = path[i + 1][id], description=path[i + 1]['description']))
             yield mg
