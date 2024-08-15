@@ -89,14 +89,16 @@ class TuGraphConnector(BaseConnector):
         self._driver.close()
 
     def run(self, query: str, stream: bool = False) -> Union[List, Generator]:
+        with self._driver.session(database=self._graph) as session:
+            result = session.run(query)
+            return list(result)
+            
+    def run_stream(self, query: str, stream: bool = False) -> Union[List, Generator]:
         """Run GQL."""
         with self._driver.session(database=self._graph) as session:
             result = session.run(query)
-            if(stream):
-                for record in result:
+            for record in result:
                     yield record
-            else:
-                return list(result)
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get fields about specified graph.
