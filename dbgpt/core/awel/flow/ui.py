@@ -11,6 +11,7 @@ _UI_TYPE = Literal[
     "select",
     "cascader",
     "checkbox",
+    "radio",
     "date_picker",
     "input",
     "text_area",
@@ -175,6 +176,12 @@ class UICheckbox(UIComponent):
         self._check_options(parameter_dict.get("options", {}))
 
 
+class UIRadio(UICheckbox):
+    """Radio component."""
+
+    ui_type: Literal["radio"] = Field("radio", frozen=True)  # type: ignore
+
+
 class UIDatePicker(UIComponent):
     """Date picker component."""
 
@@ -232,23 +239,31 @@ class UIInput(UIComponent):
 class UITextArea(PanelEditorMixin, UIInput):
     """Text area component."""
 
-    class AutoSize(BaseModel):
-        """Auto size configuration."""
+    class UIAttribute(UIInput.UIAttribute):
+        """Text area attribute."""
 
-        min_rows: Optional[int] = Field(
+        class AutoSize(BaseModel):
+            """Auto size configuration."""
+
+            min_rows: Optional[int] = Field(
+                None,
+                description="The minimum number of rows",
+            )
+            max_rows: Optional[int] = Field(
+                None,
+                description="The maximum number of rows",
+            )
+
+        auto_size: Optional[Union[bool, AutoSize]] = Field(
             None,
-            description="The minimum number of rows",
-        )
-        max_rows: Optional[int] = Field(
-            None,
-            description="The maximum number of rows",
+            description="Whether the height of the textarea automatically adjusts "
+            "based on the content",
         )
 
     ui_type: Literal["text_area"] = Field("text_area", frozen=True)  # type: ignore
-    autosize: Optional[Union[bool, AutoSize]] = Field(
+    attr: Optional[UIAttribute] = Field(
         None,
-        description="Whether the height of the textarea automatically adjusts based "
-        "on the content",
+        description="The attributes of the component",
     )
 
 
@@ -430,8 +445,9 @@ class UICodeEditor(UITextArea):
 class DefaultUITextArea(UITextArea):
     """Default text area component."""
 
-    autosize: Union[bool, UITextArea.AutoSize] = Field(
-        default_factory=lambda: UITextArea.AutoSize(min_rows=2, max_rows=40),
-        description="Whether the height of the textarea automatically adjusts based "
-        "on the content",
+    attr: Optional[UITextArea.UIAttribute] = Field(
+        default_factory=lambda: UITextArea.UIAttribute(
+            auto_size=UITextArea.UIAttribute.AutoSize(min_rows=2, max_rows=40)
+        ),
+        description="The attributes of the component",
     )
