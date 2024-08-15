@@ -2,6 +2,9 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 const en = {
+  UploadData: 'Upload Data',
+  CodeEditor: 'Code Editor:',
+  openCodeEditor:'Open Code Editor',
   Knowledge_Space: 'Knowledge',
   space: 'space',
   Vector: 'Vector',
@@ -234,6 +237,9 @@ export interface Resources {
 }
 
 const zh: Resources['translation'] = {
+  UploadData: '上传数据',
+  CodeEditor: '代码编辑:',
+  openCodeEditor: '打开代码编辑器',
   Knowledge_Space: '知识库',
   space: '知识库',
   Vector: '向量',

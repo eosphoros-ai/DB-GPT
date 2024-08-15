@@ -1,9 +1,6 @@
 import { message } from 'antd';
 import axios from './ctx-axios';
 import { isPlainObject } from 'lodash';
-import 'codemirror/lib/codemirror.css';  
-import 'codemirror/theme/material.css'; // 引入你喜欢的主题  
-import 'codemirror/mode/javascript/javascript'; // 引入JavaScript语言模式  
 const DEFAULT_HEADERS = {
   'content-type': 'application/json',
 };

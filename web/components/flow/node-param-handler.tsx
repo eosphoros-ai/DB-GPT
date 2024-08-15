@@ -18,9 +18,6 @@ import {
   RenderUpload,
   RenderCodeEditor,
 } from './node-renderer';
-import MonacoEditor from '@/components/chat/monaco-editor'
-// C:\Users\Administrator\Desktop\ai\DB-GPT\web\components\chat\monaco-editor.tsx
-import { convertKeysToCamelCase } from '@/utils/flow';
 
 interface NodeParamHandlerProps {
   node: IFlowNode;
