@@ -18,6 +18,7 @@ export const RenderInput = (params: Props) => {
       className="w-full"
       placeholder="please input"
       defaultValue={defaultValue}
+      allowClear
       onChange={(e) => {
         onChange(e.target.value);
       }}

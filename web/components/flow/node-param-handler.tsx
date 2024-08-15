@@ -15,6 +15,7 @@ import {
   RenderTreeSelect,
   RenderTimePicker,
   RenderTextArea,
+  RenderPassword,
 } from './node-renderer';
 import { convertKeysToCamelCase } from '@/utils/flow';
 
@@ -138,6 +139,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'time_picker':
         return <RenderTimePicker {...props} />;
       case 'tree_select':
+        return <RenderPassword {...props} />;
+      case 'password':
         return <RenderTreeSelect {...props} />;
       default:
         return null;
