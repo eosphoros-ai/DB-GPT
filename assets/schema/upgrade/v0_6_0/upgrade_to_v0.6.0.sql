@@ -36,6 +36,14 @@ ALTER TABLE  prompt_manage ADD COLUMN `prompt_code` varchar(255) NULL COMMENT 'P
 ALTER TABLE  prompt_manage ADD COLUMN `response_schema` text  NULL COMMENT 'Prompt response schema';
 ALTER TABLE  prompt_manage ADD COLUMN `user_code` varchar(128)  NULL COMMENT 'User code';
 
+--chat_feed_back
+ALTER TABLE  chat_feed_back ADD COLUMN `message_id` varchar(255)  NULL COMMENT 'Message id';
+ALTER TABLE  chat_feed_back ADD COLUMN `feedback_type` varchar(50)  NULL COMMENT 'Feedback type like or unlike';
+ALTER TABLE  chat_feed_back ADD COLUMN `reason_types` varchar(255)  NULL COMMENT 'Feedback reason categories';
+ALTER TABLE  chat_feed_back ADD COLUMN `user_code` varchar(128)  NULL COMMENT 'User code';
+ALTER TABLE  chat_feed_back ADD COLUMN `remark` text NULL COMMENT 'Feedback remark';
+
+
 -- dbgpt.recommend_question definition
 CREATE TABLE `recommend_question` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
