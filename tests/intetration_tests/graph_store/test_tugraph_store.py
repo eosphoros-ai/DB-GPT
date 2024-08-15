@@ -76,12 +76,10 @@ def test_insert_graph(store):
     store.insert_graph(graph)
 
 def test_stream_query(store):
-    query = 'MATCH p=(n)-[r]-(m) WHERE n._community_id = 1 RETURN n,r,m,p'
+    query = 'MATCH (n)-[r]-(m) WHERE n._community_id = 1 RETURN n,r,m'
     store.stream_query(query)
     for record in store.stream_query(query):
         for node in record.vertices():
-            pass
-            # print(node)
+            print(node)
         for edge in record.edges():
-            pass
-            # print(edge)
+            print(edge)
