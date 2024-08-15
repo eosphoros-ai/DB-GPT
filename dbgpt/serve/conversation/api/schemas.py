@@ -156,6 +156,14 @@ class MessageVo(BaseModel):
         ],
     )
 
+    feedback: Optional[Dict] = Field(
+        default={},
+        description="feedback info",
+        examples=[
+            "{}",
+        ],
+    )
+
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """Convert the model to a dictionary"""
         return model_to_dict(self, **kwargs)

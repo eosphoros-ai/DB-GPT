@@ -1,12 +1,11 @@
 import ast
 import json
 import logging
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
 from dbgpt.app.knowledge.document_db import KnowledgeDocumentDao
-
 from dbgpt.component import ComponentType
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
@@ -45,9 +44,7 @@ class QARetriever(BaseRetriever):
         self._chunk_dao = DocumentChunkDao()
         self._embedding_fn = embedding_fn
 
-        space = self._space_dao.get_one(
-            {"id": space_id}
-        )
+        space = self._space_dao.get_one({"id": space_id})
         if not space:
             raise ValueError("space not found")
         self.documents = self._document_dao.get_list({"space": space.name})
@@ -72,16 +69,16 @@ class QARetriever(BaseRetriever):
                 questions = json.loads(doc.questions)
                 if query in questions:
                     chunks = self._chunk_dao.get_document_chunks(
-                        DocumentChunkEntity(
-                            document_id=doc.id
-                        ),
-                        page_size=CHUNK_PAGE_SIZE
+                        DocumentChunkEntity(document_id=doc.id),
+                        page_size=CHUNK_PAGE_SIZE,
                     )
                     candidates = [
-                        Chunk(content=chunk.content,
-                              metadata=ast.literal_eval(chunk.meta_info),
-                              retriever=self.name(),
-                              score=0.0)
+                        Chunk(
+                            content=chunk.content,
+                            metadata=ast.literal_eval(chunk.meta_info),
+                            retriever=self.name(),
+                            score=0.0,
+                        )
                         for chunk in chunks
                     ]
                     candidate_results.extend(
@@ -109,8 +106,7 @@ class QARetriever(BaseRetriever):
         doc_ids = [doc.id for doc in self.documents]
         query_param = DocumentChunkEntity()
         chunks = self._chunk_dao.get_chunks_with_questions(
-            query=query_param,
-            document_ids=doc_ids
+            query=query_param, document_ids=doc_ids
         )
         for chunk in chunks:
             if chunk.questions:
@@ -118,14 +114,13 @@ class QARetriever(BaseRetriever):
                 if query in questions:
                     logger.info(f"qa chunk hit:{chunk}, question:{query}")
                     candidate_results.append(
-                        Chunk(content=chunk.content,
-                              chunk_id=str(chunk.id),
-                              metadata={
-                                  "prop_field": ast.literal_eval(chunk.meta_info)
-                              },
-                              retriever=self.name(),
-                              score=1.0
-                              )
+                        Chunk(
+                            content=chunk.content,
+                            chunk_id=str(chunk.id),
+                            metadata={"prop_field": ast.literal_eval(chunk.meta_info)},
+                            retriever=self.name(),
+                            score=1.0,
+                        )
                     )
         if len(candidate_results) > 0:
             return self._cosine_similarity_rerank(candidate_results, query)
@@ -137,16 +132,16 @@ class QARetriever(BaseRetriever):
                     logger.info(f"qa document hit:{doc}, question:{query}")
                     chunks = self._chunk_dao.get_document_chunks(
                         DocumentChunkEntity(document_id=doc.id),
-                        page_size=CHUNK_PAGE_SIZE
+                        page_size=CHUNK_PAGE_SIZE,
                     )
                     candidates_with_scores = [
-                        Chunk(content=chunk.content,
-                              chunk_id=str(chunk.id),
-                              metadata={
-                                  "prop_field": ast.literal_eval(chunk.meta_info)
-                                        },
-                              retriever=self.name(),
-                              score=1.0)
+                        Chunk(
+                            content=chunk.content,
+                            chunk_id=str(chunk.id),
+                            metadata={"prop_field": ast.literal_eval(chunk.meta_info)},
+                            retriever=self.name(),
+                            score=1.0,
+                        )
                         for chunk in chunks
                     ]
                     candidate_results.extend(
@@ -188,26 +183,29 @@ class QARetriever(BaseRetriever):
         )
         return candidates_with_score
 
-    def _cosine_similarity_rerank(self, candidates_with_scores: List[Chunk]
-                                  , query: str) -> List[Chunk]:
+    def _cosine_similarity_rerank(
+        self, candidates_with_scores: List[Chunk], query: str
+    ) -> List[Chunk]:
         """Rerank candidates using cosine similarity."""
         if len(candidates_with_scores) > self._top_k:
             for candidate in candidates_with_scores:
                 similarity = calculate_cosine_similarity(
                     embeddings=self._embedding_fn,
                     prediction=query,
-                    contexts=[candidate.content]
+                    contexts=[candidate.content],
                 )
                 score = float(similarity.mean())
                 candidate.score = score
             candidates_with_scores.sort(key=lambda x: x.score, reverse=True)
             candidates_with_scores = candidates_with_scores[: self._top_k]
             candidates_with_scores = [
-                Chunk(content=candidate.content,
-                      chunk_id=candidate.chunk_id,
-                      metadata=candidate.metadata,
-                      retriever=self.name(),
-                      score=1.0)
+                Chunk(
+                    content=candidate.content,
+                    chunk_id=candidate.chunk_id,
+                    metadata=candidate.metadata,
+                    retriever=self.name(),
+                    score=1.0,
+                )
                 for candidate in candidates_with_scores
             ]
         return candidates_with_scores

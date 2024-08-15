@@ -5,7 +5,7 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import Chunk
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.retriever import EmbeddingRetriever, Ranker, QueryRewrite
+from dbgpt.rag.retriever import EmbeddingRetriever, QueryRewrite, Ranker
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.serve.rag.models.models import KnowledgeSpaceDao
@@ -47,6 +47,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
+
         space_dao = KnowledgeSpaceDao()
         space = space_dao.get_one({"id": space_id})
         config = VectorStoreConfig(name=space.name, embedding_fn=embedding_fn)
@@ -58,18 +59,17 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
 
-        self._retriever_chain = RetrieverChain(retrievers=[
-            QARetriever(space_id=space_id,
-                        top_k=top_k,
-                        embedding_fn=embedding_fn
-                        ),
-            EmbeddingRetriever(
-                index_store=self._vector_store_connector.index_client,
-                top_k=top_k,
-                query_rewrite=self._query_rewrite,
-                rerank=self._rerank
-            )
-        ], executor=self._executor
+        self._retriever_chain = RetrieverChain(
+            retrievers=[
+                QARetriever(space_id=space_id, top_k=top_k, embedding_fn=embedding_fn),
+                EmbeddingRetriever(
+                    index_store=self._vector_store_connector.index_client,
+                    top_k=top_k,
+                    query_rewrite=self._query_rewrite,
+                    rerank=self._rerank,
+                ),
+            ],
+            executor=self._executor,
         )
 
     def _retrieve(
@@ -84,9 +84,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         Return:
             List[Chunk]: list of chunks
         """
-        candidates = self._retriever_chain.retrieve(
-            query=query, filters=filters
-        )
+        candidates = self._retriever_chain.retrieve(query=query, filters=filters)
         return candidates
 
     def _retrieve_with_score(

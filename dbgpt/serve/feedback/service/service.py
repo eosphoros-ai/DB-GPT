@@ -105,7 +105,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         feedbacks = self.dao.get_list(
             ServeRequest(conv_uid=conv_uid, feedback_type=feedback_type)
         )
-        return [ServerResponse.from_entity(item) for item in feedbacks]
+        return feedbacks
 
     def create_or_update(self, request: ServeRequest) -> ServerResponse:
         """

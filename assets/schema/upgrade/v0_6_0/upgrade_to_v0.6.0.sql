@@ -12,12 +12,6 @@ ALTER TABLE  gpts_app ADD COLUMN `admins` text DEFAULT NULL COMMENT 'administrat
 ALTER TABLE  connect_config ADD COLUMN `user_name` varchar(255) DEFAULT NULL COMMENT 'user name';
 ALTER TABLE  connect_config ADD COLUMN `user_id` varchar(255) DEFAULT NULL COMMENT 'user id';
 
-
---knowledge_space
-ALTER TABLE  knowledge_space ADD COLUMN `user_id` varchar(255) DEFAULT NULL COMMENT 'knowledge space owner';
-ALTER TABLE  knowledge_space ADD COLUMN `user_ids` text DEFAULT NULL COMMENT 'knowledge space members';
-
-
 -- document_chunk
 ALTER TABLE  document_chunk ADD COLUMN `questions` text DEFAULT NULL COMMENT 'chunk related questions';
 

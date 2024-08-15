@@ -76,9 +76,7 @@ class ChatKnowledge(BaseChat):
         embedding_fn = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
-        from dbgpt.serve.rag.models.models import (
-            KnowledgeSpaceDao,
-        )
+        from dbgpt.serve.rag.models.models import KnowledgeSpaceDao
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         spaces = KnowledgeSpaceDao().get_knowledge_space_by_ids([self.knowledge_space])

@@ -172,7 +172,6 @@ class KnowledgeService:
         ks.context = argument_request.argument
         return knowledge_space_dao.update_knowledge_space(ks)
 
-
     def get_knowledge_documents(self, space, request: DocumentQueryRequest):
         """get knowledge documents
         Args:
