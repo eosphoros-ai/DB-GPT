@@ -134,9 +134,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'select':
         return <RenderSelect {...props} />;
       case 'text_area':
-        return <RenderCodeEditor {...props} />;
-
-        // return <RenderTextArea {...props} />;
+        return <RenderTextArea {...props} />;
       case 'slider':
         return <RenderSlider {...props} />;
       case 'date_picker':
