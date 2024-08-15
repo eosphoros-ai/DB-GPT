@@ -1,6 +1,6 @@
 """Neo4j vector store."""
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Generator
 
 from dbgpt._private.pydantic import ConfigDict
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
@@ -23,6 +23,9 @@ class Neo4jStore(GraphStoreBase):
     def __init__(self, graph_store_config: Neo4jStoreConfig):
         """Initialize the Neo4jStore with connection details."""
         pass
+
+    def get_config(self):
+        """Get the graph store config."""
 
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Insert triplets."""
@@ -62,3 +65,7 @@ class Neo4jStore(GraphStoreBase):
     def query(self, query: str, **args) -> Graph:
         """Execute a query on graph."""
         return MemoryGraph()
+
+    def stream_query(self, query: str) -> Generator[Graph, None, None]:
+        """Execute stream query."""
+
