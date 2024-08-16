@@ -1,4 +1,4 @@
-"""Neo4j vector store."""
+"""Neo4j store."""
 import logging
 from typing import List, Optional, Tuple, Generator
 
