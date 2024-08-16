@@ -54,9 +54,14 @@ export type IFlowNodeParameter = {
 
 export type IFlowNodeParameterUI = {
   ui_type: string;
+  language: string;
   attr: {
     disabled: boolean;
     [key: string]: any;
+  };
+  editor: {
+    width: Number;
+    height: Number;
   };
   show_input: boolean;
 };

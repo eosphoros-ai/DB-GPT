@@ -1,7 +1,6 @@
 import { message } from 'antd';
 import axios from './ctx-axios';
 import { isPlainObject } from 'lodash';
-
 const DEFAULT_HEADERS = {
   'content-type': 'application/json',
 };

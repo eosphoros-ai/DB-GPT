@@ -13,6 +13,7 @@ type TextAreaProps = {
 
 export const RenderTextArea = (params: TextAreaProps) => {
   const { data, defaultValue, onChange } = params;
+
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (

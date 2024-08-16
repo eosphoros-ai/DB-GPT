@@ -15,9 +15,10 @@ import {
   RenderTreeSelect,
   RenderTimePicker,
   RenderTextArea,
+  RenderUpload,
+  RenderCodeEditor,
   RenderPassword,
 } from './node-renderer';
-import { convertKeysToCamelCase } from '@/utils/flow';
 
 interface NodeParamHandlerProps {
   node: IFlowNode;
@@ -142,6 +143,10 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderPassword {...props} />;
       case 'password':
         return <RenderTreeSelect {...props} />;
+      case 'upload':
+        return <RenderUpload {...props} />;
+      case 'code_editor':
+        return <RenderCodeEditor {...props} />;
       default:
         return null;
     }

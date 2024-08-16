@@ -8,4 +8,6 @@ export * from './textarea';
 export * from './slider';
 export * from './time-picker';
 export * from './tree-select';
+export * from './codeEditor';
+export * from './upload';
 export * from './password';
