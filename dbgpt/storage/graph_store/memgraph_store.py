@@ -1,4 +1,4 @@
-"""Graph store base class."""
+"""Memory graph store."""
 import json
 import logging
 from typing import List, Optional, Tuple, Generator

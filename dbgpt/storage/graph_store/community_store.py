@@ -2,6 +2,7 @@
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Dict, Generator, List
 
 from openai import OpenAI
@@ -61,6 +62,7 @@ class SQLiteORM:
             self.connector.close()
 
 
+@dataclass
 class Community:
     id: str
     level: str

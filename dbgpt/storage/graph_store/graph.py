@@ -1,4 +1,4 @@
-"""Graph store base class."""
+"""Graph definition."""
 import itertools
 import json
 import logging

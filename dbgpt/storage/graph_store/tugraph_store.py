@@ -1,4 +1,4 @@
-"""TuGraph vector store."""
+"""TuGraph store."""
 import logging
 import os
 from typing import List, Optional, Tuple, Generator, Iterator
