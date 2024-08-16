@@ -278,9 +278,6 @@ def run_webserver(param: WebServerParameters = None):
         param = initialize_app(param)
 
         # TODO
-        from dbgpt.serve.agent.agents.expand.app_link_assisant_agent import (  # noqa: F401
-            LinkAppAssistantAgent,
-        )
         from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (  # noqa: F401
             StartAppAssistantAgent,
         )

@@ -19,15 +19,15 @@ class IntentRecognitionInput(BaseModel):
         description="The app code of intent.",
     )
     slots: Optional[dict] = Field(
-        ...,
+        None,
         description="The slots of user question.",
     )
     ask_user: Optional[str] = Field(
-        ...,
+        None,
         description="Questions to users.",
     )
     user_input: Optional[str] = Field(
-        ...,
+        None,
         description="Generate new complete user instructions based on current intent and all slot information.",
     )
 
