@@ -250,21 +250,27 @@ const Chat: React.FC = () => {
       setHistory([]);
     }
   }, [isChatDefault]);
-  
-  // if (scene === 'chat_dashboard') {
-  //   return (
-  //     <div>
-  //       <ChatSider
-  //         refresh={refreshDialogList}
-  //         dialogueList={dialogueList}
-  //         listLoading={listLoading}
-  //         historyLoading={historyLoading}
-  //         order={order}
-  //       />
-  //       {isContract ? <DbEditor /> : <ChatContainer />}
-  //     </div>
-  //   );
-  // }
+
+  const contentRender = () => {
+    if (scene === 'chat_dashboard') {
+      return (isContract ?
+        <DbEditor /> :
+        <ChatContainer />);
+    } else {
+      return (isChatDefault ? (
+        <Content>
+          <ChatDefault />
+        </Content>
+      ) : (
+        <Spin spinning={historyLoading} className="w-full h-full m-auto">
+          <Content className="flex flex-col h-screen">
+            <ChatContentContainer ref={scrollRef} />
+            <ChatInputPanel ctrl={ctrl} />
+          </Content>
+        </Spin>
+      ));
+    }
+  }
 
   return (
     <ChatContentContext.Provider
@@ -304,19 +310,7 @@ const Chat: React.FC = () => {
             order={order}
           />
           <Layout className="bg-transparent">
-            {scene === 'chat_dashboard' ? (isContract ? <DbEditor /> : <ChatContainer />) : null}
-            {scene !== 'chat_dashboard' ? (isChatDefault ? (
-              <Content>
-                <ChatDefault />
-              </Content>
-            ) : (
-              <Spin spinning={historyLoading} className="w-full h-full m-auto">
-                <Content className="flex flex-col h-screen">
-                  <ChatContentContainer ref={scrollRef} />
-                  <ChatInputPanel ctrl={ctrl} />
-                </Content>
-              </Spin>
-            )) : null}
+            {contentRender()}
           </Layout>
         </Layout>
       </Flex>

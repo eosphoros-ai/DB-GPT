@@ -75,7 +75,7 @@ const Resource: React.FC<{
               {db.param}
             </>
           ),
-          value: db.space_id || db.param,
+          value: db.param,
         };
       }),
     [dbs],
