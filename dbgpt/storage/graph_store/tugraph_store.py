@@ -1,6 +1,7 @@
 """TuGraph store."""
 import logging
 import os
+import base64
 from typing import List, Optional, Tuple, Generator, Iterator
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -44,7 +45,15 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="label",
         description="The label of edge name, `label` by default.",
     )
-
+    summary_enabled: bool = Field(
+        default=False,
+        description=""
+    )
+    plugin:str = Field(
+        default="leiden",
+        # giturl = 'tugraph-plguin-url',
+        description=""
+    )
 
 class TuGraphStore(GraphStoreBase):
     """TuGraph graph store."""
@@ -57,6 +66,7 @@ class TuGraphStore(GraphStoreBase):
         self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
         self._password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
         self._summary_enabled = os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", False) or config.summary_enabled
+        self._plugin_name = config.plugin
         self._node_label = (
             os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
         )
@@ -74,8 +84,14 @@ class TuGraphStore(GraphStoreBase):
             pwd=self._password,
             db_name=config.name,
         )
-        self.conn.create_graph(graph_name=config.name)
+        self._create_graph(config.name)
+    
+    def _create_graph(self,graph_name:str):
+        self.conn.create_graph(graph_name=graph_name)
         self._create_schema()
+        if self._summary_enabled:
+            self._upload_plugin()
+        
 
     def _check_label(self, elem_type: str):
         result = self.conn.get_table_names()
@@ -86,6 +102,17 @@ class TuGraphStore(GraphStoreBase):
     def _add_vertex_index(self, field_name):
         gql = f"CALL db.addIndex('{self._node_label}', '{field_name}', false)"
         self.conn.run(gql)
+    def _upload_plugin(self):
+        gql = f"CALL db.plugin.listPlugin('CPP','v1')"
+        result = self.conn.run(gql)
+        has_leiden = any(self._plugin_name in item["plugin_description"] for item in result)
+        if not has_leiden:
+            plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', f'{self._plugin_name}.so')
+            with open(plugin_path, 'rb') as f:
+                content = f.read()
+            content = base64.b64encode(content).decode()
+            gql = f"CALL db.plugin.loadPlugin('CPP','{self._plugin_name}','{content}','SO','{self._plugin_name} Plugin',false,'v1')"
+            self.conn.run(gql)
     def _create_schema(self):
         if not self._check_label("vertex"):
             create_vertex_gql = (
@@ -165,7 +192,7 @@ class TuGraphStore(GraphStoreBase):
                 '_document_id': f"'{node.get_prop('_document_id')}'",
                 '_community_id': 1,
                 '_level_id': 1,
-                '_weight_id': 1
+                '_weight': 1
             })
         node_query = f"""CALL db.upsertVertex("{self._node_label}", [{', '.join(['{' + ', '.join([f"{k}: {v}" for k, v in node.items()]) + '}' for node in node_list])}])"""
         for edge in edges:
@@ -225,10 +252,15 @@ class TuGraphStore(GraphStoreBase):
             limit_string = f"LIMIT {limit}"
             if limit is None:
                 limit_string = ""
-
+            if direct == 0:
+                rel = f"-[r:{self._edge_label}*{depth_string}]->"
+            elif direct == 1:
+                rel = f"<-[r:{self._edge_label}*{depth_string}]-"
+            else:
+                rel = f"-[r:{self._edge_label}*{depth_string}]-"
             query = (
                 f"MATCH p=(n:{self._node_label})"
-                f"-[r:{self._edge_label}*{depth_string}]-(m:{self._node_label}) "
+                f"{rel}(m:{self._node_label}) "
                 f"WHERE n.id IN {subs} RETURN p {limit_string}"
             )
             return self.query(query)
@@ -317,21 +349,21 @@ class TuGraphStore(GraphStoreBase):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
+                        print(nodes[i]._properties["_community_id"])
                         formatted_path.append({
-                            id:nodes[i]._properties["id"],
-                            community_id:nodes[i]._properties["_community_id"],
-                            description:nodes[i]._properties["description"],
-                            level_id:nodes[i]._properties["_level_id"],
+                            "id":nodes[i]._properties["id"],
+                            "_community_id":nodes[i]._properties["_community_id"],
+                            "description":nodes[i]._properties["description"],
+                            "_level_id":nodes[i]._properties["_level_id"],
                         })
-                    if i < len(rels):
-                        formatted_path.append({
-                            id:rels[i]._properties["id"],
-                            description:rels[i]._properties["description"],
-                        })
-                    for path in formatted_path:
-                            print(path)
-                            # for i in range(0, len(path), 2):
-                            #     mg.upsert_vertex(Vertex(path[i]['id'],description=path[i]['description'],community_id=path[i]['community_id'],level_id=path[i]['level_id']))
-                            #     if i + 2 < len(path):
-                            #         mg.append_edge(Edge(path[i][id], path[i + 2][id], label = path[i + 1][id], description=path[i + 1]['description']))
+                        if i < len(rels):
+                            formatted_path.append({
+                                "id":rels[i]._properties["id"],
+                                "description":rels[i]._properties["description"],
+                            })
+                        for path in formatted_path:
+                            for i in range(0, len(path), 2):
+                                mg.upsert_vertex(Vertex(path[i]['id'],description=path[i]['description'],community_id=path[i]['_community_id'],level_id=path[i]['_level_id']))
+                                if i + 2 < len(path):
+                                    mg.append_edge(Edge(path[i][id], path[i + 2][id], label = path[i + 1][id], description=path[i + 1]['description']))
             yield mg
