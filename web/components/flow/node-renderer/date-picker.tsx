@@ -11,7 +11,6 @@ type Props = {
 
 export const RenderDatePicker = (params: Props) => {
   const { data, defaultValue, onChange } = params;
-  console.log('data', data);
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 

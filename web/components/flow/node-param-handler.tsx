@@ -140,9 +140,9 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'time_picker':
         return <RenderTimePicker {...props} />;
       case 'tree_select':
-        return <RenderPassword {...props} />;
-      case 'password':
         return <RenderTreeSelect {...props} />;
+      case 'password':
+        return <RenderPassword {...props} />;
       case 'upload':
         return <RenderUpload {...props} />;
       case 'code_editor':
