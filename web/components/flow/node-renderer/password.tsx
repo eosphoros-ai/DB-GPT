@@ -1,25 +1,18 @@
 import { IFlowNodeParameter } from '@/types/flow';
+import { Input } from 'antd';
 import { convertKeysToCamelCase } from '@/utils/flow';
-import { Cascader } from 'antd';
 
-type Props = {
+const { Password } = Input;
+
+type TextAreaProps = {
   data: IFlowNodeParameter;
   defaultValue: any;
   onChange: (value: any) => void;
 };
 
-export const RenderCascader = (params: Props) => {
+export const RenderPassword = (params: TextAreaProps) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
-  return (
-    <Cascader
-      {...attr}
-      options={data.options}
-      defaultValue={defaultValue}
-      placeholder="please select"
-      className="w-full nodrag"
-      onChange={onChange}
-    />
-  );
+  return <Password {...attr} placeholder="input password" defaultValue={defaultValue} onChange={onChange} />;
 };

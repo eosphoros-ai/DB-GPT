@@ -17,9 +17,5 @@ export const RenderTimePicker = (params: TextAreaProps) => {
     onChange(timeString);
   };
 
-  return (
-    <div className="p-2 text-sm">
-      <TimePicker {...attr} className="w-full" defaultValue={defaultValue} onChange={onChangeTime} />
-    </div>
-  );
+  return <TimePicker {...attr} className="w-full" defaultValue={defaultValue} onChange={onChangeTime} placeholder="please select a moment" />;
 };

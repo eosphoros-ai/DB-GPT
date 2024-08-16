@@ -1,20 +1,12 @@
 import json
 from functools import cache
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata, ViewMetadata
-from dbgpt.core.interface.variables import (
-    BUILTIN_VARIABLES_CORE_FLOW_NODES,
-    BUILTIN_VARIABLES_CORE_FLOWS,
-    BUILTIN_VARIABLES_CORE_SECRETS,
-    BUILTIN_VARIABLES_CORE_VARIABLES,
-    BuiltinVariablesProvider,
-    StorageVariables,
-)
 from dbgpt.serve.core import Result, blocking_func_to_async
 from dbgpt.util import PaginationResult
 
@@ -328,6 +320,12 @@ async def update_variables(
         global_system_app, get_variable_service().update, v_id, variables_request
     )
     return Result.succ(res)
+
+
+@router.post("/flow/debug")
+async def debug():
+    """Debug the flow."""
+    # TODO: Implement the debug endpoint
 
 
 def init_endpoints(system_app: SystemApp) -> None:

@@ -17,6 +17,7 @@ import {
   RenderTextArea,
   RenderUpload,
   RenderCodeEditor,
+  RenderPassword,
 } from './node-renderer';
 
 interface NodeParamHandlerProps {
@@ -40,7 +41,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'int':
       case 'float':
         return (
-          <div className="p-2 text-sm">
+          <div className="text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
               {data.description && (
@@ -60,7 +61,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         );
       case 'str':
         return (
-          <div className="p-2 text-sm">
+          <div className="text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
               {data.description && (
@@ -87,11 +88,11 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
             )}
           </div>
         );
-      case 'checkbox':
+      case 'bool':
         defaultValue = defaultValue === 'False' ? false : defaultValue;
         defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
-          <div className="p-2 text-sm">
+          <div className="text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
               {data.description && (
@@ -139,6 +140,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'time_picker':
         return <RenderTimePicker {...props} />;
       case 'tree_select':
+        return <RenderPassword {...props} />;
+      case 'password':
         return <RenderTreeSelect {...props} />;
       case 'upload':
         return <RenderUpload {...props} />;

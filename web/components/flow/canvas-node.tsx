@@ -18,7 +18,7 @@ type CanvasNodeProps = {
 const ICON_PATH_PREFIX = '/icons/node/';
 
 function TypeLabel({ label }: { label: string }) {
-  return <div className="w-full h-8 bg-stone-100 dark:bg-zinc-700 px-2 flex items-center justify-center">{label}</div>;
+  return <div className="w-full h-8 align-middle font-semibold">{label}</div>;
 }
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
@@ -74,20 +74,22 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   function renderOutput(data: IFlowNode) {
     if (flowType === 'operator' && outputs?.length > 0) {
       return (
-        <>
+        <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
           <TypeLabel label="Outputs" />
-          {(outputs || []).map((output, index) => (
-            <NodeHandler key={`${data.id}_input_${index}`} node={data} data={output} type="source" label="outputs" index={index} />
-          ))}
-        </>
+          <div className="flex flex-col space-y-3">
+            {outputs?.map((output, index) => (
+              <NodeHandler key={`${data.id}_input_${index}`} node={data} data={output} type="source" label="outputs" index={index} />
+            ))}
+          </div>
+        </div>
       );
     } else if (flowType === 'resource') {
       // resource nodes show output default
       return (
-        <>
+        <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
           <TypeLabel label="Outputs" />
           <NodeHandler key={`${data.id}_input_0`} node={data} data={data} type="source" label="outputs" index={0} />
-        </>
+        </div>
       );
     }
   }
@@ -105,7 +107,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
             <DeleteOutlined className="h-full text-lg cursor-pointer" onClick={deleteNode} />
           </IconWrapper>
           <IconWrapper className="mt-2">
-            <Tooltip title={<><p className="font-bold">{node.label}</p><p>{node.description}</p></>} placement="right">
+            <Tooltip
+              title={
+                <>
+                  <p className="font-bold">{node.label}</p>
+                  <p>{node.description}</p>
+                </>
+              }
+              placement="right"
+            >
               <InfoCircleOutlined className="h-full text-lg cursor-pointer" />
             </Tooltip>
           </IconWrapper>
@@ -113,36 +123,46 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       }
     >
       <div
-        className={classNames('w-72 h-auto rounded-xl shadow-md p-0 border bg-white dark:bg-zinc-800 cursor-grab', {
-          'border-blue-500': node.selected || isHovered,
-          'border-stone-400 dark:border-white': !node.selected && !isHovered,
-          'border-dashed': flowType !== 'operator',
-          'border-red-600': node.invalid,
-        })}
+        className={classNames(
+          'w-80 h-auto rounded-xl shadow-md px-2 py-4 border bg-white dark:bg-zinc-800 cursor-grab flex flex-col space-y-2 text-sm',
+          {
+            'border-blue-500': node.selected || isHovered,
+            'border-stone-400 dark:border-white': !node.selected && !isHovered,
+            'border-dashed': flowType !== 'operator',
+            'border-red-600': node.invalid,
+          },
+        )}
         onMouseEnter={onHover}
         onMouseLeave={onLeave}
       >
         {/* icon and label */}
-        <div className="flex flex-row items-center p-2">
+        <div className="flex flex-row items-center">
           <Image src={'/icons/node/vis.png'} width={24} height={24} alt="" />
           <p className="ml-2 text-lg font-bold text-ellipsis overflow-hidden whitespace-nowrap">{node.label}</p>
         </div>
-        {inputs && inputs.length > 0 && (
-          <>
+
+        {inputs?.length > 0 && (
+          <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Inputs" />
-            {(inputs || []).map((input, index) => (
-              <NodeHandler key={`${node.id}_input_${index}`} node={node} data={input} type="target" label="inputs" index={index} />
-            ))}
-          </>
+            <div className="flex flex-col space-y-2">
+              {inputs?.map((input, index) => (
+                <NodeHandler key={`${node.id}_input_${index}`} node={node} data={input} type="target" label="inputs" index={index} />
+              ))}
+            </div>
+          </div>
         )}
-        {parameters && parameters.length > 0 && (
-          <>
+
+        {parameters?.length > 0 && (
+          <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Parameters" />
-            {(parameters || []).map((parameter, index) => (
-              <NodeParamHandler key={`${node.id}_param_${index}`} node={node} data={parameter} label="parameters" index={index} />
-            ))}
-          </>
+            <div className="flex flex-col space-y-3 text-neutral-500">
+              {parameters?.map((parameter, index) => (
+                <NodeParamHandler key={`${node.id}_param_${index}`} node={node} data={parameter} label="parameters" index={index} />
+              ))}
+            </div>
+          </div>
         )}
+
         {renderOutput(node)}
       </div>
     </Popover>
