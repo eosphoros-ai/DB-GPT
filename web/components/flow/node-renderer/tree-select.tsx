@@ -15,6 +15,7 @@ export const RenderTreeSelect = (params: TextAreaProps) => {
   return (
     <div className="p-2 text-sm">
       <TreeSelect
+      className="w-full nodrag" 
         fieldNames={{ label: 'label', value: 'value', children: 'children' }}
         {...attr}
         style={{ width: '100%' }}
