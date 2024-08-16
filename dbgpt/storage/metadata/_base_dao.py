@@ -171,10 +171,10 @@ class BaseDao(Generic[T, REQ, RES]):
                 if value is not None:
                     setattr(entry, key, value)
             session.merge(entry)
-            res = self.get_one(self.to_request(entry))
-            if not res:
-                raise Exception("Update failed")
-            return res
+            # res = self.get_one(self.to_request(entry))
+            # if not res:
+            #     raise Exception("Update failed")
+            return self.to_response(entry)
 
     def delete(self, query_request: QUERY_SPEC) -> None:
         """Delete an entity object.

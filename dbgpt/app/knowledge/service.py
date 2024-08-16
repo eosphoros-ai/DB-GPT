@@ -123,7 +123,10 @@ class KnowledgeService:
            - request: KnowledgeSpaceRequest
         """
         query = KnowledgeSpaceEntity(
-            name=request.name, vector_type=request.vector_type, owner=request.owner
+            id=request.id,
+            name=request.name,
+            vector_type=request.vector_type,
+            owner=request.owner,
         )
         spaces = knowledge_space_dao.get_knowledge_space(query)
         space_names = [space.name for space in spaces]
@@ -294,44 +297,6 @@ class KnowledgeService:
         get knowledge space by ids.
         """
         return knowledge_space_dao.get_knowledge_space_by_ids(ids)
-
-    def get_knowledge_space(self, request: KnowledgeSpaceRequest):
-        """get knowledge space
-        Args:
-           - request: KnowledgeSpaceRequest
-        """
-        query = KnowledgeSpaceEntity(
-            name=request.name,
-            vector_type=request.vector_type,
-            owner=request.owner,
-        )
-        spaces = knowledge_space_dao.get_knowledge_space(query)
-        space_names = [space.name for space in spaces]
-        docs_count = knowledge_document_dao.get_knowledge_documents_count_bulk_by_ids(
-            space_names
-        )
-        responses = []
-        for space in spaces:
-            res = SpaceQueryResponse()
-            res.id = space.id
-            res.name = space.name
-            res.vector_type = space.vector_type
-            res.desc = space.desc
-            res.owner = space.owner
-            res.gmt_created = (
-                space.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
-                if space.gmt_created
-                else None
-            )
-            res.gmt_modified = (
-                space.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
-                if space.gmt_modified
-                else None
-            )
-            res.context = space.context
-            res.docs = docs_count.get(space.name, 0)
-            responses.append(res)
-        return responses
 
     def update_knowledge_space(
         self, space_id: int, space_request: KnowledgeSpaceRequest

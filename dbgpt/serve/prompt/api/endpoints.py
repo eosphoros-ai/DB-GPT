@@ -1,3 +1,4 @@
+import logging
 from functools import cache
 from typing import List, Optional
 
@@ -18,6 +19,8 @@ from .schemas import (
     ServeRequest,
     ServerResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -120,7 +123,12 @@ async def update(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.update(request))
+    try:
+        data = service.update(request)
+        return Result.succ(data)
+    except Exception as e:
+        logger.exception("Update prompt failed!")
+        return Result.failed(msg=str(e))
 
 
 @router.post(

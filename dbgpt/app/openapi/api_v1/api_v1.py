@@ -466,9 +466,13 @@ async def chat_completions(
         "Transfer-Encoding": "chunked",
     }
     try:
+        domain_type = _parse_domain_type(dialogue)
         if dialogue.chat_mode == ChatScene.ChatAgent.value():
             from dbgpt.serve.agent.agents.controller import multi_agents
 
+            dialogue.ext_info.update({"model_name": dialogue.model_name})
+            dialogue.ext_info.update({"incremental": dialogue.incremental})
+            dialogue.ext_info.update({"temperature": dialogue.temperature})
             return StreamingResponse(
                 multi_agents.app_agent_chat(
                     conv_uid=dialogue.conv_uid,
@@ -503,6 +507,13 @@ async def chat_completions(
                 headers=headers,
                 media_type="text/event-stream",
             )
+        elif domain_type is not None and domain_type != "Normal":
+            return StreamingResponse(
+                chat_with_domain_flow(dialogue, domain_type),
+                headers=headers,
+                media_type="text/event-stream",
+            )
+
         else:
             with root_tracer.start_span(
                 "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
@@ -672,9 +683,7 @@ def _parse_domain_type(dialogue: ConversationVo) -> Optional[str]:
             KnowledgeSpaceRequest(name=space_name)
         )
         if len(spaces) == 0:
-            return Result.failed(
-                code="E000X", msg=f"Knowledge space {space_name} not found"
-            )
+            raise ValueError(f"Knowledge space {space_name} not found")
         if spaces[0].domain_type:
             return spaces[0].domain_type
     else:

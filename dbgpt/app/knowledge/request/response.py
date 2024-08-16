@@ -117,6 +117,8 @@ class SpaceQueryResponse(BaseModel):
     name: Optional[str] = None
     """vector_type: vector type"""
     vector_type: Optional[str] = None
+    """domain_type"""
+    domain_type: Optional[str] = None
     """desc: description"""
     desc: Optional[str] = None
     """context: context"""

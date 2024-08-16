@@ -102,7 +102,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             sub_chat_scene=entity.sub_chat_scene,
             prompt_type=entity.prompt_type,
             prompt_name=entity.prompt_name,
-            promt_code=entity.prompt_code,
+            prompt_code=entity.prompt_code,
             content=entity.content,
             prompt_desc=entity.prompt_desc,
             user_code=entity.user_code,

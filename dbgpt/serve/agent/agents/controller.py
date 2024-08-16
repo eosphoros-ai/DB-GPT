@@ -40,6 +40,7 @@ from dbgpt.serve.conversation.serve import Serve as ConversationServe
 from dbgpt.serve.prompt.api.endpoints import get_service
 from dbgpt.serve.prompt.service import service as PromptService
 from dbgpt.util.json_utils import serialize
+from dbgpt.util.tracer import TracerManager
 
 from ..db import GptsMessagesDao
 from ..db.gpts_app import GptsApp, GptsAppDao, GptsAppQuery
@@ -51,6 +52,7 @@ CFG = Config()
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+root_tracer: TracerManager = TracerManager()
 
 
 def _build_conversation(
@@ -219,84 +221,120 @@ class MultiAgents(BaseComponent, ABC):
                 )
             )
 
-        # init gpts  memory
-        self.memory.init(
-            agent_conv_id,
-            enable_vis_message=enable_verbose,
-            history_messages=history_messages,
-            start_round=history_message_count,
-        )
-        # init agent memory
-        agent_memory = self.get_or_build_agent_memory(conv_id, gpts_name)
+        is_agent_flow = True
+        if TeamMode.AWEL_LAYOUT.value == gpt_app.team_mode:
+            from dbgpt.agent import AWELTeamContext
 
-        try:
-            task = asyncio.create_task(
-                multi_agents.agent_team_chat_new(
-                    user_query,
-                    agent_conv_id,
-                    gpt_app,
-                    agent_memory,
-                    is_retry_chat,
-                    last_speaker_name=last_speaker_name,
-                    init_message_rounds=message_round,
-                    **ext_info,
-                )
+            team_context: AWELTeamContext = gpt_app.team_context
+            if team_context.flow_category == "chat_flow":
+                is_agent_flow = False
+        if not is_agent_flow:
+            from dbgpt.core.awel import CommonLLMHttpRequestBody
+
+            flow_req = CommonLLMHttpRequestBody(
+                model=ext_info.get("model_name", None),
+                messages=user_query,
+                stream=True,
+                # context=flow_ctx,
+                # temperature=
+                # max_new_tokens=
+                # enable_vis=
+                conv_uid=agent_conv_id,
+                span_id=root_tracer.get_current_span_id(),
+                chat_mode=ext_info.get("chat_mode", None),
+                chat_param=team_context.uid,
+                user_name=user_code,
+                sys_code=sys_code,
+                incremental=ext_info.get("incremental", True),
             )
-            if enable_verbose:
-                async for chunk in multi_agents.chat_messages(agent_conv_id):
-                    if chunk:
-                        try:
-                            chunk = json.dumps(
-                                {"vis": chunk}, default=serialize, ensure_ascii=False
-                            )
-                            if chunk is None or len(chunk) <= 0:
-                                continue
-                            resp = f"data:{chunk}\n\n"
-                            yield task, resp, agent_conv_id
-                        except Exception as e:
-                            logger.exception(
-                                f"get messages {gpts_name} Exception!" + str(e)
-                            )
-                            yield f"data: {str(e)}\n\n"
+            from dbgpt.app.openapi.api_v1.api_v1 import get_chat_flow
 
-                yield task, f'data:{json.dumps({"vis": "[DONE]"}, default=serialize, ensure_ascii=False)} \n\n', agent_conv_id
+            flow_service = get_chat_flow()
+            async for chunk in flow_service.chat_stream_flow_str(
+                team_context.uid, flow_req
+            ):
+                yield None, chunk, agent_conv_id
+        else:
+            # init gpts  memory
+            self.memory.init(
+                agent_conv_id,
+                enable_vis_message=enable_verbose,
+                history_messages=history_messages,
+                start_round=history_message_count,
+            )
+            # init agent memory
+            agent_memory = self.get_or_build_agent_memory(conv_id, gpts_name)
 
-            else:
-                logger.info(f"{agent_conv_id}开启简略消息模式，不进行vis协议封装，获取极简流式消息直接输出")
-                # 开启简略消息模式，不进行vis协议封装，获取极简流式消息直接输出
-                final_message_chunk = None
-                async for chunk in multi_agents.chat_messages(agent_conv_id):
-                    if chunk:
-                        try:
-                            if chunk is None or len(chunk) <= 0:
-                                continue
-                            final_message_chunk = chunk[-1]
-                            if stream:
-                                yield task, final_message_chunk, agent_conv_id
-                            logger.info(
-                                f"agent_chat_v2 executing, timestamp={int(time.time() * 1000)}"
-                            )
-                        except Exception as e:
-                            logger.exception(
-                                f"get messages {gpts_name} Exception!" + str(e)
-                            )
-                            final_message_chunk = str(e)
-
-                logger.info(
-                    f"agent_chat_v2 finish, timestamp={int(time.time() * 1000)}"
+            try:
+                task = asyncio.create_task(
+                    multi_agents.agent_team_chat_new(
+                        user_query,
+                        agent_conv_id,
+                        gpt_app,
+                        agent_memory,
+                        is_retry_chat,
+                        last_speaker_name=last_speaker_name,
+                        init_message_rounds=message_round,
+                        **ext_info,
+                    )
                 )
-                yield task, final_message_chunk, agent_conv_id
+                if enable_verbose:
+                    async for chunk in multi_agents.chat_messages(agent_conv_id):
+                        if chunk:
+                            try:
+                                chunk = json.dumps(
+                                    {"vis": chunk},
+                                    default=serialize,
+                                    ensure_ascii=False,
+                                )
+                                if chunk is None or len(chunk) <= 0:
+                                    continue
+                                resp = f"data:{chunk}\n\n"
+                                yield task, resp, agent_conv_id
+                            except Exception as e:
+                                logger.exception(
+                                    f"get messages {gpts_name} Exception!" + str(e)
+                                )
+                                yield f"data: {str(e)}\n\n"
 
-        except Exception as e:
-            logger.exception(f"Agent chat have error!{str(e)}")
-            if enable_verbose:
-                yield task, f'data:{json.dumps({"vis": f"{str(e)}"}, default=serialize, ensure_ascii=False)} \n\n', agent_conv_id
-                yield task, f'data:{json.dumps({"vis": "[DONE]"}, default=serialize, ensure_ascii=False)} \n\n', agent_conv_id
-            else:
-                yield task, str(e), agent_conv_id
+                    yield task, f'data:{json.dumps({"vis": "[DONE]"}, default=serialize, ensure_ascii=False)} \n\n', agent_conv_id
 
-        finally:
-            self.memory.clear(agent_conv_id)
+                else:
+                    logger.info(f"{agent_conv_id}开启简略消息模式，不进行vis协议封装，获取极简流式消息直接输出")
+                    # 开启简略消息模式，不进行vis协议封装，获取极简流式消息直接输出
+                    final_message_chunk = None
+                    async for chunk in multi_agents.chat_messages(agent_conv_id):
+                        if chunk:
+                            try:
+                                if chunk is None or len(chunk) <= 0:
+                                    continue
+                                final_message_chunk = chunk[-1]
+                                if stream:
+                                    yield task, final_message_chunk, agent_conv_id
+                                logger.info(
+                                    f"agent_chat_v2 executing, timestamp={int(time.time() * 1000)}"
+                                )
+                            except Exception as e:
+                                logger.exception(
+                                    f"get messages {gpts_name} Exception!" + str(e)
+                                )
+                                final_message_chunk = str(e)
+
+                    logger.info(
+                        f"agent_chat_v2 finish, timestamp={int(time.time() * 1000)}"
+                    )
+                    yield task, final_message_chunk, agent_conv_id
+
+            except Exception as e:
+                logger.exception(f"Agent chat have error!{str(e)}")
+                if enable_verbose:
+                    yield task, f'data:{json.dumps({"vis": f"{str(e)}"}, default=serialize, ensure_ascii=False)} \n\n', agent_conv_id
+                    yield task, f'data:{json.dumps({"vis": "[DONE]"}, default=serialize, ensure_ascii=False)} \n\n', agent_conv_id
+                else:
+                    yield task, str(e), agent_conv_id
+
+            finally:
+                self.memory.clear(agent_conv_id)
 
     async def app_agent_chat(
         self,

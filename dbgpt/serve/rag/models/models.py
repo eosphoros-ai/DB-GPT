@@ -32,6 +32,7 @@ class KnowledgeSpaceDao(BaseDao):
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=space.vector_type,
+            domain_type=space.domain_type,
             desc=space.desc,
             owner=space.owner,
             gmt_created=datetime.now(),
@@ -58,6 +59,7 @@ class KnowledgeSpaceDao(BaseDao):
         return knowledge_spaces_list
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
+        """Get knowledge space by query"""
         session = self.get_raw_session()
         knowledge_spaces = session.query(KnowledgeSpaceEntity)
         if query.id is not None:
@@ -71,6 +73,10 @@ class KnowledgeSpaceDao(BaseDao):
         if query.vector_type is not None:
             knowledge_spaces = knowledge_spaces.filter(
                 KnowledgeSpaceEntity.vector_type == query.vector_type
+            )
+        if query.domain_type is not None:
+            knowledge_spaces = knowledge_spaces.filter(
+                KnowledgeSpaceEntity.domain_type == query.domain_type
             )
         if query.desc is not None:
             knowledge_spaces = knowledge_spaces.filter(
@@ -88,7 +94,6 @@ class KnowledgeSpaceDao(BaseDao):
             knowledge_spaces = knowledge_spaces.filter(
                 KnowledgeSpaceEntity.gmt_modified == query.gmt_modified
             )
-
         knowledge_spaces = knowledge_spaces.order_by(
             KnowledgeSpaceEntity.gmt_created.desc()
         )
@@ -134,7 +139,9 @@ class KnowledgeSpaceDao(BaseDao):
             T: The entity
         """
         request_dict = (
-            request.dict() if isinstance(request, SpaceServeRequest) else request
+            model_to_dict(request)
+            if isinstance(request, SpaceServeRequest)
+            else request
         )
         entity = KnowledgeSpaceEntity(**request_dict)
         return entity
@@ -173,4 +180,5 @@ class KnowledgeSpaceDao(BaseDao):
             desc=entity.desc,
             owner=entity.owner,
             context=entity.context,
+            domain_type=entity.domain_type,
         )
