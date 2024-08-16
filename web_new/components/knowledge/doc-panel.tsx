@@ -233,7 +233,7 @@ export default function DocPanel(props: IProps) {
 
   const { run: search, loading: searchLoading } = useRequest(
     async (id, doc_name: string) => {
-      const [, res] = await apiInterceptors(searchDocumentList(id, { doc_name }));
+      const [, res] = await apiInterceptors(searchDocumentList(space.name, { doc_name }));
       return res;
     },
     {
@@ -249,7 +249,7 @@ export default function DocPanel(props: IProps) {
   const { run: editChunkRun, loading: chunkLoading } = useRequest(
     async (values: any) => {
       return await editChunk(props.space.name, {
-        questions: values.questions.map((item: any) => item.question),
+        questions: values.questions?.map((item: any) => item.question),
         doc_id: curDoc?.id || '',
         doc_name: values.doc_name,
       });
