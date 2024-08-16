@@ -1,8 +1,10 @@
 import logging
 from typing import Optional
 
-from dbgpt.agent import Action, ActionOutput, AgentResource, ConversableAgent
-from dbgpt.serve.agent.agents.expand.actions.app_link_action import LinkAppInput
+from dbgpt.agent import Action, ActionOutput, AgentResource
+from dbgpt.serve.agent.agents.expand.actions.intent_recognition_action import (
+    IntentRecognitionInput,
+)
 from dbgpt.serve.agent.db.gpts_app import GptsApp, GptsAppDao
 from dbgpt.serve.agent.team.base import TeamMode
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
@@ -10,7 +12,7 @@ from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 logger = logging.getLogger(__name__)
 
 
-class StartAppAction(Action[LinkAppInput]):
+class StartAppAction(Action[IntentRecognitionInput]):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._render_protocal = VisPlugin()
@@ -21,23 +23,25 @@ class StartAppAction(Action[LinkAppInput]):
 
     @property
     def out_model_type(self):
-        return LinkAppInput
+        return IntentRecognitionInput
 
     async def run(
         self,
         ai_message: str,
-        user_input: str,
-        conv_id: str,
-        paren_agent: ConversableAgent,
-        init_message_rounds: int,
-        sender: Optional[ConversableAgent] = None,
         resource: Optional[AgentResource] = None,
         rely_action_out: Optional[ActionOutput] = None,
         need_vis_render: bool = True,
         **kwargs,
     ) -> ActionOutput:
+        user_input = kwargs.get("user_input")
+        conv_id = kwargs.get("conv_id")
+        paren_agent = kwargs.get("paren_agent")
+        init_message_rounds = kwargs.get("init_message_rounds")
+
         try:
-            param: LinkAppInput = self._input_convert(ai_message, LinkAppInput)
+            param: IntentRecognitionInput = self._input_convert(
+                ai_message, IntentRecognitionInput
+            )
         except Exception as e:
             logger.exception(str(e))
             return ActionOutput(
@@ -51,21 +55,20 @@ class StartAppAction(Action[LinkAppInput]):
             if not gpts_app:
                 return ActionOutput(
                     is_exe_success=False,
-                    content=f"链接智能体{param.app_name}信息配置异常无法找到",
-                    view=f"链接智能体{param.app_name}信息配置异常无法找到",
+                    content=ai_message,
+                    view=f"[DBGPT Warning] Intent definition application cannot be found [{param.app_code}]{param.intent}",
                     have_retry=False,
                 )
             if TeamMode.NATIVE_APP.value == gpts_app.team_mode:
                 return ActionOutput(
                     is_exe_success=False,
-                    content="暂时不支持原生应用连接启动",
-                    view="暂时不支持原生应用连接启动",
+                    content="ai_message",
+                    view="[DBGPT Warning] Native application connection startup is not supported for the time being.",
                     have_retry=False,
                 )
             else:
                 from dbgpt.serve.agent.agents.controller import multi_agents
 
-                # TODO 仅启动应用，不需要返回信息
                 await multi_agents.agent_team_chat_new(
                     user_input,
                     conv_id,
@@ -84,7 +87,7 @@ class StartAppAction(Action[LinkAppInput]):
             logger.exception(f"App [{param.app_code}] excute Failed!")
             return ActionOutput(
                 is_exe_success=False,
-                content=f"应用[{param.app_name}]回答失败!{str(e)}",
-                view=f"应用[{param.app_name}]回答失败!{str(e)}",
+                content=ai_message,
+                view=f"[DBGPT Warning] An exception occurred during the answering process of linked application [{param.app_code}]{param.intent},{str(e)}",
                 have_retry=False,
             )

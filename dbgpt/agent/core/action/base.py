@@ -85,6 +85,7 @@ class Action(ABC, Generic[T]):
     def __init__(self):
         """Create an action."""
         self.resource: Optional[Resource] = None
+        self.language: str = "en"
 
     def init_resource(self, resource: Optional[Resource]):
         """Initialize the resource."""

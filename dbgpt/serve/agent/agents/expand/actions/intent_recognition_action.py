@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 from dbgpt.agent import Action, ActionOutput, AgentResource, ResourceType
 from dbgpt.vis.tags.vis_app_link import Vis, VisAppLink
 
@@ -22,18 +22,17 @@ class IntentRecognitionInput(BaseModel):
         ...,
         description="The slots of user question.",
     )
-    thought: Optional[str] = Field(
-        ...,
-        description="Logic and rationale for selecting the current application.",
-    )
     ask_user: Optional[str] = Field(
         ...,
         description="Questions to users.",
     )
     user_input: Optional[str] = Field(
         ...,
-        description="Instructions generated based on intent and slot.",
+        description="Generate new complete user instructions based on current intent and all slot information.",
     )
+
+    def to_dict(self):
+        return model_to_dict(self)
 
 
 class IntentRecognitionAction(Action[IntentRecognitionInput]):
@@ -54,20 +53,25 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
         return IntentRecognitionInput
 
     @property
-    def ai_out_schema(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def ai_out_schema(self) -> Optional[str]:
         out_put_schema = {
-            "intent": "[意图占位符]",
-            "thought": "你的推理思路",
-            "app_code": "预定义意图的代码",
-            "slots": {"意图定义中槽位属性1": "具体值", "意图定义中槽位属性2": "具体值"},
-            "ask_user": "如果要用户补充槽位数据，向用户发起的问题",
-            "user_input": "[根据意图和槽位生成的完整指令]",
+            "intent": "[The recognized intent is placed here]",
+            "app_code": "[App code in selected intent]",
+            "slots": {
+                "Slot_1": "[The value of the slot attribute]",
+                "Slot_2": "[The value of the slot attribute]",
+            },
+            "ask_user": "If you want the user to supplement slot data, ask the user a question",
+            "user_input": "[Complete instructions generated based on intent and slot]",
         }
-
-        return f"""请按如下JSON格式输出:
-        {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
-        确保只输出json，且可以被python json.loads加载.
-        """
+        if self.language == "en":
+            return f"""Please reply in the following json format:
+                {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
+            Make sure the reply content only has correct json and can be parsed by Python json.loads."""  # noqa: E501
+        else:
+            return f"""请按如下JSON格式输出:
+            {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
+            确保只输出json，且可以被python json.loads加载."""
 
     async def run(
         self,
@@ -75,6 +79,7 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
         resource: Optional[AgentResource] = None,
         rely_action_out: Optional[ActionOutput] = None,
         need_vis_render: bool = True,
+        **kwargs,
     ) -> ActionOutput:
         try:
             intent: IntentRecognitionInput = self._input_convert(
@@ -84,17 +89,17 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
             logger.exception(str(e))
             return ActionOutput(
                 is_exe_success=False,
-                content=ai_message,
-                have_retry=False,
+                content="Error:The answer is not output in the required format.",
+                have_retry=True,
             )
 
-        # 检查意图是否完整，是否需要向用户补充信息
+        # Check whether the message is complete and whether additional information needs to be provided to the user
         if intent.slots:
             for key, value in intent.slots.items():
                 if not value or len(value) <= 0:
                     return ActionOutput(
                         is_exe_success=False,
-                        content=json.dumps(intent.dict(), ensure_ascii=False),
+                        content=json.dumps(intent.to_dict(), ensure_ascii=False),
                         view=intent.ask_user if intent.ask_user else ai_message,
                         have_retry=False,
                         ask_user=True,
@@ -104,13 +109,11 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
             "app_code": intent.app_code,
             "app_name": intent.intent,
             "app_desc": intent.user_input,
-            "thought": intent.thought,
             "app_logo": "",
             "status": "TODO",
-            "intent": json.dumps(intent.dict(), ensure_ascii=False),
         }
         return ActionOutput(
             is_exe_success=True,
-            content=json.dumps(app_link_param, ensure_ascii=False),
+            content=json.dumps(intent.to_dict(), ensure_ascii=False),
             view=await self.render_protocal.display(content=app_link_param),
         )
