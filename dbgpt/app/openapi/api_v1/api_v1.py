@@ -286,6 +286,22 @@ async def dialogue_scenes(user_info: UserRequest = Depends(get_user_from_headers
     return Result.succ(scene_vos)
 
 
+@router.post("/v1/resource/params/list", response_model=Result[List[dict]])
+async def resource_params_list(
+    resource_type: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    if resource_type == "database":
+        result = get_db_list()
+    elif resource_type == "knowledge":
+        result = knowledge_list()
+    elif resource_type == "tool":
+        result = plugins_select_info()
+    else:
+        return Result.succ()
+    return Result.succ(result)
+
+
 @router.post("/v1/chat/mode/params/list", response_model=Result[List[dict]])
 async def params_list(
     chat_mode: str = ChatScene.ChatNormal.value(),

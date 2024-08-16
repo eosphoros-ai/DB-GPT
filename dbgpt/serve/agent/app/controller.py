@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional
 
@@ -73,6 +74,27 @@ async def app_detail(
     except Exception as ex:
         logger.exception("query app detail error!")
         return Result.failed(code="E000X", msg=f"query app detail error: {ex}")
+
+
+@router.get("/v1/app/export")
+async def app_export(
+    chat_scene: str,
+    app_code: str = None,
+):
+    logger.info(f"app_export:{app_code}")
+    try:
+        if app_code:
+            app_info = gpts_dao.app_detail(app_code)
+        else:
+            from dbgpt.app.scene.base import ChatScene
+
+            scene: ChatScene = ChatScene.of_mode(chat_scene)
+            app_info = gpts_dao.native_app_detail(scene.scene_name())
+
+        return Result.succ(app_info)
+    except Exception as ex:
+        logger.exception("export app info error!")
+        return Result.failed(code="E000X", msg=f"export app info error: {ex}")
 
 
 @router.get("/v1/app/{app_code}")
