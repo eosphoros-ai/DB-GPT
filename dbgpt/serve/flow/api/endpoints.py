@@ -1,9 +1,11 @@
+import io
 import json
 from functools import cache
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
+from starlette.responses import JSONResponse, StreamingResponse
 
 from dbgpt.component import SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata, ViewMetadata
@@ -15,6 +17,7 @@ from ..config import APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
 from ..service.variables_service import VariablesService
 from .schemas import (
+    FlowDebugRequest,
     RefreshNodeRequest,
     ServeRequest,
     ServerResponse,
@@ -352,10 +355,116 @@ async def update_variables(
     return Result.succ(res)
 
 
-@router.post("/flow/debug")
-async def debug():
-    """Debug the flow."""
-    # TODO: Implement the debug endpoint
+@router.post("/flow/debug", dependencies=[Depends(check_api_key)])
+async def debug_flow(
+    flow_debug_request: FlowDebugRequest, service: Service = Depends(get_service)
+):
+    """Run the flow in debug mode."""
+    # Return the no-incremental stream by default
+    stream_iter = service.debug_flow(flow_debug_request, default_incremental=False)
+
+    headers = {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Transfer-Encoding": "chunked",
+    }
+    return StreamingResponse(
+        service._wrapper_chat_stream_flow_str(stream_iter),
+        headers=headers,
+        media_type="text/event-stream",
+    )
+
+
+@router.get("/flow/export/{uid}", dependencies=[Depends(check_api_key)])
+async def export_flow(
+    uid: str,
+    export_type: Literal["json", "dbgpts"] = Query(
+        "json", description="export type(json or dbgpts)"
+    ),
+    format: Literal["file", "json"] = Query(
+        "file", description="response format(file or json)"
+    ),
+    file_name: Optional[str] = Query(default=None, description="file name to export"),
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    service: Service = Depends(get_service),
+):
+    """Export the flow to a file."""
+    flow = service.get({"uid": uid, "user_name": user_name, "sys_code": sys_code})
+    if not flow:
+        raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
+    package_name = flow.name.replace("_", "-")
+    file_name = file_name or package_name
+    if export_type == "json":
+        flow_dict = {"flow": flow.to_dict()}
+        if format == "json":
+            return JSONResponse(content=flow_dict)
+        else:
+            # Return the json file
+            return StreamingResponse(
+                io.BytesIO(json.dumps(flow_dict, ensure_ascii=False).encode("utf-8")),
+                media_type="application/file",
+                headers={
+                    "Content-Disposition": f"attachment;filename={file_name}.json"
+                },
+            )
+
+    elif export_type == "dbgpts":
+        from ..service.share_utils import _generate_dbgpts_zip
+
+        if format == "json":
+            raise HTTPException(
+                status_code=400, detail="json response is not supported for dbgpts"
+            )
+
+        zip_buffer = await blocking_func_to_async(
+            global_system_app, _generate_dbgpts_zip, package_name, flow
+        )
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/x-zip-compressed",
+            headers={"Content-Disposition": f"attachment;filename={file_name}.zip"},
+        )
+
+
+@router.post(
+    "/flow/import",
+    response_model=Result[ServerResponse],
+    dependencies=[Depends(check_api_key)],
+)
+async def import_flow(
+    file: UploadFile = File(...),
+    save_flow: bool = Query(
+        False, description="Whether to save the flow after importing"
+    ),
+    service: Service = Depends(get_service),
+):
+    """Import the flow from a file."""
+    filename = file.filename
+    file_extension = filename.split(".")[-1].lower()
+    if file_extension == "json":
+        # Handle json file
+        json_content = await file.read()
+        json_dict = json.loads(json_content)
+        if "flow" not in json_dict:
+            raise HTTPException(
+                status_code=400, detail="invalid json file, missing 'flow' key"
+            )
+        flow = ServeRequest.parse_obj(json_dict["flow"])
+    elif file_extension == "zip":
+        from ..service.share_utils import _parse_flow_from_zip_file
+
+        # Handle zip file
+        flow = await _parse_flow_from_zip_file(file, global_system_app)
+    else:
+        raise HTTPException(
+            status_code=400, detail=f"invalid file extension {file_extension}"
+        )
+    if save_flow:
+        return Result.succ(service.create_and_save_dag(flow))
+    else:
+        return Result.succ(flow)
 
 
 def init_endpoints(system_app: SystemApp) -> None:

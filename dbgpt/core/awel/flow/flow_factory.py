@@ -4,7 +4,7 @@ import logging
 import uuid
 from contextlib import suppress
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union, cast
 
 from typing_extensions import Annotated
 
@@ -164,6 +164,59 @@ class FlowData(BaseModel):
     nodes: List[FlowNodeData] = Field(..., description="Nodes in the flow")
     edges: List[FlowEdgeData] = Field(..., description="Edges in the flow")
     viewport: FlowPositionData = Field(..., description="Viewport of the flow")
+
+
+class VariablesRequest(BaseModel):
+    """Variable request model.
+
+    For creating a new variable in the DB-GPT.
+    """
+
+    key: str = Field(
+        ...,
+        description="The key of the variable to create",
+        examples=["dbgpt.model.openai.api_key"],
+    )
+    name: str = Field(
+        ...,
+        description="The name of the variable to create",
+        examples=["my_first_openai_key"],
+    )
+    label: str = Field(
+        ...,
+        description="The label of the variable to create",
+        examples=["My First OpenAI Key"],
+    )
+    value: Any = Field(
+        ..., description="The value of the variable to create", examples=["1234567890"]
+    )
+    value_type: Literal["str", "int", "float", "bool"] = Field(
+        "str",
+        description="The type of the value of the variable to create",
+        examples=["str", "int", "float", "bool"],
+    )
+    category: Literal["common", "secret"] = Field(
+        ...,
+        description="The category of the variable to create",
+        examples=["common"],
+    )
+    scope: str = Field(
+        ...,
+        description="The scope of the variable to create",
+        examples=["global"],
+    )
+    scope_key: Optional[str] = Field(
+        ...,
+        description="The scope key of the variable to create",
+        examples=["dbgpt"],
+    )
+    enabled: Optional[bool] = Field(
+        True,
+        description="Whether the variable is enabled",
+        examples=[True],
+    )
+    user_name: Optional[str] = Field(None, description="User name")
+    sys_code: Optional[str] = Field(None, description="System code")
 
 
 class State(str, Enum):
@@ -355,6 +408,12 @@ class FlowPanel(BaseModel):
     )
     metadata: Optional[Union[DAGMetadata, Dict[str, Any]]] = Field(
         default=None, description="The metadata of the flow"
+    )
+    variables: Optional[List[VariablesRequest]] = Field(
+        default=None, description="The variables of the flow"
+    )
+    authors: Optional[List[str]] = Field(
+        default=None, description="The authors of the flow"
     )
 
     @model_validator(mode="before")

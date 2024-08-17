@@ -328,20 +328,54 @@ def _load_package_from_path(path: str):
     return parsed_packages
 
 
-def _load_flow_package_from_path(name: str, path: str = INSTALL_DIR) -> FlowPackage:
+def _load_flow_package_from_path(
+    name: str, path: str = INSTALL_DIR, filter_by_name: bool = True
+) -> FlowPackage:
     raw_packages = _load_installed_package(path)
     new_name = name.replace("_", "-")
-    packages = [p for p in raw_packages if p.package == name or p.name == name]
-    if not packages:
-        packages = [
-            p for p in raw_packages if p.package == new_name or p.name == new_name
-        ]
+    if filter_by_name:
+        packages = [p for p in raw_packages if p.package == name or p.name == name]
+        if not packages:
+            packages = [
+                p for p in raw_packages if p.package == new_name or p.name == new_name
+            ]
+    else:
+        packages = raw_packages
     if not packages:
         raise ValueError(f"Can't find the package {name} or {new_name}")
     flow_package = _parse_package_metadata(packages[0])
     if flow_package.package_type != "flow":
         raise ValueError(f"Unsupported package type: {flow_package.package_type}")
     return cast(FlowPackage, flow_package)
+
+
+def _load_flow_package_from_zip_path(zip_path: str) -> FlowPanel:
+    import tempfile
+    import zipfile
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(temp_dir)
+        package_names = os.listdir(temp_dir)
+        if not package_names:
+            raise ValueError("No package found in the zip file")
+        if len(package_names) > 1:
+            raise ValueError("Only support one package in the zip file")
+        package_name = package_names[0]
+        with open(
+            Path(temp_dir) / package_name / INSTALL_METADATA_FILE, mode="w+"
+        ) as f:
+            # Write the metadata
+            import tomlkit
+
+            install_metadata = {
+                "name": package_name,
+                "repo": "local/dbgpts",
+            }
+            tomlkit.dump(install_metadata, f)
+
+        package = _load_flow_package_from_path("", path=temp_dir, filter_by_name=False)
+        return _flow_package_to_flow_panel(package)
 
 
 def _flow_package_to_flow_panel(package: FlowPackage) -> FlowPanel:
@@ -353,6 +387,7 @@ def _flow_package_to_flow_panel(package: FlowPackage) -> FlowPanel:
         "description": package.description,
         "source": package.repo,
         "define_type": "json",
+        "authors": package.authors,
     }
     if isinstance(package, FlowJsonPackage):
         dict_value["flow_data"] = package.read_definition_json()
