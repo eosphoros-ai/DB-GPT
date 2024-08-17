@@ -334,13 +334,18 @@ class InputOperator(BaseOperator, Generic[OUT]):
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         curr_task_ctx: TaskContext[OUT] = dag_ctx.current_task_context
         task_output = await self._input_source.read(curr_task_ctx)
-        curr_task_ctx.set_task_output(task_output)
+        new_task_output: TaskOutput[OUT] = await task_output.map(self.map)
+        curr_task_ctx.set_task_output(new_task_output)
         return task_output
 
     @classmethod
     def dummy_input(cls, dummy_data: Any = SKIP_DATA, **kwargs) -> "InputOperator[OUT]":
         """Create a dummy InputOperator with a given input value."""
         return cls(input_source=InputSource.from_data(dummy_data), **kwargs)
+
+    async def map(self, input_data: OUT) -> OUT:
+        """Map the input data to a new value."""
+        return input_data
 
 
 class TriggerOperator(InputOperator[OUT], Generic[OUT]):
