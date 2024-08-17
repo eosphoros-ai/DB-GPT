@@ -30,7 +30,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         description="login username",
     )
     password: str = Field(
-        default="123456",
+        default="73@TuGraph",
         description="login password",
     )
     vertex_type: str = Field(
@@ -45,15 +45,14 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="label",
         description="The label of edge name, `label` by default.",
     )
-    summary_enabled: bool = Field(
-        default=False,
-        description=""
+    plugin_names: str = Field(
+        default=["leiden"],
+        # todo: giturl = 'tugraph-plguin-url',
+        # todo: TUGRAPH_PLUGIN_NAMES has been added, which is array type
+        description="Plugins need to be loaded when initialize TuGraph, "
+                    "reference plugins' source code: http://xxx"
     )
-    plugin:str = Field(
-        default="leiden",
-        # giturl = 'tugraph-plguin-url',
-        description=""
-    )
+
 
 class TuGraphStore(GraphStoreBase):
     """TuGraph graph store."""
@@ -61,20 +60,23 @@ class TuGraphStore(GraphStoreBase):
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
         self._config = config
-        self._host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
-        self._port = int(os.getenv("TUGRAPH_PORT", 7687)) or config.port
-        self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
-        self._password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
-        self._summary_enabled = os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", False) or config.summary_enabled
-        self._plugin_name = config.plugin
+        self._host = os.getenv("TUGRAPH_HOST") or config.host
+        self._port = int(os.getenv("TUGRAPH_PORT")) or config.port
+        self._username = os.getenv("TUGRAPH_USERNAME") or config.username
+        self._password = os.getenv("TUGRAPH_PASSWORD") or config.password
+        self._summary_enabled = (
+            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED")
+            or config.summary_enabled
+        )
+        self._plugin_names = config.plugin_names
         self._node_label = (
-            os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
+            os.getenv("TUGRAPH_VERTEX_TYPE") or config.vertex_type
         )
         self._edge_label = (
-            os.getenv("TUGRAPH_EDGE_TYPE", "relation") or config.edge_type
+            os.getenv("TUGRAPH_EDGE_TYPE") or config.edge_type
         )
         self.edge_name_key = (
-            os.getenv("TUGRAPH_EDGE_NAME_KEY", "label") or config.edge_name_key
+            os.getenv("TUGRAPH_EDGE_NAME_KEY") or config.edge_name_key
         )
         self._graph_name = config.name
         self.conn = TuGraphConnector.from_uri_db(
@@ -105,13 +107,13 @@ class TuGraphStore(GraphStoreBase):
     def _upload_plugin(self):
         gql = f"CALL db.plugin.listPlugin('CPP','v1')"
         result = self.conn.run(gql)
-        has_leiden = any(self._plugin_name in item["plugin_description"] for item in result)
+        has_leiden = any(self._plugin_names in item["plugin_description"] for item in result)
         if not has_leiden:
-            plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', f'{self._plugin_name}.so')
+            plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', f'{self._plugin_names}.so')
             with open(plugin_path, 'rb') as f:
                 content = f.read()
             content = base64.b64encode(content).decode()
-            gql = f"CALL db.plugin.loadPlugin('CPP','{self._plugin_name}','{content}','SO','{self._plugin_name} Plugin',false,'v1')"
+            gql = f"CALL db.plugin.loadPlugin('CPP','{self._plugin_names}','{content}','SO','{self._plugin_names} Plugin',false,'v1')"
             self.conn.run(gql)
     def _create_schema(self):
         if not self._check_label("vertex"):

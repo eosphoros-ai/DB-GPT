@@ -8,10 +8,11 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
-from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
+from dbgpt.storage.graph_store.base import GraphStoreConfig
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
-from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
+    KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
@@ -36,8 +37,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def __init__(self, config: BuiltinKnowledgeGraphConfig):
         """Create builtin knowledge graph instance."""
-        self._config = config
         super().__init__()
+
         self._llm_client = config.llm_client
         if not self._llm_client:
             raise ValueError("No llm client provided.")
@@ -45,17 +46,17 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._model_name = config.model_name
         self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
-        self._graph_store_type = (
-            os.getenv("GRAPH_STORE_TYPE", "TuGraph") or config.graph_store_type
-        )
+        self._graph_store = self.__init_graph_store(config)
 
+    def __init_graph_store(self, config):
         def configure(cfg: GraphStoreConfig):
-            cfg.name = self._config.name
-            cfg.embedding_fn = self._config.embedding_fn
+            cfg.name = config.name
+            cfg.embedding_fn = config.embedding_fn
 
-        self._graph_store: GraphStoreBase = GraphStoreFactory.create(
-            self._graph_store_type, configure
+        graph_store_type = (
+            os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
         )
+        return GraphStoreFactory.create(graph_store_type, configure)
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist triplets to graph store."""
