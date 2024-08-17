@@ -5,9 +5,12 @@ from typing import List, Optional
 
 from openai import OpenAI
 
-from dbgpt._private.pydantic import ConfigDict
+from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
-from dbgpt.rag.transformer.summary_triplet_extractor import SummaryTripletExtractor
+from dbgpt.rag.transformer.summary_triplet_extractor import \
+    SummaryTripletExtractor
+from dbgpt.storage.graph_store.community.community_metastore import \
+    BuiltinCommunityMetastore
 from dbgpt.storage.graph_store.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
@@ -24,6 +27,29 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    vector_store_type: str = Field(
+        default="Chroma",
+        description="The type of vector store."
+    )
+    user: Optional[str] = Field(
+        default=None,
+        description="The user of vector store, if not set, will use the default user.",
+    )
+    password: Optional[str] = Field(
+        default=None,
+        description=(
+            "The password of vector store, if not set, will use the default password."
+        ),
+    )
+    community_topk: int = Field(
+        default=50,
+        description="Topk of community search in knowledge graph",
+    )
+    community_score_threshold: float = Field(
+        default=0.3,
+        description="Recall score of community search in knowledge graph",
+    )
+
 
 class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     """Community summary knowledge graph class."""
@@ -34,9 +60,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._triplet_extractor = SummaryTripletExtractor(
             self._llm_client, self._model_name
         )
-
-        # Initialize CommunityStore with a graph storage instance
-        self.community_store = CommunityStore(self._graph_store)
+        self._community_store = CommunityStore(
+            self._graph_store, BuiltinCommunityMetastore(config)
+        )
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         # Load documents as chunks
@@ -48,7 +74,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 self._graph_store.insert_triplet(*triplet)
             logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         # Build communities after loading all triplets
-        await self.community_store.build_communities()
+        await self._community_store.build_communities()
         return [chunk.chunk_id for chunk in chunks]
 
     async def asimilar_search_with_scores(
