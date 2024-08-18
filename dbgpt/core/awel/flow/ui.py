@@ -367,7 +367,10 @@ class UIUpload(UIComponent):
         )
 
     ui_type: Literal["upload"] = Field("upload", frozen=True)
-
+    attr: Optional[UIAttribute] = Field(
+        None,
+        description="The attributes of the component",
+    )
     max_file_size: Optional[int] = Field(
         None,
         description="The maximum size of the file, in bytes",
