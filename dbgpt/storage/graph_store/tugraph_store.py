@@ -2,6 +2,7 @@
 import logging
 import os
 import base64
+import json
 from typing import List, Optional, Tuple, Generator, Iterator
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -45,7 +46,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="label",
         description="The label of edge name, `label` by default.",
     )
-    plugin_names: str = Field(
+    plugin_names: List[str] = Field(
         default=["leiden"],
         # todo: giturl = 'tugraph-plguin-url',
         # todo: TUGRAPH_PLUGIN_NAMES has been added, which is array type
@@ -61,7 +62,7 @@ class TuGraphStore(GraphStoreBase):
         """Initialize the TuGraphStore with connection details."""
         self._config = config
         self._host = os.getenv("TUGRAPH_HOST") or config.host
-        self._port = int(os.getenv("TUGRAPH_PORT")) or config.port
+        self._port = int(os.getenv("TUGRAPH_PORT",config.port))
         self._username = os.getenv("TUGRAPH_USERNAME") or config.username
         self._password = os.getenv("TUGRAPH_PASSWORD") or config.password
         self._summary_enabled = (
@@ -107,14 +108,16 @@ class TuGraphStore(GraphStoreBase):
     def _upload_plugin(self):
         gql = f"CALL db.plugin.listPlugin('CPP','v1')"
         result = self.conn.run(gql)
-        has_leiden = any(self._plugin_names in item["plugin_description"] for item in result)
-        if not has_leiden:
-            plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', f'{self._plugin_names}.so')
-            with open(plugin_path, 'rb') as f:
-                content = f.read()
-            content = base64.b64encode(content).decode()
-            gql = f"CALL db.plugin.loadPlugin('CPP','{self._plugin_names}','{content}','SO','{self._plugin_names} Plugin',false,'v1')"
-            self.conn.run(gql)
+        result_names = [json.loads(record['plugin_description'])['name'] for record in result]
+        missing_plugins = [name for name in self._plugin_names if name not in result_names]
+        if len(missing_plugins):
+            for name in missing_plugins:
+                plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', f'{name}.so')
+                with open(plugin_path, 'rb') as f:
+                    content = f.read()
+                content = base64.b64encode(content).decode()
+                gql = f"CALL db.plugin.loadPlugin('CPP','{name}','{content}','SO','{name} Plugin',false,'v1')"
+                self.conn.run(gql)
     def _create_schema(self):
         if not self._check_label("vertex"):
             create_vertex_gql = (
