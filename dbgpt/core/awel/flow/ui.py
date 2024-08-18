@@ -387,8 +387,8 @@ class UIUpload(UIComponent):
         description="Whether to support drag and drop upload",
     )
     action: Optional[str] = Field(
-        None,
-        description="The URL for the file upload",
+        "/api/v2/serve/file/files/dbgpt",
+        description="The URL for the file upload(default bucket is 'dbgpt')",
     )
 
 

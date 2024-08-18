@@ -61,6 +61,8 @@ class FileMetadata(StorageItem):
     uri: str
     custom_metadata: Dict[str, Any]
     file_hash: str
+    user_name: Optional[str] = None
+    sys_code: Optional[str] = None
     _identifier: FileMetadataIdentifier = dataclasses.field(init=False)
 
     def __post_init__(self):
@@ -68,6 +70,11 @@ class FileMetadata(StorageItem):
         self._identifier = FileMetadataIdentifier(
             file_id=self.file_id, bucket=self.bucket
         )
+        custom_metadata = self.custom_metadata or {}
+        if not self.user_name:
+            self.user_name = custom_metadata.get("user_name")
+        if not self.sys_code:
+            self.sys_code = custom_metadata.get("sys_code")
 
     @property
     def identifier(self) -> ResourceIdentifier:

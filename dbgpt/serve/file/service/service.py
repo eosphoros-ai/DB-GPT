@@ -74,15 +74,28 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
     @trace("upload_files")
     def upload_files(
-        self, bucket: str, storage_type: str, files: List[UploadFile]
+        self,
+        bucket: str,
+        storage_type: str,
+        files: List[UploadFile],
+        user_name: Optional[str] = None,
+        sys_code: Optional[str] = None,
     ) -> List[UploadFileResponse]:
         """Upload files by a list of UploadFile."""
         results = []
         for file in files:
             file_name = file.filename
             logger.info(f"Uploading file {file_name} to bucket {bucket}")
+            custom_metadata = {
+                "user_name": user_name,
+                "sys_code": sys_code,
+            }
             uri = self.file_storage_client.save_file(
-                bucket, file_name, file_data=file.file, storage_type=storage_type
+                bucket,
+                file_name,
+                file_data=file.file,
+                storage_type=storage_type,
+                custom_metadata=custom_metadata,
             )
             parsed_uri = FileStorageURI.parse(uri)
             logger.info(f"Uploaded file {file_name} to bucket {bucket}, uri={uri}")

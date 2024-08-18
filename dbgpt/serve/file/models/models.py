@@ -5,7 +5,7 @@ You can define your own models and DAOs here
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueConstraint
 
 from dbgpt.storage.metadata import BaseDao, Model, db
 
@@ -15,6 +15,8 @@ from ..config import SERVER_APP_TABLE_NAME, ServeConfig
 
 class ServeEntity(Model):
     __tablename__ = SERVER_APP_TABLE_NAME
+    __table_args__ = (UniqueConstraint("bucket", "file_id", name="uk_bucket_file_id"),)
+
     id = Column(Integer, primary_key=True, comment="Auto increment id")
 
     bucket = Column(String(255), nullable=False, comment="Bucket name")
@@ -28,7 +30,8 @@ class ServeEntity(Model):
         Text, nullable=True, comment="Custom metadata, JSON format"
     )
     file_hash = Column(String(128), nullable=True, comment="File hash")
-
+    user_name = Column(String(128), index=True, nullable=True, comment="User name")
+    sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
 
