@@ -2,7 +2,7 @@ from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 
 
-def register_serve_apps(system_app: SystemApp, cfg: Config):
+def register_serve_apps(system_app: SystemApp, cfg: Config, webserver_port: int):
     """Register serve apps"""
     system_app.config.set("dbgpt.app.global.language", cfg.LANGUAGE)
     if cfg.API_KEYS:
@@ -47,6 +47,8 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
     # Register serve app
     system_app.register(FlowServe)
 
+    # ################################ AWEL Flow Serve Register End ########################################
+
     # ################################ Rag Serve Register Begin ######################################
 
     from dbgpt.serve.rag.serve import (
@@ -57,6 +59,8 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
     # Register serve app
     system_app.register(RagServe)
 
+    # ################################ Rag Serve Register End ########################################
+
     # ################################ Datasource Serve Register Begin ######################################
 
     from dbgpt.serve.datasource.serve import (
@@ -66,4 +70,32 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
 
     # Register serve app
     system_app.register(DatasourceServe)
-    # ################################ AWEL Flow Serve Register End ########################################
+
+    # ################################ Datasource Serve Register End ########################################
+
+    # ################################ File Serve Register Begin ######################################
+
+    from dbgpt.configs.model_config import FILE_SERVER_LOCAL_STORAGE_PATH
+    from dbgpt.serve.file.serve import (
+        SERVE_CONFIG_KEY_PREFIX as FILE_SERVE_CONFIG_KEY_PREFIX,
+    )
+    from dbgpt.serve.file.serve import Serve as FileServe
+
+    local_storage_path = (
+        cfg.FILE_SERVER_LOCAL_STORAGE_PATH or FILE_SERVER_LOCAL_STORAGE_PATH
+    )
+    # Set config
+    system_app.config.set(
+        f"{FILE_SERVE_CONFIG_KEY_PREFIX}local_storage_path", local_storage_path
+    )
+    system_app.config.set(
+        f"{FILE_SERVE_CONFIG_KEY_PREFIX}file_server_port", webserver_port
+    )
+    if cfg.FILE_SERVER_HOST:
+        system_app.config.set(
+            f"{FILE_SERVE_CONFIG_KEY_PREFIX}file_server_host", cfg.FILE_SERVER_HOST
+        )
+    # Register serve app
+    system_app.register(FileServe)
+
+    # ################################ File Serve Register End ########################################
