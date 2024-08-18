@@ -146,3 +146,5 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         """Delete vector name."""
         logger.info(f"Remove graph index {index_name}")
         self._graph_store.drop()
+        self._keyword_extractor.clean()
+        self._triplet_extractor.clean()

@@ -7,8 +7,7 @@ from openai import OpenAI
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
-from dbgpt.rag.transformer.summary_triplet_extractor import \
-    SummaryTripletExtractor
+from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community.community_metastore import \
     BuiltinCommunityMetastore
 from dbgpt.storage.graph_store.community_store import CommunityStore
@@ -41,6 +40,14 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
             "The password of vector store, if not set, will use the default password."
         ),
     )
+    extract_topk: int = Field(
+        default=5,
+        description="Topk of knowledge graph extract",
+    )
+    extract_score_threshold: float = Field(
+        default=0.3,
+        description="Recall score of knowledge graph extract",
+    )
     community_topk: int = Field(
         default=50,
         description="Topk of community search in knowledge graph",
@@ -57,11 +64,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     def __init__(self, config: CommunitySummaryKnowledgeGraphConfig):
         super().__init__(config)
 
-        self._triplet_extractor = SummaryTripletExtractor(
-            self._llm_client, self._model_name
+        self._triplet_extractor = GraphExtractor(
+            self._llm_client, self._model_name, config
         )
+        self._community_metastore = BuiltinCommunityMetastore(config)
         self._community_store = CommunityStore(
-            self._graph_store, BuiltinCommunityMetastore(config)
+            self._graph_store, self._community_metastore
         )
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
@@ -72,7 +80,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             for triplet in triplets:
                 # Insert each triplet into the graph store
                 self._graph_store.insert_triplet(*triplet)
-            logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
+            logger.info(
+                f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         # Build communities after loading all triplets
         await self._community_store.build_communities()
         return [chunk.chunk_id for chunk in chunks]
@@ -87,7 +96,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         # Determine if search is global or local
         is_global_search = await self._get_intent_from_query(text)
-        return await (self._global_search if is_global_search else self._local_search)(
+        return await (
+            self._global_search if is_global_search else self._local_search)(
             text, topk, score_threshold, filters
         )
 
@@ -192,3 +202,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             ],
         )
         return response.choices[0].message.content.strip().lower() == "global"
+
+    def delete_vector_name(self, index_name: str):
+        super().delete_vector_name(index_name)
+        self._community_metastore.drop()

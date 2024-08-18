@@ -21,6 +21,10 @@ class ExtractorBase(TransformerBase, ABC):
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
         """Extract results from text."""
 
+    @abstractmethod
+    def clean(self):
+        """Clean when finish extraction."""
+
 
 class TranslatorBase(TransformerBase, ABC):
     """Translator base class."""

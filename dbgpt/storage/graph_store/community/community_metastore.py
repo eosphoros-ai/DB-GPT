@@ -49,6 +49,10 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         config: CommunitySummaryKnowledgeGraphConfig,
         rdb_store: RDBMSConnector = None
     ):
+        self.__init_metastore(config)
+        self._rdb_store = rdb_store
+
+    def __init_metastore(self, config):
         self._vector_store_type = (
             os.getenv("VECTOR_STORE_TYPE") or config.vector_store_type
         )
@@ -75,7 +79,6 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         self._vector_store = VectorStoreFactory.create(
             self._vector_store_type, configure
         )
-        self._rdb_store = rdb_store
 
     def get(self, community_id: str) -> Community:
         """Get community."""
@@ -88,9 +91,7 @@ class BuiltinCommunityMetastore(CommunityMetastore):
     async def search(self, query: str) -> List[Community]:
         """search communities relevant to query."""
         chunks = await self._vector_store.asimilar_search_with_scores(
-            query,
-            self._topk,
-            self._score_threshold,
+            query, self._topk, self._score_threshold
         )
         return [
             Community(id=chunk.id, summary=chunk.content) for chunk in chunks
