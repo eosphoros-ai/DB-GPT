@@ -128,9 +128,9 @@ class TuGraphStore(GraphStoreBase):
                         f"'vertex', '{self._node_label}', "
                         f"'id', ['id',string,false],"
                         f"['_document_id',string,false],"
-                        f"['_community_id',int32,true],"
-                        f"['_level_id',int32,true],"
-                        f"['_weight',int32,true],"
+                        f"['_community_id',string,true],"
+                        f"['_level_id',string,true],"
+                        f"['_weight',double,true],"
                         f"['description',string,true])"
                     )   
             self.conn.run(create_vertex_gql)
@@ -192,9 +192,9 @@ class TuGraphStore(GraphStoreBase):
                 'id': f"'{node.vid}'",
                 'description': f"'{node.get_prop('description')}'",
                 '_document_id': f"'{node.get_prop('_document_id')}'",
-                '_community_id': 1,
-                '_level_id': 1,
-                '_weight': 1
+                '_community_id': f"'1'",
+                '_level_id': f"''",
+                '_weight': 10
             })
         node_query = f"""CALL db.upsertVertex("{self._node_label}", [{', '.join(['{' + ', '.join([f"{k}: {v}" for k, v in node.items()]) + '}' for node in node_list])}])"""
         for edge in edges:
@@ -351,7 +351,6 @@ class TuGraphStore(GraphStoreBase):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        print(nodes[i]._properties["_community_id"])
                         formatted_path.append({
                             "id":nodes[i]._properties["id"],
                             "_community_id":nodes[i]._properties["_community_id"],
@@ -363,9 +362,11 @@ class TuGraphStore(GraphStoreBase):
                                 "id":rels[i]._properties["id"],
                                 "description":rels[i]._properties["description"],
                             })
-                        for path in formatted_path:
-                            for i in range(0, len(path), 2):
-                                mg.upsert_vertex(Vertex(path[i]['id'],description=path[i]['description'],community_id=path[i]['_community_id'],level_id=path[i]['_level_id']))
-                                if i + 2 < len(path):
-                                    mg.append_edge(Edge(path[i][id], path[i + 2][id], label = path[i + 1][id], description=path[i + 1]['description']))
+                        for i in range(0, len(formatted_path), 2):
+                            mg.upsert_vertex(Vertex(formatted_path[i]['id'],description=formatted_path[i]['description'],community_id=formatted_path[i]['_community_id'],level_id=formatted_path[i]['_level_id']))
+                            if i + 2 < len(formatted_path):
+                                mg.append_edge(Edge(formatted_path[i]['id'], formatted_path[i + 2]['id'], label = formatted_path[i + 1]['id'], description=formatted_path[i + 1]['description']))
+                else:
+                    vertex = Vertex('json_node',description=value)
+                    mg.upsert_vertex(vertex)
             yield mg
