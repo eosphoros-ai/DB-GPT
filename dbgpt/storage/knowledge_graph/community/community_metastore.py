@@ -1,42 +1,18 @@
-"""Community metastore."""
+"""Builtin Community metastore."""
 import logging
 import os
-from abc import ABC, abstractmethod
 from typing import List
 
 from dbgpt.core import Chunk
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.storage.graph_store.community_store import Community
+from dbgpt.storage.knowledge_graph.community.base import CommunityMetastore
 from dbgpt.storage.knowledge_graph.community_summary import \
     CommunitySummaryKnowledgeGraphConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.factory import VectorStoreFactory
 
 logger = logging.getLogger(__name__)
-
-
-class CommunityMetastore(ABC):
-    """Community metastore class."""
-
-    @abstractmethod
-    def get(self, community_id: str) -> Community:
-        """Get community."""
-
-    @abstractmethod
-    def list(self) -> List[Community]:
-        """get all communities."""
-
-    @abstractmethod
-    async def search(self, query: str) -> List[Community]:
-        """search communities relevant to query."""
-
-    @abstractmethod
-    def save(self, communities: List[Community]):
-        """Upsert community."""
-
-    @abstractmethod
-    def drop(self):
-        """Drop all communities."""
 
 
 class BuiltinCommunityMetastore(CommunityMetastore):
@@ -54,18 +30,17 @@ class BuiltinCommunityMetastore(CommunityMetastore):
 
     def __init_metastore(self, config):
         self._vector_store_type = (
-            os.getenv("VECTOR_STORE_TYPE") or config.vector_store_type
+            os.getenv("VECTOR_STORE_TYPE", config.vector_store_type)
         )
         self._vector_space = config.name + self.VECTOR_SPACE_SUFFIX
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads
-        self._topk = (
-            os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE")
-            or config.community_topk
+        self._topk = os.getenv(
+            "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk
         )
-        self._score_threshold = (
-            os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE")
-            or config.community_score_threshold
+        self._score_threshold = os.getenv(
+            "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
+            config.community_score_threshold
         )
 
         def configure(cfg: VectorStoreConfig):
