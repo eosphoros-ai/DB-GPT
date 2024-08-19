@@ -5,8 +5,8 @@ import { SearchDocumentParams } from '@/types/knowledge';
 /**
  * 知识库编辑搜索
  */
-export const searchDocumentList = (id: string, data: SearchDocumentParams) => {
-  return POST<SearchDocumentParams, { data: string[]; total: number; page: number }>(`/knowledge/${id}/document/list`, data);
+export const searchDocumentList = (spaceName: string, data: SearchDocumentParams) => {
+  return POST<SearchDocumentParams, { data: string[]; total: number; page: number }>(`/knowledge/${spaceName}/document/list`, data);
 };
 
 /**
