@@ -16,6 +16,7 @@ import {
   RenderTimePicker,
   RenderTextArea,
   RenderPassword,
+  RenderVariables,
 } from './node-renderer';
 import { convertKeysToCamelCase } from '@/utils/flow';
 
@@ -116,7 +117,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
     const props = { data, defaultValue, onChange };
-    
+
     switch (data?.ui?.ui_type) {
       case 'select':
         return <RenderSelect {...props} />;
@@ -142,6 +143,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderPassword {...props} />;
       case 'password':
         return <RenderTreeSelect {...props} />;
+      case 'variables':
+        return <RenderVariables {...props} />;
       default:
         return null;
     }
