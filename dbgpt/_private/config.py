@@ -322,6 +322,10 @@ class Config(metaclass=Singleton):
         self.FILE_SERVER_LOCAL_STORAGE_PATH = os.getenv(
             "FILE_SERVER_LOCAL_STORAGE_PATH"
         )
+        # multi-instance flag
+        self.WEBSERVER_MULTI_INSTANCE = (
+            os.getenv("MULTI_INSTANCE", "False").lower() == "true"
+        )
 
     @property
     def local_db_manager(self) -> "ConnectorManager":
