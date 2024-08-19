@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 
 # C extensions
-*.so
-!dbgpt/storage/graph_store/plugins/leiden.so
+# *.so
+# !dbgpt/storage/graph_store/plugins/leiden.so
 message/
 dbgpt/util/extensions/
 .env*
