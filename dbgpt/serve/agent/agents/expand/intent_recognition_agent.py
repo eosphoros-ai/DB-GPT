@@ -24,32 +24,30 @@ RETRY_GOAL_EN = (
 RETRY_GOAL_ZH = "阅读下面用户提供的最近消息内容，并把当前用户输入信息提取补充到最近消息中的意图信息里，并返回补充后的意图信息。"
 
 CONSTRAINTS_EN = [
-    "According to the user input information, select and match from the given intent definition. "
-    "If no intent is matched, 'intent' and 'app_code' will be output as empty. Do not generate "
-    "intent and slot attributes by yourself.",
-    "The selected intent does not have a slots attribute defined, so make sure the output json "
-    "does not include the 'slots' attribute.",
-    "Extract the value of the slot attribute in the intent definition from user input and historical "
-    "dialogue information. If the target information corresponding to the slot attribute cannot be "
-    "obtained, the slot value output is empty.",
-    "When extracting slot values, please be careful to only obtain the valid value part and do not "
-    "fill in auxiliary descriptions or attributes.",
-    "Make sure that the slot attributes defined by intention will output all the slot attributes "
-    "given by the definition regardless of whether the value is obtained. If the value is not found, "
-    "the slot name and null value will be output.",
-    "Please ensure that if the content of the intent slot definition is not provided in the user "
-    "question, the slot value must be empty, and do not fill in invalid information such as 'user "
-    "not provided' in the slot value.",
-    "If the information extracted from the user's question content does not completely correspond to "
-    "the matched intention slot, a new question will be generated to ask the user and prompt the user "
-    "to supplement the missing slot data.",
+    "Strictly define the output based on the given intent. Do not generate the intent and "
+    "slot attributes by yourself. If the intent does not define a slot, the output should "
+    "not include the slot.",
+    "Select the appropriate intent to answer the user's question based on user input. "
+    "If no intent can be matched, the output of app_code' will be empty.",
+    "If there is no 'Slots' definition in the selected intent definition, make sure the "
+    "output slot content is empty and do not create any slot information yourself.",
+    "If there is a 'Slots' definition in the selected intent definition, extract the value "
+    "of the specific slot attribute from the user input. If the value of the slot attribute "
+    "cannot be obtained, ensure that the slot attribute value output is empty.",
+    "When extracting the slot value, please be careful to only obtain the valid value part. "
+    "Do not fill in auxiliary descriptions, attributes, prompts or description information, "
+    "and do not appear content like 'not provided by the user'.",
+    "When the complete slot attribute value defined by the intent cannot be collected, a "
+    "prompt will be proactively sent to the user to remind the user to supplement the missing "
+    "slot data.",
 ]
 CONSTRAINTS_ZH = [
-    "根据用户输入信息，从给出的意图定义中进行选择匹配，无法匹配到任何意图'intent'和'app_code'都输出为空，不要输出任何未定义的意图.",
-    "请确保按意图定义输出槽位属性，不要自行创造任何槽位属性，如果意图定义没有槽位属性，则确保槽位输出位空"
-    "从用户输入和历史对话信息中提取意图定义中槽位属性的值，如果无法获取到槽位属性的值，则确保槽位值输出空，不要在槽位值里输出提示或者描述信息，不要出现类似'用户未提供'这样的内容.",
-    "槽位值提取时请注意只获取有效值部分，不要填入辅助描述或定语",
-    "如果无法收集到完整的意图定义的槽位属性的值，主动像用户发起提示，提醒用户补充缺槽位数据.",
+    "严格根给出的意图定义输出，不要自行生成意图和槽位属性，意图没有定义槽位则输出也不应该包含槽位.",
+    "根据用户输入选择合适的意图回答用户问题，如无法匹配到任何意图，app_code'输出为空.",
+    "如果选择的意图定义中没有'Slots'定义,则确保输出槽位内容为空，不要自行创造任何槽位信息",
+    "如果选择的意图定义中有'Slots'定义,从用户输入中提取具体槽位属性的值,如果无法获取到槽位属性的值，则确保槽位属性值输出空.",
+    "槽位值提取时请注意只获取有效值部分,不要填入辅助描述、定语、提示或者描述信息，不要出现类似'用户未提供'这样的内容.",
+    "无法收集到完整的意图定义的槽位属性值时，主动像用户发起提示，提醒用户补充缺槽位数据.",
 ]
 
 RETRY_CONSTRAINTS_EN = [

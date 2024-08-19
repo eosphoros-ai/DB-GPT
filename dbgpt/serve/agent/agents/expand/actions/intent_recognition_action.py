@@ -57,10 +57,7 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
         out_put_schema = {
             "intent": "[The recognized intent is placed here]",
             "app_code": "[App code in selected intent]",
-            "slots": {
-                "attribute name 1": "[The value of the slot attribute 1 in intent define]",
-                "attribute name 2": "[The value of the slot attribute 2 in intent define]",
-            },
+            "slots": {"意图定义中槽位属性1": "具体值", "意图定义中槽位属性2": "具体值"},
             "ask_user": "If you want the user to supplement slot data, ask the user a question",
             "user_input": "[Complete instructions generated based on intent and slot]",
         }
@@ -121,7 +118,6 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
                         next_speakers=next_speakers,
                     )
 
-        next_speakers = []
         if intent.app_code and len(intent.app_code) > 0:
             from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (
                 StartAppAssistantAgent,
@@ -133,12 +129,19 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
             "app_code": intent.app_code,
             "app_name": intent.intent,
             "app_desc": intent.user_input,
-            "app_logo": "",
-            "status": "TODO",
         }
+
         return ActionOutput(
             is_exe_success=True,
             content=json.dumps(app_link_param, ensure_ascii=False),
-            view=await self.render_protocal.display(content=app_link_param),
+            view=await self.render_protocal.display(
+                content={
+                    "app_code": intent.app_code,
+                    "app_name": intent.intent,
+                    "app_desc": intent.user_input,
+                    "app_logo": "",
+                    "status": "TODO",
+                }
+            ),
             next_speakers=next_speakers,
         )

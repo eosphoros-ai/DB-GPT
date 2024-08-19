@@ -16,7 +16,7 @@ class LinkAppAssistantAgent(ConversableAgent):
             key="dbgpt_ant_agent_agents_app_link_assistant_agent_profile_name",
         ),
         role=DynConfig(
-            "App Selector",
+            "App Link",
             category="agent",
             key="dbgpt_ant_agent_agents_app_link_assistant_agent_profile_role",
         ),

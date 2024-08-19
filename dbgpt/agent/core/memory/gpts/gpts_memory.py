@@ -305,12 +305,12 @@ class GptsMemory:
 
         none_goal_count = 1
         for message in messages:
-            if (
-                message.sender == "Intent Recognition Expert"
-                or message.receiver == "Intent Recognition Expert"
-            ):
+            if message.sender in [
+                "Intent Recognition Expert",
+                "App Link",
+            ] or message.receiver in ["Intent Recognition Expert", "App Link"]:
                 if (
-                    message.sender == "Intent Recognition Expert"
+                    message.sender in ["Intent Recognition Expert", "App Link"]
                     and message.receiver == "AppLauncher"
                 ):
                     app_link_message = message
