@@ -25,14 +25,14 @@ export const RenderSlider = (params: TextAreaProps) => {
       {data?.ui?.show_input ? (
         <Row>
           <Col span={12}>
-            <Slider {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
+            <Slider className="w-full nodrag"  {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
           </Col>
           <Col span={4}>
             <InputNumber {...attr} style={{ margin: '0 16px' }} value={inputValue} onChange={onChangeSlider} />
           </Col>
         </Row>
       ) : (
-        <Slider {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
+        <Slider className="w-full nodrag"  {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
       )}
     </>
   );
