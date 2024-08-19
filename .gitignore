@@ -5,6 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
+!dbgpt/storage/graph_store/plugins/leiden.so
 message/
 dbgpt/util/extensions/
 .env*
@@ -185,3 +186,6 @@ thirdparty
 /examples/**/*.gv.pdf
 /i18n/locales/**/**/*_ai_translated.po
 /i18n/locales/**/**/*~
+
+
+
