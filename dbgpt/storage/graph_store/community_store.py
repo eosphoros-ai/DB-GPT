@@ -4,18 +4,18 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Generator, List
+from typing import List, Set
 
-from openai import OpenAI
-
+from dbgpt.core import LLMClient
+from dbgpt.rag.transformer.llm_extractor import LLMExtractor
 from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.graph_store.community.community_metastore import \
-    CommunityMetastore
-from dbgpt.storage.graph_store.graph import Vertex, Graph
+from dbgpt.storage.graph_store.graph import Graph
+from dbgpt.storage.knowledge_graph.community.community_metastore import (
+    CommunityMetastore,
+)
 
 logger = logging.getLogger(__name__)
 
-client = OpenAI(api_key="")
 
 @dataclass
 class Community:
@@ -24,133 +24,116 @@ class Community:
     summary: str = None
 
 
+@dataclass
+class CommunityTree:
+    """Represents a community tree."""
+
+
 class CommunityStore:
 
     def __init__(
         self,
         graph_store: GraphStoreBase,
-        meta_store: CommunityMetastore
+        meta_store: CommunityMetastore,
+        llm_client: LLMClient,
+        model_name: str,
     ):
         """Initialize the CommunityStore"""
         self._graph_store = graph_store
         self._meta_store = meta_store
         self._executor = ThreadPoolExecutor(max_workers=10)
         self._max_hierarchy_level = 3
+        self._llm_extractor = LLMExtractor(llm_client, model_name)
 
     async def build_communities(self):
-        # discover communities
+        """Discover, retrieve, summarize and save communities."""
+        communities_metadata = await self.discover_communities()
+        communities = await self.retrieve_communities(communities_metadata)
+        await self.summarize_communities(communities)
+        await self.save_communities(communities)
+
+    async def discover_communities(self) -> Set[str]:
+        """Discover unique community IDs."""
         graph_name = self._graph_store.get_config().name
-        query = f"CALL {graph_name}.leiden()"
-        communities_metadata = self._graph_store.stream_query(query)
-        logger.info(f"Discover {len(communities_metadata)} communities.")
+        community_ids = set(
+            self._graph_store.stream_query(f"CALL {graph_name}.leiden()")
+        )
+        logger.info(f"Discovered {len(community_ids)} communities.")
+        return community_ids
 
-        # summarize communities
-        communities = await self._retrieve_communities(communities_metadata)
-        await self._summarize_communities(communities)
+    async def retrieve_communities(self, community_ids: Set[str]) -> List[Community]:
+        """Retrieve community data for each community ID."""
 
-    async def _retrieve_communities(
-        self, communities_metadata: Generator[Graph, None, None]
-    ) -> List[Community]:
-        """Collect detailed information for each node based on their community.
-
-        # community_hierarchical_clusters structure: Generator[Graph, None, None]
-        Each Graph contains:
-            vertices: A set of Vertex objects, each representing a node in the graph.
-            edges: A set of Edge objects, each representing an edge in the graph.
-            Vertex objects may include the following attributes:
-
-            id: A unique identifier for the node
-            properties: A dictionary containing other properties of the node, e.g., {"community_id": "cluster1"}
-            Edge objects may include the following attributes:
-
-            src_id: The ID of the source node of the edge
-            dst_id: The ID of the destination node of the edge
-            label: The label or type of the edge
-            properties: A dictionary containing other properties of the edge, e.g., {"description": "some relationship"}
-
-        # community_info example
-        {
-            "cluster1": [
-                "node1 -> node2 -> relationship_type -> relationship description",
-                "node1 -> node3 -> another_relationship -> another description",
-            ],
-            "cluster2": [
-                "node4 -> node5 -> some_relationship -> some description",
-            ],
-        }
-
-        """
-
-        community_info: List[Community] = []
-        tasks = []
-
-        for memory_graph in communities_metadata:
-            for vertex in memory_graph.vertices:
-                task = asyncio.create_task(
-                    self._process_vertex(memory_graph, vertex, community_info)
-                )
-                tasks.append(task)
-
-        await asyncio.gather(*tasks)
-
-        if self._enable_persistence and self._orm:
-            await asyncio.get_event_loop().run_in_executor(
-                self._executor, self._orm.save_community_info, community_info
+        async def process_community(community_id: str) -> Community:
+            community = Community(id=community_id, data=Graph())
+            nodes = self._graph_store.stream_query(
+                f"MATCH (n:{self._graph_store._node_label}) WHERE n._community_id = '{community_id}' RETURN n"
             )
 
-        return community_info
+            for node in nodes:
+                vertex = node.vertices[0]
+                community.data.upsert_vertex(vertex)
+                edges = self._graph_store.stream_query(
+                    f"MATCH (n:{self._graph_store._node_label})-[r:{self._graph_store._edge_label}]->(m:{self._graph_store._node_label}) WHERE n.id = '{vertex.vid}' RETURN r, m"
+                )
+                for edge_result in edges:
+                    edge, target_vertex = edge_result.edges[0], edge_result.vertices[0]
+                    community.data.append_edge(edge)
+                    community.data.upsert_vertex(target_vertex)
 
-    async def _process_vertex(
-        self,
-        memory_graph: Graph,
-        vertex: Vertex,
-        communities: List[Community],
-    ):
-        cluster_id = vertex.properties.get("community_id", "unknown")
-        if cluster_id not in communities:
-            communities[cluster_id] = []
+            return community
 
-        for edge in memory_graph.edges:
-            if edge.src_id == vertex.id:
-                neighbor_vertex = memory_graph.get_vertex(edge.dst_id)
-                if neighbor_vertex:
-                    detail = f"{vertex.id} -> {neighbor_vertex.id} -> {edge.label} -> {edge.properties.get('description', 'No description')}"
-                    communities[cluster_id].append(detail)
+        return await asyncio.gather(*[process_community(cid) for cid in community_ids])
 
-    async def _summarize_communities(self, communities: List[Community]):
-        """Generate and store summaries for each community."""
-        tasks = []
+    async def summarize_communities(self, communities: List[Community]):
+        """Generate summaries for each community."""
         for community in communities:
-            task = asyncio.create_task(self._summarize_community(community))
-            tasks.append(task)
-        await asyncio.gather(*tasks)
+            community.summary = await self._generate_community_summary(community.data)
+
+    async def save_communities(self, communities: List[Community]):
+        """Save all communities to the meta store."""
+        await asyncio.get_event_loop().run_in_executor(
+            self._executor, self._meta_store.save, communities
+        )
+
+    async def search_communities(self, query: str) -> List[Community]:
+        return await self._meta_store.search(query)
 
     async def _summarize_community(self, community: Community):
         summary = await self._generate_community_summary(community.data)
         community.summary = summary
         self._meta_store.save([community])
 
-    async def search_communities(self, query: str) -> List[Community]:
-        return await self._meta_store.search(query)
-
     async def _generate_community_summary(self, graph: Graph):
-        """Generate summary for a given text using an LLM."""
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        """Task: Summarize Knowledge Graph Relationships
-                        
-                        You are given relationships from a knowledge graph in the format:
-                        entity1 -> entity2 -> relation -> relationship_description.
-                        
-                        Goal: Create a concise summary that includes the entities' names and synthesizes the relationship descriptions, highlighting the most critical and relevant details. Ensure coherence and emphasize key aspects of each relationship.
-                        """
-                    ),
-                },
-                {"role": "user", "content": graph},
-            ],
+        """Generate summary for a given graph using an LLM."""
+        prompt_template = """Task: Summarize Knowledge Graph Community
+
+        You are given a community from a knowledge graph with the following information:
+        1. Nodes (entities) with their descriptions
+        2. Relationships between nodes with their descriptions
+
+        Goal: Create a concise summary that:
+        1. Identifies the main themes or topics of this community
+        2. Highlights key entities and their roles
+        3. Summarizes the most important relationships
+        4. Provides an overall characterization of what this community represents
+
+        Community Data:
+        Nodes: {nodes}
+        Relationships: {relationships}
+
+        Summary:"""
+
+        nodes = "\n".join(
+            [f"- {v.vid}: {v.get_prop('description')}" for v in graph.vertices()]
         )
-        return response.choices[0].message.content
+        relationships = "\n".join(
+            [
+                f"- {e.sid} -> {e.tid}: {e.get_prop('label')} ({e.get_prop('description')})"
+                for e in graph.edges()
+            ]
+        )
+
+        return await self._llm_extractor.extract(
+            prompt_template.format(nodes=nodes, relationships=relationships)
+        )
