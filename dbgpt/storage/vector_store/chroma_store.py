@@ -1,6 +1,7 @@
 """Chroma vector store."""
 import logging
 import os
+from abc import abstractmethod
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from chromadb import PersistentClient
@@ -63,6 +64,8 @@ class ChromaStore(VectorStoreBase):
             vector_store_config(ChromaVectorConfig): vector store config.
         """
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
@@ -88,6 +91,11 @@ class ChromaStore(VectorStoreBase):
             embedding_function=None,
             metadata=collection_metadata,
         )
+
+    @abstractmethod
+    def get_config(self) -> ChromaVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None

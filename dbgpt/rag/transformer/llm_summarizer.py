@@ -1,17 +1,16 @@
-"""TripletExtractor class."""
+"""LLMSummarizer class."""
 import logging
-from abc import ABC, abstractmethod
-from typing import List, Optional
+from abc import ABC
 
 from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, \
     ModelRequest
-from dbgpt.rag.transformer.base import ExtractorBase
+from dbgpt.rag.transformer.base import SummarizerBase
 
 logger = logging.getLogger(__name__)
 
 
-class LLMExtractor(ExtractorBase, ABC):
-    """LLMExtractor class."""
+class LLMSummarizer(SummarizerBase, ABC):
+    """LLMSummarizer class."""
 
     def __init__(
         self,
@@ -19,24 +18,15 @@ class LLMExtractor(ExtractorBase, ABC):
         model_name: str,
         prompt_template: str
     ):
-        """Initialize the LLMExtractor."""
+        """Initialize the LLMSummarizer."""
         self._llm_client = llm_client
         self._model_name = model_name
         self._prompt_template = prompt_template
 
-    async def extract(self, text: str, limit: Optional[int] = None) -> List:
-        """Default extract by LLM."""
-        return await self._extract(text, None, limit)
-
-    async def _extract(
-        self,
-        text: str,
-        history: str = None,
-        limit: Optional[int] = None
-    ) -> List:
-        """Inner extract by LLM."""
+    async def summarize(self, **args) -> str:
+        """Summarize by LLM."""
         template = HumanPromptTemplate.from_template(self._prompt_template)
-        messages = template.format_messages(text=text, history=history)
+        messages = template.format_messages(**args)
 
         # use default model if needed
         if not self._model_name:
@@ -54,15 +44,8 @@ class LLMExtractor(ExtractorBase, ABC):
             code = str(response.error_code)
             reason = response.text
             logger.error(f"request llm failed ({code}) {reason}")
-            return []
 
-        if limit and limit < 1:
-            ValueError("optional argument limit >= 1")
-        return self._parse_response(response.text, limit)
+        return response.text
 
     def clean(self):
         """Do nothing by default"""
-
-    @abstractmethod
-    def _parse_response(self, text: str, limit: Optional[int] = None) -> List:
-        """Parse llm response."""

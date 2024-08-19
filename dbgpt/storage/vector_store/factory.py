@@ -14,6 +14,7 @@ class VectorStoreFactory:
     @staticmethod
     def create(
         vector_store_type: str,
+        vector_space_name: str,
         vector_store_configure=None
     ) -> VectorStoreBase:
         """Create a VectorStore instance.
@@ -27,7 +28,7 @@ class VectorStoreFactory:
         try:
             config = cfg_cls()
             if vector_store_configure:
-                vector_store_configure(config)
+                vector_store_configure(vector_space_name, config)
             return store_cls(config)
         except Exception as e:
             logger.error("create vector store failed: %s", e)

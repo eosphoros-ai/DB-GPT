@@ -1,6 +1,7 @@
 """Weaviate vector store."""
 import logging
 import os
+from abc import abstractmethod
 from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -69,6 +70,8 @@ class WeaviateStore(VectorStoreBase):
                 "Please install it with `pip install weaviate-client`."
             )
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         self.weaviate_url = vector_store_config.weaviate_url
         self.embedding = vector_store_config.embedding_fn
         self.vector_name = vector_store_config.name
@@ -77,6 +80,11 @@ class WeaviateStore(VectorStoreBase):
         )
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
+
+    @abstractmethod
+    def get_config(self) -> WeaviateVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None
