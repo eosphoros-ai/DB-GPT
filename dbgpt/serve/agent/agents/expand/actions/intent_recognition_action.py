@@ -67,11 +67,11 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
         if self.language == "en":
             return f"""Please reply in the following json format:
                 {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
-            Make sure the reply content only has correct json and can be parsed by Python json.loads."""  # noqa: E501
+            Make sure the output is only json and can be parsed by Python json.loads."""  # noqa: E501
         else:
             return f"""请按如下JSON格式输出:
             {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
-            确保只输出json，且可以被python json.loads加载."""
+            确保输出只有json，且可以被python json.loads加载."""
 
     async def run(
         self,
@@ -105,15 +105,40 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
                         ask_user=True,
                     )
 
-        app_link_param = {
-            "app_code": intent.app_code,
-            "app_name": intent.intent,
-            "app_desc": intent.user_input,
-            "app_logo": "",
-            "status": "TODO",
-        }
+        next_speakers = []
+        if not intent.app_code or len(intent.app_code) <= 0:
+            from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
+
+            next_speakers.append(SummaryAssistantAgent().role)
+
+            from dbgpt.agent.expand.simple_assistant_agent import SimpleAssistantAgent
+
+            next_speakers.append(SimpleAssistantAgent().role)
+
+            app_link_param = {
+                "app_code": "Personal assistant",
+                "app_name": "Personal assistant",
+                "app_desc": "",
+                "app_logo": "",
+                "status": "TODO",
+            }
+        else:
+            from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (
+                StartAppAssistantAgent,
+            )
+
+            next_speakers = [StartAppAssistantAgent().role]
+            app_link_param = {
+                "app_code": intent.app_code,
+                "app_name": intent.intent,
+                "app_desc": intent.user_input,
+                "app_logo": "",
+                "status": "TODO",
+            }
+
         return ActionOutput(
             is_exe_success=True,
-            content=json.dumps(intent.to_dict(), ensure_ascii=False),
+            content=json.dumps(app_link_param, ensure_ascii=False),
             view=await self.render_protocal.display(content=app_link_param),
+            next_speakers=next_speakers,
         )

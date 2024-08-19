@@ -69,7 +69,7 @@ class DataScientistAgent(ConversableAgent):
         ),
     )
 
-    max_retry_count: int = 3
+    max_retry_count: int = 5
     language: str = "zh"
 
     def __init__(self, **kwargs):

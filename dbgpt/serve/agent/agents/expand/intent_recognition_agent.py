@@ -9,11 +9,11 @@ from dbgpt.serve.agent.agents.expand.actions.intent_recognition_action import (
 logger = logging.getLogger()
 
 GOAL_EN = (
-    "Understand the user input information, select an intention that best matches "
-    "the user input from the intention definition of the known information, and "
-    "extract the information and output the complete intention information as required."
+    "Understand the user input information, select an intention that best matches the "
+    "user input from the intention definition of the known information, and output the "
+    "intention information as required."
 )
-GOAL_ZH = "理解用户输入信息，从已知信息的意图定义中选择一个和用户输入最匹配的意图，并按要求提取信息输出完整意图信息."
+GOAL_ZH = "理解用户输入信息，从已知信息的意图定义中选择一个和用户输入最匹配的意图，并按要求输出意图信息."
 
 RETRY_GOAL_EN = (
     "Read the content of the recent messages provided by the following users, "
@@ -24,8 +24,10 @@ RETRY_GOAL_EN = (
 RETRY_GOAL_ZH = "阅读下面用户提供的最近消息内容，并把当前用户输入信息提取补充到最近消息中的意图信息里，并返回补充后的意图信息。"
 
 CONSTRAINTS_EN = [
-    "Strictly define the output based on the given intent. Do not generate the intent and slot "
-    "attributes by yourself. If the intent does not define a slot, the output should not include the slot.",
+    "Strictly define the output based on the given intention. Do not generate intention and slots "
+    "attributes by yourself. ",
+    "The intent selected by the match does not have a slot attribute defined, so ensure that the "
+    "output does not contain slot information either.",
     "Extract the value of the slot attribute in the intent definition from user input and historical "
     "dialogue information. If the target information corresponding to the slot attribute cannot be "
     "obtained, the slot value output is empty.",
@@ -42,7 +44,8 @@ CONSTRAINTS_EN = [
     "to supplement the missing slot data.",
 ]
 CONSTRAINTS_ZH = [
-    "严格根给出的意图定义输出，不要自行生成意图和槽位属性，意图没有定义槽位则输出也不应该包含槽位.",
+    "严格根给出的意图定义输出，不要自行生成意图和槽位属性",
+    "匹配选择到的意图没有定义槽位属性，确保输出也不要包含槽位信息."
     "从用户输入和历史对话信息中提取意图定义中槽位属性的值，如果无法获取到槽位属性对应的目标信息，则槽位值输出空.",
     "槽位值提取时请注意只获取有效值部分，不要填入辅助描述或定语",
     "确保意图定义的槽位属性不管是否获取到值，都要输出全部定义给出的槽位属性，没有找到值的输出槽位名和空值.",
@@ -115,6 +118,7 @@ class IntentRecognitionAgent(ConversableAgent):
     )
 
     stream_out: bool = False
+    language: str = "zh"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

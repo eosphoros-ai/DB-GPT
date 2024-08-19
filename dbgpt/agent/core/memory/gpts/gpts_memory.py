@@ -305,8 +305,14 @@ class GptsMemory:
 
         none_goal_count = 1
         for message in messages:
-            if message.sender == "AppLink" or message.receiver == "AppLink":
-                if message.sender == "AppLink" and message.receiver == "AppLauncher":
+            if (
+                message.sender == "Intent Recognition Expert"
+                or message.receiver == "Intent Recognition Expert"
+            ):
+                if (
+                    message.sender == "Intent Recognition Expert"
+                    and message.receiver == "AppLauncher"
+                ):
                     app_link_message = message
                 if message.receiver != "Human":
                     continue
@@ -316,10 +322,6 @@ class GptsMemory:
                     app_lanucher_message = message
                 continue
 
-            # if len(app_link_message) <= 0:
-            #     count = count + 1
-            #     if count == 1:
-            #         continue
             current_gogal = message.current_goal
 
             last_goal = next(reversed(temp_group)) if temp_group else None

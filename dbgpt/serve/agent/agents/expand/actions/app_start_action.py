@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 from dbgpt.agent import Action, ActionOutput, AgentResource
 from dbgpt.serve.agent.agents.expand.actions.intent_recognition_action import (
     IntentRecognitionInput,
@@ -12,7 +13,18 @@ from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 logger = logging.getLogger(__name__)
 
 
-class StartAppAction(Action[IntentRecognitionInput]):
+class LinkAppInput(BaseModel):
+    app_code: Optional[str] = Field(
+        ...,
+        description="The code of selected app.",
+    )
+    app_name: Optional[str] = Field(
+        ...,
+        description="The name of selected app.",
+    )
+
+
+class StartAppAction(Action[LinkAppInput]):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._render_protocal = VisPlugin()
@@ -39,9 +51,7 @@ class StartAppAction(Action[IntentRecognitionInput]):
         init_message_rounds = kwargs.get("init_message_rounds")
 
         try:
-            param: IntentRecognitionInput = self._input_convert(
-                ai_message, IntentRecognitionInput
-            )
+            param: LinkAppInput = self._input_convert(ai_message, LinkAppInput)
         except Exception as e:
             logger.exception(str(e))
             return ActionOutput(
@@ -56,7 +66,7 @@ class StartAppAction(Action[IntentRecognitionInput]):
                 return ActionOutput(
                     is_exe_success=False,
                     content=ai_message,
-                    view=f"[DBGPT Warning] Intent definition application cannot be found [{param.app_code}]{param.intent}",
+                    view=f"[DBGPT Warning] Intent definition application cannot be found [{param.app_code}]{param.app_name}",
                     have_retry=False,
                 )
             if TeamMode.NATIVE_APP.value == gpts_app.team_mode:
