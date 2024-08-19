@@ -3,14 +3,13 @@
 import logging
 from typing import List, Optional
 
-from openai import OpenAI
-
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community_store import CommunityStore
-from dbgpt.storage.knowledge_graph.community.community_metastore import \
-    BuiltinCommunityMetastore
+from dbgpt.storage.knowledge_graph.community.community_metastore import (
+    BuiltinCommunityMetastore,
+)
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -18,7 +17,6 @@ from dbgpt.storage.knowledge_graph.knowledge_graph import (
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
-client = OpenAI(api_key="")
 
 
 class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
@@ -27,8 +25,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     vector_store_type: str = Field(
-        default="Chroma",
-        description="The type of vector store."
+        default="Chroma", description="The type of vector store."
     )
     user: Optional[str] = Field(
         default=None,
@@ -80,8 +77,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             for triplet in triplets:
                 # Insert each triplet into the graph store
                 self._graph_store.insert_triplet(*triplet)
-            logger.info(
-                f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
+            logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         # Build communities after loading all triplets
         await self._community_store.build_communities()
         return [chunk.chunk_id for chunk in chunks]
@@ -93,13 +89,21 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
+        # Perform both global and local searches
+        global_results = await self._global_search(text, topk, score_threshold, filters)
+        local_results = await self._local_search(text, topk, score_threshold, filters)
 
-        # Determine if search is global or local
-        is_global_search = await self._get_intent_from_query(text)
-        return await (
-            self._global_search if is_global_search else self._local_search)(
-            text, topk, score_threshold, filters
-        )
+        # Combine results, keeping original order and scores
+        combined_results = global_results + local_results
+
+        # Add a source field to distinguish between global and local results
+        for chunk in combined_results[: len(global_results)]:
+            chunk.metadata["source"] = "global"
+        for chunk in combined_results[len(global_results) :]:
+            chunk.metadata["source"] = "local"
+
+        # Return all results
+        return combined_results
 
     async def _global_search(
         self,
@@ -108,18 +112,16 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        community_summaries = await self.community_store.summarize_communities()
-        chunks = [
-            Chunk(
-                content=await self._generate_answer_from_summary(summary, text),
-                metadata={"cluster_id": cluster_id},
-            )
-            for cluster_id, summary in community_summaries.items()
-        ]
-        return chunks[:topk]
+        # Use the community metastore to perform vector search
+        relevant_communities = await self._community_metastore.search(text)
 
-        #     final_answer = self._aggregate_answers(community_summaries)
-        # return final_answer
+        # Generate answers from the top-k community summaries
+        chunks = []
+        for community in relevant_communities[:topk]:
+            answer = await self._generate_answer_from_summary(community.summary, text)
+            chunks.append(Chunk(content=answer, metadata={"cluster_id": community.id}))
+
+        return chunks
 
     async def _local_search(
         self,
@@ -160,48 +162,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def _generate_answer_from_summary(self, community_summary, query):
         """Generate an answer from a community summary based on a given query using LLM."""
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"Given the community summary: {community_summary}, answer the following query.",
-                },
-                {"role": "user", "content": query},
-            ],
-        )
-        return response.choices[0].message.content.strip()
+        prompt_template = """Given the community summary: {summary}, answer the following query.
 
-    async def _aggregate_answers(self, community_answers):
-        """Aggregate individual community answers into a final, coherent response."""
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Combine the following intermediate answers into a final, concise response.",
-                },
-                {
-                    "role": "user",
-                    "content": f"Intermediate answers: {' '.join(community_answers)}",
-                },
-            ],
-        )
-        return response.choices[0].message.content.strip()
+        Query: {query}
 
-    @staticmethod
-    async def _get_intent_from_query(query: str) -> bool:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Determine if the given query is abstract (global) or concrete (local). Respond with 'global' or 'local'.",
-                },
-                {"role": "user", "content": query},
-            ],
+        Answer:"""
+
+        return await self._triplet_extractor.extract(
+            prompt_template.format(summary=community_summary, query=query)
         )
-        return response.choices[0].message.content.strip().lower() == "global"
 
     def delete_vector_name(self, index_name: str):
         super().delete_vector_name(index_name)
