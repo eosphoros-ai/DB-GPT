@@ -31,24 +31,12 @@ const Header: React.FC = () => {
 
   return (
     <header className="flex items-center justify-end fixed top-0 right-0 h-14 pr-11 bg-transparent">
-      <a href="https://yuque.antfin.com/datafun/nqnxur" target="_blank" className="flex items-center h-full mr-4">
+      <a href="htt://docs.dbgpt.cn" target="_blank" className="flex items-center h-full mr-4">
         <Tooltip title={t('docs')}>
           <ReadOutlined />
         </Tooltip>
       </a>
-      <a href="https://yuque.antfin.com/datafun/nqnxur/blekla63691o3gzg" target="_blank" className="flex items-center h-full">
-        <Tooltip title={t('sdk_insert')}>
-          <ApiOutlined />
-        </Tooltip>
-      </a>
-      <Tooltip
-        className="ml-4"
-        title={
-          <span>
-            <Image src="/images/QR.png" alt="english" width={300} height={200}></Image>
-          </span>
-        }
-      >
+
         <span className="text-sm">帮助中心</span>
       </Tooltip>
       {/* <UserBar /> */}

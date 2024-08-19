@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends
 
@@ -343,3 +343,16 @@ async def query_admins(
     except Exception as ex:
         logger.exception("query_admins:" + str(ex))
         return Result.failed(code="E000X", msg=f"query admins error: {ex}")
+
+
+@router.get("/v1/dbgpts/list", response_model=Result[List[GptsApp]])
+async def get_dbgpts(user_code: str = None, sys_code: str = None):
+    logger.info(f"get_dbgpts:{user_code},{sys_code}")
+    try:
+        query: GptsAppQuery = GptsAppQuery()
+        query.ignore_user = "true"
+        response = gpts_dao.app_list(query, True)
+        return Result.succ(response.app_list)
+    except Exception as e:
+        logger.error(f"get_dbgpts failed:{str(e)}")
+        return Result.failed(msg=str(e), code="E300003")
