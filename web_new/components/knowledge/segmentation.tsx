@@ -106,7 +106,7 @@ export default function Segmentation(props: IProps) {
 
   async function updateSyncStatus(docIds: Array<number>) {
     const [, docs] = await apiInterceptors(
-      getDocumentList(spaceId as any, {
+      getDocumentList(spaceName as any, {
         doc_ids: docIds,
       }),
     );
