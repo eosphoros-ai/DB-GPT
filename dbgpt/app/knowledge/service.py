@@ -154,13 +154,15 @@ class KnowledgeService:
         Args:
             - space_name: Knowledge Space Name
         """
-        ks = knowledge_space_dao.get_one({"id": space})
-        if ks is None:
-            raise Exception(f"there are no or more than one space called {ks}")
-        if ks.context is None:
+        query = KnowledgeSpaceEntity(name=space)
+        spaces = knowledge_space_dao.get_knowledge_space(query)
+        if len(spaces) != 1:
+            raise Exception(f"there are no or more than one space called {space_name}")
+        space = spaces[0]
+        if space.context is None:
             context = self._build_default_context()
         else:
-            context = ks.context
+            context = space.context
         return json.loads(context)
 
     def argument_save(self, space, argument_request: SpaceArgumentRequest):
@@ -169,11 +171,13 @@ class KnowledgeService:
             - space_name: Knowledge Space Name
             - argument_request: SpaceArgumentRequest
         """
-        ks = knowledge_space_dao.get_one({"id": space})
-        if ks is None:
-            raise Exception(f"there are no or more than one space called {ks}")
-        ks.context = argument_request.argument
-        return knowledge_space_dao.update_knowledge_space(ks)
+        query = KnowledgeSpaceEntity(name=space)
+        spaces = knowledge_space_dao.get_knowledge_space(query)
+        if len(spaces) != 1:
+            raise Exception(f"there are no or more than one space called {space}")
+        space = spaces[0]
+        space.context = argument_request.argument
+        return knowledge_space_dao.update_knowledge_space(space)
 
     def get_knowledge_documents(self, space, request: DocumentQueryRequest):
         """get knowledge documents
@@ -183,7 +187,9 @@ class KnowledgeService:
         Returns:
             - res DocumentQueryResponse
         """
-        ks = knowledge_space_dao.get_one({"id": space})
+        if request.page_size <= 0:
+            request.page_size = 20
+        ks = knowledge_space_dao.get_one({"name": space})
         if ks is None:
             raise Exception(f"there is no space id called {space}")
         res = DocumentQueryResponse()

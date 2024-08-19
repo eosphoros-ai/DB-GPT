@@ -24,10 +24,11 @@ RETRY_GOAL_EN = (
 RETRY_GOAL_ZH = "阅读下面用户提供的最近消息内容，并把当前用户输入信息提取补充到最近消息中的意图信息里，并返回补充后的意图信息。"
 
 CONSTRAINTS_EN = [
-    "Strictly define the output based on the given intention. Do not generate intention and slots "
-    "attributes by yourself. ",
-    "The intent selected by the match does not have a slot attribute defined, so ensure that the "
-    "output does not contain slot information either.",
+    "According to the user input information, select and match from the given intent definition. "
+    "If no intent is matched, 'intent' and 'app_code' will be output as empty. Do not generate "
+    "intent and slot attributes by yourself.",
+    "The selected intent does not have a slots attribute defined, so make sure the output json "
+    "does not include the 'slots' attribute.",
     "Extract the value of the slot attribute in the intent definition from user input and historical "
     "dialogue information. If the target information corresponding to the slot attribute cannot be "
     "obtained, the slot value output is empty.",
@@ -44,8 +45,8 @@ CONSTRAINTS_EN = [
     "to supplement the missing slot data.",
 ]
 CONSTRAINTS_ZH = [
-    "严格根给出的意图定义输出，不要自行生成意图和槽位属性",
-    "匹配选择到的意图没有定义槽位属性，确保输出也不要包含槽位信息."
+    "根据用户输入信息，从给出的意图定义中进行选择匹配，无法匹配到任何意图'intent'和'app_code'都输出为空， 不要自行生成意图和槽位属性.",
+    "匹配选择到的意图没有定义槽位属性，确保输出json中也不要包含'slots'属性."
     "从用户输入和历史对话信息中提取意图定义中槽位属性的值，如果无法获取到槽位属性对应的目标信息，则槽位值输出空.",
     "槽位值提取时请注意只获取有效值部分，不要填入辅助描述或定语",
     "确保意图定义的槽位属性不管是否获取到值，都要输出全部定义给出的槽位属性，没有找到值的输出槽位名和空值.",
@@ -123,6 +124,11 @@ class IntentRecognitionAgent(ConversableAgent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._init_actions([IntentRecognitionAction])
+        if self.language == "zh":
+            self.profile.goal.default = GOAL_ZH
+            self.profile.retry_goal.default = RETRY_GOAL_ZH
+            self.profile.constraints.default = CONSTRAINTS_ZH
+            self.profile.retry_constraints.default = RETRY_CONSTRAINTS_ZH
 
     async def load_resource(self, question: str, is_retry_chat: bool = False):
         if is_retry_chat:

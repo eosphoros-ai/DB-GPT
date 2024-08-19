@@ -57,10 +57,7 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
         out_put_schema = {
             "intent": "[The recognized intent is placed here]",
             "app_code": "[App code in selected intent]",
-            "slots": {
-                "Slot_1": "[The value of the slot attribute]",
-                "Slot_2": "[The value of the slot attribute]",
-            },
+            "slots": "If the intent has a defined slot attribute, the slot attribute and value are output here",
             "ask_user": "If you want the user to supplement slot data, ask the user a question",
             "user_input": "[Complete instructions generated based on intent and slot]",
         }

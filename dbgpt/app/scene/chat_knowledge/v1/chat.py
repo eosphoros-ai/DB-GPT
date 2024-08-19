@@ -50,8 +50,7 @@ class ChatKnowledge(BaseChat):
         super().__init__(
             chat_param=chat_param,
         )
-        #  self.space_context = self.get_space_context(self.knowledge_space)
-        self.space_context = self.get_space_context_by_id(self.knowledge_space)
+        self.space_context = self.get_space_context(self.knowledge_space)
         self.top_k = (
             self.get_knowledge_search_top_size(self.knowledge_space)
             if self.space_context is None
@@ -76,10 +75,15 @@ class ChatKnowledge(BaseChat):
         embedding_fn = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
-        from dbgpt.serve.rag.models.models import KnowledgeSpaceDao
+        from dbgpt.serve.rag.models.models import (
+            KnowledgeSpaceDao,
+            KnowledgeSpaceEntity,
+        )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        spaces = KnowledgeSpaceDao().get_knowledge_space_by_ids([self.knowledge_space])
+        spaces = KnowledgeSpaceDao().get_knowledge_space(
+            KnowledgeSpaceEntity(name=self.knowledge_space)
+        )
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{self.knowledge_space}")
         space = spaces[0]
