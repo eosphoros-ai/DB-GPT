@@ -130,8 +130,6 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderRadio {...props} />;
       case 'input':
         return <RenderInput {...props} />;
-      case 'select':
-        return <RenderSelect {...props} />;
       case 'text_area':
         return <RenderTextArea {...props} />;
       case 'slider':
@@ -146,6 +144,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderPassword {...props} />;
       case 'upload':
         return <RenderUpload {...props} />;
+        case 'variables':
+          return <RenderVariables {...props} />;
       case 'code_editor':
         return <RenderCodeEditor {...props} />;
       default:
