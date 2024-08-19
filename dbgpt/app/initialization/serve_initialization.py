@@ -94,6 +94,8 @@ def register_serve_apps(system_app: SystemApp, cfg: Config, webserver_port: int)
     local_storage_path = (
         cfg.FILE_SERVER_LOCAL_STORAGE_PATH or FILE_SERVER_LOCAL_STORAGE_PATH
     )
+    if cfg.WEBSERVER_MULTI_INSTANCE:
+        local_storage_path = f"{local_storage_path}_{webserver_port}"
     # Set config
     system_app.config.set(
         f"{FILE_SERVE_CONFIG_KEY_PREFIX}local_storage_path", local_storage_path
