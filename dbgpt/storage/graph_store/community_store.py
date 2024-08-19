@@ -3,30 +3,17 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 from typing import List, Set
 
-from dbgpt.core import LLMClient
-from dbgpt.rag.transformer.llm_extractor import LLMExtractor
+from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.storage.graph_store.base import GraphStoreBase
+from dbgpt.storage.graph_store.community import Community
 from dbgpt.storage.graph_store.graph import Graph
-from dbgpt.storage.knowledge_graph.community.community_metastore import (
-    CommunityMetastore,
-)
+from dbgpt.storage.knowledge_graph.community.community_metastore import \
+    BuiltinCommunityMetastore
+from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class Community:
-    id: str
-    data: Graph = None
-    summary: str = None
-
-
-@dataclass
-class CommunityTree:
-    """Represents a community tree."""
 
 
 class CommunityStore:
@@ -34,16 +21,15 @@ class CommunityStore:
     def __init__(
         self,
         graph_store: GraphStoreBase,
-        meta_store: CommunityMetastore,
-        llm_client: LLMClient,
-        model_name: str,
+        community_summarizer: CommunitySummarizer,
+        vector_store: VectorStoreBase
     ):
         """Initialize the CommunityStore"""
         self._graph_store = graph_store
-        self._meta_store = meta_store
+        self._community_summarizer = community_summarizer
+        self._meta_store = BuiltinCommunityMetastore(vector_store)
         self._executor = ThreadPoolExecutor(max_workers=10)
         self._max_hierarchy_level = 3
-        self._llm_extractor = LLMExtractor(llm_client, model_name)
 
     async def build_communities(self):
         """Discover, retrieve, summarize and save communities."""
@@ -106,24 +92,6 @@ class CommunityStore:
 
     async def _generate_community_summary(self, graph: Graph):
         """Generate summary for a given graph using an LLM."""
-        prompt_template = """Task: Summarize Knowledge Graph Community
-
-        You are given a community from a knowledge graph with the following information:
-        1. Nodes (entities) with their descriptions
-        2. Relationships between nodes with their descriptions
-
-        Goal: Create a concise summary that:
-        1. Identifies the main themes or topics of this community
-        2. Highlights key entities and their roles
-        3. Summarizes the most important relationships
-        4. Provides an overall characterization of what this community represents
-
-        Community Data:
-        Nodes: {nodes}
-        Relationships: {relationships}
-
-        Summary:"""
-
         nodes = "\n".join(
             [f"- {v.vid}: {v.get_prop('description')}" for v in graph.vertices()]
         )
@@ -134,6 +102,10 @@ class CommunityStore:
             ]
         )
 
-        return await self._llm_extractor.extract(
-            prompt_template.format(nodes=nodes, relationships=relationships)
+        return await self._community_summarizer.summarize(
+            nodes=nodes, relationships=relationships
         )
+
+    def drop(self):
+        self._graph_store.drop()
+        self._meta_store.drop()

@@ -6,9 +6,10 @@ from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
+from dbgpt.rag.index.base import IndexStoreConfig
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
-from dbgpt.storage.graph_store.base import GraphStoreConfig
+from dbgpt.storage.graph_store.base import GraphStoreConfig, GraphStoreBase
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
@@ -38,6 +39,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
     def __init__(self, config: BuiltinKnowledgeGraphConfig):
         """Create builtin knowledge graph instance."""
         super().__init__()
+        self._config = config
 
         self._llm_client = config.llm_client
         if not self._llm_client:
@@ -48,7 +50,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
         self._graph_store = self.__init_graph_store(config)
 
-    def __init_graph_store(self, config):
+    def __init_graph_store(self, config) -> GraphStoreBase:
         def configure(cfg: GraphStoreConfig):
             cfg.name = config.name
             cfg.embedding_fn = config.embedding_fn
@@ -57,6 +59,10 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
         )
         return GraphStoreFactory.create(graph_store_type, configure)
+
+    def get_config(self) -> BuiltinKnowledgeGraphConfig:
+        """Get the knowledge graph config."""
+        return self._config
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist triplets to graph store."""

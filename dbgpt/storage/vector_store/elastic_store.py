@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from abc import abstractmethod
 from typing import List, Optional
 
 from dbgpt._private.pydantic import Field
@@ -126,6 +127,8 @@ class ElasticStore(VectorStoreBase):
             vector_store_config (ElasticsearchVectorConfig): ElasticsearchStore config.
         """
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         connect_kwargs = {}
         elasticsearch_vector_config = vector_store_config.dict()
         self.uri = elasticsearch_vector_config.get("uri") or os.getenv(
@@ -233,6 +236,11 @@ class ElasticStore(VectorStoreBase):
             logger.error("ElasticSearch connection failed")
         except Exception as e:
             logger.error(f"ElasticSearch connection failed: {e}")
+
+    @abstractmethod
+    def get_config(self) -> ElasticsearchVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def load_document(
         self,

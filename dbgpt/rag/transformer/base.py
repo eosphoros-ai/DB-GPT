@@ -14,6 +14,18 @@ class EmbedderBase(TransformerBase, ABC):
     """Embedder base class."""
 
 
+class SummarizerBase(TransformerBase, ABC):
+    """Summarizer base class."""
+
+    @abstractmethod
+    async def summarize(self, **args) -> str:
+        """Summarize result."""
+
+    @abstractmethod
+    def clean(self):
+        """Clean when finish summarization."""
+
+
 class ExtractorBase(TransformerBase, ABC):
     """Extractor base class."""
 

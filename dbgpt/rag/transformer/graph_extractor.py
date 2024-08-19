@@ -1,16 +1,11 @@
 """GraphExtractor class."""
 
 import logging
-import os
 from typing import List, Optional
 
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.llm_extractor import LLMExtractor
-from dbgpt.storage.knowledge_graph.community_summary import (
-    CommunitySummaryKnowledgeGraphConfig,
-)
-from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.factory import VectorStoreFactory
+from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
 
@@ -79,39 +74,19 @@ class GraphExtractor(LLMExtractor):
         self,
         llm_client: LLMClient,
         model_name: str,
-        config: CommunitySummaryKnowledgeGraphConfig,
+        chunk_history: VectorStoreBase
     ):
         """Initialize the GraphExtractor."""
         super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT)
 
-        self.__init_chunk_history(config)
+        self._chunk_history = chunk_history
 
-    def __init_chunk_history(self, config):
-        self._vector_store_type = os.getenv(
-            "VECTOR_STORE_TYPE", config.vector_store_type
-        )
-        self._vector_space = config.name + self.VECTOR_SPACE_SUFFIX
+        config = self._chunk_history.get_config()
+        self._vector_space = config.name
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads
-        self._topk = os.getenv(
-            "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk
-        )
-        self._score_threshold = os.getenv(
-            "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
-            config.extract_score_threshold,
-        )
-
-        def configure(cfg: VectorStoreConfig):
-            cfg.name = self._vector_space
-            cfg.embedding_fn = config.embedding_fn
-            cfg.max_chunks_once_load = config.max_chunks_once_load
-            cfg.max_threads = config.max_threads
-            cfg.user = config.user
-            cfg.password = config.password
-
-        self._chunk_history = VectorStoreFactory.create(
-            self._vector_store_type, configure
-        )
+        self._topk = config.topk
+        self._score_threshold = config.score_threshold
 
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
         # load similar chunks
@@ -128,7 +103,8 @@ class GraphExtractor(LLMExtractor):
         finally:
             # save chunk to history
             await self._chunk_history.aload_document_with_limit(
-                [Chunk(content=text)], self._max_chunks_once_load, self._max_threads
+                [Chunk(content=text)], self._max_chunks_once_load,
+                self._max_threads
             )
 
     def _parse_response(self, text: str, limit: Optional[int] = None) -> List:

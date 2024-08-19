@@ -1,19 +1,20 @@
 """Define the CommunitySummaryKnowledgeGraph class inheriting from BuiltinKnowledgeGraph."""
 
 import logging
+import os
 from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
+from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community_store import CommunityStore
-from dbgpt.storage.knowledge_graph.community.community_metastore import (
-    BuiltinCommunityMetastore,
-)
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
 )
+from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.storage.vector_store.factory import VectorStoreFactory
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
@@ -60,14 +61,59 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     def __init__(self, config: CommunitySummaryKnowledgeGraphConfig):
         super().__init__(config)
+        self._config = config
+
+        self._vector_store_type = os.getenv(
+            "VECTOR_STORE_TYPE", config.vector_store_type
+        )
+        self._extract_topk = os.getenv(
+            "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk
+        )
+        self._extract_score_threshold = os.getenv(
+            "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
+            config.extract_score_threshold,
+        )
+        self._community_topk = os.getenv(
+            "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk
+        )
+        self._community_score_threshold = os.getenv(
+            "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
+            config.community_score_threshold
+        )
+
+        def configure(name: str, cfg: VectorStoreConfig):
+            cfg.name = name
+            cfg.embedding_fn = config.embedding_fn
+            cfg.max_chunks_once_load = config.max_chunks_once_load
+            cfg.max_threads = config.max_threads
+            cfg.user = config.user
+            cfg.password = config.password
 
         self._triplet_extractor = GraphExtractor(
-            self._llm_client, self._model_name, config
+            self._llm_client,
+            self._model_name,
+            VectorStoreFactory.create(
+                self._vector_store_type,
+                config.name + "_CHUNK_HISTORY",
+                configure
+            )
         )
-        self._community_metastore = BuiltinCommunityMetastore(config)
+        self._community_summarizer = CommunitySummarizer(
+            self._llm_client, self._model_name
+        )
         self._community_store = CommunityStore(
-            self._graph_store, self._community_metastore
+            self._graph_store,
+            self._community_summarizer,
+            VectorStoreFactory.create(
+                self._vector_store_type,
+                config.name + "_COMMUNITY_SUMMARY",
+                configure
+            )
         )
+
+    def get_config(self) -> BuiltinKnowledgeGraphConfig:
+        """Get the knowledge graph config."""
+        return self._config
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         # Load documents as chunks
@@ -77,7 +123,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             for triplet in triplets:
                 # Insert each triplet into the graph store
                 self._graph_store.insert_triplet(*triplet)
-            logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
+            logger.info(
+                f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         # Build communities after loading all triplets
         await self._community_store.build_communities()
         return [chunk.chunk_id for chunk in chunks]
@@ -90,8 +137,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         # Perform both global and local searches
-        global_results = await self._global_search(text, topk, score_threshold, filters)
-        local_results = await self._local_search(text, topk, score_threshold, filters)
+        global_results = await self._global_search(text, topk, score_threshold,
+                                                   filters)
+        local_results = await self._local_search(text, topk, score_threshold,
+                                                 filters)
 
         # Combine results, keeping original order and scores
         combined_results = global_results + local_results
@@ -99,7 +148,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         # Add a source field to distinguish between global and local results
         for chunk in combined_results[: len(global_results)]:
             chunk.metadata["source"] = "global"
-        for chunk in combined_results[len(global_results) :]:
+        for chunk in combined_results[len(global_results):]:
             chunk.metadata["source"] = "local"
 
         # Return all results
@@ -118,8 +167,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         # Generate answers from the top-k community summaries
         chunks = []
         for community in relevant_communities[:topk]:
-            answer = await self._generate_answer_from_summary(community.summary, text)
-            chunks.append(Chunk(content=answer, metadata={"cluster_id": community.id}))
+            answer = await self._generate_answer_from_summary(community.summary,
+                                                              text)
+            chunks.append(
+                Chunk(content=answer, metadata={"cluster_id": community.id}))
 
         return chunks
 
@@ -174,4 +225,4 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     def delete_vector_name(self, index_name: str):
         super().delete_vector_name(index_name)
-        self._community_metastore.drop()
+        self._community_store.drop()

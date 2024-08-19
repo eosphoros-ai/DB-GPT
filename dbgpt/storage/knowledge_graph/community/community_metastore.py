@@ -1,16 +1,12 @@
 """Builtin Community metastore."""
 import logging
-import os
 from typing import List
 
 from dbgpt.core import Chunk
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.storage.graph_store.community_store import Community
 from dbgpt.storage.knowledge_graph.community.base import CommunityMetastore
-from dbgpt.storage.knowledge_graph.community_summary import \
-    CommunitySummaryKnowledgeGraphConfig
-from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.storage.vector_store.factory import VectorStoreFactory
+from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
 
@@ -22,38 +18,18 @@ class BuiltinCommunityMetastore(CommunityMetastore):
 
     def __init__(
         self,
-        config: CommunitySummaryKnowledgeGraphConfig,
+        vector_store: VectorStoreBase,
         rdb_store: RDBMSConnector = None
     ):
-        self.__init_metastore(config)
+        self._vector_store = vector_store
         self._rdb_store = rdb_store
 
-    def __init_metastore(self, config):
-        self._vector_store_type = (
-            os.getenv("VECTOR_STORE_TYPE", config.vector_store_type)
-        )
-        self._vector_space = config.name + self.VECTOR_SPACE_SUFFIX
+        config = self._vector_store.get_config()
+        self._vector_space = config.name
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads
-        self._topk = os.getenv(
-            "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk
-        )
-        self._score_threshold = os.getenv(
-            "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
-            config.community_score_threshold
-        )
-
-        def configure(cfg: VectorStoreConfig):
-            cfg.name = self._vector_space
-            cfg.embedding_fn = config.embedding_fn
-            cfg.max_chunks_once_load = config.max_chunks_once_load
-            cfg.max_threads = config.max_threads
-            cfg.user = config.user
-            cfg.password = config.password
-
-        self._vector_store = VectorStoreFactory.create(
-            self._vector_store_type, configure
-        )
+        self._topk = config.topk
+        self._score_threshold = config.score_threshold
 
     def get(self, community_id: str) -> Community:
         """Get community."""
