@@ -98,7 +98,7 @@ class TuGraphConnector(BaseConnector):
         with self._driver.session(database=self._graph) as session:
             result = session.run(query)
             for record in result:
-                    yield record
+                yield record
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
         """Get fields about specified graph.

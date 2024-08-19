@@ -110,6 +110,7 @@ class TuGraphStore(GraphStoreBase):
         result = self.conn.run(gql)
         result_names = [json.loads(record['plugin_description'])['name'] for record in result]
         missing_plugins = [name for name in self._plugin_names if name not in result_names]
+        
         if len(missing_plugins):
             for name in missing_plugins:
                 plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', f'{name}.so')
