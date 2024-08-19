@@ -117,7 +117,7 @@ export default function DocPanel(props: IProps) {
   } = useRequest(
     async () =>
       await apiInterceptors(
-        getDocumentList(+space.id, {
+        getDocumentList(space.name, {
           page: currentPageRef.current,
           page_size,
         }),
@@ -139,7 +139,7 @@ export default function DocPanel(props: IProps) {
     }
     currentPageRef.current += 1;
     const [_, data] = await apiInterceptors(
-      getDocumentList(+space.id, {
+      getDocumentList(space.name, {
         page: currentPageRef.current,
         page_size,
       }),

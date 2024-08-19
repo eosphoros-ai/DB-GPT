@@ -21,7 +21,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
   // 获取推荐问题
   const { data: questions = [], run: questionsRun } = useRequest(
     async () => {
-      const [, res] = await apiInterceptors(recallTestRecommendQuestion(space.id + ''));
+      const [, res] = await apiInterceptors(recallTestRecommendQuestion(space.name + ''));
       return res ?? [];
     },
     {
@@ -32,7 +32,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
   // 召回方法选项
   const { data: options = [], run: optionsRun } = useRequest(
     async () => {
-      const [, res] = await apiInterceptors(recallMethodOptions(space.id + ''));
+      const [, res] = await apiInterceptors(recallMethodOptions(space.name + ''));
       return res ?? [];
     },
     {
@@ -57,7 +57,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
     loading,
   } = useRequest(
     async (props: RecallTestProps) => {
-      const [, res] = await apiInterceptors(recallTest({ ...props }, space.id + ''));
+      const [, res] = await apiInterceptors(recallTest({ ...props }, space.name + ''));
       return res ?? [];
     },
     {

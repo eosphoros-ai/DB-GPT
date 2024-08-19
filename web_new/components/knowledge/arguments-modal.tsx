@@ -20,7 +20,7 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
   const [spinning, setSpinning] = useState<boolean>(false);
 
   const fetchArguments = async () => {
-    const [_, data] = await apiInterceptors(getArguments(space.id));
+    const [_, data] = await apiInterceptors(getArguments(space.name));
     setNewSpaceArguments(data);
   };
 
@@ -145,7 +145,7 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
   const handleSubmit = async (fieldsValue: IArguments) => {
     setSpinning(true);
     const [_, data, res] = await apiInterceptors(
-      saveArguments(space.id, {
+      saveArguments(space.name, {
         argument: JSON.stringify(fieldsValue),
       }),
     );

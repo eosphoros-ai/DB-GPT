@@ -103,7 +103,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }
     },
-    [queryAgentURL, app_code],
+    [queryAgentURL, app_code, scene],
   );
 
   return { chat, ctrl };
