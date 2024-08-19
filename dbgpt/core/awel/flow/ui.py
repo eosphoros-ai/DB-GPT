@@ -367,7 +367,10 @@ class UIUpload(UIComponent):
         )
 
     ui_type: Literal["upload"] = Field("upload", frozen=True)
-
+    attr: Optional[UIAttribute] = Field(
+        None,
+        description="The attributes of the component",
+    )
     max_file_size: Optional[int] = Field(
         None,
         description="The maximum size of the file, in bytes",
@@ -387,8 +390,8 @@ class UIUpload(UIComponent):
         description="Whether to support drag and drop upload",
     )
     action: Optional[str] = Field(
-        None,
-        description="The URL for the file upload",
+        "/api/v2/serve/file/files/dbgpt",
+        description="The URL for the file upload(default bucket is 'dbgpt')",
     )
 
 

@@ -316,6 +316,17 @@ class Config(metaclass=Singleton):
         # experimental financial report model configuration
         self.FIN_REPORT_MODEL = os.getenv("FIN_REPORT_MODEL", None)
 
+        # file server configuration
+        # The host of the current file server, if None, get the host automatically
+        self.FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
+        self.FILE_SERVER_LOCAL_STORAGE_PATH = os.getenv(
+            "FILE_SERVER_LOCAL_STORAGE_PATH"
+        )
+        # multi-instance flag
+        self.WEBSERVER_MULTI_INSTANCE = (
+            os.getenv("MULTI_INSTANCE", "False").lower() == "true"
+        )
+
     @property
     def local_db_manager(self) -> "ConnectorManager":
         from dbgpt.datasource.manages import ConnectorManager

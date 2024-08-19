@@ -87,7 +87,9 @@ class HttpTriggerMetadata(TriggerMetadata):
 
     path: str = Field(..., description="The path of the trigger")
     methods: List[str] = Field(..., description="The methods of the trigger")
-
+    trigger_mode: str = Field(
+        default="command", description="The mode of the trigger, command or chat"
+    )
     trigger_type: Optional[str] = Field(
         default="http", description="The type of the trigger"
     )
@@ -477,7 +479,9 @@ class HttpTrigger(Trigger):
         )(dynamic_route_function)
 
         logger.info(f"Mount http trigger success, path: {path}")
-        return HttpTriggerMetadata(path=path, methods=self._methods)
+        return HttpTriggerMetadata(
+            path=path, methods=self._methods, trigger_mode=self._trigger_mode()
+        )
 
     def mount_to_app(
         self, app: "FastAPI", global_prefix: Optional[str] = None
@@ -512,7 +516,9 @@ class HttpTrigger(Trigger):
         app.openapi_schema = None
         app.middleware_stack = None
         logger.info(f"Mount http trigger success, path: {path}")
-        return HttpTriggerMetadata(path=path, methods=self._methods)
+        return HttpTriggerMetadata(
+            path=path, methods=self._methods, trigger_mode=self._trigger_mode()
+        )
 
     def remove_from_app(
         self, app: "FastAPI", global_prefix: Optional[str] = None
@@ -536,6 +542,36 @@ class HttpTrigger(Trigger):
             if r.path_format == path:  # type: ignore
                 # TODO, remove with path and methods
                 del app_router.routes[i]
+
+    def _trigger_mode(self) -> str:
+        if (
+            self._req_body
+            and isinstance(self._req_body, type)
+            and issubclass(self._req_body, CommonLLMHttpRequestBody)
+        ):
+            return "chat"
+        return "command"
+
+    async def map(self, input_data: Any) -> Any:
+        """Map the input data.
+
+        Do some transformation for the input data.
+
+        Args:
+            input_data (Any): The input data from caller.
+
+        Returns:
+            Any: The mapped data.
+        """
+        if not self._req_body or not input_data:
+            return await super().map(input_data)
+        if (
+            isinstance(self._req_body, type)
+            and issubclass(self._req_body, BaseModel)
+            and isinstance(input_data, dict)
+        ):
+            return self._req_body(**input_data)
+        return await super().map(input_data)
 
     def _create_route_func(self):
         from inspect import Parameter, Signature

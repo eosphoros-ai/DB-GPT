@@ -197,7 +197,7 @@ class DAGManager(BaseComponent):
         return self._dag_metadata_map.get(dag.dag_id)
 
 
-def _parse_metadata(dag: DAG):
+def _parse_metadata(dag: DAG) -> DAGMetadata:
     from ..util.chat_util import _is_sse_output
 
     metadata = DAGMetadata()
