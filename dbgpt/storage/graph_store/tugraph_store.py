@@ -280,15 +280,23 @@ class TuGraphStore(GraphStoreBase):
                 nodes = list(path["p"].nodes)
                 rels = list(path["p"].relationships)
                 for i in range(len(nodes)):
-                    formatted_path.append(nodes[i]._properties["id"])
+                    formatted_path.append({
+                            "id":nodes[i]._properties["id"],
+                            "community_id":nodes[i]._properties.get("_community_id",""),
+                            "description":nodes[i]._properties.get("description",""),
+                            "level_id":nodes[i]._properties.get("_level_id","")
+                        })
                     if i < len(rels):
-                        formatted_path.append(rels[i]._properties["id"])
+                        formatted_path.append({
+                            "id":rels[i]._properties["id"],
+                            "description":rels[i]._properties.get("description",""),
+                        })    
                 formatted_paths.append(formatted_path)
             return formatted_paths
 
         def _format_query_data(data):
-            node_ids_set = set()
-            rels_set = set()
+            nodes_list = []
+            rels_list = []
             from neo4j import graph
 
             for record in data:
@@ -296,28 +304,67 @@ class TuGraphStore(GraphStoreBase):
                     value = record[key]
                     if isinstance(value, graph.Node):
                         node_id = value._properties["id"]
-                        node_ids_set.add(node_id)
+                        description = value._properties.get("description","")
+                        level_id = value._properties.get("level_id","")
+                        community_id = value._properties.get("community_id","")
+                        if not any(existing_node.get("id") == node_id  for existing_node in nodes_list):
+                            nodes_list.append({
+                                "id":node_id,
+                                "description":description,
+                                "level_id":level_id,
+                                "community_id":community_id
+                            })
                     elif isinstance(value, graph.Relationship):
                         rel_nodes = value.nodes
                         prop_id = value._properties["id"]
                         src_id = rel_nodes[0]._properties["id"]
                         dst_id = rel_nodes[1]._properties["id"]
-                        rels_set.add((src_id, dst_id, prop_id))
+                        description = value._properties.get("description","")
+                        if not any(existing_edge.get("prop_id") == prop_id and existing_edge.get("src_id")== src_id and existing_edge.get("dst_id")== dst_id for existing_edge in rels_list):
+                            rels_list.append({
+                                "src_id":src_id, 
+                                "dst_id":dst_id, 
+                                "prop_id":prop_id,
+                                "description":description
+                            })
                     elif isinstance(value, graph.Path):
                         formatted_paths = _format_paths(data)
-                        for path in formatted_paths:
-                            for i in range(0, len(path), 2):
-                                node_ids_set.add(path[i])
-                                if i + 2 < len(path):
-                                    rels_set.add((path[i], path[i + 2], path[i + 1]))
+                        for formatted_path in formatted_paths:
+                            
+                            for i in range(0, len(formatted_path), 2):
+                                if not any(existing_node.get("id") == formatted_path[i]['id']  for existing_node in nodes_list):
+                                    nodes_list.append({
+                                            "id":formatted_path[i]['id'],
+                                            "description":formatted_path[i]['description'],
+                                            "level_id":formatted_path[i]['level_id'],
+                                            "community_id":formatted_path[i]['community_id']    
+                                        })
+                                if i + 2 < len(formatted_path):
+                                    src_id = formatted_path[i]['id']
+                                    dst_id = formatted_path[i+2]['id']
+                                    prop_id = formatted_path[i + 1]['id']
+                                    if not any(existing_edge.get("prop_id") == prop_id and existing_edge.get("src_id")== src_id and existing_edge.get("dst_id")== dst_id for existing_edge in rels_list):
+                                        rels_list.append({
+                                            "src_id":src_id, 
+                                            "dst_id":dst_id, 
+                                            "prop_id":prop_id,
+                                            "description":formatted_path[i + 1]['description']
+                                        })             
+                    else:
+                        if not any(existing_node.get("id") == node_id  for existing_node in nodes_list):
+                            nodes_list.append({
+                                "id":"json_node",
+                                "description":value,
+                                "level_id":"",
+                                "community_id":""
+                            })
 
-            nodes = [Vertex(node_id) for node_id in node_ids_set]
+            nodes = [Vertex(node['id'],description=node['description'],community_id=node['community_id'],level_id=node['level_id']) for node in nodes_list]
             rels = [
-                Edge(src_id, dst_id, label=prop_id)
-                for (src_id, dst_id, prop_id) in rels_set
+                Edge(edge["src_id"], edge["dst_id"], label=edge["prop_id"],description=edge["description"])
+                for edge in rels_list
             ]
             return {"nodes": nodes, "edges": rels}
-
         result = self.conn.run(query=query)
         graph = _format_query_data(result)
         mg = MemoryGraph()
@@ -365,10 +412,10 @@ class TuGraphStore(GraphStoreBase):
                                 "id":rels[i]._properties["id"],
                                 "description":rels[i]._properties["description"],
                             })
-                        for i in range(0, len(formatted_path), 2):
-                            mg.upsert_vertex(Vertex(formatted_path[i]['id'],description=formatted_path[i]['description'],community_id=formatted_path[i]['_community_id'],level_id=formatted_path[i]['_level_id']))
-                            if i + 2 < len(formatted_path):
-                                mg.append_edge(Edge(formatted_path[i]['id'], formatted_path[i + 2]['id'], label = formatted_path[i + 1]['id'], description=formatted_path[i + 1]['description']))
+                    for i in range(0, len(formatted_path), 2):
+                        mg.upsert_vertex(Vertex(formatted_path[i]['id'],description=formatted_path[i]['description'],community_id=formatted_path[i]['_community_id'],level_id=formatted_path[i]['_level_id']))
+                        if i + 2 < len(formatted_path):
+                            mg.append_edge(Edge(formatted_path[i]['id'], formatted_path[i + 2]['id'], label = formatted_path[i + 1]['id'], description=formatted_path[i + 1]['description']))    
                 else:
                     vertex = Vertex('json_node',description=value)
                     mg.upsert_vertex(vertex)
