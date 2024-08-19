@@ -14,25 +14,25 @@ export const RenderSlider = (params: TextAreaProps) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [inputValue, setInputValue] = useState(defaultValue);
-
   const onChangeSlider: InputNumberProps['onChange'] = (newValue) => {
-    setInputValue(newValue as number);
-    onChange(newValue as number);
+    setInputValue(newValue);
+    onChange(newValue);
   };
+console.log(data);
 
   return (
     <>
       {data?.ui?.show_input ? (
         <Row>
           <Col span={12}>
-            <Slider className="w-full nodrag"  {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
+            <Slider className="w-full nodrag" {...attr} onChange={onChangeSlider} value={inputValue} />
           </Col>
           <Col span={4}>
             <InputNumber {...attr} style={{ margin: '0 16px' }} value={inputValue} onChange={onChangeSlider} />
           </Col>
         </Row>
       ) : (
-        <Slider className="w-full nodrag"  {...attr} onChange={onChangeSlider} value={typeof inputValue === 'number' ? inputValue : 0} />
+        <Slider className="w-full nodrag"  {...attr} onChange={onChangeSlider} value={inputValue} />
       )}
     </>
   );

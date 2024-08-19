@@ -18,7 +18,7 @@ export const RenderTextArea = (params: TextAreaProps) => {
 
   return (
     <div className={classNames({ 'mb-3': attr.showCount === true })}>
-      <TextArea {...attr} defaultValue={defaultValue} onChange={onChange} />
+      <TextArea className='nowheel' {...attr} defaultValue={defaultValue} onChange={onChange} />
     </div>
   );
 };
