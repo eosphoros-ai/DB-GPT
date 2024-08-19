@@ -35,6 +35,22 @@ def test_insert_graph(store):
         graph.append_edge(edge)
     store.insert_graph(graph)
 
+def test_query_node_and_edge(store):
+    query = 'MATCH (n)-[r]->(m) WHERE n._community_id = "1" RETURN n,r,m'
+    result = store.query(query)
+    assert result.vertex_count == 7 and result.edge_count == 6
+
+def test_stream_query_path(store):
+    query = 'MATCH p=(n)-[r:relation*3]->(m) WHERE n._community_id = "1" RETURN p'
+    result = store.query(query)
+    assert result.vertex_count == 7 and result.edge_count == 6
+    
+def test_leiden_query(store):
+    query = "CALL db.plugin.callPlugin('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)"
+    result = store.query(query)
+    assert result.vertex_count == 1
+   
+
 # def test_stream_query_path(store):
 #     query = 'MATCH p=(n)-[r:relation*3]-(m) WHERE n._community_id = "1" RETURN p'
 #     store.stream_query(query)
@@ -49,7 +65,7 @@ def test_insert_graph(store):
 #         print(len(list(graph.vertices())))
 
 
-def test_leiden_stream_query(store):
-    query = "CALL db.plugin.callPlugin('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)"
-    for graph in store.stream_query(query):
-        print(len(list(graph.vertices())))
+# def test_leiden_stream_query(store):
+#     query = "CALL db.plugin.callPlugin('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)"
+#     for graph in store.stream_query(query):
+#         print(len(list(graph.vertices())))
