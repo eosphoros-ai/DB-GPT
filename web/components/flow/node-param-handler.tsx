@@ -18,6 +18,7 @@ import {
   RenderUpload,
   RenderCodeEditor,
   RenderPassword,
+  RenderVariables,
 } from './node-renderer';
 
 interface NodeParamHandlerProps {
@@ -117,7 +118,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
     const props = { data, defaultValue, onChange };
-    
+
     switch (data?.ui?.ui_type) {
       case 'select':
         return <RenderSelect {...props} />;
@@ -129,8 +130,6 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderRadio {...props} />;
       case 'input':
         return <RenderInput {...props} />;
-      case 'select':
-        return <RenderSelect {...props} />;
       case 'text_area':
         return <RenderTextArea {...props} />;
       case 'slider':
@@ -145,6 +144,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderPassword {...props} />;
       case 'upload':
         return <RenderUpload {...props} />;
+        case 'variables':
+          return <RenderVariables {...props} />;
       case 'code_editor':
         return <RenderCodeEditor {...props} />;
       default:
