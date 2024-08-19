@@ -8,9 +8,9 @@ from openai import OpenAI
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.community.community_metastore import \
-    BuiltinCommunityMetastore
 from dbgpt.storage.graph_store.community_store import CommunityStore
+from dbgpt.storage.knowledge_graph.community.community_metastore import \
+    BuiltinCommunityMetastore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,

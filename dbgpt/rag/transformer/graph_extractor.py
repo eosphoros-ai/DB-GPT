@@ -44,18 +44,17 @@ class GraphExtractor(LLMExtractor):
 
     def __init_chunk_history(self, config):
         self._vector_store_type = (
-            os.getenv("VECTOR_STORE_TYPE") or config.vector_store_type
+            os.getenv("VECTOR_STORE_TYPE", config.vector_store_type)
         )
         self._vector_space = config.name + self.VECTOR_SPACE_SUFFIX
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads
-        self._topk = (
-            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE")
-            or config.extract_topk
+        self._topk = os.getenv(
+            "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk
         )
-        self._score_threshold = (
-            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE")
-            or config.extract_score_threshold
+        self._score_threshold = os.getenv(
+            "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
+            config.extract_score_threshold
         )
 
         def configure(cfg: VectorStoreConfig):
