@@ -42,20 +42,11 @@ class LinkAppAssistantAgent(ConversableAgent):
             key="dbgpt_ant_agent_agents_app_link_assistant_agent_profile_desc",
         ),
     )
-    version: int = 2
     stream_out: bool = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._init_actions([LinkAppAction])
-
-    def prepare_act_param(
-        self,
-        recive_message: Optional[Dict],
-        sender: Agent,
-        rely_messages: Optional[List[Dict]] = None,
-    ) -> Optional[Dict]:
-        return {"version": self.version}
 
 
 agent_manage = get_agent_manager()

@@ -165,9 +165,9 @@ class Action(ABC, Generic[T]):
         json_format_data = json.dumps(
             self._create_example(self.out_model_type), indent=2, ensure_ascii=False
         )
-        return f"""Please reply in the following json format:
-            {json_format_data}
-        Make sure the reply content only has correct json and can be parsed by Python json.loads."""  # noqa: E501
+        return f"""Please reply strictly in the following json format:
+        {json_format_data}
+        Make sure the reply content only has the correct json."""  # noqa: E501
 
     def _ai_message_2_json(self, ai_message: str) -> JsonMessageType:
         json_objects = find_json_objects(ai_message)

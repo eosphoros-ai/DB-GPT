@@ -54,64 +54,39 @@ class LinkAppAction(Action[LinkAppInput]):
                 content=ai_message,
                 have_retry=False,
             )
-        #        version: int = 1,
-        version = kwargs.get("version", 1)
-        if version == 1:
-            if not param.app_code or len(param.app_code) <= 0:
-                return ActionOutput(
-                    is_exe_success=False,
-                    content="这个问题没有找到合适的解决方案",
-                    view="这个问题没有找到合适的解决方案",
-                )
-            else:
-                app_link_param = {
-                    "app_code": param.app_code,
-                    "app_name": param.app_name,
-                    "app_desc": "",
-                    "app_logo": "",
-                    "status": "TODO",
-                }
-                return ActionOutput(
-                    is_exe_success=True,
-                    content=json.dumps(model_to_dict(param), ensure_ascii=False),
-                    view=await self.render_protocal.display(content=app_link_param),
-                )
+        if not param.app_code or len(param.app_code) <= 0:
+            app_link_param = {
+                "app_code": "Personal assistant",
+                "app_name": "Personal assistant",
+                "app_desc": "",
+                "app_logo": "",
+                "status": "TODO",
+            }
+
+            from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
+
+            return ActionOutput(
+                is_exe_success=True,
+                content=json.dumps(app_link_param, ensure_ascii=False),
+                view=await self.render_protocal.display(content=app_link_param),
+                next_speakers=[SummaryAssistantAgent().role],
+            )
         else:
-            if not param.app_code or len(param.app_code) <= 0:
-                app_link_param = {
-                    "app_code": "Personal assistant",
-                    "app_name": "Personal assistant",
-                    "app_desc": "",
-                    "app_logo": "",
-                    "status": "TODO",
-                }
+            app_link_param = {
+                "app_code": param.app_code,
+                "app_name": param.app_name,
+                "app_desc": "",
+                "app_logo": "",
+                "status": "TODO",
+            }
 
-                from dbgpt.agent.expand.summary_assistant_agent import (
-                    SummaryAssistantAgent,
-                )
+            from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (
+                StartAppAssistantAgent,
+            )
 
-                return ActionOutput(
-                    is_exe_success=True,
-                    content=json.dumps(app_link_param, ensure_ascii=False),
-                    view=await self.render_protocal.display(content=app_link_param),
-                    next_speakers=[SummaryAssistantAgent().role],
-                )
-            else:
-                app_link_param = {
-                    "app_code": param.app_code,
-                    "app_name": param.app_name,
-                    "app_desc": "",
-                    "app_logo": "",
-                    "status": "TODO",
-                }
-
-                from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (
-                    StartAppAssistantAgent,
-                )
-
-                return ActionOutput(
-                    is_exe_success=True,
-                    content=json.dumps(model_to_dict(param), ensure_ascii=False),
-                    view=await self.render_protocal.display(content=app_link_param),
-                    next_speakers=[StartAppAssistantAgent().role],
-                )
+            return ActionOutput(
+                is_exe_success=True,
+                content=json.dumps(model_to_dict(param), ensure_ascii=False),
+                view=await self.render_protocal.display(content=app_link_param),
+                next_speakers=[StartAppAssistantAgent().role],
+            )

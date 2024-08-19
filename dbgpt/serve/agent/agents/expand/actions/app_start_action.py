@@ -22,6 +22,10 @@ class LinkAppInput(BaseModel):
         ...,
         description="The name of selected app.",
     )
+    app_desc: Optional[str] = Field(
+        ...,
+        description="The new user input.",
+    )
 
 
 class StartAppAction(Action[LinkAppInput]):
@@ -45,7 +49,6 @@ class StartAppAction(Action[LinkAppInput]):
         need_vis_render: bool = True,
         **kwargs,
     ) -> ActionOutput:
-        user_input = kwargs.get("user_input")
         conv_id = kwargs.get("conv_id")
         paren_agent = kwargs.get("paren_agent")
         init_message_rounds = kwargs.get("init_message_rounds")
@@ -58,7 +61,7 @@ class StartAppAction(Action[LinkAppInput]):
                 is_exe_success=False,
                 content="The requested correctly structured answer could not be found.",
             )
-
+        new_user_input = param.app_desc
         try:
             gpts_dao = GptsAppDao()
             gpts_app: GptsApp = gpts_dao.app_detail(param.app_code)
@@ -72,7 +75,7 @@ class StartAppAction(Action[LinkAppInput]):
             if TeamMode.NATIVE_APP.value == gpts_app.team_mode:
                 return ActionOutput(
                     is_exe_success=False,
-                    content="ai_message",
+                    content=ai_message,
                     view="[DBGPT Warning] Native application connection startup is not supported for the time being.",
                     have_retry=False,
                 )
@@ -80,7 +83,7 @@ class StartAppAction(Action[LinkAppInput]):
                 from dbgpt.serve.agent.agents.controller import multi_agents
 
                 await multi_agents.agent_team_chat_new(
-                    user_input,
+                    new_user_input,
                     conv_id,
                     gpts_app,
                     paren_agent.memory,

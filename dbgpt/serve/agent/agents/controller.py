@@ -189,7 +189,8 @@ class MultiAgents(BaseComponent, ABC):
                 history_messages = gpts_messages
                 last_message = gpts_messages[-1]
                 message_round = last_message.rounds + 1
-                from dbgpt.ant.agent.agents.app_start_assisant_agent import (
+
+                from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (
                     StartAppAssistantAgent,
                 )
 

@@ -57,7 +57,10 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
         out_put_schema = {
             "intent": "[The recognized intent is placed here]",
             "app_code": "[App code in selected intent]",
-            "slots": "If the intent has a defined slot attribute, the slot attribute and value are output here",
+            "slots": {
+                "attribute name 1": "[The value of the slot attribute 1 in intent define]",
+                "attribute name 2": "[The value of the slot attribute 2 in intent define]",
+            },
             "ask_user": "If you want the user to supplement slot data, ask the user a question",
             "user_input": "[Complete instructions generated based on intent and slot]",
         }
@@ -70,6 +73,18 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
             {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
             确保输出只有json，且可以被python json.loads加载."""
 
+    def _get_default_next_speakers(self):
+        next_speakers = []
+        from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
+
+        next_speakers.append(SummaryAssistantAgent().role)
+
+        from dbgpt.agent.expand.simple_assistant_agent import SimpleAssistantAgent
+
+        next_speakers.append(SimpleAssistantAgent().role)
+
+        return next_speakers
+
     async def run(
         self,
         ai_message: str,
@@ -78,6 +93,7 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
         need_vis_render: bool = True,
         **kwargs,
     ) -> ActionOutput:
+        next_speakers = self._get_default_next_speakers()
         try:
             intent: IntentRecognitionInput = self._input_convert(
                 ai_message, IntentRecognitionInput
@@ -88,51 +104,38 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
                 is_exe_success=False,
                 content="Error:The answer is not output in the required format.",
                 have_retry=True,
+                next_speakers=next_speakers,
             )
 
         # Check whether the message is complete and whether additional information needs to be provided to the user
         if intent.slots:
             for key, value in intent.slots.items():
                 if not value or len(value) <= 0:
+                    logger.info("slots check, need additional information!")
                     return ActionOutput(
                         is_exe_success=False,
                         content=json.dumps(intent.to_dict(), ensure_ascii=False),
                         view=intent.ask_user if intent.ask_user else ai_message,
                         have_retry=False,
                         ask_user=True,
+                        next_speakers=next_speakers,
                     )
 
         next_speakers = []
-        if not intent.app_code or len(intent.app_code) <= 0:
-            from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
-
-            next_speakers.append(SummaryAssistantAgent().role)
-
-            from dbgpt.agent.expand.simple_assistant_agent import SimpleAssistantAgent
-
-            next_speakers.append(SimpleAssistantAgent().role)
-
-            app_link_param = {
-                "app_code": "Personal assistant",
-                "app_name": "Personal assistant",
-                "app_desc": "",
-                "app_logo": "",
-                "status": "TODO",
-            }
-        else:
+        if intent.app_code and len(intent.app_code) > 0:
             from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (
                 StartAppAssistantAgent,
             )
 
             next_speakers = [StartAppAssistantAgent().role]
-            app_link_param = {
-                "app_code": intent.app_code,
-                "app_name": intent.intent,
-                "app_desc": intent.user_input,
-                "app_logo": "",
-                "status": "TODO",
-            }
 
+        app_link_param = {
+            "app_code": intent.app_code,
+            "app_name": intent.intent,
+            "app_desc": intent.user_input,
+            "app_logo": "",
+            "status": "TODO",
+        }
         return ActionOutput(
             is_exe_success=True,
             content=json.dumps(app_link_param, ensure_ascii=False),
