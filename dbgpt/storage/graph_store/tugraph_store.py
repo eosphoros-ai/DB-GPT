@@ -127,7 +127,7 @@ class TuGraphStore(GraphStoreBase):
                         f"'vertex', '{self._node_label}', "
                         f"'id', ['id',string,false],"
                         f"['name',string,false],"
-                        f"['_document_id',string,false],"
+                        f"['_document_id',string,true],"
                         f"['_community_id',string,true],"
                         f"['_level_id',string,true],"
                         f"['_weight',double,true],"
