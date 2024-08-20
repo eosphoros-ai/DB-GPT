@@ -110,6 +110,32 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
     }
   }
 
+  // TODO: refresh flow node
+  async function refreshFlowNode() {
+    // setLoading(true);
+    const params = {
+      id: '',
+      type_name: '',
+      type_cls: '',
+      flow_type: 'operator' as const,
+      refresh: [
+        {
+          name: '',
+          depends: [
+            {
+              name: '',
+              value: '',
+              has_value: true,
+            },
+          ],
+        },
+      ],
+    };
+    const [_, data] = await apiInterceptors(refreshFlowNodeById(params));
+    // setLoading(false);
+    // setFlowList(data?.items ?? []);
+  }
+  
   function renderComponentByType(type: string, props?: any) {
     switch (type) {
       case 'select':
