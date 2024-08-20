@@ -33,6 +33,11 @@ function matchCustomeTagValues(context: string) {
 }
 
 const codeComponents = {
+  /**
+   * @description
+   * Custom code block rendering, which can be used to render custom components in the code block.
+   * Is it defined in gpt-vis, and the default rendering contains `vis-chart`.
+   */
   code: withDefaultChartCode({
     languageRenderers: {
       'agent-plans': ({ inline, node, className, children, style, ...props }) => {
