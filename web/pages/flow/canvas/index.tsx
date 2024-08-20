@@ -5,8 +5,8 @@ import ButtonEdge from '@/components/flow/button-edge';
 import CanvasNode from '@/components/flow/canvas-node';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import { checkFlowDataRequied, getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
-import { FrownOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Divider, Form, Input, Modal, Space, message, notification } from 'antd';
+import { ExportOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Divider, Form, Input, Modal, Space, Tooltip, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -150,7 +150,7 @@ const Canvas: React.FC<Props> = () => {
     form.setFieldsValue({ name: result });
   }
 
-  function clickSave() {
+  function onSave() {
     const flowData = reactFlow.toObject() as IFlowData;
     const [check, node, message] = checkFlowDataRequied(flowData);
     if (!check && message) {
@@ -175,11 +175,40 @@ const Canvas: React.FC<Props> = () => {
     setIsModalVisible(true);
   }
 
+  // TODO: EXport flow data
+  function onExport() {
+    const flowData = reactFlow.toObject() as IFlowData;
+    const blob = new Blob([JSON.stringify(flowData)], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'flow.json';
+    a.click();
+  }
+
+  // TODO: Import flow data
+  function onImport() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e: any) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const flowData = JSON.parse(event.target?.result as string) as IFlowData;
+        setNodes(flowData.nodes);
+        setEdges(flowData.edges);
+      };
+      reader.readAsText(file);
+    };
+    input.click;
+  }
+
   async function handleSaveFlow() {
     const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
     console.log(form.getFieldsValue());
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
-    
+
     if (id) {
       const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject, state }));
       setIsModalVisible(false);
@@ -202,11 +231,22 @@ const Canvas: React.FC<Props> = () => {
   return (
     <>
       <MuiLoading visible={loading} />
-      <div className="my-2 mx-4 flex flex-row justify-end items-center">
-        <div className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 flext justify-center items-center hover:text-blue-500 dark:hover:text-zinc-100">
-          <SaveOutlined className="block text-xl" onClick={clickSave} />
-        </div>
-      </div>
+      <Space className="my-2 mx-4 flex flex-row justify-end">
+        {[
+          { title: 'import', icon: <ImportOutlined className="block text-xl" onClick={onImport} /> },
+          { title: 'export', icon: <ExportOutlined className="block text-xl" onClick={onExport} /> },
+          { title: 'save', icon: <SaveOutlined className="block text-xl" onClick={onSave} /> },
+        ].map(({ title, icon }) => (
+          <Tooltip
+            key={title}
+            title={title}
+            className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 hover:text-blue-500 dark:hover:text-zinc-100"
+          >
+            {icon}
+          </Tooltip>
+        ))}
+      </Space>
+
       <Divider className="mt-0 mb-0" />
       <div className="h-[calc(100vh-60px)] w-full" ref={reactFlowWrapper}>
         <ReactFlow

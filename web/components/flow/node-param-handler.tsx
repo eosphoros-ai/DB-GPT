@@ -135,7 +135,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
     // setLoading(false);
     // setFlowList(data?.items ?? []);
   }
-
+  
   function renderComponentByType(type: string, props?: any) {
     switch (type) {
       case 'select':
