@@ -28,6 +28,17 @@ interface NodeParamHandlerProps {
   index: number; // index of array
 }
 
+const renderLabelWithTooltip = (data: IFlowNodeParameter) => (
+  <div>
+    {data.label}:<RequiredIcon optional={data.optional} />
+    {data.description && (
+      <Tooltip title={data.description}>
+        <InfoCircleOutlined className="ml-2 cursor-pointer" />
+      </Tooltip>
+    )}
+  </div>
+);
+
 // render node parameters item
 const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, index }) => {
   function onChange(value: any) {
@@ -43,14 +54,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'float':
         return (
           <div className="text-sm">
-            <p>
-              {data.label}:<RequiredIcon optional={data.optional} />
-              {data.description && (
-                <Tooltip title={data.description}>
-                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
-                </Tooltip>
-              )}
-            </p>
+            {renderLabelWithTooltip(data)}
             <InputNumber
               className="w-full"
               defaultValue={defaultValue}
@@ -63,14 +67,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'str':
         return (
           <div className="text-sm">
-            <p>
-              {data.label}:<RequiredIcon optional={data.optional} />
-              {data.description && (
-                <Tooltip title={data.description}>
-                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
-                </Tooltip>
-              )}
-            </p>
+            {renderLabelWithTooltip(data)}
             {data.options?.length > 0 ? (
               <Select
                 className="w-full nodrag"
@@ -94,32 +91,21 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
           <div className="text-sm">
-            <p>
-              {data.label}:<RequiredIcon optional={data.optional} />
-              {data.description && (
-                <Tooltip title={data.description}>
-                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
-                </Tooltip>
-              )}
-              <Checkbox
-                className="ml-2"
-                defaultChecked={defaultValue}
-                onChange={(e) => {
-                  onChange(e.target.checked);
-                }}
-              />
-            </p>
+            {renderLabelWithTooltip(data)}
+            <Checkbox
+              className="ml-2"
+              defaultChecked={defaultValue}
+              onChange={(e) => {
+                onChange(e.target.checked);
+              }}
+            />
           </div>
         );
     }
   }
 
-  // render node parameters based on AWEL2.0
-  function renderNodeWithUiParam(data: IFlowNodeParameter) {
-    let defaultValue = data.value ?? data.default;
-    const props = { data, defaultValue, onChange };
-
-    switch (data?.ui?.ui_type) {
+  function renderComponentByType(type: string, props?: any) {
+    switch (type) {
       case 'select':
         return <RenderSelect {...props} />;
       case 'cascader':
@@ -144,13 +130,26 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderPassword {...props} />;
       case 'upload':
         return <RenderUpload {...props} />;
-        case 'variables':
-          return <RenderVariables {...props} />;
+      case 'variables':
+        return <RenderVariables {...props} />;
       case 'code_editor':
         return <RenderCodeEditor {...props} />;
       default:
         return null;
     }
+  }
+
+  // render node parameters based on AWEL2.0
+  function renderNodeWithUiParam(data: IFlowNodeParameter) {
+    let defaultValue = data.value ?? data.default;
+    const props = { data, defaultValue, onChange };
+
+    return (
+      <div>
+        {renderLabelWithTooltip(data)}
+        {renderComponentByType(data?.ui?.ui_type, props)}
+      </div>
+    );
   }
 
   if (data.category === 'resource') {
