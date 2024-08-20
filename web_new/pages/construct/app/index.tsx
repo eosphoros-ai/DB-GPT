@@ -317,7 +317,7 @@ export default function AppContent() {
                                   fontSize: 12,
                                 }}
                               />
-                              <span className="text-sm text-gray-500">单击复制分享链接</span>
+                              <span className="text-sm text-gray-500">{t('copy_url')}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <BulbOutlined
@@ -326,7 +326,7 @@ export default function AppContent() {
                                   fontSize: 12,
                                 }}
                               />
-                              <span className="text-sm text-gray-500">双击钉钉打开</span>
+                              <span className="text-sm text-gray-500">{t('double_click_open')}</span>
                             </div>
                           </div>
                         }
@@ -349,7 +349,7 @@ export default function AppContent() {
                                     operate(item);
                                   }}
                                 >
-                                  {item.published === 'true' ? '取消发布' : '发布应用'}
+                                  {item.published === 'true' ? t('unpublish') : t('publish')}
                                 </span>
                               ),
                             },
@@ -363,7 +363,7 @@ export default function AppContent() {
                                     showDeleteConfirm(item);
                                   }}
                                 >
-                                  删除
+                                  {t('Delete')}
                                 </span>
                               ),
                             },

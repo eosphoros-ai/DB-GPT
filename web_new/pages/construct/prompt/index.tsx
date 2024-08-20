@@ -99,7 +99,7 @@ const Prompt = () => {
       width: '10%',
     },
     {
-      title: '语言',
+      title: t('language'),
       dataIndex: 'prompt_language',
       key: 'prompt_language',
       render: (lang) => (lang ? LangMap[lang as keyof typeof LangMap] : '-'),

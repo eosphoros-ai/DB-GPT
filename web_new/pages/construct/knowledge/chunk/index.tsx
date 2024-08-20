@@ -176,7 +176,7 @@ function ChunkList() {
       />
       <MenuModal
         modal={{
-          title: '手动录入',
+          title: t('Manual_entry'),
           width: '70%',
           open: isModalOpen,
           footer: false,
@@ -193,13 +193,13 @@ function ChunkList() {
         items={[
           {
             key: 'edit',
-            label: '数据内容',
+            label: t('Data_content'),
             children: (
               <div className="flex gap-4">
-                <Card size="small" title="主要内容" className="w-2/3 flex-wrap overflow-y-auto">
+                <Card size="small" title={t('Main_content')} className="w-2/3 flex-wrap overflow-y-auto">
                   <MarkDownContext>{currentChunkInfo?.content}</MarkDownContext>
                 </Card>
-                <Card size="small" title="辅助数据" className="w-1/3">
+                <Card size="small" title={t('Auxiliary_data')} className="w-1/3">
                   <MarkDownContext>{currentChunkInfo?.meta_info}</MarkDownContext>
                 </Card>
               </div>
@@ -207,7 +207,7 @@ function ChunkList() {
           },
           {
             key: 'delete',
-            label: '添加问题',
+            label: t('Add_problem'),
             children: (
               <Card
                 size="small"
@@ -218,11 +218,11 @@ function ChunkList() {
                     onClick={async () => {
                       const formVal = form.getFieldsValue();
                       if (!formVal.questions) {
-                        message.warning('请先输入问题');
+                        message.warning(t('enter_question_first'));
                         return;
                       }
                       if (formVal.questions?.filter(Boolean).length === 0) {
-                        message.warning('请先输入问题');
+                        message.warning(t('enter_question_first'));
                         return;
                       }
                       const questions = formVal.questions?.filter(Boolean).map((item: any) => item.question);
@@ -230,7 +230,7 @@ function ChunkList() {
                     }}
                     loading={addLoading}
                   >
-                    保存
+                    {t('save')}
                   </Button>
                 }
               >
@@ -241,7 +241,7 @@ function ChunkList() {
                         {fields.map(({ key, name }) => (
                           <div key={key} className={cls('flex flex-1 items-center gap-8')}>
                             <Form.Item label="" name={[name, 'question']} className="grow">
-                              <Input placeholder="请输入" />
+                              <Input placeholder={t('Please_Input')} />
                             </Form.Item>
                             <Form.Item>
                               <MinusCircleOutlined
@@ -261,7 +261,7 @@ function ChunkList() {
                             block
                             icon={<PlusOutlined />}
                           >
-                            添加问题
+                            {t('Add_problem')}
                           </Button>
                         </Form.Item>
                       </>

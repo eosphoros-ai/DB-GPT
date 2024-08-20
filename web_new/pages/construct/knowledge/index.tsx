@@ -191,7 +191,7 @@ const Knowledge = () => {
                           key: 'del',
                           label: (
                             <span className="text-red-400" onClick={() => showDeleteConfirm(space)}>
-                              删除
+                              {t('Delete')}
                             </span>
                           ),
                         },
@@ -254,7 +254,7 @@ const Knowledge = () => {
           <DocPanel space={currentSpace!} onAddDoc={onAddDoc} onDeleteDoc={getSpaces} addStatus={addStatus} />
         </Modal>
         <Modal
-          title="新增知识库"
+          title={t('New_knowledge_base')}
           centered
           open={isAddShow}
           destroyOnClose={true}

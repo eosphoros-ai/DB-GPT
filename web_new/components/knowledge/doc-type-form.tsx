@@ -31,8 +31,8 @@ export default function DocTypeForm(props: IProps) {
     },
     {
       type: 'YUQUEURL',
-      title: '语雀文档',
-      subTitle: '获取语雀文档的内容',
+      title: t('yuque'),
+      subTitle: t('Get_yuque_document'),
       iconType: 'YUQUEURL',
     },
   ];
