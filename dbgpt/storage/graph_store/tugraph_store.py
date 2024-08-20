@@ -126,6 +126,7 @@ class TuGraphStore(GraphStoreBase):
                         f"CALL db.createLabel("
                         f"'vertex', '{self._node_label}', "
                         f"'id', ['id',string,false],"
+                        f"['name',string,false],"
                         f"['_document_id',string,false],"
                         f"['_community_id',string,true],"
                         f"['_level_id',string,true],"
@@ -138,18 +139,19 @@ class TuGraphStore(GraphStoreBase):
                 create_vertex_gql = (
                     f"CALL db.createLabel("
                     f"'vertex', '{self._node_label}', "
-                    f"'id', ['id',string,false])"
+                    f"'id', ['id',string,false],"
+                    f"['name',string,false])"
                 )
                 self.conn.run(create_vertex_gql)
 
         if not self._check_label("edge"):
             create_edge_gql = f"""CALL db.createLabel(
                     'edge', '{self._edge_label}', '[["{self._node_label}",
-                    "{self._node_label}"]]', ["id",STRING,false])"""
+                    "{self._node_label}"]]', ["id",STRING,false],["name",STRING,false])"""
             if(self._summary_enabled):
                 create_edge_gql = f"""CALL db.createLabel(
                     'edge', '{self._edge_label}', '[["{self._node_label}",
-                    "{self._node_label}"]]', ["id",STRING,false],["description",STRING,true])"""
+                    "{self._node_label}"]]', ["id",STRING,false],["name",STRING,false],["description",STRING,true])"""
             self.conn.run(create_edge_gql)   
 
     def get_config(self):
@@ -176,16 +178,11 @@ class TuGraphStore(GraphStoreBase):
         rel_escaped = escape_quotes(rel)
         obj_escaped = escape_quotes(obj)
 
-        subj_query = f"MERGE (n1:{self._node_label} {{id:'{subj_escaped}'}})"
-        obj_query = f"MERGE (n1:{self._node_label} {{id:'{obj_escaped}'}})"
-        rel_query = (
-            f"MERGE (n1:{self._node_label} {{id:'{subj_escaped}'}})"
-            f"-[r:{self._edge_label} {{id:'{rel_escaped}'}}]->"
-            f"(n2:{self._node_label} {{id:'{obj_escaped}'}})"
-        )
-        self.conn.run(query=subj_query)
-        self.conn.run(query=obj_query)
-        self.conn.run(query=rel_query)
+        node_query = f"CALL db.upsertVertex('{self._node_label}', [{{id:'{subj_escaped}',name:'{subj_escaped}'}},{{id:'{obj_escaped}',name:'{obj_escaped}'}}])"
+        edge_query = f"""CALL db.upsertEdge('{self._edge_label}', {{type:"{self._node_label}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{{sid:"{subj_escaped}", tid: "{obj_escaped}",id:"{rel_escaped}", name: "{rel_escaped}"}}])"""
+
+        self.conn.run(query=node_query)
+        self.conn.run(query=edge_query)
 
     def insert_graph(self, graph:Graph) -> None:
         """Add triplet."""

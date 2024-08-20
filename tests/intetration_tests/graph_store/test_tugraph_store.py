@@ -23,7 +23,7 @@ def test_insert_and_get_triplets(store):
     store.insert_triplet("F", "7", "E")
     store.insert_triplet("E", "8", "F")
     triplets = store.get_triplets("A")
-    assert len(triplets) == 3
+    assert len(triplets) == 2
     triplets = store.get_triplets("B")
     assert len(triplets) == 3
     triplets = store.get_triplets("C")
@@ -41,7 +41,7 @@ def test_query(store):
     result = store.query(query)
     v_c = result.vertex_count
     e_c = result.edge_count
-    assert v_c == 2 and e_c == 3
+    assert v_c == 3 and e_c == 3
 
 
 def test_explore(store):
@@ -49,7 +49,7 @@ def test_explore(store):
     result = store.explore(subs, depth=2, fan=None, limit=10)
     v_c = result.vertex_count
     e_c = result.edge_count
-    assert v_c == 2 and e_c == 3
+    assert v_c == 5 and e_c == 5
 
 
 def test_delete_triplet(store):
