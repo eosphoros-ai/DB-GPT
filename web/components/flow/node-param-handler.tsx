@@ -28,21 +28,23 @@ interface NodeParamHandlerProps {
   index: number; // index of array
 }
 
-const renderLabelWithTooltip = (data: IFlowNodeParameter) => (
-  <div>
-    {data.label}:<RequiredIcon optional={data.optional} />
-    {data.description && (
-      <Tooltip title={data.description}>
-        <InfoCircleOutlined className="ml-2 cursor-pointer" />
-      </Tooltip>
-    )}
-  </div>
-);
-
 // render node parameters item
 const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, index }) => {
   function onChange(value: any) {
     data.value = value;
+  }
+
+  function renderLabelWithTooltip(data: IFlowNodeParameter) {
+    return (
+      <div>
+        {data.label}:<RequiredIcon optional={data.optional} />
+        {data.description && (
+          <Tooltip title={data.description}>
+            <InfoCircleOutlined className="ml-2 cursor-pointer" />
+          </Tooltip>
+        )}
+      </div>
+    );
   }
 
   // render node parameters based on AWEL1.0
