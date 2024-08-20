@@ -258,8 +258,23 @@ The MIT License (MIT)
 
 ## 联系我们
 
-<p align="center">
+<div style="display: flex; justify-content: space-around;">
+    <figure style="display: flex; flex-direction: column;">
+        <img src="./assets/wechat.jpg" alt="图片1" style="width: 200px;">
+        <p style="text-align: center;">
+          微信
+        </p> 
+    </figure>
+    <figure style="display: flex; flex-direction: column;">
+        <img src="./assets/ding.jpg" alt="图片2" style="width: 220px;">
+        <p style="text-align: center;">
+          钉钉
+        </p>
+    </figure>
+</div>
+
+<!-- <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
-</p>
+</p> -->
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)

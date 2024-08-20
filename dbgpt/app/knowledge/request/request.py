@@ -1,10 +1,7 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional
 
-from pydantic import ConfigDict
-
-from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt._private.pydantic import BaseModel, ConfigDict
 
 
 class KnowledgeQueryRequest(BaseModel):
@@ -26,7 +23,7 @@ class KnowledgeSpaceRequest(BaseModel):
     """vector_type: vector type"""
     vector_type: Optional[str] = None
     """vector_type: vector type"""
-    domain_type: str = "normal"
+    domain_type: str = "Normal"
     """desc: description"""
     desc: str = None
     """owner: owner"""

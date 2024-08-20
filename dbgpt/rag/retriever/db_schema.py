@@ -167,7 +167,7 @@ class DBSchemaRetriever(BaseRetriever):
             result_candidates = await run_async_tasks(
                 tasks=candidates, concurrency_limit=1
             )
-            return result_candidates
+            return cast(List[Chunk], reduce(lambda x, y: x + y, result_candidates))
         else:
             from dbgpt.rag.summary.rdbms_db_summary import (  # noqa: F401
                 _parse_db_summary,
@@ -177,7 +177,9 @@ class DBSchemaRetriever(BaseRetriever):
                 tasks=[self._aparse_db_summary(root_tracer.get_current_span_id())],
                 concurrency_limit=1,
             )
-            return [Chunk(content=table_summary) for table_summary in table_summaries]
+            return [
+                Chunk(content=table_summary) for table_summary in table_summaries[0]
+            ]
 
     async def _aretrieve_with_score(
         self,
