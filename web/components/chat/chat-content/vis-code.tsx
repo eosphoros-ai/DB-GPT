@@ -1,4 +1,4 @@
-import { MarkdownVis } from '@antv/gpt-vis';
+import { GPTVis } from '@antv/gpt-vis';
 import remarkGfm from 'remark-gfm';
 import markdownComponents from './config';
 import { CodePreview } from './code-preview';
@@ -57,9 +57,9 @@ function VisCode({ data }: Props) {
           </div>
         </div>
         <div className="p-4 max-h-72 overflow-y-auto whitespace-normal bg-white dark:dark:bg-theme-dark">
-          <MarkdownVis components={markdownComponents} remarkPlugins={[remarkGfm]}>
+          <GPTVis components={markdownComponents} remarkPlugins={[remarkGfm]}>
             {data.log}
-          </MarkdownVis>
+          </GPTVis>
         </div>
       </div>
     </div>

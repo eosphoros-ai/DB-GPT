@@ -1,5 +1,5 @@
 import { LinkOutlined, ReadOutlined, SyncOutlined } from '@ant-design/icons';
-import { MarkdownVis } from '@antv/gpt-vis';
+import { GPTVis, withDefaultChartCode } from '@antv/gpt-vis';
 import { Table, Image, Tag, Tabs, TabsProps, Popover } from 'antd';
 import { Reference } from '@/types/chat';
 import { AutoChart, BackEndChartType, getChartType } from '@/components/chart';
@@ -16,7 +16,7 @@ import VisPlugin from './vis-plugin';
 import VisCode from './vis-code';
 import { formatSql } from '@/utils';
 
-type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
+type MarkdownComponent = Parameters<typeof GPTVis>['0']['components'];
 
 const customeTags: (keyof JSX.IntrinsicElements)[] = ['custom-view', 'chart-view', 'references', 'summary'];
 
@@ -32,97 +32,110 @@ function matchCustomeTagValues(context: string) {
   return { context, matchValues };
 }
 
-const basicComponents: MarkdownComponent = {
-  code({ inline, node, className, children, style, ...props }) {
-    const content = String(children);
-    /**
-     * @description
-     * In some cases, tags are nested within code syntax,
-     * so it is necessary to extract the tags present in the code block and render them separately.
-     */
-    // const { context, matchValues } = matchCustomeTagValues(content);
-    const lang = className?.replace('language-', '') || 'javascript';
+const codeComponents = {
+  code: withDefaultChartCode({
+    languageRenderers: {
+      'agent-plans': ({ inline, node, className, children, style, ...props }) => {
+        const content = String(children);
+        /**
+         * @description
+         * In some cases, tags are nested within code syntax,
+         * so it is necessary to extract the tags present in the code block and render them separately.
+         */
+        const lang = className?.replace('language-', '') || 'javascript';
+        try {
+          const data = JSON.parse(content) as Parameters<typeof AgentPlans>[0]['data'];
+          return <AgentPlans data={data} />;
+        } catch (e) {
+          return <CodePreview language={lang} code={content} />;
+        }
+      },
+      'agent-messages': ({ inline, node, className, children, style, ...props }) => {
+        const content = String(children);
+        const lang = className?.replace('language-', '') || 'javascript';
+        try {
+          const data = JSON.parse(content) as Parameters<typeof AgentMessages>[0]['data'];
+          return <AgentMessages data={data} />;
+        } catch (e) {
+          return <CodePreview language={lang} code={content} />;
+        }
+      },
+      'vis-convert-error': ({ inline, node, className, children, style, ...props }) => {
+        const content = String(children);
+        const lang = className?.replace('language-', '') || 'javascript';
+        try {
+          const data = JSON.parse(content) as Parameters<typeof VisConvertError>[0]['data'];
+          return <VisConvertError data={data} />;
+        } catch (e) {
+          return <CodePreview language={lang} code={content} />;
+        }
+      },
+      'vis-dashboard': ({ inline, node, className, children, style, ...props }) => {
+        const content = String(children);
+        const lang = className?.replace('language-', '') || 'javascript';
+        try {
+          const data = JSON.parse(content) as Parameters<typeof VisDashboard>[0]['data'];
+          return <VisDashboard data={data} />;
+        } catch (e) {
+          return <CodePreview language={lang} code={content} />;
+        }
+      },
+      'vis-chart': ({ inline, node, className, children, style, ...props }) => {
+        const content = String(children);
+        const lang = className?.replace('language-', '') || 'javascript';
+        try {
+          const data = JSON.parse(content) as Parameters<typeof VisChart>[0]['data'];
+          return <VisChart data={data} />;
+        } catch (e) {
+          return <CodePreview language={lang} code={content} />;
+        }
+      },
+      'vis-plugin': ({ inline, node, className, children, style, ...props }) => {
+        const content = String(children);
+        const lang = className?.replace('language-', '') || 'javascript';
+        try {
+          const data = JSON.parse(content) as Parameters<typeof VisPlugin>[0]['data'];
+          return <VisPlugin data={data} />;
+        } catch (e) {
+          return <CodePreview language={lang} code={content} />;
+        }
+      },
+      'vis-code': ({ inline, node, className, children, style, ...props }) => {
+        const content = String(children);
+        const lang = className?.replace('language-', '') || 'javascript';
 
-    if (lang === 'agent-plans') {
-      try {
-        const data = JSON.parse(content) as Parameters<typeof AgentPlans>[0]['data'];
-        return <AgentPlans data={data} />;
-      } catch (e) {
-        return <CodePreview language={lang} code={content} />;
-      }
-    }
+        try {
+          const data = JSON.parse(content) as Parameters<typeof VisCode>[0]['data'];
+          return <VisCode data={data} />;
+        } catch (e) {
+          return <CodePreview language={lang} code={content} />;
+        }
+      },
+    },
+    defaultRenderer({ inline, node, className, children, style, ...props }) {
+      const content = String(children);
+      const lang = className?.replace('language-', '') || 'javascript';
+      const { context, matchValues } = matchCustomeTagValues(content);
+      return (
+        <>
+          {!inline ? (
+            <CodePreview code={context} language={lang} />
+          ) : (
+            <code {...props} style={style} className="p-1 mx-1 rounded bg-theme-light dark:bg-theme-dark text-sm">
+              {children}
+            </code>
+          )}
+          <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]}>
+            {matchValues.join('\n')}
+          </GPTVis>
+        </>
+      );
+    },
+  }),
+};
 
-    if (lang === 'agent-messages') {
-      try {
-        const data = JSON.parse(content) as Parameters<typeof AgentMessages>[0]['data'];
-        return <AgentMessages data={data} />;
-      } catch (e) {
-        return <CodePreview language={lang} code={content} />;
-      }
-    }
-
-    if (lang === 'vis-convert-error') {
-      try {
-        const data = JSON.parse(content) as Parameters<typeof VisConvertError>[0]['data'];
-        return <VisConvertError data={data} />;
-      } catch (e) {
-        return <CodePreview language={lang} code={content} />;
-      }
-    }
-
-    if (lang === 'vis-dashboard') {
-      try {
-        const data = JSON.parse(content) as Parameters<typeof VisDashboard>[0]['data'];
-        return <VisDashboard data={data} />;
-      } catch (e) {
-        return <CodePreview language={lang} code={content} />;
-      }
-    }
-
-    if (lang === 'vis-chart') {
-      try {
-        const data = JSON.parse(content) as Parameters<typeof VisChart>[0]['data'];
-        return <VisChart data={data} />;
-      } catch (e) {
-        return <CodePreview language={lang} code={content} />;
-      }
-    }
-
-    if (lang === 'vis-plugin') {
-      try {
-        const data = JSON.parse(content) as Parameters<typeof VisPlugin>[0]['data'];
-        return <VisPlugin data={data} />;
-      } catch (e) {
-        return <CodePreview language={lang} code={content} />;
-      }
-    }
-
-    if (lang === 'vis-code') {
-      try {
-        const data = JSON.parse(content) as Parameters<typeof VisCode>[0]['data'];
-        return <VisCode data={data} />;
-      } catch (e) {
-        return <CodePreview language={lang} code={content} />;
-      }
-    }
-
-    console.log(1111111, 'render with gpt-vis');
-    return (
-      <>
-        {!inline ? (
-          <CodePreview code={context} language={lang} />
-        ) : (
-          <code {...props} style={style} className="p-1 mx-1 rounded bg-theme-light dark:bg-theme-dark text-sm">
-            {children}
-          </code>
-        )}
-        <MarkdownVis components={{ markdownComponents }}>{matchValues.join('\n')}</MarkdownVis>
-        {/* <ReactMarkdown components={{ markdownComponents }} rehypePlugins={[rehypeRaw]}>
-          {matchValues.join('\n')}
-        </ReactMarkdown> */}
-      </>
-    );
-  },
+const basicComponents: MarkdownComponent = {    
+  ...codeComponents,
   ul({ children }) {
     return <ul className="py-1">{children}</ul>;
   },

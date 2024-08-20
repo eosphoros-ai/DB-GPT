@@ -1,6 +1,6 @@
 import { PropsWithChildren, ReactNode, memo, useContext, useMemo } from 'react';
 import { CheckOutlined, ClockCircleOutlined, CloseOutlined, CodeOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import { MarkdownVis } from '@antv/gpt-vis';
+import { GPTVis } from '@antv/gpt-vis';
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import rehypeRaw from 'rehype-raw';
 import classNames from 'classnames';
@@ -22,7 +22,7 @@ interface Props {
   onLinkClick?: () => void;
 }
 
-type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
+type MarkdownComponent = Parameters<typeof GPTVis>['0']['components'];
 
 type DBGPTView = {
   name: string;
@@ -160,9 +160,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
         )}
         {/* Markdown */}
         {isRobot && typeof context === 'string' && (
-          <MarkdownVis components={{ ...markdownComponents, ...extraMarkdownComponents }}>
-            {formatMarkdownVal(value)}
-          </MarkdownVis>
+          <GPTVis components={{ ...markdownComponents, ...extraMarkdownComponents }}>{formatMarkdownVal(value)}</GPTVis>
         )}
         {!!relations?.length && (
           <div className="flex flex-wrap mt-2">
