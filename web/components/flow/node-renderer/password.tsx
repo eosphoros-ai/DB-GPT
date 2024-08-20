@@ -4,13 +4,13 @@ import { convertKeysToCamelCase } from '@/utils/flow';
 
 const { Password } = Input;
 
-type TextAreaProps = {
+type Props = {
   data: IFlowNodeParameter;
   defaultValue: any;
   onChange: (value: any) => void;
 };
 
-export const RenderPassword = (params: TextAreaProps) => {
+export const RenderPassword = (params: Props) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 

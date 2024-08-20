@@ -12,6 +12,21 @@ export type IFlowUpdateParam = {
   state?: FlowState;
 };
 
+export type IFlowRefreshParams = {
+  id: string;
+  type_name: string;
+  type_cls: string;
+  flow_type: 'resource' | 'operator';
+  refresh: {
+    name: string;
+    depends?: Array<{
+      name: string;
+      value: string;
+      has_value: boolean;
+    }>;
+  }[];
+};
+
 export type IFlow = {
   dag_id: string;
   gmt_created: string;
@@ -60,8 +75,8 @@ export type IFlowNodeParameterUI = {
     [key: string]: any;
   };
   editor: {
-    width: Number;
-    height: Number;
+    width: number;
+    height: number;
   };
   show_input: boolean;
 };

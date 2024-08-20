@@ -22,19 +22,17 @@ export const RenderCodeEditor = (params: Props) => {
     setIsModalOpen(true);
   };
 
-  const handleOk = () => {
+  const onOk = () => {
     setIsModalOpen(false);
   };
 
-  const handleCancel = () => {
+  const onCancel = () => {
     setIsModalOpen(false);
   };
-  /**
-   * 设置弹窗宽度
-   */
+
   const modalWidth = useMemo(() => {
     if (data?.ui?.editor?.width) {
-      return data?.ui?.editor?.width + 100
+      return data?.ui?.editor?.width + 100;
     }
     return '80%';
   }, [data?.ui?.editor?.width]);
@@ -44,16 +42,16 @@ export const RenderCodeEditor = (params: Props) => {
       <Button type="primary" onClick={showModal}>
         {t('openCodeEditor')}
       </Button>
-      <Modal title={t('openCodeEditor')} width={modalWidth} open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+
+      <Modal title={t('openCodeEditor')} width={modalWidth} open={isModalOpen} onOk={onOk} onCancel={onCancel}>
         <Editor
-          {...data?.ui?.attr}
+          {...attr}
           width={data?.ui?.editor?.width || '100%'}
           value={defaultValue}
-          style={{ padding: '10px' }}
           height={data?.ui?.editor?.height || 200}
           defaultLanguage={data?.ui?.language}
           onChange={onChange}
-          theme='vs-dark' 
+          theme="vs-dark"
           options={{
             minimap: {
               enabled: false,
