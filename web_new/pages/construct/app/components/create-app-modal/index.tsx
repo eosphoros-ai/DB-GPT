@@ -20,6 +20,7 @@ interface WorkModeSelectProps {
 // 自定义team_mode选择
 const WorkModeSelect: React.FC<WorkModeSelectProps> = ({ disable = false, options = [], value, onChange }) => {
   const [selected, setSelected] = useState<TeamMode>(value || ({} as TeamMode));
+  const { i18n } = useTranslation();
 
   const returnOptionStyle = (item: TeamMode) => {
     if (disable) {
@@ -34,6 +35,7 @@ const WorkModeSelect: React.FC<WorkModeSelectProps> = ({ disable = false, option
       item.value === selected?.value ? 'border-[#0c75fc] bg-[#f5faff] dark:bg-[#606264] dark:border-[#0c75fc]' : 'border-[#d9d9d9]'
     } `;
   };
+  const language = i18n.language === 'en';
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -52,9 +54,9 @@ const WorkModeSelect: React.FC<WorkModeSelectProps> = ({ disable = false, option
           <Image src={`/icons/app/${item.value}.png`} width={48} height={48} alt={item.value} />
           <div className="flex flex-col ml-3">
             <span className="text-xs font-medium text-[rgba(0,0,0,0.85)] dark:text-[rgba(255,255,255,0.85)] first-line:leading-6">
-              {item.name_cn}
+              {language ? item.name_en : item.name_cn}
             </span>
-            <span className="text-xs text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.85)]">{item.description}</span>
+            <span className="text-xs text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.85)]">{language ? item.description_en : item.description}</span>
           </div>
           {item.value === selected?.value && (
             <div
@@ -74,13 +76,14 @@ const CreateAppModal: React.FC<{
   refresh?: any;
   type?: 'add' | 'edit';
 }> = ({ open, onCancel, type = 'add', refresh }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const appInfo = JSON.parse(localStorage.getItem('new_app_info') || '{}');
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const teamMode = Form.useWatch('team_mode', form);
 
   const router = useRouter();
+  const language = i18n.language === 'en';
 
   // 获取工作模式列表
   const { data, loading } = useRequest(async () => {
@@ -199,10 +202,14 @@ const CreateAppModal: React.FC<{
             </Form>
             <Divider type="vertical" className="h-auto mx-6 bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.5)] " />
             <div className="flex flex-col w-2/5 pl-6 pt-8 ">
-              <span className="text-base text-[rgba(0,0,0,0.85)] font-medium mb-6 dark:text-[rgba(255,255,255,0.85)]">{teamMode?.name_cn}</span>
+              <span className="text-base text-[rgba(0,0,0,0.85)] font-medium mb-6 dark:text-[rgba(255,255,255,0.85)]">
+                {language ? teamMode?.name_en : teamMode?.name_cn}
+              </span>
               <div className="flex items-start">
                 <span className="flex flex-shrink-0 w-1 h-1 rounded-full bg-[rgba(0,0,0,0.45)] mt-2 mr-1 dark:bg-[rgba(255,255,255,0.65)]" />
-                <span className="text-xs leading-5 text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.65)]">{teamMode?.remark}</span>
+                <span className="text-xs leading-5 text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.65)]">
+                  {language ? teamMode?.remark_en : teamMode?.remark}
+                </span>
               </div>
             </div>
           </div>
