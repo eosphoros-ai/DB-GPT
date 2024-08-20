@@ -2,7 +2,7 @@ import { ChatContext } from '@/app/chat-context';
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import classNames from 'classnames';
 import { memo, useContext } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownVis } from '@antv/gpt-vis';
 import markdownComponents from './chat-content/config';
 import rehypeRaw from 'rehype-raw';
 
@@ -27,10 +27,11 @@ function AgentContent({ content }: Props) {
       })}
     >
       {isView ? (
-        <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
-          {formatMarkdownVal(content.context)}
-        </ReactMarkdown>
+        <MarkdownVis components={markdownComponents}>{formatMarkdownVal(content.context)}</MarkdownVis>
       ) : (
+        // <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
+        //   {formatMarkdownVal(content.context)}
+        // </ReactMarkdown>
         <div className="">{content.context}</div>
       )}
     </div>

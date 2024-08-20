@@ -1,5 +1,5 @@
 import { LinkOutlined, ReadOutlined, SyncOutlined } from '@ant-design/icons';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownVis } from '@antv/gpt-vis';
 import { Table, Image, Tag, Tabs, TabsProps, Popover } from 'antd';
 import { Reference } from '@/types/chat';
 import { AutoChart, BackEndChartType, getChartType } from '@/components/chart';
@@ -40,7 +40,7 @@ const basicComponents: MarkdownComponent = {
      * In some cases, tags are nested within code syntax,
      * so it is necessary to extract the tags present in the code block and render them separately.
      */
-    const { context, matchValues } = matchCustomeTagValues(content);
+    // const { context, matchValues } = matchCustomeTagValues(content);
     const lang = className?.replace('language-', '') || 'javascript';
 
     if (lang === 'agent-plans') {
@@ -106,6 +106,7 @@ const basicComponents: MarkdownComponent = {
       }
     }
 
+    console.log(1111111, 'render with gpt-vis');
     return (
       <>
         {!inline ? (
@@ -115,9 +116,10 @@ const basicComponents: MarkdownComponent = {
             {children}
           </code>
         )}
-        <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
+        <MarkdownVis components={{ markdownComponents }}>{matchValues.join('\n')}</MarkdownVis>
+        {/* <ReactMarkdown components={{ markdownComponents }} rehypePlugins={[rehypeRaw]}>
           {matchValues.join('\n')}
-        </ReactMarkdown>
+        </ReactMarkdown> */}
       </>
     );
   },

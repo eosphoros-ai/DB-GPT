@@ -1,6 +1,6 @@
 import { CaretRightOutlined, CheckOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { Collapse } from 'antd';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownVis } from '@antv/gpt-vis';
 import markdownComponents from './config';
 
 interface Props {
@@ -36,7 +36,7 @@ function AgentPlans({ data }: Props) {
               )}
             </div>
           ),
-          children: <ReactMarkdown components={markdownComponents}>{item.markdown}</ReactMarkdown>,
+          children: <MarkdownVis components={markdownComponents}>{item.markdown}</MarkdownVis>,
         };
       })}
     />

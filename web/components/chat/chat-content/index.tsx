@@ -1,6 +1,6 @@
 import { PropsWithChildren, ReactNode, memo, useContext, useMemo } from 'react';
 import { CheckOutlined, ClockCircleOutlined, CloseOutlined, CodeOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownVis } from '@antv/gpt-vis';
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import rehypeRaw from 'rehype-raw';
 import classNames from 'classnames';
@@ -134,6 +134,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
 
   if (!isRobot && !context) return <div className="h-12"></div>;
 
+  console.log(22222, 'render');
   return (
     <div
       className={classNames('relative flex flex-wrap w-full p-2 md:p-4 rounded-xl break-words', {
@@ -159,9 +160,9 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
         )}
         {/* Markdown */}
         {isRobot && typeof context === 'string' && (
-          <ReactMarkdown components={{ ...markdownComponents, ...extraMarkdownComponents }} rehypePlugins={[rehypeRaw]}>
+          <MarkdownVis components={{ ...markdownComponents, ...extraMarkdownComponents }}>
             {formatMarkdownVal(value)}
-          </ReactMarkdown>
+          </MarkdownVis>
         )}
         {!!relations?.length && (
           <div className="flex flex-wrap mt-2">

@@ -1,4 +1,4 @@
-import ReactMarkdown from 'react-markdown';
+import { MarkdownVis } from '@antv/gpt-vis';
 import markdownComponents from './config';
 import { renderModelIcon } from '../header/model-selector';
 import { SwapRightOutlined } from '@ant-design/icons';
@@ -28,7 +28,7 @@ function AgentMessages({ data }: Props) {
             </div>
           </div>
           <div className="whitespace-normal text-sm">
-            <ReactMarkdown components={markdownComponents}>{item.markdown}</ReactMarkdown>
+            <MarkdownVis components={markdownComponents}>{item.markdown}</MarkdownVis>
           </div>
         </div>
       ))}
