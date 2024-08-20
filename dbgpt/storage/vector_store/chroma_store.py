@@ -1,7 +1,6 @@
 """Chroma vector store."""
 import logging
 import os
-from abc import abstractmethod
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from chromadb import PersistentClient
@@ -12,7 +11,6 @@ from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
-
 from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
 from .filters import FilterOperator, MetadataFilters
 
@@ -92,7 +90,6 @@ class ChromaStore(VectorStoreBase):
             metadata=collection_metadata,
         )
 
-    @abstractmethod
     def get_config(self) -> ChromaVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config

@@ -66,7 +66,7 @@ class TuGraphStore(GraphStoreBase):
         self._username = os.getenv("TUGRAPH_USERNAME") or config.username
         self._password = os.getenv("TUGRAPH_PASSWORD") or config.password
         self._summary_enabled = (
-            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED")
+            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", '').lower() == 'true'
             or config.summary_enabled
         )
         self._plugin_names = config.plugin_names
@@ -121,12 +121,7 @@ class TuGraphStore(GraphStoreBase):
                 self.conn.run(gql)
     def _create_schema(self):
         if not self._check_label("vertex"):
-            create_vertex_gql = (
-                    f"CALL db.createLabel("
-                    f"'vertex', '{self._node_label}', "
-                    f"'id', ['id',string,false])"
-                )
-            if(self._summary_enabled):
+            if self._summary_enabled:
                 create_vertex_gql = (
                         f"CALL db.createLabel("
                         f"'vertex', '{self._node_label}', "
@@ -137,8 +132,15 @@ class TuGraphStore(GraphStoreBase):
                         f"['_weight',double,true],"
                         f"['description',string,true])"
                     )   
-            self.conn.run(create_vertex_gql)
-            self._add_vertex_index('_community_id')
+                self.conn.run(create_vertex_gql)
+                self._add_vertex_index('_community_id')
+            else:
+                create_vertex_gql = (
+                    f"CALL db.createLabel("
+                    f"'vertex', '{self._node_label}', "
+                    f"'id', ['id',string,false])"
+                )
+                self.conn.run(create_vertex_gql)
 
         if not self._check_label("edge"):
             create_edge_gql = f"""CALL db.createLabel(

@@ -1,14 +1,12 @@
 """Weaviate vector store."""
 import logging
 import os
-from abc import abstractmethod
 from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
-
 from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
 from .filters import MetadataFilters
 
@@ -81,7 +79,6 @@ class WeaviateStore(VectorStoreBase):
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
 
-    @abstractmethod
     def get_config(self) -> WeaviateVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config

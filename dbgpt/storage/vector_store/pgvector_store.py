@@ -1,7 +1,6 @@
 """Postgres vector store."""
 
 import logging
-from abc import abstractmethod
 from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -77,7 +76,6 @@ class PGVectorStore(VectorStoreBase):
             connection_string=self.connection_string,
         )
 
-    @abstractmethod
     def get_config(self) -> PGVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
