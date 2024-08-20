@@ -36,7 +36,7 @@ const Playground: NextPage = () => {
     },
     {
       value: 'all',
-      label: '全部应用',
+      label: t('all_apps'),
     },
     {
       value: 'collected',

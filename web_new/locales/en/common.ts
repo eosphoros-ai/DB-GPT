@@ -228,6 +228,7 @@ export const CommonEn = {
   construct: ' Construct App',
   chat_online: 'Chat',
   recommend_apps: 'Recommend',
+  all_apps: 'All',
   latest_apps: 'Latest',
   my_collected_apps: 'Collected',
   collect_success: 'Collect success',

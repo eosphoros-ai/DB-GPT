@@ -236,6 +236,7 @@ export const CommonZh: Resources['translation'] = {
   construct: '应用管理',
   chat_online: '在线对话',
   recommend_apps: '热门推荐',
+  all_apps: '热门推荐',
   latest_apps: '最新应用',
   my_collected_apps: '我的收藏',
   collect_success: '收藏成功',
