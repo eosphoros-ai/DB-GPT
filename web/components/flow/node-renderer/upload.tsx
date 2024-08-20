@@ -25,7 +25,6 @@ export const RenderUpload = (params: Props) => {
       urlList.current.pop();
     }
     urlList.current.push(url)
-    console.log('上传数据'+urlList.current);
     
     onChange(urlList.current.toString())
   }
@@ -45,7 +44,6 @@ export const RenderUpload = (params: Props) => {
     onChange(info) {
       setUploading(true)
       if (info.file.status !== 'uploading') {
-        console.log(info.file, info.fileList);
       }
       if (info.file.status === 'done') {
         setUploading(false)
