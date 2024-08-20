@@ -16,7 +16,6 @@ REQ = TypeVar("REQ")
 # The response schema type
 RES = TypeVar("RES")
 
-
 QUERY_SPEC = Union[REQ, Dict[str, Any]]
 
 
@@ -286,10 +285,16 @@ class BaseDao(Generic[T, REQ, RES]):
             else model_to_dict(query_request)
         )
         for key, value in query_dict.items():
-            if value is not None:
-                if isinstance(value, (list, tuple, dict, set)):
+            if value is not None and hasattr(model_cls, key):
+                if isinstance(value, list):
+                    if len(value) > 0:
+                        query = query.filter(getattr(model_cls, key).in_(value))
+                    else:
+                        continue
+                elif isinstance(value, (tuple, dict, set)):
                     continue
-                query = query.filter(getattr(model_cls, key) == value)
+                else:
+                    query = query.filter(getattr(model_cls, key) == value)
 
         if desc_order_column:
             query = query.order_by(desc(getattr(model_cls, desc_order_column)))

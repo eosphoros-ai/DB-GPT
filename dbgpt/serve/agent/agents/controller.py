@@ -33,6 +33,7 @@ from dbgpt.app.dbgpt_server import system_app
 from dbgpt.app.scene.base import ChatScene
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import PromptTemplate
+from dbgpt.core.awel.flow.flow_factory import FlowCategory
 from dbgpt.core.interface.message import StorageConversation
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
@@ -222,14 +223,11 @@ class MultiAgents(BaseComponent, ABC):
                 )
             )
 
-        is_agent_flow = True
-        if TeamMode.AWEL_LAYOUT.value == gpt_app.team_mode:
-            from dbgpt.agent import AWELTeamContext
-
-            team_context: AWELTeamContext = gpt_app.team_context
-            if team_context.flow_category == "chat_flow":
-                is_agent_flow = False
-        if not is_agent_flow:
+        if (
+            TeamMode.AWEL_LAYOUT.value == gpt_app.team_mode
+            and gpt_app.team_context.flow_category == FlowCategory.CHAT_FLOW
+        ):
+            team_context = gpt_app.team_context
             from dbgpt.core.awel import CommonLLMHttpRequestBody
 
             flow_req = CommonLLMHttpRequestBody(
