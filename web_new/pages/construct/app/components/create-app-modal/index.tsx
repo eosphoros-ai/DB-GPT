@@ -6,6 +6,7 @@ import classNames from 'classnames';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import styles from './styles.module.css';
 
@@ -73,6 +74,7 @@ const CreateAppModal: React.FC<{
   refresh?: any;
   type?: 'add' | 'edit';
 }> = ({ open, onCancel, type = 'add', refresh }) => {
+  const { t } = useTranslation();
   const appInfo = JSON.parse(localStorage.getItem('new_app_info') || '{}');
   const { message } = App.useApp();
   const [form] = Form.useForm();
@@ -115,14 +117,14 @@ const CreateAppModal: React.FC<{
             const [, res] = await apiInterceptors(getAppList({}));
             const curApp = res?.app_list?.find((item) => item.app_code === appInfo?.app_code);
             localStorage.setItem('new_app_info', JSON.stringify({ ...curApp, isEdit: true }));
-            message.success('更新成功');
+            message.success(t('Update_successfully'));
           } else {
-            message.success('创建成功');
+            message.success(t('Create_successfully'));
             localStorage.setItem('new_app_info', JSON.stringify(data));
             router.push(`/construct/app/extra`);
           }
         } else {
-          message.error(type === 'edit' ? '更新失败' : '创建失败');
+          message.error(type === 'edit' ? t('Update_failure') : t('Create_failure'));
         }
         await refresh?.();
         onCancel();
@@ -150,7 +152,7 @@ const CreateAppModal: React.FC<{
     >
       <Modal
         className={styles['create-app-modal-container']}
-        title="创建应用"
+        title={t('create_app')}
         width={900}
         open={open}
         onOk={async () => {
@@ -177,14 +179,14 @@ const CreateAppModal: React.FC<{
                 app_describe: appInfo?.app_describe,
               }}
             >
-              <Form.Item label="工作模式" name="team_mode" required rules={[{ required: true, message: '请选择工作模式' }]}>
+              <Form.Item label={t('team_modal')} name="team_mode" required rules={[{ required: true, message: t('Please_input_the_work_modal') }]}>
                 <WorkModeSelect disable={type === 'edit'} options={data || []} />
               </Form.Item>
-              <Form.Item label="应用名称：" name="app_name" required rules={[{ required: true, message: '请输入应用名称' }]}>
-                <Input placeholder="请输入应用名称" autoComplete="off" className="h-8" />
+              <Form.Item label={`${t('app_name')}：`} name="app_name" required rules={[{ required: true, message: t('input_app_name') }]}>
+                <Input placeholder={t('input_app_name')} autoComplete="off" className="h-8" />
               </Form.Item>
-              <Form.Item label="描述：" name="app_describe" required rules={[{ required: true, message: '请输入应用描述' }]}>
-                <Input.TextArea autoComplete="off" placeholder="请输入应用描述" autoSize={{ minRows: 2.5 }} />
+              <Form.Item label={`${t('Description')}：`} name="app_describe" required rules={[{ required: true, message: t('Please_input_the_description') }]}>
+                <Input.TextArea autoComplete="off" placeholder={t('Please_input_the_description')} autoSize={{ minRows: 2.5 }} />
               </Form.Item>
               {/* <Form.Item label="应用图标：" name="app_icon" valuePropName="fileList">
               <Upload listType="picture-card">

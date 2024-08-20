@@ -144,14 +144,14 @@ export default function DocUploadForm(props: IProps) {
         <Form.Item<FieldType> label={`${t('Text')}:`} name="text" rules={[{ required: true, message: t('Please_input_the_description') }]}>
           <TextArea rows={4} />
         </Form.Item>
-        <Form.Item<FieldType> label="关联问题:">
+        <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
           <Form.List name="questions">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name }, index) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
                     <Form.Item label="" name={[name, 'question']} className="grow">
-                      <Input placeholder="请输入问题" />
+                      <Input placeholder={t('input_question')} />
                     </Form.Item>
                     <Form.Item>
                       <MinusCircleOutlined
@@ -171,7 +171,7 @@ export default function DocUploadForm(props: IProps) {
                     block
                     icon={<PlusOutlined />}
                   >
-                    添加问题
+                    {t('Add_problem')}
                   </Button>
                 </Form.Item>
               </>
@@ -195,14 +195,14 @@ export default function DocUploadForm(props: IProps) {
         >
           <Input className="mb-5  h-12" placeholder={t('Please_input_the_Web_Page_URL')} />
         </Form.Item>
-        <Form.Item<FieldType> label="关联问题:">
+        <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
           <Form.List name="questions">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name }, index) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
                     <Form.Item label="" name={[name, 'question']} className="grow">
-                      <Input placeholder="请输入问题" />
+                      <Input placeholder={t('input_question')} />
                     </Form.Item>
                     <Form.Item>
                       <MinusCircleOutlined
@@ -222,7 +222,7 @@ export default function DocUploadForm(props: IProps) {
                     block
                     icon={<PlusOutlined />}
                   >
-                    添加问题
+                    {t('Add_problem')}
                   </Button>
                 </Form.Item>
               </>
@@ -239,31 +239,31 @@ export default function DocUploadForm(props: IProps) {
         <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
           <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
         </Form.Item>
-        <Form.Item<FieldType> label="文档地址" name="webPageUrl" rules={[{ required: true, message: '请输入文档地址' }]}>
-          <Input className="mb-5  h-12" placeholder="请输入文档地址" />
+        <Form.Item<FieldType> label={t('document_url')} name="webPageUrl" rules={[{ required: true, message: t('input_document_url') }]}>
+          <Input className="mb-5  h-12" placeholder={t('input_document_url')} />
         </Form.Item>
         <Form.Item<FieldType>
-          label="文档token"
+          label={t('document_token')}
           name="doc_token"
           tooltip={
             <>
-              请先获取团队知识库token，token获取
+              {t('Get_token')}
               <Typography.Link href="https://yuque.antfin-inc.com/lark/openapi/dh8zp4" target="_blank">
-                参考链接
+                {t('Reference_link')}
               </Typography.Link>
             </>
           }
         >
-          <Input className="mb-5  h-12" placeholder="请输入文档token" />
+          <Input className="mb-5  h-12" placeholder={t('input_document_token')} />
         </Form.Item>
-        <Form.Item<FieldType> label="关联问题:">
+        <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
           <Form.List name="questions">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name }, index) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
                     <Form.Item label="" name={[name, 'question']} className="grow">
-                      <Input placeholder="请输入问题" />
+                      <Input placeholder={t('input_question')} />
                     </Form.Item>
                     <Form.Item>
                       <MinusCircleOutlined
@@ -283,7 +283,7 @@ export default function DocUploadForm(props: IProps) {
                     block
                     icon={<PlusOutlined />}
                   >
-                    添加问题
+                    {t('Add_problem')}
                   </Button>
                 </Form.Item>
               </>
@@ -341,7 +341,7 @@ export default function DocUploadForm(props: IProps) {
                     block
                     icon={<PlusOutlined />}
                   >
-                    添加问题
+                    {t('Add_problem')}
                   </Button>
                 </Form.Item>
               </>

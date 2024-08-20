@@ -118,7 +118,7 @@ function ChatDefault() {
               }}
             />
             <span className="flex items-center text-gray-500 gap-1 dark:text-slate-300">
-              <span>没有心仪的应用？去</span>
+              <span>{t('app_in_mind')}</span>
               <span
                 className="flex items-center cursor-pointer"
                 onClick={() => {
@@ -126,15 +126,15 @@ function ChatDefault() {
                 }}
               >
                 <Image key="image_explore" src={'/pictures/explore_active.png'} alt="construct_image" width={24} height={24} />
-                <span className="text-default">探索广场</span>
+                <span className="text-default">{t('explore')}</span>
               </span>
-              <span>发现更多</span>
+              <span>{t('Discover_more')}</span>
             </span>
           </div>
           <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} type={activeKey as any} />
           {helps && helps.length > 0 && (
             <div>
-              <h2 className="font-medium text-xl my-4">我可以帮您：</h2>
+              <h2 className="font-medium text-xl my-4">{t('help')}</h2>
               <div className="flex justify-start gap-4">
                 {helps.map((help) => (
                   <span

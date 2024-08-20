@@ -24,7 +24,7 @@ import 'moment/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useContext, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type SettingItem = {
@@ -405,6 +405,12 @@ function SideBar() {
   // useEffect(() => {
   //   queryDialogueList();
   // }, [queryDialogueList]);
+
+  useEffect(() => {
+    const language = i18n.language;
+    if (language === 'zh') moment.locale('zh-cn');
+    if (language === 'en') moment.locale('en');
+  }, [])
 
   // useEffect(() => {
   //   setLogo(mode === 'dark' ? '/WHITE_LOGO.png' : '/logo_zh_latest.png');

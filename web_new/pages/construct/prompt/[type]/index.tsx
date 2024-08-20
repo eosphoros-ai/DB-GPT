@@ -17,6 +17,7 @@ import MarkdownIt from 'markdown-it';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import 'react-markdown-editor-lite/lib/index.css';
 import styles from '../styles.module.css';
 
@@ -78,6 +79,7 @@ const TemperatureItem: React.FC<{ value?: any; onChange?: (value: any) => void }
 const AddOrEditPrompt: React.FC = () => {
   const router = useRouter();
   const { type = '' } = router.query;
+  const { t } = useTranslation();
 
   const { modelList, model, mode } = useContext(ChatContext);
   const theme = mode === 'dark' ? githubDarkTheme : githubLightTheme;
@@ -172,7 +174,7 @@ const AddOrEditPrompt: React.FC = () => {
     {
       manual: true,
       onSuccess: () => {
-        message.success(`${type === 'add' ? '新增' : '更新'}成功`);
+        message.success(`${type === 'add' ? t('Add') : t('update')}${t('success')}`);
         router.replace('/construct/prompt');
       },
     },
@@ -205,11 +207,11 @@ const AddOrEditPrompt: React.FC = () => {
     }
     const midVals = midForm.getFieldsValue();
     if (!Object.values(midVals).every((value) => !!value)) {
-      message.warning('请填写完整的输入参数');
+      message.warning(t('Please_complete_the_input_parameters'));
       return;
     }
     if (!bottomForm.getFieldValue('user_input')) {
-      message.warning('请填写用户输入内容');
+      message.warning(t('Please_fill_in_the_user_input'));
       return;
     }
     topForm.validateFields().then(async (values) => {
@@ -358,11 +360,11 @@ const AddOrEditPrompt: React.FC = () => {
               router.replace('/construct/prompt');
             }}
           />
-          <span className="font-medium text-sm">{type === 'add' ? '新增' : '编辑'} Prompt</span>
+          <span className="font-medium text-sm">{type === 'add' ? t('Add') : t('Edit')} Prompt</span>
         </Space>
         <Space>
           <Button type="primary" onClick={operateFn} loading={operateLoading}>
-            {type === 'add' ? '保存' : '更新'}
+            {type === 'add' ? t('save') : t('update')}
           </Button>
         </Space>
       </header>
@@ -397,13 +399,13 @@ const AddOrEditPrompt: React.FC = () => {
           <Card className="mb-4">
             <Form form={topForm}>
               <div className="flex w-full gap-1 justify-between">
-                <Form.Item label="Type" name="prompt_type" className="w-2/5" rules={[{ required: true, message: '请选择类型' }]}>
-                  <Select options={TypeOptions} placeholder="请选择类型" allowClear />
+                <Form.Item label="Type" name="prompt_type" className="w-2/5" rules={[{ required: true, message: t('select_type') }]}>
+                  <Select options={TypeOptions} placeholder={t('select_type')} allowClear />
                 </Form.Item>
-                <Form.Item name="target" className="w-3/5" rules={[{ required: true, message: '请选择场景' }]}>
+                <Form.Item name="target" className="w-3/5" rules={[{ required: true, message: t('select_scene') }]}>
                   <Select
                     loading={loading}
-                    placeholder="请选择场景"
+                    placeholder={t('select_scene')}
                     allowClear
                     showSearch
                     onChange={async (value) => {
@@ -423,24 +425,24 @@ const AddOrEditPrompt: React.FC = () => {
                   <Input disabled />
                 </Form.Item>
               )}
-              <Form.Item label="Name" name="prompt_name" className="m-0" rules={[{ required: true, message: '请输入prompt名称' }]}>
-                <Input placeholder="请输入prompt名称" />
+              <Form.Item label="Name" name="prompt_name" className="m-0" rules={[{ required: true, message: `${t('Please_Input')}prompt${t('Prompt_Info_Name')}` }]}>
+                <Input placeholder={`${t('Please_Input')}prompt${t('Prompt_Info_Name')}`} />
               </Form.Item>
             </Form>
           </Card>
-          <Card title="输入参数" className="mb-4">
+          <Card title={t('input_parameter')} className="mb-4">
             <Form form={midForm}>
               {variables.length > 0 &&
                 variables
                   .filter((item) => item !== 'out_schema')
                   .map((item) => (
-                    <Form.Item key={item} label={item} name={item} rules={[{ message: `请输入${item}` }]}>
-                      <Input placeholder="请输入" />
+                    <Form.Item key={item} label={item} name={item} rules={[{ message: `${t('Please_Input')}${item}` }]}>
+                      <Input placeholder={t('Please_Input')} />
                     </Form.Item>
                   ))}
             </Form>
           </Card>
-          <Card title="输出结构" className="flex flex-col flex-1">
+          <Card title={t('output_structure')} className="flex flex-col flex-1">
             <JsonView
               style={{ ...theme, width: '100%', padding: 4 }}
               className={classNames({
@@ -453,34 +455,34 @@ const AddOrEditPrompt: React.FC = () => {
             />
             <div className="flex flex-col mt-4">
               <Form form={bottomForm} initialValues={{ model: model, temperature: 0.5, prompt_language: 'en' }}>
-                <Form.Item label="模型" name="model">
+                <Form.Item label={t('model')} name="model">
                   <Select className="h-8 rounded-3xl" options={modelOptions} allowClear showSearch />
                 </Form.Item>
-                <Form.Item label="温度" name="temperature">
+                <Form.Item label={t('temperature')} name="temperature">
                   <TemperatureItem />
                 </Form.Item>
-                <Form.Item label="语言" name="prompt_language">
+                <Form.Item label={t('language')} name="prompt_language">
                   <Select
                     options={[
                       {
-                        label: '英文',
+                        label: t('English'),
                         value: 'en',
                       },
                       {
-                        label: '中文',
+                        label: t('Chinese'),
                         value: 'zh',
                       },
                     ]}
                   />
                 </Form.Item>
-                <Form.Item label="用户输入" name="user_input">
-                  <Input placeholder="请输入" />
+                <Form.Item label={t('User_input')} name="user_input">
+                  <Input placeholder={t('Please_Input')} />
                 </Form.Item>
               </Form>
             </div>
             <Space className="flex justify-between">
               <Button type="primary" onClick={onLLMTest} loading={llmLoading}>
-                LLM测试
+                {t('LLM_test')}
               </Button>
               <Button
                 type="primary"
@@ -491,7 +493,7 @@ const AddOrEditPrompt: React.FC = () => {
                   await run();
                 }}
               >
-                输出验证
+                {t('Output_verification')}
               </Button>
             </Space>
           </Card>

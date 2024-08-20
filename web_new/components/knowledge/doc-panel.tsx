@@ -46,13 +46,14 @@ const { confirm } = Modal;
 
 const SyncContent: React.FC<{ name: string; id: number }> = ({ name, id }) => {
   const [syncLoading, setSyncLoading] = useState<boolean>(false);
+  const { t } = useTranslation();
 
   const handleSync = async (spaceName: string, id: number) => {
     setSyncLoading(true);
     const res = await apiInterceptors(syncDocument(spaceName, { doc_ids: [id] }));
     setSyncLoading(false);
     if (res[2]?.success) {
-      message.success('同步已发起，请稍后');
+      message.success(t('Synchronization_initiated'));
     }
   };
 
@@ -66,7 +67,7 @@ const SyncContent: React.FC<{ name: string; id: number }> = ({ name, id }) => {
       }}
     >
       <SyncOutlined />
-      <span>同步</span>
+      <span>{t('Sync')}</span>
     </Space>
   );
 };
@@ -258,7 +259,7 @@ export default function DocPanel(props: IProps) {
       manual: true,
       onSuccess: async (res) => {
         if (res.data.success) {
-          message.success('编辑成功');
+          message.success(t('Edit_Success'));
           await fetchDocuments();
           setEditOpen(false);
         } else {
@@ -289,7 +290,7 @@ export default function DocPanel(props: IProps) {
               }}
               loading={isLoading}
             >
-              刷新状态
+              {t('Refresh_status')}
             </Button>
           </div>
         </div>
@@ -309,11 +310,11 @@ export default function DocPanel(props: IProps) {
                 <Button
                   onClick={async () => {
                     await apiInterceptors(syncDocument(space.name, { doc_ids: [] }));
-                    message.success('同步已发起，请稍后');
+                    message.success(t('Synchronization_initiated'));
                   }}
                   className="border"
                 >
-                  一键同步
+                  {t('synchronization')}
                 </Button>
               </div>
               <Spin spinning={searchLoading}>
@@ -346,12 +347,12 @@ export default function DocPanel(props: IProps) {
                                           }}
                                         >
                                           <EyeOutlined />
-                                          <span>详情</span>
+                                          <span>{t('detail')}</span>
                                         </Space>
                                       ),
                                     },
                                     {
-                                      key: 'sync',
+                                      key: `${t('Sync')}`,
                                       label: <SyncContent name={space.name} id={document.id} />,
                                     },
                                     {
@@ -364,7 +365,7 @@ export default function DocPanel(props: IProps) {
                                           }}
                                         >
                                           <EditOutlined />
-                                          <span>编辑</span>
+                                          <span>{t('Edit')}</span>
                                         </Space>
                                       ),
                                     },
@@ -377,7 +378,7 @@ export default function DocPanel(props: IProps) {
                                           }}
                                         >
                                           <DeleteOutlined />
-                                          <span>删除</span>
+                                          <span>{t('Delete')}</span>
                                         </Space>
                                       ),
                                     },
@@ -453,7 +454,7 @@ export default function DocPanel(props: IProps) {
           space.vector_type === 'KnowledgeGraph' && (<Button size="middle" className="flex items-center mx-2" icon={<DeploymentUnitOutlined />} onClick={openGraphVisualPage}>{t('View_Graph')}</Button>)
         }
         <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
-          召回测试
+          {t('Recall_test')}
         </Button>
       </Space>
       <Divider />
@@ -461,13 +462,13 @@ export default function DocPanel(props: IProps) {
       <ArgumentsModal space={space} argumentsShow={argumentsShow} setArgumentsShow={setArgumentsShow} />
       {/* 编辑弹窗 */}
       <Modal
-        title="编辑文档"
+        title={t('Edit_document')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         destroyOnClose={true}
         footer={[
           <Button key="back" onClick={() => setEditOpen(false)}>
-            取消
+            {t('cancel')}
           </Button>,
           <Button
             key="submit"
@@ -478,7 +479,7 @@ export default function DocPanel(props: IProps) {
               await editChunkRun(values);
             }}
           >
-            确认
+            {t('verify')}
           </Button>,
         ]}
       >
@@ -493,10 +494,10 @@ export default function DocPanel(props: IProps) {
             }),
           }}
         >
-          <Form.Item label="文档名" name="doc_name">
+          <Form.Item label={t('Document_name')} name="doc_name">
             <Input />
           </Form.Item>
-          <Form.Item label="关联问题">
+          <Form.Item label={t('Correlation_problem')}>
             <Form.List name="questions">
               {(fields, { add, remove }) => (
                 <>
@@ -523,7 +524,7 @@ export default function DocPanel(props: IProps) {
                       block
                       icon={<PlusOutlined />}
                     >
-                      添加问题
+                      {t('Add_problem')}
                     </Button>
                   </Form.Item>
                 </>
