@@ -5,6 +5,7 @@ import { useRequest } from 'ahooks';
 import { Form, InputNumber, Select, Tooltip, Typography } from 'antd';
 import cls from 'classnames';
 import React, { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface TeamContext {
   scene_name?: string;
@@ -27,6 +28,7 @@ const NativeApp: React.FC<{
   classNames?: string;
   initValue?: InitValueProps;
 }> = ({ classNames, initValue, updateData }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm<FormProps>();
   const chatScene = Form.useWatch('chat_scene', form);
   const bindValue = Form.useWatch('bind_value', form);
@@ -126,24 +128,24 @@ const NativeApp: React.FC<{
   return (
     <div className={cls(classNames)}>
       <Form<FormProps> form={form} autoComplete="off" style={{ width: '100%' }} labelCol={{ span: 3 }} wrapperCol={{ span: 21 }}>
-        <Form.Item label="应用类型" tooltip name="chat_scene">
+        <Form.Item label={t('native_type')} tooltip name="chat_scene">
           <Select
             className="w-1/2"
             options={appTypeOptions}
-            placeholder="请选择应用类型"
+            placeholder={t('app_type_select')}
             onChange={() => form.setFieldsValue({ bind_value: undefined })}
           />
         </Form.Item>
         {chatScene !== 'chat_excel' && (
-          <Form.Item label="参数" name="bind_value">
-            <Select placeholder="请选择参数" allowClear className="w-1/2" options={options} loading={paramsLoading} />
+          <Form.Item label={t('Arguments')} name="bind_value">
+            <Select placeholder={t('please_select_param')} allowClear className="w-1/2" options={options} loading={paramsLoading} />
           </Form.Item>
         )}
-        <Form.Item label="模型" tooltip name="model">
-          <Select placeholder="请选择模型" allowClear options={data?.[1]?.[1]?.map((item) => ({ label: item, value: item }))} className="w-1/2" />
+        <Form.Item label={t("model")} tooltip name="model">
+          <Select placeholder={t("please_select_model")} allowClear options={data?.[1]?.[1]?.map((item) => ({ label: item, value: item }))} className="w-1/2" />
         </Form.Item>
-        <Form.Item label="温度" tooltip name="temperature">
-          <InputNumber className="w-1/5 h-8" max={1} min={0} step={0.1} placeholder="请输入温度值" />
+        <Form.Item label={t("temperature")} tooltip name="temperature">
+          <InputNumber className="w-1/5 h-8" max={1} min={0} step={0.1} placeholder={t('please_input_temperature')} />
         </Form.Item>
       </Form>
     </div>

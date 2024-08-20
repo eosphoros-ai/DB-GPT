@@ -7,6 +7,7 @@ import { App, Button, Space, Spin } from 'antd';
 import classNames from 'classnames';
 import { useRouter } from 'next/router';
 import React, { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import CreateAppModal from '../components/create-app-modal';
 import AwelLayout from './components/AwelLayout';
@@ -15,10 +16,11 @@ import RecommendQuestions from './components/RecommendQuestions';
 import AutoPlan from './components/auto-plan';
 import styles from './styles.module.css';
 
+
 const ExtraAppInfo: React.FC = () => {
   // 获取当前应用信息
   const curApp = JSON.parse(localStorage.getItem('new_app_info') || '{}');
-
+  const { t } = useTranslation();
   const { message } = App.useApp();
   const router = useRouter();
 
@@ -44,10 +46,10 @@ const ExtraAppInfo: React.FC = () => {
       onSuccess: (data) => {
         const [, res] = data;
         if (res) {
-          message.success('更新成功');
+          message.success(t('update_success'));
           router.replace('/construct/app');
         } else {
-          message.error('更新失败');
+          message.error(t('update_failed'));
         }
       },
     },
@@ -88,7 +90,7 @@ const ExtraAppInfo: React.FC = () => {
               <EditOutlined className="cursor-pointer hover:text-[#0c75fc]" onClick={() => setOpen(true)} />
             </Space>
             <Button type="primary" onClick={submit} loading={createLoading}>
-              {curApp?.isEdit ? '更新' : '保存'}
+              {curApp?.isEdit ? t('update') : t('save')}
             </Button>
           </header>
           <div className="flex flex-1 flex-col py-12 max-h-full overflow-y-auto">

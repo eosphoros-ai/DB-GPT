@@ -8,6 +8,7 @@ import { concat } from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { agentIcon, resourceTypeIcon } from '../../config';
 import DetailsCard from './DetailsCard';
+import { useTranslation } from 'react-i18next';
 
 interface AgentSelectProps {
   agents: IAgent[];
@@ -18,6 +19,7 @@ interface AgentSelectProps {
 }
 // 自定义agent选择
 const AgentSelect: React.FC<AgentSelectProps> = ({ value, onChange, agents, selectedTab, setSelectedTab }) => {
+  const { t } = useTranslation();
   return (
     <Checkbox.Group
       className="grid grid-cols-4 gap-4"
@@ -151,7 +153,7 @@ const AutoPlan: React.FC<{
   return (
     <div className={cls(classNames)}>
       <Form form={form} style={{ width: '100%' }} labelCol={{ span: 3 }} wrapperCol={{ span: 21 }}>
-        <Form.Item label="选择agent" name="agent_name" required tooltip rules={[{ required: true, message: '请先选择agent' }]}>
+        <Form.Item label={`${t('Choose') agent}`} name="agent_name" required tooltip rules={[{ required: true, message: t('please_choose') + ' agent' }]}>
           <AgentSelect agents={data?.[0]?.[1] || []} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         </Form.Item>
       </Form>

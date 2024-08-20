@@ -3,6 +3,7 @@ import { useRequest } from 'ahooks';
 import { Form, Select, Switch } from 'antd';
 import cls from 'classnames';
 import React, { useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ResourceContent: React.FC<{
   uid: string;
@@ -21,7 +22,7 @@ const ResourceContent: React.FC<{
   const type = Form.useWatch('type', form);
   const isDynamic = Form.useWatch('is_dynamic', form);
   const value = Form.useWatch('value', form);
-
+  const { t } = useTranslation();
   // 资源类型选项
   const options = useMemo(() => {
     return resourceTypeOptions?.filter((item) => item.value !== 'all') || [];
@@ -94,8 +95,8 @@ const ResourceContent: React.FC<{
       // );
     }
     return (
-      <Form.Item label="参数" name="value" required>
-        <Select placeholder="请选择参数" options={dynamicOptions} loading={loading} className="w-3/5" allowClear />
+      <Form.Item label={t('resource_value')} name="value" required>
+        <Select placeholder={t('please_select_param')} options={dynamicOptions} loading={loading} className="w-3/5" allowClear />
       </Form.Item>
     );
   };
@@ -117,7 +118,7 @@ const ResourceContent: React.FC<{
           ...initValue,
         }}
       >
-        <Form.Item label="资源类型" name="type">
+        <Form.Item label={t('resource_type')} name="type">
           <Select
             className="w-2/5"
             options={options}
@@ -126,7 +127,7 @@ const ResourceContent: React.FC<{
             }}
           />
         </Form.Item>
-        <Form.Item label="动态" name="is_dynamic">
+        <Form.Item label={t('resource_dynamic')} name="is_dynamic">
           <Switch style={{ background: isDynamic ? '#1677ff' : '#ccc' }} />
         </Form.Item>
         {/* 如果选择了动态参数这里就不需要参数了 */}

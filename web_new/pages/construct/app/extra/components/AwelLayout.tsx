@@ -5,8 +5,10 @@ import PreviewFlow from '@/components/flow/preview-flow';
 import { useRequest } from 'ahooks';
 import { apiInterceptors, getFlows } from '@/client/api';
 import { IFlowResponse } from '@/types/flow';
+import { useTranslation } from 'react-i18next';
 
 const AwelLayout: React.FC<{ initValue: any; updateData: (data: any) => void; classNames?: string }> = ({ initValue, updateData, classNames }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const flow = Form.useWatch('flow', form);
 
@@ -36,8 +38,8 @@ const AwelLayout: React.FC<{ initValue: any; updateData: (data: any) => void; cl
   return (
     <div className={cls(classNames, 'mb-6')}>
       <Form form={form} style={{ width: '100%' }}>
-        <Form.Item label="选择工作流" name="flow">
-          <Select className="w-1/4" placeholder="请选择工作流" options={flowOptions} allowClear />
+        <Form.Item label={t('select_workflow')} name="flow">
+          <Select className="w-1/4" placeholder={t("please_select_workflow")} options={flowOptions} allowClear />
         </Form.Item>
         {flowData && (
           <div className="w-full h-[600px] mx-auto border-[0.5px] border-dark-gray">

@@ -7,12 +7,12 @@ from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
 
 class ConvFeedbackReasonType(Enum):
-    WRONG_ANSWER = "答案有误"
-    WRONG_SOURCE = "来源有误"
-    OUTDATED_CONTENT = "内容陈旧"
-    UNREAL_CONTENT = "非真实数据"
-    ILLEGAL_CONTENT = "含色情/违法/有害信"
-    OTHERS = "其他"
+    WRONG_ANSWER = "Wrong answer"
+    WRONG_SOURCE = "Wrong source"
+    OUTDATED_CONTENT = "Outdated content"
+    UNREAL_CONTENT = "Data is inaccurate"
+    ILLEGAL_CONTENT = "Harmful content"
+    OTHERS = "Others"
 
     @classmethod
     def to_dict(cls, reason_type):

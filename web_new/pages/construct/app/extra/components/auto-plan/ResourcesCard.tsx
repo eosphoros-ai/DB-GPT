@@ -9,6 +9,7 @@ import { v4 as uuid } from 'uuid';
 
 import { resourceTypeIcon } from '../../config';
 import ResourceContent from './ResourceContent';
+import { useTranslation } from 'react-i18next';
 
 interface ResourceTabProps extends IResource {
   uid?: string;
@@ -23,6 +24,7 @@ const ResourcesCard: React.FC<{ name: string; updateData: (data: any) => void; i
   resourceTypeOptions,
   initValue,
 }) => {
+  const { t } = useTranslation();
   const resources = useRef<ResourceTabProps[]>(initValue || []);
   const [curIcon, setCurIcon] = useState<{ uid: string; icon: string }>({ uid: '', icon: '' });
   const [resourcesTabs, setResourcesTabs] = useState<ResourceTabProps[]>(
@@ -65,7 +67,7 @@ const ResourcesCard: React.FC<{ name: string; updateData: (data: any) => void; i
           type: resourceTypeOptions?.filter((item) => item.value !== 'all')?.[0].value,
           value: '',
           uid,
-          name: `资源${resources.current.length + 1}`,
+          name: t('resource') + ` ${resources.current.length + 1}`,
         },
       ].filter(Boolean),
     );
@@ -81,9 +83,9 @@ const ResourcesCard: React.FC<{ name: string; updateData: (data: any) => void; i
             type: resourceTypeOptions?.filter((item) => item.value !== 'all')?.[0].value,
             value: '',
             uid,
-            name: `资源${prev.length + 1}`,
+            name: t('resource') + ` ${prev.length + 1}`,
           },
-          name: `资源${prev.length + 1}`,
+          name: t('resource') + ` ${prev.length + 1}`,
         },
       ];
     });
@@ -193,7 +195,7 @@ const ResourcesCard: React.FC<{ name: string; updateData: (data: any) => void; i
                 {item.name}
               </Typography.Text>
               <Popconfirm
-                title="您确定要删除吗？"
+                title={t('want_delete')}
                 onConfirm={(e) => {
                   remove(e, item);
                 }}
@@ -209,7 +211,7 @@ const ResourcesCard: React.FC<{ name: string; updateData: (data: any) => void; i
           ))}
         </div>
         <Button className="w-full h-8" type="dashed" block icon={<PlusOutlined />} onClick={addSource}>
-          添加资源
+          {t('add_resource')}
         </Button>
       </div>
       <div className="flex flex-1 ml-6 ">

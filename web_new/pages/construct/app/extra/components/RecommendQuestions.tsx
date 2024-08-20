@@ -2,7 +2,7 @@ import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Switch } from 'antd';
 import cls from 'classnames';
 import React, { useEffect } from 'react';
-
+import { useTranslation } from 'react-i18next';
 import styles from '../styles.module.css';
 
 interface RecommendQuestion {
@@ -20,6 +20,7 @@ const RecommendQuestions: React.FC<{
   formStyle?: string;
   labelCol?: boolean;
 }> = ({ initValue, updateData, classNames, formStyle, labelCol = true }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm<FormRecommendQuestion>();
   const recommendQuestions = Form.useWatch('recommend_questions', form);
 
@@ -38,16 +39,16 @@ const RecommendQuestions: React.FC<{
         wrapperCol={{ span: 21 }}
         {...(labelCol && { labelCol: { span: 3 } })}
       >
-        <Form.Item label="推荐问题">
+        <Form.Item label={t('recommended_questions')}>
           <Form.List name="recommend_questions">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name }, index) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6', formStyle)}>
-                    <Form.Item label={`问题${index + 1}`} name={[name, 'question']} className="grow">
-                      <Input placeholder="请输入推荐问题" />
+                    <Form.Item label={t('question')`${index + 1}`} name={[name, 'question']} className="grow">
+                      <Input placeholder={t('please_input_recommended_questions')} />
                     </Form.Item>
-                    <Form.Item label="是否生效" name={[name, 'valid']}>
+                    <Form.Item label={t('is_effective')} name={[name, 'valid']}>
                       <Switch style={{ background: recommendQuestions?.[index]?.valid ? '#1677ff' : '#ccc' }} />
                     </Form.Item>
                     <Form.Item>
@@ -68,7 +69,7 @@ const RecommendQuestions: React.FC<{
                     block
                     icon={<PlusOutlined />}
                   >
-                    添加问题
+                    {t('add_question')}
                   </Button>
                 </Form.Item>
               </>

@@ -8,6 +8,7 @@ import cls from 'classnames';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import ResourcesCard from './ResourcesCard';
+import { useTranslation } from 'react-i18next';
 
 type PromptSelectType = {
   promptList: Record<string, any>[];
@@ -18,7 +19,7 @@ type PromptSelectType = {
 const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList }) => {
   const [showPrompt, setShowPrompt] = useState<boolean>(false);
   const [curPrompt, setCurPrompt] = useState<Record<string, any>>();
-
+  const { t } = useTranslation();
   useEffect(() => {
     if (value) {
       const filterPrompt = promptList?.filter((item) => item.prompt_code === value)[0];
@@ -30,7 +31,7 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
     <div className="w-2/5 flex items-center gap-2">
       <Select
         className="w-1/2"
-        placeholder="请选择提示语"
+        placeholder={t('please_select_prompt')}
         options={promptList}
         fieldNames={{ label: 'prompt_name', value: 'prompt_code' }}
         onChange={(value) => {
@@ -48,7 +49,7 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
           查看详情
         </span>
       )}
-      <Modal title="Prompt详情" open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
+      <Modal title={"Prompt" t('details')} open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
         <MarkDownContext>{curPrompt?.content}</MarkDownContext>
       </Modal>
     </div>
@@ -121,18 +122,18 @@ const DetailsCard: React.FC<{
         form={form}
         initialValues={{ llm_strategy: 'default', ...initVal, llm_strategy_value: initVal?.llm_strategy_value?.split(',') }}
       >
-        <Form.Item label="提示语" name="prompt_template">
+        <Form.Item label={t('Prompt')} name="prompt_template">
           <PromptSelect promptList={promptList} />
         </Form.Item>
-        <Form.Item label="模型策略" required tooltip name="llm_strategy">
-          <Select className="w-1/5" placeholder="请选择模型策略" options={modelStrategyOptions} allowClear />
+        <Form.Item label={t('LLM_strategy')} required tooltip name="llm_strategy">
+          <Select className="w-1/5" placeholder={t('please_select_LLM_strategy')} options={modelStrategyOptions} allowClear />
         </Form.Item>
         {strategy === 'priority' && (
-          <Form.Item label="模型策略参数" required tooltip name="llm_strategy_value">
-            <Select mode="multiple" className="w-2/5" placeholder="请选择模型策略参数" options={data} allowClear />
+          <Form.Item label={t('LLM_strategy_value')} required tooltip name="llm_strategy_value">
+            <Select mode="multiple" className="w-2/5" placeholder={t('please_select_LLM_strategy_value')} options={data} allowClear />
           </Form.Item>
         )}
-        <Form.Item label="可用资源" tooltip name="resources">
+        <Form.Item label={t('available_resources')} tooltip name="resources">
           <ResourcesCard
             resourceTypeOptions={resourceTypeOptions}
             initValue={initVal?.resources?.map((res: any) => {
