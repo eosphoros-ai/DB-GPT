@@ -174,7 +174,15 @@ const Knowledge = () => {
                 description={space.desc}
                 name={space.name}
                 key={space.id}
-                logo="/images/knowledge.png"
+                logo={
+                  space.domain_type === 'FinancialReport'
+                    ? '/models/fin_report.jpg'
+                    : space.vector_type === 'KnowledgeGraph'
+                    ? '/models/knowledge-graph.png'
+                    : space.vector_type === 'FullText'
+                    ? '/models/knowledge-full-text.jpg'
+                    : '/models/knowledge-default.jpg'
+                }
                 RightTop={
                   <InnerDropdown
                     menu={{
@@ -193,13 +201,27 @@ const Knowledge = () => {
                 }
                 rightTopHover={false}
                 Tags={
-                  <div>
+                  <div className='flex item-center'>
                     <Tag>
                       <span className="flex items-center gap-1">
                         <ReadOutlined className="mt-[1px]" />
                         {space.docs}
                       </span>
                     </Tag>
+                    <Tag>
+                      <span className="flex items-center gap-1">
+                        {space.domain_type || 'Normal'}
+                      </span>
+                    </Tag>
+                    {space.vector_type ? (
+                      <Tag>
+                        <span className="flex items-center gap-1">
+                          {space.vector_type}
+                        </span>
+                      </Tag>
+                    ) :
+                    null
+                    }
                   </div>
                 }
                 LeftBottom={
