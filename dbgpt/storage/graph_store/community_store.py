@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Set
 
@@ -40,10 +41,10 @@ class CommunityStore:
 
     async def discover_communities(self) -> Set[str]:
         """Discover unique community IDs."""
-        graph_name = self._graph_store.get_config().name
-        community_ids = set(
-            self._graph_store.stream_query(f"CALL {graph_name}.leiden()")
-        )
+        # graph_name = self._graph_store.get_config().name
+        mg = self._graph_store.query("CALL db.plugin.callPlugin('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)")
+        result = mg.get_vertex("json_node").get_prop('description')
+        community_ids = json.loads(result)
         logger.info(f"Discovered {len(community_ids)} communities.")
         return community_ids
 
@@ -52,14 +53,14 @@ class CommunityStore:
 
         async def process_community(community_id: str) -> Community:
             community = Community(id=community_id, data=Graph())
-            nodes = self._graph_store.stream_query(
+            nodes = self._graph_store.query(
                 f"MATCH (n:{self._graph_store._node_label}) WHERE n._community_id = '{community_id}' RETURN n"
             )
 
             for node in nodes:
                 vertex = node.vertices[0]
                 community.data.upsert_vertex(vertex)
-                edges = self._graph_store.stream_query(
+                edges = self._graph_store.query(
                     f"MATCH (n:{self._graph_store._node_label})-[r:{self._graph_store._edge_label}]->(m:{self._graph_store._node_label}) WHERE n.id = '{vertex.vid}' RETURN r, m"
                 )
                 for edge_result in edges:
