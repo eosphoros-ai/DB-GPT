@@ -148,7 +148,7 @@ function SideBar() {
             label: (
               <div className="py-1 flex justify-between gap-8 ">
                 <span className="flex gap-2 items-center">
-                  <Image src="/images/theme_light.png" alt="english" width={38} height={32}></Image>
+                  <Image src="/pictures/theme_light.png" alt="english" width={38} height={32}></Image>
                   <span>Light</span>
                 </span>
                 <span
@@ -167,7 +167,7 @@ function SideBar() {
             label: (
               <div className="py-1 flex justify-between gap-8 ">
                 <span className="flex gap-2 items-center">
-                  <Image src="/images/theme_dark.png" alt="english" width={38} height={32}></Image>
+                  <Image src="/pictures/theme_dark.png" alt="english" width={38} height={32}></Image>
                   <span>Dark</span>
                 </span>
                 <span
@@ -264,7 +264,7 @@ function SideBar() {
         icon: (
           <Image
             key="image_chat"
-            src={pathname === '/chat' ? '/images/chat_active.png' : '/images/chat.png'}
+            src={pathname === '/chat' ? '/pictures/chat_active.png' : '/pictures/chat.png'}
             alt="chat_image"
             width={40}
             height={40}
@@ -280,7 +280,7 @@ function SideBar() {
         icon: (
           <Image
             key="image_explore"
-            src={pathname === '/' ? '/images/explore_active.png' : '/images/explore.png'}
+            src={pathname === '/' ? '/pictures/explore_active.png' : '/pictures/explore.png'}
             alt="construct_image"
             width={40}
             height={40}
@@ -295,7 +295,7 @@ function SideBar() {
         icon: (
           <Image
             key="image_construct"
-            src={pathname.startsWith('/construct') ? '/images/app_active.png' : '/images/app.png'}
+            src={pathname.startsWith('/construct') ? '/pictures/app_active.png' : '/pictures/app.png'}
             alt="construct_image"
             width={40}
             height={40}
@@ -311,7 +311,7 @@ function SideBar() {
         icon: (
           <Image
             key="image_construct"
-            src={pathname.startsWith('/evaluation') ? '/images/app_active.png' : '/images/app.png'}
+            src={pathname.startsWith('/evaluation') ? '/pictures/app_active.png' : '/pictures/app.png'}
             alt="construct_image"
             width={40}
             height={40}

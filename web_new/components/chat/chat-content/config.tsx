@@ -196,7 +196,7 @@ const basicComponents: MarkdownComponent = {
               Image Loading...
             </Tag>
           }
-          fallback="/images/fallback.png"
+          fallback="/pictures/fallback.png"
         />
       </div>
     );

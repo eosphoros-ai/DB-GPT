@@ -60,7 +60,7 @@ function Models() {
         return MODEL_ICON_DICT[element];
       }
     }
-    return '/images/model.png';
+    return '/pictures/model.png';
   };
 
   return (

@@ -125,7 +125,7 @@ function ChatDefault() {
                   router.push('/');
                 }}
               >
-                <Image key="image_explore" src={'/images/explore_active.png'} alt="construct_image" width={24} height={24} />
+                <Image key="image_explore" src={'/pictures/explore_active.png'} alt="construct_image" width={24} height={24} />
                 <span className="text-default">探索广场</span>
               </span>
               <span>发现更多</span>

@@ -128,7 +128,7 @@ const TabContent: React.FC<{ apps: IApp[]; loading: boolean; refresh: () => void
         ))
       ) : (
         <Empty
-          image={<Image src="/images/empty.png" alt="empty" width={142} height={133} className="w-[142px] h-[133px]" />}
+          image={<Image src="/pictures/empty.png" alt="empty" width={142} height={133} className="w-[142px] h-[133px]" />}
           className="flex justify-center items-center w-full h-full min-h-[200px]"
         />
       )}

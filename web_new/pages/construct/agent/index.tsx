@@ -137,7 +137,7 @@ function Agent() {
           </div>
           {agents.map((agent, index) => (
             <BlurredCard
-              logo="/images/agent.png"
+              logo="/pictures/agent.png"
               onClick={() => {
                 if (agent.storage_url) window.open(agent.storage_url, '_blank');
               }}

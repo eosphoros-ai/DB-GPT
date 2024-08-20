@@ -104,7 +104,7 @@ const ChatButton: React.FC<{
   onClick?: () => void;
   Icon?: React.ReactNode | string;
   text?: string;
-}> = ({ onClick, Icon = '/images/card_chat.png', text = t('start_chat') }) => {
+}> = ({ onClick, Icon = '/pictures/card_chat.png', text = t('start_chat') }) => {
   if (typeof Icon === 'string') {
     Icon = <Image src={Icon as string} alt={Icon as string} width={17} height={15} />;
   }

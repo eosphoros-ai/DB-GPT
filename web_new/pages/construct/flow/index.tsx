@@ -222,7 +222,7 @@ function Flow() {
                 description={flow.description}
                 name={flow.name}
                 key={flow.uid}
-                logo="/images/flow.png"
+                logo="/pictures/flow.png"
                 onClick={() => {
                   router.push('/construct/flow/canvas?id=' + flow.uid);
                 }}
