@@ -1,7 +1,7 @@
-import React,{useState,useRef}from 'react';
+import React, { useState, useRef } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
-import { Button, Upload,message } from 'antd';
+import { Button, Upload, message } from 'antd';
 import { convertKeysToCamelCase } from '@/utils/flow';
 import { IFlowNodeParameter } from '@/types/flow';
 import { useTranslation } from 'react-i18next';
@@ -13,22 +13,22 @@ type Props = {
 };
 export const RenderUpload = (params: Props) => {
   const { t } = useTranslation();
-  const urlList =useRef<string[]>([]);
+  const urlList = useRef<string[]>([]);
 
   const { data, defaultValue, onChange } = params;
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
 
-  const getUploadSuccessUrl = (url:string) => {
+  const getUploadSuccessUrl = (url: string) => {
     if (urlList.current.length === data.ui.attr.max_count) {
       urlList.current.pop();
     }
     urlList.current.push(url)
-    
+
     onChange(urlList.current.toString())
   }
-  const handleFileRemove = (file:any) => {
+  const handleFileRemove = (file: any) => {
     const index = urlList.current.indexOf(file.response.data[0].uri);
     if (index !== -1) {
       urlList.current.splice(index, 1);
@@ -57,9 +57,12 @@ export const RenderUpload = (params: Props) => {
   };
   return (
     <div className="p-2 text-sm text-center">
-    <Upload onRemove={handleFileRemove}  {...props} {...attr} multiple={false} accept={data.ui?.file_types}>
-      <Button   loading={uploading}  icon={<UploadOutlined />}>{t('UploadData')}</Button>
-    </Upload>
+      {data.is_list ? <Upload onRemove={handleFileRemove}   {...props} {...attr} multiple={true} accept={data.ui?.file_types}>
+        <Button loading={uploading} icon={<UploadOutlined />}>{t('UploadData')}</Button>
+      </Upload> : <Upload onRemove={handleFileRemove}  {...props} {...attr} multiple={false} accept={data.ui?.file_types}>
+        <Button loading={uploading} icon={<UploadOutlined />}>{t('UploadData')}</Button>
+      </Upload>}
+
     </div>
   )
 
