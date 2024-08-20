@@ -317,4 +317,6 @@ export const CommonZh: Resources['translation'] = {
   Create_successfully: '创建成功',
   Update_failure: '更新失败',
   Create_failure: '创建失败',
+  View_details: '查看详情',
+  All: '全部',
 } as const;

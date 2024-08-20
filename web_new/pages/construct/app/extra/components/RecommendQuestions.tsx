@@ -36,8 +36,8 @@ const RecommendQuestions: React.FC<{
         form={form}
         initialValues={{ recommend_questions: initValue || [{ question: '', valid: false }] }}
         autoComplete="off"
-        wrapperCol={{ span: 21 }}
-        {...(labelCol && { labelCol: { span: 3 } })}
+        wrapperCol={{ span: 20 }}
+        {...(labelCol && { labelCol: { span: 4 } })}
       >
         <Form.Item label={t('recommended_questions')}>
           <Form.List name="recommend_questions">
@@ -45,7 +45,7 @@ const RecommendQuestions: React.FC<{
               <>
                 {fields.map(({ key, name }, index) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6', formStyle)}>
-                    <Form.Item label={t('question')`${index + 1}`} name={[name, 'question']} className="grow">
+                    <Form.Item label={`${t('question')} ${index + 1}`} name={[name, 'question']} className="grow">
                       <Input placeholder={t('please_input_recommended_questions')} />
                     </Form.Item>
                     <Form.Item label={t('is_effective')} name={[name, 'valid']}>

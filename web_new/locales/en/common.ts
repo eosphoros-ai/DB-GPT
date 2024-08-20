@@ -310,4 +310,6 @@ export const CommonEn = {
   Create_successfully: 'Create successfully',
   Update_failure: 'Update failure',
   Create_failure: 'Create failure',
+  View_details: 'View details',
+  All: 'All',
 } as const;

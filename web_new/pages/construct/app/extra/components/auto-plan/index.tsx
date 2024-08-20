@@ -19,7 +19,6 @@ interface AgentSelectProps {
 }
 // 自定义agent选择
 const AgentSelect: React.FC<AgentSelectProps> = ({ value, onChange, agents, selectedTab, setSelectedTab }) => {
-  const { t } = useTranslation();
   return (
     <Checkbox.Group
       className="grid grid-cols-4 gap-4"
@@ -61,6 +60,7 @@ const AutoPlan: React.FC<{
   updateData: (data: any) => void;
   classNames?: string;
 }> = ({ initValue, updateData, classNames }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const agentName = Form.useWatch('agent_name', form);
   // 选中的agent
@@ -133,7 +133,7 @@ const AutoPlan: React.FC<{
             label: (
               <div className="flex items-center text-sm">
                 {resourceTypeIcon['all']}
-                <span className="ml-2 text-[rgba(0,10,26,0.68)] dark:text-[#ffffffD9]">全部</span>
+                <span className="ml-2 text-[rgba(0,10,26,0.68)] dark:text-[#ffffffD9]">{t('All')}</span>
               </div>
             ),
             value: 'all',
@@ -152,8 +152,8 @@ const AutoPlan: React.FC<{
 
   return (
     <div className={cls(classNames)}>
-      <Form form={form} style={{ width: '100%' }} labelCol={{ span: 3 }} wrapperCol={{ span: 21 }}>
-        <Form.Item label={`${t('Choose') agent}`} name="agent_name" required tooltip rules={[{ required: true, message: t('please_choose') + ' agent' }]}>
+      <Form form={form} style={{ width: '100%' }} labelCol={{ span: 4 }} wrapperCol={{ span: 20 }}>
+        <Form.Item label={`${t('choose')} agent`} name="agent_name" required rules={[{ required: true, message: t('please_choose') + ' agent' }]}>
           <AgentSelect agents={data?.[0]?.[1] || []} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         </Form.Item>
       </Form>

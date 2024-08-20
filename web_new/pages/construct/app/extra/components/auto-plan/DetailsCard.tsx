@@ -46,10 +46,10 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
       {curPrompt && (
         <span className="text-sm text-blue-500 cursor-pointer" onClick={() => setShowPrompt(true)}>
           <ExclamationCircleOutlined className="mr-1" />
-          查看详情
+          {t('View_details')}
         </span>
       )}
-      <Modal title={"Prompt" t('details')} open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
+      <Modal title={`Prompt ${t('details')}`} open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
         <MarkDownContext>{curPrompt?.content}</MarkDownContext>
       </Modal>
     </div>
@@ -65,6 +65,7 @@ const DetailsCard: React.FC<{
   classNames?: string;
   promptList: Record<string, any>[];
 }> = ({ name, initValue, modelStrategyOptions, resourceTypeOptions, updateData, classNames, promptList }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const promptTemplate = Form.useWatch('prompt_template', form);
   const strategy = Form.useWatch('llm_strategy', form);
@@ -118,22 +119,22 @@ const DetailsCard: React.FC<{
     <div className={cls(classNames)}>
       <Form
         style={{ width: '100%' }}
-        labelCol={{ span: 3 }}
+        labelCol={{ span: 4 }}
         form={form}
         initialValues={{ llm_strategy: 'default', ...initVal, llm_strategy_value: initVal?.llm_strategy_value?.split(',') }}
       >
         <Form.Item label={t('Prompt')} name="prompt_template">
           <PromptSelect promptList={promptList} />
         </Form.Item>
-        <Form.Item label={t('LLM_strategy')} required tooltip name="llm_strategy">
+        <Form.Item label={t('LLM_strategy')} required name="llm_strategy">
           <Select className="w-1/5" placeholder={t('please_select_LLM_strategy')} options={modelStrategyOptions} allowClear />
         </Form.Item>
         {strategy === 'priority' && (
-          <Form.Item label={t('LLM_strategy_value')} required tooltip name="llm_strategy_value">
+          <Form.Item label={t('LLM_strategy_value')} required name="llm_strategy_value">
             <Select mode="multiple" className="w-2/5" placeholder={t('please_select_LLM_strategy_value')} options={data} allowClear />
           </Form.Item>
         )}
-        <Form.Item label={t('available_resources')} tooltip name="resources">
+        <Form.Item label={t('available_resources')} name="resources">
           <ResourcesCard
             resourceTypeOptions={resourceTypeOptions}
             initValue={initVal?.resources?.map((res: any) => {
