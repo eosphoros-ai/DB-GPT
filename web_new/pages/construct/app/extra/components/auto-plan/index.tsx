@@ -60,12 +60,13 @@ const AutoPlan: React.FC<{
   updateData: (data: any) => void;
   classNames?: string;
 }> = ({ initValue, updateData, classNames }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [form] = Form.useForm();
   const agentName = Form.useWatch('agent_name', form);
   // 选中的agent
   const [selectedTab, setSelectedTab] = useState<string>('');
   const details = useRef<IDetail[]>([]);
+  const language = i18n.language === 'en';
 
   // 获取agents, strategy, sourceType;
   const { data, loading } = useRequest(async () => {
@@ -103,7 +104,7 @@ const AutoPlan: React.FC<{
     if (strategy?.length) {
       return strategy.map((item) => {
         return {
-          label: item.name_cn,
+          label: language ? item.name : item.name_cn,
           value: item.value,
         };
       });

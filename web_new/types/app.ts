@@ -112,7 +112,9 @@ export interface TeamMode {
   name: string;
   value: string;
   name_cn: string;
+  name_en: string;
   description: string;
+  description_en: string;
   remark: string;
 }
 
