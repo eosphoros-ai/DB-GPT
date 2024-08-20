@@ -52,7 +52,6 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
 
-    console.log('datacc', data);
     switch (data.type_name) {
       case 'int':
       case 'float':
@@ -175,8 +174,6 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
     const props = { data, defaultValue, onChange };
-
-    console.log('xxx', props);
 
     return (
       <div>
