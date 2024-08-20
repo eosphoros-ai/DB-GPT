@@ -117,7 +117,9 @@ async def test_auth():
 
 
 @router.post(
-    "/flows", response_model=Result[None], dependencies=[Depends(check_api_key)]
+    "/flows",
+    response_model=Result[ServerResponse],
+    dependencies=[Depends(check_api_key)],
 )
 async def create(
     request: ServeRequest, service: Service = Depends(get_service)

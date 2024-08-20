@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { TimePickerProps } from 'antd';
 import { TimePicker } from 'antd';
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
 
-type TextAreaProps = {
+type Props = {
   data: IFlowNodeParameter;
   defaultValue: any;
   onChange: (value: any) => void;
 };
-export const RenderTimePicker = (params: TextAreaProps) => {
+
+export const RenderTimePicker = (params: Props) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 

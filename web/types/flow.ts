@@ -1,3 +1,4 @@
+import { File } from 'buffer';
 import { Node } from 'reactflow';
 
 export type FlowState = 'deployed' | 'developing' | 'initializing' | 'testing' | 'disabled' | 'running' | 'load_failed';
@@ -10,6 +11,21 @@ export type IFlowUpdateParam = {
   uid?: string;
   flow_data?: IFlowData;
   state?: FlowState;
+};
+
+export type IFlowRefreshParams = {
+  id: string;
+  type_name: string;
+  type_cls: string;
+  flow_type: 'resource' | 'operator';
+  refresh: {
+    name: string;
+    depends?: Array<{
+      name: string;
+      value: string;
+      has_value: boolean;
+    }>;
+  }[];
 };
 
 export type IFlow = {
@@ -60,8 +76,8 @@ export type IFlowNodeParameterUI = {
     [key: string]: any;
   };
   editor: {
-    width: Number;
-    height: Number;
+    width: number;
+    height: number;
   };
   show_input: boolean;
 };
@@ -149,4 +165,30 @@ export type IFlowData = {
   nodes: Array<IFlowDataNode>;
   edges: Array<IFlowDataEdge>;
   viewport: IFlowDataViewport;
+};
+
+export type IFlowExportParams = {
+  export_type?: 'json' | 'dbgpts';
+  format?: 'json' | 'file';
+  file_name?: string;
+  user_name?: string;
+  sys_code?: string;
+};
+
+export type IFlowImportParams = {
+  file: File;
+  save_flow?: boolean;
+};
+
+export type IUploadFileRequestParams = {
+  files: Array<File>;
+  user_name?: string;
+  sys_code?: string;
+};
+
+export type IUploadFileResponse = {
+  file_name: string;
+  file_id: string;
+  bucket: string;
+  uri?: string;
 };

@@ -1,4 +1,5 @@
 import { IFlowNode, IFlowNodeParameter } from '@/types/flow';
+import { refreshFlowNodeById, apiInterceptors } from '@/client/api';
 import { Checkbox, Input, InputNumber, Select, Tooltip } from 'antd';
 import React from 'react';
 import RequiredIcon from './required-icon';
@@ -34,27 +35,36 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
     data.value = value;
   }
 
+  function renderLabelWithTooltip(data: IFlowNodeParameter) {
+    return (
+      <div>
+        {data.label}:<RequiredIcon optional={data.optional} />
+        {data.description && (
+          <Tooltip title={data.description}>
+            <InfoCircleOutlined className="ml-2 cursor-pointer" />
+          </Tooltip>
+        )}
+      </div>
+    );
+  }
+
   // render node parameters based on AWEL1.0
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
 
+    console.log('datacc', data);
     switch (data.type_name) {
       case 'int':
       case 'float':
         return (
           <div className="text-sm">
-            <p>
-              {data.label}:<RequiredIcon optional={data.optional} />
-              {data.description && (
-                <Tooltip title={data.description}>
-                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
-                </Tooltip>
-              )}
-            </p>
+            {renderLabelWithTooltip(data)}
             <InputNumber
               className="w-full"
               defaultValue={defaultValue}
               onChange={(value: number | null) => {
+                console.log('value', value);
+
                 onChange(value);
               }}
             />
@@ -63,14 +73,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'str':
         return (
           <div className="text-sm">
-            <p>
-              {data.label}:<RequiredIcon optional={data.optional} />
-              {data.description && (
-                <Tooltip title={data.description}>
-                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
-                </Tooltip>
-              )}
-            </p>
+            {renderLabelWithTooltip(data)}
             {data.options?.length > 0 ? (
               <Select
                 className="w-full nodrag"
@@ -94,32 +97,47 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
           <div className="text-sm">
-            <p>
-              {data.label}:<RequiredIcon optional={data.optional} />
-              {data.description && (
-                <Tooltip title={data.description}>
-                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
-                </Tooltip>
-              )}
-              <Checkbox
-                className="ml-2"
-                defaultChecked={defaultValue}
-                onChange={(e) => {
-                  onChange(e.target.checked);
-                }}
-              />
-            </p>
+            {renderLabelWithTooltip(data)}
+            <Checkbox
+              className="ml-2"
+              defaultChecked={defaultValue}
+              onChange={(e) => {
+                onChange(e.target.checked);
+              }}
+            />
           </div>
         );
     }
   }
 
-  // render node parameters based on AWEL2.0
-  function renderNodeWithUiParam(data: IFlowNodeParameter) {
-    let defaultValue = data.value ?? data.default;
-    const props = { data, defaultValue, onChange };
-
-    switch (data?.ui?.ui_type) {
+  // TODO: refresh flow node
+  async function refreshFlowNode() {
+    // setLoading(true);
+    const params = {
+      id: '',
+      type_name: '',
+      type_cls: '',
+      flow_type: 'operator' as const,
+      refresh: [
+        {
+          name: '',
+          depends: [
+            {
+              name: '',
+              value: '',
+              has_value: true,
+            },
+          ],
+        },
+      ],
+    };
+    const [_, data] = await apiInterceptors(refreshFlowNodeById(params));
+    // setLoading(false);
+    // setFlowList(data?.items ?? []);
+  }
+  
+  function renderComponentByType(type: string, props?: any) {
+    switch (type) {
       case 'select':
         return <RenderSelect {...props} />;
       case 'cascader':
@@ -144,13 +162,28 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
         return <RenderPassword {...props} />;
       case 'upload':
         return <RenderUpload {...props} />;
-        case 'variables':
-          return <RenderVariables {...props} />;
+      case 'variables':
+        return <RenderVariables {...props} />;
       case 'code_editor':
         return <RenderCodeEditor {...props} />;
       default:
         return null;
     }
+  }
+
+  // render node parameters based on AWEL2.0
+  function renderNodeWithUiParam(data: IFlowNodeParameter) {
+    let defaultValue = data.value ?? data.default;
+    const props = { data, defaultValue, onChange };
+
+    console.log('xxx', props);
+
+    return (
+      <div>
+        {renderLabelWithTooltip(data)}
+        {renderComponentByType(data?.ui?.ui_type, props)}
+      </div>
+    );
   }
 
   if (data.category === 'resource') {
