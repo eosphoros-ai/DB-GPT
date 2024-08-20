@@ -22,7 +22,7 @@ export type IFlowRefreshParams = {
     name: string;
     depends?: Array<{
       name: string;
-      value: string;
+      value: any;
       has_value: boolean;
     }>;
   }[];
@@ -75,11 +75,13 @@ export type IFlowNodeParameterUI = {
     disabled: boolean;
     [key: string]: any;
   };
-  editor: {
+  editor?: {
     width: number;
     height: number;
   };
-  show_input: boolean;
+  show_input?: boolean;
+  refresh?: boolean;
+  refresh_depends?: string[];
 };
 
 export type IFlowNodeInput = {
