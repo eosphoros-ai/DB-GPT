@@ -14,11 +14,11 @@ type Props = {
 export const RenderUpload = (params: Props) => {
   const { t } = useTranslation();
   const urlList = useRef<string[]>([]);
-
   const { data, defaultValue, onChange } = params;
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
+  const [uploadType, setUploadType] = useState('');
 
   const getUploadSuccessUrl = (url: string) => {
     if (urlList.current.length === data.ui.attr.max_count) {
@@ -55,11 +55,15 @@ export const RenderUpload = (params: Props) => {
       }
     },
   };
+
+  if (data.ui?.file_types && Array.isArray(data.ui?.file_types)) {
+    setUploadType(data.ui?.file_types.toString())
+  }
   return (
     <div className="p-2 text-sm text-center">
-      {data.is_list ? <Upload onRemove={handleFileRemove}   {...props} {...attr} multiple={true} accept={data.ui?.file_types}>
+      {data.is_list ? <Upload onRemove={handleFileRemove}   {...props} {...attr} multiple={true} accept={uploadType}>
         <Button loading={uploading} icon={<UploadOutlined />}>{t('UploadData')}</Button>
-      </Upload> : <Upload onRemove={handleFileRemove}  {...props} {...attr} multiple={false} accept={data.ui?.file_types}>
+      </Upload> : <Upload onRemove={handleFileRemove}  {...props} {...attr} multiple={false} accept={uploadType}>
         <Button loading={uploading} icon={<UploadOutlined />}>{t('UploadData')}</Button>
       </Upload>}
 
