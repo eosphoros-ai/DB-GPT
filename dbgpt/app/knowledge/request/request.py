@@ -1,7 +1,8 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict
+from dbgpt.rag import ChunkParameters
 
 
 class KnowledgeQueryRequest(BaseModel):

@@ -64,7 +64,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             conv_uid=entity.conv_uid,
             user_input=entity.summary,
             chat_mode=entity.chat_mode,
-            user_name=entity.user_name,
+            user_name="",
             sys_code=entity.sys_code,
         )
 
