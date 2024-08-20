@@ -1382,12 +1382,10 @@ def adapt_native_app_model(dialogue: ConversationVo):
 
                         ks_service = KnowledgeService()
                         knowledge_spaces = ks_service.get_knowledge_space(
-                            KnowledgeSpaceRequest(
-                                name=dialogue.select_param, user_id=dialogue.user_name
-                            )
+                            KnowledgeSpaceRequest(name=dialogue.select_param)
                         )
                         if len(knowledge_spaces) == 1:
-                            dialogue.select_param = knowledge_spaces[0].id
+                            dialogue.select_param = knowledge_spaces[0].name
         return dialogue
     except Exception as e:
         logger.info(f"adapt_native_app_model error: {e}")
