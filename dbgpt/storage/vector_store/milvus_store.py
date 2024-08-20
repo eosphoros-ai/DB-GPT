@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-from abc import abstractmethod
 from typing import Any, Iterable, List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -366,7 +365,6 @@ class MilvusStore(VectorStoreBase):
 
         return res.primary_keys
 
-    @abstractmethod
     def get_config(self) -> MilvusVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config

@@ -36,7 +36,9 @@ class LLMExtractor(ExtractorBase, ABC):
     ) -> List:
         """Inner extract by LLM."""
         template = HumanPromptTemplate.from_template(self._prompt_template)
-        messages = template.format_messages(text=text, history=history)
+
+        messages = template.format_messages(text=text, history=history) \
+            if history else template.format_messages(text=text)
 
         # use default model if needed
         if not self._model_name:

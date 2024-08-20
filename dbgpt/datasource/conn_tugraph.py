@@ -88,7 +88,7 @@ class TuGraphConnector(BaseConnector):
         """Close the Neo4j driver."""
         self._driver.close()
 
-    def run(self, query: str) -> List:
+    def run(self, query: str, fetch: str = "all") -> List:
         with self._driver.session(database=self._graph) as session:
             result = session.run(query)
             return list(result)
