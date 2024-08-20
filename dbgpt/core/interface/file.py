@@ -3,6 +3,7 @@
 import dataclasses
 import hashlib
 import io
+import logging
 import os
 import uuid
 from abc import ABC, abstractmethod
@@ -24,6 +25,7 @@ from .storage import (
     StorageItem,
 )
 
+logger = logging.getLogger(__name__)
 _SCHEMA = "dbgpt-fs"
 
 
@@ -132,6 +134,14 @@ class FileStorageURI:
         self.file_id = file_id
         self.version = version
         self.custom_params = custom_params or {}
+
+    @classmethod
+    def is_local_file(cls, uri: str) -> bool:
+        """Check if the URI is local."""
+        parsed = urlparse(uri)
+        if not parsed.scheme or parsed.scheme == "file":
+            return True
+        return False
 
     @classmethod
     def parse(cls, uri: str) -> "FileStorageURI":
@@ -313,6 +323,13 @@ class FileStorageSystem:
         file_size = file_data.tell()  # Get the file size
         file_data.seek(0)  # Reset file pointer
 
+        # filter None value
+        custom_metadata = (
+            {k: v for k, v in custom_metadata.items() if v is not None}
+            if custom_metadata
+            else {}
+        )
+
         with root_tracer.start_span(
             "file_storage_system.save_file.calculate_hash",
         ):
@@ -329,7 +346,7 @@ class FileStorageSystem:
             storage_type=storage_type,
             storage_path=storage_path,
             uri=str(uri),
-            custom_metadata=custom_metadata or {},
+            custom_metadata=custom_metadata,
             file_hash=file_hash,
         )
 
@@ -339,6 +356,25 @@ class FileStorageSystem:
     @trace("file_storage_system.get_file")
     def get_file(self, uri: str) -> Tuple[BinaryIO, FileMetadata]:
         """Get the file data from the storage backend."""
+        if FileStorageURI.is_local_file(uri):
+            local_file_name = uri.split("/")[-1]
+            if not os.path.exists(uri):
+                raise FileNotFoundError(f"File not found: {uri}")
+
+            dummy_metadata = FileMetadata(
+                file_id=local_file_name,
+                bucket="dummy_bucket",
+                file_name=local_file_name,
+                file_size=-1,
+                storage_type="local",
+                storage_path=uri,
+                uri=uri,
+                custom_metadata={},
+                file_hash="",
+            )
+            logger.info(f"Reading local file: {uri}")
+            return open(uri, "rb"), dummy_metadata  # noqa: SIM115
+
         parsed_uri = FileStorageURI.parse(uri)
         metadata = self.metadata_storage.load(
             FileMetadataIdentifier(
