@@ -2,6 +2,8 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 const en = {
+  UploadDataSuccessfully: 'file uploaded successfully',
+  UploadDataFailed: 'file upload failed',
   UploadData: 'Upload Data',
   CodeEditor: 'Code Editor:',
   openCodeEditor:'Open Code Editor',
@@ -237,6 +239,8 @@ export interface Resources {
 }
 
 const zh: Resources['translation'] = {
+  UploadDataSuccessfully: '文件上传成功',
+  UploadDataFailed: '文件上传失败',
   UploadData: '上传数据',
   CodeEditor: '代码编辑:',
   openCodeEditor: '打开代码编辑器',

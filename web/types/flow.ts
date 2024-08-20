@@ -71,6 +71,8 @@ export type IFlowNodeParameter = {
 export type IFlowNodeParameterUI = {
   ui_type: string;
   language: string;
+  file_types: string;
+  action: string;
   attr: {
     disabled: boolean;
     [key: string]: any;
