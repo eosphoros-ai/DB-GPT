@@ -714,7 +714,6 @@ async def chat_with_domain_flow(dialogue: ConversationVo, domain_type: str):
         raise ValueError(f"Cant find the DAG for domain type {domain_type}")
 
     end_task = cast(BaseOperator, dags[0].leaf_nodes[0])
-
     space = dialogue.select_param
     connector_manager = CFG.local_db_manager
     # TODO: Some flow maybe not connector
