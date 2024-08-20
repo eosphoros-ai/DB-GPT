@@ -15,8 +15,6 @@ type CanvasNodeProps = {
   data: IFlowNode;
 };
 
-const ICON_PATH_PREFIX = '/icons/node/';
-
 function TypeLabel({ label }: { label: string }) {
   return <div className="w-full h-8 align-middle font-semibold">{label}</div>;
 }
@@ -71,29 +69,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     reactFlow.setEdges((edges) => edges.filter((edge) => edge.source !== node.id && edge.target !== node.id));
   }
 
-  function renderOutput(data: IFlowNode) {
-    if (flowType === 'operator' && outputs?.length > 0) {
-      return (
-        <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
-          <TypeLabel label="Outputs" />
-          <div className="flex flex-col space-y-3">
-            {outputs?.map((output, index) => (
-              <NodeHandler key={`${data.id}_input_${index}`} node={data} data={output} type="source" label="outputs" index={index} />
-            ))}
-          </div>
-        </div>
-      );
-    } else if (flowType === 'resource') {
-      // resource nodes show output default
-      return (
-        <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
-          <TypeLabel label="Outputs" />
-          <NodeHandler key={`${data.id}_input_0`} node={data} data={data} type="source" label="outputs" index={0} />
-        </div>
-      );
-    }
-  }
-
   return (
     <Popover
       placement="rightTop"
@@ -145,8 +120,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
           <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Inputs" />
             <div className="flex flex-col space-y-2">
-              {inputs?.map((input, index) => (
-                <NodeHandler key={`${node.id}_input_${index}`} node={node} data={input} type="target" label="inputs" index={index} />
+              {inputs?.map((item, index) => (
+                <NodeHandler key={`${node.id}_input_${index}`} node={node} data={item} type="target" label="inputs" index={index} />
               ))}
             </div>
           </div>
@@ -156,14 +131,27 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
           <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Parameters" />
             <div className="flex flex-col space-y-3 text-neutral-500">
-              {parameters?.map((parameter, index) => (
-                <NodeParamHandler key={`${node.id}_param_${index}`} node={node} data={parameter} label="parameters" index={index} />
+              {parameters?.map((item, index) => (
+                <NodeParamHandler key={`${node.id}_param_${index}`} node={node} data={item} label="parameters" index={index} />
               ))}
             </div>
           </div>
         )}
 
-        {renderOutput(node)}
+        {outputs?.length > 0 && (
+          <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
+            <TypeLabel label="Outputs" />
+            {flowType === 'operator' ? (
+              <div className="flex flex-col space-y-3">
+                {outputs.map((item, index) => (
+                  <NodeHandler key={`${node.id}_output_${index}`} node={node} data={item} type="source" label="outputs" index={index} />
+                ))}
+              </div>
+            ) : (
+              flowType === 'resource' && <NodeHandler key={`${data.id}_output_0`} node={node} data={node} type="source" label="outputs" index={0} />
+            )}
+          </div>
+        )}
       </div>
     </Popover>
   );
