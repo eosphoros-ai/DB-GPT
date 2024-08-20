@@ -101,8 +101,10 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
         isValidConnection={(connection) => isValidConnection(connection)}
       />
       <Typography
-        className={classNames('bg-white dark:bg-[#232734] w-full px-2 py-1 rounded text-neutral-500',{
+        className={classNames('bg-white dark:bg-[#232734] w-full py-1 rounded text-neutral-500', {
           'text-right': label === 'outputs',
+          'pl-2': label === 'inputs',
+          'pr-2': label === 'outputs',
         })}
       >
         <Popconfirm
@@ -117,9 +119,10 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
             </div>
           }
         >
-          {['inputs', 'parameters'].includes(label) && <PlusOutlined className="mr-2 cursor-pointer" onClick={showRelatedNodes} />}
+          {['inputs', 'parameters'].includes(label) && <PlusOutlined className="cursor-pointer" onClick={showRelatedNodes} />}
         </Popconfirm>
-        {data.type_name}:{label !== 'outputs' && <RequiredIcon optional={data.optional} />}
+        {label !== 'outputs' && <RequiredIcon optional={data.optional} />}
+        {data.type_name}
         {data.description && (
           <Tooltip title={data.description}>
             <InfoCircleOutlined className="ml-2 cursor-pointer" />

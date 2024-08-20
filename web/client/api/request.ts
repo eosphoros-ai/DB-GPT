@@ -299,7 +299,6 @@ export const refreshFlowNodeById = (data: IFlowRefreshParams) => {
   return POST<IFlowRefreshParams, IFlowNode>('/api/v2/serve/awel/nodes/refresh', data);
 };
 
-// TODO: wait for interface update
 export const debugFlow = (data: any) => {
   return POST<any, IFlowNode>('/api/v2/serve/awel/flow/debug', data);
 };
@@ -312,20 +311,21 @@ export const importFlow = (data: IFlowImportParams) => {
   return POST<IFlowImportParams, any>('/api/v2/serve/awel/flow/import', data);
 };
 
-export const getFlowTemplateList = () => {
-  return GET<null, Array<any>>('/api/v2/serve/awel/flow/templates');
-};
-
-export const getFlowTemplateById = (id: string) => {
-  return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
-};
-
 export const uploadFile = (data: IUploadFileRequestParams) => {
   return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>('/api/v2/serve/file/files/dbgpt', data);
 };
 
 export const downloadFile = (fileId: string) => {
   return GET<null, any>(`/api/v2/serve/file/files/dbgpt/${fileId}`);
+};
+
+// TODO：wait for interface update
+export const getFlowTemplateList = () => {
+  return GET<null, Array<any>>('/api/v2/serve/awel/flow/templates');
+};
+
+export const getFlowTemplateById = (id: string) => {
+  return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
 };
 
 /** app */
