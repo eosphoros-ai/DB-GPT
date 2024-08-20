@@ -37,17 +37,23 @@ def _build_model_request(input_value: Dict) -> ModelRequest:
 class LLMStrategyType(Enum):
     """LLM strategy type."""
 
-    def __new__(cls, value, name_cn, description):
+    def __new__(cls, value, name_cn, description, description_en):
         """Overide new."""
         obj = object.__new__(cls)
         obj._value_ = value
         obj.name_cn = name_cn
         obj.description = description
+        obj.description_en = description_en
         return obj
 
-    Priority = ("priority", "优先级", "有优先级的策略")
-    Auto = ("auto", "自动", "自动选择的策略")
-    Default = ("default", "默认", "默认的策略")
+    Priority = ("priority", "优先级", "根据优先级使用模型", "Use LLM based on priority")
+    Auto = ("auto", "自动", "自动选择的策略", "Automatically select LLM strategies")
+    Default = (
+        "default",
+        "默认",
+        "默认的策略",
+        "Use the LLM specified by the system default",
+    )
 
     def to_dict(self):
         """To dict."""
@@ -56,6 +62,7 @@ class LLMStrategyType(Enum):
             "name_cn": self.name_cn,
             "value": self.value,
             "description": self.description,
+            "description_en": self.description_en,
         }
 
 
