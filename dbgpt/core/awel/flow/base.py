@@ -1198,15 +1198,6 @@ class FlowRegistry:
                 request, trigger, system_app
             )
 
-    def refresh(
-        self, key: str, is_operator: bool, request: List[RefreshOptionRequest]
-    ) -> Dict:
-        """Refresh the metadata."""
-        if is_operator:
-            return _get_operator_class(key).metadata.refresh(request)  # type: ignore
-        else:
-            return _get_resource_class(key).metadata.refresh(request)
-
 
 _OPERATOR_REGISTRY: FlowRegistry = FlowRegistry()
 
