@@ -34,8 +34,18 @@ import {
   SpaceConfig,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
-import { IFlow, IFlowNode, IFlowResponse, IFlowUpdateParam, IFlowRefreshParams } from '@/types/flow';
-import { IAgent, IApp, IAppData, ITeamModal } from '@/types/app';
+import {
+  IFlow,
+  IFlowNode,
+  IFlowResponse,
+  IFlowUpdateParam,
+  IFlowRefreshParams,
+  IFlowExportParams,
+  IFlowImportParams,
+  IUploadFileRequestParams,
+  IUploadFileResponse,
+} from '@/types/flow';
+import { IAgent, IApp, IAppData } from '@/types/app';
 
 /** App */
 export const postScenes = () => {
@@ -287,6 +297,35 @@ export const getFlowNodes = () => {
 
 export const refreshFlowNodeById = (data: IFlowRefreshParams) => {
   return POST<IFlowRefreshParams, IFlowNode>('/api/v2/serve/awel/nodes/refresh', data);
+};
+
+// TODO: wait for interface update
+export const debugFlow = (data: any) => {
+  return POST<any, IFlowNode>('/api/v2/serve/awel/flow/debug', data);
+};
+
+export const exportFlow = (data: IFlowExportParams) => {
+  return GET<IFlowExportParams, any>('/api/v2/serve/awel/flow/export', data);
+};
+
+export const importFlow = (data: IFlowImportParams) => {
+  return POST<IFlowImportParams, any>('/api/v2/serve/awel/flow/import', data);
+};
+
+export const getFlowTemplateList = () => {
+  return GET<null, Array<any>>('/api/v2/serve/awel/flow/templates');
+};
+
+export const getFlowTemplateById = (id: string) => {
+  return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
+};
+
+export const uploadFile = (data: IUploadFileRequestParams) => {
+  return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>('/api/v2/serve/file/files/dbgpt', data);
+};
+
+export const downloadFile = (fileId: string) => {
+  return GET<null, any>(`/api/v2/serve/file/files/dbgpt/${fileId}`);
 };
 
 /** app */
