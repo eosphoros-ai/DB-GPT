@@ -5,13 +5,13 @@ import classNames from 'classnames';
 
 const { TextArea } = Input;
 
-type TextAreaProps = {
+type Props = {
   data: IFlowNodeParameter;
   defaultValue: any;
   onChange: (value: any) => void;
 };
 
-export const RenderTextArea = (params: TextAreaProps) => {
+export const RenderTextArea = (params: Props) => {
   const { data, defaultValue, onChange } = params;
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});

@@ -4,13 +4,13 @@ import { Col, InputNumber, Row, Slider, Space } from 'antd';
 import type { InputNumberProps } from 'antd';
 import React, { useState } from 'react';
 
-type TextAreaProps = {
+type Props = {
   data: IFlowNodeParameter;
   defaultValue: any;
   onChange: (value: any) => void;
 };
 
-export const RenderSlider = (params: TextAreaProps) => {
+export const RenderSlider = (params: Props) => {
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [inputValue, setInputValue] = useState(defaultValue);
@@ -18,7 +18,6 @@ export const RenderSlider = (params: TextAreaProps) => {
     setInputValue(newValue);
     onChange(newValue);
   };
-console.log(data);
 
   return (
     <>

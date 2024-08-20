@@ -1,4 +1,5 @@
 import { IFlowNode, IFlowNodeParameter } from '@/types/flow';
+import { refreshFlowNodeById, apiInterceptors } from '@/client/api';
 import { Checkbox, Input, InputNumber, Select, Tooltip } from 'antd';
 import React from 'react';
 import RequiredIcon from './required-icon';
@@ -51,6 +52,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
 
+    console.log('datacc', data);
     switch (data.type_name) {
       case 'int':
       case 'float':
@@ -61,6 +63,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
               className="w-full"
               defaultValue={defaultValue}
               onChange={(value: number | null) => {
+                console.log('value', value);
+
                 onChange(value);
               }}
             />
@@ -106,6 +110,32 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
     }
   }
 
+  // TODO: refresh flow node
+  async function refreshFlowNode() {
+    // setLoading(true);
+    const params = {
+      id: '',
+      type_name: '',
+      type_cls: '',
+      flow_type: 'operator' as const,
+      refresh: [
+        {
+          name: '',
+          depends: [
+            {
+              name: '',
+              value: '',
+              has_value: true,
+            },
+          ],
+        },
+      ],
+    };
+    const [_, data] = await apiInterceptors(refreshFlowNodeById(params));
+    // setLoading(false);
+    // setFlowList(data?.items ?? []);
+  }
+
   function renderComponentByType(type: string, props?: any) {
     switch (type) {
       case 'select':
@@ -145,6 +175,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
     const props = { data, defaultValue, onChange };
+
+    console.log('xxx', props);
 
     return (
       <div>
