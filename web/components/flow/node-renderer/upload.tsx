@@ -8,13 +8,12 @@ import { useTranslation } from 'react-i18next';
 
 type Props = {
   data: IFlowNodeParameter;
-  defaultValue: any;
-  onChange: (value: any) => void;
+  onChange?: (value: any) => void;
 };
-export const RenderUpload = (params: Props) => {
+export const renderUpload = (params: Props) => {
   const { t } = useTranslation();
   const urlList = useRef<string[]>([]);
-  const { data, defaultValue, onChange } = params;
+  const { data, onChange } = params;
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
@@ -24,52 +23,59 @@ export const RenderUpload = (params: Props) => {
     if (urlList.current.length === data.ui.attr.max_count) {
       urlList.current.pop();
     }
-    urlList.current.push(url)
+    urlList.current.push(url);
 
-    onChange(urlList.current.toString())
-  }
+    onChange?.(urlList.current.toString());
+  };
+
   const handleFileRemove = (file: any) => {
     const index = urlList.current.indexOf(file.response.data[0].uri);
     if (index !== -1) {
       urlList.current.splice(index, 1);
     }
-    onChange(urlList.current.toString())
-  }
+    onChange?.(urlList.current.toString());
+  };
+
   const props: UploadProps = {
     name: 'files',
     action: process.env.API_BASE_URL + data.ui.action,
     headers: {
-      'authorization': 'authorization-text',
+      authorization: 'authorization-text',
     },
     onChange(info) {
-      setUploading(true)
+      setUploading(true);
       if (info.file.status !== 'uploading') {
       }
       if (info.file.status === 'done') {
-        setUploading(false)
-        message.success(`${info.file.response.data[0].file_name} ${t('UploadDataSuccessfully')}`);
-        getUploadSuccessUrl(info.file.response.data[0].uri)
+        setUploading(false);
+        message.success(`${info.file.response.data[0].file_name} ${t('Upload_Data_Successfully')}`);
+        getUploadSuccessUrl(info.file.response.data[0].uri);
       } else if (info.file.status === 'error') {
-        setUploading(false)
-        message.error(`${info.file.response.data[0].file_name}  ${t('UploadDataFailed')}`);
+        setUploading(false);
+        message.error(`${info.file.response.data[0].file_name}  ${t('Upload_Data_Failed')}`);
       }
     },
   };
 
   if (data.ui?.file_types && Array.isArray(data.ui?.file_types)) {
-    setUploadType(data.ui?.file_types.toString())
+    setUploadType(data.ui?.file_types.toString());
   }
+
   return (
     <div className="p-2 text-sm text-center">
-      {data.is_list ? <Upload onRemove={handleFileRemove}   {...props} {...attr} multiple={true} accept={uploadType}>
-        <Button loading={uploading} icon={<UploadOutlined />}>{t('UploadData')}</Button>
-      </Upload> : <Upload onRemove={handleFileRemove}  {...props} {...attr} multiple={false} accept={uploadType}>
-        <Button loading={uploading} icon={<UploadOutlined />}>{t('UploadData')}</Button>
-      </Upload>}
-
+      {data.is_list ? (
+        <Upload onRemove={handleFileRemove} {...props} {...attr} multiple={true} accept={uploadType}>
+          <Button loading={uploading} icon={<UploadOutlined />}>
+            {t('Upload_Data')}
+          </Button>
+        </Upload>
+      ) : (
+        <Upload onRemove={handleFileRemove} {...props} {...attr} multiple={false} accept={uploadType}>
+          <Button loading={uploading} icon={<UploadOutlined />}>
+            {t('Upload_Data')}
+          </Button>
+        </Upload>
+      )}
     </div>
-  )
-
-
-}
-
+  );
+};

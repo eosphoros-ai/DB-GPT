@@ -71,26 +71,22 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     reactFlow.setEdges((edges) => edges.filter((edge) => edge.source !== node.id && edge.target !== node.id));
   }
 
-  // function onChange(value: any) {
-  //   data.value = value;
-  // }
+  function updateCurrentNodeValue(changedKey: string, changedVal: any) {
+    parameters.forEach((item) => {
+      if (item.name === changedKey) {
+        item.value = changedVal;
+      }
+    });
+  }
 
-  function onValuesChange(changedValues: any, allValues: any) {
-    // onChange(changedValues);
-    console.log('Changed xxx', changedValues);
-    console.log('All xxx', allValues);
-    console.log('xxxx', parameters);
+  async function updateDependsNodeValue(changedKey: string, changedVal: any) {
+    if (!changedVal) return;
 
-    const [changedKey, changedVal] = Object.entries(changedValues)[0];
-    console.log('====', changedKey, changedVal);
+    const dependParamNodes = parameters.filter(({ ui }) => ui?.refresh_depends?.includes(changedKey));
 
-    // 获取以当前改变项目为 refresh_depends 的参数name
-    const needChangeNodes = parameters.filter(({ ui }) => ui?.refresh_depends?.includes(changedKey));
-    console.log('needChangeNodes====', needChangeNodes);
+    if (dependParamNodes?.length === 0) return;
 
-    if (needChangeNodes?.length === 0) return;
-
-    needChangeNodes.forEach(async (item) => {
+    dependParamNodes.forEach(async (item) => {
       const params = {
         id: removeIndexFromNodeId(data?.id),
         type_name: data.type_name,
@@ -98,11 +94,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         flow_type: 'operator' as const,
         refresh: [
           {
-            name: item.name, // 要刷新的参数的name
+            name: item.name,
             depends: [
               {
-                name: changedKey, // 依赖的参数的name
-                value: changedVal, // 依赖的参数的值
+                name: changedKey,
+                value: changedVal,
                 has_value: true,
               },
             ],
@@ -110,27 +106,21 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         ],
       };
 
-      // const params = {
-      //   id: 'operator_example_refresh_operator___$$___example___$$___v1',
-      //   type_name: 'ExampleFlowRefreshOperator',
-      //   type_cls: 'unusual_prefix_90027f35e50ecfda77e3c7c7b20a0272d562480c_awel_flow_ui_components.ExampleFlowRefreshOperator',
-      //   flow_type: 'operator' as const,
-      //   refresh: [
-      //     {
-      //       name: 'recent_time', // 要刷新的参数的name
-      //       depends: [
-      //         {
-      //           name: 'time_interval', // 依赖的参数的name
-      //           value: 3, // 依赖的参数的值
-      //           has_value: true,
-      //         },
-      //       ],
-      //     },
-      //   ],
-      // };
-
       const [_, res] = await apiInterceptors(refreshFlowNodeById(params));
+      // TODO: update node value
+      console.log('res', res);
     });
+  }
+
+  function onParameterValuesChange(changedValues: any, allValues: any) {
+    // TODO: update node value
+    console.log('Changed xxx', changedValues);    
+    console.log('All xxx', allValues);
+
+    const [changedKey, changedVal] = Object.entries(changedValues)[0];
+
+    updateCurrentNodeValue(changedKey, changedVal);
+    updateDependsNodeValue(changedKey, changedVal);
   }
 
   return (
@@ -194,15 +184,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         {parameters?.length > 0 && (
           <div className="bg-zinc-100 dark:bg-zinc-700 rounded p-2">
             <TypeLabel label="Parameters" />
-            {/* <div className="flex flex-col space-y-3 text-neutral-500"> */}
-
-            <Form form={form} layout="vertical" onValuesChange={onValuesChange} className="flex flex-col text-neutral-500">
+            <Form form={form} layout="vertical" onValuesChange={onParameterValuesChange} className="flex flex-col space-y-3 text-neutral-500">
               {parameters?.map((item, index) => (
-                <NodeParamHandler key={`${node.id}_param_${index}`} node={node} data={item} label="parameters" index={index} />
+                <NodeParamHandler key={`${node.id}_param_${index}`} node={node} paramData={item} label="parameters" index={index} />
               ))}
             </Form>
-
-            {/* </div> */}
           </div>
         )}
 
