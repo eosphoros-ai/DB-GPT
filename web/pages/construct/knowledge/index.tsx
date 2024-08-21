@@ -78,7 +78,7 @@ const Knowledge = () => {
           app_code: data.chat_mode,
         }),
       );
-      router.push(`/chat?scene=chat_knowledge&id=${data?.conv_uid}&knowledge_id=${space.id}`);
+      router.push(`/chat?scene=chat_knowledge&id=${data?.conv_uid}&knowledge_id=${space.name}`);
     }
   };
   const handleStepChange = ({ label, spaceName, docType, files }: StepChangeParams) => {

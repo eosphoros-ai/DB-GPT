@@ -96,7 +96,7 @@ const Chat: React.FC = () => {
   useEffect(() => {
     setTemperatureValue(appInfo?.param_need?.filter((item) => item.type === 'temperature')[0]?.value || 0.5);
     setModelValue(appInfo?.param_need?.filter((item) => item.type === 'model')[0]?.value || model);
-    setResourceValue(Number(knowledgeId) || dbName || appInfo?.param_need?.filter((item) => item.type === 'resource')[0]?.bind_value);
+    setResourceValue(knowledgeId || dbName || appInfo?.param_need?.filter((item) => item.type === 'resource')[0]?.bind_value);
   }, [appInfo, dbName, knowledgeId, model]);
 
   useEffect(() => {
