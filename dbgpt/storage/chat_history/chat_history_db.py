@@ -1,10 +1,24 @@
 """Chat history database model."""
+import logging
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    desc,
+    func,
+    text,
+)
 
-from ..metadata import BaseDao, Model
+from dbgpt.storage.metadata import BaseDao, Model
+
+logger = logging.getLogger(__name__)
 
 
 class ChatHistoryEntity(Model):
@@ -37,10 +51,12 @@ class ChatHistoryEntity(Model):
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
+    app_code = Column(String(255), nullable=True, comment="App unique code")
 
     Index("idx_q_user", "user_name")
     Index("idx_q_mode", "chat_mode")
     Index("idx_q_conv", "summary")
+    Index("idx_app_code", "app_code")
 
 
 class ChatHistoryMessageEntity(Model):
@@ -123,3 +139,63 @@ class ChatHistoryDao(BaseDao):
         """Retrieve the chat history record by conv_uid."""
         with self.session(commit=False) as session:
             return session.query(ChatHistoryEntity).filter_by(conv_uid=conv_uid).first()
+
+    def list_hot_apps(self, skip_page: int = 0, top_k: int = 20):
+        """Get list hot app list.
+
+        Select COUNT(*) as sz, app_code from chat_history
+        where app_code in
+        (select app_code from gpts_app where
+        published = 'true' and team_mode != 'native_app')
+        group by app_code order by sz desc
+        LIMIT (skip_page * top_k), (top_k)
+        """
+        from dbgpt.serve.agent.db.gpts_app import GptsAppDao
+
+        gpts_app_dao = GptsAppDao()
+        apps = gpts_app_dao.list_all()
+        app_codes = [
+            app.app_code
+            for app in apps
+            if app.published == "true" and app.app_code is not None
+        ]
+        if len(app_codes) == 0:
+            return []
+
+        session = self.get_raw_session()
+        try:
+            hot_apps = (
+                session.query(
+                    ChatHistoryEntity.app_code,
+                    func.count(ChatHistoryEntity.app_code).label("sz"),
+                )
+                .filter(ChatHistoryEntity.app_code.in_(app_codes))
+                .group_by(ChatHistoryEntity.app_code)
+                .order_by(desc("sz"))
+                .limit(top_k)
+                .offset(skip_page * top_k)
+                .all()
+            )
+        finally:
+            session.close()
+        return hot_apps
+
+    def get_hot_app_map(self, skip_page: int = 0, top_k: int = 20):
+        """Get hot app map."""
+        with self.get_raw_session() as session:
+            try:
+                result = session.execute(
+                    text(
+                        f"""SELECT c.app_code, count(*) as sz FROM chat_history a
+    INNER JOIN chat_history_message b on a.conv_uid = b.conv_uid
+    INNER JOIN gpts_app c ON a.app_code = c.app_code and c.published = 'true'
+    GROUP BY c.app_code
+    ORDER BY sz desc  LIMIT {str(skip_page)}, {str(top_k)};"""
+                    )
+                )
+                keys = result.keys()
+                rows = [dict(zip(keys, row)) for row in result]
+                return rows
+            except Exception as e:
+                logger.error(f"Error executing SQL query: {e}")
+                raise e

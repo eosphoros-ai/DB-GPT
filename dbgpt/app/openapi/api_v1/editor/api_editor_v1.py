@@ -6,6 +6,9 @@ from typing import Dict, List
 from fastapi import APIRouter, Body, Depends
 
 from dbgpt._private.config import Config
+from dbgpt.app.openapi.api_v1.editor._chat_history.chat_hisotry_factory import (
+    ChatHistory,
+)
 from dbgpt.app.openapi.api_v1.editor.service import EditorService
 from dbgpt.app.openapi.api_v1.editor.sql_editor import (
     ChartRunData,
@@ -23,10 +26,8 @@ from dbgpt.app.openapi.editor_view_model import (
 )
 from dbgpt.app.scene import ChatFactory
 from dbgpt.app.scene.chat_dashboard.data_loader import DashboardDataLoader
+from dbgpt.core.interface.message import OnceConversation
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
-from dbgpt.util.date_utils import convert_datetime_in_row
-
-from ._chat_history.chat_hisotry_factory import ChatHistory
 
 router = APIRouter()
 CFG = Config()
@@ -74,11 +75,16 @@ async def get_editor_tables(
 async def get_editor_sql_rounds(
     con_uid: str, editor_service: EditorService = Depends(get_edit_service)
 ):
-    logger.info(f"get_editor_sql_rounds:{ con_uid}")
-    return Result.succ(editor_service.get_editor_sql_rounds(con_uid))
+    logger.info("get_editor_sql_rounds:{con_uid}")
+    try:
+        chat_rounds = editor_service.get_editor_sql_rounds(con_uid)
+        return Result.succ(data=chat_rounds)
+    except Exception as e:
+        logger.exception("Get editor sql rounds failed!")
+        return Result.failed(msg=str(e))
 
 
-@router.get("/v1/editor/sql", response_model=Result[dict | list])
+@router.get("/v1/editor/sql", response_model=Result[List[Dict]])
 async def get_editor_sql(
     con_uid: str, round: int, editor_service: EditorService = Depends(get_edit_service)
 ):
@@ -107,7 +113,7 @@ async def editor_sql_run(run_param: dict = Body()):
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(
             result_info="",
-            run_cost=int((end_time - start_time) / 1000),
+            run_cost=(end_time - start_time) / 1000,
             colunms=colunms,
             values=sql_result,
         )
@@ -174,14 +180,15 @@ async def editor_chart_run(run_param: dict = Body()):
         field_names, chart_values = dashboard_data_loader.get_chart_values_by_data(
             colunms, sql_result, sql
         )
+
         start_time = time.time() * 1000
-        sql_result = [convert_datetime_in_row(row) for row in sql_result]
+        # 计算执行耗时
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(
             result_info="",
-            run_cost=int((end_time - start_time) / 1000),
+            run_cost=(end_time - start_time) / 1000,
             colunms=colunms,
-            values=sql_result,
+            values=[list(row) for row in sql_result],
         )
         return Result.succ(
             ChartRunData(
@@ -189,6 +196,7 @@ async def editor_chart_run(run_param: dict = Body()):
             )
         )
     except Exception as e:
+        logger.exception("Chart sql run failed!")
         sql_result = SqlRunData(result_info=str(e), run_cost=0, colunms=[], values=[])
         return Result.succ(
             ChartRunData(sql_data=sql_result, chart_values=[], chart_type=chart_type)
@@ -201,7 +209,7 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
 
     chat_history_fac = ChatHistory()
     history_mem = chat_history_fac.get_store_instance(chart_edit_context.con_uid)
-    history_messages: List[Dict] = history_mem.get_messages()
+    history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
         db_conn = CFG.local_db_manager.get_connector(chart_edit_context.db_name)

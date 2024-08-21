@@ -1,12 +1,11 @@
-"""Visualize the result of the DBGPts flow."""
-
+"""VisDbgptsFlowResult."""
 from ..base import Vis
 
 
 class VisDbgptsFlowResult(Vis):
-    """Protocol for visualizing the result of the DBGPts flow."""
+    """VisDbgptsFlowResult."""
 
     @classmethod
     def vis_tag(cls) -> str:
-        """Return the tag name of the vis protocol module."""
+        """VisDbgptsFlowResult."""
         return "dbgpts-result"

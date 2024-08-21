@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypedDict, TypeVar
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
+from pydantic import field_validator, validator
+
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
 T = TypeVar("T")
 
@@ -33,6 +35,56 @@ class PagenationResult(BaseModel, Generic[T]):
         }
 
 
+class NativeTeamContext(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    chat_scene: Optional[str] = Field(
+        ...,
+        description="The chat scene of current app",
+        examples=[
+            "chat_knowledge",
+            "chat_with_db_qa",
+            "chat_with_db_execute",
+            "chat_dba",
+            "chat_dashboard",
+            "chat_excel",
+        ],
+    )
+    scene_name: Optional[str] = Field(
+        ...,
+        description="The name of scene",
+        examples=[
+            "Chat Knowledge",
+            "Chat DB",
+            "Chat Data",
+            "Professional DBA",
+            "Dashboard",
+            "Chat Excel",
+        ],
+    )
+    scene_describe: Optional[str] = Field(
+        default="",
+        description="The describe of scene",
+    )
+    param_title: Optional[str] = Field(
+        default="",
+        description="The param title of scene",
+    )
+    show_disable: Optional[bool] = Field(
+        default=False,
+        description="The description of dag",
+    )
+
+    @field_validator("show_disable", mode="before")
+    def parse_show_disable(cls, value):
+        if value in (None, ""):
+            return False
+        return value
+
+    def to_dict(self):
+        return model_to_dict(self)
+
+
 @dataclass
 class PluginHubFilter(BaseModel):
     name: Optional[str] = None
@@ -47,13 +99,13 @@ class PluginHubFilter(BaseModel):
 
 @dataclass
 class MyPluginFilter(BaseModel):
-    tenant: str
-    user_code: str
-    user_name: str
-    name: str
-    file_name: str
-    type: str
-    version: str
+    tenant: Optional[str] = None
+    user_code: Optional[str] = None
+    user_name: Optional[str] = None
+    name: Optional[str] = None
+    file_name: Optional[str] = None
+    type: Optional[str] = None
+    version: Optional[str] = None
 
 
 class PluginHubParam(BaseModel):
@@ -68,33 +120,3 @@ class PluginHubParam(BaseModel):
     authorization: Optional[str] = Field(
         None, description="github download authorization", nullable=True
     )
-
-
-class PluginHubVO(BaseModel):
-    id: int = Field(..., description="Plugin id")
-    name: str = Field(..., description="Plugin name")
-    description: str = Field(..., description="Plugin description")
-    author: Optional[str] = Field(None, description="Plugin author")
-    email: Optional[str] = Field(None, description="Plugin email")
-    type: Optional[str] = Field(None, description="Plugin type")
-    version: Optional[str] = Field(None, description="Plugin version")
-    storage_channel: Optional[str] = Field(None, description="Plugin storage channel")
-    storage_url: Optional[str] = Field(None, description="Plugin storage url")
-    download_param: Optional[str] = Field(None, description="Plugin download param")
-    installed: Optional[int] = Field(None, description="Plugin installed")
-    gmt_created: Optional[str] = Field(None, description="Plugin upload time")
-
-
-class MyPluginVO(BaseModel):
-    id: int = Field(..., description="My Plugin")
-    tenant: Optional[str] = Field(None, description="My Plugin tenant")
-    user_code: Optional[str] = Field(None, description="My Plugin user code")
-    user_name: Optional[str] = Field(None, description="My Plugin user name")
-    sys_code: Optional[str] = Field(None, description="My Plugin sys code")
-    name: str = Field(..., description="My Plugin name")
-    file_name: str = Field(..., description="My Plugin file name")
-    type: Optional[str] = Field(None, description="My Plugin type")
-    version: Optional[str] = Field(None, description="My Plugin version")
-    use_count: Optional[int] = Field(None, description="My Plugin use count")
-    succ_count: Optional[int] = Field(None, description="My Plugin succ count")
-    gmt_created: Optional[str] = Field(None, description="My Plugin install time")

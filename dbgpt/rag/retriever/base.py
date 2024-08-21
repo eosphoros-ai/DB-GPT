@@ -162,3 +162,8 @@ class BaseRetriever(ABC):
         Returns:
             List[Chunk]: list of chunks
         """
+
+    @classmethod
+    def name(cls):
+        """Return the name of the retriever."""
+        raise NotImplementedError("Current retriever does not support name")

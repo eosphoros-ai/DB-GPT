@@ -72,7 +72,6 @@ class ModelInstanceIdentifier(ResourceIdentifier):
 
 @dataclass
 class ModelInstanceStorageItem(StorageItem):
-
     model_name: str
     host: str
     port: int

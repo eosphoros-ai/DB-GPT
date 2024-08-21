@@ -20,6 +20,9 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
     space_name: str = dataclasses.field(
         default=None, metadata={"help": "Knowledge space name"}
     )
+    context: int = dataclasses.field(
+        default=None, metadata={"help": "Knowledge retriver params"}
+    )
 
     @classmethod
     def _resource_version(cls) -> str:
@@ -31,6 +34,7 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
         cls,
         parameters: Type["KnowledgeSpaceLoadResourceParameters"],
         version: Optional[str] = None,
+        **kwargs,
     ) -> Any:
         """Convert the parameters to configurations."""
         conf: List[ParameterDescription] = cast(
@@ -59,20 +63,28 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
 class KnowledgeSpaceRetrieverResource(RetrieverResource):
     """Knowledge Space retriever resource."""
 
-    def __init__(self, name: str, space_name: str):
-        retriever = KnowledgeSpaceRetriever(space_name=space_name)
+    def __init__(self, name: str, space_name: str, context: Optional[dict] = None):
+        retriever = KnowledgeSpaceRetriever(
+            space_id=space_name,
+            top_k=context.get("top_k", None) if context else 4,
+        )
         super().__init__(name, retriever=retriever)
 
     @classmethod
-    def resource_parameters_class(cls) -> Type[KnowledgeSpaceLoadResourceParameters]:
+    def resource_parameters_class(
+        cls, **kwargs
+    ) -> Type[KnowledgeSpaceLoadResourceParameters]:
         from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
         from dbgpt.app.knowledge.service import KnowledgeService
 
         knowledge_space_service = KnowledgeService()
         knowledge_spaces = knowledge_space_service.get_knowledge_space(
-            KnowledgeSpaceRequest()
+            KnowledgeSpaceRequest(**kwargs)
         )
-        results = [ks.name for ks in knowledge_spaces]
+        results = [
+            {"label": ks.name, "key": ks.id, "description": ks.desc}
+            for ks in knowledge_spaces
+        ]
 
         @dataclasses.dataclass
         class _DynamicKnowledgeSpaceLoadResourceParameters(

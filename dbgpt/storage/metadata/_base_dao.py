@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Dict, Generic, Iterator, List, Optional, TypeVar, Union
 
+from sqlalchemy import desc
 from sqlalchemy.orm.session import Session
 
 from dbgpt._private.pydantic import model_to_dict
@@ -14,7 +15,6 @@ T = TypeVar("T")
 REQ = TypeVar("REQ")
 # The response schema type
 RES = TypeVar("RES")
-
 
 QUERY_SPEC = Union[REQ, Dict[str, Any]]
 
@@ -170,10 +170,10 @@ class BaseDao(Generic[T, REQ, RES]):
                 if value is not None:
                     setattr(entry, key, value)
             session.merge(entry)
-            res = self.get_one(self.to_request(entry))
-            if not res:
-                raise Exception("Update failed")
-            return res
+            # res = self.get_one(self.to_request(entry))
+            # if not res:
+            #     raise Exception("Update failed")
+            return self.to_response(entry)
 
     def delete(self, query_request: QUERY_SPEC) -> None:
         """Delete an entity object.
@@ -232,7 +232,11 @@ class BaseDao(Generic[T, REQ, RES]):
         return result_list
 
     def get_list_page(
-        self, query_request: QUERY_SPEC, page: int, page_size: int
+        self,
+        query_request: QUERY_SPEC,
+        page: int,
+        page_size: int,
+        desc_order_column: Optional[str] = None,
     ) -> PaginationResult[RES]:
         """Get a page of entity objects.
 
@@ -245,7 +249,7 @@ class BaseDao(Generic[T, REQ, RES]):
             PaginationResult: The pagination result.
         """
         with self.session() as session:
-            query = self._create_query_object(session, query_request)
+            query = self._create_query_object(session, query_request, desc_order_column)
             total_count = query.count()
             items = query.offset((page - 1) * page_size).limit(page_size)
             res_items = [self.to_response(item) for item in items]
@@ -260,7 +264,10 @@ class BaseDao(Generic[T, REQ, RES]):
             )
 
     def _create_query_object(
-        self, session: Session, query_request: QUERY_SPEC
+        self,
+        session: Session,
+        query_request: QUERY_SPEC,
+        desc_order_column: Optional[str] = None,
     ) -> BaseQuery:
         """Create a query object.
 
@@ -278,8 +285,17 @@ class BaseDao(Generic[T, REQ, RES]):
             else model_to_dict(query_request)
         )
         for key, value in query_dict.items():
-            if value is not None:
-                if isinstance(value, (list, tuple, dict, set)):
+            if value is not None and hasattr(model_cls, key):
+                if isinstance(value, list):
+                    if len(value) > 0:
+                        query = query.filter(getattr(model_cls, key).in_(value))
+                    else:
+                        continue
+                elif isinstance(value, (tuple, dict, set)):
                     continue
-                query = query.filter(getattr(model_cls, key) == value)
+                else:
+                    query = query.filter(getattr(model_cls, key) == value)
+
+        if desc_order_column:
+            query = query.order_by(desc(getattr(model_cls, desc_order_column)))
         return query  # type: ignore

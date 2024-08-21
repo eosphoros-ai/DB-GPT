@@ -1,21 +1,28 @@
 import asyncio
+import json
 import logging
 import os
+import time
 import uuid
 from concurrent.futures import Executor
+from io import BytesIO
 from typing import List, Optional, cast
 
 import aiofiles
-from fastapi import APIRouter, Body, Depends, File, UploadFile
+import chardet
+import pandas as pd
+from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
 from dbgpt._private.config import Config
-from dbgpt._private.pydantic import model_to_dict, model_to_json
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_view_model import (
+    ChatCompletionResponseStreamChoice,
+    ChatCompletionStreamResponse,
     ChatSceneVo,
     ConversationVo,
+    DeltaMessage,
     MessageVo,
     Result,
 )
@@ -26,22 +33,20 @@ from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from dbgpt.core.awel import BaseOperator, CommonLLMHttpRequestBody
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.core.awel.util.chat_util import safe_chat_stream_with_dag_task
-from dbgpt.core.schema.api import (
-    ChatCompletionResponseStreamChoice,
-    ChatCompletionStreamResponse,
-    DeltaMessage,
-)
+from dbgpt.core.interface.message import OnceConversation
 from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt.rag.summary.db_summary_client import DBSummaryClient
-from dbgpt.serve.agent.agents.controller import multi_agents
+from dbgpt.serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
 from dbgpt.serve.flow.service.service import Service as FlowService
+from dbgpt.serve.utils.auth import UserRequest, get_user_from_headers
 from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
     ExecutorFactory,
     blocking_func_to_async,
 )
+from dbgpt.util.file_client import FileClient
 from dbgpt.util.tracer import SpanType, root_tracer
 
 router = APIRouter()
@@ -52,6 +57,9 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
+
+
+user_recent_app_dao = UserRecentAppsDao()
 
 
 def __get_conv_user_message(conversations: dict):
@@ -72,8 +80,8 @@ def __new_conversation(chat_mode, user_name: str, sys_code: str) -> Conversation
     )
 
 
-def get_db_list():
-    dbs = CFG.local_db_manager.get_db_list()
+def get_db_list(user_id: str = None):
+    dbs = CFG.local_db_manager.get_db_list(user_id=user_id)
     db_params = []
     for item in dbs:
         params: dict = {}
@@ -83,8 +91,15 @@ def get_db_list():
     return db_params
 
 
-def get_db_list_info():
-    dbs = CFG.local_db_manager.get_db_list()
+def plugins_select_info():
+    plugins_infos: dict = {}
+    for plugin in CFG.plugins:
+        plugins_infos.update({f"【{plugin._name}】=>{plugin._description}": plugin._name})
+    return plugins_infos
+
+
+def get_db_list_info(user_id: str = None):
+    dbs = CFG.local_db_manager.get_db_list(user_id=user_id)
     params: dict = {}
     for item in dbs:
         comment = item["comment"]
@@ -103,17 +118,23 @@ def knowledge_list_info():
     return params
 
 
-def knowledge_list():
+def knowledge_list(user_id: str = None):
     """return knowledge space list"""
-    request = KnowledgeSpaceRequest()
+    request = KnowledgeSpaceRequest(user_id=user_id)
     spaces = knowledge_service.get_knowledge_space(request)
     space_list = []
     for space in spaces:
         params: dict = {}
         params.update({"param": space.name})
         params.update({"type": "space"})
+        params.update({"space_id": space.id})
         space_list.append(params)
     return space_list
+
+
+def get_chat_flow() -> FlowService:
+    """Get Chat Flow Service."""
+    return FlowService.get_instance(CFG.SYSTEM_APP)
 
 
 def get_model_controller() -> BaseModelController:
@@ -149,18 +170,45 @@ def get_executor() -> Executor:
     ).create()
 
 
-@router.get("/v1/chat/db/list", response_model=Result[List[DBConfig]])
-async def db_connect_list():
-    return Result.succ(CFG.local_db_manager.get_db_list())
+@router.get("/v1/chat/db/list", response_model=Result)
+async def db_connect_list(
+    db_name: Optional[str] = Query(default=None, description="database name"),
+    user_info: UserRequest = Depends(get_user_from_headers),
+):
+    results = CFG.local_db_manager.get_db_list(
+        db_name=db_name, user_id=user_info.user_id
+    )
+    # 排除部分数据库不允许用户访问
+    if results and len(results):
+        results = [
+            d
+            for d in results
+            if d.get("db_name") not in ["auth", "dbgpt", "test", "public"]
+        ]
+    return Result.succ(results)
 
 
-@router.post("/v1/chat/db/add", response_model=Result[bool])
-async def db_connect_add(db_config: DBConfig = Body()):
-    return Result.succ(CFG.local_db_manager.add_db(db_config))
+@router.post("/v1/chat/db/add", response_model=Result)
+async def db_connect_add(
+    db_config: DBConfig = Body(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    return Result.succ(CFG.local_db_manager.add_db(db_config, user_token.user_id))
 
 
-@router.post("/v1/chat/db/edit", response_model=Result[bool])
-async def db_connect_edit(db_config: DBConfig = Body()):
+@router.get("/v1/permission/db/list", response_model=Result[List])
+async def permission_db_list(
+    db_name: str = None,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    return Result.succ()
+
+
+@router.post("/v1/chat/db/edit", response_model=Result)
+async def db_connect_edit(
+    db_config: DBConfig = Body(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     return Result.succ(CFG.local_db_manager.edit_db(db_config))
 
 
@@ -185,7 +233,10 @@ async def async_db_summary_embedding(db_name, db_type):
 
 
 @router.post("/v1/chat/db/test/connect", response_model=Result[bool])
-async def test_connect(db_config: DBConfig = Body()):
+async def test_connect(
+    db_config: DBConfig = Body(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     try:
         # TODO Change the synchronous call to the asynchronous call
         CFG.local_db_manager.test_connect(db_config)
@@ -213,7 +264,7 @@ async def db_support_types():
 
 
 @router.post("/v1/chat/dialogue/scenes", response_model=Result[List[ChatSceneVo]])
-async def dialogue_scenes():
+async def dialogue_scenes(user_info: UserRequest = Depends(get_user_from_headers)):
     scene_vos: List[ChatSceneVo] = []
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
@@ -235,65 +286,129 @@ async def dialogue_scenes():
     return Result.succ(scene_vos)
 
 
-@router.post("/v1/chat/mode/params/list", response_model=Result[dict | list])
-async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
-    if ChatScene.ChatWithDbQA.value() == chat_mode:
-        return Result.succ(get_db_list())
-    elif ChatScene.ChatWithDbExecute.value() == chat_mode:
-        return Result.succ(get_db_list())
-    elif ChatScene.ChatDashboard.value() == chat_mode:
-        return Result.succ(get_db_list())
-    elif ChatScene.ChatKnowledge.value() == chat_mode:
-        return Result.succ(knowledge_list())
-    elif ChatScene.ChatKnowledge.ExtractRefineSummary.value() == chat_mode:
-        return Result.succ(knowledge_list())
-    else:
-        return Result.succ(None)
-
-
-@router.post("/v1/chat/mode/params/file/load")
-async def params_load(
-    conv_uid: str,
-    chat_mode: str,
-    model_name: str,
-    user_name: Optional[str] = None,
-    sys_code: Optional[str] = None,
-    doc_file: UploadFile = File(...),
+@router.post("/v1/resource/params/list", response_model=Result[List[dict]])
+async def resource_params_list(
+    resource_type: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
-    logger.info(f"params_load: {conv_uid},{chat_mode},{model_name}")
-    try:
-        if doc_file:
-            # Save the uploaded file
-            upload_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)
-            os.makedirs(upload_dir, exist_ok=True)
-            upload_path = os.path.join(upload_dir, doc_file.filename)
-            async with aiofiles.open(upload_path, "wb") as f:
-                await f.write(await doc_file.read())
+    if resource_type == "database":
+        result = get_db_list()
+    elif resource_type == "knowledge":
+        result = knowledge_list()
+    elif resource_type == "tool":
+        result = plugins_select_info()
+    else:
+        return Result.succ()
+    return Result.succ(result)
 
-            # Prepare the chat
-            dialogue = ConversationVo(
-                conv_uid=conv_uid,
-                chat_mode=chat_mode,
-                select_param=doc_file.filename,
-                model_name=model_name,
-                user_name=user_name,
-                sys_code=sys_code,
-            )
-            chat: BaseChat = await get_chat_instance(dialogue)
-            resp = await chat.prepare()
+
+@router.post("/v1/chat/mode/params/list", response_model=Result[List[dict]])
+async def params_list(
+    chat_mode: str = ChatScene.ChatNormal.value(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    if ChatScene.ChatWithDbQA.value() == chat_mode:
+        result = get_db_list()
+    elif ChatScene.ChatWithDbExecute.value() == chat_mode:
+        result = get_db_list()
+    elif ChatScene.ChatDashboard.value() == chat_mode:
+        result = get_db_list()
+    elif ChatScene.ChatExecution.value() == chat_mode:
+        result = plugins_select_info()
+    elif ChatScene.ChatKnowledge.value() == chat_mode:
+        result = knowledge_list()
+    elif ChatScene.ChatKnowledge.ExtractRefineSummary.value() == chat_mode:
+        result = knowledge_list()
+    else:
+        return Result.succ()
+    return Result.succ(result)
+
+
+@router.post("/v1/resource/file/upload")
+async def file_upload(
+    chat_mode: str,
+    conv_uid: str,
+    sys_code: Optional[str] = None,
+    model_name: Optional[str] = None,
+    doc_file: UploadFile = File(...),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    logger.info(f"file_upload:{conv_uid},{doc_file.filename}")
+    file_client = FileClient()
+    file_name = doc_file.filename
+    is_oss, file_key = await file_client.write_file(
+        conv_uid=conv_uid, doc_file=doc_file
+    )
+
+    _, file_extension = os.path.splitext(file_name)
+    if file_extension.lower() in [".xls", ".xlsx", ".csv"]:
+        file_param = {
+            "is_oss": is_oss,
+            "file_path": file_key,
+            "file_name": file_name,
+            "file_learning": True,
+        }
+        # Prepare the chat
+        dialogue = ConversationVo(
+            conv_uid=conv_uid,
+            chat_mode=chat_mode,
+            select_param=file_param,
+            model_name=model_name,
+            user_name=user_token.user_id,
+            sys_code=sys_code,
+        )
+        chat: BaseChat = await get_chat_instance(dialogue)
+        await chat.prepare()
 
         # Refresh messages
-        return Result.succ(get_hist_messages(conv_uid))
-    except Exception as e:
-        logger.error("excel load error!", e)
-        return Result.failed(code="E000X", msg=f"File Load Error {str(e)}")
+        return Result.succ(file_param)
+    else:
+        return Result.succ(
+            {
+                "is_oss": is_oss,
+                "file_path": file_key,
+                "file_learning": False,
+                "file_name": file_name,
+            }
+        )
 
 
-def get_hist_messages(conv_uid: str):
+@router.post("/v1/resource/file/delete")
+async def file_delete(
+    conv_uid: str,
+    file_key: str,
+    user_name: Optional[str] = None,
+    sys_code: Optional[str] = None,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    logger.info(f"file_delete:{conv_uid},{file_key}")
+    oss_file_client = FileClient()
+
+    return Result.succ(
+        await oss_file_client.delete_file(conv_uid=conv_uid, file_key=file_key)
+    )
+
+
+@router.post("/v1/resource/file/read")
+async def file_read(
+    conv_uid: str,
+    file_key: str,
+    user_name: Optional[str] = None,
+    sys_code: Optional[str] = None,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    logger.info(f"file_read:{conv_uid},{file_key}")
+    file_client = FileClient()
+    res = await file_client.read_file(conv_uid=conv_uid, file_key=file_key)
+    df = pd.read_excel(res, index_col=False)
+    return Result.succ(df.to_json(orient="records", date_format="iso", date_unit="s"))
+
+
+def get_hist_messages(conv_uid: str, user_name: str = None):
     from dbgpt.serve.conversation.serve import Service as ConversationService
 
     instance: ConversationService = ConversationService.get_instance(CFG.SYSTEM_APP)
-    return instance.get_history_messages({"conv_uid": conv_uid})
+    return instance.get_history_messages({"conv_uid": conv_uid, "user_name": user_name})
 
 
 async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
@@ -307,7 +422,9 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         dialogue.conv_uid = conv_vo.conv_uid
 
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
-        raise StopAsyncIteration(f"Unsupported Chat Mode,{dialogue.chat_mode}!")
+        raise StopAsyncIteration(
+            Result.failed("Unsupported Chat Mode," + dialogue.chat_mode + "!")
+        )
 
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
@@ -316,6 +433,9 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "current_user_input": dialogue.user_input,
         "select_param": dialogue.select_param,
         "model_name": dialogue.model_name,
+        "app_code": dialogue.app_code,
+        "ext_info": dialogue.ext_info,
+        "temperature": dialogue.temperature,
     }
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),
@@ -327,94 +447,131 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 
 
 @router.post("/v1/chat/prepare")
-async def chat_prepare(dialogue: ConversationVo = Body()):
+async def chat_prepare(
+    dialogue: ConversationVo = Body(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    logger.info(json.dumps(dialogue.__dict__))
     # dialogue.model_name = CFG.LLM_MODEL
+    dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
     chat: BaseChat = await get_chat_instance(dialogue)
-    if chat.has_history_messages():
-        return Result.succ(None)
-    resp = await chat.prepare()
-    return Result.succ(resp)
+
+    await chat.prepare()
+
+    # Refresh messages
+    return Result.succ(get_hist_messages(dialogue.conv_uid, user_token.user_id))
 
 
 @router.post("/v1/chat/completions")
 async def chat_completions(
     dialogue: ConversationVo = Body(),
     flow_service: FlowService = Depends(get_chat_flow),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(
-        f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
+        f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}, timestamp={int(time.time() * 1000)}"
     )
+    dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    dialogue = adapt_native_app_model(dialogue)
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
         "Transfer-Encoding": "chunked",
     }
-    domain_type = _parse_domain_type(dialogue)
-    if dialogue.chat_mode == ChatScene.ChatAgent.value():
-        return StreamingResponse(
-            multi_agents.app_agent_chat(
-                conv_uid=dialogue.conv_uid,
-                gpts_name=dialogue.select_param,
-                user_query=dialogue.user_input,
-                user_code=dialogue.user_name,
-                sys_code=dialogue.sys_code,
-            ),
-            headers=headers,
-            media_type="text/event-stream",
-        )
-    elif dialogue.chat_mode == ChatScene.ChatFlow.value():
-        flow_req = CommonLLMHttpRequestBody(
-            model=dialogue.model_name,
-            messages=dialogue.user_input,
-            stream=True,
-            # context=flow_ctx,
-            # temperature=
-            # max_new_tokens=
-            # enable_vis=
-            conv_uid=dialogue.conv_uid,
-            span_id=root_tracer.get_current_span_id(),
-            chat_mode=dialogue.chat_mode,
-            chat_param=dialogue.select_param,
-            user_name=dialogue.user_name,
-            sys_code=dialogue.sys_code,
-            incremental=dialogue.incremental,
-        )
-        return StreamingResponse(
-            flow_service.chat_stream_flow_str(dialogue.select_param, flow_req),
-            headers=headers,
-            media_type="text/event-stream",
-        )
-    elif domain_type is not None and domain_type != "Normal":
-        return StreamingResponse(
-            chat_with_domain_flow(dialogue, domain_type),
-            headers=headers,
-            media_type="text/event-stream",
-        )
+    try:
+        domain_type = _parse_domain_type(dialogue)
+        if dialogue.chat_mode == ChatScene.ChatAgent.value():
+            from dbgpt.serve.agent.agents.controller import multi_agents
 
-    else:
-        with root_tracer.start_span(
-            "get_chat_instance",
-            span_type=SpanType.CHAT,
-            metadata=model_to_dict(dialogue),
-        ):
-
-            chat: BaseChat = await get_chat_instance(dialogue)
-
-        if not chat.prompt_template.stream_out:
+            dialogue.ext_info.update({"model_name": dialogue.model_name})
+            dialogue.ext_info.update({"incremental": dialogue.incremental})
+            dialogue.ext_info.update({"temperature": dialogue.temperature})
             return StreamingResponse(
-                no_stream_generator(chat),
+                multi_agents.app_agent_chat(
+                    conv_uid=dialogue.conv_uid,
+                    gpts_name=dialogue.app_code,
+                    user_query=dialogue.user_input,
+                    user_code=dialogue.user_name,
+                    sys_code=dialogue.sys_code,
+                    **dialogue.ext_info,
+                ),
                 headers=headers,
                 media_type="text/event-stream",
             )
-        else:
-            return StreamingResponse(
-                stream_generator(chat, dialogue.incremental, dialogue.model_name),
-                headers=headers,
-                media_type="text/plain",
+        elif dialogue.chat_mode == ChatScene.ChatFlow.value():
+            flow_req = CommonLLMHttpRequestBody(
+                model=dialogue.model_name,
+                messages=dialogue.user_input,
+                stream=True,
+                # context=flow_ctx,
+                # temperature=
+                # max_new_tokens=
+                # enable_vis=
+                conv_uid=dialogue.conv_uid,
+                span_id=root_tracer.get_current_span_id(),
+                chat_mode=dialogue.chat_mode,
+                chat_param=dialogue.select_param,
+                user_name=dialogue.user_name,
+                sys_code=dialogue.sys_code,
+                incremental=dialogue.incremental,
             )
+            return StreamingResponse(
+                flow_service.chat_stream_flow_str(dialogue.select_param, flow_req),
+                headers=headers,
+                media_type="text/event-stream",
+            )
+        elif domain_type is not None and domain_type != "Normal":
+            return StreamingResponse(
+                chat_with_domain_flow(dialogue, domain_type),
+                headers=headers,
+                media_type="text/event-stream",
+            )
+
+        else:
+            with root_tracer.start_span(
+                "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
+            ):
+                chat: BaseChat = await get_chat_instance(dialogue)
+
+            if not chat.prompt_template.stream_out:
+                return StreamingResponse(
+                    no_stream_generator(chat),
+                    headers=headers,
+                    media_type="text/event-stream",
+                )
+            else:
+                return StreamingResponse(
+                    stream_generator(chat, dialogue.incremental, dialogue.model_name),
+                    headers=headers,
+                    media_type="text/plain",
+                )
+    finally:
+        # write to recent usage app.
+        if dialogue.user_name is not None and dialogue.app_code is not None:
+            user_recent_app_dao.upsert(
+                user_code=dialogue.user_name,
+                sys_code=dialogue.sys_code,
+                app_code=dialogue.app_code,
+            )
+
+
+@router.post("/v1/chat/topic/terminate")
+async def terminate_topic(
+    conv_id: str,
+    round_index: int,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    logger.info(f"terminate_topic:{conv_id},{round_index}")
+    try:
+        from dbgpt.serve.agent.agents.controller import multi_agents
+
+        return Result.succ(await multi_agents.topic_terminate(conv_id))
+    except Exception as e:
+        logger.exception("Topic terminate error!")
+        return Result.failed(code="E0102", msg=str(e))
 
 
 @router.get("/v1/model/types")
@@ -425,12 +582,20 @@ async def model_types(controller: BaseModelController = Depends(get_model_contro
         models = await controller.get_all_instances(healthy_only=True)
         for model in models:
             worker_name, worker_type = model.model_name.split("@")
-            if worker_type == "llm":
+            if worker_type == "llm" and worker_name not in [
+                "codegpt_proxyllm",
+                "text2sql_proxyllm",
+            ]:
                 types.add(worker_name)
         return Result.succ(list(types))
 
     except Exception as e:
         return Result.failed(code="E000X", msg=f"controller model types error {e}")
+
+
+@router.get("/v1/test")
+async def test():
+    return "service status is UP"
 
 
 @router.get("/v1/model/supports")
@@ -441,6 +606,31 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
         return Result.succ(FlatSupportedModel.from_supports(models))
     except Exception as e:
         return Result.failed(code="E000X", msg=f"Fetch supportd models error {e}")
+
+
+async def flow_stream_generator(func, incremental: bool, model_name: str):
+    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
+    previous_response = ""
+    async for chunk in func:
+        if chunk:
+            msg = chunk.replace("\ufffd", "")
+            if incremental:
+                incremental_output = msg[len(previous_response) :]
+                choice_data = ChatCompletionResponseStreamChoice(
+                    index=0,
+                    delta=DeltaMessage(role="assistant", content=incremental_output),
+                )
+                chunk = ChatCompletionStreamResponse(
+                    id=stream_id, choices=[choice_data], model=model_name
+                )
+                yield f"data: {json.dumps(chunk.dict(exclude_unset=True), ensure_ascii=False)}\n\n"
+            else:
+                # TODO generate an openai-compatible streaming responses
+                msg = msg.replace("\n", "\\n")
+                yield f"data:{msg}\n\n"
+            previous_response = msg
+    if incremental:
+        yield "data: [DONE]\n\n"
 
 
 async def no_stream_generator(chat):
@@ -466,6 +656,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
+    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
     previous_response = ""
     async for chunk in chat.stream_call():
         if chunk:
@@ -477,12 +668,9 @@ async def stream_generator(chat, incremental: bool, model_name: str):
                     delta=DeltaMessage(role="assistant", content=incremental_output),
                 )
                 chunk = ChatCompletionStreamResponse(
-                    id=chat.chat_session_id, choices=[choice_data], model=model_name
+                    id=stream_id, choices=[choice_data], model=model_name
                 )
-                json_chunk = model_to_json(
-                    chunk, exclude_unset=True, ensure_ascii=False
-                )
-                yield f"data: {json_chunk}\n\n"
+                yield f"data:{json.dumps(chunk.dict(exclude_unset=True), ensure_ascii=False)}\n\n"
             else:
                 # TODO generate an openai-compatible streaming responses
                 msg = msg.replace("\n", "\\n")
@@ -511,9 +699,7 @@ def _parse_domain_type(dialogue: ConversationVo) -> Optional[str]:
             KnowledgeSpaceRequest(name=space_name)
         )
         if len(spaces) == 0:
-            return Result.failed(
-                code="E000X", msg=f"Knowledge space {space_name} not found"
-            )
+            raise ValueError(f"Knowledge space {space_name} not found")
         if spaces[0].domain_type:
             return spaces[0].domain_type
     else:
@@ -528,7 +714,6 @@ async def chat_with_domain_flow(dialogue: ConversationVo, domain_type: str):
         raise ValueError(f"Cant find the DAG for domain type {domain_type}")
 
     end_task = cast(BaseOperator, dags[0].leaf_nodes[0])
-
     space = dialogue.select_param
     connector_manager = CFG.local_db_manager
     # TODO: Some flow maybe not connector

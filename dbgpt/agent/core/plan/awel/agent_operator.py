@@ -1,9 +1,15 @@
 """Agent Operator for AWEL."""
-
+import logging
 from abc import ABC
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type
 
-from dbgpt.core.awel import MapOperator
+from dbgpt.core.awel import (
+    BranchFunc,
+    BranchJoinOperator,
+    BranchOperator,
+    BranchTaskType,
+    MapOperator,
+)
 from dbgpt.core.awel.flow import (
     IOField,
     OperatorCategory,
@@ -16,13 +22,18 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 
 # TODO: Don't dependent on MixinLLMOperator
 from dbgpt.model.operators.llm_operator import MixinLLMOperator
+from dbgpt.serve.prompt.api.endpoints import get_service
+from dbgpt.util.i18n_utils import _
 
+from .... import ActionOutput
 from ....resource.manage import get_resource_manager
 from ....util.llm.llm import LLMConfig
 from ...agent import Agent, AgentGenerateContext, AgentMessage
 from ...agent_manage import get_agent_manager
 from ...base_agent import ConversableAgent
 from .agent_operator_resource import AWELAgent
+
+logger = logging.getLogger()
 
 
 class BaseAgentOperator:
@@ -164,10 +175,23 @@ class AWELAgentOperator(
         input_value: AgentGenerateContext,
     ) -> AgentGenerateContext:
         """Trigger agent to generate a reply."""
+        if input_value.already_failed:
+            return input_value
+
         if not input_value.message:
             raise ValueError("The message is empty.")
         input_message = input_value.message.copy()
+        input_message.rounds = input_message.rounds + 1
         agent = await self.get_agent(input_value)
+
+        is_retry_chat = False
+        # 检测awel flow的启动位置，如果还没启动当前不执行要匹配到启动点才开始执行，如果已经启动则当前需要执行
+        if input_value.begin_agent and not input_value.already_started:
+            if agent.role != input_value.begin_agent:
+                return input_value
+            else:
+                is_retry_chat = True
+
         if agent.fixed_subgoal and len(agent.fixed_subgoal) > 0:
             # Isolate the message delivery mechanism and pass it to the operator
             current_goal = f"[{agent.name if agent.name else agent.role}]:"
@@ -200,19 +224,19 @@ class AWELAgentOperator(
 
         agent_reply_message = await agent.generate_reply(
             received_message=input_message,
-            sender=sender,
+            sender=input_value.sender,
             reviewer=input_value.reviewer,
             rely_messages=input_value.rely_messages,
+            is_retry_chat=is_retry_chat,
+            last_speaker_name=input_value.begin_agent,
         )
+        if not isinstance(agent_reply_message, AgentMessage):
+            raise ValueError(agent_reply_message)
 
+        already_failed = False
         is_success = agent_reply_message.success
-
         if not is_success:
-            raise ValueError(
-                f"The task failed at step {agent.role} and the attempt to "
-                f"repair it failed. The final reason for "
-                f"failure:{agent_reply_message.content}!"
-            )
+            already_failed = True
 
         # What is sent is an AI message
         ai_message: AgentMessage = agent_reply_message.copy()
@@ -230,7 +254,10 @@ class AWELAgentOperator(
             memory=input_value.memory.structure_clone() if input_value.memory else None,
             agent_context=input_value.agent_context,
             llm_client=input_value.llm_client,
-            round_index=agent.consecutive_auto_reply_counter,
+            begin_agent=None,
+            already_failed=already_failed,
+            last_speaker=agent,
+            already_started=True,
         )
 
     async def get_agent(
@@ -262,6 +289,13 @@ class AWELAgentOperator(
         if self.awel_agent.fixed_subgoal:
             kwargs["fixed_subgoal"] = self.awel_agent.fixed_subgoal
 
+        prompt_template = None
+        if self.awel_agent.agent_prompt:
+            prompt_service = get_service()
+            prompt_template = prompt_service.get_template(
+                self.awel_agent.agent_prompt.code
+            )
+
         resource = get_resource_manager().build_resource(self.awel_agent.resources)
         agent = (
             await agent_cls(**kwargs)
@@ -269,7 +303,8 @@ class AWELAgentOperator(
             .bind(llm_config)
             .bind(input_value.agent_context)
             .bind(resource)
-            .build()
+            .bind(prompt_template)
+            .build(is_retry_chat=bool(input_value.begin_agent))
         )
 
         return agent
@@ -309,3 +344,101 @@ class AgentDummyTrigger(Trigger):
     async def trigger(self, **kwargs) -> None:
         """Trigger the DAG. Not used in HttpTrigger."""
         raise NotImplementedError("Dummy trigger does not support trigger.")
+
+
+class AgentBranchOperator(BranchOperator[AgentGenerateContext, AgentGenerateContext]):
+    """The intent detection branch operator."""
+
+    metadata = ViewMetadata(
+        label=_("Agent Branch Operator"),
+        name="agent_branch_operator",
+        category=OperatorCategory.AGENT,
+        operator_type=OperatorType.BRANCH,
+        description=_(
+            "Branch the workflow based on the agent actionreport nexspeakers of the request."  # noqa
+        ),
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                _("Agent Request"),
+                "input_value",
+                AgentGenerateContext,
+                description=_("The input value of the operator."),
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                _("Agent Request"),
+                "output_value",
+                AgentGenerateContext,
+                description=_("The agent request to agent Operator."),
+            ),
+        ],
+    )
+
+    def __init__(self, **kwargs):
+        """Create the intent detection branch operator."""
+        super().__init__(**kwargs)
+
+    async def branches(
+        self,
+    ) -> Dict[BranchFunc[AgentGenerateContext], BranchTaskType]:
+        """Branch the intent detection result to different tasks."""
+        agent_nodes: List[AWELAgentOperator] = [
+            node for node in self.downstream if isinstance(node, AWELAgentOperator)
+        ]
+
+        download_agent_nodes = set(task for task in agent_nodes)  # noqa
+        branch_func_map = {}
+
+        for task_node in download_agent_nodes:
+            agent_name = task_node.awel_agent.agent_profile
+
+            def check(r: AgentGenerateContext, outer_task_name=agent_name):
+                last_message = r.rely_messages[-1]
+                action_output: Optional[ActionOutput] = last_message.action_report
+
+                if not action_output or not action_output.next_speakers:
+                    return False
+
+                return outer_task_name in action_output.next_speakers
+
+            branch_func_map[check] = task_node.node_name
+
+        return branch_func_map  # type: ignore
+
+
+class AgentBranchJoinOperator(BranchJoinOperator[AgentGenerateContext]):
+    """The LLM Branch Join Operator.
+
+    Decide which output to keep(streaming or non-streaming).
+    """
+
+    metadata = ViewMetadata(
+        label=_("Agent Branch Join Operator"),
+        name="agent_branch_join_operator",
+        category=OperatorCategory.AGENT,
+        operator_type=OperatorType.JOIN,
+        description=_("Just keep the first non-empty output."),
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                _("Agent Output"),
+                "agent_output",
+                AgentGenerateContext,
+                description=_("The Agent output."),
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                _("Branch Output"),
+                "agent_output_value",
+                AgentGenerateContext,
+                description=_("The output value of the operator."),
+            ),
+        ],
+    )
+
+    def __init__(self, **kwargs):
+        """Create a new LLM branch join operator."""
+        super().__init__(**kwargs)
