@@ -186,29 +186,40 @@ class TuGraphStore(GraphStoreBase):
 
     def insert_graph(self, graph:Graph) -> None:
         """Add triplet."""
+
+        def escape_quotes(value: str) -> str:
+            """Escape single and double quotes in a string for queries."""
+            if value is not None:
+                return value.replace("'", "").replace('"', '')
+
         nodes:Iterator[Vertex] = graph.vertices()
         edges:Iterator[Edge] = graph.edges()
         node_list = []
         edge_list = []
+        def parser(node_list):
+            return f"""{', '.join(['{' + ', '.join([f'{k}: "{v}"' if isinstance(v, str) else f'{k}: {v}' for k, v in node.items()]) + '}' for node in node_list])}"""
+            
         for node in nodes:
             node_list.append({
-                'id': f"'{node.vid}'",
-                'description': f"'{node.get_prop('description')}'",
-                '_document_id': f"'{node.get_prop('_document_id')}'",
-                '_community_id': f"'1'",
-                '_level_id': f"''",
+                'id': escape_quotes(node.vid),
+                'name': escape_quotes(node.vid),
+                'description': escape_quotes(node.get_prop('description')) or '',
+                '_document_id': '0',
+                '_community_id': '1',
+                '_level_id': '0',
                 '_weight': 10
             })
-        node_query = f"""CALL db.upsertVertex("{self._node_label}", [{', '.join(['{' + ', '.join([f"{k}: {v}" for k, v in node.items()]) + '}' for node in node_list])}])"""
+        node_query = f"""CALL db.upsertVertex("{self._node_label}", [{parser(node_list)}])"""
         for edge in edges:
             edge_list.append({
-                'sid':edge.sid,
-                'tid':edge.tid,
-                'id':edge.get_prop('label'),
-                'description':f"{edge.get_prop('description')}"
+                'sid':escape_quotes(edge.sid),
+                'tid':escape_quotes(edge.tid),
+                'id':escape_quotes(edge.get_prop('label')),
+                'name':escape_quotes(edge.get_prop('label')),
+                'description':escape_quotes(edge.get_prop('description'))
             })    
-        edge_list_str = ', '.join([f'{{sid:"{edge["sid"]}", tid: "{edge["tid"]}",id: "{edge["id"]}", description: "{edge["description"]}"}}' for edge in edge_list])
-        edge_query = f"""CALL db.upsertEdge('{self._edge_label}', {{type:"{self._node_label}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{edge_list_str}])"""
+        
+        edge_query = f"""CALL db.upsertEdge("{self._edge_label}", {{type:"{self._node_label}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{parser(edge_list)}])"""
         self.conn.run(query=node_query)
         self.conn.run(query=edge_query)
 
