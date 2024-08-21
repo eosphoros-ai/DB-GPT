@@ -92,7 +92,7 @@ class GraphExtractor(LLMExtractor):
             text, self._topk, self._score_threshold
         )
         history = [chunk.content for chunk in chunks]
-        context = "\n".join(history) if history else None
+        context = "\n".join(history) if history else ""
 
         try:
             # extract with chunk history
