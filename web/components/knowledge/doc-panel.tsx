@@ -9,6 +9,7 @@ import {
   updateKnowledgeAdmins,
 } from '@/client/api';
 import { IDocument, ISpace } from '@/types/knowledge';
+import { ChatContext } from '@/app/chat-context';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -29,7 +30,7 @@ import { Button, Card, Divider, Dropdown, Empty, Form, Input, Modal, Select, Spa
 import cls from 'classnames';
 import moment from 'moment';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import ArgumentsModal from './arguments-modal';
 import DocIcon from './doc-icon';
@@ -78,6 +79,7 @@ export default function DocPanel(props: IProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const page_size = 18;
+  const { isMenuExpand } = useContext(ChatContext);
 
   const [admins, setAdmins] = useState<string[]>([]);
   const [documents, setDocuments] = useState<any>([]);
@@ -380,7 +382,7 @@ export default function DocPanel(props: IProps) {
                                 autoAdjustOverflow={false}
                                 className="bg-gray-100 rounded-md"
                               >
-                                <EllipsisOutlined className="p-2" />
+                                <EllipsisOutlined className="p-2" style={{ color: isMenuExpand ? '#333' : '#fff' }}/>
                               </Dropdown>
                             }
                           >
