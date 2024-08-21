@@ -100,34 +100,3 @@ Happy coding! 😊
 ## antdbgptweb installation
 
 ### deploy in local environment:
-
-1. 在 /etc/hosts文件增加一行, 必须配置本地xxx.alipay.net，否则无法接入线下的登陆系统
-```
-127.0.0.1 local.alipay.net
-```
-
-2. 在.env文件增加下面配置
-deploy in local environment:
-```
-ANT_BUC_GET_USER_URL='http://antbuservice.stable.alipay.net/pub/getLoginUser.json?appName=antdbgpt'
-ANT_BUC_NOT_LOGIN_URL='http://antbuservice.stable.alipay.net/pub/userNotLogin.htm?appName=antdbgpt&sourceUrl='
-API_BASE_URL='http://local.alipay.net:5000'
-```
-
-OR modify file next.config.js
-```
-  env: {
-    API_BASE_URL: process.env.API_BASE_URL || "http://local.alipay.net:5000",
-    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-    ANT_BUC_GET_USER_URL: 'http://antbuservice.stable.alipay.net/pub/getLoginUser.json?appName=antdbgpt',
-    ANT_BUC_NOT_LOGIN_URL: 'http://antbuservice.stable.alipay.net/pub/userNotLogin.htm?appName=antdbgpt&sourceUrl='
-  },
-```
-
-
-deploy in production environment:
-```
-ANT_BUC_GET_USER_URL=https://antbuservice.alipay.com/pub/getLoginUser.json?appName=antdbgpt
-ANT_BUC_NOT_LOGIN_URL=https://antbuservice.alipay.com/pub/userNotLogin.htm?appName=antdbgpt&sourceUrl=
-```
