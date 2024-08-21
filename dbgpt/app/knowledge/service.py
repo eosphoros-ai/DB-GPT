@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import timeit
 from datetime import datetime
 from typing import List
 
@@ -10,6 +11,8 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
+from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
+
 from dbgpt.app.knowledge.request.request import (
     ChunkQueryRequest,
     DocumentQueryRequest,
@@ -17,6 +20,8 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeDocumentRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
+    ChunkEditRequest,
+    DocumentRecallTestRequest,
 )
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
@@ -37,6 +42,7 @@ from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from dbgpt.serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 from dbgpt.serve.rag.service.service import SyncStatus
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
@@ -157,7 +163,7 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(name=space)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
-            raise Exception(f"there are no or more than one space called {space_name}")
+            raise Exception(f"there are no or more than one space called {space}")
         space = spaces[0]
         if space.context is None:
             context = self._build_default_context()
@@ -303,6 +309,75 @@ class KnowledgeService:
         get knowledge space by ids.
         """
         return knowledge_space_dao.get_knowledge_space_by_ids(ids)
+
+    def recall_test(self, space_name, doc_recall_test_request: DocumentRecallTestRequest):
+        logger.info(f"recall_test {space_name}, {doc_recall_test_request}")
+        from dbgpt.rag.embedding.embedding_factory import (
+            RerankEmbeddingFactory,
+        )
+        try:
+            start_time = timeit.default_timer()
+            question = doc_recall_test_request.question
+            space_context = self.get_space_context(space_name)
+            logger.info(f"space_context is {space_context}")
+            space = knowledge_space_dao.get_one({"name": space_name})
+
+            top_k = int(doc_recall_test_request.recall_top_k)
+            score_threshold = (
+                float(space_context["embedding"].get("recall_score", 0.3))
+                if (space_context and "embedding" in space_context)
+                else 0.3
+            )
+
+            if CFG.RERANK_MODEL is not None:
+                if top_k < int(CFG.RERANK_TOP_K) or top_k < 20:
+                    # We use reranker, so if the top_k is less than 20,
+                    # we need to set it to 20
+                    top_k = max(int(CFG.RERANK_TOP_K), 20)
+
+            knowledge_space_retriever = KnowledgeSpaceRetriever(
+                space_id=space.id, top_k=top_k
+            )
+            chunks = knowledge_space_retriever.retrieve_with_scores(
+                question, score_threshold
+            )
+            retrievers_end_time = timeit.default_timer()
+            retrievers_cost_time = retrievers_end_time - start_time
+            logger.info(
+                f"retrieve chunks size is {len(chunks)}, "
+                f"retrievers_cost_time is {retrievers_cost_time} seconds"
+            )
+
+            recall_top_k = int(doc_recall_test_request.recall_top_k)
+            if CFG.RERANK_MODEL is not None:
+                rerank_embeddings = RerankEmbeddingFactory.get_instance(
+                    CFG.SYSTEM_APP
+                ).create()
+                reranker = RerankEmbeddingsRanker(rerank_embeddings,
+                                                  topk=recall_top_k)
+                chunks = reranker.rank(candidates_with_scores=chunks, query=question)
+
+            recall_score_threshold = doc_recall_test_request.recall_score_threshold
+            if recall_score_threshold is not None:
+                chunks = [
+                    chunk for chunk in chunks if chunk.score >= recall_score_threshold
+                ]
+            recall_end_time = timeit.default_timer()
+            recall_cost_time = recall_end_time - start_time
+            cost_time_map = {
+                "retrievers_cost_time": retrievers_cost_time,
+                "recall_cost_time": recall_cost_time,
+            }
+            logger.info(
+                f"recall chunks size is {len(chunks)}, "
+                f"recall_cost_time is {recall_cost_time} seconds, {cost_time_map}"
+            )
+
+            # return chunks, cost_time_map
+            return chunks
+        except Exception as e:
+            logger.error(f" recall_test error: {str(e)}")
+        return []
 
     def update_knowledge_space(
         self, space_id: int, space_request: KnowledgeSpaceRequest

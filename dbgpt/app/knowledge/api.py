@@ -19,6 +19,8 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
+    ChunkEditRequest,
+    DocumentRecallTestRequest,
 )
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
@@ -37,6 +39,7 @@ from dbgpt.rag import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
+from dbgpt.rag.retriever import BaseRetriever
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.api.schemas import (
     ChunkServeRequest,
@@ -107,6 +110,60 @@ def arguments(space_id: str):
         return Result.succ(knowledge_space_service.arguments(space_id))
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space arguments error {e}")
+
+
+@router.post("/knowledge/{space_name}/recall_test")
+def recall_test(
+    space_name: str,
+    request: DocumentRecallTestRequest,
+):
+    print(f"/knowledge/{space_name}/recall_test params:")
+    try:
+        return Result.succ(knowledge_space_service.recall_test(space_name, request))
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"{space_name} recall_test error {e}")
+
+
+@router.get("/knowledge/{space_id}/recall_retrievers")
+def recall_retrievers(
+    space_id: str,
+):
+    print(f"/knowledge/{space_id}/recall_retrievers params:")
+    try:
+        logger.info(f"get_recall_retrievers {space_id}")
+
+        subclasses = set()
+
+        def recursively_find_subclasses(cls):
+            for subclass in cls.__subclasses__():
+                subclasses.add(subclass)
+                recursively_find_subclasses(subclass)
+
+        recursively_find_subclasses(BaseRetriever)
+
+        retrievers_with_name = []
+        base_name_method = BaseRetriever.name.__func__
+        for cls in subclasses:
+            if hasattr(cls, "name"):
+                cls_name_method = getattr(cls, "name")
+                if cls_name_method.__func__ != base_name_method:
+                    retrievers_with_name.append(cls)
+
+        retriever_names = {}
+        for retriever_cls in retrievers_with_name:
+            try:
+                name = retriever_cls.name()
+                retriever_names[name] = retriever_cls
+            except Exception as e:
+                logger.error(f"Error calling name method on {retriever_cls}: {e}")
+
+        return Result.succ(
+            list(retriever_names.keys())
+        )
+    except Exception as e:
+        return Result.failed(
+            code="E000X", msg=f"{space_id} get_recall_retrievers error {e}"
+        )
 
 
 @router.post("/knowledge/{space_id}/argument/save")
