@@ -122,7 +122,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
                 # Insert each triplet into the graph store
-                self._graph_store.insert_triplet(*triplet)
+                if triplet.get("type") == "triplet":
+                    triplet = triplet.get("data")
+                    self._graph_store.insert_triplet(*triplet)
             logger.info(
                 f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         # Build communities after loading all triplets
