@@ -380,9 +380,9 @@ export default function DocPanel(props: IProps) {
                                 getPopupContainer={(node) => node.parentNode as HTMLElement}
                                 placement="bottomRight"
                                 autoAdjustOverflow={false}
-                                className="bg-gray-100 rounded-md"
+                                className="rounded-md"
                               >
-                                <EllipsisOutlined className="p-2" style={{ color: isMenuExpand ? '#333' : '#fff' }}/>
+                                <EllipsisOutlined className="p-2" />
                               </Dropdown>
                             }
                           >
