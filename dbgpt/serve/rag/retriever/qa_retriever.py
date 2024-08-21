@@ -211,6 +211,6 @@ class QARetriever(BaseRetriever):
         return candidates_with_scores
 
     @classmethod
-    def name(self):
+    def name(cls):
         """Return retriever name."""
         return "qa_retriever"

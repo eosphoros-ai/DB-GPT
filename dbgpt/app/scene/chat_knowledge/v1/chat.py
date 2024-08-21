@@ -40,10 +40,7 @@ class ChatKnowledge(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) space name
         """
-        from dbgpt.rag.embedding.embedding_factory import (
-            EmbeddingFactory,
-            RerankEmbeddingFactory,
-        )
+        from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
 
         self.knowledge_space = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatKnowledge
@@ -66,20 +63,10 @@ class ChatKnowledge(BaseChat):
             if self.space_context is None or self.space_context.get("prompt") is None
             else int(self.space_context["prompt"]["max_token"])
         )
-        embedding_factory = CFG.SYSTEM_APP.get_component(
-            "embedding_factory", EmbeddingFactory
-        )
-        from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-        from dbgpt.serve.rag.connector import VectorStoreConnector
-
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        )
         from dbgpt.serve.rag.models.models import (
             KnowledgeSpaceDao,
             KnowledgeSpaceEntity,
         )
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         spaces = KnowledgeSpaceDao().get_knowledge_space(
             KnowledgeSpaceEntity(name=self.knowledge_space)
@@ -88,15 +75,6 @@ class ChatKnowledge(BaseChat):
             raise Exception(f"invalid space name:{self.knowledge_space}")
         space = spaces[0]
 
-        config = VectorStoreConfig(
-            name=space.name,
-            embedding_fn=embedding_fn,
-            llm_client=self.llm_client,
-            llm_model=self.llm_model,
-        )
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type, vector_store_config=config
-        )
         query_rewrite = None
         if CFG.KNOWLEDGE_SEARCH_REWRITE:
             query_rewrite = QueryRewrite(
@@ -115,14 +93,8 @@ class ChatKnowledge(BaseChat):
                 # We use reranker, so if the top_k is less than 20,
                 # we need to set it to 20
                 retriever_top_k = max(CFG.RERANK_TOP_K, 20)
-        # self.embedding_retriever = EmbeddingRetriever(
-        #     top_k=retriever_top_k,
-        #     index_store=vector_store_connector.index_client,
-        #     query_rewrite=query_rewrite,
-        #     rerank=reranker,
-        # )
         self._space_retriever = KnowledgeSpaceRetriever(
-            space_id=self.knowledge_space,
+            space_id=space.id,
             top_k=retriever_top_k,
             query_rewrite=query_rewrite,
             rerank=reranker,

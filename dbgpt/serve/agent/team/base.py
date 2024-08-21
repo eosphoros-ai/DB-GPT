@@ -6,36 +6,66 @@ logger = logging.getLogger(__name__)
 
 
 class TeamMode(Enum):
-    def __new__(cls, value, name_cn, description, remark):
+    def __new__(
+        cls, value, name_cn, name_en, description, description_en, remark, remark_en
+    ):
         obj = object.__new__(cls)
         obj._value_ = value
         obj.name_cn = name_cn
+        obj.name_en = name_en
         obj.description = description
+        obj.description_en = description_en
+        obj.remark_en = remark_en
         obj.remark = remark
         return obj
 
     AUTO_PLAN = (
         "auto_plan",
         "多智能体自动规划模式",
+        "Multi-agent automatic planning",
         "可以选择多个Agent",
+        "Multiple Agents can be selected",
         "自动根据用户目标进行任务规划拆分，分布推进解决，最终完成用户目标",
+        "Automatically carry out task planning and splitting according to user goals, distribute and promote solutions, and finally complete user goals",
     )
     AWEL_LAYOUT = (
         "awel_layout",
         "任务流编排模式",
+        "AWEL Flow App",
         "选择一个AWEL工作流",
+        "Choose an AWEL workflow",
         "根据指定任务流执行，常用于需要保证执行顺序的应用场景",
+        "Execute according to the specified task flow, often used in application scenarios that need to ensure the order of execution",
     )
-    SINGLE_AGENT = ("single_agent", "单一智能体模式", "只能选择一个Agent", "将一个现有Agent创建成应用")
-    NATIVE_APP = ("native_app", "原生应用模式", "选择应用模板", "基于现有原生应用模板快速创建应用")
+    SINGLE_AGENT = (
+        "single_agent",
+        "单一智能体模式",
+        "Single Agent",
+        "只能选择一个Agent",
+        "Only one Agent can be selected",
+        "和单个Agent进行对话",
+        "Conversation with a single Agent",
+    )
+    NATIVE_APP = (
+        "native_app",
+        "原生应用模式",
+        "Native application",
+        "选择应用模板",
+        "Choose a native app template",
+        "基于现有原生应用模板快速创建应用",
+        "Quickly create apps based on existing native app templates",
+    )
 
     def to_dict(self):
         return {
             "name": self.name,
             "value": self.value,
             "name_cn": self.name_cn,
+            "name_en": self.name_en,
             "description": self.description,
+            "description_en": self.description_en,
             "remark": self.remark,
+            "remark_en": self.remark_en,
         }
 
 

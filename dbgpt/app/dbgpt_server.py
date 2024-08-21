@@ -88,10 +88,6 @@ def mount_routers(app: FastAPI):
 
     app.include_router(knowledge_router, tags=["Knowledge"])
 
-    from dbgpt.app.openapi.open_api_v1 import router as openapi_v1
-
-    app.include_router(openapi_v1, prefix="/openapi", tags=["OpenApi"])
-
     from dbgpt.serve.agent.app.recommend_question.controller import (
         router as recommend_question_v1,
     )
