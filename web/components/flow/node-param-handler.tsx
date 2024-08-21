@@ -114,7 +114,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, la
       case 'variables':
         return renderVariables(data);
       case 'code_editor':
-        return renderCodeEditor({ data });
+        return renderCodeEditor(data);
       default:
         return null;
     }

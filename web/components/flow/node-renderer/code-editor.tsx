@@ -8,12 +8,11 @@ import { useTranslation } from 'react-i18next';
 type Props = {
   data: IFlowNodeParameter;
   defaultValue?: any;
-  onChange?: (value: any) => void;
 };
 
-export const renderCodeEditor = (params: Props) => {
+export const renderCodeEditor = (data: IFlowNodeParameter) => {
   const { t } = useTranslation();
-  const { data, defaultValue, onChange } = params;
+  // const { data, defaultValue } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,11 +45,9 @@ export const renderCodeEditor = (params: Props) => {
         <Form.Item name={data?.name}>
           <Editor
             {...attr}
-            value={defaultValue}
             width={data?.ui?.editor?.width || '100%'}
             height={data?.ui?.editor?.height || 200}
             defaultLanguage={data?.ui?.language}
-            onChange={onChange}
             theme="vs-dark"
             options={{
               minimap: {
