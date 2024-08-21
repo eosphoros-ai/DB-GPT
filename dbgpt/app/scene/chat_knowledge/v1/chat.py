@@ -40,9 +40,7 @@ class ChatKnowledge(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) space name
         """
-        from dbgpt.rag.embedding.embedding_factory import (
-            RerankEmbeddingFactory,
-        )
+        from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
 
         self.knowledge_space = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatKnowledge

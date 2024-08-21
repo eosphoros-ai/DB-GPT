@@ -11,6 +11,7 @@ from dbgpt.app.knowledge.request.request import (
     ChunkEditRequest,
     ChunkQueryRequest,
     DocumentQueryRequest,
+    DocumentRecallTestRequest,
     DocumentSummaryRequest,
     DocumentSyncRequest,
     EntityExtractRequest,
@@ -19,8 +20,6 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
-    ChunkEditRequest,
-    DocumentRecallTestRequest,
 )
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
@@ -157,9 +156,7 @@ def recall_retrievers(
             except Exception as e:
                 logger.error(f"Error calling name method on {retriever_cls}: {e}")
 
-        return Result.succ(
-            list(retriever_names.keys())
-        )
+        return Result.succ(list(retriever_names.keys()))
     except Exception as e:
         return Result.failed(
             code="E000X", msg=f"{space_id} get_recall_retrievers error {e}"
