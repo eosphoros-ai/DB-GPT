@@ -319,4 +319,5 @@ export const CommonZh: Resources['translation'] = {
   Create_failure: '创建失败',
   View_details: '查看详情',
   All: '全部',
+  Please_input_prompt_name: '请输入prompt名称',
 } as const;

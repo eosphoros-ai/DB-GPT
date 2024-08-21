@@ -312,4 +312,5 @@ export const CommonEn = {
   Create_failure: 'Create failure',
   View_details: 'View details',
   All: 'All',
+  Please_input_prompt_name: 'Please input prompt name',
 } as const;

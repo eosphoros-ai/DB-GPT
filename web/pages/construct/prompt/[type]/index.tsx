@@ -425,8 +425,8 @@ const AddOrEditPrompt: React.FC = () => {
                   <Input disabled />
                 </Form.Item>
               )}
-              <Form.Item label="Name" name="prompt_name" className="m-0" rules={[{ required: true, message: `${t('Please_Input')}prompt${t('Prompt_Info_Name')}` }]}>
-                <Input placeholder={`${t('Please_Input')}prompt${t('Prompt_Info_Name')}`} />
+              <Form.Item label="Name" name="prompt_name" className="m-0" rules={[{ required: true, message: t('Please_input_prompt_name') }]}>
+                <Input placeholder={t('Please_input_prompt_name')} />
               </Form.Item>
             </Form>
           </Card>
