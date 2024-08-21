@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 
 type Props = {
   data: IFlowNodeParameter;
-  defaultValue?: any;
   onChange?: (value: any) => void;
 };
 export const renderUpload = (params: Props) => {
