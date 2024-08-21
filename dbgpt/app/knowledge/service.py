@@ -11,17 +11,15 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
-from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
-
 from dbgpt.app.knowledge.request.request import (
+    ChunkEditRequest,
     ChunkQueryRequest,
     DocumentQueryRequest,
+    DocumentRecallTestRequest,
     DocumentSummaryRequest,
     KnowledgeDocumentRequest,
     KnowledgeSpaceRequest,
     SpaceArgumentRequest,
-    ChunkEditRequest,
-    DocumentRecallTestRequest,
 )
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
@@ -40,6 +38,7 @@ from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
+from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from dbgpt.serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
@@ -310,11 +309,12 @@ class KnowledgeService:
         """
         return knowledge_space_dao.get_knowledge_space_by_ids(ids)
 
-    def recall_test(self, space_name, doc_recall_test_request: DocumentRecallTestRequest):
+    def recall_test(
+        self, space_name, doc_recall_test_request: DocumentRecallTestRequest
+    ):
         logger.info(f"recall_test {space_name}, {doc_recall_test_request}")
-        from dbgpt.rag.embedding.embedding_factory import (
-            RerankEmbeddingFactory,
-        )
+        from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
+
         try:
             start_time = timeit.default_timer()
             question = doc_recall_test_request.question
@@ -353,8 +353,7 @@ class KnowledgeService:
                 rerank_embeddings = RerankEmbeddingFactory.get_instance(
                     CFG.SYSTEM_APP
                 ).create()
-                reranker = RerankEmbeddingsRanker(rerank_embeddings,
-                                                  topk=recall_top_k)
+                reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=recall_top_k)
                 chunks = reranker.rank(candidates_with_scores=chunks, query=question)
 
             recall_score_threshold = doc_recall_test_request.recall_score_threshold
