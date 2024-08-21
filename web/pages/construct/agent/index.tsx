@@ -124,12 +124,11 @@ function Agent() {
             <div className="flex items-center gap-4">
               <Button
                 className={cls('border-none text-white bg-button-gradient h-full', {
-                  'opacity-40': true,
+                  'opacity-40': false,
                 })}
                 loading={uploading}
                 icon={<SyncOutlined />}
                 onClick={updateFromGithub}
-                disabled
               >
                 {t('Update_From_Github')}
               </Button>
