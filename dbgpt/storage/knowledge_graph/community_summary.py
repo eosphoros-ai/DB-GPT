@@ -9,6 +9,7 @@ from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community_store import CommunityStore
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -16,7 +17,7 @@ from dbgpt.storage.knowledge_graph.knowledge_graph import (
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.factory import VectorStoreFactory
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex, Graph
+
 logger = logging.getLogger(__name__)
 
 
@@ -167,7 +168,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         # Add a source field to distinguish between global and local results
         for chunk in combined_results[: len(global_results)]:
             chunk.metadata["source"] = "global"
-        for chunk in combined_results[len(global_results):]:
+        for chunk in combined_results[len(local_results):]:
             chunk.metadata["source"] = "local"
 
         # Return all results
@@ -181,17 +182,24 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         # Use the community metastore to perform vector search
-        relevant_communities = await self._community_metastore.search(text)
+        relevant_communities = await self._community_store.search_communities(text)
 
-        # Generate answers from the top-k community summaries
-        chunks = []
-        for community in relevant_communities[:topk]:
-            answer = await self._generate_answer_from_summary(community.summary,
-                                                              text)
-            chunks.append(
-                Chunk(content=answer, metadata={"cluster_id": community.id}))
+        return [
+            Chunk(content=c.summary, metadata={"cluster_id": c.id})
+            for c in relevant_communities
+        ]
 
-        return chunks
+        # # Generate answers from the top-k community summaries
+        # chunks = []
+        # for community in relevant_communities[:topk]:
+        #     answer = await self._generate_answer_from_summary(
+        #         community.summary, text
+        #     )
+        #     chunks.append(
+        #         Chunk(content=answer, metadata={"cluster_id": community.id})
+        #     )
+        #
+        # return chunks
 
     async def _local_search(
         self,
@@ -200,35 +208,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        """Search neighbours on knowledge graph."""
-        if not filters:
-            logger.info("Filters on knowledge graph not supported yet")
-
-        # extract keywords and explore graph store
-        keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store.explore(keywords, limit=topk)
-        logger.info(f"Search subgraph from {len(keywords)} keywords")
-
-        content = (
-            "The following vertices and edges data after [Subgraph Data] "
-            "are retrieved from the knowledge graph based on the keywords:\n"
-            f"Keywords:\n{','.join(keywords)}\n"
-            "---------------------\n"
-            "You can refer to the sample vertices and edges to understand "
-            "the real knowledge graph data provided by [Subgraph Data].\n"
-            "Sample vertices:\n"
-            "(alice)\n"
-            "(bob:{age:28})\n"
-            '(carry:{age:18;role:"teacher"})\n\n'
-            "Sample edges:\n"
-            "(alice)-[reward]->(alice)\n"
-            '(alice)-[notify:{method:"email"}]->'
-            '(carry:{age:18;role:"teacher"})\n'
-            '(bob:{age:28})-[teach:{course:"math";hour:180}]->(alice)\n'
-            "---------------------\n"
-            f"Subgraph Data:\n{subgraph.format()}\n"
+        return await super().asimilar_search_with_scores(
+            text, topk, score_threshold, filters
         )
-        return [Chunk(content=content, metadata=subgraph.schema())]
 
     async def _generate_answer_from_summary(self, community_summary, query):
         """Generate an answer from a community summary based on a given query using LLM."""
