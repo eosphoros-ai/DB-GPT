@@ -41,6 +41,10 @@ class GraphStoreBase(ABC):
         """Add triplet."""
 
     @abstractmethod
+    def insert_graph(self, graph:Graph):
+        """Add triplet."""
+
+    @abstractmethod
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Get triplets."""
 

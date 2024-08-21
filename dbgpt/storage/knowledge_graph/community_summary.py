@@ -16,7 +16,7 @@ from dbgpt.storage.knowledge_graph.knowledge_graph import (
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.factory import VectorStoreFactory
 from dbgpt.storage.vector_store.filters import MetadataFilters
-
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex, Graph
 logger = logging.getLogger(__name__)
 
 
@@ -120,11 +120,28 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         for chunk in chunks:
             # Extract triplets from each chunk
             triplets = await self._triplet_extractor.extract(chunk.content)
+            memory_graph = MemoryGraph()
             for triplet in triplets:
                 # Insert each triplet into the graph store
-                if triplet.get("type") == "triplet":
-                    triplet = triplet.get("data")
-                    self._graph_store.insert_triplet(*triplet)
+                # if triplet.get("type") == "triplet":
+                #     data = triplet.get("data")
+                #     self._graph_store.insert_triplet(*data)
+                if triplet.get("type") == "node":
+                    data = triplet.get("data")
+                    id = data.get('node')
+                    desc = data.get("description")
+                    vertex = Vertex(id,description=desc)
+                    memory_graph.upsert_vertex(vertex)
+                elif triplet.get("type") == "edge":
+                    data = triplet.get("data")
+                    edge_data = data.get("triplet")
+                    desc = data.get("description")
+                    sid = edge_data[0]
+                    tid = edge_data[2]
+                    label = edge_data[1]
+                    edge = Edge(sid,tid,label=label,description = desc)
+                    memory_graph.append_edge(edge)
+            self._graph_store.insert_graph(memory_graph)
             logger.info(
                 f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         # Build communities after loading all triplets

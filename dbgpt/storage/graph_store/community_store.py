@@ -9,7 +9,7 @@ from typing import List, Set
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.community import Community
-from dbgpt.storage.graph_store.graph import Graph
+from dbgpt.storage.graph_store.graph import Graph, MemoryGraph, Vertex, Edge
 from dbgpt.storage.knowledge_graph.community.community_metastore import \
     BuiltinCommunityMetastore
 from dbgpt.storage.vector_store.base import VectorStoreBase
@@ -46,28 +46,30 @@ class CommunityStore:
         result = mg.get_vertex("json_node").get_prop('description')
         community_ids = json.loads(result)
         logger.info(f"Discovered {len(community_ids)} communities.")
-        return community_ids
+        return community_ids["community_id_list"]
 
     async def retrieve_communities(self, community_ids: Set[str]) -> List[Community]:
         """Retrieve community data for each community ID."""
 
         async def process_community(community_id: str) -> Community:
-            community = Community(id=community_id, data=Graph())
-            nodes = self._graph_store.query(
-                f"MATCH (n:{self._graph_store._node_label}) WHERE n._community_id = '{community_id}' RETURN n"
-            )
-
-            for node in nodes:
-                vertex = node.vertices[0]
+            community = Community(id=community_id, data=MemoryGraph())
+            gql = f"MATCH (n:{self._graph_store._node_label})-[r:{self._graph_store._edge_label}]-(m:{self._graph_store._node_label}) WHERE n._community_id = '{community_id}' RETURN n,r,m"
+            graph = self._graph_store.query(gql)
+            for vertex in graph.vertices():
                 community.data.upsert_vertex(vertex)
-                edges = self._graph_store.query(
-                    f"MATCH (n:{self._graph_store._node_label})-[r:{self._graph_store._edge_label}]->(m:{self._graph_store._node_label}) WHERE n.id = '{vertex.vid}' RETURN r, m"
-                )
-                for edge_result in edges:
-                    edge, target_vertex = edge_result.edges[0], edge_result.vertices[0]
+                for edge in graph.get_neighbor_edges(vertex.vid):
                     community.data.append_edge(edge)
-                    community.data.upsert_vertex(target_vertex)
-
+            # for node in graph:
+            #     vertex = node.vertices[0]
+            #     vertex = Vertex()
+            #     community.data.upsert_vertex(vertex)
+            #     edges = self._graph_store.query(
+            #         f"MATCH (n:{self._graph_store._node_label})-[r:{self._graph_store._edge_label}]->(m:{self._graph_store._node_label}) WHERE n.id = '{vertex.vid}' RETURN r, m"
+            #     )
+            #     for edge_result in edges:
+            #         edge, target_vertex = edge_result.edges[0], edge_result.vertices[0]
+            #         community.data.append_edge(edge)
+            #         community.data.upsert_vertex(target_vertex)
             return community
 
         return await asyncio.gather(*[process_community(cid) for cid in community_ids])
