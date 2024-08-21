@@ -13,8 +13,6 @@ from fastapi import (
 )
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
-from dbgpt.app.openapi.api_view_model import APIToken
-from dbgpt.app.openapi.open_api_v1 import OpenAPIException
 from dbgpt.component import SystemApp
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.serve.core import Result

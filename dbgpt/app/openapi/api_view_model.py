@@ -166,33 +166,6 @@ class OpenAPIChatCompletionRequest(BaseModel):
     )
 
 
-class LinksFilters(BaseModel):
-    chatRoomId: Optional[str] = Field(None, description="chat room id")
-    chatRoomIds: Optional[str] = Field(None, description="chat room ids")
-
-
-class LinksChatCompletionRequest(BaseModel):
-    conversation_id: Optional[str] = Field(None, description="conversation uid")
-    message_id: Optional[str] = Field(None, description="小蜜这边用户输入的消息Id")
-    filters: Optional[LinksFilters] = Field(
-        None,
-        description="小蜜 filters",
-        examples=None,
-    )
-    query: Optional[str] = Field(default=None, description="query")
-
-
-class ScriptLink(BaseModel):
-    sequence: Optional[str] = Field(None, description="sequence")
-    title: Optional[str] = Field(None, description="title")
-    url: Optional[str] = Field(None, description="url")
-
-
-class LinksChatExtraResponse(BaseModel):
-    gptModel: Optional[str] = Field(None, description="gpt model")
-    scriptLinks: Optional[List[ScriptLink]] = Field(None, description="scriptLinks")
-
-
 class ChatType(Enum):
     NORMAL = "normal"
     APP = "app"
