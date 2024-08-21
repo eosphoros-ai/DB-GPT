@@ -112,8 +112,10 @@ async def test_function_tool_sync_with_args() -> None:
         f"sample: Call this tool to interact with the sample API. What is the "
         f"sample API useful for? Add two numbers. Parameters: {json_params}"
     )
-    assert await ft.get_prompt() == expected_prompt
-    assert await ft1.get_prompt() == expected_prompt
+    pmt, info = await ft.get_prompt()
+    pmt1, info1 = await ft1.get_prompt()
+    assert pmt == expected_prompt
+    assert pmt1 == expected_prompt
     assert ft.execute(1, 2) == 3
     with pytest.raises(ValueError):
         await ft.async_execute(1, 2)

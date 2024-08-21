@@ -11,9 +11,8 @@ from fastapi import UploadFile
 from dbgpt.agent.core.schema import PluginStorageType
 from dbgpt.agent.resource.tool.autogpt.plugins_util import scan_plugins, update_from_git
 from dbgpt.configs.model_config import PLUGINS_DIR
-
-from ..db.my_plugin_db import MyPluginDao, MyPluginEntity
-from ..db.plugin_hub_db import PluginHubDao, PluginHubEntity
+from dbgpt.serve.agent.hub.db.my_plugin_db import MyPluginDao, MyPluginEntity
+from dbgpt.serve.agent.hub.db.plugin_hub_db import PluginHubDao, PluginHubEntity
 
 logger = logging.getLogger(__name__)
 Default_User = "default"

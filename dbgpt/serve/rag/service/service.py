@@ -35,11 +35,12 @@ from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.pagination_utils import PaginationResult
+from dbgpt.util.string_utils import remove_trailing_punctuation
 from dbgpt.util.tracer import root_tracer, trace
 
 from ..api.schemas import (
+    ChunkServeRequest,
     DocumentServeRequest,
     DocumentServeResponse,
     DocumentVO,
@@ -306,6 +307,27 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._dao.delete(query_request)
         return space
 
+    def update_document(self, request: DocumentServeRequest):
+        """update knowledge document
+
+        Args:
+            - space_id: space id
+            - request: KnowledgeDocumentRequest
+        """
+        if not request.id:
+            raise Exception("doc_id is required")
+        document = self._document_dao.get_one({"id": request.id})
+        entity = self._document_dao.from_response(document)
+        if request.doc_name:
+            entity.doc_name = request.doc_name
+        if len(request.questions) == 0:
+            request.questions = ""
+        questions = [
+            remove_trailing_punctuation(question) for question in request.questions
+        ]
+        entity.questions = json.dumps(questions, ensure_ascii=False)
+        self._document_dao.update_knowledge_document(entity)
+
     def delete_document(self, document_id: str) -> Optional[DocumentServeResponse]:
         """Delete a Flow entity
 
@@ -389,6 +411,28 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         """
         return self._document_dao.get_list_page(request, page, page_size)
 
+    def get_chunk_list(self, request: QUERY_SPEC, page: int, page_size: int):
+        """get document chunks
+        Args:
+            - request: QUERY_SPEC
+        """
+        return self._chunk_dao.get_list_page(request, page, page_size)
+
+    def update_chunk(self, request: ChunkServeRequest):
+        """update knowledge document chunk"""
+        if not request.id:
+            raise Exception("chunk_id is required")
+        chunk = self._chunk_dao.get_one({"id": request.id})
+        entity = self._chunk_dao.from_response(chunk)
+        if request.content:
+            entity.content = request.content
+        if request.questions:
+            questions = [
+                remove_trailing_punctuation(question) for question in request.questions
+            ]
+            entity.questions = json.dumps(questions, ensure_ascii=False)
+        self._chunk_dao.update_chunk(entity)
+
     async def _batch_document_sync(
         self, space_id, sync_requests: List[KnowledgeSyncRequest]
     ) -> List[int]:
@@ -434,7 +478,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
     async def _sync_knowledge_document(
         self,
         space_id,
-        doc_vo: DocumentVO,
+        doc: KnowledgeDocumentEntity,
         chunk_parameters: ChunkParameters,
     ) -> None:
         """sync knowledge document chunk into vector store"""
@@ -445,8 +489,6 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-
-        doc = KnowledgeDocumentEntity.from_document_vo(doc_vo)
 
         space = self.get({"id": space_id})
         config = VectorStoreConfig(

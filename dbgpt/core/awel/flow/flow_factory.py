@@ -536,6 +536,7 @@ class FlowFactory:
             except FlowMetadataException as e:
                 raise e
             except Exception as e:
+                logger.warning(str(e), e)
                 raise FlowMetadataException(
                     f"Unable to build resource instance: {resource_key}, resource_cls: "
                     f"{resource_cls}, error: {e}"

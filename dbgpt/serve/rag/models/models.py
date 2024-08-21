@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text, or_
 
 from dbgpt._private.pydantic import model_to_dict
+from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.serve.rag.api.schemas import SpaceServeRequest, SpaceServeResponse
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -21,11 +22,11 @@ class KnowledgeSpaceEntity(Model):
     gmt_modified = Column(DateTime)
 
     def __repr__(self):
-        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', domain_type='{self.domain_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
 class KnowledgeSpaceDao(BaseDao):
-    def create_knowledge_space(self, space: SpaceServeRequest):
+    def create_knowledge_space(self, space: KnowledgeSpaceRequest):
         """Create knowledge space"""
         session = self.get_raw_session()
         knowledge_space = KnowledgeSpaceEntity(
@@ -39,9 +40,23 @@ class KnowledgeSpaceDao(BaseDao):
         )
         session.add(knowledge_space)
         session.commit()
-        space_id = knowledge_space.id
         session.close()
-        return self.to_response(knowledge_space)
+        ks = self.get_knowledge_space(KnowledgeSpaceEntity(name=space.name))
+        if ks is not None and len(ks) == 1:
+            return ks[0].id
+        raise Exception(f"create space error, find more than 1 or 0 space.")
+
+    def get_knowledge_space_by_ids(self, ids):
+        session = self.get_raw_session()
+        if ids:
+            knowledge_spaces = session.query(KnowledgeSpaceEntity).filter(
+                KnowledgeSpaceEntity.id.in_(ids)
+            )
+        else:
+            return []
+        knowledge_spaces_list = knowledge_spaces.all()
+        session.close()
+        return knowledge_spaces_list
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
         """Get knowledge space by query"""

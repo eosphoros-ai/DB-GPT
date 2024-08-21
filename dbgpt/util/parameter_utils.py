@@ -517,6 +517,8 @@ class EnvArgumentParser:
             return bool
         elif field_type is str or field_type == Optional[str]:
             return str
+        elif field_type is dict or field_type == Optional[dict]:
+            return dict
         else:
             raise ValueError(f"Unsupported parameter type {field_type}")
 
@@ -529,6 +531,8 @@ class EnvArgumentParser:
             return "float"
         elif argparse_type is bool:
             return "bool"
+        elif argparse_type is dict:
+            return "dict"
         else:
             return "str"
 

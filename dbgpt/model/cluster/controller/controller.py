@@ -164,7 +164,6 @@ def initialize_controller(
     controller_params: Optional[ModelControllerParameters] = None,
     system_app: Optional[SystemApp] = None,
 ):
-
     global controller
     if remote_controller_addr:
         controller.backend = _RemoteModelController(remote_controller_addr)

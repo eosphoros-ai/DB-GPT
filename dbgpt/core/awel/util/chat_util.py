@@ -19,6 +19,15 @@ def is_chat_flow_type(output_obj: Any, is_class: bool = False) -> bool:
         return isinstance(output_obj, chat_types)
 
 
+def is_agent_flow_type(output_obj: Any, is_class: bool = False) -> bool:
+    """Check whether the output object is a agent flow type."""
+    if is_class:
+        return output_obj in (str, CommonLLMHttpResponseBody, ModelOutput)
+    else:
+        chat_types = (str, CommonLLMHttpResponseBody)
+        return isinstance(output_obj, chat_types)
+
+
 async def safe_chat_with_dag_task(
     task: BaseOperator, request: Any, covert_to_str: bool = False
 ) -> ModelOutput:

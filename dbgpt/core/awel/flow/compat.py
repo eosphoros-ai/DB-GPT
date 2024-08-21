@@ -25,6 +25,8 @@ class _RegisterItem:
 
 _COMPAT_FLOW_MAPPING: Dict[str, _RegisterItem] = {}
 
+_OLD_AGENT_OPERATOR_MODULE = "dbgpt.serve.agent.team.layout.agent_operator"
+_NEW_AGENT_OPERATOR_MODULE = "dbgpt.agent.core.plan.awel.agent_operator"
 
 _OLD_AGENT_RESOURCE_MODULE_1 = "dbgpt.serve.agent.team.layout.agent_operator_resource"
 _OLD_AGENT_RESOURCE_MODULE_2 = "dbgpt.agent.plan.awel.agent_operator_resource"
@@ -82,6 +84,50 @@ _register(
 _register(
     _OLD_AGENT_RESOURCE_MODULE_2, _NEW_AGENT_RESOURCE_MODULE, "AWELAgent", "AWELAgent"
 )
+
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_1,
+    _NEW_AGENT_RESOURCE_MODULE,
+    "AwelAgentKnowledgeResource",
+    "AWELAgentKnowledgeResource",
+)
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_1,
+    _NEW_AGENT_RESOURCE_MODULE,
+    "AgentPrompt",
+)
+
+
+# AGENT Operator
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_1,
+    _NEW_AGENT_RESOURCE_MODULE,
+    "AwelAgentOperator",
+    "AWELAgentOperator",
+)
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_1,
+    _NEW_AGENT_RESOURCE_MODULE,
+    "AgentBranchOperator",
+)
+_register(
+    _OLD_AGENT_RESOURCE_MODULE_1,
+    _NEW_AGENT_RESOURCE_MODULE,
+    "AgentBranchJoinOperator",
+)
+
+_register(
+    _OLD_AGENT_OPERATOR_MODULE,
+    _NEW_AGENT_OPERATOR_MODULE,
+    "AgentDummyTrigger",
+)
+_register(
+    _OLD_AGENT_OPERATOR_MODULE,
+    _NEW_AGENT_OPERATOR_MODULE,
+    "AgentDummyTrigger",
+)
+
+
 _register(
     "dbgpt.storage.vector_store.connector",
     "dbgpt.serve.rag.connector",

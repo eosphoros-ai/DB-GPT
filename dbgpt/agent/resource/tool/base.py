@@ -121,15 +121,14 @@ class BaseTool(Resource[ToolResourceParameters], ABC):
                     }
                 )
             parameters_string = json.dumps(parameters, ensure_ascii=False)
-        return template.format(
-            name=self.name,
-            description=self.description,
-            parameters=parameters_string,
+        return (
+            template.format(
+                name=self.name,
+                description=self.description,
+                parameters=parameters_string,
+            ),
+            None,
         )
-
-    def __str__(self) -> str:
-        """Return the string representation of the tool."""
-        return f"Tool: {self.name} ({self.description})"
 
 
 class FunctionTool(BaseTool):

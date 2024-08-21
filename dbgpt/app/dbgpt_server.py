@@ -44,10 +44,13 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 
 
-static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
-
 CFG = Config()
 set_default_language(CFG.LANGUAGE)
+
+if CFG.USE_NEW_WEB_UI:
+    static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static/web")
+else:
+    static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static/old_web")
 
 app = create_app(
     title=_("DB-GPT Open API"),
@@ -57,12 +60,6 @@ app = create_app(
 )
 # Use custom router to support priority
 replace_router(app)
-
-app.mount(
-    "/swagger_static",
-    StaticFiles(directory=static_file_path),
-    name="swagger_static",
-)
 
 
 system_app = SystemApp(app)
@@ -91,6 +88,12 @@ def mount_routers(app: FastAPI):
 
     app.include_router(knowledge_router, tags=["Knowledge"])
 
+    from dbgpt.serve.agent.app.recommend_question.controller import (
+        router as recommend_question_v1,
+    )
+
+    app.include_router(recommend_question_v1, prefix="/api", tags=["RecommendQuestion"])
+
 
 def mount_static_files(app: FastAPI):
     os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
@@ -103,6 +106,12 @@ def mount_static_files(app: FastAPI):
         "/_next/static", StaticFiles(directory=static_file_path + "/_next/static")
     )
     app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
+
+    app.mount(
+        "/swagger_static",
+        StaticFiles(directory=static_file_path),
+        name="swagger_static",
+    )
 
 
 add_exception_handler(app)
@@ -266,6 +275,15 @@ def run_webserver(param: WebServerParameters = None):
         },
     ):
         param = initialize_app(param)
+
+        # TODO
+        from dbgpt.serve.agent.agents.expand.app_start_assisant_agent import (  # noqa: F401
+            StartAppAssistantAgent,
+        )
+        from dbgpt.serve.agent.agents.expand.intent_recognition_agent import (  # noqa: F401
+            IntentRecognitionAgent,
+        )
+
         run_uvicorn(param)
 
 
