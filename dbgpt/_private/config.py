@@ -315,7 +315,8 @@ class Config(metaclass=Singleton):
         # experimental financial report model configuration
         self.FIN_REPORT_MODEL = os.getenv("FIN_REPORT_MODEL", None)
         # Whether to enable the new web UI, enabled by default
-        self.USE_NEW_WEB_UI = os.getenv("USE_NEW_WEB_UI", True)
+
+        self.USE_NEW_WEB_UI = os.getenv("USE_NEW_WEB_UI", "True").lower() == "true"
 
     @property
     def local_db_manager(self) -> "ConnectorManager":
