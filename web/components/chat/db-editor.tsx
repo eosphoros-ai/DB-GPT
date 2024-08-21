@@ -116,7 +116,6 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, tab
       }
     };
   }, [tables])
-
   return (
     <div
       className={classNames('flex w-full flex-1 h-full gap-2 overflow-hidden', {
@@ -618,6 +617,7 @@ function DbEditor() {
                     })}
                   >
                     <DbEditorContent
+                      layout={layout}
                       editorValue={item}
                       handleChange={(value) => {
                         const { sql, thoughts } = resolveSqlAndThoughts(value);
