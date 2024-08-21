@@ -307,15 +307,6 @@ export default function DocPanel(props: IProps) {
                   }}
                   allowClear
                 />
-                <Button
-                  onClick={async () => {
-                    await apiInterceptors(syncDocument(space.name, { doc_ids: [] }));
-                    message.success(t('Synchronization_initiated'));
-                  }}
-                  className="border"
-                >
-                  {t('synchronization')}
-                </Button>
               </div>
               <Spin spinning={searchLoading}>
                 <>
