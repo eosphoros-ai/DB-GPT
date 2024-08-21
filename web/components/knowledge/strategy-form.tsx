@@ -38,10 +38,10 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
     if (!selectedStrategy) {
       return null;
     }
-    if (selectedStrategy === DEFAULT_STRATEGY.strategy) {
+    if (selectedStrategy === DEFAULT_STRATEGY.name) {
       return <p className="my-4">{DEFAULT_STRATEGY.desc}</p>;
     }
-    const parameters = ableStrategies?.filter((i) => i.strategy === selectedStrategy)[0].parameters;
+    const parameters = ableStrategies?.filter((i) => i.strategy === selectedStrategy)[0]?.parameters;
     if (!parameters || !parameters.length) {
       return <Alert className="my-2" type="warning" message={t('No_parameter')} />;
     }

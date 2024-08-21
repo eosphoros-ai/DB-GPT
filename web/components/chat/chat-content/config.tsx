@@ -1,19 +1,23 @@
-import { LinkOutlined, ReadOutlined, SyncOutlined } from '@ant-design/icons';
-import ReactMarkdown from 'react-markdown';
-import { Table, Image, Tag, Tabs, TabsProps, Popover } from 'antd';
-import { Reference } from '@/types/chat';
 import { AutoChart, BackEndChartType, getChartType } from '@/components/chart';
-import { CodePreview } from './code-preview';
+import { LinkOutlined, ReadOutlined, SyncOutlined } from '@ant-design/icons';
 import { Datum } from '@antv/ava';
+import { Image, Table, Tabs, TabsProps, Tag } from 'antd';
+import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import { IChunk } from '@/types/knowledge';
-import AgentPlans from './agent-plans';
+import remarkGfm from 'remark-gfm';
+
 import AgentMessages from './agent-messages';
-import VisConvertError from './vis-convert-error';
+import AgentPlans from './agent-plans';
+import { CodePreview } from './code-preview';
+import ReferencesContent from './ReferencesContent';
 import VisChart from './vis-chart';
+import VisCode from './vis-code';
+import VisConvertError from './vis-convert-error';
 import VisDashboard from './vis-dashboard';
 import VisPlugin from './vis-plugin';
-import VisCode from './vis-code';
+import VisAppLink from './VisAppLink';
+import VisChatLink from './VisChatLink';
+import VisResponse from './VisResponse';
 import { formatSql } from '@/utils';
 
 type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
@@ -106,6 +110,22 @@ const basicComponents: MarkdownComponent = {
       }
     }
 
+    if (lang === 'vis-app-link') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisAppLink>[0]['data'];
+        return <VisAppLink data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+    if (lang === 'vis-api-response') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisResponse>[0]['data'];
+        return <VisResponse data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
     return (
       <>
         {!inline ? (
@@ -115,7 +135,7 @@ const basicComponents: MarkdownComponent = {
             {children}
           </code>
         )}
-        <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
+        <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
           {matchValues.join('\n')}
         </ReactMarkdown>
       </>
@@ -131,9 +151,7 @@ const basicComponents: MarkdownComponent = {
     return <li className={`text-sm leading-7 ml-5 pl-2 text-gray-600 dark:text-gray-300 ${ordered ? 'list-decimal' : 'list-disc'}`}>{children}</li>;
   },
   table({ children }) {
-    return (
-      <table className="my-2 rounded-tl-md rounded-tr-md max-w-full bg-white dark:bg-gray-800 text-sm rounded-lg overflow-hidden">{children}</table>
-    );
+    return <table className="my-2 rounded-tl-md rounded-tr-md  bg-white dark:bg-gray-800 text-sm rounded-lg overflow-hidden">{children}</table>;
   },
   thead({ children }) {
     return <thead className="bg-[#fafafa] dark:bg-black font-semibold">{children}</thead>;
@@ -178,7 +196,7 @@ const basicComponents: MarkdownComponent = {
               Image Loading...
             </Tag>
           }
-          fallback="/images/fallback.png"
+          fallback="/pictures/fallback.png"
         />
       </div>
     );
@@ -190,6 +208,43 @@ const basicComponents: MarkdownComponent = {
       </blockquote>
     );
   },
+  button({ children, className, ...restProps }) {
+    if (className === 'chat-link') {
+      const msg = (restProps as any)?.['data-msg'];
+      return <VisChatLink msg={msg}>{children}</VisChatLink>;
+    }
+    return (
+      <button className={className} {...restProps}>
+        {children}
+      </button>
+    );
+  },
+};
+
+const returnSqlVal = (val: string) => {
+  const punctuationMap: any = {
+    '，': ',',
+    '。': '.',
+    '？': '?',
+    '！': '!',
+    '：': ':',
+    '；': ';',
+    '“': '"',
+    '”': '"',
+    '‘': "'",
+    '’': "'",
+    '（': '(',
+    '）': ')',
+    '【': '[',
+    '】': ']',
+    '《': '<',
+    '》': '>',
+    '—': '-',
+    '、': ',',
+    '…': '...',
+  };
+  const regex = new RegExp(Object.keys(punctuationMap).join('|'), 'g');
+  return val.replace(regex, (match) => punctuationMap[match]);
 };
 
 const extraComponents: MarkdownComponent = {
@@ -228,12 +283,12 @@ const extraComponents: MarkdownComponent = {
     const SqlItem = {
       key: 'sql',
       label: 'SQL',
-      children: <CodePreview code={formatSql(data?.sql, 'mysql')} language="sql" />,
+      children: <CodePreview code={formatSql(returnSqlVal(data?.sql), 'mysql') as string} language={'sql'} />,
     };
     const DataItem = {
       key: 'data',
       label: 'Data',
-      children: <Table dataSource={data?.data} columns={columns}  scroll={{x:true}} />,
+      children: <Table dataSource={data?.data} columns={columns} scroll={{x:true}} virtual={true} />,
     };
     const TabItems: TabsProps['items'] = data?.type === 'response_table' ? [DataItem, SqlItem] : [ChartItem, SqlItem, DataItem];
 
@@ -245,71 +300,15 @@ const extraComponents: MarkdownComponent = {
     );
   },
   references: function ({ title, references, children }) {
-    let referenceData;
-    // Low version compatibility, read data from children
     if (children) {
       try {
-        referenceData = JSON.parse(children as string);
-        title = referenceData.title;
-        references = referenceData.references;
+        const referenceData = JSON.parse(children as string);
+        const references = referenceData.references;
+        return <ReferencesContent references={references} />;
       } catch (error) {
-        console.log('parse references failed', error);
-        return <p className="text-sm text-red-500">Render Reference Error!</p>;
-      }
-    } else {
-      // new version, read from tag props.
-      try {
-        references = JSON.parse(references as string);
-      } catch (error) {
-        console.log('parse references failed', error);
-        return <p className="text-sm text-red-500">Render Reference Error!</p>;
+        return null;
       }
     }
-    if (!references || references?.length < 1) {
-      return null;
-    }
-    return (
-      <div className="border-t-[1px] border-gray-300 mt-3 py-2">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-          <LinkOutlined className="mr-2" />
-          <span className="font-semibold">{title}</span>
-        </p>
-        {references.map((reference: Reference, index: number) => (
-          <div key={`file_${index}`} className="text-sm font-normal block ml-2 h-6 leading-6 overflow-hidden">
-            <span className="inline-block w-6">[{index + 1}]</span>
-            <span className="mr-2 lg:mr-4 text-blue-400">{reference.name}</span>
-            {reference?.chunks?.map((chunk: IChunk | number, index) => (
-              <span key={`chunk_${index}`}>
-                {typeof chunk === 'object' ? (
-                  <Popover
-                    content={
-                      <div className="max-w-4xl">
-                        <p className="mt-2 font-bold mr-2 border-t border-gray-500 pt-2">Content:</p>
-                        <p>{chunk?.content || 'No Content'}</p>
-                        <p className="mt-2 font-bold mr-2 border-t border-gray-500 pt-2">MetaData:</p>
-                        <p>{chunk?.meta_info || 'No MetaData'}</p>
-                        <p className="mt-2 font-bold mr-2 border-t border-gray-500 pt-2">Score:</p>
-                        <p>{chunk?.recall_score || ''}</p>
-                      </div>
-                    }
-                    title="Chunk Information"
-                  >
-                    <span className="cursor-pointer text-blue-500 ml-2" key={`chunk_content_${chunk?.id}`}>
-                      {chunk?.id}
-                    </span>
-                  </Popover>
-                ) : (
-                  <span className="cursor-pointer text-blue-500 ml-2" key={`chunk_id_${chunk}`}>
-                    {chunk}
-                  </span>
-                )}
-                {index < reference?.chunks.length - 1 && <span key={`chunk_comma_${index}`}>,</span>}
-              </span>
-            ))}
-          </div>
-        ))}
-      </div>
-    );
   },
   summary: function ({ children }) {
     return (

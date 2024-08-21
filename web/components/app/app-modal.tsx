@@ -1,4 +1,4 @@
-import { AgentParams, IAgent as IAgentParams, IApp, IDetail } from '@/types/app';
+import { AgentParams, IAgent as IAgentParams, CreateAppParams, IDetail } from '@/types/app';
 import { Dropdown, Form, Input, Modal, Select, Space, Spin, Tabs } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -60,7 +60,7 @@ export default function AppModal(props: IProps) {
     setActiveKey(newActiveKey);
   };
 
-  const createApp = async (app: IApp) => {
+  const createApp = async (app: CreateAppParams) => {
     await apiInterceptors(type === 'add' ? addApp(app) : updateApp(app));
     await updateApps();
   };
@@ -302,7 +302,7 @@ export default function AppModal(props: IProps) {
     <div>
       <Modal
         okText={t('Submit')}
-        title={type === 'edit' ? t('edit_application') : t('add_application')}
+        title={type === 'edit' ? 'edit application' : 'add application'}
         open={open}
         width={'65%'}
         onCancel={handleCancel}
@@ -327,7 +327,7 @@ export default function AppModal(props: IProps) {
             autoComplete="off"
             onFinish={handleSubmit}
           >
-            <Form.Item<FieldType> label={t('app_name')} name="app_name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
+            <Form.Item<FieldType> label={'App Name'} name="app_name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
               <Input placeholder={t('Please_input_the_name')} />
             </Form.Item>
             <Form.Item<FieldType>
@@ -353,7 +353,7 @@ export default function AppModal(props: IProps) {
             </div>
             {curTeamModal !== 'awel_layout' ? (
               <>
-                <div className="mb-5">{t('Agents')}</div>
+                <div className="mb-5">Agents</div>
                 <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
               </>
             ) : (

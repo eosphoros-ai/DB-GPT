@@ -6,6 +6,7 @@ export type IFlowUpdateParam = {
   name: string;
   label: string;
   editable: boolean;
+  deploy?: boolean;
   description: string;
   uid?: string;
   flow_data?: IFlowData;
@@ -15,7 +16,6 @@ export type IFlowUpdateParam = {
 export type IFlow = {
   dag_id: string;
   gmt_created: string;
-  gmt_modified: string;
   uid: string;
   name: string;
   label: string;
@@ -23,17 +23,20 @@ export type IFlow = {
   description: string;
   flow_data: IFlowData;
   source: string;
+  gmt_modified?: string;
+  admins?: string[];
+  nick_name: string;
   state?: FlowState;
   error_message?: string;
 };
 
-export type IFlowResponse = {
-  items: Array<IFlow>;
+export interface IFlowResponse {
+  items: IFlow[];
   total_count: number;
   total_pages: number;
   page: number;
   page_size: number;
-};
+}
 
 export type IFlowNodeParameter = {
   id: string;
@@ -135,3 +138,8 @@ export type IFlowData = {
   edges: Array<IFlowDataEdge>;
   viewport: IFlowDataViewport;
 };
+
+export interface UpdateFLowAdminsParams {
+  uid: string;
+  admins: string[];
+}

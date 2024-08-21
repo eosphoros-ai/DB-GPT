@@ -1,3 +1,5 @@
+import { ParamNeed } from './app';
+
 type ChartValue = {
   name: string;
   type: string;
@@ -48,6 +50,20 @@ export type IChatDialogueSchema = {
     | 'chat_flow'
     | (string & {});
   select_param: string;
+  app_code: string;
+  param_need?: ParamNeed[];
+};
+
+export type UserParam = {
+  user_channel: string;
+  user_no: string;
+  nick_name: string;
+};
+
+export type UserParamResponse = {
+  user_channel: string;
+  user_no: string;
+  user_id: string;
 };
 
 export type DialogueListResponse = IChatDialogueSchema[];
@@ -59,6 +75,9 @@ export type IChatDialogueMessageSchema = {
   time_stamp: number | string | null;
   model_name: string;
   retry?: boolean;
+  thinking?: boolean;
+  outing?: boolean;
+  feedback?: Record<string, any>;
 };
 
 export type ModelType =
@@ -113,4 +132,49 @@ export type Reference = {
 export type IDB = {
   param: string;
   type: string;
+  space_id?: number;
 };
+
+export interface UploadResponse {
+  file_learning: boolean;
+  file_path: string;
+  is_oss: boolean;
+}
+
+export interface RecommendQuestionParams {
+  valid?: string; // 是否仅选择生效的应用，true/false
+  app_code?: string; // 所属应用
+  chat_mode?: string; // 类型（chat_knwoledge, chat_excel...）
+  is_hot_question?: string;
+}
+
+export interface RecommendQuestionResponse {
+  id: string;
+  app_code: string;
+  question: string;
+  chat_mode: string;
+  user_code: string;
+}
+
+export interface FeedbackReasonsResponse {
+  reason_type: string;
+  reason: string;
+}
+
+export interface FeedbackAddParams {
+  conv_uid: string;
+  message_id: string; // 消息id, 对应order
+  feedback_type: string; // 反馈类型，like, unlike
+  reason_types?: string[]; // 原因类型
+  remark?: string; // 备注信息
+}
+
+export interface CancelFeedbackAddParams {
+  conv_uid: string;
+  message_id: string;
+}
+
+export interface StopTopicParams {
+  conv_id: string;
+  round_index: number;
+}
