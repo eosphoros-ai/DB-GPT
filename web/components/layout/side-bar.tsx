@@ -412,9 +412,9 @@ function SideBar() {
     if (language === 'en') moment.locale('en');
   }, [])
 
-  // useEffect(() => {
-  //   setLogo(mode === 'dark' ? '/WHITE_LOGO.png' : '/logo_zh_latest.png');
-  // }, [mode]);
+  useEffect(() => {
+    setLogo(mode === 'dark' ? '/logo_s_latest.png' : '/logo_zh_latest.png');
+  }, [mode]);
 
   if (!isMenuExpand) {
     return (
@@ -426,7 +426,7 @@ function SideBar() {
       >
         <div>
           <Link href="/" className="flex justify-center items-center pb-4">
-            <Image src="/logo_s_latest.png" alt="DB-GPT" width={40} height={40} />
+            <Image src={isMenuExpand ? logo : '/LOGO_SMALL.png'} alt="DB-GPT" width={40} height={40} />
           </Link>
           <div className="flex flex-col gap-4 items-center">
             {functions.map((i) => (
@@ -462,7 +462,7 @@ function SideBar() {
       <div>
         {/* LOGO */}
         <Link href="/" className="flex items-center justify-center p-2 pb-4">
-          <Image src={logo} alt="DB-GPT" width={180} height={40} />
+          <Image src={isMenuExpand ? logo : '/LOGO_SMALL.png'} alt="DB-GPT" width={180} height={40} />
         </Link>
         {/* functions */}
         <div className="flex flex-col gap-4">
