@@ -79,6 +79,10 @@ class GraphStoreBase(ABC):
     def query(self, query: str, **args) -> Graph:
         """Execute a query."""
 
+    def aquery(self, query: str, **args) -> Graph:
+        """Async execute a query."""
+        return self.query(query, **args)
+
     @abstractmethod
     def stream_query(self, query: str) -> Generator[Graph, None, None]:
         """Execute stream query."""

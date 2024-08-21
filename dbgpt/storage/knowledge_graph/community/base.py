@@ -24,7 +24,7 @@ class CommunityMetastore(ABC):
         """search communities relevant to query."""
 
     @abstractmethod
-    def save(self, communities: List[Community]):
+    async def save(self, communities: List[Community]):
         """Upsert community."""
 
     @abstractmethod

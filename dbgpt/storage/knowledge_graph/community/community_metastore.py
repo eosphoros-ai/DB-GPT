@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 class BuiltinCommunityMetastore(CommunityMetastore):
     """Builtin Community metastore."""
 
-    VECTOR_SPACE_SUFFIX = "_COMMUNITY_SUMMARY"
-
     def __init__(
         self,
         vector_store: VectorStoreBase,
@@ -48,10 +46,13 @@ class BuiltinCommunityMetastore(CommunityMetastore):
             Community(id=chunk.id, summary=chunk.content) for chunk in chunks
         ]
 
-    def save(self, communities: List[Community]):
+    async def save(self, communities: List[Community]):
         """Upsert communities."""
-        chunks = [Chunk(id=c.id, content=c.summary) for c in communities]
-        self._vector_store.aload_document_with_limit(
+        chunks = [
+            Chunk(id=c.id, content=c.summary, metadata={"total": len(communities)})
+            for c in communities
+        ]
+        await self._vector_store.aload_document_with_limit(
             chunks, self._max_chunks_once_load, self._max_threads
         )
         logger.info(f"Save {len(communities)} communities")

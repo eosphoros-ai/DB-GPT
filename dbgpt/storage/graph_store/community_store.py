@@ -1,15 +1,13 @@
 """Define the CommunityStore class"""
 
-import asyncio
-import logging
 import json
-from concurrent.futures import ThreadPoolExecutor
+import logging
 from typing import List, Set
 
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.community import Community
-from dbgpt.storage.graph_store.graph import Graph, MemoryGraph, Vertex, Edge
+from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.community.community_metastore import \
     BuiltinCommunityMetastore
 from dbgpt.storage.vector_store.base import VectorStoreBase
@@ -18,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class CommunityStore:
+    MAX_HIERARCHY_LEVEL = 3
 
     def __init__(
         self,
@@ -29,74 +28,52 @@ class CommunityStore:
         self._graph_store = graph_store
         self._community_summarizer = community_summarizer
         self._meta_store = BuiltinCommunityMetastore(vector_store)
-        self._executor = ThreadPoolExecutor(max_workers=10)
-        self._max_hierarchy_level = 3
 
     async def build_communities(self):
         """Discover, retrieve, summarize and save communities."""
-        communities_metadata = await self.discover_communities()
-        communities = await self.retrieve_communities(communities_metadata)
-        await self.summarize_communities(communities)
-        await self.save_communities(communities)
+        community_ids = await self.__discover_communities()
 
-    async def discover_communities(self) -> Set[str]:
+        communities = []
+        for community_id in community_ids:
+            community = await self.__retrieve_community(community_id)
+            community.summary = await (
+                self.__summarize_community(community.data)
+            )
+            communities.append(community)
+
+        await self._meta_store.save(communities)
+
+    async def __discover_communities(self) -> Set[str]:
         """Discover unique community IDs."""
         # graph_name = self._graph_store.get_config().name
-        mg = self._graph_store.query("CALL db.plugin.callPlugin('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)")
-        result = mg.get_vertex("json_node").get_prop('description')
-        community_ids = json.loads(result)
-        logger.info(f"Discovered {len(community_ids)} communities.")
-        return community_ids["community_id_list"]
-
-    async def retrieve_communities(self, community_ids: Set[str]) -> List[Community]:
-        """Retrieve community data for each community ID."""
-
-        async def process_community(community_id: str) -> Community:
-            community = Community(id=community_id, data=MemoryGraph())
-            gql = f"MATCH (n:{self._graph_store._node_label})-[r:{self._graph_store._edge_label}]-(m:{self._graph_store._node_label}) WHERE n._community_id = '{community_id}' RETURN n,r,m"
-            graph = self._graph_store.query(gql)
-            for vertex in graph.vertices():
-                community.data.upsert_vertex(vertex)
-                for edge in graph.get_neighbor_edges(vertex.vid):
-                    community.data.append_edge(edge)
-            # for node in graph:
-            #     vertex = node.vertices[0]
-            #     vertex = Vertex()
-            #     community.data.upsert_vertex(vertex)
-            #     edges = self._graph_store.query(
-            #         f"MATCH (n:{self._graph_store._node_label})-[r:{self._graph_store._edge_label}]->(m:{self._graph_store._node_label}) WHERE n.id = '{vertex.vid}' RETURN r, m"
-            #     )
-            #     for edge_result in edges:
-            #         edge, target_vertex = edge_result.edges[0], edge_result.vertices[0]
-            #         community.data.append_edge(edge)
-            #         community.data.upsert_vertex(target_vertex)
-            return community
-
-        return await asyncio.gather(*[process_community(cid) for cid in community_ids])
-
-    async def summarize_communities(self, communities: List[Community]):
-        """Generate summaries for each community."""
-        for community in communities:
-            community.summary = await self._generate_community_summary(community.data)
-
-    async def save_communities(self, communities: List[Community]):
-        """Save all communities to the meta store."""
-        await asyncio.get_event_loop().run_in_executor(
-            self._executor, self._meta_store.save, communities
+        mg = self._graph_store.query(
+            "CALL db.plugin.callPlugin"
+            "('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)"
         )
+        result = mg.get_vertex("json_node").get_prop('description')
+        community_ids = json.loads(result)["community_id_list"]
+        logger.info(f"Discovered {len(community_ids)} communities.")
+        return community_ids
 
-    async def search_communities(self, query: str) -> List[Community]:
-        return await self._meta_store.search(query)
+    async def __retrieve_community(
+        self, community_id: str
+    ) -> Community:
+        """Retrieve community data for community id."""
+        gql = (
+            f"MATCH (n:{self._graph_store._node_label})-"
+            f"[r:{self._graph_store._edge_label}]-"
+            f"(m:{self._graph_store._node_label}) "
+            f"WHERE n._community_id = '{community_id}' RETURN n,r,m"
+        )
+        return Community(id=community_id, data=self._graph_store.aquery(gql))
 
-    async def _summarize_community(self, community: Community):
-        summary = await self._generate_community_summary(community.data)
-        community.summary = summary
-        self._meta_store.save([community])
-
-    async def _generate_community_summary(self, graph: Graph):
+    async def __summarize_community(self, graph: Graph):
         """Generate summary for a given graph using an LLM."""
         nodes = "\n".join(
-            [f"- {v.vid}: {v.get_prop('description')}" for v in graph.vertices()]
+            [
+                f"- {v.vid}: {v.get_prop('description')}"
+                for v in graph.vertices()
+            ]
         )
         relationships = "\n".join(
             [
@@ -108,6 +85,9 @@ class CommunityStore:
         return await self._community_summarizer.summarize(
             nodes=nodes, relationships=relationships
         )
+
+    async def search_communities(self, query: str) -> List[Community]:
+        return await self._meta_store.search(query)
 
     def drop(self):
         self._graph_store.drop()

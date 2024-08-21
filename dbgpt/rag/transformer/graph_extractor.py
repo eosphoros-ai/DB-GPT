@@ -69,10 +69,10 @@ GRAPH_EXTRACT_PT = (
 class GraphExtractor(LLMExtractor):
     """GraphExtractor class."""
 
-    VECTOR_SPACE_SUFFIX = "_CHUNK_HISTORY"
-
     def __init__(
-        self, llm_client: LLMClient, model_name: str, chunk_history: VectorStoreBase
+        self, llm_client: LLMClient,
+        model_name: str,
+        chunk_history: VectorStoreBase
     ):
         """Initialize the GraphExtractor."""
         super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT)
@@ -101,16 +101,22 @@ class GraphExtractor(LLMExtractor):
         finally:
             # save chunk to history
             await self._chunk_history.aload_document_with_limit(
-                [Chunk(content=text)], self._max_chunks_once_load, self._max_threads
+                [
+                    Chunk(content=text, metadata={"relevant_cnt": len(history)})
+                ],
+                self._max_chunks_once_load,
+                self._max_threads
             )
 
-    def _parse_response(self, text: str, limit: Optional[int] = None) -> List[dict]:
+    def _parse_response(self, text: str, limit: Optional[int] = None) -> List[
+        dict]:
         results = []
         current_section = None
 
         for line in text.split("\n"):
             line = line.strip()
-            if line in ["Triplets:", "Node Descriptions:", "Edge Descriptions:"]:
+            if line in ["Triplets:", "Node Descriptions:",
+                        "Edge Descriptions:"]:
                 current_section = line[:-1]  # Remove the colon
             elif line and current_section:
                 if current_section == "Triplets":
@@ -120,16 +126,19 @@ class GraphExtractor(LLMExtractor):
                             part.strip() for part in match.groups()
                         ]
                         results.append(
-                            {"type": "triplet", "data": (subject, predicate, obj)}
+                            {"type": "triplet",
+                             "data": (subject, predicate, obj)}
                         )
                 elif current_section == "Node Descriptions":
                     match = re.match(r"\[(.*?),(.*?)\]", line)
                     if match:
-                        node, description = [part.strip() for part in match.groups()]
+                        node, description = [part.strip() for part in
+                                             match.groups()]
                         results.append(
                             {
                                 "type": "node",
-                                "data": {"node": node, "description": description},
+                                "data": {"node": node,
+                                         "description": description},
                             }
                         )
                 elif current_section == "Edge Descriptions":
