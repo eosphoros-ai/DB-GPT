@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Button, Modal } from 'antd';
+import { Button, Form, Modal } from 'antd';
 import Editor from '@monaco-editor/react';
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
@@ -7,13 +7,12 @@ import { useTranslation } from 'react-i18next';
 
 type Props = {
   data: IFlowNodeParameter;
-  defaultValue: any;
-  onChange: (value: any) => void;
+  defaultValue?: any;
+  onChange?: (value: any) => void;
 };
 
-export const RenderCodeEditor = (params: Props) => {
+export const renderCodeEditor = (params: Props) => {
   const { t } = useTranslation();
-
   const { data, defaultValue, onChange } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
@@ -38,27 +37,29 @@ export const RenderCodeEditor = (params: Props) => {
   }, [data?.ui?.editor?.width]);
 
   return (
-    <div style={{ textAlign: 'center' }} className="p-2 text-sm">
-      <Button type="primary" onClick={showModal}>
-        {t('openCodeEditor')}
+    <div className="p-2 text-sm">
+      <Button type="default" onClick={showModal}>
+        {t('Open_Code_Editor')}
       </Button>
 
-      <Modal title={t('openCodeEditor')} width={modalWidth} open={isModalOpen} onOk={onOk} onCancel={onCancel}>
-        <Editor
-          {...attr}
-          width={data?.ui?.editor?.width || '100%'}
-          value={defaultValue}
-          height={data?.ui?.editor?.height || 200}
-          defaultLanguage={data?.ui?.language}
-          onChange={onChange}
-          theme="vs-dark"
-          options={{
-            minimap: {
-              enabled: false,
-            },
-            wordWrap: 'on',
-          }}
-        />
+      <Modal title={t('Code_Editor')} width={modalWidth} open={isModalOpen} onOk={onOk} onCancel={onCancel}>
+        <Form.Item name={data?.name}>
+          <Editor
+            {...attr}
+            value={defaultValue}
+            width={data?.ui?.editor?.width || '100%'}
+            height={data?.ui?.editor?.height || 200}
+            defaultLanguage={data?.ui?.language}
+            onChange={onChange}
+            theme="vs-dark"
+            options={{
+              minimap: {
+                enabled: false,
+              },
+              wordWrap: 'on',
+            }}
+          />
+        </Form.Item>
       </Modal>
     </div>
   );
