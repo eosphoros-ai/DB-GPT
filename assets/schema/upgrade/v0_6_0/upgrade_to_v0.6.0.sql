@@ -19,18 +19,18 @@ ALTER TABLE  document_chunk ADD COLUMN `questions` text DEFAULT NULL COMMENT 'ch
 ALTER TABLE  knowledge_document ADD COLUMN `doc_token` varchar(100) DEFAULT NULL COMMENT 'doc token';
 ALTER TABLE  knowledge_document ADD COLUMN `questions` text DEFAULT NULL COMMENT 'document related questions';
 
---gpts_messages
+-- gpts_messages
 ALTER TABLE  gpts_messages ADD COLUMN `is_success` int(4)  NULL DEFAULT 0 COMMENT 'agent message is success';
 ALTER TABLE  gpts_messages ADD COLUMN `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code';
 ALTER TABLE  gpts_messages ADD COLUMN `app_name` varchar(255) NOT NULL COMMENT 'Current AI assistant name';
 ALTER TABLE  gpts_messages ADD COLUMN `resource_info` text DEFAULT NULL  COMMENT 'Current conversation resource info';
 
---prompt_manage
+-- prompt_manage
 ALTER TABLE  prompt_manage ADD COLUMN `prompt_code` varchar(255) NULL COMMENT 'Prompt code';
 ALTER TABLE  prompt_manage ADD COLUMN `response_schema` text  NULL COMMENT 'Prompt response schema';
 ALTER TABLE  prompt_manage ADD COLUMN `user_code` varchar(128)  NULL COMMENT 'User code';
 
---chat_feed_back
+-- chat_feed_back
 ALTER TABLE  chat_feed_back ADD COLUMN `message_id` varchar(255)  NULL COMMENT 'Message id';
 ALTER TABLE  chat_feed_back ADD COLUMN `feedback_type` varchar(50)  NULL COMMENT 'Feedback type like or unlike';
 ALTER TABLE  chat_feed_back ADD COLUMN `reason_types` varchar(255)  NULL COMMENT 'Feedback reason categories';
@@ -55,7 +55,7 @@ CREATE TABLE `recommend_question` (
   KEY `idx_app_code` (`app_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="AI application related recommendation issues";
 
---dbgpt.user_recent_apps definition
+-- dbgpt.user_recent_apps definition
 CREATE TABLE `user_recent_apps` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
