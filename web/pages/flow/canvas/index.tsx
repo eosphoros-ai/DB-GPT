@@ -1,19 +1,18 @@
-import { addFlow, apiInterceptors, getFlowById, updateFlowById } from '@/client/api';
+import { apiInterceptors, getFlowById, importFlow } from '@/client/api';
 import MuiLoading from '@/components/common/loading';
 import AddNodes from '@/components/flow/add-nodes';
 import ButtonEdge from '@/components/flow/button-edge';
 import CanvasNode from '@/components/flow/canvas-node';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { checkFlowDataRequied, getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
-import { FrownOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Divider, Form, Input, Modal, Space, message, notification } from 'antd';
+import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
+import { ExportOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
+import { Divider, Space, Tooltip, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactFlow, { Background, Connection, Controls, ReactFlowProvider, addEdge, useEdgesState, useNodesState, useReactFlow, Node } from 'reactflow';
 import 'reactflow/dist/style.css';
-
-const { TextArea } = Input;
+import { SaveFlowModal, ExportFlowModal, ImportFlowModal } from '@/components/flow/canvas-modal';
 
 interface Props {
   // Define your component props here
@@ -23,8 +22,7 @@ const edgeTypes = { buttonedge: ButtonEdge };
 
 const Canvas: React.FC<Props> = () => {
   const { t } = useTranslation();
-  const [messageApi, contextHolder] = message.useMessage();
-  const [form] = Form.useForm<IFlowUpdateParam>();
+
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
@@ -33,9 +31,10 @@ const Canvas: React.FC<Props> = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
-  const [deploy, setDeploy] = useState(true);
+  const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
+  const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
 
   async function getFlowData() {
     setLoading(true);
@@ -139,18 +138,7 @@ const Canvas: React.FC<Props> = () => {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  function labelChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const label = e.target.value;
-    // replace spaces with underscores, convert uppercase letters to lowercase, remove characters other than digits, letters, _, and -.
-    let result = label
-      .replace(/\s+/g, '_')
-      .replace(/[^a-z0-9_-]/g, '')
-      .toLowerCase();
-    result = result;
-    form.setFieldsValue({ name: result });
-  }
-
-  function clickSave() {
+  function onSave() {
     const flowData = reactFlow.toObject() as IFlowData;
     const [check, node, message] = checkFlowDataRequied(flowData);
     if (!check && message) {
@@ -172,39 +160,36 @@ const Canvas: React.FC<Props> = () => {
       );
       return notification.error({ message: 'Error', description: message, icon: <FrownOutlined className="text-red-600" /> });
     }
-    setIsModalVisible(true);
+    setIsSaveFlowModalOpen(true);
   }
 
-  async function handleSaveFlow() {
-    const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
-    const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
-    if (id) {
-      const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject, state }));
-      setIsModalVisible(false);
-      if (res?.success) {
-        messageApi.success(t('save_flow_success'));
-      } else if (res?.err_msg) {
-        messageApi.error(res?.err_msg);
-      }
-    } else {
-      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject, state }));
-      if (res?.uid) {
-        messageApi.success(t('save_flow_success'));
-        const history = window.history;
-        history.pushState(null, '', `/flow/canvas?id=${res.uid}`);
-      }
-      setIsModalVisible(false);
-    }
+  function onExport() {
+    setIsExportFlowModalOpen(true);
+  }
+
+  function onImport() {
+    setIsImportFlowModalOpen(true);
   }
 
   return (
     <>
       <MuiLoading visible={loading} />
-      <div className="my-2 mx-4 flex flex-row justify-end items-center">
-        <div className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 flext justify-center items-center hover:text-blue-500 dark:hover:text-zinc-100">
-          <SaveOutlined className="block text-xl" onClick={clickSave} />
-        </div>
-      </div>
+      <Space className="my-2 mx-4 flex flex-row justify-end">
+        {[
+          { title: 'import', icon: <ImportOutlined className="block text-xl" onClick={onImport} /> },
+          { title: 'export', icon: <ExportOutlined className="block text-xl" onClick={onExport} /> },
+          { title: 'save', icon: <SaveOutlined className="block text-xl" onClick={onSave} /> },
+        ].map(({ title, icon }) => (
+          <Tooltip
+            key={title}
+            title={title}
+            className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 hover:text-blue-500 dark:hover:text-zinc-100"
+          >
+            {icon}
+          </Tooltip>
+        ))}
+      </Space>
+
       <Divider className="mt-0 mb-0" />
       <div className="h-[calc(100vh-60px)] w-full" ref={reactFlowWrapper}>
         <ReactFlow
@@ -227,85 +212,27 @@ const Canvas: React.FC<Props> = () => {
           <AddNodes />
         </ReactFlow>
       </div>
-      <Modal
-        title={t('flow_modal_title')}
-        open={isModalVisible}
-        onCancel={() => {
-          setIsModalVisible(false);
-        }}
-        cancelButtonProps={{ className: 'hidden' }}
-        okButtonProps={{ className: 'hidden' }}
-      >
-        <Form
-          name="flow_form"
-          form={form}
-          labelCol={{ span: 8 }}
-          wrapperCol={{ span: 16 }}
-          style={{ maxWidth: 600 }}
-          initialValues={{ remember: true }}
-          onFinish={handleSaveFlow}
-          autoComplete="off"
-        >
-          <Form.Item label="Title" name="label" initialValue={flowInfo?.label} rules={[{ required: true, message: 'Please input flow title!' }]}>
-            <Input onChange={labelChange} />
-          </Form.Item>
-          <Form.Item
-            label="Name"
-            name="name"
-            initialValue={flowInfo?.name}
-            rules={[
-              { required: true, message: 'Please input flow name!' },
-              () => ({
-                validator(_, value) {
-                  const regex = /^[a-zA-Z0-9_\-]+$/;
-                  if (!regex.test(value)) {
-                    return Promise.reject('Can only contain numbers, letters, underscores, and dashes');
-                  }
-                  return Promise.resolve();
-                },
-              }),
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item label="Description" initialValue={flowInfo?.description} name="description">
-            <TextArea rows={3} />
-          </Form.Item>
-          <Form.Item label="Editable" name="editable" initialValue={flowInfo?.editable} valuePropName="checked">
-            <Checkbox />
-          </Form.Item>
-          <Form.Item hidden name="state">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Deploy">
-            <Checkbox
-              defaultChecked={flowInfo?.state === 'deployed' || flowInfo?.state === 'running'}
-              value={deploy}
-              onChange={(e) => {
-                const val = e.target.checked;
-                form.setFieldValue('state', val ? 'deployed' : 'developing');
-                setDeploy(val);
-              }}
-            />
-          </Form.Item>
-          <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-            <Space>
-              <Button
-                htmlType="button"
-                onClick={() => {
-                  setIsModalVisible(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Submit
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
-      {contextHolder}
+
+      <SaveFlowModal
+        reactFlow={reactFlow}
+        flowInfo={flowInfo}
+        isSaveFlowModalOpen={isSaveFlowModalOpen}
+        setIsSaveFlowModalOpen={setIsSaveFlowModalOpen}
+      />
+
+      <ExportFlowModal
+        reactFlow={reactFlow}
+        flowInfo={flowInfo}
+        isExportFlowModalOpen={isExportFlowModalOpen}
+        setIsExportFlowModalOpen={setIsExportFlowModalOpen}
+      />
+
+      <ImportFlowModal
+        setNodes={setNodes}
+        setEdges={setEdges}
+        isImportModalOpen={isImportModalOpen}
+        setIsImportFlowModalOpen={setIsImportFlowModalOpen}
+      />
     </>
   );
 };
