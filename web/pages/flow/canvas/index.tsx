@@ -269,6 +269,7 @@ const Canvas: React.FC<Props> = () => {
           <AddNodes />
         </ReactFlow>
       </div>
+      
       <Modal
         title={t('flow_modal_title')}
         open={isModalVisible}
