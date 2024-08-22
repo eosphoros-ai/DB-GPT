@@ -126,10 +126,8 @@ class CodeAssistantAgent(ConversableAgent):
         """Verify whether the current execution results meet the target expectations."""
         task_goal = message.current_goal
         action_report = message.action_report
-        task_result = ""
-        if action_report:
-            task_result = action_report.get("content", "")
-
+        if not action_report:
+            return False, "No execution solution results were checked"
         check_result, model = await self.thinking(
             messages=[
                 AgentMessage(
@@ -137,7 +135,7 @@ class CodeAssistantAgent(ConversableAgent):
                     content="Please understand the following task objectives and "
                     f"results and give your judgment:\n"
                     f"Task goal: {task_goal}\n"
-                    f"Execution Result: {task_result}",
+                    f"Execution Result: {action_report.content}",
                 )
             ],
             prompt=CHECK_RESULT_SYSTEM_MESSAGE,

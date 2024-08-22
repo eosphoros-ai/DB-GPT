@@ -1,8 +1,9 @@
 """Role class for role-based conversation."""
 
 from abc import ABC
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
+from jinja2 import Environment, Template, meta
 from jinja2.sandbox import SandboxedEnvironment
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
@@ -37,6 +38,8 @@ class Role(ABC, BaseModel):
         question: Optional[str] = None,
         is_system: bool = True,
         most_recent_memories: Optional[str] = None,
+        resource_vars: Optional[Dict] = None,
+        is_retry_chat: bool = False,
         **kwargs
     ) -> str:
         """Return the prompt template for the role.
@@ -44,8 +47,6 @@ class Role(ABC, BaseModel):
         Returns:
             str: The prompt template.
         """
-        resource_vars = await self.generate_resource_variables(question)
-
         if is_system:
             return self.current_profile.format_system_prompt(
                 template_env=self.template_env,
@@ -53,6 +54,7 @@ class Role(ABC, BaseModel):
                 language=self.language,
                 most_recent_memories=most_recent_memories,
                 resource_vars=resource_vars,
+                is_retry_chat=is_retry_chat,
                 **kwargs,
             )
         else:
@@ -65,12 +67,6 @@ class Role(ABC, BaseModel):
                 **kwargs,
             )
 
-    async def generate_resource_variables(
-        self, question: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Generate the resource variables."""
-        return {}
-
     def identity_check(self) -> None:
         """Check the identity of the role."""
         pass
@@ -82,8 +78,55 @@ class Role(ABC, BaseModel):
     @property
     def current_profile(self) -> Profile:
         """Return the current profile."""
-        profile = self.profile.create_profile()
+        profile = self.profile.create_profile(prefer_prompt_language=self.language)
         return profile
+
+    def prompt_template(
+        self,
+        template_format: str = "f-string",
+        language: str = "en",
+        is_retry_chat: bool = False,
+    ) -> str:
+        """Get agent prompt template."""
+        self.language = language
+        system_prompt = self.current_profile.get_system_prompt_template()
+        template = Template(system_prompt)
+
+        env = Environment()
+        parsed_content = env.parse(system_prompt)
+        variables = meta.find_undeclared_variables(parsed_content)
+
+        role_params = {
+            "role": self.role,
+            "name": self.name,
+            "goal": self.goal,
+            "retry_goal": self.retry_goal,
+            "expand_prompt": self.expand_prompt,
+            "language": language,
+            "constraints": self.constraints,
+            "retry_constraints": self.retry_constraints,
+            "examples": self.examples,
+            "is_retry_chat": is_retry_chat,
+        }
+        param = role_params.copy()
+        runtime_param_names = []
+        for variable in variables:
+            if variable not in role_params:
+                runtime_param_names.append(variable)
+
+        if template_format == "f-string":
+            input_params = {}
+            for variable in runtime_param_names:
+                input_params[variable] = "{" + variable + "}"
+            param.update(input_params)
+        else:
+            input_params = {}
+            for variable in runtime_param_names:
+                input_params[variable] = "{{" + variable + "}}"
+            param.update(input_params)
+
+        prompt_template = template.render(param)
+        return prompt_template
 
     @property
     def name(self) -> str:
@@ -101,9 +144,19 @@ class Role(ABC, BaseModel):
         return self.current_profile.get_goal()
 
     @property
+    def retry_goal(self) -> Optional[str]:
+        """Return the retry goal of the role."""
+        return self.current_profile.get_retry_goal()
+
+    @property
     def constraints(self) -> Optional[List[str]]:
         """Return the constraints of the role."""
         return self.current_profile.get_constraints()
+
+    @property
+    def retry_constraints(self) -> Optional[List[str]]:
+        """Return the retry constraints of the role."""
+        return self.current_profile.get_retry_constraints()
 
     @property
     def desc(self) -> Optional[str]:
@@ -111,9 +164,19 @@ class Role(ABC, BaseModel):
         return self.current_profile.get_description()
 
     @property
+    def expand_prompt(self) -> Optional[str]:
+        """Return the expand prompt introduction of the role."""
+        return self.current_profile.get_expand_prompt()
+
+    @property
     def write_memory_template(self) -> str:
         """Return the current save memory template."""
         return self.current_profile.get_write_memory_template()
+
+    @property
+    def examples(self) -> Optional[str]:
+        """Return the current example template."""
+        return self.current_profile.get_examples()
 
     def _render_template(self, template: str, **kwargs):
         r_template = self.template_env.from_string(template)
@@ -171,13 +234,11 @@ class Role(ABC, BaseModel):
 
         mem_thoughts = action_output.thoughts or ai_message
         observation = action_output.observations
-        if not check_pass and observation and check_fail_reason:
-            observation += "\n" + check_fail_reason
 
         memory_map = {
             "question": question,
             "thought": mem_thoughts,
-            "action": action_output.action,
+            "action": check_fail_reason,
             "observation": observation,
         }
         write_memory_template = self.write_memory_template

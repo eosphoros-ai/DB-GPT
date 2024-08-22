@@ -4,9 +4,12 @@ import dataclasses
 import json
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
+from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, cast
+
+from pydantic import field_validator
 
 from dbgpt._private.pydantic import BaseModel, model_to_dict
+from dbgpt.core import Chunk
 from dbgpt.util.parameter_utils import BaseParameters, _get_parameter_descriptions
 
 P = TypeVar("P", bound="ResourceParameters")
@@ -45,7 +48,9 @@ class ResourceParameters(BaseParameters):
 
     @classmethod
     def to_configurations(
-        cls, parameters: Type["ResourceParameters"], version: Optional[str] = None
+        cls,
+        parameters: Type["ResourceParameters"],
+        version: Optional[str] = None,
     ) -> Any:
         """Convert the parameters to configurations."""
         return _get_parameter_descriptions(parameters)
@@ -70,17 +75,17 @@ class Resource(ABC, Generic[P]):
         """Return the resource name."""
 
     @classmethod
-    def resource_parameters_class(cls) -> Type[P]:
+    def resource_parameters_class(cls, **kwargs) -> Type[P]:
         """Return the parameters class."""
         return ResourceParameters
 
-    def prefer_resource_parameters_class(self) -> Type[P]:
+    def prefer_resource_parameters_class(self, **kwargs) -> Type[P]:
         """Return the parameters class.
 
         You can override this method to return a different parameters class.
         It will be used to initialize the resource with parameters.
         """
-        return self.resource_parameters_class()
+        return self.resource_parameters_class(**kwargs)
 
     def initialize_with_parameters(self, resource_parameters: P):
         """Initialize the resource with parameters."""
@@ -114,6 +119,25 @@ class Resource(ABC, Generic[P]):
             typed_resources.append(cast(T, r))
         return typed_resources
 
+    async def get_resources_info(
+        self,
+        *,
+        lang: str = "en",
+        prompt_type: str = "default",
+        question: Optional[str] = None,
+        resources: Optional[List] = None,
+        **kwargs,
+    ):
+        """Get prompts for multiple resources at the same time.
+
+        Args:
+            lang(str): The language.
+            prompt_type(str): The prompt type.
+            question(str): The question.
+            resource_name(str): The resource name, just for the pack, it will be used
+                to select specific resource in the pack.
+        """
+
     @abstractmethod
     async def get_prompt(
         self,
@@ -123,7 +147,7 @@ class Resource(ABC, Generic[P]):
         question: Optional[str] = None,
         resource_name: Optional[str] = None,
         **kwargs,
-    ) -> str:
+    ) -> Tuple[str, Optional[Dict]]:
         """Get the prompt.
 
         Args:
@@ -133,6 +157,16 @@ class Resource(ABC, Generic[P]):
             resource_name(str): The resource name, just for the pack, it will be used
                 to select specific resource in the pack.
         """
+
+    async def get_resources(
+        self,
+        lang: str = "en",
+        prompt_type: str = "default",
+        question: Optional[str] = None,
+        resource_name: Optional[str] = None,
+    ) -> Tuple[Optional[List[Chunk]], str, Optional[Dict]]:
+        """Get the resources."""
+        raise NotImplementedError
 
     def execute(self, *args, resource_name: Optional[str] = None, **kwargs) -> Any:
         """Execute the resource."""
@@ -189,15 +223,22 @@ class AgentResource(BaseModel):
     """Agent resource class."""
 
     type: str
-    name: str
     value: str
+    name: Optional[str] = None
+
     is_dynamic: bool = (
         False  # Is the current resource predefined or dynamically passed in?
     )
+    context: Optional[dict] = None
 
     def resource_prompt_template(self, **kwargs) -> str:
         """Get the resource prompt template."""
         return "{data_type}  --{data_introduce}"
+
+    @field_validator("value", mode="before")
+    def parse_value(cls, value):
+        """Parse value."""
+        return str(value)
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> Optional["AgentResource"]:
@@ -210,7 +251,7 @@ class AgentResource(BaseModel):
             introduce=d.get("introduce"),
             value=d.get("value", None),
             is_dynamic=d.get("is_dynamic", False),
-            parameters=d.get("parameters", None),
+            context=d.get("context", None),
         )
 
     @staticmethod

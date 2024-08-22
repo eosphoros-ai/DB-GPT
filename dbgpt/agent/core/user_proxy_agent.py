@@ -1,4 +1,7 @@
 """A proxy agent for the user."""
+from typing import Optional
+
+from .. import ActionOutput, Agent, AgentMessage
 from .base_agent import ConversableAgent
 from .profile import ProfileConfig
 
@@ -19,3 +22,29 @@ class UserProxyAgent(ConversableAgent):
     )
 
     is_human: bool = True
+
+    ask_user: bool = False
+
+    def have_ask_user(self):
+        """If have ask user info in message."""
+        return self.ask_user
+
+    async def receive(
+        self,
+        message: AgentMessage,
+        sender: Agent,
+        reviewer: Optional[Agent] = None,
+        request_reply: Optional[bool] = None,
+        silent: Optional[bool] = False,
+        is_recovery: Optional[bool] = False,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
+    ) -> None:
+        """Receive a message from another agent."""
+        if not silent:
+            await self._a_process_received_message(message, sender)
+
+        if message.action_report:
+            action_report: ActionOutput = message.action_report
+            if action_report.ask_user:
+                self.ask_user = True

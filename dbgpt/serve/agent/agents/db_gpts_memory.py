@@ -1,9 +1,9 @@
 from typing import List, Optional
 
-from dbgpt.agent.core.memory.gpts.base import GptsPlan
-from dbgpt.agent.core.memory.gpts.gpts_memory import (
+from dbgpt.agent.core.memory.gpts import (
     GptsMessage,
     GptsMessageMemory,
+    GptsPlan,
     GptsPlansMemory,
 )
 
@@ -56,9 +56,9 @@ class MetaDbGptsPlansMemory(GptsPlansMemory):
         task_num: int,
         state: str,
         retry_times: int,
-        agent: Optional[str] = None,
-        model: Optional[str] = None,
-        result: Optional[str] = None,
+        agent: str = None,
+        model: str = None,
+        result: str = None,
     ):
         self.gpts_plan.update_task(
             conv_id=conv_id,
@@ -95,7 +95,7 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
         agent1: str,
         agent2: str,
         current_goal: Optional[str] = None,
-    ) -> List[GptsMessage]:
+    ) -> Optional[List[GptsMessage]]:
         db_results = self.gpts_message.get_between_agents(
             conv_id, agent1, agent2, current_goal
         )
@@ -105,7 +105,7 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
             results.append(GptsMessage.from_dict(item.__dict__))
         return results
 
-    def get_by_conv_id(self, conv_id: str) -> List[GptsMessage]:
+    def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
         db_results = self.gpts_message.get_by_conv_id(conv_id)
 
         results = []

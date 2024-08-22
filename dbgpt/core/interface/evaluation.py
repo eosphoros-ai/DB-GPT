@@ -2,16 +2,17 @@
 import asyncio
 import string
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
-    Callable,
     Generic,
     Iterator,
     List,
     Optional,
     Sequence,
+    Type,
     TypeVar,
     Union,
 )
@@ -30,6 +31,11 @@ PredictionType = Union[str, Any]
 ContextType = Union[str, Sequence[str], Any]
 DatasetType = Union["InputSource", Iterator, AsyncIterator]
 
+EVALUATE_FILE_COL_QUESTION = "query"
+EVALUATE_FILE_COL_ANSWER = "factual"
+EVALUATE_FILE_COL_PREDICTION = "prediction"
+EVALUATE_FILE_COL_PREDICTION_COST = "prediction_cost"
+
 
 class BaseEvaluationResult(BaseModel):
     """Base evaluation result."""
@@ -40,11 +46,14 @@ class BaseEvaluationResult(BaseModel):
         "retrieval, etc.)",
     )
     contexts: Optional[ContextType] = Field(None, description="Context data")
-    score: Optional[float] = Field(None, description="Score for the prediction")
+    score: Optional[float] = Field(
+        None, description="Score for the prediction in now metric"
+    )
     passing: Optional[bool] = Field(
-        None, description="Binary evaluation result (passing or not)"
+        True, description="Determine whether the current prediction result is valid"
     )
     metric_name: Optional[str] = Field(None, description="Name of the metric")
+    prediction_cost: int = 0
 
 
 class EvaluationResult(BaseEvaluationResult):
@@ -55,6 +64,7 @@ class EvaluationResult(BaseEvaluationResult):
 
     query: Optional[QueryType] = Field(None, description="Query data")
     raw_dataset: Optional[Any] = Field(None, description="Raw dataset")
+    feedback: Optional[str] = Field(None, description="feedback")
 
 
 Q = TypeVar("Q")
@@ -65,39 +75,51 @@ C = TypeVar("C")
 class EvaluationMetric(ABC, Generic[P, C]):
     """Base class for evaluation metric."""
 
-    @property
-    def name(self) -> str:
+    def __init__(self, **kwargs):  # noqa
+        pass
+
+    @classmethod
+    def name(cls) -> str:
         """Name of the metric."""
-        return self.__class__.__name__
+        return cls.__name__
+
+    @classmethod
+    def describe(cls) -> str:
+        """Describe."""
+        return f"This is an evaluation result index calculation tool, named {cls.name} "
 
     async def compute(
         self,
         prediction: P,
         contexts: Optional[Sequence[C]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric.
 
         Args:
             prediction(P): The prediction data.
             contexts(Optional[Sequence[C]]): The context data.
+            query:(Optional[str]) The query text.
 
         Returns:
             BaseEvaluationResult: The evaluation result.
         """
         return await asyncio.get_running_loop().run_in_executor(
-            None, self.sync_compute, prediction, contexts
+            None, self.sync_compute, prediction, contexts, query
         )
 
     def sync_compute(
         self,
         prediction: P,
         contexts: Optional[Sequence[C]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric.
 
         Args:
             prediction(P): The prediction data.
-            contexts(Optional[Sequence[C]]): The context data.
+            contexts(Optional[Sequence[C]]): The factual data.
+            query:(Optional[str]) The query text.
 
         Returns:
             BaseEvaluationResult: The evaluation result.
@@ -108,14 +130,7 @@ class EvaluationMetric(ABC, Generic[P, C]):
 class FunctionMetric(EvaluationMetric[P, C], Generic[P, C]):
     """Evaluation metric based on a function."""
 
-    def __init__(
-        self,
-        name: str,
-        func: Callable[
-            [P, Optional[Sequence[C]]],
-            BaseEvaluationResult,
-        ],
-    ):
+    def __init__(self, **kwargs):
         """Create a FunctionMetric.
 
         Args:
@@ -123,11 +138,16 @@ class FunctionMetric(EvaluationMetric[P, C], Generic[P, C]):
             func(Callable[[P, Optional[Sequence[C]]], BaseEvaluationResult]):
                 The function to use for evaluation.
         """
-        self._name = name
-        self.func = func
+        if "name" not in kwargs:
+            raise ValueError("Must need param name")
+
+        if "func" not in kwargs:
+            raise ValueError("Must need param func")
+        self._name = kwargs.get("name", None)
+        self.func = kwargs.get("func", None)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str:  # type: ignore # noqa
         """Name of the metric."""
         return self._name
 
@@ -135,6 +155,7 @@ class FunctionMetric(EvaluationMetric[P, C], Generic[P, C]):
         self,
         prediction: P,
         context: Optional[Sequence[C]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric."""
         return self.func(prediction, context)
@@ -146,15 +167,16 @@ class ExactMatchMetric(EvaluationMetric[str, str]):
     Just support string prediction and context.
     """
 
-    def __init__(self, ignore_case: bool = False, ignore_punctuation: bool = False):
+    def __init__(self, **kwargs):
         """Create an ExactMatchMetric."""
-        self._ignore_case = ignore_case
-        self._ignore_punctuation = ignore_punctuation
+        self._ignore_case = kwargs.get("ignore_case", False)
+        self._ignore_punctuation = kwargs.get("ignore_punctuation", False)
 
     async def compute(
         self,
         prediction: str,
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric."""
         if self._ignore_case:
@@ -182,14 +204,17 @@ class SimilarityMetric(EvaluationMetric[str, str]):
     Calculate the cosine similarity between a prediction and a list of contexts.
     """
 
-    def __init__(self, embeddings: Embeddings):
+    def __init__(self, **kwargs):
         """Create a SimilarityMetric with embeddings."""
-        self._embeddings = embeddings
+        self._embeddings = kwargs.get("embeddings", None)
+        if self._embeddings is None or not isinstance(self._embeddings, Embeddings):
+            raise ValueError("Need embedding service！")
 
     def sync_compute(
         self,
         prediction: str,
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric."""
         if not contexts:
@@ -232,7 +257,7 @@ class Evaluator(ABC):
         contexts_key: str = "contexts",
         prediction_key: str = "prediction",
         parallel_num: int = 1,
-        **kwargs
+        **kwargs,
     ) -> List[List[EvaluationResult]]:
         """Run evaluation with a dataset and metrics.
 
@@ -251,3 +276,36 @@ class Evaluator(ABC):
                 result equals to the length of the dataset. The first element in the
                 list is the list of evaluation results for metrics.
         """
+
+
+class MetricManage:
+    """MetricManage."""
+
+    def __init__(self):
+        """Init metricManage."""
+        self.metrics = defaultdict()
+
+    def register_metric(self, cls: Type[EvaluationMetric]):
+        """Register metric."""
+        self.metrics[cls.name] = cls
+
+    def get_by_name(self, name: str) -> Type[EvaluationMetric]:
+        """Get by name."""
+        if name not in self.metrics:
+            raise ValueError(f"Metric:{name} not register!")
+        return self.metrics[name]
+
+    def all_metric_infos(self):
+        """Get all metric infos."""
+        result = []
+        for name, cls in self.metrics.items():
+            result.append(
+                {
+                    "name": name,
+                    "describe": cls.describe,
+                }
+            )
+        return result
+
+
+metric_mange = MetricManage()

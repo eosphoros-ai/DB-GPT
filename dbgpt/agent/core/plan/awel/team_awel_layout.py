@@ -104,9 +104,32 @@ class AWELBaseManager(ManagerAgent, ABC):
         ),
     )
 
-    async def _a_process_received_message(self, message: AgentMessage, sender: Agent):
-        """Process the received message."""
-        pass
+    async def receive(
+        self,
+        message: AgentMessage,
+        sender: Agent,
+        reviewer: Optional[Agent] = None,
+        request_reply: Optional[bool] = None,
+        silent: Optional[bool] = False,
+        is_recovery: Optional[bool] = False,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
+    ) -> None:
+        """Recive message by base team."""
+        if request_reply is False or request_reply is None:
+            return
+
+        if not self.is_human:
+            await self.generate_reply(
+                received_message=message,
+                sender=sender,
+                reviewer=reviewer,
+                is_retry_chat=is_retry_chat,
+                last_speaker_name=last_speaker_name,
+            )
+
+        # if reply is not None:
+        #     await self.a_send(reply, sender)
 
     @abstractmethod
     def get_dag(self) -> DAG:
@@ -114,11 +137,13 @@ class AWELBaseManager(ManagerAgent, ABC):
 
     async def act(
         self,
-        message: Optional[str],
-        sender: Optional[Agent] = None,
+        message: AgentMessage,
+        sender: Agent,
         reviewer: Optional[Agent] = None,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
         **kwargs,
-    ) -> Optional[ActionOutput]:
+    ) -> ActionOutput:
         """Perform the action."""
         try:
             agent_dag = self.get_dag()
@@ -127,44 +152,62 @@ class AWELBaseManager(ManagerAgent, ABC):
             )
 
             start_message_context: AgentGenerateContext = AgentGenerateContext(
-                message=AgentMessage(content=message, current_goal=message),
+                message=message,
                 sender=sender,
                 reviewer=reviewer,
                 memory=self.memory.structure_clone(),
                 agent_context=self.agent_context,
+                begin_agent=last_speaker_name if is_retry_chat else None,
                 llm_client=self.not_null_llm_config.llm_client,
             )
             final_generate_context: AgentGenerateContext = await last_node.call(
                 call_data=start_message_context
             )
             last_message = final_generate_context.rely_messages[-1]
-
-            last_agent = await last_node.get_agent(final_generate_context)
-            if final_generate_context.round_index is not None:
-                last_agent.consecutive_auto_reply_counter = (
-                    final_generate_context.round_index
-                )
-            if not sender:
-                raise ValueError("sender is required!")
-            await last_agent.send(
-                last_message, sender, start_message_context.reviewer, False
+            last_message.rounds = last_message.rounds + 1
+            if not final_generate_context.last_speaker:
+                raise ValueError("Dont have last speaker agent!")
+            await final_generate_context.last_speaker.send(
+                last_message,
+                sender,
+                start_message_context.reviewer,
+                False,
+                is_retry_chat=is_retry_chat,
+                last_speaker_name=last_speaker_name,
             )
 
-            view_message: Optional[str] = None
+            view_message = None
             if last_message.action_report:
-                view_message = last_message.action_report.get("view", None)
-
+                if last_message.action_report.view:
+                    view_message = last_message.action_report.view
+                else:
+                    view_message = last_message.action_report.content
             return ActionOutput(
                 content=last_message.content,
                 view=view_message,
             )
         except Exception as e:
             logger.exception(f"DAG run failed!{str(e)}")
-
-            return ActionOutput(
+            failed_out = ActionOutput(
                 is_exe_success=False,
-                content=f"Failed to complete goal! {str(e)}",
+                content=f"{str(e)}",
+                have_retry=False,
             )
+            failed_message = AgentMessage.from_llm_message(
+                {
+                    "content": f"{str(e)}",
+                    "rounds": 999,
+                }
+            )
+            await self.send(
+                failed_message,
+                sender,
+                reviewer,
+                False,
+                is_retry_chat=is_retry_chat,
+                last_speaker_name=last_speaker_name,
+            )
+            return failed_out
 
 
 class WrappedAWELLayoutManager(AWELBaseManager):
@@ -198,11 +241,13 @@ class WrappedAWELLayoutManager(AWELBaseManager):
 
     async def act(
         self,
-        message: Optional[str],
-        sender: Optional[Agent] = None,
+        message: AgentMessage,
+        sender: Agent,
         reviewer: Optional[Agent] = None,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
         **kwargs,
-    ) -> Optional[ActionOutput]:
+    ) -> ActionOutput:
         """Perform the action."""
         try:
             dag = self.get_dag()
@@ -210,27 +255,37 @@ class WrappedAWELLayoutManager(AWELBaseManager):
                 WrappedAgentOperator, dag.leaf_nodes[0]
             )
             start_message_context: AgentGenerateContext = AgentGenerateContext(
-                message=AgentMessage(content=message, current_goal=message),
-                sender=self,
+                message=message,
+                sender=sender,
                 reviewer=reviewer,
+                memory=self.memory,
+                agent_context=self.agent_context,
+                begin_agent=last_speaker_name if is_retry_chat else None,
+                llm_client=self.not_null_llm_client,
             )
             final_generate_context: AgentGenerateContext = await last_node.call(
                 call_data=start_message_context
             )
-            last_message = final_generate_context.rely_messages[-1]
 
-            last_agent = last_node.agent
-            await last_agent.send(
+            last_message = final_generate_context.rely_messages[-1]
+            last_message.rounds = last_message.rounds + 1
+            if not final_generate_context.last_speaker:
+                raise ValueError("Not have last speaker!")
+            await final_generate_context.last_speaker.send(
                 last_message,
-                self,
+                sender,
                 start_message_context.reviewer,
                 False,
+                is_retry_chat=is_retry_chat,
+                last_speaker_name=last_speaker_name,
             )
 
-            view_message: Optional[str] = None
+            view_message = None
             if last_message.action_report:
-                view_message = last_message.action_report.get("view", None)
-
+                if last_message.action_report.view:
+                    view_message = last_message.action_report.view
+                else:
+                    view_message = last_message.action_report.content
             return ActionOutput(
                 content=last_message.content,
                 view=view_message,
@@ -238,10 +293,26 @@ class WrappedAWELLayoutManager(AWELBaseManager):
         except Exception as e:
             logger.exception(f"DAG run failed!{str(e)}")
 
-            return ActionOutput(
+            failed_out = ActionOutput(
                 is_exe_success=False,
-                content=f"Failed to complete goal! {str(e)}",
+                content=f"{str(e)}",
+                have_retry=False,
             )
+            failed_message = AgentMessage.from_llm_message(
+                {
+                    "content": f"{str(e)}",
+                    "rounds": 999,
+                }
+            )
+            await self.send(
+                failed_message,
+                sender,
+                reviewer,
+                False,
+                is_retry_chat=is_retry_chat,
+                last_speaker_name=last_speaker_name,
+            )
+            return failed_out
 
 
 class DefaultAWELLayoutManager(AWELBaseManager):

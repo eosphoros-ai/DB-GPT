@@ -6,6 +6,7 @@ import schedule
 from fastapi import HTTPException
 
 from dbgpt._private.pydantic import model_to_json
+from dbgpt.agent import AgentDummyTrigger
 from dbgpt.component import SystemApp
 from dbgpt.core.awel import DAG, BaseOperator, CommonLLMHttpRequestBody
 from dbgpt.core.awel.dag.dag_manager import DAGManager
@@ -258,7 +259,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             ServerResponse: The response
         """
-        new_state = request.state
+        new_state = State.DEPLOYED
         try:
             # Try to build the dag from the request
             if request.define_type == "json":
@@ -548,18 +549,28 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             or not isinstance(leaf_nodes[0], BaseOperator)
         ):
             return FlowCategory.COMMON
+
+        leaf_node = cast(BaseOperator, leaf_nodes[0])
+        if not leaf_node.metadata or not leaf_node.metadata.outputs:
+            return FlowCategory.COMMON
+
         common_http_trigger = False
+        agent_trigger = False
         for trigger in triggers:
             if isinstance(trigger, CommonLLMHttpTrigger):
                 common_http_trigger = True
                 break
-        leaf_node = cast(BaseOperator, leaf_nodes[0])
-        if not leaf_node.metadata or not leaf_node.metadata.outputs:
-            return FlowCategory.COMMON
+
+            if isinstance(trigger, AgentDummyTrigger):
+                agent_trigger = True
+                break
+
         output = leaf_node.metadata.outputs[0]
         try:
             real_class = _get_type_cls(output.type_cls)
-            if common_http_trigger and is_chat_flow_type(real_class, is_class=True):
+            if agent_trigger:
+                return FlowCategory.CHAT_AGENT
+            elif common_http_trigger and is_chat_flow_type(real_class, is_class=True):
                 return FlowCategory.CHAT_FLOW
         except Exception:
             return FlowCategory.COMMON

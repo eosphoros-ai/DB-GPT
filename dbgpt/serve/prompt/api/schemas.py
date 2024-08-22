@@ -1,4 +1,5 @@
 # Define your Pydantic schemas here
+from enum import Enum
 from typing import Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
@@ -22,7 +23,11 @@ class ServeRequest(BaseModel):
         description="The sub chat scene.",
         examples=["sub_scene_1", "sub_scene_2", "sub_scene_3"],
     )
-
+    prompt_code: Optional[str] = Field(
+        None,
+        description="The prompt code.",
+        examples=["test123", "test456"],
+    )
     prompt_type: Optional[str] = Field(
         None,
         description="The prompt type, either common or private.",
@@ -51,7 +56,39 @@ class ServeRequest(BaseModel):
             "This is a prompt for data analysis expert.",
         ],
     )
+    response_schema: Optional[str] = Field(
+        None,
+        description="The prompt response schema.",
+        examples=[
+            "None",
+            '{"xx": "123"}',
+        ],
+    )
+    input_variables: Optional[str] = Field(
+        None,
+        description="The prompt variables.",
+        examples=[
+            "display_type",
+            "resources",
+        ],
+    )
 
+    model: Optional[str] = Field(
+        None,
+        description="The prompt can use model.",
+        examples=["vicuna13b", "chatgpt"],
+    )
+
+    prompt_language: Optional[str] = Field(
+        None,
+        description="The prompt language.",
+        examples=["en", "zh"],
+    )
+    user_code: Optional[str] = Field(
+        None,
+        description="The user id.",
+        examples=[""],
+    )
     user_name: Optional[str] = Field(
         None,
         description="The user name.",
@@ -75,6 +112,11 @@ class ServerResponse(ServeRequest):
         description="The prompt id.",
         examples=[1, 2, 3],
     )
+    prompt_code: Optional[str] = Field(
+        None,
+        description="The prompt code.",
+        examples=["xxxx1", "xxxx2", "xxxx3"],
+    )
     gmt_created: Optional[str] = Field(
         None,
         description="The prompt created time.",
@@ -85,3 +127,37 @@ class ServerResponse(ServeRequest):
         description="The prompt modified time.",
         examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
     )
+
+
+class PromptVerifyInput(ServeRequest):
+    llm_out: Optional[str] = Field(
+        None,
+        description="The llm out of prompt.",
+    )
+
+
+class PromptDebugInput(ServeRequest):
+    input_values: Optional[dict] = Field(
+        None,
+        description="The prompt variables debug value.",
+    )
+    temperature: Optional[float] = Field(
+        default=0.5,
+        description="The prompt debug temperature.",
+    )
+    debug_model: Optional[str] = Field(
+        None,
+        description="The prompt debug model.",
+        examples=["vicuna13b", "chatgpt"],
+    )
+    user_input: Optional[str] = Field(
+        None,
+        description="The prompt debug user input.",
+    )
+
+
+class PromptType(Enum):
+    AGENT = "Agent"
+    SCENE = "Scene"
+    NORMAL = "Normal"
+    EVALUATE = "Evaluate"

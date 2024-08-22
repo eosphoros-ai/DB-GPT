@@ -280,7 +280,6 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         if call_data != EMPTY_DATA:
             call_data = {"data": call_data}
         with root_tracer.start_span("dbgpt.awel.operator.call_stream"):
-
             out_ctx = await self._runner.execute_workflow(
                 self, call_data, streaming_call=True, exist_dag_ctx=dag_ctx
             )
@@ -291,7 +290,6 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
                     out_ctx.current_task_context.task_output.output_stream
                 )
             else:
-
                 # No stream output, wrap the output in a stream
                 async def _gen():
                     yield task_output.output

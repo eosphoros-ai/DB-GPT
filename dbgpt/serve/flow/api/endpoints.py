@@ -6,6 +6,7 @@ from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata, ViewMetadata
+from dbgpt.core.awel.flow.flow_factory import FlowCategory
 from dbgpt.serve.core import Result
 from dbgpt.util import PaginationResult
 
@@ -170,6 +171,35 @@ async def get_flows(
     if not flow:
         raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
     return Result.succ(flow)
+
+
+@router.get(
+    "/chat/flows",
+    response_model=Result[PaginationResult[ServerResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def query_chat_flows(
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    page: int = Query(default=1, description="current page"),
+    page_size: int = Query(default=20, description="page size"),
+    name: Optional[str] = Query(default=None, description="flow name"),
+    uid: Optional[str] = Query(default=None, description="flow uid"),
+    service: Service = Depends(get_service),
+) -> Result[PaginationResult[ServerResponse]]:
+    return Result.succ(
+        service.get_list_by_page(
+            {
+                "user_name": user_name,
+                "sys_code": sys_code,
+                "name": name,
+                "uid": uid,
+                "flow_category": [FlowCategory.CHAT_AGENT, FlowCategory.CHAT_FLOW],
+            },
+            page,
+            page_size,
+        )
+    )
 
 
 @router.get(
