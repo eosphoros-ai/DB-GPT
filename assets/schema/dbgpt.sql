@@ -98,7 +98,8 @@ CREATE TABLE IF NOT EXISTS `chat_history`
     `gmt_created`  timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
     `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     UNIQUE KEY `conv_uid` (`conv_uid`),
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    KEY `idx_chat_his_app_code` (`app_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Chat history';
 
 CREATE TABLE IF NOT EXISTS `chat_history_message`
@@ -446,7 +447,7 @@ CREATE TABLE `recommend_question` (
   `params` text DEFAULT NULL COMMENT 'question param',
   `is_hot_question` varchar(10) DEFAULT 'false' COMMENT 'Is it a popular recommendation question?',
   PRIMARY KEY (`id`),
-  KEY `idx_app_code` (`app_code`)
+  KEY `idx_rec_q_app_code` (`app_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="AI application related recommendation issues";
 
 -- dbgpt.user_recent_apps definition
@@ -459,7 +460,7 @@ CREATE TABLE `user_recent_apps` (
   `user_code` varchar(255) DEFAULT NULL COMMENT 'user code',
   `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app code',
   PRIMARY KEY (`id`),
-  KEY `idx_app_code` (`app_code`),
+  KEY `idx_user_r_app_code` (`app_code`),
   KEY `idx_last_accessed` (`last_accessed`),
   KEY `idx_user_code` (`user_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User recently used apps'
