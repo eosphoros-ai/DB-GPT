@@ -209,7 +209,7 @@ def install(
     if not repo_info:
         cl.error(f"The specified dbgpt '{name}' does not exist.", exit_code=1)
     repo, dbgpt_path = repo_info
-    _copy_and_install(repo, name, dbgpt_path)
+    copy_and_install(repo, name, dbgpt_path)
 
 
 def uninstall(name: str):
@@ -227,7 +227,7 @@ def uninstall(name: str):
     cl.info(f"Uninstalling dbgpt '{name}'...")
 
 
-def _copy_and_install(repo: str, name: str, package_path: Path):
+def copy_and_install(repo: str, name: str, package_path: Path):
     if not package_path.exists():
         cl.error(
             f"The specified dbgpt '{name}' does not exist in the {repo} tap.",
@@ -348,6 +348,42 @@ def list_repo_apps(repo: str | None = None, with_update: bool = True):
     for repo, package, app in data:
         table.add_row(repo, package, app)
     cl.print(table)
+
+
+async def list_dbgpts(
+    spec_repo: str | None = None, with_update: bool = True
+) -> List[Tuple[str, str, str, str]]:
+    """scan dbgpts in repo
+
+    Args:
+        spec_repo:  The name of the repo
+
+    Returns:
+        Tuple[str, Path] | None: The repo and the path of the dbgpt
+    """
+    repos = _list_repos_details()
+    if spec_repo:
+        repos = list(filter(lambda x: x[0] == spec_repo, repos))
+        if not repos:
+            raise ValueError(f"The specified repo '{spec_repo}' does not exist.")
+    if with_update:
+        for repo in repos:
+            update_repo(repo[0])
+    data = []
+    for repo in repos:
+        repo_path = Path(repo[1])
+        for package in DEFAULT_PACKAGES:
+            dbgpt_path = repo_path / package
+            for app in os.listdir(dbgpt_path):
+                gpts_path = dbgpt_path / app
+                dbgpt_metadata_path = dbgpt_path / app / DBGPTS_METADATA_FILE
+                if (
+                    dbgpt_path.exists()
+                    and dbgpt_path.is_dir()
+                    and dbgpt_metadata_path.exists()
+                ):
+                    data.append((repo[0], package, app, gpts_path))
+    return data
 
 
 def list_installed_apps():
