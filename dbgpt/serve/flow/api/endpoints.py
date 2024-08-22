@@ -1,5 +1,6 @@
+import json
 from functools import cache
-from typing import List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
@@ -251,8 +252,17 @@ async def query_page(
 
 
 @router.get("/nodes", dependencies=[Depends(check_api_key)])
-async def get_nodes():
+async def get_nodes(
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    tags: Optional[str] = Query(default=None, description="tags"),
+):
     """Get the operator or resource nodes
+
+    Args:
+        user_name (Optional[str]): The username
+        sys_code (Optional[str]): The system code
+        tags (Optional[str]): The tags encoded in JSON format
 
     Returns:
         Result[List[Union[ViewMetadata, ResourceMetadata]]]:
@@ -260,7 +270,20 @@ async def get_nodes():
     """
     from dbgpt.core.awel.flow.base import _OPERATOR_REGISTRY
 
-    metadata_list = _OPERATOR_REGISTRY.metadata_list()
+    tags_dict: Optional[Dict[str, str]] = None
+    if tags:
+        try:
+            tags_dict = json.loads(tags)
+        except json.JSONDecodeError:
+            return Result.fail("Invalid JSON format for tags")
+
+    metadata_list = await blocking_func_to_async(
+        global_system_app,
+        _OPERATOR_REGISTRY.metadata_list,
+        tags_dict,
+        user_name,
+        sys_code,
+    )
     return Result.succ(metadata_list)
 
 

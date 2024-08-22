@@ -881,3 +881,39 @@ class ExampleFlowVariablesOperator(MapOperator[str, str]):
         }
         json_data = json.dumps(dict_dict, ensure_ascii=False)
         return "Your name is %s, and your model info is %s." % (user_name, json_data)
+
+
+class ExampleFlowTagsOperator(MapOperator[str, str]):
+    """An example flow operator that includes a tags option."""
+
+    metadata = ViewMetadata(
+        label="Example Tags Operator",
+        name="example_tags_operator",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes a tags",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Tags",
+                "tags",
+                str,
+                description="The tags to use.",
+            ),
+        ],
+        tags={"order": "higher-order", "type": "example"},
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the tags."""
+        return "Your name is %s, and your tags are %s." % (user_name, "higher-order")

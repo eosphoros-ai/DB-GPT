@@ -796,6 +796,8 @@ def is_variable_string(variable_str: str) -> bool:
     Returns:
         bool: True if the string is a variable string, False otherwise.
     """
+    if not variable_str or not isinstance(variable_str, str):
+        return False
     if not _is_variable_format(variable_str):
         return False
     try:
