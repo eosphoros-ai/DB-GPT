@@ -66,17 +66,17 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const handleAuth = async () => {
     setIsLogin(false);
     // 如果已有登录信息，直接展示首页
-    if (localStorage.getItem(STORAGE_USERINFO_KEY)) {
-      setIsLogin(true);
-      return;
-    }
+    // if (localStorage.getItem(STORAGE_USERINFO_KEY)) {
+    //   setIsLogin(true);
+    //   return;
+    // }
     const get_user_url = process.env.GET_USER_URL || '';
     var user_not_login_url = process.env.LOGIN_URL;
     // MOCK User info
     var user = {
-          user_channel: `sys`,
-          user_no: `dbgpt`,
-          nick_name: ` `,
+          user_channel: `dbgpt`,
+          user_no: `001`,
+          nick_name: `dbgpt`,
         }
     if (user) {
         localStorage.setItem(STORAGE_USERINFO_KEY, JSON.stringify(user));
