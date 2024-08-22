@@ -1,6 +1,6 @@
 import json
 from functools import cache
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
@@ -350,6 +350,12 @@ async def update_variables(
         global_system_app, get_variable_service().update, v_id, variables_request
     )
     return Result.succ(res)
+
+
+@router.post("/flow/debug")
+async def debug():
+    """Debug the flow."""
+    # TODO: Implement the debug endpoint
 
 
 def init_endpoints(system_app: SystemApp) -> None:

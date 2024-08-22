@@ -206,7 +206,7 @@ class ExampleFlowCheckboxOperator(MapOperator[str, str]):
                     OptionValue(label="Orange", name="orange", value="orange"),
                     OptionValue(label="Pear", name="pear", value="pear"),
                 ],
-                ui=ui.UICheckbox(attr=ui.UICheckbox.UIAttribute(show_search=True)),
+                ui=ui.UICheckbox(),
             )
         ],
         inputs=[
@@ -234,6 +234,59 @@ class ExampleFlowCheckboxOperator(MapOperator[str, str]):
     async def map(self, user_name: str) -> str:
         """Map the user name to the fruits."""
         return "Your name is %s, and you like %s." % (user_name, ", ".join(self.fruits))
+
+
+class ExampleFlowRadioOperator(MapOperator[str, str]):
+    """An example flow operator that includes a radio as parameter."""
+
+    metadata = ViewMetadata(
+        label="Example Flow Radio",
+        name="example_flow_radio",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes a radio as parameter.",
+        parameters=[
+            Parameter.build_from(
+                "Fruits Selector",
+                "fruits",
+                type=str,
+                optional=True,
+                default=None,
+                placeholder="Select the fruits",
+                description="The fruits you like.",
+                options=[
+                    OptionValue(label="Apple", name="apple", value="apple"),
+                    OptionValue(label="Banana", name="banana", value="banana"),
+                    OptionValue(label="Orange", name="orange", value="orange"),
+                    OptionValue(label="Pear", name="pear", value="pear"),
+                ],
+                ui=ui.UIRadio(),
+            )
+        ],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Fruits",
+                "fruits",
+                str,
+                description="User's favorite fruits.",
+            )
+        ],
+    )
+
+    def __init__(self, fruits: Optional[str] = None, **kwargs):
+        super().__init__(**kwargs)
+        self.fruits = fruits
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the fruits."""
+        return "Your name is %s, and you like %s." % (user_name, self.fruits)
 
 
 class ExampleFlowDatePickerOperator(MapOperator[str, str]):
@@ -348,8 +401,13 @@ class ExampleFlowTextAreaOperator(MapOperator[str, str]):
                 placeholder="Please input your comment",
                 description="The comment you want to say.",
                 ui=ui.UITextArea(
-                    attr=ui.UITextArea.UIAttribute(show_count=True, maxlength=1000),
-                    autosize=ui.UITextArea.AutoSize(min_rows=2, max_rows=6),
+                    attr=ui.UITextArea.UIAttribute(
+                        show_count=True,
+                        maxlength=1000,
+                        auto_size=ui.UITextArea.UIAttribute.AutoSize(
+                            min_rows=2, max_rows=6
+                        ),
+                    ),
                 ),
             )
         ],

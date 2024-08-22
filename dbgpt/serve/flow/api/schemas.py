@@ -1,6 +1,7 @@
-from typing import Any, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
+from dbgpt.core.awel import CommonLLMHttpRequestBody
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
 from dbgpt.core.awel.util.parameter_util import RefreshOptionRequest
 
@@ -113,3 +114,26 @@ class RefreshNodeRequest(BaseModel):
         title="The refresh options",
         description="The refresh options",
     )
+
+
+class FlowDebugRequest(BaseModel):
+    """Flow response model"""
+
+    model_config = ConfigDict(title=f"FlowDebugRequest")
+    flow: ServeRequest = Field(
+        ...,
+        title="The flow to debug",
+        description="The flow to debug",
+    )
+    request: Union[CommonLLMHttpRequestBody, Dict[str, Any]] = Field(
+        ...,
+        title="The request to debug",
+        description="The request to debug",
+    )
+    variables: Optional[Dict[str, Any]] = Field(
+        None,
+        title="The variables to debug",
+        description="The variables to debug",
+    )
+    user_name: Optional[str] = Field(None, description="User name")
+    sys_code: Optional[str] = Field(None, description="System code")
