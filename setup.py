@@ -619,6 +619,7 @@ def all_datasource_requires():
         "thrift_sasl",
         "neo4j",
         "vertica_python",
+        "dbgpt-tugraph-plugins>=0.1.0rc1"
     ]
 
 
