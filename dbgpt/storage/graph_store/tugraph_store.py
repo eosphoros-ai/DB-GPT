@@ -113,7 +113,9 @@ class TuGraphStore(GraphStoreBase):
         
         if len(missing_plugins):
             for name in missing_plugins:
-                plugin_path = os.path.join(os.path.dirname(__file__), 'plugins', f'{name}.so')
+                from dbgpt_tugraph_plugins import get_plugin_binary_path
+                plugin_path = get_plugin_binary_path("leiden")
+                print(plugin_path)
                 with open(plugin_path, 'rb') as f:
                     content = f.read()
                 content = base64.b64encode(content).decode()
