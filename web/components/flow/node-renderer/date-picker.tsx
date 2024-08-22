@@ -1,29 +1,9 @@
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
-import { DatePicker, DatePickerProps } from 'antd';
-import dayjs from 'dayjs';
+import { DatePicker } from 'antd';
 
-type Props = {
-  data: IFlowNodeParameter;
-  defaultValue: any;
-  onChange: (value: any) => void;
-};
-
-export const RenderDatePicker = (params: Props) => {
-  const { data, defaultValue, onChange } = params;
+export const renderDatePicker = (data: IFlowNodeParameter) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
-  const onChangeDate: DatePickerProps['onChange'] = (date, dateString) => {
-    onChange(dateString);
-  };
-
-  return (
-    <DatePicker
-      {...attr}
-      className="w-full"
-      placeholder="please select a date"
-      defaultValue={defaultValue ? dayjs(defaultValue) : null}
-      onChange={onChangeDate}
-    />
-  );
+  return <DatePicker {...attr} className="w-full" placeholder="please select a date" />;
 };

@@ -5,20 +5,12 @@ import classNames from 'classnames';
 
 const { TextArea } = Input;
 
-type Props = {
-  data: IFlowNodeParameter;
-  defaultValue: any;
-  onChange: (value: any) => void;
-};
-
-export const RenderTextArea = (params: Props) => {
-  const { data, defaultValue, onChange } = params;
-
+export const renderTextArea = (data: IFlowNodeParameter) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   return (
     <div className={classNames({ 'mb-3': attr.showCount === true })}>
-      <TextArea className='nowheel' {...attr} defaultValue={defaultValue} onChange={onChange} />
+      <TextArea className="nowheel" {...attr} />
     </div>
   );
 };

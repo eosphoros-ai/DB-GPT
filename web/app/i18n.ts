@@ -1,12 +1,13 @@
+import { Domain } from '@mui/icons-material';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 const en = {
-  UploadDataSuccessfully: 'file uploaded successfully',
-  UploadDataFailed: 'file upload failed',
-  UploadData: 'Upload Data',
-  CodeEditor: 'Code Editor:',
-  openCodeEditor:'Open Code Editor',
+  Upload_Data_Successfully: 'file uploaded successfully',
+  Upload_Data_Failed: 'file upload failed',
+  Upload_Data: 'Upload Data',
+  Code_Editor: 'Code Editor',
+  Open_Code_Editor: 'Open Code Editor',
   Knowledge_Space: 'Knowledge',
   space: 'space',
   Vector: 'Vector',
@@ -23,6 +24,7 @@ const en = {
   Please_select_file: 'Please select one file',
   Description: 'Description',
   Storage: 'Storage',
+  Domain: 'Domain',
   Please_input_the_description: 'Please input the description',
   Please_select_the_storage: 'Please select the storage',
   Please_select_the_domain_type: 'Please select the domain type',
@@ -229,7 +231,7 @@ const en = {
   Chinese: 'Chinese',
   English: 'English',
   refreshSuccess: 'Refresh Success',
-  Download: 'Download'
+  Download: 'Download',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -239,11 +241,11 @@ export interface Resources {
 }
 
 const zh: Resources['translation'] = {
-  UploadDataSuccessfully: '文件上传成功',
-  UploadDataFailed: '文件上传失败',
-  UploadData: '上传数据',
-  CodeEditor: '代码编辑:',
-  openCodeEditor: '打开代码编辑器',
+  Upload_Data_Successfully: '文件上传成功',
+  Upload_Data_Failed: '文件上传失败',
+  Upload_Data: '上传数据',
+  Code_Editor: '代码编辑器',
+  Open_Code_Editor: '打开代码编辑器',
   Knowledge_Space: '知识库',
   space: '知识库',
   Vector: '向量',

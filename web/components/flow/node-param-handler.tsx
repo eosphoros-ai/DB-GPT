@@ -1,111 +1,35 @@
 import { IFlowNode, IFlowNodeParameter } from '@/types/flow';
-import { Checkbox, Form, Input, InputNumber, Select, Tooltip } from 'antd';
+import { Checkbox, Form, Input, InputNumber, Select } from 'antd';
 import React from 'react';
-import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import {
-  RenderSelect,
-  RenderCheckbox,
-  RenderRadio,
-  RenderCascader,
-  RenderDatePicker,
-  RenderInput,
-  RenderSlider,
-  RenderTreeSelect,
-  RenderTimePicker,
-  RenderTextArea,
-  RenderUpload,
-  RenderCodeEditor,
-  RenderPassword,
-  RenderVariables,
+  renderSelect,
+  renderCheckbox,
+  renderRadio,
+  renderCascader,
+  renderDatePicker,
+  renderInput,
+  renderSlider,
+  renderTreeSelect,
+  renderTimePicker,
+  renderTextArea,
+  renderUpload,
+  renderCodeEditor,
+  renderPassword,
+  renderVariables,
 } from './node-renderer';
 
 interface NodeParamHandlerProps {
   node: IFlowNode;
-  data: IFlowNodeParameter;
+  paramData: IFlowNodeParameter;
   label: 'inputs' | 'outputs' | 'parameters';
   index: number; // index of array
 }
 
 // render node parameters item
-const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, index }) => {
-  function onChange(value: any) {
-    data.value = value;
-  }
-
-  function renderLabelWithTooltip(data: IFlowNodeParameter) {
-    return (
-      <div>
-        <RequiredIcon optional={data.optional} />
-        {data.label}
-        <Tooltip title={data.description || ''}>
-          <InfoCircleOutlined className="ml-2 cursor-pointer" />
-        </Tooltip>
-      </div>
-    );
-  }
-
+const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, label, index }) => {
   // render node parameters based on AWEL1.0
-  // function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
-  //   let defaultValue = data.value ?? data.default;
-
-  //   switch (data.type_name) {
-  //     case 'int':
-  //     case 'float':
-  //       return (
-  //         <div className="text-sm">
-  //           {renderLabelWithTooltip(data)}
-  //           <InputNumber
-  //             className="w-full"
-  //             defaultValue={defaultValue}
-  //             onChange={(value: number | null) => {
-  //               console.log('value', value);
-
-  //               onChange(value);
-  //             }}
-  //           />
-  //         </div>
-  //       );
-  //     case 'str':
-  //       return (
-  //         <div className="text-sm">
-  //           {renderLabelWithTooltip(data)}
-  //           {data.options?.length > 0 ? (
-  //             <Select
-  //               className="w-full nodrag"
-  //               defaultValue={defaultValue}
-  //               options={data.options.map((item: any) => ({ label: item.label, value: item.value }))}
-  //               onChange={onChange}
-  //             />
-  //           ) : (
-  //             <Input
-  //               className="w-full"
-  //               defaultValue={defaultValue}
-  //               onChange={(e) => {
-  //                 onChange(e.target.value);
-  //               }}
-  //             />
-  //           )}
-  //         </div>
-  //       );
-  //     case 'bool':
-  //       defaultValue = defaultValue === 'False' ? false : defaultValue;
-  //       defaultValue = defaultValue === 'True' ? true : defaultValue;
-  //       return (
-  //         <div className="text-sm">
-  //           {renderLabelWithTooltip(data)}
-  //           <Checkbox
-  //             className="ml-2"
-  //             defaultChecked={defaultValue}
-  //             onChange={(e) => {
-  //               onChange(e.target.checked);
-  //             }}
-  //           />
-  //         </div>
-  //       );
-  //   }
-  // }
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
 
@@ -114,139 +38,83 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
       case 'float':
         return (
           <Form.Item
-            className="mb-2"
+            className="mb-2 text-sm"
             name={data.name}
+            initialValue={defaultValue}
+            rules={[{ required: !data.optional }]}
             label={<span className="text-neutral-500">{data.label}</span>}
             tooltip={data.description ? { title: data.description, icon: <InfoCircleOutlined /> } : ''}
-            rules={[{ required: !data.optional }]}
           >
-            <InputNumber className="w-full" defaultValue={defaultValue} onChange={onChange} />
+            <InputNumber className="w-full nodrag" />
           </Form.Item>
         );
-        {
-          /* <div className="text-sm">
-            {renderLabelWithTooltip(data)}
-            <InputNumber
-              className="w-full"
-              defaultValue={defaultValue}
-              onChange={(value: number | null) => {
-                console.log('value', value);
-                onChange(value);
-              }}
-            />
-          </div> */
-        }
 
       case 'str':
         return (
           <Form.Item
-            className="mb-2"
+            className="mb-2 text-sm"
             name={data.name}
+            initialValue={defaultValue}
+            rules={[{ required: !data.optional }]}
             label={<span className="text-neutral-500">{data.label}</span>}
             tooltip={data.description ? { title: data.description, icon: <InfoCircleOutlined /> } : ''}
-            rules={[{ required: !data.optional }]}
           >
             {data.options?.length > 0 ? (
-              <Select
-                className="w-full nodrag"
-                defaultValue={defaultValue}
-                options={data.options.map((item: any) => ({ label: item.label, value: item.value }))}
-                onChange={onChange}
-              />
+              <Select className="w-full nodrag" options={data.options.map((item: any) => ({ label: item.label, value: item.value }))} />
             ) : (
-              <Input
-                className="w-full"
-                defaultValue={defaultValue}
-                onChange={(e) => {
-                  onChange(e.target.value);
-                }}
-              />
+              <Input className="w-full" />
             )}
           </Form.Item>
-          // <div className="text-sm">
-          //   {renderLabelWithTooltip(data)}
-          //   {data.options?.length > 0 ? (
-          //     <Select
-          //       className="w-full nodrag"
-          //       defaultValue={defaultValue}
-          //       options={data.options.map((item: any) => ({ label: item.label, value: item.value }))}
-          //       onChange={onChange}
-          //     />
-          //   ) : (
-          //     <Input
-          //       className="w-full"
-          //       defaultValue={defaultValue}
-          //       onChange={(e) => {
-          //         onChange(e.target.value);
-          //       }}
-          //     />
-          //   )}
-          // </div>
         );
+
       case 'bool':
         defaultValue = defaultValue === 'False' ? false : defaultValue;
         defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
-          // <div className="text-sm">
-          //   {renderLabelWithTooltip(data)}
-          //   <Checkbox
-          //     className="ml-2"
-          //     defaultChecked={defaultValue}
-          //     onChange={(e) => {
-          //       onChange(e.target.checked);
-          //     }}
-          //   />
-          // </div>
-
           <Form.Item
-            className="mb-2"
+            className="mb-2 text-sm"
             name={data.name}
+            initialValue={defaultValue}
+            rules={[{ required: !data.optional }]}
             label={<span className="text-neutral-500">{data.label}</span>}
             tooltip={data.description ? { title: data.description, icon: <InfoCircleOutlined /> } : ''}
-            rules={[{ required: !data.optional }]}
           >
-            <Checkbox
-              className="ml-2"
-              defaultChecked={defaultValue}
-              onChange={(e) => {
-                onChange(e.target.checked);
-              }}
-            />
+            <Checkbox className="ml-2" />
           </Form.Item>
         );
     }
   }
 
-  function renderComponentByType(type: string, props?: any) {
+  function renderComponentByType(type: string, data: IFlowNodeParameter) {
     switch (type) {
       case 'select':
-        return <RenderSelect {...props} />;
+        return renderSelect(data);
       case 'cascader':
-        return <RenderCascader {...props} />;
+        return renderCascader(data);
       case 'checkbox':
-        return <RenderCheckbox {...props} />;
+        return renderCheckbox(data);
       case 'radio':
-        return <RenderRadio {...props} />;
+        return renderRadio(data);
       case 'input':
-        return <RenderInput {...props} />;
+        return renderInput(data);
       case 'text_area':
-        return <RenderTextArea {...props} />;
+        return renderTextArea(data);
       case 'slider':
-        return <RenderSlider {...props} />;
+        return renderSlider(data);
       case 'date_picker':
-        return <RenderDatePicker {...props} />;
+        return renderDatePicker(data);
       case 'time_picker':
-        return <RenderTimePicker {...props} />;
+        return renderTimePicker(data);
       case 'tree_select':
-        return <RenderTreeSelect {...props} />;
+        return renderTreeSelect(data);
       case 'password':
-        return <RenderPassword {...props} />;
+        return renderPassword(data);
       case 'upload':
-        return <RenderUpload {...props} />;
+        return renderUpload({ data });
       case 'variables':
-        return <RenderVariables {...props} />;
+        return renderVariables(data);
       case 'code_editor':
-        return <RenderCodeEditor {...props} />;
+        return renderCodeEditor(data);
       default:
         return null;
     }
@@ -256,31 +124,26 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   function renderNodeWithUiParam(data: IFlowNodeParameter) {
     const { refresh_depends, ui_type } = data.ui;
     let defaultValue = data.value ?? data.default;
-    const props = { data, defaultValue, onChange };
 
     return (
-      // <div>
-      //   {renderLabelWithTooltip(data)}
-      //   {renderComponentByType(data?.ui?.ui_type, props)}
-      // </div>
-
       <Form.Item
         className="mb-2"
+        initialValue={defaultValue}
         name={data.name}
-        label={<span className="text-neutral-500">{data.label}</span>}
-        tooltip={data.description ? { title: data.description, icon: <InfoCircleOutlined /> } : ''}
-        {...(refresh_depends && { dependencies: refresh_depends })}
         rules={[{ required: !data.optional }]}
+        label={<span className="text-neutral-500">{data.label}</span>}
+        {...(refresh_depends && { dependencies: refresh_depends })}
+        {...(data.description && { tooltip: { title: data.description, icon: <InfoCircleOutlined /> } })}
       >
-        {renderComponentByType(ui_type, props)}
+        {renderComponentByType(ui_type, data)}
       </Form.Item>
     );
   }
 
-  if (data.category === 'resource') {
-    return <NodeHandler node={node} data={data} type="target" label={label} index={index} />;
-  } else if (data.category === 'common') {
-    return data?.ui ? renderNodeWithUiParam(data) : renderNodeWithoutUiParam(data);
+  if (paramData.category === 'resource') {
+    return <NodeHandler node={node} data={paramData} type="target" label={label} index={index} />;
+  } else if (paramData.category === 'common') {
+    return paramData?.ui ? renderNodeWithUiParam(paramData) : renderNodeWithoutUiParam(paramData);
   }
 };
 
