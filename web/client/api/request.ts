@@ -275,8 +275,11 @@ export const addFlow = (data: IFlowUpdateParam) => {
   return POST<IFlowUpdateParam, IFlow>('/api/v2/serve/awel/flows', data);
 };
 
-export const getFlows = () => {
-  return GET<null, IFlowResponse>('/api/v2/serve/awel/flows');
+export const getFlows = (page?: number, page_size?: number) => {
+  return GET<any, IFlowResponse>('/api/v2/serve/awel/flows', {
+    page,
+    page_size,
+  });
 };
 
 export const getFlowById = (id: string) => {
@@ -304,7 +307,7 @@ export const debugFlow = (data: any) => {
 };
 
 export const exportFlow = (data: IFlowExportParams) => {
-  return GET<IFlowExportParams, any>('/api/v2/serve/awel/flow/export', data);
+  return GET<IFlowExportParams, any>(`/api/v2/serve/awel/flow/export/${data.uid}`, data);
 };
 
 export const importFlow = (data: IFlowImportParams) => {

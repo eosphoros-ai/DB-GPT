@@ -1,4 +1,4 @@
-import { IFlowNode, IFlowRefreshParams } from '@/types/flow';
+import { IFlowNode } from '@/types/flow';
 import Image from 'next/image';
 import NodeParamHandler from './node-param-handler';
 import classNames from 'classnames';
@@ -80,8 +80,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   }
 
   async function updateDependsNodeValue(changedKey: string, changedVal: any) {
-    if (!changedVal) return;
-
     const dependParamNodes = parameters.filter(({ ui }) => ui?.refresh_depends?.includes(changedKey));
 
     if (dependParamNodes?.length === 0) return;
@@ -107,20 +105,34 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       };
 
       const [_, res] = await apiInterceptors(refreshFlowNodeById(params));
-      // TODO: update node value
-      console.log('res', res);
+
+      // update value of the node
+      if (res) {
+        reactFlow.setNodes((nodes) =>
+          nodes.map((n) => {
+            return n.id === node.id
+              ? {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    parameters: res.parameters,
+                  },
+                }
+              : n;
+          }),
+        );
+      }
     });
   }
 
   function onParameterValuesChange(changedValues: any, allValues: any) {
-    // TODO: update node value
-    console.log('Changed xxx', changedValues);    
-    console.log('All xxx', allValues);
 
     const [changedKey, changedVal] = Object.entries(changedValues)[0];
 
     updateCurrentNodeValue(changedKey, changedVal);
-    updateDependsNodeValue(changedKey, changedVal);
+    if (changedVal) {
+      updateDependsNodeValue(changedKey, changedVal);
+    }
   }
 
   return (
@@ -132,9 +144,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
           <IconWrapper className="hover:text-blue-500">
             <CopyOutlined className="h-full text-lg cursor-pointer" onClick={copyNode} />
           </IconWrapper>
+
           <IconWrapper className="mt-2 hover:text-red-500">
             <DeleteOutlined className="h-full text-lg cursor-pointer" onClick={deleteNode} />
           </IconWrapper>
+
           <IconWrapper className="mt-2">
             <Tooltip
               title={

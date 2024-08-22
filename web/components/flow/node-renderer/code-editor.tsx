@@ -12,7 +12,6 @@ type Props = {
 
 export const renderCodeEditor = (data: IFlowNodeParameter) => {
   const { t } = useTranslation();
-  // const { data, defaultValue } = params;
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
