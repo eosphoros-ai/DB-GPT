@@ -1,4 +1,4 @@
-import UserBar from '@/ant-components/layout/UserBar';
+import UserBar from '@/new-components/layout/UserBar';
 import { ChatContext } from '@/app/chat-context';
 import { DarkSvg, SunnySvg } from '@/components/icons';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';

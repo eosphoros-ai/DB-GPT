@@ -1,8 +1,8 @@
-import ChatHeader from '@/ant-components/chat/header/ChatHeader';
+import ChatHeader from '@/new-components/chat/header/ChatHeader';
 import dynamic from 'next/dynamic';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-const ChatCompletion = dynamic(() => import('@/ant-components/chat/content/ChatCompletion'), { ssr: false });
+const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
 const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   const scrollRef = useRef<HTMLDivElement>(null);

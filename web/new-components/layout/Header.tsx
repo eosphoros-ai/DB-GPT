@@ -1,4 +1,4 @@
-import UserBar from '@/ant-components/layout/UserBar';
+import UserBar from '@/new-components/layout/UserBar';
 import { ApiOutlined, ReadOutlined } from '@ant-design/icons';
 import { Tooltip } from 'antd';
 import { useRouter } from 'next/router';

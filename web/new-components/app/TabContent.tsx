@@ -3,7 +3,7 @@ import { Avatar, Empty, Spin } from 'antd';
 import { useRouter } from 'next/router';
 import React, { useContext } from 'react';
 
-import BlurredCard from '@/ant-components/common/blurredCard';
+import BlurredCard from '@/new-components/common/blurredCard';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, collectApp, newDialogue, unCollectApp } from '@/client/api';
 import { StarFilled, StarOutlined } from '@ant-design/icons';

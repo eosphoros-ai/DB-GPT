@@ -1,4 +1,4 @@
-import ChatContent from '@/ant-components/chat/content/ChatContent';
+import ChatContent from '@/new-components/chat/content/ChatContent';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppInfo } from '@/client/api';
 import MonacoEditor from '@/components/chat/monaco-editor';
