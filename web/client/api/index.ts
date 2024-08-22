@@ -1,3 +1,5 @@
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 
 export type ResponseType<T = any> = {
@@ -39,8 +41,9 @@ const LONG_TIME_API: string[] = [
 ins.interceptors.request.use((request) => {
   const isLongTimeApi = LONG_TIME_API.some((item) => request.url && request.url.indexOf(item) >= 0);
   if (!request.timeout) {
-    request.timeout = isLongTimeApi ? 60000 : 10000;
+    request.timeout = isLongTimeApi ? 60000 : 100000;
   }
+  request.headers.set(HEADER_USER_ID_KEY, getUserId());
   return request;
 });
 
@@ -66,3 +69,10 @@ export const DELETE = <Params = any, Response = any, D = any>(url: string, param
 
 export * from './tools';
 export * from './request';
+export * from './chat';
+export * from './flow';
+export * from './app';
+export * from './knowledge';
+export * from './user';
+export * from './prompt';
+export * from './evaluate';

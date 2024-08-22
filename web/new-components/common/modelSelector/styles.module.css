@@ -1,0 +1,5 @@
+.cus-selector :global .ant-select-selector {
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid #ffffff;
+    border-radius: 20px;
+}

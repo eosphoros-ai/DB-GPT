@@ -22,6 +22,7 @@ let intervalId: string | number | NodeJS.Timeout | undefined;
 
 export default function Segmentation(props: IProps) {
   const { spaceName, docType, uploadFiles, handleStepChange } = props;
+  console.log(docType, 'doctype');
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [files, setFiles] = useState(uploadFiles);
@@ -29,6 +30,7 @@ export default function Segmentation(props: IProps) {
   const [strategies, setStrategies] = useState<Array<IChunkStrategyResponse>>([]);
   const [syncStatus, setSyncStatus] = useState<string>('');
 
+  const spaceId = localStorage.getItem('cur_space_id');
   async function getStrategies() {
     setLoading(true);
     const [, allStrategies] = await apiInterceptors(getChunkStrategies());
@@ -41,6 +43,7 @@ export default function Segmentation(props: IProps) {
     return () => {
       intervalId && clearInterval(intervalId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFinish = async (data: FieldType) => {
@@ -61,6 +64,11 @@ export default function Segmentation(props: IProps) {
             handleStepChange({
               label: 'finish',
             });
+          } else if (status === 'FAILED') {
+            clearInterval(intervalId);
+            handleStepChange({
+              label: 'finish',
+            });
           }
         }, 3000);
       }
@@ -77,8 +85,8 @@ export default function Segmentation(props: IProps) {
     fileStrategies.map((item) => {
       const name = item?.chunk_parameters?.chunk_strategy;
       if (!name) {
-        // set default strategy
-        item.chunk_parameters = { chunk_strategy: 'Automatic' };
+        message.error(`Please select chunk strategy for ${item.name}.`);
+        checked = false;
       }
       const strategy = strategies.filter((item) => item.strategy === name)[0];
       const newParam: any = {
@@ -98,7 +106,7 @@ export default function Segmentation(props: IProps) {
 
   async function updateSyncStatus(docIds: Array<number>) {
     const [, docs] = await apiInterceptors(
-      getDocumentList(spaceName, {
+      getDocumentList(spaceName as any, {
         doc_ids: docIds,
       }),
     );
@@ -129,8 +137,9 @@ export default function Segmentation(props: IProps) {
           switch (docType) {
             case 'TEXT':
             case 'URL':
+            case 'YUQUEURL':
               return fields?.map((field) => (
-                <StrategyForm strategies={strategies} docType={docType} fileName={files![field.name].name} field={field} />
+                <StrategyForm key={field.key} strategies={strategies} docType={docType} fileName={files![field.name].name} field={field} />
               ));
             case 'DOCUMENT':
               return (

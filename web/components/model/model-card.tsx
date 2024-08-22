@@ -48,19 +48,19 @@ function ModelCard({ info }: Props) {
         info.model_type,
       ]}
       icon={MODEL_ICON_MAP[info.model_name]?.icon || '/models/huggingface.svg'}
-      operations={[
-        {
-          children: (
-            <div>
-              <PauseCircleOutlined className="mr-2" />
-              <span className="text-sm">Stop Model</span>
-            </div>
-          ),
-          onClick: () => {
-            stopTheModel(info);
-          },
-        },
-      ]}
+      // operations={[
+      //   {
+      //     children: (
+      //       <div>
+      //         <PauseCircleOutlined className="mr-2" />
+      //         <span className="text-sm">Stop Model</span>
+      //       </div>
+      //     ),
+      //     onClick: () => {
+      //       stopTheModel(info);
+      //     },
+      //   },
+      // ]}
     >
       <div className="flex flex-col gap-1 px-4 pb-4 text-xs">
         <div className="flex overflow-hidden">

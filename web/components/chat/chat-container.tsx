@@ -16,7 +16,7 @@ import MyEmpty from '../common/MyEmpty';
 const ChatContainer = () => {
   const searchParams = useSearchParams();
   const { scene, chatId, model, agent, setModel, history, setHistory } = useContext(ChatContext);
-  const chat = useChat({});
+  const { chat } = useChat({});
   const initMessage = (searchParams && searchParams.get('initMessage')) ?? '';
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,9 +34,11 @@ const ChatContainer = () => {
     if (contextTemp) {
       try {
         const contextObj = typeof contextTemp === 'string' ? JSON.parse(contextTemp) : contextTemp;
+        console.log('contextObj', contextObj);
         setChartsData(contextObj?.template_name === 'report' ? contextObj?.charts : undefined);
       } catch (e) {
-        setChartsData(undefined);
+        console.log(e);
+        setChartsData([]);
       }
     }
   };
@@ -117,7 +119,9 @@ const ChatContainer = () => {
             <Chart chartsData={chartsData} />
           </div>
         )}
-        {!chartsData?.length && scene === 'chat_dashboard' && <MyEmpty className="w-full xl:w-3/4 h-1/2 xl:h-full" />}
+        {!chartsData?.length && scene === 'chat_dashboard' && (
+          <MyEmpty className="w-full xl:w-3/4 h-1/2 xl:h-full" />
+        )}
         {/** chat panel */}
         <div
           className={classNames('flex flex-1 flex-col overflow-hidden', {

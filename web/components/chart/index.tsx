@@ -10,6 +10,7 @@ type Props = {
 };
 
 function Chart({ chartsData }: Props) {
+  console.log(chartsData,'xxx')
   const chartRows = useMemo(() => {
     if (chartsData) {
       let res = [];
@@ -66,7 +67,7 @@ function Chart({ chartsData }: Props) {
               return <LineChart key={chart.chart_uid} chart={chart} />;
             } else if (chart.chart_type === 'BarChart' || chart.type === 'BarChart') {
               return <BarChart key={chart.chart_uid} chart={chart} />;
-            } else if (chart.chart_type === 'Table' || chart.type === 'Table') {
+            } else if (chart.chart_type === 'Table' || chart.type === 'TableChartData') {
               return <TableChart key={chart.chart_uid} chart={chart} />;
             }
           })}

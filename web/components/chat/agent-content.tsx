@@ -11,7 +11,7 @@ interface Props {
 }
 
 function formatMarkdownVal(val: string) {
-  return val.replace(/<table(\w*=[^>]+)>/gi, '<table $1>').replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
+  return val?.replace(/<table(\w*=[^>]+)>/gi, '<table $1>').replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
 }
 
 function AgentContent({ content }: Props) {

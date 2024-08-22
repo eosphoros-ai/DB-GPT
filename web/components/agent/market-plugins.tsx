@@ -6,6 +6,8 @@ import { useCallback, useMemo, useState } from 'react';
 import MyEmpty from '../common/MyEmpty';
 import { ClearOutlined, DownloadOutlined, GithubOutlined, LoadingOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
+import moment from 'moment';
 
 function MarketPlugins() {
   const { t } = useTranslation();
@@ -96,6 +98,7 @@ function MarketPlugins() {
     },
     [actionIndex, pluginAction],
   );
+  console.log(agents);
 
   return (
     <Spin spinning={loading}>
@@ -114,8 +117,7 @@ function MarketPlugins() {
       </Form>
       {!agents.length && !loading && <MyEmpty error={isError} refresh={refresh} />}
       <div className="flex flex-wrap gap-2 md:gap-4">
-        {agents.map((agent, index) => (
-          <Card
+        {/* <Card
             className="w-full md:w-1/2 lg:w-1/3 xl:w-1/4"
             key={agent.id}
             actions={[
@@ -142,7 +144,50 @@ function MarketPlugins() {
             <Tooltip title={agent.description}>
               <p className="mt-2 line-clamp-2 text-gray-400 text-sm">{agent.description}</p>
             </Tooltip>
-          </Card>
+          </Card> */}
+        {agents.map((agent, index) => (
+          <BlurredCard
+            onClick={() => {
+              window.open(agent.storage_url, '_blank');
+            }}
+            description={agent.description}
+            name={agent.name}
+            key={agent.id}
+            Tags={
+              <div>
+                {agent.author && <Tag>{agent.author}</Tag>}
+                {agent.version && <Tag>v{agent.version}</Tag>}
+                {agent.type && <Tag>Type {agent.type}</Tag>}
+                {agent.storage_channel && <Tag>{agent.storage_channel}</Tag>}
+              </div>
+            }
+            LeftBottom={
+              <div className="flex gap-2">
+                <span>{agent.author}</span>
+                <span>•</span>
+                {agent?.gmt_created && <span>{moment(agent?.gmt_created).fromNow() + ' ' + t('update')}</span>}
+              </div>
+            }
+            RightBottom={
+              agent.installed ? (
+                <ChatButton
+                  Icon={<ClearOutlined />}
+                  text="Uninstall"
+                  onClick={() => {
+                    pluginAction(agent.name, index, false);
+                  }}
+                />
+              ) : (
+                <ChatButton
+                  Icon={<DownloadOutlined />}
+                  text="Install"
+                  onClick={() => {
+                    pluginAction(agent.name, index, true);
+                  }}
+                />
+              )
+            }
+          />
         ))}
       </div>
     </Spin>

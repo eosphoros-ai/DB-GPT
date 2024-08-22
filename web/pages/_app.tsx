@@ -1,19 +1,22 @@
-import type { AppProps } from 'next/app';
-import React, { useContext, useEffect, useRef } from 'react';
+import { ChatContext, ChatContextProvider } from '@/app/chat-context';
+import { addUser, apiInterceptors } from '@/client/api';
 import SideBar from '@/components/layout/side-bar';
 import TopProgressBar from '@/components/layout/top-progress-bar';
-import { useTranslation } from 'react-i18next';
-import { ChatContext, ChatContextProvider } from '@/app/chat-context';
-import classNames from 'classnames';
-import '../styles/globals.css';
-import '../nprogress.css';
-import '../app/i18n';
-import { STORAGE_LANG_KEY } from '@/utils';
-import { ConfigProvider, MappingAlgorithm, theme } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
+import { STORAGE_LANG_KEY, STORAGE_USERINFO_KEY, STORAGE_USERINFO_VALID_TIME_KEY } from '@/utils/constants/index';
+import { App, ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
-import { CssVarsProvider, ThemeProvider, useColorScheme } from '@mui/joy';
-import { joyTheme } from '@/defaultTheme';
+import zhCN from 'antd/locale/zh_CN';
+import classNames from 'classnames';
+import type { AppProps } from 'next/app';
+import { useRouter } from 'next/router';
+import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import FloatHelper from '@/new-components/layout/FloatHelper';
+import '../app/i18n';
+import '../nprogress.css';
+import '../styles/globals.css';
+import Head from 'next/head';
 
 const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
   return {
@@ -27,11 +30,6 @@ const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
 function CssWrapper({ children }: { children: React.ReactElement }) {
   const { mode } = useContext(ChatContext);
   const { i18n } = useTranslation();
-  const { setMode: setMuiMode } = useColorScheme();
-
-  useEffect(() => {
-    setMuiMode(mode);
-  }, [mode]);
 
   useEffect(() => {
     if (mode) {
@@ -45,12 +43,12 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
   }, [mode]);
 
   useEffect(() => {
-    i18n.changeLanguage && i18n.changeLanguage(window.localStorage.getItem(STORAGE_LANG_KEY) || 'en');
+    i18n.changeLanguage && i18n.changeLanguage(window.localStorage.getItem(STORAGE_LANG_KEY) || 'zh');
   }, [i18n]);
 
   return (
     <div>
-      <TopProgressBar />
+      {/* <TopProgressBar /> */}
       {children}
     </div>
   );
@@ -59,24 +57,74 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { isMenuExpand, mode } = useContext(ChatContext);
   const { i18n } = useTranslation();
+  const [isLogin, setIsLogin] = useState(false);
+
+  const router = useRouter();
+
+
+  // 登录检测
+  const handleAuth = async () => {
+    setIsLogin(false);
+    // 如果已有登录信息，直接展示首页
+    // if (localStorage.getItem(STORAGE_USERINFO_KEY)) {
+    //   setIsLogin(true);
+    //   return;
+    // }
+    const get_user_url = process.env.GET_USER_URL || '';
+    var user_not_login_url = process.env.LOGIN_URL;
+    // MOCK User info
+    var user = {
+          user_channel: `dbgpt`,
+          user_no: `001`,
+          nick_name: `dbgpt`,
+        }
+    if (user) {
+        localStorage.setItem(STORAGE_USERINFO_KEY, JSON.stringify(user));
+        localStorage.setItem(STORAGE_USERINFO_VALID_TIME_KEY, Date.now().toString());
+        setIsLogin(true);
+    }
+  };
+
+  useEffect(() => {
+    handleAuth();
+  }, []);
+
+  if (!isLogin) {
+    return null;
+  }
+
+  const renderContent = () => {
+    if (router.pathname.includes('mobile')) {
+      return <>{children}</>;
+    }
+    return (
+      <div className="flex w-screen h-screen overflow-hidden">
+        <Head>
+          <meta name="viewport" content="initial-scale=1.0, width=device-width, maximum-scale-1" />
+        </Head>
+        {router.pathname !== '/construct/app/extra' && (
+          <div className={classNames('transition-[width]', isMenuExpand ? 'w-60' : 'w-20', 'hidden', 'md:block')}>
+            <SideBar />
+          </div>
+        )}
+        <div className="flex flex-col flex-1 relative overflow-hidden">{children}</div>
+        <FloatHelper />
+      </div>
+    );
+  };
 
   return (
     <ConfigProvider
       locale={i18n.language === 'en' ? enUS : zhCN}
       theme={{
         token: {
-          colorPrimary: '#0069FE',
+          colorPrimary: '#0C75FC',
           borderRadius: 4,
         },
         algorithm: mode === 'dark' ? antdDarkTheme : undefined,
       }}
     >
-      <div className="flex w-screen h-screen overflow-hidden">
-        <div className={classNames('transition-[width]', isMenuExpand ? 'w-60' : 'w-20', 'hidden', 'md:block')}>
-          <SideBar />
-        </div>
-        <div className="flex flex-col flex-1 relative overflow-hidden">{children}</div>
-      </div>
+      <App>{renderContent()}</App>
     </ConfigProvider>
   );
 }
@@ -84,15 +132,11 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ChatContextProvider>
-      <ThemeProvider theme={joyTheme}>
-        <CssVarsProvider theme={joyTheme} defaultMode="light">
-          <CssWrapper>
-            <LayoutWrapper>
-              <Component {...pageProps} />
-            </LayoutWrapper>
-          </CssWrapper>
-        </CssVarsProvider>
-      </ThemeProvider>
+      <CssWrapper>
+        <LayoutWrapper>
+          <Component {...pageProps} />
+        </LayoutWrapper>
+      </CssWrapper>
     </ChatContextProvider>
   );
 }

@@ -1,8 +1,23 @@
-import { AxiosRequestConfig } from 'axios';
-import { DELETE, GET, POST, PUT } from '.';
-import { DbListResponse, DbSupportTypeResponse, PostDbParams, ChatFeedBackSchema, PostDbRefreshParams } from '@/types/db';
-import { DialogueListResponse, IChatDialogueSchema, NewDialogueParam, SceneResponse, ChatHistoryResponse, FeedBack, IDB } from '@/types/chat';
-import { IModelData, StartModelParams, BaseModelParams, SupportModel } from '@/types/model';
+import {
+  GetDBGPTsListResponse,
+  PostAgentHubUpdateParams,
+  PostAgentMyPluginResponse,
+  PostAgentPluginResponse,
+  PostAgentQueryParams,
+} from '@/types/agent';
+import { GetAppInfoParams, IApp, IAgent, IAppData } from '@/types/app';
+import {
+  ChatHistoryResponse,
+  DialogueListResponse,
+  FeedBack,
+  IChatDialogueSchema,
+  IDB,
+  NewDialogueParam,
+  SceneResponse,
+  UserParam,
+  UserParamResponse,
+} from '@/types/chat';
+import { ChatFeedBackSchema, DbListResponse, DbSupportTypeResponse, PostDbParams, PostDbRefreshParams } from '@/types/db';
 import {
   GetEditorSQLRoundRequest,
   GetEditorySqlParams,
@@ -11,13 +26,7 @@ import {
   PostEditorSQLRunParams,
   PostSQLEditorSubmitParams,
 } from '@/types/editor';
-import {
-  PostAgentHubUpdateParams,
-  PostAgentQueryParams,
-  PostAgentPluginResponse,
-  PostAgentMyPluginResponse,
-  GetDBGPTsListResponse,
-} from '@/types/agent';
+import { IFlow, IFlowNode, IFlowUpdateParam, IFlowResponse } from '@/types/flow';
 import {
   AddKnowledgeParams,
   ArgumentsParams,
@@ -33,16 +42,21 @@ import {
   ISyncBatchResponse,
   SpaceConfig,
 } from '@/types/knowledge';
-import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
-import { IFlow, IFlowNode, IFlowResponse, IFlowUpdateParam } from '@/types/flow';
-import { IAgent, IApp, IAppData, ITeamModal } from '@/types/app';
+import { BaseModelParams, IModelData, StartModelParams, SupportModel } from '@/types/model';
+import { AxiosRequestConfig } from 'axios';
+import { DELETE, GET, POST, PUT } from '.';
+
 
 /** App */
 export const postScenes = () => {
   return POST<null, Array<SceneResponse>>('/api/v1/chat/dialogue/scenes');
 };
 export const newDialogue = (data: NewDialogueParam) => {
-  return POST<NewDialogueParam, IChatDialogueSchema>('/api/v1/chat/dialogue/new', data);
+  return POST<NewDialogueParam, IChatDialogueSchema>(`/api/v1/chat/dialogue/new?chat_mode=${data.chat_mode}&model_name=${data.model}`, data);
+};
+
+export const addUser = (data: UserParam) => {
+  return POST<UserParam, UserParamResponse>('/api/v1/user/add', data);
 };
 
 /** Database Page */
@@ -90,15 +104,19 @@ export const postChatModeParamsFileLoad = ({
   data,
   config,
   model,
+  userName,
+  sysCode,
 }: {
   convUid: string;
   chatMode: string;
   data: FormData;
   model: string;
+  userName?: string;
+  sysCode?: string;
   config?: Omit<AxiosRequestConfig, 'headers'>;
 }) => {
-  return POST<FormData, ChatHistoryResponse>(
-    `/api/v1/chat/mode/params/file/load?conv_uid=${convUid}&chat_mode=${chatMode}&model_name=${model}`,
+  return POST<FormData, any>(
+    `/api/v1/resource/file/upload?conv_uid=${convUid}&chat_mode=${chatMode}&model_name=${model}&user_name=${userName}&sys_code=${sysCode}`,
     data,
     {
       headers: {
@@ -107,6 +125,10 @@ export const postChatModeParamsFileLoad = ({
       ...config,
     },
   );
+};
+
+export const clearChatHistory = (conUid: string) => {
+  return POST<null, Record<string, string>>(`/api/v1/chat/dialogue/clear?con_uid=${conUid}`);
 };
 
 /** Menu */
@@ -139,8 +161,8 @@ export const saveArguments = (knowledgeName: string, data: ArgumentsParams) => {
   return POST<ArgumentsParams, IArguments>(`/knowledge/${knowledgeName}/argument/save`, data);
 };
 
-export const getSpaceList = () => {
-  return POST<any, Array<ISpace>>('/knowledge/space/list', {});
+export const getSpaceList = (data: any) => {
+  return POST<any, Array<ISpace>>('/knowledge/space/list', data);
 };
 export const getDocumentList = (spaceName: string, data: Record<string, number | Array<number>>) => {
   return POST<Record<string, number | Array<number>>, IDocumentResponse>(`/knowledge/${spaceName}/document/list`, data);
@@ -154,7 +176,7 @@ export const addDocument = (knowledgeName: string, data: DocumentParams) => {
 };
 
 export const addSpace = (data: AddKnowledgeParams) => {
-  return POST<AddKnowledgeParams, Array<any>>(`/knowledge/space/add`, data);
+  return POST<AddKnowledgeParams, number>(`/knowledge/space/add`, data);
 };
 
 export const getChunkStrategies = () => {
@@ -178,7 +200,7 @@ export const getChunkList = (spaceName: string, data: ChunkListParams) => {
 };
 
 export const delDocument = (spaceName: string, data: Record<string, number>) => {
-  return POST<Record<string, number>>(`/knowledge/${spaceName}/document/delete`, data);
+  return POST<Record<string, number>, null>(`/knowledge/${spaceName}/document/delete`, data);
 };
 
 export const delSpace = (data: Record<string, string>) => {
@@ -248,25 +270,10 @@ export const postChatFeedBackForm = ({ data, config }: { data: ChatFeedBackSchem
 };
 
 /** prompt */
-export const getPromptList = (data: PromptParams) => {
-  return POST<PromptParams, Array<IPrompt>>('/prompt/list', data);
-};
-
-export const updatePrompt = (data: UpdatePromptParams) => {
-  return POST<UpdatePromptParams, []>('/prompt/update', data);
-};
-
-export const addPrompt = (data: UpdatePromptParams) => {
-  return POST<UpdatePromptParams, []>('/prompt/add', data);
-};
 
 /** AWEL Flow */
 export const addFlow = (data: IFlowUpdateParam) => {
   return POST<IFlowUpdateParam, IFlow>('/api/v1/serve/awel/flows', data);
-};
-
-export const getFlows = () => {
-  return GET<null, IFlowResponse>('/api/v1/serve/awel/flows');
 };
 
 export const getFlowById = (id: string) => {
@@ -286,13 +293,6 @@ export const getFlowNodes = () => {
 };
 
 /** app */
-export const addApp = (data: IApp) => {
-  return POST<IApp, []>('/api/v1/app/create', data);
-};
-
-export const getAppList = (data: Record<string, string>) => {
-  return POST<Record<string, string>, IAppData>('/api/v1/app/list', data);
-};
 
 export const collectApp = (data: Record<string, string>) => {
   return POST<Record<string, string>, []>('/api/v1/app/collect', data);
@@ -302,36 +302,51 @@ export const unCollectApp = (data: Record<string, string>) => {
   return POST<Record<string, string>, []>('/api/v1/app/uncollect', data);
 };
 
-export const delApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>('/api/v1/app/remove', data);
-};
-
-export const getAgents = () => {
-  return GET<object, IAgent[]>('/api/v1/agents/list', {});
-};
-
-export const getTeamMode = () => {
-  return GET<null, string[]>('/api/v1/team-mode/list');
-};
-
 export const getResourceType = () => {
   return GET<null, string[]>('/api/v1/resource-type/list');
 };
 
-export const getResource = (data: Record<string, string>) => {
-  return GET<Record<string, string>, []>(`/api/v1/app/resources/list?type=${data.type}`);
+export const publishApp = (app_code: string) => {
+  return POST<Record<string, any>, []>('/api/v1/app/publish', { app_code });
 };
 
-export const updateApp = (data: IApp) => {
-  return POST<IApp, []>('/api/v1/app/edit', data);
+export const unPublishApp = (app_code: string) => {
+  return POST<Record<string, any>, []>('/api/v1/app/unpublish', { app_code });
+};
+export const addOmcDB = (params: Record<string, string>) => {
+  return POST<Record<string, any>, []>('/api/v1/chat/db/add', params);
 };
 
-export const getAppStrategy = () => {
-  return GET<null, []>(`/api/v1/llm-strategy/list`);
+export const getAppInfo = (data: GetAppInfoParams) => {
+  return GET<GetAppInfoParams, IApp>('/api/v1/app/info', data);
 };
 
-export const getAppStrategyValues = (type: string) => {
-  return GET<string, []>(`/api/v1/llm-strategy/value/list?type=${type}`);
+export const getSupportDBList = (db_name = '') => {
+  return GET<null, Record<string, any>>(`/api/v1/permission/db/list?db_name=${db_name}`);
+};
+
+export const recommendApps = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/v1/app/hot/list', data);
+};
+export const flowSearch = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/v1/serve/awel/flows', data);
+};
+export const modelSearch = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/controller/models', data);
+};
+
+export const getKnowledgeAdmins = (spaceId: string) => {
+  return GET<string, Record<string, any>>(`/knowledge/users/list?space_id=${spaceId}`);
+};
+export const updateKnowledgeAdmins = (data: Record<string, string>) => {
+  return POST<Record<string, any>, any[]>(`/knowledge/users/update`, data);
+};
+
+/** AWEL Flow */
+
+/** app */
+export const delApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/v1/app/remove', data);
 };
 
 export const getSpaceConfig = () => {

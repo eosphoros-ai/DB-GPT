@@ -1,31 +1,30 @@
+import UserBar from '@/new-components/layout/UserBar';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delDialogue } from '@/client/api';
-import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils';
-import { DarkSvg, SunnySvg, ModelSvg } from '@/components/icons';
+import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import { IChatDialogueSchema } from '@/types/chat';
+import { STORAGE_LANG_KEY, STORAGE_THEME_KEY, STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import Icon, {
+  AppstoreOutlined,
+  BuildOutlined,
   ConsoleSqlOutlined,
-  PartitionOutlined,
-  DeleteOutlined,
-  MessageOutlined,
+  ForkOutlined,
   GlobalOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  PlusOutlined,
-  ShareAltOutlined,
-  MenuOutlined,
-  SettingOutlined,
-  BuildOutlined,
-  ForkOutlined,
-  AppstoreOutlined,
+  MessageOutlined,
+  PartitionOutlined
 } from '@ant-design/icons';
-import { Modal, message, Tooltip, Dropdown } from 'antd';
+import { Modal, Popover, Tooltip, message } from 'antd';
 import { ItemType } from 'antd/es/menu/hooks/useItems';
+import cls from 'classnames';
 import copy from 'copy-to-clipboard';
+import moment from 'moment';
+import 'moment/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useContext, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type SettingItem = {
@@ -33,7 +32,11 @@ type SettingItem = {
   name: string;
   icon: ReactNode;
   noDropdownItem?: boolean;
-  onClick: () => void;
+  onClick?: () => void;
+  items?: ItemType[];
+  onSelect?: (p: { key: string }) => void;
+  defaultSelectedKeys?: string[];
+  placement?: 'top' | 'topLeft';
 };
 
 type RouteItem = {
@@ -41,10 +44,11 @@ type RouteItem = {
   name: string;
   icon: ReactNode;
   path: string;
+  isActive?: boolean;
 };
 
 function menuItemStyle(active?: boolean) {
-  return `flex items-center h-10 hover:bg-[#F1F5F9] dark:hover:bg-theme-dark text-base w-full transition-colors whitespace-nowrap px-4 ${
+  return `flex items-center h-12 hover:bg-[#F1F5F9] dark:hover:bg-theme-dark text-base w-full transition-colors whitespace-nowrap px-4 ${
     active ? 'bg-[#F1F5F9] dark:bg-theme-dark' : ''
   }`;
 }
@@ -56,13 +60,17 @@ function smallMenuItemStyle(active?: boolean) {
 }
 
 function SideBar() {
-  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode } =
+  const { chatId, scene, isMenuExpand, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode, adminList } =
     useContext(ChatContext);
   const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();
+  const [logo, setLogo] = useState<string>('/logo_zh_latest.png');
 
-  const [logo, setLogo] = useState<string>('/LOGO_1.png');
-
+  const hasAdmin = useMemo(() => {
+    const { user_id } = JSON.parse(localStorage.getItem(STORAGE_USERINFO_KEY) || '{}');
+    return adminList.some((admin) => admin.user_id === user_id);
+  }, [adminList]);
+  
   const routes = useMemo(() => {
     const items: RouteItem[] = [
       {
@@ -109,37 +117,133 @@ function SideBar() {
       },
     ];
     return items;
-  }, [i18n.language]);
+  }, [t]);
 
-  const handleToggleMenu = () => {
+  const handleToggleMenu = useCallback(() => {
     setIsMenuExpand(!isMenuExpand);
-  };
+  }, [isMenuExpand, setIsMenuExpand]);
 
   const handleToggleTheme = useCallback(() => {
     const theme = mode === 'light' ? 'dark' : 'light';
     setMode(theme);
     localStorage.setItem(STORAGE_THEME_KEY, theme);
-  }, [mode]);
+  }, [mode, setMode]);
 
   const handleChangeLang = useCallback(() => {
     const language = i18n.language === 'en' ? 'zh' : 'en';
     i18n.changeLanguage(language);
+    if (language === 'zh') moment.locale('zh-cn');
+    if (language === 'en') moment.locale('en');
     localStorage.setItem(STORAGE_LANG_KEY, language);
-  }, [i18n.language, i18n.changeLanguage]);
-
+  }, [i18n]);
   const settings = useMemo(() => {
     const items: SettingItem[] = [
       {
         key: 'theme',
         name: t('Theme'),
         icon: mode === 'dark' ? <Icon component={DarkSvg} /> : <Icon component={SunnySvg} />,
+        items: [
+          {
+            key: 'light',
+            label: (
+              <div className="py-1 flex justify-between gap-8 ">
+                <span className="flex gap-2 items-center">
+                  <Image src="/pictures/theme_light.png" alt="english" width={38} height={32}></Image>
+                  <span>Light</span>
+                </span>
+                <span
+                  className={cls({
+                    block: mode === 'light',
+                    hidden: mode !== 'light',
+                  })}
+                >
+                  ✓
+                </span>
+              </div>
+            ),
+          },
+          {
+            key: 'dark',
+            label: (
+              <div className="py-1 flex justify-between gap-8 ">
+                <span className="flex gap-2 items-center">
+                  <Image src="/pictures/theme_dark.png" alt="english" width={38} height={32}></Image>
+                  <span>Dark</span>
+                </span>
+                <span
+                  className={cls({
+                    block: mode === 'dark',
+                    hidden: mode !== 'dark',
+                  })}
+                >
+                  ✓
+                </span>
+              </div>
+            ),
+          },
+        ],
         onClick: handleToggleTheme,
+        onSelect: ({ key }: { key: string }) => {
+          if (mode === key) return;
+          setMode(key as 'light' | 'dark');
+          localStorage.setItem(STORAGE_THEME_KEY, key);
+        },
+        defaultSelectedKeys: [mode],
+        placement: 'topLeft',
       },
       {
         key: 'language',
         name: t('language'),
         icon: <GlobalOutlined />,
+        items: [
+          {
+            key: 'en',
+            label: (
+              <div className="py-1 flex justify-between gap-8 ">
+                <span className="flex gap-2">
+                  <Image src="/icons/english.png" alt="english" width={21} height={21}></Image>
+                  <span>English</span>
+                </span>
+                <span
+                  className={cls({
+                    block: i18n.language === 'en',
+                    hidden: i18n.language !== 'en',
+                  })}
+                >
+                  ✓
+                </span>
+              </div>
+            ),
+          },
+          {
+            key: 'zh',
+            label: (
+              <div className="py-1 flex justify-between gap-8 ">
+                <span className="flex gap-2">
+                  <Image src="/icons/zh.png" alt="english" width={21} height={21}></Image>
+                  <span>简体中文</span>
+                </span>
+                <span
+                  className={cls({
+                    block: i18n.language === 'zh',
+                    hidden: i18n.language !== 'zh',
+                  })}
+                >
+                  ✓
+                </span>
+              </div>
+            ),
+          },
+        ],
+        onSelect: ({ key }: { key: string }) => {
+          if (i18n.language === key) return;
+          i18n.changeLanguage(key);
+          if (key === 'zh') moment.locale('zh-cn');
+          if (key === 'en') moment.locale('en');
+          localStorage.setItem(STORAGE_LANG_KEY, key);
+        },
         onClick: handleChangeLang,
+        defaultSelectedKeys: [i18n.language],
       },
       {
         key: 'fold',
@@ -150,7 +254,75 @@ function SideBar() {
       },
     ];
     return items;
-  }, [mode, handleChangeLang, handleToggleMenu, handleChangeLang]);
+  }, [t, mode, handleToggleTheme, i18n, handleChangeLang, isMenuExpand, handleToggleMenu, setMode]);
+
+  const functions = useMemo(() => {
+    const items: RouteItem[] = [
+      {
+        key: 'chat',
+        name: t('chat_online'),
+        icon: (
+          <Image
+            key="image_chat"
+            src={pathname === '/chat' ? '/pictures/chat_active.png' : '/pictures/chat.png'}
+            alt="chat_image"
+            width={40}
+            height={40}
+          />
+        ),
+        path: '/chat',
+        isActive: pathname.startsWith('/chat'),
+      },
+      {
+        key: 'explore',
+        name: t('explore'),
+        isActive: pathname === '/',
+        icon: (
+          <Image
+            key="image_explore"
+            src={pathname === '/' ? '/pictures/explore_active.png' : '/pictures/explore.png'}
+            alt="construct_image"
+            width={40}
+            height={40}
+          />
+        ),
+        path: '/',
+      },
+      {
+        key: 'construct',
+        name: t('construct'),
+        isActive: pathname.startsWith('/construct'),
+        icon: (
+          <Image
+            key="image_construct"
+            src={pathname.startsWith('/construct') ? '/pictures/app_active.png' : '/pictures/app.png'}
+            alt="construct_image"
+            width={40}
+            height={40}
+          />
+        ),
+        path: '/construct/app',
+      },
+    ];
+    if (hasAdmin) {
+      items.push({
+        key: 'evaluation',
+        name: '场景评测',
+        icon: (
+          <Image
+            key="image_construct"
+            src={pathname.startsWith('/evaluation') ? '/pictures/app_active.png' : '/pictures/app.png'}
+            alt="construct_image"
+            width={40}
+            height={40}
+          />
+        ),
+        path: '/evaluation',
+        isActive: pathname === '/evaluation',
+      });
+    }
+    return items;
+  }, [t, pathname, hasAdmin]);
 
   const dropDownRoutes: ItemType[] = useMemo(() => {
     return routes.map<ItemType>((item) => ({
@@ -178,6 +350,18 @@ function SideBar() {
       }));
   }, [settings]);
 
+  const dropDownFunctions: ItemType[] = useMemo(() => {
+    return functions.map<ItemType>((item) => ({
+      key: item.key,
+      label: (
+        <Link href={item.path} className="text-base">
+          {item.icon}
+          <span className="ml-2 text-sm">{item.name}</span>
+        </Link>
+      ),
+    }));
+  }, [functions]);
+
   const handleDelChat = useCallback(
     (dialogue: IChatDialogueSchema) => {
       Modal.confirm({
@@ -204,7 +388,7 @@ function SideBar() {
         },
       });
     },
-    [refreshDialogList],
+    [chatId, refreshDialogList, replace, scene],
   );
 
   const handleClickChatItem = (item: IChatDialogueSchema) => {
@@ -218,56 +402,42 @@ function SideBar() {
     message[success ? 'success' : 'error'](success ? 'Copy success' : 'Copy failed');
   }, []);
 
-  useEffect(() => {
-    queryDialogueList();
-  }, []);
+  // useEffect(() => {
+  //   queryDialogueList();
+  // }, [queryDialogueList]);
 
   useEffect(() => {
-    setLogo(mode === 'dark' ? '/WHITE_LOGO.png' : '/LOGO_1.png');
+    const language = i18n.language;
+    if (language === 'zh') moment.locale('zh-cn');
+    if (language === 'en') moment.locale('en');
+  }, [])
+
+  useEffect(() => {
+    setLogo(mode === 'dark' ? '/logo_s_latest.png' : '/logo_zh_latest.png');
   }, [mode]);
 
   if (!isMenuExpand) {
     return (
-      <div className="flex flex-col justify-between h-screen bg-white dark:bg-[#232734] animate-fade animate-duration-300">
-        <Link href="/" className="px-2 py-3">
-          <Image src="/LOGO_SMALL.png" alt="DB-GPT" width={63} height={46} className="w-[63px] h-[46px]" />
-        </Link>
+      <div
+        className="flex flex-col justify-between pt-4 h-screen bg-bar dark:bg-[#232734] animate-fade animate-duration-300"
+        // onMouseEnter={() => {
+        // setIsMenuExpand(true);
+        // }}
+      >
         <div>
-          <Link href="/" className="flex items-center justify-center my-4 mx-auto w-12 h-12 bg-theme-primary rounded-full text-white">
-            <PlusOutlined className="text-lg" />
+          <Link href="/" className="flex justify-center items-center pb-4">
+            <Image src={isMenuExpand ? logo : '/LOGO_SMALL.png'} alt="DB-GPT" width={40} height={40} />
           </Link>
-        </div>
-        {/* Chat List */}
-        <div className="flex-1 overflow-y-scroll py-4 space-y-2">
-          {dialogueList?.map((item) => {
-            const active = item.conv_uid === chatId && item.chat_mode === scene;
-
-            return (
-              <Tooltip key={item.conv_uid} title={item.user_name || item.user_input} placement="right">
-                <Link
-                  href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
-                  className={smallMenuItemStyle(active)}
-                  onClick={() => {
-                    handleClickChatItem(item);
-                  }}
-                >
-                  <MessageOutlined />
-                </Link>
-              </Tooltip>
-            );
-          })}
+          <div className="flex flex-col gap-4 items-center">
+            {functions.map((i) => (
+              <Link key={i.key} className="h-12 flex items-center" href={i.path}>
+                {i?.icon}
+              </Link>
+            ))}
+          </div>
         </div>
         <div className="py-4">
-          <Dropdown menu={{ items: dropDownRoutes }} placement="topRight">
-            <div className={smallMenuItemStyle()}>
-              <MenuOutlined />
-            </div>
-          </Dropdown>
-          <Dropdown menu={{ items: dropDownSettings }} placement="topRight">
-            <div className={smallMenuItemStyle()}>
-              <SettingOutlined />
-            </div>
-          </Dropdown>
+          <UserBar onlyAvatar />
           {settings
             .filter((item) => item.noDropdownItem)
             .map((item) => (
@@ -283,72 +453,67 @@ function SideBar() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-[#232734]">
-      {/* LOGO */}
-      <Link href="/" className="p-2">
-        <Image src={logo} alt="DB-GPT" width={239} height={60} className="w-full h-full" />
-      </Link>
-      <Link href="/" className="flex items-center justify-center mb-4 mx-4 h-11 bg-theme-primary rounded text-white">
-        <PlusOutlined className="mr-2" />
-        <span>{t('new_chat')}</span>
-      </Link>
-      {/* Chat List */}
-      <div className="flex-1 overflow-y-scroll">
-        {dialogueList?.map((item) => {
-          const active = item.conv_uid === chatId && item.chat_mode === scene;
-
-          return (
-            <Link
-              key={item.conv_uid}
-              href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
-              className={`group/item ${menuItemStyle(active)}`}
-              onClick={() => {
-                handleClickChatItem(item);
-              }}
-            >
-              <MessageOutlined className="text-base" />
-              <div className="flex-1 line-clamp-1 mx-2 text-sm">{item.user_name || item.user_input}</div>
-              <div
-                className="group-hover/item:opacity-100 cursor-pointer opacity-0 mr-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  copyLink(item);
-                }}
+    <div
+      className="flex flex-col justify-between h-screen px-4 pt-4 bg-bar dark:bg-[#232734] animate-fade animate-duration-300"
+      // onMouseLeave={() => {
+      //   setIsMenuExpand(false);
+      // }}
+    >
+      <div>
+        {/* LOGO */}
+        <Link href="/" className="flex items-center justify-center p-2 pb-4">
+          <Image src={isMenuExpand ? logo : '/LOGO_SMALL.png'} alt="DB-GPT" width={180} height={40} />
+        </Link>
+        {/* functions */}
+        <div className="flex flex-col gap-4">
+          {functions.map((item) => {
+            return (
+              <Link
+                href={item.path}
+                className={cls('flex items-center w-full h-12 px-4 cursor-pointer hover:bg-[#F1F5F9] dark:hover:bg-theme-dark hover:rounded-xl', {
+                  'bg-white rounded-xl dark:bg-black': item.isActive,
+                })}
+                key={item.key}
               >
-                <ShareAltOutlined />
-              </div>
-              <div
-                className="group-hover/item:opacity-100 cursor-pointer opacity-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleDelChat(item);
-                }}
-              >
-                <DeleteOutlined />
-              </div>
-            </Link>
-          );
-        })}
+                <div className="mr-3">{item.icon}</div>
+                <span className="text-sm">{t(item.name as any)}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
+
       {/* Settings */}
       <div className="pt-4">
-        <div className="max-h-52 overflow-y-auto scrollbar-default">
-          {routes.map((item) => (
-            <Link key={item.key} href={item.path} className={`${menuItemStyle(pathname === item.path)} overflow-hidden`}>
-              <>
-                {item.icon}
-                <span className="ml-3 text-sm">{item.name}</span>
-              </>
-            </Link>
-          ))}
-        </div>
-        <div className="flex items-center justify-around py-4 mt-2">
+        <span className={cls('flex items-center w-full h-12 px-4 bg-[#F1F5F9] dark:bg-theme-dark rounded-xl')}>
+          <div className="mr-3 w-full">
+            <UserBar />
+          </div>
+        </span>
+        <div className="flex items-center justify-around py-4 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
           {settings.map((item) => (
-            <Tooltip key={item.key} title={item.name}>
-              <div className="flex-1 flex items-center justify-center cursor-pointer text-xl" onClick={item.onClick}>
-                {item.icon}
-              </div>
-            </Tooltip>
+            <div key={item.key}>
+              <Popover content={item.name}>
+                <div className="flex-1 flex items-center justify-center cursor-pointer text-xl" onClick={item.onClick}>
+                  {item.icon}
+                </div>
+              </Popover>
+              {/* {item.items ? (
+                <Dropdown
+                  menu={{ items: item.items, selectable: true, onSelect: item.onSelect, defaultSelectedKeys: item.defaultSelectedKeys }}
+                  placement={item.placement || 'top'}
+                  arrow
+                >
+                  <span onClick={item.onClick}>{item.icon}</span>
+                </Dropdown>
+              ) : (
+                <Popover content={item.name}>
+                  <div className="flex-1 flex items-center justify-center cursor-pointer text-xl" onClick={item.onClick}>
+                    {item.icon}
+                  </div>
+                </Popover>
+              )} */}
+            </div>
           ))}
         </div>
       </div>

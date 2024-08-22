@@ -36,6 +36,7 @@ Also, it is a **LLM to Vision** solution.
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 16
+- [npm](https://npmjs.com/) >= 8
 - [yarn](https://yarnpkg.com/) >= 1.22
 - Supported OSes: Linux, macOS and Windows
 
@@ -43,6 +44,7 @@ Also, it is a **LLM to Vision** solution.
 
 ```sh
 # Install dependencies
+npm install
 yarn install
 ```
 
@@ -54,12 +56,14 @@ edit the `API_BASE_URL` to the real address
 
 ```sh
 # development model
+npm run dev
 yarn dev
 ```
 
 ## 🚀 Use In DB-GPT
 
 ```sh
+npm run compile
 yarn compile
 
 # copy compile file to DB-GPT static file dictory
@@ -91,3 +95,8 @@ Enjoy using DB-GPT-Web to build stunning UIs for your AI and GPT projects.
 For any queries or issues, feel free to open an [issue](https://github.com/eosphoros-ai/DB-GPT-Web/issues) on the repository.
 
 Happy coding! 😊
+
+
+## antdbgptweb installation
+
+### deploy in local environment:

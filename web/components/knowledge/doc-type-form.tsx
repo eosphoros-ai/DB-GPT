@@ -29,6 +29,12 @@ export default function DocTypeForm(props: IProps) {
       subTitle: t('Upload_a_document'),
       iconType: 'DOCUMENT',
     },
+    {
+      type: 'YUQUEURL',
+      title: t('yuque'),
+      subTitle: t('Get_yuque_document'),
+      iconType: 'YUQUEURL',
+    },
   ];
 
   return (
