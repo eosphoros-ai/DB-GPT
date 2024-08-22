@@ -104,12 +104,22 @@ async def test_auth():
     dependencies=[Depends(check_api_key)],
 )
 async def upload_files(
-    bucket: str, files: List[UploadFile], service: Service = Depends(get_service)
+    bucket: str,
+    files: List[UploadFile],
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    service: Service = Depends(get_service),
 ) -> Result[List[UploadFileResponse]]:
     """Upload files by a list of UploadFile."""
     logger.info(f"upload_files: bucket={bucket}, files={files}")
     results = await blocking_func_to_async(
-        global_system_app, service.upload_files, bucket, "distributed", files
+        global_system_app,
+        service.upload_files,
+        bucket,
+        "distributed",
+        files,
+        user_name,
+        sys_code,
     )
     return Result.succ(results)
 

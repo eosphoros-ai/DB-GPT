@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import (
@@ -15,6 +15,7 @@ from dbgpt.core.awel.flow import (
     ViewMetadata,
     ui,
 )
+from dbgpt.core.interface.file import FileStorageClient
 from dbgpt.core.interface.variables import (
     BUILTIN_VARIABLES_CORE_EMBEDDINGS,
     BUILTIN_VARIABLES_CORE_FLOW_NODES,
@@ -785,6 +786,109 @@ class ExampleFlowRefreshOperator(MapOperator[str, str]):
             user_name,
             self.recent_time,
         )
+
+
+class ExampleFlowUploadOperator(MapOperator[str, str]):
+    """An example flow operator that includes an upload as parameter."""
+
+    metadata = ViewMetadata(
+        label="Example Flow Upload",
+        name="example_flow_upload",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes a upload as parameter.",
+        parameters=[
+            Parameter.build_from(
+                "Single File Selector",
+                "file",
+                type=str,
+                optional=True,
+                default=None,
+                placeholder="Select the file",
+                description="The file you want to upload.",
+                ui=ui.UIUpload(
+                    max_file_size=1024 * 1024 * 100,
+                    up_event="after_select",
+                    attr=ui.UIUpload.UIAttribute(max_count=1),
+                ),
+            ),
+            Parameter.build_from(
+                "Multiple Files Selector",
+                "multiple_files",
+                type=str,
+                is_list=True,
+                optional=True,
+                default=None,
+                placeholder="Select the multiple files",
+                description="The multiple files you want to upload.",
+                ui=ui.UIUpload(
+                    max_file_size=1024 * 1024 * 100,
+                    up_event="button_click",
+                    attr=ui.UIUpload.UIAttribute(max_count=5),
+                ),
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "File",
+                "file",
+                str,
+                description="User's uploaded file.",
+            )
+        ],
+    )
+
+    def __init__(
+        self,
+        file: Optional[str] = None,
+        multiple_files: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.file = file
+        self.multiple_files = multiple_files or []
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the file."""
+
+        fsc = FileStorageClient.get_instance(self.system_app)
+        files_metadata = await self.blocking_func_to_async(
+            self._parse_files_metadata, fsc
+        )
+        files_metadata_str = json.dumps(files_metadata, ensure_ascii=False)
+        return "Your name is %s, and you files are %s." % (
+            user_name,
+            files_metadata_str,
+        )
+
+    def _parse_files_metadata(self, fsc: FileStorageClient) -> List[Dict[str, Any]]:
+        """Parse the files metadata."""
+        if not self.file:
+            raise ValueError("The file is not uploaded.")
+        if not self.multiple_files:
+            raise ValueError("The multiple files are not uploaded.")
+        files = [self.file] + self.multiple_files
+        results = []
+        for file in files:
+            _, metadata = fsc.get_file(file)
+            results.append(
+                {
+                    "bucket": metadata.bucket,
+                    "file_id": metadata.file_id,
+                    "file_size": metadata.file_size,
+                    "storage_type": metadata.storage_type,
+                    "uri": metadata.uri,
+                    "file_hash": metadata.file_hash,
+                }
+            )
+        return results
 
 
 class ExampleFlowVariablesOperator(MapOperator[str, str]):
