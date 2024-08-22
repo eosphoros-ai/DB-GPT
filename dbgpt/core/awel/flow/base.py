@@ -6,7 +6,7 @@ import inspect
 from abc import ABC
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cast
 
 from dbgpt._private.pydantic import (
     BaseModel,
@@ -15,12 +15,14 @@ from dbgpt._private.pydantic import (
     model_to_dict,
     model_validator,
 )
+from dbgpt.component import SystemApp
 from dbgpt.core.awel.util.parameter_util import (
     BaseDynamicOptions,
     OptionValue,
     RefreshOptionRequest,
 )
 from dbgpt.core.interface.serialization import Serializable
+from dbgpt.util.executor_utils import DefaultExecutorFactory, blocking_func_to_async
 
 from .exceptions import FlowMetadataException, FlowParameterMetadataException
 from .ui import UIComponent
@@ -490,11 +492,19 @@ class Parameter(TypeMetadata, Serializable):
             dict_value["ui"] = self.ui.to_dict()
         return dict_value
 
-    def refresh(self, request: Optional[RefreshOptionRequest] = None) -> Dict:
+    async def refresh(
+        self,
+        request: Optional[RefreshOptionRequest] = None,
+        trigger: Literal["default", "http"] = "default",
+        system_app: Optional[SystemApp] = None,
+    ) -> Dict:
         """Refresh the options of the parameter.
 
         Args:
             request (RefreshOptionRequest): The request to refresh the options.
+            trigger (Literal["default", "http"], optional): The trigger type.
+                Defaults to "default".
+            system_app (Optional[SystemApp], optional): The system app.
 
         Returns:
             Dict: The response.
@@ -503,7 +513,7 @@ class Parameter(TypeMetadata, Serializable):
         if not self.options:
             dict_value["options"] = None
         elif isinstance(self.options, BaseDynamicOptions):
-            values = self.options.refresh(request)
+            values = self.options.refresh(request, trigger, system_app)
             dict_value["options"] = [value.to_dict() for value in values]
         else:
             dict_value["options"] = [value.to_dict() for value in self.options]
@@ -793,18 +803,56 @@ class BaseMetadata(BaseResource):
         ]
         return dict_value
 
-    def refresh(self, request: List[RefreshOptionRequest]) -> Dict:
-        """Refresh the metadata."""
+    async def refresh(
+        self,
+        request: List[RefreshOptionRequest],
+        trigger: Literal["default", "http"] = "default",
+        system_app: Optional[SystemApp] = None,
+    ) -> Dict:
+        """Refresh the metadata.
+
+        Args:
+            request (List[RefreshOptionRequest]): The refresh request
+            trigger (Literal["default", "http"]): The trigger type, how to trigger
+                the refresh
+            system_app (Optional[SystemApp]): The system app
+        """
+        executor = DefaultExecutorFactory.get_instance(system_app).create()
+
         name_to_request = {req.name: req for req in request}
         parameter_requests = {
             parameter.name: name_to_request.get(parameter.name)
             for parameter in self.parameters
         }
-        dict_value = self.to_dict()
-        dict_value["parameters"] = [
-            parameter.refresh(parameter_requests.get(parameter.name))
-            for parameter in self.parameters
-        ]
+        dict_value = model_to_dict(self, exclude={"parameters"})
+        parameters = []
+        for parameter in self.parameters:
+            parameter_dict = parameter.to_dict()
+            parameter_request = parameter_requests.get(parameter.name)
+            if not parameter.options:
+                options = None
+            elif isinstance(parameter.options, BaseDynamicOptions):
+                options_obj = parameter.options
+                if options_obj.support_async(system_app, parameter_request):
+                    values = await options_obj.async_refresh(
+                        parameter_request, trigger, system_app
+                    )
+                else:
+                    values = await blocking_func_to_async(
+                        executor,
+                        options_obj.refresh,
+                        parameter_request,
+                        trigger,
+                        system_app,
+                    )
+                options = [value.to_dict() for value in values]
+            else:
+                options = [value.to_dict() for value in self.options]
+            parameter_dict["options"] = options
+            parameters.append(parameter_dict)
+
+        dict_value["parameters"] = parameters
+
         return dict_value
 
 
@@ -1090,14 +1138,23 @@ class FlowRegistry:
         """Get the metadata list."""
         return [item.metadata.to_dict() for item in self._registry.values()]
 
-    def refresh(
-        self, key: str, is_operator: bool, request: List[RefreshOptionRequest]
+    async def refresh(
+        self,
+        key: str,
+        is_operator: bool,
+        request: List[RefreshOptionRequest],
+        trigger: Literal["default", "http"] = "default",
+        system_app: Optional[SystemApp] = None,
     ) -> Dict:
         """Refresh the metadata."""
         if is_operator:
-            return _get_operator_class(key).metadata.refresh(request)  # type: ignore
+            return await _get_operator_class(key).metadata.refresh(  # type: ignore
+                request, trigger, system_app
+            )
         else:
-            return _get_resource_class(key).metadata.refresh(request)
+            return await _get_resource_class(key).metadata.refresh(
+                request, trigger, system_app
+            )
 
 
 _OPERATOR_REGISTRY: FlowRegistry = FlowRegistry()
