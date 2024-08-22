@@ -4,7 +4,7 @@ import MuiLoading from '@/components/common/loading';
 import FlowCard from '@/components/flow/flow-card';
 import { IFlow, IFlowUpdateParam } from '@/types/flow';
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Form, Input, Modal, message } from 'antd';
+import { Button, Checkbox, Form, Input, Modal, message, Pagination, PaginationProps } from 'antd';
 import Link from 'next/link';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,22 +16,25 @@ function Flow() {
   const [loading, setLoading] = useState(false);
   const [flowList, setFlowList] = useState<Array<IFlow>>([]);
   const [deploy, setDeploy] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [total, setTotal] = useState<number>(0);
 
   const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm<Pick<IFlow, 'label' | 'name'>>();
-
   const copyFlowTemp = useRef<IFlow>();
 
   async function getFlowList() {
     setLoading(true);
-    const [_, data] = await apiInterceptors(getFlows());
+    const [_, data] = await apiInterceptors(getFlows(page, pageSize));
+    setTotal(data?.total_count ?? 0);
     setLoading(false);
     setFlowList(data?.items ?? []);
   }
 
   useEffect(() => {
     getFlowList();
-  }, []);
+  }, [page, pageSize]);
 
   function updateFlowList(uid: string) {
     setFlowList((flows) => flows.filter((flow) => flow.uid !== uid));
@@ -62,10 +65,16 @@ function Flow() {
     }
   };
 
+  const onPageChange: PaginationProps['onChange'] = (page: number, pageSize: number) => {
+    setPage(page);
+    setPageSize(pageSize);
+  };
+
   return (
-    <div className="relative p-4 md:p-6 min-h-full overflow-y-auto">
+    <div className="flex flex-col justify-between relative p-4 md:p-6 min-h-full overflow-y-auto">
       {contextHolder}
       <MuiLoading visible={loading} />
+
       <div className="mb-4">
         <Link href="/flow/canvas">
           <Button type="primary" className="flex items-center" icon={<PlusOutlined />}>
@@ -73,12 +82,29 @@ function Flow() {
           </Button>
         </Link>
       </div>
-      <div className="flex flex-wrap gap-2 md:gap-4 justify-start items-stretch">
-        {flowList.map((flow) => (
-          <FlowCard key={flow.uid} flow={flow} deleteCallback={updateFlowList} onCopy={handleCopy} />
-        ))}
-        {flowList.length === 0 && <MyEmpty description="No flow found" />}
+
+      <div className="flex flex-col justify-between flex-1">
+        <div className="flex flex-wrap gap-2 md:gap-4 justify-start items-stretch">
+          {flowList.map((flow) => (
+            <FlowCard key={flow.uid} flow={flow} deleteCallback={updateFlowList} onCopy={handleCopy} />
+          ))}
+          {flowList.length === 0 && <MyEmpty description="No flow found" />}
+        </div>
+
+        <div className="flex justify-end mt-6">
+          <Pagination
+            showQuickJumper
+            showSizeChanger
+            defaultPageSize={10}
+            defaultCurrent={1}
+            current={page}
+            total={total}
+            showTotal={(total) => `Total ${total} items`}
+            onChange={onPageChange}
+          />
+        </div>
       </div>
+
       <Modal
         open={showModal}
         title="Copy AWEL Flow"
