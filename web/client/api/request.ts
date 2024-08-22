@@ -307,7 +307,7 @@ export const debugFlow = (data: any) => {
 };
 
 export const exportFlow = (data: IFlowExportParams) => {
-  return GET<IFlowExportParams, any>('/api/v2/serve/awel/flow/export', data);
+  return GET<IFlowExportParams, any>(`/api/v2/serve/awel/flow/export/${data.uid}`, data);
 };
 
 export const importFlow = (data: IFlowImportParams) => {

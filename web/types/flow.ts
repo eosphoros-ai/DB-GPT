@@ -172,6 +172,7 @@ export type IFlowData = {
 };
 
 export type IFlowExportParams = {
+  uid: string;
   export_type?: 'json' | 'dbgpts';
   format?: 'json' | 'file';
   file_name?: string;

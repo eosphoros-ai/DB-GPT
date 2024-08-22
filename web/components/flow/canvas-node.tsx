@@ -1,4 +1,4 @@
-import { IFlowNode, IFlowRefreshParams } from '@/types/flow';
+import { IFlowNode } from '@/types/flow';
 import Image from 'next/image';
 import NodeParamHandler from './node-param-handler';
 import classNames from 'classnames';
