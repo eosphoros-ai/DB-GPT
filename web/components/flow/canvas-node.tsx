@@ -114,8 +114,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
 
   function onParameterValuesChange(changedValues: any, allValues: any) {
     // TODO: update node value
-    console.log('Changed xxx', changedValues);    
-    console.log('All xxx', allValues);
+    console.log('Changed value', changedValues);
+    console.log('All value', allValues);
 
     const [changedKey, changedVal] = Object.entries(changedValues)[0];
 
@@ -132,9 +132,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
           <IconWrapper className="hover:text-blue-500">
             <CopyOutlined className="h-full text-lg cursor-pointer" onClick={copyNode} />
           </IconWrapper>
+
           <IconWrapper className="mt-2 hover:text-red-500">
             <DeleteOutlined className="h-full text-lg cursor-pointer" onClick={deleteNode} />
           </IconWrapper>
+
           <IconWrapper className="mt-2">
             <Tooltip
               title={
