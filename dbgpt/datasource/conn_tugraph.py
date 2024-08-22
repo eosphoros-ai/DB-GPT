@@ -23,9 +23,6 @@ class TuGraphConnector(BaseConnector):
     def create_graph(self, graph_name: str) -> None:
         """Create a new graph."""
         # run the query to get vertex labels
-
-        if not re.match(r"^[a-zA-Z\u4e00-\u9fff]", graph_name):
-            raise ValueError("Graph name must start with a letter or Chinese character, and cannot begin with a number or special character.")
         
         with self._driver.session(database="default") as session:
             graph_list = session.run("CALL dbms.graph.listGraphs()").data()

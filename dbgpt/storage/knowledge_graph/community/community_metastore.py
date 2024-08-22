@@ -43,7 +43,7 @@ class BuiltinCommunityMetastore(CommunityMetastore):
             query, self._topk, self._score_threshold
         )
         return [
-            Community(id=chunk.id, summary=chunk.content) for chunk in chunks
+            Community(id=chunk.chunk_id, summary=chunk.content) for chunk in chunks
         ]
 
     async def save(self, communities: List[Community]):

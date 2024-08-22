@@ -69,6 +69,7 @@ class CommunityStore:
 
     async def __summarize_community(self, graph: Graph):
         """Generate summary for a given graph using an LLM."""
+        # todo remove (chunk and doc) vertex 
         nodes = "\n".join(
             [
                 f"- {v.vid}: {v.get_prop('description')}"
