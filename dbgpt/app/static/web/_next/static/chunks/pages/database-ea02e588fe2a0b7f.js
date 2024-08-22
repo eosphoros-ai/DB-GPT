@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[5498],{55286:function(n,_,u){(window.__NEXT_P=window.__NEXT_P||[]).push(["/database",function(){return u(86655)}])}},function(n){n.O(0,[7779,3791,7656,2913,5081,8791,6184,9859,2398,418,5265,1687,4393,4029,7822,9774,2888,179],function(){return n(n.s=55286)}),_N_E=n.O()}]);

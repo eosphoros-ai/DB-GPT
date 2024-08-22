@@ -40,7 +40,7 @@ export default function AgentPanel(props: IProps) {
   const getStrategy = async () => {
     const [_, data] = await apiInterceptors(getAppStrategy());
     if (data) {
-      setStrategyOptions(data?.map((item) => ({ label: item, value: item })));
+      setStrategyOptions(data?.map((item) => ({ label: item.name_cn, value: item.value })));
     }
   };
 

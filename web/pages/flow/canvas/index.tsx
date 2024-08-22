@@ -177,7 +177,6 @@ const Canvas: React.FC<Props> = () => {
 
   async function handleSaveFlow() {
     const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
-    console.log(form.getFieldsValue());
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
       const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject, state }));

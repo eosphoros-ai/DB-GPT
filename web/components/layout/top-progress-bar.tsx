@@ -39,9 +39,9 @@ if (typeof window !== 'undefined' && typeof window?.fetch === 'function') {
     if (activeRequests === 0) {
       load();
     }
-  
+
     activeRequests++;
-  
+
     try {
       const response = await originalFetch(...args);
       return response;
