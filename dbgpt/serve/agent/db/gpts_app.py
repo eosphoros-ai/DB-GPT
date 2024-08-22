@@ -919,7 +919,7 @@ class GptsAppDao(BaseDao):
             app_entity.team_mode = gpts_app.team_mode
             app_entity.icon = gpts_app.icon
             app_entity.team_context = _parse_team_context(gpts_app.team_context)
-            app_entity.param_need = (json.dumps(gpts_app.param_need),)
+            app_entity.param_need = json.dumps(gpts_app.param_need)
             session.merge(app_entity)
 
             old_details = session.query(GptsAppDetailEntity).filter(
