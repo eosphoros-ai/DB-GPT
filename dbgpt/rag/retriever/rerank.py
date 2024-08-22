@@ -314,3 +314,30 @@ class RerankEmbeddingsRanker(Ranker):
             candidates_with_scores, rank_scores
         )
         return new_candidates_with_scores[: self.topk]
+
+
+class RetrieverNameRanker(Ranker):
+    """RetrieverName Ranker."""
+
+    def __init__(self, topk: int, rank_fn: Optional[callable] = None):  # type: ignore # noqa
+        super().__init__(topk, rank_fn)
+
+    def rank(self, candidates: List[Chunk], query: Optional[str] = None) -> List[Chunk]:
+        """Use Retriever NameRanker return candidates with retriever name in filter_retrievers.
+        Args:
+            candidates: List[Tuple]
+            query: Optional[str]
+        Return:
+            List[Chunk]
+        """  # noqa
+        candidates_with_scores = [
+            candidate
+            for candidate in candidates
+            if candidate.retriever in self.filter_retrievers
+        ]
+        return candidates_with_scores
+
+    @property
+    def filter_retrievers(self):
+        """Filter retrievers."""
+        return ["qa_retriever", "title_retriever"]

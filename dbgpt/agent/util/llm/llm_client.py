@@ -3,14 +3,14 @@
 import json
 import logging
 import traceback
-from typing import Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
-from dbgpt.core import LLMClient
+from dbgpt.core import LLMClient, ModelRequestContext
 from dbgpt.core.interface.output_parser import BaseOutputParser
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.util.tracer import root_tracer
 
-from .llm import _build_model_request
+from ..llm.llm import _build_model_request
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,10 @@ class AIWrapper:
         "allow_format_str_template",
         "context",
         "llm_model",
+        "memory",
+        "conv_id",
+        "sender",
+        "stream_out",
     }
 
     def __init__(
@@ -68,6 +72,8 @@ class AIWrapper:
         allow_format_str_template = extra_kwargs.get("allow_format_str_template", False)
         # Make a copy of the config
         params = create_config.copy()
+        params["context"] = context
+
         if prompt is not None:
             # Instantiate the prompt
             params["prompt"] = self.instantiate(
@@ -113,8 +119,8 @@ class AIWrapper:
                 config.pop(key)
         return json.dumps(config, sort_keys=True, ensure_ascii=False)
 
-    async def create(self, verbose: bool = False, **config) -> Optional[str]:
-        """Create a response from the input config."""
+    async def create(self, verbose: bool = False, **config):
+        """Create llm client request."""
         # merge the input config with the i-th config in the config list
         full_config = {**config}
         # separate the config into create_config and extra_kwargs
@@ -122,11 +128,19 @@ class AIWrapper:
 
         # construct the create params
         params = self._construct_create_params(create_config, extra_kwargs)
+        # get the cache_seed, filter_func and context
         filter_func = extra_kwargs.get("filter_func")
         context = extra_kwargs.get("context")
         llm_model = extra_kwargs.get("llm_model")
+        memory = extra_kwargs.get("memory", None)
+        conv_id = extra_kwargs.get("conv_id", None)
+        sender = extra_kwargs.get("sender", None)
+        stream_out = extra_kwargs.get("stream_out", True)
+
         try:
-            response = await self._completions_create(llm_model, params, verbose)
+            response = await self._completions_create(
+                llm_model, params, conv_id, sender, memory, stream_out, verbose
+            )
         except LLMChatError as e:
             logger.debug(f"{llm_model} generate failed!{str(e)}")
             raise e
@@ -155,8 +169,15 @@ class AIWrapper:
         return gpts_messages
 
     async def _completions_create(
-        self, llm_model, params, verbose: bool = False
-    ) -> str:
+        self,
+        llm_model,
+        params,
+        conv_id: Optional[str] = None,
+        sender: Optional[str] = None,
+        memory: Optional[Any] = None,
+        stream_out: bool = True,
+        verbose: bool = False,
+    ):
         payload = {
             "model": llm_model,
             "prompt": params.get("prompt"),
@@ -172,13 +193,38 @@ class AIWrapper:
         )
         payload["span_id"] = span.span_id
         payload["model_cache_enable"] = self.model_cache_enable
+        if params.get("context") is not None:
+            payload["context"] = ModelRequestContext(extra=params["context"])
         try:
             model_request = _build_model_request(payload)
             str_prompt = model_request.messages_to_string()
-            model_output = await self._llm_client.generate(model_request.copy())
+            model_output = None
+
+            async for output in self._llm_client.generate_stream(model_request.copy()):  # type: ignore # noqa
+                model_output = output
+                if memory and stream_out:
+                    from ... import GptsMemory  # noqa: F401
+
+                    temp_message = {
+                        "sender": sender,
+                        "receiver": "?",
+                        "model": llm_model,
+                        "markdown": self._output_parser.parse_model_nostream_resp(
+                            model_output, "###"
+                        ),
+                    }
+
+                    await memory.push_message(
+                        conv_id,
+                        temp_message,
+                    )
+            if not model_output:
+                raise ValueError("LLM generate stream is null!")
             parsed_output = self._output_parser.parse_model_nostream_resp(
-                model_output, "#########################"
+                model_output, "###"
             )
+            parsed_output = parsed_output.strip().replace("\\n", "\n")
+
             if verbose:
                 print("\n", "-" * 80, flush=True, sep="")
                 print(f"String Prompt[verbose]: \n{str_prompt}")

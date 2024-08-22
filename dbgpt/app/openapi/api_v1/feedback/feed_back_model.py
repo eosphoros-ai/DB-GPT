@@ -6,19 +6,19 @@ from dbgpt._private.pydantic import BaseModel
 class FeedBackBody(BaseModel):
     """conv_uid: conversation id"""
 
-    conv_uid: str
+    conv_uid: Optional[str]
 
     """conv_index: conversation index"""
-    conv_index: int
+    conv_index: Optional[int]
 
     """question: human question"""
-    question: str
+    question: Optional[str]
 
     """score: rating of the llm's answer"""
-    score: int
+    score: Optional[int]
 
     """ques_type: question type"""
-    ques_type: str
+    ques_type: Optional[str]
 
     user_name: Optional[str] = None
 

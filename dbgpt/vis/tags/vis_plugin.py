@@ -1,11 +1,12 @@
-"""Visualize plugins."""
+"""Vis Plugin."""
+
 from ..base import Vis
 
 
 class VisPlugin(Vis):
-    """Protocol for visualizing plugins."""
+    """Vis Plugin."""
 
     @classmethod
-    def vis_tag(cls) -> str:
-        """Return the tag name of the vis protocol module."""
+    def vis_tag(cls):
+        """Vis Plugin."""
         return "vis-plugin"

@@ -1,11 +1,12 @@
-"""Code visualization protocol."""
+"""Vis Code."""
+
 from ..base import Vis
 
 
 class VisCode(Vis):
-    """Protocol for visualizing code."""
+    """Vis Code."""
 
     @classmethod
-    def vis_tag(cls) -> str:
-        """Return the tag name of the vis protocol module."""
+    def vis_tag(cls):
+        """Vis Code."""
         return "vis-code"

@@ -13,8 +13,8 @@ class VisDashboard(Vis):
 
     async def generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
         """Generate the parameters required by the vis protocol."""
-        charts = kwargs.get("charts", None)
-        title = kwargs.get("title", None)
+        charts: Optional[dict] = kwargs.get("charts", None)
+        title: Optional[str] = kwargs.get("title", None)
         if not charts:
             raise ValueError(
                 f"Parameter information is missing and {self.vis_tag} protocol "
@@ -55,6 +55,6 @@ class VisDashboard(Vis):
         return dashboard_param
 
     @classmethod
-    def vis_tag(cls) -> str:
-        """Return the tag name of the vis protocol."""
+    def vis_tag(cls):
+        """Vis Dashboard."""
         return "vis-dashboard"

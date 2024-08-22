@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from dbgpt._private.config import Config
 from dbgpt.app.openapi.api_view_model import Result
@@ -22,7 +22,7 @@ from dbgpt.core.interface.message import (
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
 
 if TYPE_CHECKING:
-    from dbgpt.datasource.base import BaseConnector
+    from dbgpt.datasource.base import BaseConnect
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class EditorService(BaseComponent):
 
     def get_editor_sql_by_round(
         self, conv_uid: str, round_index: int
-    ) -> Optional[Union[List, Dict]]:
+    ) -> Optional[List[Dict]]:
         storage_conv: StorageConversation = self.get_storage_conv(conv_uid)
         messages_by_round = _split_messages_by_round(storage_conv.messages)
         for one_round_message in messages_by_round:
@@ -86,7 +86,7 @@ class EditorService(BaseComponent):
         return None
 
     def sql_editor_submit_and_save(
-        self, sql_edit_context: ChatSqlEditContext, connection: BaseConnector
+        self, sql_edit_context: ChatSqlEditContext, connection: BaseConnect
     ):
         storage_conv: StorageConversation = self.get_storage_conv(
             sql_edit_context.conv_uid
@@ -184,7 +184,7 @@ class EditorService(BaseComponent):
         return Result.failed(msg="Can't Find Chart Detail Info!")
 
 
-def _parse_pure_dict(res_str: str) -> Union[Dict, List]:
+def _parse_pure_dict(res_str: str) -> Dict:
     output_parser = BaseOutputParser()
     context = output_parser.parse_prompt_response(res_str)
     return json.loads(context)

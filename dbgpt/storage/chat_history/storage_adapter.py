@@ -34,7 +34,7 @@ class DBStorageConversationItemAdapter(
         summary = item.summary
         latest_user_message = item.get_latest_user_message()
         if not summary and latest_user_message is not None:
-            summary = latest_user_message.content
+            summary = latest_user_message.content[:250]
         return ChatHistoryEntity(
             conv_uid=item.conv_uid,
             chat_mode=item.chat_mode,
@@ -44,6 +44,7 @@ class DBStorageConversationItemAdapter(
             messages=messages,
             message_ids=message_ids,
             sys_code=item.sys_code,
+            app_code=item.app_code,
         )
 
     def from_storage_format(self, model: ChatHistoryEntity) -> StorageConversation:
@@ -68,6 +69,7 @@ class DBStorageConversationItemAdapter(
             sys_code=model.sys_code,  # type: ignore
             save_message_independent=save_message_independent,
             messages=old_messages,
+            app_code=model.app_code,
         )
 
     def get_query_for_identifier(

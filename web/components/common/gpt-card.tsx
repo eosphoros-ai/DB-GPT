@@ -1,5 +1,5 @@
 import React, { HtmlHTMLAttributes, PropsWithChildren, ReactNode, memo, useCallback, useMemo } from 'react';
-import { Tag, TagProps, Tooltip } from 'antd';
+import { Popover, Tag, TagProps, Tooltip } from 'antd';
 import classNames from 'classnames';
 import Image from 'next/image';
 
@@ -25,6 +25,7 @@ interface Props {
   icon?: ReactNode;
   iconBorder?: boolean;
   onClick?: () => void;
+  extraContent?: ReactNode;
 }
 
 function GPTCard({
@@ -37,6 +38,7 @@ function GPTCard({
   disabled,
   operations,
   className,
+  extraContent,
   ...props
 }: PropsWithChildren<HtmlHTMLAttributes<HTMLDivElement> & Props>) {
   const iconNode = useMemo(() => {
@@ -93,11 +95,14 @@ function GPTCard({
       )}
       {...props}
     >
-      <div className="p-4">
+      <div className="p-4 0">
         <div className="flex items-center">
           {iconNode}
           <div className="flex flex-col">
-            <h2 className="text-sm font-semibold">{title}</h2>
+            <Popover title={title}>
+              <h2 className="text-sm font-semibold line-clamp-1 pr-8">{title}</h2>
+            </Popover>
+
             {tagNode}
           </div>
         </div>
@@ -128,6 +133,7 @@ function GPTCard({
           </div>
         )}
       </div>
+      <div className="absolute top-2 right-4 ">{extraContent}</div>
     </div>
   );
 }

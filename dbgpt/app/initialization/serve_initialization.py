@@ -65,3 +65,13 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
     # Register serve app
     system_app.register(DatasourceServe)
     # ################################ AWEL Flow Serve Register End ########################################
+
+    # ################################ Chat Feedback Serve Register End ########################################
+    from dbgpt.serve.feedback.serve import (
+        SERVE_CONFIG_KEY_PREFIX as Feedback_SERVE_CONFIG_KEY_PREFIX,
+    )
+    from dbgpt.serve.feedback.serve import Serve as FeedbackServe
+
+    # Register serve feedback
+    system_app.register(FeedbackServe)
+    # ################################ Chat Feedback Register End ########################################

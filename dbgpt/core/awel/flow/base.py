@@ -505,6 +505,8 @@ class Parameter(TypeMetadata, Serializable):
         ):
             # Resource type can have multiple parameters.
             resource_id = view_value
+            if resource_id not in resources:
+                return {self.name: None}
             resource_metadata = resources[resource_id]
             # Check the type.
             resource_type = _get_type_cls(resource_metadata.type_cls)

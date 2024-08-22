@@ -1,22 +1,23 @@
+import { ChatContext } from '@/app/chat-context';
+import { apiInterceptors, getDocumentList } from '@/client/api';
+import { IDocument } from '@/types/knowledge';
 import { SendOutlined } from '@ant-design/icons';
 import { Button, Input } from 'antd';
 import { PropsWithChildren, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import PromptBot from './prompt-bot';
-import DocUpload from '../chat/doc-upload';
 import DocList from '../chat/doc-list';
-import { IDocument } from '@/types/knowledge';
-import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, getDocumentList } from '@/client/api';
+import DocUpload from '../chat/doc-upload';
+import PromptBot from './prompt-bot';
 
 type TextAreaProps = Omit<Parameters<typeof Input.TextArea>[0], 'value' | 'onPressEnter' | 'onChange' | 'onSubmit'>;
 
 interface Props {
-  loading?: boolean;
   onSubmit: (val: string) => void;
   handleFinish?: (val: boolean) => void;
+  loading?: boolean;
+  placeholder?: string;
 }
 
-function CompletionInput({ children, loading, onSubmit, handleFinish, ...props }: PropsWithChildren<Props & TextAreaProps>) {
+function CompletionInput({ children, loading, onSubmit, handleFinish, placeholder, ...props }: PropsWithChildren<Props & TextAreaProps>) {
   const { dbParam, scene } = useContext(ChatContext);
 
   const [userInput, setUserInput] = useState('');
@@ -77,6 +78,7 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, ...props }
           }
           setUserInput(e.target.value);
         }}
+        placeholder={placeholder}
       />
       <Button
         className="ml-2 flex items-center justify-center absolute right-0 bottom-0"

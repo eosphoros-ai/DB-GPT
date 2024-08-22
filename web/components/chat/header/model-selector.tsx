@@ -3,8 +3,8 @@
  */
 
 import { ChatContext } from '@/app/chat-context';
-import { Select } from 'antd';
 import { MODEL_ICON_MAP } from '@/utils/constants';
+import { Select } from 'antd';
 import Image from 'next/image';
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,7 @@ export function renderModelIcon(model?: string, props?: { width: number; height:
       width={width || 24}
       height={height || 24}
       src={MODEL_ICON_MAP[model]?.icon || DEFAULT_ICON_URL}
+      key={MODEL_ICON_MAP[model]?.icon || DEFAULT_ICON_URL}
       alt="llm"
     />
   );

@@ -1,8 +1,10 @@
+import logging
 from functools import cache
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
+from starlette.responses import StreamingResponse
 
 from dbgpt.component import SystemApp
 from dbgpt.serve.core import Result
@@ -10,7 +12,15 @@ from dbgpt.util import PaginationResult
 
 from ..config import APP_NAME, SERVE_APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
-from .schemas import ServeRequest, ServerResponse
+from .schemas import (
+    PromptDebugInput,
+    PromptType,
+    PromptVerifyInput,
+    ServeRequest,
+    ServerResponse,
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -66,25 +76,6 @@ async def check_api_key(
     if request.url.path.startswith(f"/api/v1"):
         return None
 
-    # if service.config.api_keys:
-    #     api_keys = _parse_api_keys(service.config.api_keys)
-    #     if auth is None or (token := auth.credentials) not in api_keys:
-    #         raise HTTPException(
-    #             status_code=401,
-    #             detail={
-    #                 "error": {
-    #                     "message": "",
-    #                     "type": "invalid_request_error",
-    #                     "param": None,
-    #                     "code": "invalid_api_key",
-    #                 }
-    #             },
-    #         )
-    #     return token
-    # else:
-    #     # api_keys not set; allow all
-    #     return None
-
 
 @router.get("/health")
 async def health():
@@ -132,7 +123,12 @@ async def update(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.update(request))
+    try:
+        data = service.update(request)
+        return Result.succ(data)
+    except Exception as e:
+        logger.exception("Update prompt failed!")
+        return Result.failed(msg=str(e))
 
 
 @router.post(
@@ -193,6 +189,113 @@ async def query_page(
         ServerResponse: The response
     """
     return Result.succ(service.get_list_by_page(request, page, page_size))
+
+
+@router.get(
+    "/type/targets",
+    response_model=Result,
+    dependencies=[Depends(check_api_key)],
+)
+async def prompt_type_targets(
+    prompt_type: str = Query(
+        default=PromptType.NORMAL, description="Prompt template type"
+    ),
+    service: Service = Depends(get_service),
+) -> Result:
+    """get Prompt type
+    Args:
+        request (ServeRequest): The request
+
+    Returns:
+        ServerResponse: The response
+    """
+    return Result.succ(service.get_type_targets(prompt_type))
+
+
+@router.post(
+    "/template/load",
+    response_model=Result,
+    dependencies=[Depends(check_api_key)],
+)
+async def load_template(
+    prompt_type: str = Query(
+        default=PromptType.NORMAL, description="Prompt template type"
+    ),
+    target: Optional[str] = Query(
+        default=None, description="The target to load the template from"
+    ),
+    service: Service = Depends(get_service),
+) -> Result:
+    """load Prompt from target
+
+    Args:
+        request (ServeRequest): The request
+
+    Returns:
+        ServerResponse: The response
+    """
+    return Result.succ(service.load_template(prompt_type, target))
+
+
+@router.post(
+    "/template/debug",
+    dependencies=[Depends(check_api_key)],
+)
+async def template_debug(
+    debug_input: PromptDebugInput,
+    service: Service = Depends(get_service),
+):
+    """test Prompt
+
+    Args:
+        request (ServeRequest): The request
+
+    Returns:
+        ServerResponse: The response
+    """
+    headers = {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Transfer-Encoding": "chunked",
+    }
+    try:
+        return StreamingResponse(
+            service.debug_prompt(
+                debug_input=debug_input,
+            ),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+    except Exception as e:
+        return Result.failed(msg=str(e))
+
+
+@router.post(
+    "/response/verify",
+    response_model=Result[bool],
+    dependencies=[Depends(check_api_key)],
+)
+async def response_verify(
+    request: PromptVerifyInput,
+    service: Service = Depends(get_service),
+) -> Result[bool]:
+    """test Prompt
+
+    Args:
+        request (ServeRequest): The request
+
+    Returns:
+        ServerResponse: The response
+    """
+    try:
+        return Result.succ(
+            service.verify_response(
+                request.llm_out, request.prompt_type, request.chat_scene
+            )
+        )
+    except Exception as e:
+        return Result.failed(msg=str(e))
 
 
 def init_endpoints(system_app: SystemApp) -> None:

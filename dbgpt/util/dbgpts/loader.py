@@ -91,18 +91,22 @@ class BasePackage(BaseModel):
             raise ValueError("The root is required")
         if root not in sys.path:
             sys.path.append(root)
-        with pkg_resources.path(name, "__init__.py") as path:
-            mods = _load_modules_from_file(str(path), name, show_log=False)
-            all_cls = [_get_classes_from_module(m) for m in mods]
-            all_predicate_results = []
-            for m in mods:
-                all_predicate_results.extend(_get_from_module(m, predicates))
-            module_cls = []
-            for list_cls in all_cls:
-                for c in list_cls:
-                    if issubclass(c, expected_cls):
-                        module_cls.append(c)
-            return module_cls, all_predicate_results, mods
+        try:
+            with pkg_resources.path(name, "__init__.py") as path:
+                mods = _load_modules_from_file(str(path), name, show_log=False)
+                all_cls = [_get_classes_from_module(m) for m in mods]
+                all_predicate_results = []
+                for m in mods:
+                    all_predicate_results.extend(_get_from_module(m, predicates))
+                module_cls = []
+                for list_cls in all_cls:
+                    for c in list_cls:
+                        if issubclass(c, expected_cls):
+                            module_cls.append(c)
+                return module_cls, all_predicate_results, mods
+        except Exception as e:
+            logger.warning(f"load_module_class error!{str(e)}", e)
+            raise e
 
 
 class FlowPackage(BasePackage):
@@ -316,7 +320,11 @@ def _load_package_from_path(path: str):
     packages = _load_installed_package(path)
     parsed_packages = []
     for package in packages:
-        parsed_packages.append(_parse_package_metadata(package))
+        try:
+            parsed_packages.append(_parse_package_metadata(package))
+        except Exception as e:
+            logger.warning(f"Load package failed!{str(e)}", e)
+
     return parsed_packages
 
 
@@ -405,7 +413,7 @@ class DBGPTsLoader(BaseComponent):
                 self._packages[package.name] = package
                 self._register_packages(package)
         except Exception as e:
-            logger.warning(f"Load dbgpts package error: {e}")
+            logger.warning(f"Load dbgpts package error: {e}", e)
 
     def get_flows(self) -> List[FlowPanel]:
         """Get the flows.

@@ -10,3 +10,4 @@ function SplitScreenWeight() {
 }
 
 export default SplitScreenWeight;
+  

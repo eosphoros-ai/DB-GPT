@@ -1,11 +1,11 @@
-"""Protocol module for agent messages vis tag."""
+"""Vis Agent Messages."""
 from ..base import Vis
 
 
 class VisAgentMessages(Vis):
-    """Agent Messages Vis Protocol."""
+    """Vis Agent Messages."""
 
     @classmethod
-    def vis_tag(cls) -> str:
-        """Return the tag name of the vis protocol module."""
+    def vis_tag(cls):
+        """Vis tag name."""
         return "agent-messages"
