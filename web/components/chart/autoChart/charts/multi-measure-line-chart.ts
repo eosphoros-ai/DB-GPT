@@ -1,5 +1,5 @@
 import { hasSubset } from '../advisor/utils';
-import { findNominalField, findOrdinalField, getLineSize, processDateEncode, sortData } from './util';
+import { processDateEncode, findNominalField, findOrdinalField, getLineSize, sortData } from './util';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 import { Datum } from '@antv/ava';
 

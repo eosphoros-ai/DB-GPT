@@ -29,6 +29,12 @@ export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> 
   "yi-34b-chat-8bits": { label: 'yi-34b-chat-8bits', icon: '/models/yi.svg' },
   "yi-34b-chat-4bits": { label: 'yi-34b-chat-4bits', icon: '/models/yi.svg' },
   "yi-6b-chat": { label: 'yi-6b-chat', icon: '/models/yi.svg' },
+  bailing_proxyllm: { label: 'bailing_proxyllm', icon: '/models/bailing.svg' },
+  antglm_proxyllm: { label: 'antglm_proxyllm', icon: '/models/huggingface.svg' },
+  chatglm_proxyllm: { label: 'chatglm_proxyllm', icon: '/models/chatglm.png' },
+  qwen7b_proxyllm: { label: 'qwen7b_proxyllm', icon: '/models/tongyi.apng' },
+  qwen72b_proxyllm: { label: 'qwen72b_proxyllm', icon: '/models/qwen2.png' },
+  qwen110b_proxyllm: { label: 'qwen110b_proxyllm', icon: '/models/qwen2.png' },
   'llama-2-7b': { label: 'Llama-2-7b-chat-hf', icon: '/models/llama.jpg' },
   'llama-2-13b': { label: 'Llama-2-13b-chat-hf', icon: '/models/llama.jpg' },
   'llama-2-70b': { label: 'Llama-2-70b-chat-hf', icon: '/models/llama.jpg' },
@@ -41,6 +47,32 @@ export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> 
   'internlm-7b': { label: 'internlm-chat-7b-v1_1', icon: '/models/internlm.png' },
   'internlm-7b-8k': { label: 'internlm-chat-7b-8k', icon: '/models/internlm.png' },
   'solar-10.7b-instruct-v1.0': { label: 'solar-10.7b-instruct-v1.0', icon: '/models/solar_logo.png' },
+  bailing_65b_v21_0520_proxyllm: { label: 'bailing_65b_v21_0520_proxyllm', icon: '/models/bailing.svg' },
+};
+
+export const MODEL_ICON_DICT: Record<string, string> = {
+  proxyllm: '/models/chatgpt.png',
+  qwen: '/models/qwen2.png',
+  bailing: '/models/bailing.svg',
+  antglm: '/models/huggingface.svg',
+  chatgpt: '/models/chatgpt.png',
+  vicuna: '/models/vicuna.jpeg',
+  flan: '/models/google.png',
+  code: '/models/vicuna.jpeg',
+  chatglm: '/models/chatglm.png',
+  guanaco: '/models/huggingface.svg',
+  gorilla: '/models/gorilla.png',
+  gptj: '/models/huggingface.svg',
+  bard: '/models/bard.gif',
+  claude: '/models/claude.png',
+  wenxin: '/models/huggingface.svg',
+  tongyi: '/models/qwen2.png',
+  zhipu: '/models/zhipu.png',
+  llama: '/models/llama.jpg',
+  baichuan: '/models/baichuan.png',
+  wizardlm: '/models/wizardlm.png',
+  internlm: '/models/internlm.png',
+  solar:'/models/solar_logo.png'
 };
 
 export const dbMapper: Record<DBType, { label: string; icon: string; desc: string }> = {
@@ -60,6 +92,7 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
   redis: { label: 'Redis', icon: '/icons/redis.png', desc: 'Fast, versatile in-memory data structure store as cache, DB, or broker.' },
   cassandra: { label: 'Cassandra', icon: '/icons/cassandra.png', desc: 'Scalable, fault-tolerant distributed NoSQL database for large data.' },
   couchbase: { label: 'Couchbase', icon: '/icons/couchbase.png', desc: 'High-performance NoSQL document database with distributed architecture.' },
+  omc: { label: 'Omc', icon: '/icons/odc.png', desc: 'Omc meta data.' },
   postgresql: {
     label: 'PostgreSQL',
     icon: '/icons/postgresql.png',

@@ -2,8 +2,10 @@ import { CheckOutlined, ClockCircleOutlined, CloseOutlined, LoadingOutlined } fr
 import classNames from 'classnames';
 import { ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
-import markdownComponents from './config';
 import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+
+import markdownComponents from './config';
 
 interface IVisPlugin {
   name: string;
@@ -42,15 +44,16 @@ const pluginViewStatusMapper: Record<IVisPlugin['status'], { bgClass: string; ic
 function VisPlugin({ data }: Props) {
   const { bgClass, icon } = pluginViewStatusMapper[data.status] ?? {};
 
+
   return (
-    <div className="bg-theme-light dark:bg-theme-dark-container rounded overflow-hidden my-2 flex flex-col lg:max-w-[80%]">
+    <div className="bg-theme-light dark:bg-theme-dark-container rounded overflow-hidden my-2 flex flex-col">
       <div className={classNames('flex px-4 md:px-6 py-2 items-center text-white text-sm', bgClass)}>
         {data.name}
         {icon}
       </div>
       {data.result ? (
         <div className="px-4 md:px-6 py-4 text-sm whitespace-normal">
-          <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
+          <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
             {data.result ?? ''}
           </ReactMarkdown>
         </div>

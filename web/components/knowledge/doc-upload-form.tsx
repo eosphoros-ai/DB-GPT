@@ -1,12 +1,12 @@
-import { Button, Form, Input, Upload, Spin, message } from 'antd';
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { InboxOutlined } from '@ant-design/icons';
-import { apiInterceptors, addDocument, uploadDocument } from '@/client/api';
+import { addDocument, apiInterceptors, uploadDocument, addYuque } from '@/client/api';
+import { StepChangeParams } from '@/types/knowledge';
+import { InboxOutlined, MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Spin, Upload, message } from 'antd';
 import { RcFile, UploadChangeParam } from 'antd/es/upload';
-import { File, StepChangeParams } from '@/types/knowledge';
-import { UploadRequestOption as RcCustomRequestOptions } from 'rc-upload/lib/interface';
-import classNames from 'classnames';
+import { default as classNames, default as cls } from 'classnames';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Typography } from 'antd';
 
 type FileParams = {
   file: RcFile;
@@ -26,6 +26,8 @@ type FieldType = {
   originFileObj: FileParams;
   text: string;
   webPageUrl: string;
+  questions: Record<string, any>[];
+  doc_token?: string;
 };
 
 const { Dragger } = Upload;
@@ -36,11 +38,11 @@ export default function DocUploadForm(props: IProps) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [spinning, setSpinning] = useState<boolean>(false);
-  const [files, setFiles] = useState<Array<File>>([]);
+  const [files, setFiles] = useState<any>([]);
 
   const upload = async (data: FieldType) => {
-    const { docName, textSource, text, webPageUrl } = data;
-    let docId;
+    const { docName, textSource, text, webPageUrl, doc_token, questions = [], originFileObj } = data;
+    let docId: any;
     setSpinning(true);
     switch (docType) {
       case 'URL':
@@ -49,6 +51,7 @@ export default function DocUploadForm(props: IProps) {
             doc_name: docName,
             content: webPageUrl,
             doc_type: 'URL',
+            questions: questions?.map((item) => item.question),
           }),
         );
         break;
@@ -59,8 +62,42 @@ export default function DocUploadForm(props: IProps) {
             source: textSource,
             content: text,
             doc_type: 'TEXT',
+            questions: questions.map((item) => item.question),
           }),
         );
+        break;
+      case 'YUQUEURL':
+        [, docId] = await apiInterceptors(
+          addYuque({
+            doc_name: docName,
+            space_name: spaceName,
+            content: webPageUrl,
+            doc_type: 'YUQUEURL',
+            doc_token: doc_token || '',
+            questions: questions?.map((item) => item.question),
+          }),
+        );
+        break;
+      case 'DOCUMENT':
+        const file = originFileObj as any;
+        const formData = new FormData();
+        const filename = file?.name;
+        const ques = questions.map((item) => item.question);
+        formData.append('doc_name', filename);
+        formData.append('doc_file', file);
+        formData.append('doc_type', 'DOCUMENT');
+        formData.append('questions', JSON.stringify(ques));
+        [, docId] = await apiInterceptors(uploadDocument(spaceName, formData));
+        console.log(docId);
+        if (Number.isInteger(docId)) {
+          setFiles((files: any) => {
+            files.push({
+              name: filename,
+              doc_id: docId || -1,
+            });
+            return files;
+          });
+        }
         break;
     }
     setSpinning(false);
@@ -86,28 +123,8 @@ export default function DocUploadForm(props: IProps) {
   const handleFileChange = ({ file, fileList }: UploadChangeParam) => {
     if (fileList.length === 0) {
       form.setFieldValue('originFileObj', null);
-    }
-  };
-
-  const uploadFile = async (options: RcCustomRequestOptions) => {
-    const { onSuccess, onError, file } = options;
-    const formData = new FormData();
-    const filename = file?.name;
-    formData.append('doc_name', filename);
-    formData.append('doc_file', file);
-    formData.append('doc_type', 'DOCUMENT');
-    const [, docId] = await apiInterceptors(uploadDocument(spaceName, formData));
-    if (Number.isInteger(docId)) {
-      onSuccess && onSuccess(docId || 0);
-      setFiles((files) => {
-        files.push({
-          name: filename,
-          doc_id: docId || -1,
-        });
-        return files;
-      });
     } else {
-      onError && onError({ name: '', message: '' });
+      form.setFieldValue('originFileObj', file);
     }
   };
 
@@ -127,6 +144,40 @@ export default function DocUploadForm(props: IProps) {
         <Form.Item<FieldType> label={`${t('Text')}:`} name="text" rules={[{ required: true, message: t('Please_input_the_description') }]}>
           <TextArea rows={4} />
         </Form.Item>
+        <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
+          <Form.List name="questions">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name }, index) => (
+                  <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
+                    <Form.Item label="" name={[name, 'question']} className="grow">
+                      <Input placeholder={t('input_question')} />
+                    </Form.Item>
+                    <Form.Item>
+                      <MinusCircleOutlined
+                        onClick={() => {
+                          remove(name);
+                        }}
+                      />
+                    </Form.Item>
+                  </div>
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => {
+                      add();
+                    }}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    {t('Add_problem')}
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Form.Item>
       </>
     );
   };
@@ -144,6 +195,101 @@ export default function DocUploadForm(props: IProps) {
         >
           <Input className="mb-5  h-12" placeholder={t('Please_input_the_Web_Page_URL')} />
         </Form.Item>
+        <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
+          <Form.List name="questions">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name }, index) => (
+                  <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
+                    <Form.Item label="" name={[name, 'question']} className="grow">
+                      <Input placeholder={t('input_question')} />
+                    </Form.Item>
+                    <Form.Item>
+                      <MinusCircleOutlined
+                        onClick={() => {
+                          remove(name);
+                        }}
+                      />
+                    </Form.Item>
+                  </div>
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => {
+                      add();
+                    }}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    {t('Add_problem')}
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Form.Item>
+      </>
+    );
+  };
+
+  const renderYuquePage = () => {
+    return (
+      <>
+        <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
+          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
+        </Form.Item>
+        <Form.Item<FieldType> label={t('document_url')} name="webPageUrl" rules={[{ required: true, message: t('input_document_url') }]}>
+          <Input className="mb-5  h-12" placeholder={t('input_document_url')} />
+        </Form.Item>
+        <Form.Item<FieldType>
+          label={t('document_token')}
+          name="doc_token"
+          tooltip={
+            <>
+              {t('Get_token')}
+              <Typography.Link href="https://yuque.antfin-inc.com/lark/openapi/dh8zp4" target="_blank">
+                {t('Reference_link')}
+              </Typography.Link>
+            </>
+          }
+        >
+          <Input className="mb-5  h-12" placeholder={t('input_document_token')} />
+        </Form.Item>
+        <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
+          <Form.List name="questions">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name }, index) => (
+                  <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
+                    <Form.Item label="" name={[name, 'question']} className="grow">
+                      <Input placeholder={t('input_question')} />
+                    </Form.Item>
+                    <Form.Item>
+                      <MinusCircleOutlined
+                        onClick={() => {
+                          remove(name);
+                        }}
+                      />
+                    </Form.Item>
+                  </div>
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => {
+                      add();
+                    }}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    {t('Add_problem')}
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Form.Item>
       </>
     );
   };
@@ -154,19 +300,53 @@ export default function DocUploadForm(props: IProps) {
         <Form.Item<FieldType> name="originFileObj" rules={[{ required: true, message: t('Please_select_file') }]}>
           <Dragger
             multiple
+            beforeUpload={() => false}
             onChange={handleFileChange}
-            maxCount={10}
-            accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md"
-            customRequest={uploadFile}
+            maxCount={1}
+            accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md,.zip"
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p style={{ color: 'rgb(22, 108, 255)', fontSize: '20px' }}>{t('Select_or_Drop_file')}</p>
             <p className="ant-upload-hint" style={{ color: 'rgb(22, 108, 255)' }}>
-              PDF, PowerPoint, Excel, Word, Text, Markdown,
+              PDF, PowerPoint, Excel, Word, Text, Markdown, Zip1
             </p>
           </Dragger>
+        </Form.Item>
+        <Form.Item<FieldType> label="关联问题:">
+          <Form.List name="questions">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name }, index) => (
+                  <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
+                    <Form.Item label="" name={[name, 'question']} className="grow">
+                      <Input placeholder="请输入问题" />
+                    </Form.Item>
+                    <Form.Item>
+                      <MinusCircleOutlined
+                        onClick={() => {
+                          remove(name);
+                        }}
+                      />
+                    </Form.Item>
+                  </div>
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => {
+                      add();
+                    }}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    {t('Add_problem')}
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
         </Form.Item>
       </>
     );
@@ -178,6 +358,8 @@ export default function DocUploadForm(props: IProps) {
         return renderWebPage();
       case 'DOCUMENT':
         return renderDocument();
+      case 'YUQUEURL':
+        return renderYuquePage();
       default:
         return renderText();
     }

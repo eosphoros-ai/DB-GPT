@@ -31,7 +31,7 @@ export default function ResourceCard(props: IProps) {
     if (data) {
       setResourceValueOptions(
         data?.map((item) => {
-          return { label: item, value: item };
+          return { label: item.label, value: item.key + '' };
         }),
       );
     } else {

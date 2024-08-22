@@ -1,9 +1,11 @@
 import { message } from 'antd';
 import axios from './ctx-axios';
 import { isPlainObject } from 'lodash';
+import { getUserId } from '@/utils';
 
 const DEFAULT_HEADERS = {
   'content-type': 'application/json',
+  'User-Id': getUserId(),
 };
 
 // body 字段 trim

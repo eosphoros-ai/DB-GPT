@@ -73,10 +73,10 @@ export const getVisAdvices = (props: { data: Datum[]; myChartAdvisor: Advisor; d
    */
   const customDataProps = dataMetaMap
     ? Object.keys(dataMetaMap).map((item) => {
-      return { name: item, ...dataMetaMap[item] };
-    })
+        return { name: item, ...dataMetaMap[item] };
+      })
     : null;
-
+  
   // 可根据需要选择是否使用全部 fields 进行推荐
   const useAllFields = false;
   // 挑选出维值不只有一个的字段
@@ -84,11 +84,11 @@ export const getVisAdvices = (props: { data: Datum[]; myChartAdvisor: Advisor; d
   const selectedFields =
     size(allFieldsInfo) > 2
       ? allFieldsInfo?.filter((field) => {
-        if (field.recommendation === 'string' || field.recommendation === 'date') {
-          return field.distinct && field.distinct > 1;
-        }
-        return true;
-      })
+          if (field.recommendation === 'string' || field.recommendation === 'date') {
+            return field.distinct && field.distinct > 1;
+          }
+          return true;
+        })
       : allFieldsInfo;
 
   const allAdvices = myChartAdvisor?.adviseWithLog({
