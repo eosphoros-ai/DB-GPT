@@ -118,10 +118,13 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         # Load documents as chunks
+        memory_graph = MemoryGraph()
+        # todo add doc node
         for chunk in chunks:
             # Extract triplets from each chunk
             triplets = await self._triplet_extractor.extract(chunk.content)
-            memory_graph = MemoryGraph()
+            # todo add chunk node
+            # todo add relation doc-chunk
             for triplet in triplets:
                 # Insert each triplet into the graph store
                 # if triplet.get("type") == "triplet":
@@ -133,6 +136,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     desc = data.get("description")
                     vertex = Vertex(id,description=desc)
                     memory_graph.upsert_vertex(vertex)
+                    # todo add relation chunk-vertex
                 elif triplet.get("type") == "edge":
                     data = triplet.get("data")
                     edge_data = data.get("triplet")
@@ -142,10 +146,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     label = edge_data[1]
                     edge = Edge(sid,tid,label=label,description = desc)
                     memory_graph.append_edge(edge)
-            self._graph_store.insert_graph(memory_graph)
             logger.info(
                 f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         # Build communities after loading all triplets
+        self._graph_store.insert_graph(memory_graph)
         await self._community_store.build_communities()
         return [chunk.chunk_id for chunk in chunks]
 
@@ -164,7 +168,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         # Combine results, keeping original order and scores
         combined_results = global_results + local_results
-
+       
         # Add a source field to distinguish between global and local results
         for chunk in combined_results[: len(global_results)]:
             chunk.metadata["source"] = "global"
