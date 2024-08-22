@@ -1,4 +1,4 @@
-import IconFont from '@/ant-components/common/Icon';
+import IconFont from '@/new-components/common/Icon';
 import {
   AppstoreAddOutlined,
   BarChartOutlined,

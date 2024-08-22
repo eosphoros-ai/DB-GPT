@@ -1,4 +1,4 @@
-import ModelIcon from '@/ant-components/chat/content/ModelIcon';
+import ModelIcon from '@/new-components/chat/content/ModelIcon';
 import { ChatContext } from '@/app/chat-context';
 import { addPrompt, apiInterceptors, llmOutVerify, promptTemplateLoad, promptTypeTarget, updatePrompt } from '@/client/api';
 import useUser from '@/hooks/use-user';
@@ -24,7 +24,7 @@ import styles from '../styles.module.css';
 const MarkdownEditor = dynamic(() => import('react-markdown-editor-lite'), { ssr: false });
 const mdParser = new MarkdownIt();
 
-const MarkdownContext = dynamic(() => import('@/ant-components/common/MarkdownContext'), { ssr: false });
+const MarkdownContext = dynamic(() => import('@/new-components/common/MarkdownContext'), { ssr: false });
 
 const TypeOptions = [
   {

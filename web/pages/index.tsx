@@ -11,8 +11,8 @@ import { useTranslation } from 'react-i18next';
 import type { GridCellRenderer, Index, IndexRange } from 'react-virtualized';
 import { AutoSizer, Grid, InfiniteLoader } from 'react-virtualized';
 
-import IconFont from '@/ant-components/common/Icon';
-import BlurredCard from '@/ant-components/common/blurredCard';
+import IconFont from '@/new-components/common/Icon';
+import BlurredCard from '@/new-components/common/blurredCard';
 import { ChatContext } from '@/app/chat-context';
 import moment from 'moment';
 

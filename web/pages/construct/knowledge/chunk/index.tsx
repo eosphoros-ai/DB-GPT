@@ -1,4 +1,4 @@
-import MarkDownContext from '@/ant-components/common/MarkdownContext';
+import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { apiInterceptors, getChunkList, chunkAddQuestion } from '@/client/api';
 import MenuModal from '@/components/MenuModal';
 import { MinusCircleOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';

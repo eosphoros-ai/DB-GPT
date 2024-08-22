@@ -1,7 +1,7 @@
-import ChatContentContainer from '@/ant-components/chat/ChatContentContainer';
-import ChatDefault from '@/ant-components/chat/content/ChatDefault';
-import ChatInputPanel from '@/ant-components/chat/input/ChatInputPanel';
-import ChatSider from '@/ant-components/chat/sider/ChatSider';
+import ChatContentContainer from '@/new-components/chat/ChatContentContainer';
+import ChatDefault from '@/new-components/chat/content/ChatDefault';
+import ChatInputPanel from '@/new-components/chat/input/ChatInputPanel';
+import ChatSider from '@/new-components/chat/sider/ChatSider';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppInfo, getChatHistory, getDialogueList } from '@/client/api';
 import useChat from '@/hooks/use-chat';

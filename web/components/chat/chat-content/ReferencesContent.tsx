@@ -1,4 +1,4 @@
-import MarkDownContext from '@/ant-components/common/MarkdownContext';
+import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { LinkOutlined } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import { Divider, Drawer, Tabs, Typography } from 'antd';

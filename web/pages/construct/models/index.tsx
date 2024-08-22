@@ -1,5 +1,5 @@
-import BlurredCard from '@/ant-components/common/blurredCard';
-import ConstructLayout from '@/ant-components/layout/Construct';
+import BlurredCard from '@/new-components/common/blurredCard';
+import ConstructLayout from '@/new-components/layout/Construct';
 import { apiInterceptors, getModelList, modelSearch, stopModel } from '@/client/api';
 import ModelForm from '@/components/model/model-form';
 import { IModelData } from '@/types/model';

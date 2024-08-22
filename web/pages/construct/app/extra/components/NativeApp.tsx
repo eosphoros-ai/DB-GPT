@@ -1,4 +1,4 @@
-import AppDefaultIcon from '@/ant-components/common/AppDefaultIcon';
+import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { apiInterceptors, getAppStrategyValues, getNativeAppScenes, getResource } from '@/client/api';
 import { ParamNeed } from '@/types/app';
 import { useRequest } from 'ahooks';

@@ -1,5 +1,5 @@
-import BlurredCard, { ChatButton, InnerDropdown } from '@/ant-components/common/blurredCard';
-import ConstructLayout from '@/ant-components/layout/Construct';
+import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
+import ConstructLayout from '@/new-components/layout/Construct';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delSpace, getSpaceList, newDialogue, getSpaceConfig } from '@/client/api';
 import DocPanel from '@/components/knowledge/doc-panel';

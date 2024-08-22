@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 import MyEmpty from '../common/MyEmpty';
 import { ClearOutlined, DownloadOutlined, GithubOutlined, LoadingOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import BlurredCard, { ChatButton, InnerDropdown } from '@/ant-components/common/blurredCard';
+import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
 import moment from 'moment';
 
 function MarketPlugins() {

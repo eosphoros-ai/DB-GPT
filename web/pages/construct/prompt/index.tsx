@@ -1,4 +1,4 @@
-import ConstructLayout from '@/ant-components/layout/Construct';
+import ConstructLayout from '@/new-components/layout/Construct';
 import { apiInterceptors, deletePrompt, getPromptList } from '@/client/api';
 import useUser from '@/hooks/use-user';
 import { IPrompt, PromptListResponse } from '@/types/prompt';

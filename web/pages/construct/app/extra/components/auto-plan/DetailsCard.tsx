@@ -1,4 +1,4 @@
-import MarkDownContext from '@/ant-components/common/MarkdownContext';
+import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { apiInterceptors, getAppStrategyValues } from '@/client/api';
 import { IResource } from '@/types/app';
 import { ExclamationCircleOutlined } from '@ant-design/icons';

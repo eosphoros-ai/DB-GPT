@@ -1,5 +1,5 @@
-import TabContent from '@/ant-components/app/TabContent';
-import ChatInput from '@/ant-components/chat/input/ChatInput';
+import TabContent from '@/new-components/app/TabContent';
+import ChatInput from '@/new-components/chat/input/ChatInput';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppList, recommendApps } from '@/client/api';
 import { getRecommendQuestions } from '@/client/api/chat';

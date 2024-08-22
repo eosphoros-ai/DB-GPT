@@ -1,4 +1,4 @@
-import MarkDownContext from '@/ant-components/common/MarkdownContext';
+import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { apiInterceptors, recallMethodOptions, recallTest, recallTestRecommendQuestion } from '@/client/api';
 import { ISpace, RecallTestProps } from '@/types/knowledge';
 import { SettingOutlined } from '@ant-design/icons';

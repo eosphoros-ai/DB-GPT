@@ -1,4 +1,4 @@
-import ConstructLayout from '@/ant-components/layout/Construct';
+import ConstructLayout from '@/new-components/layout/Construct';
 import MarketPlugins from '@/components/agent/market-plugins';
 import MyPlugins from '@/components/agent/my-plugins';
 import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
@@ -8,7 +8,7 @@ import { Button, Input, Segmented, SegmentedProps, Tabs, Form, message, Spin, Ta
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiInterceptors, postAgentHubUpdate, postAgentInstall, postAgentQuery, postAgentUninstall, postAgentMy } from '@/client/api';
 import { useTranslation } from 'react-i18next';
-import BlurredCard, { ChatButton } from '@/ant-components/common/blurredCard';
+import BlurredCard, { ChatButton } from '@/new-components/common/blurredCard';
 import moment from 'moment';
 import cls from 'classnames';
 function Agent() {

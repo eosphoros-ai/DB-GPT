@@ -1,4 +1,4 @@
-import AppDefaultIcon from '@/ant-components/common/AppDefaultIcon';
+import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { apiInterceptors, updateApp } from '@/client/api';
 import { CreateAppParams } from '@/types/app';
 import { EditOutlined, LeftOutlined } from '@ant-design/icons';
@@ -74,7 +74,9 @@ const ExtraAppInfo: React.FC = () => {
   return (
     <App>
       <Spin spinning={loading}>
-        <div className={classNames('flex flex-col  h-screen w-screen bg-white dark:bg-gradient-dark', styles['extra-container'])}>
+        <div
+          className={classNames('flex flex-col  h-screen w-screen dark:bg-gradient-dark bg-gradient-light bg-cover bg-center', styles['extra-container'])}
+        >
           <header className="flex items-center justify-between px-6 py-2 h-14 border-b border-[#edeeef]">
             <Space className="flex items-center">
               <LeftOutlined

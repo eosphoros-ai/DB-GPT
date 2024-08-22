@@ -1,5 +1,5 @@
-import ModelIcon from '@/ant-components/chat/content/ModelIcon';
-import MarkdownContext from '@/ant-components/common/MarkdownContext';
+import ModelIcon from '@/new-components/chat/content/ModelIcon';
+import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import { Divider } from 'antd';
 import cls from 'classnames';

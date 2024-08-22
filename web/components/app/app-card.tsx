@@ -7,7 +7,7 @@ import { useRouter } from 'next/router';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import IconFont from '@/ant-components/common/Icon';
+import IconFont from '@/new-components/common/Icon';
 import { useRequest } from 'ahooks';
 import GPTCard from '../common/gpt-card';
 

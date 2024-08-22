@@ -1,4 +1,4 @@
-import MyEmpty from '@/ant-components/common/MyEmpty';
+import MyEmpty from '@/new-components/common/MyEmpty';
 import { IResource } from '@/types/app';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Popconfirm, Select, Space, Typography } from 'antd';

@@ -1,4 +1,4 @@
-import AppDefaultIcon from '@/ant-components/common/AppDefaultIcon';
+import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { ExportOutlined } from '@ant-design/icons';
 import { App, Typography } from 'antd';
 import copy from 'copy-to-clipboard';

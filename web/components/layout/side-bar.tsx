@@ -1,4 +1,4 @@
-import UserBar from '@/ant-components/layout/UserBar';
+import UserBar from '@/new-components/layout/UserBar';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delDialogue } from '@/client/api';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
@@ -60,7 +60,7 @@ function smallMenuItemStyle(active?: boolean) {
 }
 
 function SideBar() {
-  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode, adminList } =
+  const { chatId, scene, isMenuExpand, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode, adminList } =
     useContext(ChatContext);
   const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();

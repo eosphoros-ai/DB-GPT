@@ -1,4 +1,4 @@
-import AppDefaultIcon from '@/ant-components/common/AppDefaultIcon';
+import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Spin, Tooltip, Typography } from 'antd';
 import React, { useMemo } from 'react';

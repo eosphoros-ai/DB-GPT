@@ -1,4 +1,4 @@
-import ModelIcon from '@/ant-components/chat/content/ModelIcon';
+import ModelIcon from '@/new-components/chat/content/ModelIcon';
 import { LinkOutlined, SwapRightOutlined } from '@ant-design/icons';
 import { Popover, Space } from 'antd';
 import ReactMarkdown from 'react-markdown';

@@ -1,4 +1,4 @@
-import ModelIcon from '@/ant-components/chat/content/ModelIcon';
+import ModelIcon from '@/new-components/chat/content/ModelIcon';
 import { ChatContext } from '@/app/chat-context';
 import { SwapOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';

@@ -12,7 +12,7 @@ import { useRouter } from 'next/router';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import FloatHelper from '@/ant-components/layout/FloatHelper';
+import FloatHelper from '@/new-components/layout/FloatHelper';
 import '../app/i18n';
 import '../nprogress.css';
 import '../styles/globals.css';
