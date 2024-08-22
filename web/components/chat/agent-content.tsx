@@ -31,9 +31,6 @@ function AgentContent({ content }: Props) {
           {formatMarkdownVal(content.context)}
         </GPTVis>
       ) : (
-        // <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
-        //   {formatMarkdownVal(content.context)}
-        // </ReactMarkdown>
         <div className="">{content.context}</div>
       )}
     </div>

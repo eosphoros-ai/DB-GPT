@@ -134,7 +134,6 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
 
   if (!isRobot && !context) return <div className="h-12"></div>;
 
-  console.log(22222, 'render');
   return (
     <div
       className={classNames('relative flex flex-wrap w-full p-2 md:p-4 rounded-xl break-words', {
