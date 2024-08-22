@@ -11,6 +11,7 @@ from dbgpt.serve.agent.app.recommend_question.recommend_question import (
 )
 from dbgpt.serve.agent.hub.db.my_plugin_db import MyPluginEntity
 from dbgpt.serve.agent.hub.db.plugin_hub_db import PluginHubEntity
+from dbgpt.serve.file.models.models import ServeEntity as FileServeEntity
 from dbgpt.serve.flow.models.models import ServeEntity as FlowServeEntity
 from dbgpt.serve.flow.models.models import VariablesEntity as FlowVariableEntity
 from dbgpt.serve.prompt.models.models import ServeEntity as PromptManageEntity
@@ -22,6 +23,7 @@ from dbgpt.storage.chat_history.chat_history_db import (
 
 _MODELS = [
     PluginHubEntity,
+    FileServeEntity,
     MyPluginEntity,
     PromptManageEntity,
     KnowledgeSpaceEntity,

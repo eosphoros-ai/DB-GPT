@@ -59,7 +59,7 @@ def initialize_components(
     _initialize_agent(system_app)
     _initialize_openapi(system_app)
     # Register serve apps
-    register_serve_apps(system_app, CFG)
+    register_serve_apps(system_app, CFG, param.port)
 
 
 def _initialize_model_cache(system_app: SystemApp):

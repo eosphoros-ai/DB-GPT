@@ -321,6 +321,13 @@ class Config(metaclass=Singleton):
             os.getenv("USE_NEW_WEB_UI", "True").lower() == "true"
         )
 
+        # file server configuration
+        # The host of the current file server, if None, get the host automatically
+        self.FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
+        self.FILE_SERVER_LOCAL_STORAGE_PATH = os.getenv(
+            "FILE_SERVER_LOCAL_STORAGE_PATH"
+        )
+
     @property
     def local_db_manager(self) -> "ConnectorManager":
         from dbgpt.datasource.manages import ConnectorManager
