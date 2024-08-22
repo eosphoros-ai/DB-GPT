@@ -322,4 +322,6 @@ export const CommonEn = {
   View_details: "View details",
   All: "All",
   Please_input_prompt_name: "Please input prompt name",
+  Copy_Btn: 'Copy',
+  Delete_Btn: 'Delete'
 } as const;

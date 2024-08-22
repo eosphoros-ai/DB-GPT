@@ -324,4 +324,6 @@ export const CommonZh: Resources["translation"] = {
   View_details: "查看详情",
   All: "全部",
   Please_input_prompt_name: "请输入prompt名称",
+  Copy_Btn: '复制',
+  Delete_Btn: '删除'
 } as const;
