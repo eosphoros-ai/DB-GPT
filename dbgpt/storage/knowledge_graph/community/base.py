@@ -45,7 +45,7 @@ class CommunityMetastore(ABC):
 
     @abstractmethod
     async def save(self, communities: List[Community]):
-        """Upsert community."""
+        """Save communities."""
 
     @abstractmethod
     def drop(self):

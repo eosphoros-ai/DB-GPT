@@ -142,8 +142,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         # local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store.explore(keywords, limit=topk)
+        subgraph = self._graph_store.explore(keywords, limit=topk).format()
         logger.info(f"Search subgraph from {len(keywords)} keywords")
+
+        if not summaries and not subgraph:
+            return []
 
         content = (
             "The following entities and relations provided after [SUBGRAPH] "
@@ -152,20 +155,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             "The text provided after [SUMMARY] is a summary supplement "
             "to the entities and relations."
             "---------------------\n"
-            "These are some examples of entities and relations that "
+            "The following examples after [ENTITIES] and [RELATIONS] that "
             "can help you understand the data format of the knowledge graph, "
-            "but they cannot be used in the answer.\n"
-            "Entities:\n"
+            "but do not use them in the answer.\n"
+            "[ENTITIES]:\n"
             "(alice)\n"
             "(bob:{age:28})\n"
             '(carry:{age:18;role:"teacher"})\n\n'
-            "Relations:\n"
+            "[RELATIONS]:\n"
             "(alice)-[reward]->(alice)\n"
             '(alice)-[notify:{method:"email"}]->'
             '(carry:{age:18;role:"teacher"})\n'
             '(bob:{age:28})-[teach:{course:"math";hour:180}]->(alice)\n'
             "---------------------\n"
-            f"[SUBGRAPH]:\n{subgraph.format()}\n"
+            f"[SUBGRAPH]:\n{subgraph}\n"
             f"[SUMMARY]:\n{summaries}\n"
         )
 

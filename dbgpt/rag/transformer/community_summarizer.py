@@ -20,11 +20,10 @@ COMMUNITY_SUMMARY_EXTRACT_PT = (
         3. Summarizes the most important relationships
         4. Provides an overall characterization of what this community represents
 
-        Community Data:
-        Nodes: {nodes}
-        Relationships: {relationships}
+        Community Data:\n{graph}
 
-        Summary:"""
+        Summary:
+    """
 )
 
 

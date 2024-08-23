@@ -459,7 +459,8 @@ class MemoryGraph(Graph):
             f"{self.get_vertex(e.tid).format(self.vertex_label)}"
             for e in self.edges()
         )
-        return f"Entities:\n{vs_str}\n\nRelations:\n{es_str}"
+        return f"Entities:\n{vs_str}\n\nRelations:\n{es_str}" \
+            if (vs_str or es_str) else ""
 
     def graphviz(self, name="g"):
         """View graphviz graph: https://dreampuf.github.io/GraphvizOnline."""
