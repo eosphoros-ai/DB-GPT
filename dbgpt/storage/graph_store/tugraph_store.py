@@ -48,10 +48,9 @@ class TuGraphStoreConfig(GraphStoreConfig):
     )
     plugin_names: List[str] = Field(
         default=["leiden"],
-        # todo: giturl = 'tugraph-plguin-url',
-        # todo: TUGRAPH_PLUGIN_NAMES has been added, which is array type
         description="Plugins need to be loaded when initialize TuGraph, "
-                    "reference plugins' source code: https://pypi.org/project/dbgpt-tugraph-plugins/"
+                    "code: https://github.com/TuGraph-family"
+                    "/dbgpt-tugraph-plugins/tree/master/cpp"
     )
 
 
@@ -95,16 +94,17 @@ class TuGraphStore(GraphStoreBase):
         if self._summary_enabled:
             self._upload_plugin()
         
-
     def _check_label(self, elem_type: str):
         result = self.conn.get_table_names()
         if elem_type == "vertex":
             return self._node_label in result["vertex_tables"]
         if elem_type == "edge":
             return self._edge_label in result["edge_tables"]
+
     def _add_vertex_index(self, field_name):
         gql = f"CALL db.addIndex('{self._node_label}', '{field_name}', false)"
         self.conn.run(gql)
+
     def _upload_plugin(self):
         gql = f"CALL db.plugin.listPlugin('CPP','v1')"
         result = self.conn.run(gql)
@@ -121,6 +121,7 @@ class TuGraphStore(GraphStoreBase):
                 content = base64.b64encode(content).decode()
                 gql = f"CALL db.plugin.loadPlugin('CPP','{name}','{content}','SO','{name} Plugin',false,'v1')"
                 self.conn.run(gql)
+
     def _create_schema(self):
         if not self._check_label("vertex"):
             if self._summary_enabled:
