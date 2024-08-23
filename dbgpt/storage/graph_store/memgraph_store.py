@@ -34,9 +34,25 @@ class MemoryGraphStore(GraphStoreBase):
         """Get the graph store config."""
         return self._graph_store_config
 
+    def relation_type(self) -> str:
+        """Get the relation type."""
+        pass
+
+    def entity_type(self) -> str:
+        """Get the entity type."""
+        pass
+
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Insert a triplet into the graph."""
         self._graph.append_edge(Edge(sub, obj, **{self._edge_name_key: rel}))
+
+    def insert_graph(self, graph: Graph):
+        """Add graph."""
+        for vertex in graph.vertices():
+            self._graph.upsert_vertex(vertex)
+
+        for edge in graph.edges():
+            self._graph.append_edge(edge)
 
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Retrieve triplets originating from a subject."""

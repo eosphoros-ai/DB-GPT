@@ -6,7 +6,6 @@ from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
-from dbgpt.rag.index.base import IndexStoreConfig
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
 from dbgpt.storage.graph_store.base import GraphStoreConfig, GraphStoreBase

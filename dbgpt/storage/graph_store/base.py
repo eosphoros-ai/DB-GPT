@@ -37,12 +37,20 @@ class GraphStoreBase(ABC):
         """Get the graph store config."""
 
     @abstractmethod
+    def entity_type(self) -> str:
+        """Get the entity type."""
+
+    @abstractmethod
+    def relation_type(self) -> str:
+        """Get the relation type."""
+
+    @abstractmethod
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Add triplet."""
 
     @abstractmethod
     def insert_graph(self, graph:Graph):
-        """Add triplet."""
+        """Add graph."""
 
     @abstractmethod
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
