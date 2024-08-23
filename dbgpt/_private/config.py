@@ -303,6 +303,7 @@ class Config(metaclass=Singleton):
         )
         # global dbgpt api key
         self.API_KEYS = os.getenv("API_KEYS", None)
+        self.ENCRYPT_KEY = os.getenv("ENCRYPT_KEY", "your_secret_key")
 
         # Non-streaming scene retries
         self.DBGPT_APP_SCENE_NON_STREAMING_RETRIES_BASE = int(
@@ -318,6 +319,17 @@ class Config(metaclass=Singleton):
 
         self.USE_NEW_WEB_UI: bool = (
             os.getenv("USE_NEW_WEB_UI", "True").lower() == "true"
+        )
+
+        # file server configuration
+        # The host of the current file server, if None, get the host automatically
+        self.FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
+        self.FILE_SERVER_LOCAL_STORAGE_PATH = os.getenv(
+            "FILE_SERVER_LOCAL_STORAGE_PATH"
+        )
+        # multi-instance flag
+        self.WEBSERVER_MULTI_INSTANCE = (
+            os.getenv("MULTI_INSTANCE", "False").lower() == "true"
         )
 
     @property

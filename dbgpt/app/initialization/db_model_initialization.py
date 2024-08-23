@@ -1,5 +1,6 @@
 """Import all models to make sure they are registered with SQLAlchemy.
 """
+
 from dbgpt.app.knowledge.chunk_db import DocumentChunkEntity
 from dbgpt.app.knowledge.document_db import KnowledgeDocumentEntity
 from dbgpt.app.openapi.api_v1.feedback.feed_back_db import ChatFeedBackEntity
@@ -10,7 +11,9 @@ from dbgpt.serve.agent.app.recommend_question.recommend_question import (
 )
 from dbgpt.serve.agent.hub.db.my_plugin_db import MyPluginEntity
 from dbgpt.serve.agent.hub.db.plugin_hub_db import PluginHubEntity
+from dbgpt.serve.file.models.models import ServeEntity as FileServeEntity
 from dbgpt.serve.flow.models.models import ServeEntity as FlowServeEntity
+from dbgpt.serve.flow.models.models import VariablesEntity as FlowVariableEntity
 from dbgpt.serve.prompt.models.models import ServeEntity as PromptManageEntity
 from dbgpt.serve.rag.models.models import KnowledgeSpaceEntity
 from dbgpt.storage.chat_history.chat_history_db import (
@@ -20,6 +23,7 @@ from dbgpt.storage.chat_history.chat_history_db import (
 
 _MODELS = [
     PluginHubEntity,
+    FileServeEntity,
     MyPluginEntity,
     PromptManageEntity,
     KnowledgeSpaceEntity,
@@ -32,4 +36,5 @@ _MODELS = [
     ModelInstanceEntity,
     FlowServeEntity,
     RecommendQuestionEntity,
+    FlowVariableEntity,
 ]
