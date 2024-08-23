@@ -29,6 +29,7 @@ const BlurredCard: React.FC<{
       </p>
     );
   }
+  
   return (
     <div className={cls('hover-underline-gradient flex justify-center mt-6 relative group w-1/3 px-2 mb-6', className)}>
       <div
@@ -41,7 +42,7 @@ const BlurredCard: React.FC<{
               {scene ? (
                 <AppDefaultIcon scene={scene} width={14} height={14} />
               ) : (
-                logo && <Image src={logo} width={44} height={44} alt={name} className="w-8 min-w-8 rounded-full" />
+                logo && <Image src={logo} width={44} height={44} alt={name} className="w-8 min-w-8 rounded-full max-w-none" />
               )}
             </div>
             <div>
