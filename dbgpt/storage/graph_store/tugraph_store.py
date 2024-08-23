@@ -51,7 +51,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         # todo: giturl = 'tugraph-plguin-url',
         # todo: TUGRAPH_PLUGIN_NAMES has been added, which is array type
         description="Plugins need to be loaded when initialize TuGraph, "
-                    "reference plugins' source code: http://xxx"
+                    "reference plugins' source code: https://pypi.org/project/dbgpt-tugraph-plugins/"
     )
 
 
@@ -266,11 +266,12 @@ class TuGraphStore(GraphStoreBase):
                 depth_string = ".."
 
             limit_string = f"LIMIT {limit}"
+            print(direct.name)
             if limit is None:
                 limit_string = ""
-            if direct == 0:
+            if direct.name == 'OUT':
                 rel = f"-[r:{self._edge_label}*{depth_string}]->"
-            elif direct == 1:
+            elif direct.name == 'IN':
                 rel = f"<-[r:{self._edge_label}*{depth_string}]-"
             else:
                 rel = f"-[r:{self._edge_label}*{depth_string}]-"
