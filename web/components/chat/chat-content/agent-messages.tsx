@@ -1,7 +1,5 @@
 import ModelIcon from '@/new-components/chat/content/ModelIcon';
-import { LinkOutlined, SwapRightOutlined } from '@ant-design/icons';
-import { Popover, Space } from 'antd';
-import ReactMarkdown from 'react-markdown';
+import { SwapRightOutlined } from '@ant-design/icons';
 import { GPTVis } from '@antv/gpt-vis';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';

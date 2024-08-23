@@ -172,45 +172,68 @@ const ChatContent: React.FC<{
     [cachePluginContext],
   );
 
-
   return (
     <div className="flex flex-1 gap-3 mt-6">
       {/* icon */}
-      <div className="flex flex-shrink-0 items-start">{isRobot ? <RobotIcon model={model_name} /> : <UserIcon />}</div>
-      <div className={`flex ${scene === 'chat_agent' && !thinking ? 'flex-1' : ''} overflow-hidden`}>
+      <div className="flex flex-shrink-0 items-start">
+        {isRobot ? <RobotIcon model={model_name} /> : <UserIcon />}
+      </div>
+      <div
+        className={`flex ${
+          scene === "chat_agent" && !thinking ? "flex-1" : ""
+        } overflow-hidden`}
+      >
         {/* 用户提问 */}
-        {!isRobot && <div className="flex flex-1 items-center text-sm text-[#1c2533] dark:text-white">{typeof context === 'string' && context}</div>}
+        {!isRobot && (
+          <div className="flex flex-1 items-center text-sm text-[#1c2533] dark:text-white">
+            {typeof context === "string" && context}
+          </div>
+        )}
         {/* ai回答 */}
         {isRobot && (
           <div className="flex flex-1 flex-col w-full">
             <div className="bg-white dark:bg-[rgba(255,255,255,0.16)] p-4 rounded-2xl rounded-tl-none mb-2">
-              {typeof context === 'object' && (
+              {typeof context === "object" && (
                 <div>
                   {`[${context.template_name}]: `}
-                  <span className="text-theme-primary cursor-pointer" onClick={onLinkClick}>
+                  <span
+                    className="text-theme-primary cursor-pointer"
+                    onClick={onLinkClick}
+                  >
                     <CodeOutlined className="mr-1" />
-                    {context.template_introduce || 'More Details'}
+                    {context.template_introduce || "More Details"}
                   </span>
                 </div>
               )}
-              {typeof context === 'string' && scene === 'chat_agent' && (
-                <ReactMarkdown components={{ ...markdownComponents }} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
-                  {formatMarkdownValForAgent(value)}
-                </ReactMarkdown>
-              )}
-              {typeof context === 'string' && scene !== 'chat_agent' && (
-                <ReactMarkdown
-                  components={{ ...markdownComponents, ...extraMarkdownComponents }}
+              {typeof context === "string" && scene === "chat_agent" && (
+                <GPTVis
+                  components={{ ...markdownComponents }}
                   rehypePlugins={[rehypeRaw]}
                   remarkPlugins={[remarkGfm]}
                 >
-                  {formatMarkdownVal(value)}
-                </ReactMarkdown>
+                  {formatMarkdownValForAgent(value)}
+                </GPTVis>
+              )}
+              {typeof context === "string" && scene !== "chat_agent" && (
+                <div>
+                  <GPTVis
+                    components={{
+                      ...markdownComponents,
+                      ...extraMarkdownComponents,
+                    }}
+                    rehypePlugins={[rehypeRaw]}
+                    remarkPlugins={[remarkGfm]}
+                  >
+                    {formatMarkdownVal(value)}
+                  </GPTVis>
+                </div>
               )}
               {/* 正在思考 */}
               {thinking && !context && (
                 <div className="flex items-center gap-2">
-                  <span className="flex text-sm text-[#1c2533] dark:text-white">{t('thinking')}</span>
+                  <span className="flex text-sm text-[#1c2533] dark:text-white">
+                    {t("thinking")}
+                  </span>
                   <div className="flex">
                     <div className="w-1 h-1 rounded-full mx-1 animate-pulse1"></div>
                     <div className="w-1 h-1 rounded-full mx-1 animate-pulse2"></div>

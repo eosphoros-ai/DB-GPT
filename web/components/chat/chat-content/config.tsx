@@ -49,12 +49,10 @@ const codeComponents = {
   code: withDefaultChartCode({
     languageRenderers: {
       "agent-plans": ({
-        inline,
         node,
         className,
         children,
         style,
-        ...props
       }) => {
         const content = String(children);
         /**
@@ -73,12 +71,10 @@ const codeComponents = {
         }
       },
       "agent-messages": ({
-        inline,
         node,
         className,
         children,
         style,
-        ...props
       }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
@@ -92,12 +88,10 @@ const codeComponents = {
         }
       },
       "vis-convert-error": ({
-        inline,
         node,
         className,
         children,
         style,
-        ...props
       }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
@@ -111,12 +105,10 @@ const codeComponents = {
         }
       },
       "vis-dashboard": ({
-        inline,
         node,
         className,
         children,
         style,
-        ...props
       }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
@@ -129,7 +121,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-chart": ({ inline, node, className, children, style, ...props }) => {
+      "vis-chart": ({ node, className, children, style }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -142,12 +134,10 @@ const codeComponents = {
         }
       },
       "vis-plugin": ({
-        inline,
         node,
         className,
         children,
         style,
-        ...props
       }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
@@ -160,7 +150,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-code": ({ inline, node, className, children, style, ...props }) => {
+      "vis-code": ({ node, className, children, style, ...props }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
 
@@ -174,7 +164,6 @@ const codeComponents = {
         }
       },
       "vis-app-link": ({
-        inline,
         node,
         className,
         children,
@@ -193,7 +182,6 @@ const codeComponents = {
         }
       },
       "vis-api-response": ({
-        inline,
         node,
         className,
         children,
@@ -212,14 +200,18 @@ const codeComponents = {
         }
       },
     },
-    defaultRenderer({ inline, node, className, children, style, ...props }) {
+    defaultRenderer({ node, className, children, style, ...props }) {
+      
       const content = String(children);
-      const lang = className?.replace("language-", "") || "javascript";
+      const lang = className?.replace("language-", "") || "";
       const { context, matchValues } = matchCustomeTagValues(content);
+      
+
+      console.log(111, { node, className, children, style, ...props }, lang);
       return (
         <>
-          {!inline ? (
-            <CodePreview code={context} language={lang} />
+          {lang ? (
+            <CodePreview code={context} language={lang || "javascript"} />
           ) : (
             <code
               {...props}
@@ -391,6 +383,7 @@ const extraComponents: MarkdownComponent = {
         data: [],
       };
     }
+    console.log(111, data);
 
     const columns = data?.data?.[0]
       ? Object.keys(data?.data?.[0])?.map((item) => {
