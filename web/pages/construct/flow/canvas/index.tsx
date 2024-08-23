@@ -1,6 +1,7 @@
-import { apiInterceptors, getFlowById, importFlow } from "@/client/api";
+import { apiInterceptors, getFlowById } from "@/client/api";
 import MuiLoading from "@/components/common/loading";
 import AddNodes from "@/components/flow/add-nodes";
+import AddNodesSider from "@/components/flow/add-nodes-sider";
 import ButtonEdge from "@/components/flow/button-edge";
 import CanvasNode from "@/components/flow/canvas-node";
 import { IFlowData, IFlowUpdateParam } from "@/types/flow";
@@ -206,61 +207,77 @@ const Canvas: React.FC<Props> = () => {
 
   return (
     <>
-      <MuiLoading visible={loading} />
-      <Space className="my-2 mx-4 flex flex-row justify-end">
-        {[
-          {
-            title: "import",
-            icon: (
-              <ImportOutlined className="block text-xl" onClick={onImport} />
-            ),
-          },
-          {
-            title: "export",
-            icon: (
-              <ExportOutlined className="block text-xl" onClick={onExport} />
-            ),
-          },
-          {
-            title: "save",
-            icon: <SaveOutlined className="block text-xl" onClick={onSave} />,
-          },
-        ].map(({ title, icon }) => (
-          <Tooltip
-            key={title}
-            title={title}
-            className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 hover:text-blue-500 dark:hover:text-zinc-100"
-          >
-            {icon}
-          </Tooltip>
-        ))}
-      </Space>
+      <div className="flex flex-row">
+        <AddNodesSider />
 
-      <Divider className="mt-0 mb-0" />
-      <div className="h-[calc(100vh-60px)] w-full" ref={reactFlowWrapper}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={onNodesClick}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          minZoom={0.1}
-          fitView
-          deleteKeyCode={["Backspace", "Delete"]}
-        >
-          <Controls
-            className="flex flex-row items-center"
-            position="bottom-center"
-          />
-          <Background color="#aaa" gap={16} />
-          <AddNodes />
-        </ReactFlow>
+        <div className="flex flex-col flex-1">
+          <Space className="my-2 mx-4 flex flex-row justify-end">
+            {[
+              {
+                title: "import",
+                icon: (
+                  <ImportOutlined
+                    className="block text-xl"
+                    onClick={onImport}
+                  />
+                ),
+              },
+              {
+                title: "export",
+                icon: (
+                  <ExportOutlined
+                    className="block text-xl"
+                    onClick={onExport}
+                  />
+                ),
+              },
+              {
+                title: "save",
+                icon: (
+                  <SaveOutlined className="block text-xl" onClick={onSave} />
+                ),
+              },
+            ].map(({ title, icon }) => (
+              <Tooltip
+                key={title}
+                title={title}
+                className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 hover:text-blue-500 dark:hover:text-zinc-100"
+              >
+                {icon}
+              </Tooltip>
+            ))}
+          </Space>
+
+          <Divider className="mt-0 mb-0" />
+
+          <div className="h-[calc(100vh-60px)] w-full" ref={reactFlowWrapper}>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeClick={onNodesClick}
+              onConnect={onConnect}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              minZoom={0.1}
+              fitView
+              deleteKeyCode={["Backspace", "Delete"]}
+            >
+              <Controls
+                className="flex flex-row items-center"
+                position="bottom-center"
+              />
+              <Background color="#aaa" gap={16} />
+              {/* <AddNodes /> */}
+            </ReactFlow>
+          </div>
+        </div>
       </div>
+
+      <MuiLoading visible={loading} />
 
       <SaveFlowModal
         reactFlow={reactFlow}
