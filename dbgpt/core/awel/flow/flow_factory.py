@@ -173,6 +173,7 @@ class _VariablesRequestBase(BaseModel):
         description="The key of the variable to create",
         examples=["dbgpt.model.openai.api_key"],
     )
+
     label: str = Field(
         ...,
         description="The label of the variable to create",

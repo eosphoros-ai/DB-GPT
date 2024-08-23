@@ -37,6 +37,8 @@ ALTER TABLE  chat_feed_back ADD COLUMN `reason_types` varchar(255)  NULL COMMENT
 ALTER TABLE  chat_feed_back ADD COLUMN `user_code` varchar(128)  NULL COMMENT 'User code';
 ALTER TABLE  chat_feed_back ADD COLUMN `remark` text NULL COMMENT 'Feedback remark';
 
+-- dbgpt_serve_flow
+ALTER TABLE dbgpt_serve_flow ADD COLUMN `variables` text DEFAULT NULL COMMENT 'Flow variables, JSON format';
 
 -- dbgpt.recommend_question definition
 CREATE TABLE `recommend_question` (

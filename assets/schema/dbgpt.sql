@@ -308,6 +308,7 @@ CREATE TABLE `dbgpt_serve_flow` (
   `define_type` varchar(32) null comment 'Flow define type(json or python)',
   `label` varchar(128) DEFAULT NULL COMMENT 'Flow label',
   `editable` int DEFAULT NULL COMMENT 'Editable, 0: editable, 1: not editable',
+  `variables` text DEFAULT NULL COMMENT 'Flow variables, JSON format',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_uid` (`uid`),
   KEY `ix_dbgpt_serve_flow_sys_code` (`sys_code`),
