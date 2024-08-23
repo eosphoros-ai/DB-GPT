@@ -265,6 +265,9 @@ class TuGraphStore(GraphStoreBase):
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
+        if not subs:
+            return MemoryGraph()
+
         """Explore the graph from given subjects up to a depth."""
         if fan is not None:
             raise ValueError("Fan functionality is not supported at this time.")

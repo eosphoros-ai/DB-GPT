@@ -28,11 +28,12 @@ class CommunityStore:
         self._meta_store = BuiltinCommunityMetastore(vector_store)
 
     async def build_communities(self):
-        """Discover, retrieve, summarize and save communities."""
+        """discover communities."""
         community_ids = await (
             self._community_store_adapter.discover_communities()
         )
 
+        # summarize communities
         communities = []
         for community_id in community_ids:
             community = await (
@@ -43,6 +44,8 @@ class CommunityStore:
             )
             communities.append(community)
 
+        # reset metastore
+        await self._meta_store.drop()
         await self._meta_store.save(communities)
 
     async def __summarize_community(self, graph: Graph):
@@ -68,5 +71,8 @@ class CommunityStore:
         return await self._meta_store.search(query)
 
     def drop(self):
+        logger.info(f"Remove graph")
         self._community_store_adapter.graph_store.drop()
+
+        logger.info(f"Remove community metastore")
         self._meta_store.drop()

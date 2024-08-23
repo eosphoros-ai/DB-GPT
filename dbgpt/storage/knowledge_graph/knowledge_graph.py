@@ -123,25 +123,26 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
         content = (
-            "The following vertices and edges data after [Subgraph Data] "
+            "The following entities and relations provided after [SUBGRAPH] "
             "are retrieved from the knowledge graph based on the keywords:\n"
-            f"Keywords:\n{','.join(keywords)}\n"
+            f"\"{','.join(keywords)}\".\n"
             "---------------------\n"
-            "You can refer to the sample vertices and edges to understand "
-            "the real knowledge graph data provided by [Subgraph Data].\n"
-            "Sample vertices:\n"
+            "These are some examples of entities and relations that "
+            "can help you understand the data format of the knowledge graph, "
+            "but they cannot be used in the answer.\n"
+            "Entities:\n"
             "(alice)\n"
             "(bob:{age:28})\n"
             '(carry:{age:18;role:"teacher"})\n\n'
-            "Sample edges:\n"
+            "Relations:\n"
             "(alice)-[reward]->(alice)\n"
             '(alice)-[notify:{method:"email"}]->'
             '(carry:{age:18;role:"teacher"})\n'
             '(bob:{age:28})-[teach:{course:"math";hour:180}]->(alice)\n'
             "---------------------\n"
-            f"Subgraph Data:\n{subgraph.format()}\n"
+            f"[SUBGRAPH]:\n{subgraph.format()}\n"
         )
-        return [Chunk(content=content, metadata=subgraph.schema())]
+        return [Chunk(content=content)]
 
     def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Query graph."""
@@ -149,7 +150,11 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def delete_vector_name(self, index_name: str):
         """Delete vector name."""
-        logger.info(f"Remove graph index {index_name}")
+        logger.info(f"Remove graph {index_name}")
         self._graph_store.drop()
+
+        logger.info(f"Clean keyword extractor")
         self._keyword_extractor.clean()
+
+        logger.info(f"Clean triplet extractor")
         self._triplet_extractor.clean()
