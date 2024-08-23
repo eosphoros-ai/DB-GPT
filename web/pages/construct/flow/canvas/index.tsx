@@ -250,7 +250,7 @@ const Canvas: React.FC<Props> = () => {
 
           <Divider className="mt-0 mb-0" />
 
-          <div className="h-[calc(100vh-60px)] w-full" ref={reactFlowWrapper}>
+          <div className="h-[calc(100vh-48px)] w-full" ref={reactFlowWrapper}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
