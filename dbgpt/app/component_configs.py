@@ -52,17 +52,17 @@ def initialize_components(
         param, system_app, embedding_model_name, embedding_model_path
     )
     _initialize_rerank_model(param, system_app, rerank_model_name, rerank_model_path)
-    _initialize_model_cache(system_app)
+    _initialize_model_cache(system_app, param.port)
     _initialize_awel(system_app, param)
     # Initialize resource manager of agent
     _initialize_resource_manager(system_app)
     _initialize_agent(system_app)
     _initialize_openapi(system_app)
     # Register serve apps
-    register_serve_apps(system_app, CFG)
+    register_serve_apps(system_app, CFG, param.port)
 
 
-def _initialize_model_cache(system_app: SystemApp):
+def _initialize_model_cache(system_app: SystemApp, port: int):
     from dbgpt.storage.cache import initialize_cache
 
     if not CFG.MODEL_CACHE_ENABLE:
@@ -72,6 +72,8 @@ def _initialize_model_cache(system_app: SystemApp):
     storage_type = CFG.MODEL_CACHE_STORAGE_TYPE or "disk"
     max_memory_mb = CFG.MODEL_CACHE_MAX_MEMORY_MB or 256
     persist_dir = CFG.MODEL_CACHE_STORAGE_DISK_DIR or MODEL_DISK_CACHE_DIR
+    if CFG.WEBSERVER_MULTI_INSTANCE:
+        persist_dir = f"{persist_dir}_{port}"
     initialize_cache(system_app, storage_type, max_memory_mb, persist_dir)
 
 

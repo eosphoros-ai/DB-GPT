@@ -24,6 +24,7 @@ from dbgpt.core.awel.flow import (
     OperatorType,
     Parameter,
     ViewMetadata,
+    ui,
 )
 from dbgpt.core.interface.llm import (
     LLMClient,
@@ -69,6 +70,10 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest]):
                 optional=True,
                 default=None,
                 description=_("The temperature of the model request."),
+                ui=ui.UISlider(
+                    show_input=True,
+                    attr=ui.UISlider.UIAttribute(min=0.0, max=2.0, step=0.1),
+                ),
             ),
             Parameter.build_from(
                 _("Max New Tokens"),
