@@ -19,6 +19,7 @@ type CanvasNodeProps = {
 function TypeLabel({ label }: { label: string }) {
   return <div className="w-full h-8 align-middle font-semibold">{label}</div>;
 }
+const forceTypeList = ['file','multiple_files','time']
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const node = data;
@@ -26,7 +27,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const [isHovered, setIsHovered] = useState(false);
   const reactFlow = useReactFlow();
   const [form] = Form.useForm();
-
+  
   function onHover() {
     setIsHovered(true);
   }
@@ -83,7 +84,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     const dependParamNodes = parameters.filter(({ ui }) => ui?.refresh_depends?.includes(changedKey));
 
     if (dependParamNodes?.length === 0) return;
-
     dependParamNodes.forEach(async (item) => {
       const params = {
         id: removeIndexFromNodeId(data?.id),
@@ -128,12 +128,16 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   function onParameterValuesChange(changedValues: any, allValues: any) {
 
     const [changedKey, changedVal] = Object.entries(changedValues)[0];
-
+   
+    if (!allValues?.force &&  forceTypeList.includes(changedKey)) {
+      return
+    }
     updateCurrentNodeValue(changedKey, changedVal);
     if (changedVal) {
       updateDependsNodeValue(changedKey, changedVal);
     }
   }
+
 
   return (
     <Popover
@@ -200,7 +204,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
             <TypeLabel label="Parameters" />
             <Form form={form} layout="vertical" onValuesChange={onParameterValuesChange} className="flex flex-col space-y-3 text-neutral-500">
               {parameters?.map((item, index) => (
-                <NodeParamHandler key={`${node.id}_param_${index}`} node={node} paramData={item} label="parameters" index={index} />
+                <NodeParamHandler key={`${node.id}_param_${index}`} formValuesChange={onParameterValuesChange} node={node} paramData={item} label="parameters" index={index} />
               ))}
             </Form>
           </div>
