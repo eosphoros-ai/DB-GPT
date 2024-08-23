@@ -30,7 +30,12 @@ class ServeEntity(Model):
         default=datetime.utcnow,
         comment="plugin upload time",
     )
-    gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
+    gmt_modified = Column(
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.utcnow,
+        comment="Record update time",
+    )
     installed = Column(Integer, default=False, comment="plugin already installed count")
 
     UniqueConstraint("name", "type", name="uk_dbgpts")
@@ -84,7 +89,6 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             storage_url=entity.storage_url,
             download_param=entity.download_param,
             installed=entity.installed,
-            gmt_created=entity.gmt_created,
         )
 
     def to_response(self, entity: ServeEntity) -> ServerResponse:
@@ -96,5 +100,12 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             RES: The response
         """
+        gmt_created_str = entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+        gmt_modified_str = entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+        request = self.to_request(entity)
 
-        return self.to_request(entity)
+        return ServerResponse(
+            **request.to_dict(),
+            gmt_created=gmt_created_str,
+            gmt_modified=gmt_modified_str,
+        )

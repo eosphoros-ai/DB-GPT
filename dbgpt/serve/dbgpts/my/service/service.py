@@ -5,7 +5,12 @@ from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util.dbgpts.base import INSTALL_DIR
-from dbgpt.util.dbgpts.repo import copy_and_install, install, uninstall
+from dbgpt.util.dbgpts.repo import (
+    copy_and_install,
+    inner_copy_and_install,
+    install,
+    uninstall,
+)
 from dbgpt.util.pagination_utils import PaginationResult
 
 from ..api.schemas import ServeRequest, ServerResponse
@@ -132,8 +137,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
         # install(name, repo)
         try:
-            copy_and_install(repo, name, dbgpt_path)
+            from pathlib import Path
+
+            inner_copy_and_install(repo, name, Path(dbgpt_path))
         except Exception as e:
+            logger.exception(f"install_gpts failed!{str(e)}")
             raise ValueError(f"Install dbgpts [{type}:{name}] Failed! {str(e)}", e)
 
         from dbgpt.util.dbgpts.base import get_repo_path
@@ -147,11 +155,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             InstalledPackage(
                 name=name,
                 repo=repo,
-                root=get_repo_path(repo),
+                root=dbgpt_path,
                 package=type,
             )
         )
-        dbgpts_entity = self.dao.get_one(ServeRequest(name=name, type=type))
+        dbgpts_entity = self.get(ServeRequest(name=name, type=type))
 
         if not dbgpts_entity:
             request = ServeRequest()
@@ -160,7 +168,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             request.user_code = user_code
             request.sys_code = sys_code
             request.type = type
-            request.file_name = INSTALL_DIR / name
+            request.file_name = str(INSTALL_DIR / name)
             request.version = base_package.version
             return self.create(request)
         else:

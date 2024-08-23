@@ -120,7 +120,17 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
-        query_request = request
+        query_request = ServeRequest(
+            name=request.name,
+            type=request.type,
+            version=request.version,
+            description=request.description,
+            author=request.author,
+            storage_channel=request.storage_channel,
+            storage_url=request.storage_url,
+            installed=request.installed,
+        )
+
         return self.dao.get_list_page(query_request, page, page_size)
 
     async def refresh_hub_from_git(
@@ -142,12 +152,22 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
         try:
             for repo, package, name, gpts_path in data:
-                old_hub_info = self.dao.get_one(ServeRequest(name=name, type=package))
+                if not name:
+                    logger.info(
+                        f"dbgpts error repo:{repo}, package:{package}, name:{name}, gpts_path:{gpts_path}"
+                    )
+                    continue
+                old_hub_info = self.get(ServeRequest(name=name, type=package))
+                if (
+                    get_repo_path(repo)
+                    == "/Users/tuyang.yhj/.dbgpts/repos/eosphoros/dbgpts/dbgpts.toml"
+                ):
+                    logger.info("xxx")
                 base_package: BasePackage = parse_package_metadata(
                     InstalledPackage(
                         name=name,
                         repo=repo,
-                        root=get_repo_path(repo),
+                        root=str(gpts_path),
                         package=package,
                     )
                 )
@@ -166,7 +186,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     request.type = package
                     request.name = name
                     request.storage_channel = repo
-                    request.storage_url = gpts_path
+                    request.storage_url = str(gpts_path)
                     request.author = ",".join(base_package.authors)
                     request.email = ",".join(base_package.authors)
 
@@ -174,7 +194,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     request.installed = 0
                     request.version = base_package.version
                     request.description = base_package.description
-                    self.dao.create(request)
+                    self.create(request)
 
         except Exception as e:
             raise ValueError(f"Update Agent Hub Db Info Faild!{str(e)}")

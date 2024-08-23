@@ -1,4 +1,5 @@
 import functools
+import logging
 import os
 import shutil
 import subprocess
@@ -23,6 +24,8 @@ from .loader import _load_package_from_path
 cl = CliLogger()
 
 _DEFAULT_REPO = "eosphoros/dbgpts"
+
+logger = logging.getLogger(__name__)
 
 
 @functools.cache
@@ -225,6 +228,45 @@ def uninstall(name: str):
     subprocess.run(["pip", "uninstall", name, "-y"], check=True)
     shutil.rmtree(install_path)
     cl.info(f"Uninstalling dbgpt '{name}'...")
+
+
+def inner_copy_and_install(repo: str, name: str, package_path: Path):
+    if not package_path.exists():
+        raise ValueError(
+            f"The specified dbgpt '{name}' does not exist in the {repo} tap."
+        )
+    install_path = INSTALL_DIR / name
+    if install_path.exists():
+        logger.info(
+            f"The dbgpt '{name}' has already been installed"
+            f"({_print_path(install_path)})."
+        )
+        return True
+
+    try:
+        shutil.copytree(package_path, install_path)
+        logger.info(f"Installing dbgpts '{name}' from {repo}...")
+        os.chdir(install_path)
+        subprocess.run(["poetry", "build"], check=True)
+        wheel_files = list(install_path.glob("dist/*.whl"))
+        if not wheel_files:
+            logger.error(
+                "No wheel file found after building the package.",
+            )
+            raise ValueError("No wheel file found after building the package.")
+        # Install the wheel file using pip
+        wheel_file = wheel_files[0]
+        logger.info(
+            f"Installing dbgpts '{name}' wheel file {_print_path(wheel_file)}..."
+        )
+        subprocess.run(["pip", "install", str(wheel_file)], check=True)
+        _write_install_metadata(name, repo, install_path)
+        logger.info(f"Installed dbgpts at {_print_path(install_path)}.")
+        logger.info(f"dbgpts '{name}' installed successfully.")
+    except Exception as e:
+        if install_path.exists():
+            shutil.rmtree(install_path)
+        raise e
 
 
 def copy_and_install(repo: str, name: str, package_path: Path):

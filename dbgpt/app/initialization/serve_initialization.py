@@ -75,3 +75,14 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
     # Register serve feedback
     system_app.register(FeedbackServe)
     # ################################ Chat Feedback Register End ########################################
+
+    # ################################ DbGpts Register Begin ########################################
+    # Register serve dbgptshub
+    from dbgpt.serve.dbgpts.hub.serve import Serve as DbgptsHubServe
+
+    system_app.register(DbgptsHubServe)
+    # Register serve dbgptsmy
+    from dbgpt.serve.dbgpts.my.serve import Serve as DbgptsMyServe
+
+    system_app.register(DbgptsMyServe)
+    # ################################ DbGpts Register End ########################################

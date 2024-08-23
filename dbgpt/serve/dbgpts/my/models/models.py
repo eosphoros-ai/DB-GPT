@@ -29,6 +29,12 @@ class ServeEntity(Model):
     )
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.utcnow, comment="gpts install time")
+    gmt_modified = Column(
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.utcnow,
+        comment="Record update time",
+    )
     UniqueConstraint("user_code", "name", name="uk_name")
 
 
@@ -51,7 +57,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         request_dict = (
             request.to_dict() if isinstance(request, ServeRequest) else request
         )
-        entity = ServeRequest(**request_dict)
+        entity = ServeEntity(**request_dict)
+
         return entity
 
     def to_request(self, entity: ServeEntity) -> ServeRequest:
@@ -74,7 +81,6 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             version=entity.version,
             use_count=entity.use_count,
             succ_count=entity.succ_count,
-            gmt_created=entity.gmt_created,
         )
 
     def to_response(self, entity: ServeEntity) -> ServerResponse:
@@ -86,4 +92,12 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             RES: The response
         """
-        return self.to_request(entity)
+        gmt_created_str = entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+        gmt_modified_str = entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+        request = self.to_request(entity)
+
+        return ServerResponse(
+            **request.to_dict(),
+            gmt_created=gmt_created_str,
+            gmt_modified=gmt_modified_str,
+        )

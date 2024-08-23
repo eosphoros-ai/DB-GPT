@@ -1,3 +1,4 @@
+import logging
 from functools import cache
 from typing import List, Optional
 
@@ -17,6 +18,8 @@ router = APIRouter()
 # Add your API endpoints here
 
 global_system_app: Optional[SystemApp] = None
+
+logger = logging.getLogger(__name__)
 
 
 def get_service() -> Service:
@@ -169,6 +172,22 @@ async def query_page(
         ServerResponse: The response
     """
     return Result.succ(service.get_list_by_page(request, page, page_size))
+
+
+@router.post("uninstall", response_model=Result[str])
+async def agent_uninstall(
+    name: str,
+    type=str,
+    user: Optional[str] = None,
+    service: Service = Depends(get_service),
+):
+    logger.info(f"dbgpts uninstall:{name},{user}")
+    try:
+        service.uninstall_gpts(name=name, type=type, user_code=user)
+        return Result.succ(None)
+    except Exception as e:
+        logger.error("Plugin Uninstall Error!", e)
+        return Result.failed(code="E0022", msg=f"Plugin Uninstall Error {e}")
 
 
 def init_endpoints(system_app: SystemApp) -> None:

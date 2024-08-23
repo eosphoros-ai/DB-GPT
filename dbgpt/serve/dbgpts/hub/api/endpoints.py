@@ -1,3 +1,4 @@
+import logging
 from functools import cache
 from typing import List, Optional
 
@@ -17,6 +18,8 @@ router = APIRouter()
 # Add your API endpoints here
 
 global_system_app: Optional[SystemApp] = None
+
+logger = logging.getLogger(__name__)
 
 
 def get_service() -> Service:
@@ -168,7 +171,51 @@ async def query_page(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.get_list_by_page(request, page, page_size))
+    try:
+        return Result.succ(service.get_list_by_page(request, page, page_size))
+    except Exception as e:
+        logger.exception("query_page exception!")
+        return Result.failed(msg=str(e))
+
+
+@router.post("/source/refresh", response_model=Result[str])
+async def source_refresh(
+    service: Service = Depends(get_service),
+):
+    logger.info(f"source_refresh")
+    try:
+        await service.refresh_hub_from_git()
+        return Result.succ(None)
+    except Exception as e:
+        logger.error("Dbgpts hub source refresh Error!", e)
+        return Result.failed(err_code="E0020", msg=f"Dbgpts Hub refresh Error! {e}")
+
+
+@router.post("/install", response_model=Result[str])
+async def install(request: ServeRequest):
+    logger.info(f"dbgpts install:{request.name},{request.type}")
+
+    try:
+        from dbgpt.serve.dbgpts.my.config import (
+            SERVE_SERVICE_COMPONENT_NAME as MY_GPTS_SERVICE_COMPONENT,
+        )
+        from dbgpt.serve.dbgpts.my.service.service import Service as MyGptsService
+
+        mygpts_service: MyGptsService = global_system_app.get_component(
+            MY_GPTS_SERVICE_COMPONENT, MyGptsService
+        )
+        await mygpts_service.install_gpts(
+            name=request.name,
+            type=request.type,
+            repo=request.storage_channel,
+            dbgpt_path=request.storage_url,
+            user_code=None,
+            sys_code=None,
+        )
+        return Result.succ(None)
+    except Exception as e:
+        logger.error("Plugin Install Error!", e)
+        return Result.failed(err_code="E0021", msg=f"Plugin Install Error {e}")
 
 
 def init_endpoints(system_app: SystemApp) -> None:
