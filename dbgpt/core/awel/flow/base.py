@@ -6,7 +6,7 @@ import inspect
 from abc import ABC
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cast
 
 from dbgpt._private.pydantic import (
     BaseModel,
@@ -15,10 +15,17 @@ from dbgpt._private.pydantic import (
     model_to_dict,
     model_validator,
 )
-from dbgpt.core.awel.util.parameter_util import BaseDynamicOptions, OptionValue
+from dbgpt.component import SystemApp
+from dbgpt.core.awel.util.parameter_util import (
+    BaseDynamicOptions,
+    OptionValue,
+    RefreshOptionRequest,
+)
 from dbgpt.core.interface.serialization import Serializable
+from dbgpt.util.executor_utils import DefaultExecutorFactory, blocking_func_to_async
 
 from .exceptions import FlowMetadataException, FlowParameterMetadataException
+from .ui import UIComponent
 
 _TYPE_REGISTRY: Dict[str, Type] = {}
 
@@ -136,6 +143,7 @@ _OPERATOR_CATEGORY_DETAIL = {
     "agent": _CategoryDetail("Agent", "The agent operator"),
     "rag": _CategoryDetail("RAG", "The RAG operator"),
     "experimental": _CategoryDetail("EXPERIMENTAL", "EXPERIMENTAL operator"),
+    "example": _CategoryDetail("Example", "Example operator"),
 }
 
 
@@ -151,6 +159,7 @@ class OperatorCategory(str, Enum):
     AGENT = "agent"
     RAG = "rag"
     EXPERIMENTAL = "experimental"
+    EXAMPLE = "example"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -193,6 +202,7 @@ _RESOURCE_CATEGORY_DETAIL = {
     "embeddings": _CategoryDetail("Embeddings", "The embeddings resource"),
     "rag": _CategoryDetail("RAG", "The  resource"),
     "vector_store": _CategoryDetail("Vector Store", "The vector store resource"),
+    "example": _CategoryDetail("Example", "The example resource"),
 }
 
 
@@ -209,6 +219,7 @@ class ResourceCategory(str, Enum):
     EMBEDDINGS = "embeddings"
     RAG = "rag"
     VECTOR_STORE = "vector_store"
+    EXAMPLE = "example"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -343,6 +354,9 @@ class Parameter(TypeMetadata, Serializable):
     alias: Optional[List[str]] = Field(
         None, description="The alias of the parameter(Compatible with old version)"
     )
+    ui: Optional[UIComponent] = Field(
+        None, description="The UI component of the parameter"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -366,27 +380,40 @@ class Parameter(TypeMetadata, Serializable):
         return values
 
     @classmethod
-    def _covert_to_real_type(cls, type_cls: str, v: Any):
+    def _covert_to_real_type(cls, type_cls: str, v: Any) -> Any:
         if type_cls and v is not None:
+            typed_value: Any = v
             try:
                 # Try to convert the value to the type.
                 if type_cls == "builtins.str":
-                    return str(v)
+                    typed_value = str(v)
                 elif type_cls == "builtins.int":
-                    return int(v)
+                    typed_value = int(v)
                 elif type_cls == "builtins.float":
-                    return float(v)
+                    typed_value = float(v)
                 elif type_cls == "builtins.bool":
                     if str(v).lower() in ["false", "0", "", "no", "off"]:
                         return False
-                    return bool(v)
+                    typed_value = bool(v)
+                return typed_value
             except ValueError:
                 raise ValidationError(f"Value '{v}' is not valid for type {type_cls}")
         return v
 
     def get_typed_value(self) -> Any:
-        """Get the typed value."""
-        return self._covert_to_real_type(self.type_cls, self.value)
+        """Get the typed value.
+
+        Returns:
+            Any: The typed value. VariablesPlaceHolder if the value is a variable
+                string. Otherwise, the real type value.
+        """
+        from ...interface.variables import VariablesPlaceHolder, is_variable_string
+
+        is_variables = is_variable_string(self.value) if self.value else False
+        if is_variables and self.value is not None and isinstance(self.value, str):
+            return VariablesPlaceHolder(self.name, self.value)
+        else:
+            return self._covert_to_real_type(self.type_cls, self.value)
 
     def get_typed_default(self) -> Any:
         """Get the typed default."""
@@ -398,6 +425,7 @@ class Parameter(TypeMetadata, Serializable):
         label: str,
         name: str,
         type: Type,
+        is_list: bool = False,
         optional: bool = False,
         default: Optional[Union[DefaultParameterType, _MISSING_TYPE]] = _MISSING_VALUE,
         placeholder: Optional[DefaultParameterType] = None,
@@ -405,6 +433,7 @@ class Parameter(TypeMetadata, Serializable):
         options: Optional[Union[BaseDynamicOptions, List[OptionValue]]] = None,
         resource_type: ResourceType = ResourceType.INSTANCE,
         alias: Optional[List[str]] = None,
+        ui: Optional[UIComponent] = None,
     ):
         """Build the parameter from the type."""
         type_name = type.__qualname__
@@ -419,6 +448,7 @@ class Parameter(TypeMetadata, Serializable):
             name=name,
             type_name=type_name,
             type_cls=type_cls,
+            is_list=is_list,
             category=category.value,
             resource_type=resource_type,
             optional=optional,
@@ -427,6 +457,7 @@ class Parameter(TypeMetadata, Serializable):
             description=description or label,
             options=options,
             alias=alias,
+            ui=ui,
         )
 
     @classmethod
@@ -456,15 +487,46 @@ class Parameter(TypeMetadata, Serializable):
             description=data["description"],
             options=data["options"],
             value=data["value"],
+            ui=data.get("ui"),
         )
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        dict_value = model_to_dict(self, exclude={"options", "alias"})
+        dict_value = model_to_dict(self, exclude={"options", "alias", "ui"})
         if not self.options:
             dict_value["options"] = None
         elif isinstance(self.options, BaseDynamicOptions):
             values = self.options.option_values()
+            dict_value["options"] = [value.to_dict() for value in values]
+        else:
+            dict_value["options"] = [value.to_dict() for value in self.options]
+
+        if self.ui:
+            dict_value["ui"] = self.ui.to_dict()
+        return dict_value
+
+    async def refresh(
+        self,
+        request: Optional[RefreshOptionRequest] = None,
+        trigger: Literal["default", "http"] = "default",
+        system_app: Optional[SystemApp] = None,
+    ) -> Dict:
+        """Refresh the options of the parameter.
+
+        Args:
+            request (RefreshOptionRequest): The request to refresh the options.
+            trigger (Literal["default", "http"], optional): The trigger type.
+                Defaults to "default".
+            system_app (Optional[SystemApp], optional): The system app.
+
+        Returns:
+            Dict: The response.
+        """
+        dict_value = self.to_dict()
+        if not self.options:
+            dict_value["options"] = None
+        elif isinstance(self.options, BaseDynamicOptions):
+            values = self.options.refresh(request, trigger, system_app)
             dict_value["options"] = [value.to_dict() for value in values]
         else:
             dict_value["options"] = [value.to_dict() for value in self.options]
@@ -641,10 +703,10 @@ class BaseMetadata(BaseResource):
         ],
     )
 
-    tags: Optional[List[str]] = Field(
+    tags: Optional[Dict[str, str]] = Field(
         default=None,
         description="The tags of the operator",
-        examples=[["llm", "openai", "gpt3"]],
+        examples=[{"order": "higher-order"}, {"order": "first-order"}],
     )
 
     parameters: List[Parameter] = Field(
@@ -752,6 +814,58 @@ class BaseMetadata(BaseResource):
         dict_value["parameters"] = [
             parameter.to_dict() for parameter in self.parameters
         ]
+        return dict_value
+
+    async def refresh(
+        self,
+        request: List[RefreshOptionRequest],
+        trigger: Literal["default", "http"] = "default",
+        system_app: Optional[SystemApp] = None,
+    ) -> Dict:
+        """Refresh the metadata.
+
+        Args:
+            request (List[RefreshOptionRequest]): The refresh request
+            trigger (Literal["default", "http"]): The trigger type, how to trigger
+                the refresh
+            system_app (Optional[SystemApp]): The system app
+        """
+        executor = DefaultExecutorFactory.get_instance(system_app).create()
+
+        name_to_request = {req.name: req for req in request}
+        parameter_requests = {
+            parameter.name: name_to_request.get(parameter.name)
+            for parameter in self.parameters
+        }
+        dict_value = model_to_dict(self, exclude={"parameters"})
+        parameters = []
+        for parameter in self.parameters:
+            parameter_dict = parameter.to_dict()
+            parameter_request = parameter_requests.get(parameter.name)
+            if not parameter.options:
+                options = None
+            elif isinstance(parameter.options, BaseDynamicOptions):
+                options_obj = parameter.options
+                if options_obj.support_async(system_app, parameter_request):
+                    values = await options_obj.async_refresh(
+                        parameter_request, trigger, system_app
+                    )
+                else:
+                    values = await blocking_func_to_async(
+                        executor,
+                        options_obj.refresh,
+                        parameter_request,
+                        trigger,
+                        system_app,
+                    )
+                options = [value.to_dict() for value in values]
+            else:
+                options = [value.to_dict() for value in self.options]
+            parameter_dict["options"] = options
+            parameters.append(parameter_dict)
+
+        dict_value["parameters"] = parameters
+
         return dict_value
 
 
@@ -1033,9 +1147,58 @@ class FlowRegistry:
         """Get the registry item by the key."""
         return self._registry.get(key)
 
-    def metadata_list(self):
-        """Get the metadata list."""
-        return [item.metadata.to_dict() for item in self._registry.values()]
+    def metadata_list(
+        self,
+        tags: Optional[Dict[str, str]] = None,
+        user_name: Optional[str] = None,
+        sys_code: Optional[str] = None,
+    ) -> List[Dict]:
+        """Get the metadata list.
+
+        TODO: Support the user and system code filter.
+
+        Args:
+            tags (Optional[Dict[str, str]], optional): The tags. Defaults to None.
+            user_name (Optional[str], optional): The user name. Defaults to None.
+            sys_code (Optional[str], optional): The system code. Defaults to None.
+
+        Returns:
+            List[Dict]: The metadata list.
+        """
+        if not tags:
+            return [item.metadata.to_dict() for item in self._registry.values()]
+        else:
+            results = []
+            for item in self._registry.values():
+                node_tags = item.metadata.tags
+                is_match = True
+                if not node_tags or not isinstance(node_tags, dict):
+                    continue
+                for k, v in tags.items():
+                    if node_tags.get(k) != v:
+                        is_match = False
+                        break
+                if is_match:
+                    results.append(item.metadata.to_dict())
+            return results
+
+    async def refresh(
+        self,
+        key: str,
+        is_operator: bool,
+        request: List[RefreshOptionRequest],
+        trigger: Literal["default", "http"] = "default",
+        system_app: Optional[SystemApp] = None,
+    ) -> Dict:
+        """Refresh the metadata."""
+        if is_operator:
+            return await _get_operator_class(key).metadata.refresh(  # type: ignore
+                request, trigger, system_app
+            )
+        else:
+            return await _get_resource_class(key).metadata.refresh(
+                request, trigger, system_app
+            )
 
 
 _OPERATOR_REGISTRY: FlowRegistry = FlowRegistry()

@@ -87,7 +87,7 @@ class RecommendQuestionEntity(Model):
         default=False,
         comment="hot question would be displayed on the main page.",
     )
-    __table_args__ = (Index("idx_app_code", "app_code"),)
+    __table_args__ = (Index("idx_rec_q_app_code", "app_code"),)
 
 
 class RecommendQuestionDao(BaseDao):

@@ -4,7 +4,7 @@ import logging
 import uuid
 from contextlib import suppress
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type, Union, cast
 
 from typing_extensions import Annotated
 
@@ -17,6 +17,7 @@ from dbgpt._private.pydantic import (
     model_to_dict,
     model_validator,
 )
+from dbgpt.configs import VARIABLES_SCOPE_FLOW_PRIVATE
 from dbgpt.core.awel.dag.base import DAG, DAGNode
 from dbgpt.core.awel.dag.dag_manager import DAGMetadata
 
@@ -164,6 +165,143 @@ class FlowData(BaseModel):
     nodes: List[FlowNodeData] = Field(..., description="Nodes in the flow")
     edges: List[FlowEdgeData] = Field(..., description="Edges in the flow")
     viewport: FlowPositionData = Field(..., description="Viewport of the flow")
+
+
+class _VariablesRequestBase(BaseModel):
+    key: str = Field(
+        ...,
+        description="The key of the variable to create",
+        examples=["dbgpt.model.openai.api_key"],
+    )
+
+    label: str = Field(
+        ...,
+        description="The label of the variable to create",
+        examples=["My First OpenAI Key"],
+    )
+
+    description: Optional[str] = Field(
+        None,
+        description="The description of the variable to create",
+        examples=["Your OpenAI API key"],
+    )
+    value_type: Literal["str", "int", "float", "bool"] = Field(
+        "str",
+        description="The type of the value of the variable to create",
+        examples=["str", "int", "float", "bool"],
+    )
+    category: Literal["common", "secret"] = Field(
+        ...,
+        description="The category of the variable to create",
+        examples=["common"],
+    )
+    scope: str = Field(
+        ...,
+        description="The scope of the variable to create",
+        examples=["global"],
+    )
+    scope_key: Optional[str] = Field(
+        None,
+        description="The scope key of the variable to create",
+        examples=["dbgpt"],
+    )
+
+
+class VariablesRequest(_VariablesRequestBase):
+    """Variable request model.
+
+    For creating a new variable in the DB-GPT.
+    """
+
+    name: str = Field(
+        ...,
+        description="The name of the variable to create",
+        examples=["my_first_openai_key"],
+    )
+    value: Any = Field(
+        ..., description="The value of the variable to create", examples=["1234567890"]
+    )
+    enabled: Optional[bool] = Field(
+        True,
+        description="Whether the variable is enabled",
+        examples=[True],
+    )
+    user_name: Optional[str] = Field(None, description="User name")
+    sys_code: Optional[str] = Field(None, description="System code")
+
+
+class ParsedFlowVariables(BaseModel):
+    """Parsed variables for the flow."""
+
+    key: str = Field(
+        ...,
+        description="The key of the variable",
+        examples=["dbgpt.model.openai.api_key"],
+    )
+    name: Optional[str] = Field(
+        None,
+        description="The name of the variable",
+        examples=["my_first_openai_key"],
+    )
+    scope: str = Field(
+        ...,
+        description="The scope of the variable",
+        examples=["global"],
+    )
+    scope_key: Optional[str] = Field(
+        None,
+        description="The scope key of the variable",
+        examples=["dbgpt"],
+    )
+    sys_code: Optional[str] = Field(None, description="System code")
+    user_name: Optional[str] = Field(None, description="User name")
+
+
+class FlowVariables(_VariablesRequestBase):
+    """Variables for the flow."""
+
+    name: Optional[str] = Field(
+        None,
+        description="The name of the variable",
+        examples=["my_first_openai_key"],
+    )
+    value: Optional[Any] = Field(
+        None, description="The value of the variable", examples=["1234567890"]
+    )
+    parsed_variables: Optional[ParsedFlowVariables] = Field(
+        None, description="The parsed variables, parsed from the value"
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
+        if "parsed_variables" not in values:
+            parsed_variables = cls.parse_value_to_variables(values.get("value"))
+            if parsed_variables:
+                values["parsed_variables"] = parsed_variables
+        return values
+
+    @classmethod
+    def parse_value_to_variables(cls, value: Any) -> Optional[ParsedFlowVariables]:
+        """Parse the value to variables.
+
+        Args:
+            value (Any): The value to parse
+
+        Returns:
+            Optional[ParsedFlowVariables]: The parsed variables, None if the value is
+                invalid
+        """
+        from ...interface.variables import _is_variable_format, parse_variable
+
+        if not value or not isinstance(value, str) or not _is_variable_format(value):
+            return None
+
+        variable_dict = parse_variable(value)
+        return ParsedFlowVariables(**variable_dict)
 
 
 class State(str, Enum):
@@ -356,6 +494,12 @@ class FlowPanel(BaseModel):
     metadata: Optional[Union[DAGMetadata, Dict[str, Any]]] = Field(
         default=None, description="The metadata of the flow"
     )
+    variables: Optional[List[FlowVariables]] = Field(
+        default=None, description="The variables of the flow"
+    )
+    authors: Optional[List[str]] = Field(
+        default=None, description="The authors of the flow"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -377,6 +521,21 @@ class FlowPanel(BaseModel):
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dict."""
         return model_to_dict(self, exclude={"flow_dag"})
+
+    def get_variables_dict(self) -> List[Dict[str, Any]]:
+        """Get the variables dict."""
+        if not self.variables:
+            return []
+        return [v.dict() for v in self.variables]
+
+    @classmethod
+    def parse_variables(
+        cls, variables: Optional[List[Dict[str, Any]]] = None
+    ) -> Optional[List[FlowVariables]]:
+        """Parse the variables."""
+        if not variables:
+            return None
+        return [FlowVariables(**v) for v in variables]
 
 
 class FlowFactory:
@@ -598,10 +757,36 @@ class FlowFactory:
         dag_id: Optional[str] = None,
     ) -> DAG:
         """Build the DAG."""
+        from ..dag.base import DAGVariables, _DAGVariablesItem
+
         formatted_name = flow_panel.name.replace(" ", "_")
         if not dag_id:
             dag_id = f"{self._dag_prefix}_{formatted_name}_{flow_panel.uid}"
-        with DAG(dag_id) as dag:
+
+        default_dag_variables: Optional[DAGVariables] = None
+        if flow_panel.variables:
+            variables = []
+            for v in flow_panel.variables:
+                scope_key = v.scope_key
+                if v.scope == VARIABLES_SCOPE_FLOW_PRIVATE and not scope_key:
+                    scope_key = dag_id
+                variables.append(
+                    _DAGVariablesItem(
+                        key=v.key,
+                        name=v.name,  # type: ignore
+                        label=v.label,
+                        description=v.description,
+                        value_type=v.value_type,
+                        category=v.category,
+                        scope=v.scope,
+                        scope_key=scope_key,
+                        value=v.value,
+                        user_name=flow_panel.user_name,
+                        sys_code=flow_panel.sys_code,
+                    )
+                )
+            default_dag_variables = DAGVariables(items=variables)
+        with DAG(dag_id, default_dag_variables=default_dag_variables) as dag:
             for key, task in key_to_tasks.items():
                 if not task._node_id:
                     task.set_node_id(dag._new_node_id())

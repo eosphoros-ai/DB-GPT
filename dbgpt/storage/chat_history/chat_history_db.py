@@ -1,4 +1,5 @@
 """Chat history database model."""
+
 import logging
 from datetime import datetime
 from typing import Optional
@@ -56,7 +57,7 @@ class ChatHistoryEntity(Model):
     Index("idx_q_user", "user_name")
     Index("idx_q_mode", "chat_mode")
     Index("idx_q_conv", "summary")
-    Index("idx_app_code", "app_code")
+    Index("idx_chat_his_app_code", "app_code")
 
 
 class ChatHistoryMessageEntity(Model):
