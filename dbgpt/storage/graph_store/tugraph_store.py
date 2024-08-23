@@ -61,23 +61,23 @@ class TuGraphStore(GraphStoreBase):
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
         self._config = config
-        self._host = os.getenv("TUGRAPH_HOST") or config.host
-        self._port = int(os.getenv("TUGRAPH_PORT",config.port))
-        self._username = os.getenv("TUGRAPH_USERNAME") or config.username
-        self._password = os.getenv("TUGRAPH_PASSWORD") or config.password
+        self._host = os.getenv("TUGRAPH_HOST", config.host)
+        self._port = int(os.getenv("TUGRAPH_PORT", config.port))
+        self._username = os.getenv("TUGRAPH_USERNAME", config.username)
+        self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
         self._summary_enabled = (
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", '').lower() == 'true'
             or config.summary_enabled
         )
         self._plugin_names = config.plugin_names
         self._node_label = (
-            os.getenv("TUGRAPH_VERTEX_TYPE") or config.vertex_type
+            os.getenv("TUGRAPH_VERTEX_TYPE", config.vertex_type)
         )
         self._edge_label = (
-            os.getenv("TUGRAPH_EDGE_TYPE") or config.edge_type
+            os.getenv("TUGRAPH_EDGE_TYPE", config.edge_type)
         )
         self.edge_name_key = (
-            os.getenv("TUGRAPH_EDGE_NAME_KEY") or config.edge_name_key
+            os.getenv("TUGRAPH_EDGE_NAME_KEY", config.edge_name_key)
         )
         self._graph_name = config.name
         self.conn = TuGraphConnector.from_uri_db(
