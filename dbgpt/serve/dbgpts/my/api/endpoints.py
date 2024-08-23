@@ -174,7 +174,7 @@ async def query_page(
     return Result.succ(service.get_list_by_page(request, page, page_size))
 
 
-@router.post("uninstall", response_model=Result[str])
+@router.post("/uninstall", response_model=Result[str])
 async def agent_uninstall(
     name: str,
     type=str,

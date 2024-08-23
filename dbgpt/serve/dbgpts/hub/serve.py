@@ -27,7 +27,7 @@ class Serve(BaseServe):
     def __init__(
         self,
         system_app: SystemApp,
-        api_prefix: Optional[str] = f"/api/v1/serve/{APP_NAME}",
+        api_prefix: Optional[str] = f"/api/v1/serve/dbgpts/hub",
         api_tags: Optional[List[str]] = None,
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
         try_create_tables: Optional[bool] = False,
