@@ -121,13 +121,13 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
 
   const lockDBType = useMemo(() => !!editValue || !!choiceDBType, [editValue, choiceDBType]);
   return (
-    <Modal open={open} width={400} title={editValue ? t('Edit') : t('create_database')} maskClosable={false} footer={null} onCancel={onClose}>
+    <Modal open={open} width={800} title={editValue ? t('Edit') : t('create_database')} maskClosable={false} footer={null} onCancel={onClose}>
       <Form form={form} className="pt-2" labelCol={{ span: 6 }} labelAlign="left" onFinish={onFinish}>
-        <Form.Item name="db_type" label="DB Type" className="mb-3" rules={[{ required: true }]}>
+        <Form.Item name="db_type" label="DB Type" className="mb-6" rules={[{ required: true }]}>
           <Select aria-readonly={lockDBType} disabled={lockDBType} options={dbTypeList} />
         </Form.Item>
         {form.getFieldValue('db_type') === 'omc' ? (
-          <Form.Item name="db_name" label="DB Name" className="mb-3" rules={[{ required: true }]}>
+          <Form.Item name="db_name" label="DB Name" className="mb-6" rules={[{ required: true }]}>
             <Select
               optionRender={(option, { index }) => {
                 const item = omcDBList[index] as any;
@@ -166,37 +166,37 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
             />
           </Form.Item>
         ) : (
-          <Form.Item name="db_name" label="DB Name" className="mb-3" rules={[{ required: true }]}>
+          <Form.Item name="db_name" label="DB Name" className="mb-6" rules={[{ required: true }]}>
             <Input readOnly={!!editValue} disabled={!!editValue} />
           </Form.Item>
         )}
         {fileDb === true && (
-          <Form.Item name="db_path" label="Path" className="mb-3" rules={[{ required: true }]}>
+          <Form.Item name="db_path" label="Path" className="mb-6" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
         )}
         {fileDb === false && form.getFieldValue('db_type') !== 'omc' && (
           <>
-            <Form.Item name="db_user" label="Username" className="mb-3" rules={[{ required: true }]}>
+            <Form.Item name="db_user" label="Username" className="mb-6" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item name="db_pwd" label="Password" className="mb-3" rules={[{ required: false }]}>
+            <Form.Item name="db_pwd" label="Password" className="mb-6" rules={[{ required: false }]}>
               <Input type="password" />
             </Form.Item>
-            <Form.Item name="db_host" label="Host" className="mb-3" rules={[{ required: true }]}>
+            <Form.Item name="db_host" label="Host" className="mb-6" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item name="db_port" label="Port" className="mb-3" rules={[{ required: true }]}>
+            <Form.Item name="db_port" label="Port" className="mb-6" rules={[{ required: true }]}>
               <InputNumber min={1} step={1} max={65535} />
             </Form.Item>
           </>
         )}
         {form.getFieldValue('db_type') === 'omc' && (
-          <Form.Item name="db_arn" label="Arn" className="mb-3" rules={[{ required: true }]}>
+          <Form.Item name="db_arn" label="Arn" className="mb-6" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
         )}
-        <Form.Item name="comment" label="Remark" className="mb-3">
+        <Form.Item name="comment" label="Remark" className="mb-6">
           <Input />
         </Form.Item>
         <Form.Item className="flex flex-row-reverse pt-1 mb-0">
