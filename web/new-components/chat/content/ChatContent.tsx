@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
+import { GPTVis } from '@antv/gpt-vis';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
@@ -42,7 +42,7 @@ type DBGPTView = {
   err_msg?: string;
 };
 
-type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
+type MarkdownComponent = Parameters<typeof GPTVis>["0"]["components"];
 
 const pluginViewStatusMapper: Record<DBGPTView['status'], { bgClass: string; icon: React.ReactNode }> = {
   todo: {
@@ -143,15 +143,24 @@ const ChatContent: React.FC<{
         const { bgClass, icon } = pluginViewStatusMapper[status] ?? {};
         return (
           <div className="bg-white dark:bg-[#212121] rounded-lg overflow-hidden my-2 flex flex-col lg:max-w-[80%]">
-            <div className={classNames('flex px-4 md:px-6 py-2 items-center text-white text-sm', bgClass)}>
+            <div
+              className={classNames(
+                "flex px-4 md:px-6 py-2 items-center text-white text-sm",
+                bgClass
+              )}
+            >
               {name}
               {icon}
             </div>
             {result ? (
               <div className="px-4 md:px-6 py-4 text-sm">
-                <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
-                  {result ?? ''}
-                </ReactMarkdown>
+                <GPTVis
+                  components={markdownComponents}
+                  rehypePlugins={[rehypeRaw]}
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {result ?? ""}
+                </GPTVis>
               </div>
             ) : (
               <div className="px-4 md:px-6 py-4 text-sm">{err_msg}</div>

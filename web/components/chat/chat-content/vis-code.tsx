@@ -1,4 +1,4 @@
-import ReactMarkdown from 'react-markdown';
+import { GPTVis } from '@antv/gpt-vis';
 import remarkGfm from 'remark-gfm';
 import markdownComponents from './config';
 import { CodePreview } from './code-preview';
@@ -29,9 +29,12 @@ function VisCode({ data }: Props) {
           {data.code.map((item, index) => (
             <div
               key={index}
-              className={classNames('px-4 py-2 text-[#121417] dark:text-white cursor-pointer', {
-                'bg-white dark:bg-theme-dark-container': index === show,
-              })}
+              className={classNames(
+                "px-4 py-2 text-[#121417] dark:text-white cursor-pointer",
+                {
+                  "bg-white dark:bg-theme-dark-container": index === show,
+                }
+              )}
               onClick={() => {
                 setShow(index);
               }}
@@ -53,13 +56,18 @@ function VisCode({ data }: Props) {
       <div>
         <div className="flex">
           <div className="bg-white dark:bg-theme-dark-container px-4 py-2 text-[#121417] dark:text-white">
-            {t('Terminal')} {data.exit_success ? <CheckOutlined className="text-green-600" /> : <CloseOutlined className="text-red-600" />}
+            {t("Terminal")}{" "}
+            {data.exit_success ? (
+              <CheckOutlined className="text-green-600" />
+            ) : (
+              <CloseOutlined className="text-red-600" />
+            )}
           </div>
         </div>
         <div className="p-4 max-h-72 overflow-y-auto whitespace-normal bg-white dark:dark:bg-theme-dark">
-          <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+          <GPTVis components={markdownComponents} remarkPlugins={[remarkGfm]}>
             {data.log}
-          </ReactMarkdown>
+          </GPTVis>
         </div>
       </div>
     </div>
