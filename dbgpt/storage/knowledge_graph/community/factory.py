@@ -21,8 +21,8 @@ class CommunityStoreAdapterFactory:
             - graph_store_type: graph store type Memory, TuGraph, Neo4j
         """
 
-        if graph_store == TuGraphStore:
-            return TuGraphCommunityStoreAdapter()
+        if isinstance(graph_store, TuGraphStore):
+            return TuGraphCommunityStoreAdapter(graph_store)
         else:
             raise Exception(
                 "create community store adapter for %s failed",
