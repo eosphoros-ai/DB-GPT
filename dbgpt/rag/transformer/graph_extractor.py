@@ -11,7 +11,8 @@ from dbgpt.storage.vector_store.base import VectorStoreBase
 logger = logging.getLogger(__name__)
 
 GRAPH_EXTRACT_PT = (
-    "Given the TEXT provided below, extract and summarize knowledge in the following forms:\n"
+    "Given the HISTORY provided before TEXT (maybe empty), which means relevant information of TEXT, "
+    "extract TEXT and summarize knowledge in the following forms:\n"
     "1. Entities: (entity_name, entity_type, entity_description)\n"
     "2. Relationships: (source_entity, target_entity, relationship_description, relationship_strength)\n"
     "3. Keywords: [keyword1, keyword2, ...]\n"
@@ -48,6 +49,7 @@ GRAPH_EXTRACT_PT = (
     "\n"
     "---------------------\n"
     "Example:\n"
+    "HISTORY: This is a story about Philz Coffee.\n"
     "TEXT: Philz Coffee was founded by Phil Jaber in Berkeley, California in 1978. Known for its unique blends, Philz has expanded to multiple locations across the United States. Phil Jaber's son, Jacob Jaber, became the CEO in 2005 and has led the company through significant growth.\n"
     "\n"
     "Entities:\n"
@@ -74,6 +76,7 @@ GRAPH_EXTRACT_PT = (
     "[Phil Jaber, Phil Jaber is the visionary founder of Philz Coffee, establishing the company in Berkeley, California in 1978. His innovative approach to coffee blending and preparation laid the foundation for Philz Coffee's success and unique position in the market. Phil later passed the leadership of the company to his son, Jacob Jaber, fostering a family legacy in the coffee business.]\n"
     "\n"
     "---------------------\n"
+    "HISTORY: {history}\n"
     "TEXT: {text}\n"
     "RESULTS:\n"
 )
