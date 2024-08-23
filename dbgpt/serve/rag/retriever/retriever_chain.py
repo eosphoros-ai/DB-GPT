@@ -85,7 +85,10 @@ class RetrieverChain(BaseRetriever):
         Return:
             List[Chunk]: list of chunks with score
         """
-        candidates_with_score = await blocking_func_to_async(
-            self._executor, self._retrieve_with_score, query, score_threshold, filters
-        )
-        return candidates_with_score
+        for retriever in self._retrievers:
+            candidates_with_scores = await retriever.aretrieve_with_scores(
+                query=query, score_threshold=score_threshold, filters=filters
+            )
+            if candidates_with_scores:
+                return candidates_with_scores
+        return []
