@@ -268,7 +268,7 @@ class UserRecentAppsEntity(Model):
     )
     last_accessed = Column(DateTime, default=None, comment="last access time")
     __table_args__ = (
-        Index("idx_app_code", "app_code"),
+        Index("idx_user_r_app_code", "app_code"),
         Index("idx_user_code", "user_code"),
         Index("idx_last_accessed", "last_accessed"),
     )
@@ -451,9 +451,11 @@ class UserRecentAppsDao(BaseDao):
                         "sys_code": sys_code,
                         "user_code": user_code,
                         "last_accessed": last_accessed,
-                        "gmt_create": existing_app.gmt_create
-                        if existing_app
-                        else new_app.gmt_create,
+                        "gmt_create": (
+                            existing_app.gmt_create
+                            if existing_app
+                            else new_app.gmt_create
+                        ),
                         "gmt_modified": last_accessed,
                     }
                 )
@@ -655,9 +657,9 @@ class GptsAppDao(BaseDao):
 
             apps = sorted(
                 apps,
-                key=lambda obj: float("-inf")
-                if obj.hot_value is None
-                else obj.hot_value,
+                key=lambda obj: (
+                    float("-inf") if obj.hot_value is None else obj.hot_value
+                ),
                 reverse=True,
             )
             app_resp.total_count = total_count
@@ -696,19 +698,19 @@ class GptsAppDao(BaseDao):
                 for item in app_details
             ],
             "published": app_info.published,
-            "param_need": json.loads(app_info.param_need)
-            if app_info.param_need
-            else None,
-            "hot_value": hot_app_map.get(app_info.app_code, 0)
-            if hot_app_map is not None
-            else 0,
+            "param_need": (
+                json.loads(app_info.param_need) if app_info.param_need else None
+            ),
+            "hot_value": (
+                hot_app_map.get(app_info.app_code, 0) if hot_app_map is not None else 0
+            ),
             "owner_name": app_info.user_code,
             "owner_avatar_url": owner_avatar_url,
-            "recommend_questions": [
-                RecommendQuestion.from_entity(item) for item in recommend_questions
-            ]
-            if recommend_questions
-            else [],
+            "recommend_questions": (
+                [RecommendQuestion.from_entity(item) for item in recommend_questions]
+                if recommend_questions
+                else []
+            ),
             "admins": [],
         }
 
@@ -848,9 +850,9 @@ class GptsAppDao(BaseDao):
                 updated_at=gpts_app.updated_at,
                 icon=gpts_app.icon,
                 published="true" if gpts_app.published else "false",
-                param_need=json.dumps(gpts_app.param_need)
-                if gpts_app.param_need
-                else None,
+                param_need=(
+                    json.dumps(gpts_app.param_need) if gpts_app.param_need else None
+                ),
             )
             session.add(app_entity)
 
@@ -869,9 +871,11 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=None
-                        if item.llm_strategy_value is None
-                        else json.dumps(tuple(item.llm_strategy_value.split(","))),
+                        llm_strategy_value=(
+                            None
+                            if item.llm_strategy_value is None
+                            else json.dumps(tuple(item.llm_strategy_value.split(",")))
+                        ),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )
@@ -915,7 +919,7 @@ class GptsAppDao(BaseDao):
             app_entity.team_mode = gpts_app.team_mode
             app_entity.icon = gpts_app.icon
             app_entity.team_context = _parse_team_context(gpts_app.team_context)
-            app_entity.param_need = (json.dumps(gpts_app.param_need),)
+            app_entity.param_need = json.dumps(gpts_app.param_need)
             session.merge(app_entity)
 
             old_details = session.query(GptsAppDetailEntity).filter(
@@ -936,9 +940,11 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=None
-                        if item.llm_strategy_value is None
-                        else json.dumps(tuple(item.llm_strategy_value.split(","))),
+                        llm_strategy_value=(
+                            None
+                            if item.llm_strategy_value is None
+                            else json.dumps(tuple(item.llm_strategy_value.split(",")))
+                        ),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )

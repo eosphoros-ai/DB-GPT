@@ -1,4 +1,4 @@
--- Full SQL of v0.5.9, please not modify this file(It must be same as the file in the release package)
+-- Full SQL of v0.5.10, please not modify this file(It must be same as the file in the release package)
 
 CREATE
 DATABASE IF NOT EXISTS dbgpt;
@@ -16,11 +16,10 @@ CREATE TABLE IF NOT EXISTS `knowledge_space`
     `id`           int          NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
     `name`         varchar(100) NOT NULL COMMENT 'knowledge space name',
     `vector_type`  varchar(50)  NOT NULL COMMENT 'vector type',
+    `domain_type`  varchar(50)  NOT NULL COMMENT 'domain type',
     `desc`         varchar(500) NOT NULL COMMENT 'description',
     `owner`        varchar(100) DEFAULT NULL COMMENT 'owner',
     `context`      TEXT         DEFAULT NULL COMMENT 'context argument',
-    `user_id`         varchar(255) DEFAULT NULL COMMENT 'knowledge space owner',
-    `user_ids`    TEXT DEFAULT NULL COMMENT 'knowledge space members',
     `gmt_created`  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
     `gmt_modified` TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     PRIMARY KEY (`id`),
@@ -32,14 +31,12 @@ CREATE TABLE IF NOT EXISTS `knowledge_document`
     `id`           int          NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
     `doc_name`     varchar(100) NOT NULL COMMENT 'document path name',
     `doc_type`     varchar(50)  NOT NULL COMMENT 'doc type',
-    `doc_token`     varchar(100)  NOT NULL COMMENT 'doc token',
     `space`        varchar(50)  NOT NULL COMMENT 'knowledge space',
     `chunk_size`   int          NOT NULL COMMENT 'chunk size',
     `last_sync`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'last sync time',
     `status`       varchar(50)  NOT NULL COMMENT 'status TODO,RUNNING,FAILED,FINISHED',
     `content`      LONGTEXT     NOT NULL COMMENT 'knowledge embedding sync result',
     `result`       TEXT NULL COMMENT 'knowledge content',
-    `questions`    TEXT NULL COMMENT 'document related questions',
     `vector_ids`   LONGTEXT NULL COMMENT 'vector_ids',
     `summary`      LONGTEXT NULL COMMENT 'knowledge summary',
     `gmt_created`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
@@ -55,7 +52,6 @@ CREATE TABLE IF NOT EXISTS `document_chunk`
     `doc_type`     varchar(50)  NOT NULL COMMENT 'doc type',
     `document_id`  int          NOT NULL COMMENT 'document parent id',
     `content`      longtext     NOT NULL COMMENT 'chunk content',
-    `questions`    text         NULL COMMENT 'chunk related questions',
     `meta_info`    varchar(200) NOT NULL COMMENT 'metadata info',
     `gmt_created`  timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
     `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
@@ -77,9 +73,6 @@ CREATE TABLE IF NOT EXISTS `connect_config`
     `db_pwd`   varchar(255) DEFAULT NULL COMMENT 'db password',
     `comment`  text COMMENT 'db comment',
     `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
-    `user_name`  varchar(255) DEFAULT NULL COMMENT 'user name',
-    `user_id`  varchar(255) DEFAULT NULL COMMENT 'user id',
-
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_db` (`db_name`),
     KEY        `idx_q_db_type` (`db_type`)
@@ -94,7 +87,6 @@ CREATE TABLE IF NOT EXISTS `chat_history`
     `user_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'interlocutor',
     `messages`  text COLLATE utf8mb4_unicode_ci COMMENT 'Conversation details',
     `message_ids` text COLLATE utf8mb4_unicode_ci COMMENT 'Message id list, split by comma',
-    `app_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'App unique code',
     `sys_code`  varchar(128)                            DEFAULT NULL COMMENT 'System code',
     `gmt_created`  timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
     `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
@@ -125,11 +117,6 @@ CREATE TABLE IF NOT EXISTS `chat_feed_back`
     `question`        longtext     DEFAULT NULL COMMENT 'User question',
     `knowledge_space` varchar(128) DEFAULT NULL COMMENT 'Knowledge space name',
     `messages`        longtext     DEFAULT NULL COMMENT 'The details of user feedback',
-    `message_id`      varchar(255)  NULL COMMENT 'Message id',
-    `feedback_type`   varchar(50)  NULL COMMENT 'Feedback type like or unlike',
-    `reason_types`    varchar(255)  NULL COMMENT 'Feedback reason categories',
-    `remark`          text          NULL COMMENT 'Feedback remark',
-    `user_code`       varchar(128)  NULL COMMENT 'User code',
     `user_name`       varchar(128) DEFAULT NULL COMMENT 'User name',
     `gmt_created`     timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
     `gmt_modified`    timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
@@ -179,20 +166,17 @@ CREATE TABLE IF NOT EXISTS `plugin_hub`
 CREATE TABLE IF NOT EXISTS `prompt_manage`
 (
     `id`             int(11) NOT NULL AUTO_INCREMENT,
-    `chat_scene`     varchar(100) DEFAULT NULL COMMENT 'Chat scene',
-    `sub_chat_scene` varchar(100) DEFAULT NULL COMMENT 'Sub chat scene',
-    `prompt_type`    varchar(100) DEFAULT NULL COMMENT 'Prompt type: common or private',
-    `prompt_name`    varchar(256) DEFAULT NULL COMMENT 'prompt name',
-    `prompt_code`    varchar(256) DEFAULT NULL COMMENT 'prompt code',
-    `content`        longtext COMMENT 'Prompt content',
-    `input_variables` varchar(1024) DEFAULT NULL COMMENT 'Prompt input variables(split by comma))',
-    `response_schema` text  DEFAULT NULL COMMENT 'Prompt response schema',
-    `model` varchar(128) DEFAULT NULL COMMENT 'Prompt model name(we can use different models for different prompt)',
-    `prompt_language` varchar(32) DEFAULT NULL COMMENT 'Prompt language(eg:en, zh-cn)',
-    `prompt_format` varchar(32) DEFAULT 'f-string' COMMENT 'Prompt format(eg: f-string, jinja2)',
-    `prompt_desc`    varchar(512) DEFAULT NULL COMMENT 'Prompt description',
-    `user_code`     varchar(128) DEFAULT NULL COMMENT 'User code',
-    `user_name`      varchar(128) DEFAULT NULL COMMENT 'User name',
+    `chat_scene`     varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Chat scene',
+    `sub_chat_scene` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Sub chat scene',
+    `prompt_type`    varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt type: common or private',
+    `prompt_name`    varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'prompt name',
+    `content`        longtext COLLATE utf8mb4_unicode_ci COMMENT 'Prompt content',
+    `input_variables` varchar(1024) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt input variables(split by comma))',
+    `model` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt model name(we can use different models for different prompt)',
+    `prompt_language` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt language(eg:en, zh-cn)',
+    `prompt_format` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT 'f-string' COMMENT 'Prompt format(eg: f-string, jinja2)',
+    `prompt_desc`    varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt description',
+    `user_name`      varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User name',
     `sys_code`       varchar(128)                            DEFAULT NULL COMMENT 'System code',
     `gmt_created`    timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
     `gmt_modified`   timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
@@ -247,15 +231,11 @@ CREATE TABLE `gpts_messages` (
   `receiver` varchar(255) NOT NULL COMMENT 'Who receive message in the current conversation turn',
   `model_name` varchar(255) DEFAULT NULL COMMENT 'message generate model',
   `rounds` int(11) NOT NULL COMMENT 'dialogue turns',
-  `is_success` int(4)  NULL DEFAULT 0 COMMENT 'agent message is success',
-  `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
-  `app_name` varchar(255) NOT NULL COMMENT 'Current AI assistant name',
   `content` text COMMENT 'Content of the speech',
   `current_goal` text COMMENT 'The target corresponding to the current message',
   `context` text COMMENT 'Current conversation context',
   `review_info` text COMMENT 'Current conversation review info',
   `action_report` text COMMENT 'Current conversation action report',
-  `resource_info` text DEFAULT NULL  COMMENT 'Current conversation resource info',
   `role` varchar(255) DEFAULT NULL COMMENT 'The role of the current message content',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
@@ -328,9 +308,6 @@ CREATE TABLE `gpts_app` (
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
   `icon` varchar(1024) DEFAULT NULL COMMENT 'app icon, url',
-  `published` varchar(64) DEFAULT 'false' COMMENT 'Has it been published?',
-  `param_need` text DEFAULT NULL COMMENT 'Parameter information supported by the application',
-  `admins` text DEFAULT NULL COMMENT 'administrator',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts_app` (`app_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -364,37 +341,26 @@ CREATE TABLE `gpts_app_detail` (
   UNIQUE KEY `uk_gpts_app_agent_node` (`app_name`,`agent_name`,`node_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- dbgpt.recommend_question definition
-CREATE TABLE `recommend_question` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
-  `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
-  `gmt_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
-  `app_code` varchar(255) DEFAULT NULL COMMENT 'Current AI assistant code',
-  `question` text DEFAULT NULL COMMENT 'question',
-  `user_code` int(11) NOT NULL COMMENT 'user code',
-  `sys_code` varchar(255) NOT NULL COMMENT 'system app code',
-  `valid` varchar(10) DEFAULT 'true' COMMENT 'is it effective，true/false',
-  `chat_mode` varchar(255) DEFAULT NULL COMMENT 'Conversation scene mode，chat_knowledge...',
-  `params` text DEFAULT NULL COMMENT 'question param',
-  `is_hot_question` varchar(10) DEFAULT 'false' COMMENT 'Is it a popular recommendation question?',
-  PRIMARY KEY (`id`),
-  KEY `idx_app_code` (`app_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT="AI application related recommendation issues";
 
---dbgpt.user_recent_apps definition
-CREATE TABLE `user_recent_apps` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
-  `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
-  `gmt_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
-  `app_code` varchar(255) DEFAULT NULL COMMENT 'AI assistant code',
-  `last_accessed` timestamp NULL DEFAULT NULL COMMENT 'User recent usage time',
-  `user_code` varchar(255) DEFAULT NULL COMMENT 'user code',
-  `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app code',
+-- For deploy model cluster of DB-GPT(StorageModelRegistry)
+CREATE TABLE IF NOT EXISTS `dbgpt_cluster_registry_instance` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `model_name` varchar(128) NOT NULL COMMENT 'Model name',
+  `host` varchar(128) NOT NULL COMMENT 'Host of the model',
+  `port` int(11) NOT NULL COMMENT 'Port of the model',
+  `weight` float DEFAULT 1.0 COMMENT 'Weight of the model',
+  `check_healthy` tinyint(1) DEFAULT 1 COMMENT 'Whether to check the health of the model',
+  `healthy` tinyint(1) DEFAULT 0 COMMENT 'Whether the model is healthy',
+  `enabled` tinyint(1) DEFAULT 1 COMMENT 'Whether the model is enabled',
+  `prompt_template` varchar(128) DEFAULT NULL COMMENT 'Prompt template for the model instance',
+  `last_heartbeat` datetime DEFAULT NULL COMMENT 'Last heartbeat time of the model instance',
+  `user_name` varchar(128) DEFAULT NULL COMMENT 'User name',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
+  `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+  `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record update time',
   PRIMARY KEY (`id`),
-  KEY `idx_app_code` (`app_code`),
-  KEY `idx_last_accessed` (`last_accessed`),
-  KEY `idx_user_code` (`user_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User recently used apps'
+  UNIQUE KEY `uk_model_instance` (`model_name`, `host`, `port`, `sys_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='Cluster model instance table, for registering and managing model instances';
 
 
 CREATE
