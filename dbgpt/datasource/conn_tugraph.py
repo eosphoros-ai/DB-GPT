@@ -23,12 +23,14 @@ class TuGraphConnector(BaseConnector):
     def create_graph(self, graph_name: str) -> None:
         """Create a new graph."""
         # run the query to get vertex labels
-        
-        with self._driver.session(database="default") as session:
-            graph_list = session.run("CALL dbms.graph.listGraphs()").data()
-            exists = any(item["graph_name"] == graph_name for item in graph_list)
-            if not exists:
-                session.run(f"CALL dbms.graph.createGraph('{graph_name}', '', 2048)")
+        try:
+            with self._driver.session(database="default") as session:
+                graph_list = session.run("CALL dbms.graph.listGraphs()").data()
+                exists = any(item["graph_name"] == graph_name for item in graph_list)
+                if not exists:
+                    session.run(f"CALL dbms.graph.createGraph('{graph_name}', '', 2048)")
+        except Exception as e:
+            raise Exception(f"Failed to create graph '{graph_name}': {str(e)}")
 
     def delete_graph(self, graph_name: str) -> None:
         """Delete a graph."""
@@ -91,8 +93,11 @@ class TuGraphConnector(BaseConnector):
 
     def run(self, query: str, fetch: str = "all") -> List:
         with self._driver.session(database=self._graph) as session:
-            result = session.run(query)
-            return list(result)
+            try:
+                result = session.run(query)
+                return list(result)
+            except Exception as e:
+                raise Exception(f"Query execution failed: {e}")
             
     def run_stream(self, query: str) -> Generator:
         """Run GQL."""
