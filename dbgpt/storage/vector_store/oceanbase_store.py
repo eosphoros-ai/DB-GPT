@@ -718,6 +718,8 @@ class OceanBaseStore(VectorStoreBase):
         if vector_store_config.embedding_fn is None:
             raise ValueError("embedding_fn is required for OceanBaseStore")
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         self.embeddings = vector_store_config.embedding_fn
         self.collection_name = vector_store_config.name
         vector_store_config = vector_store_config.dict()
@@ -759,6 +761,10 @@ class OceanBaseStore(VectorStoreBase):
             collection_stat=self.collection_stat,
             enable_normalize_vector=self.OB_ENABLE_NORMALIZE_VECTOR,
         )
+
+    def get_config(self) -> OceanBaseConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None, **kwargs: Any

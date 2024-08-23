@@ -8,10 +8,11 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
-from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
+from dbgpt.storage.graph_store.base import GraphStoreConfig, GraphStoreBase
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
-from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
+    KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
@@ -36,8 +37,9 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def __init__(self, config: BuiltinKnowledgeGraphConfig):
         """Create builtin knowledge graph instance."""
-        self._config = config
         super().__init__()
+        self._config = config
+
         self._llm_client = config.llm_client
         if not self._llm_client:
             raise ValueError("No llm client provided.")
@@ -45,17 +47,21 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._model_name = config.model_name
         self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
-        self._graph_store_type = (
-            os.getenv("GRAPH_STORE_TYPE", "TuGraph") or config.graph_store_type
-        )
+        self._graph_store = self.__init_graph_store(config)
 
+    def __init_graph_store(self, config) -> GraphStoreBase:
         def configure(cfg: GraphStoreConfig):
-            cfg.name = self._config.name
-            cfg.embedding_fn = self._config.embedding_fn
+            cfg.name = config.name
+            cfg.embedding_fn = config.embedding_fn
 
-        self._graph_store: GraphStoreBase = GraphStoreFactory.create(
-            self._graph_store_type, configure
+        graph_store_type = (
+            os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
         )
+        return GraphStoreFactory.create(graph_store_type, configure)
+
+    def get_config(self) -> BuiltinKnowledgeGraphConfig:
+        """Get the knowledge graph config."""
+        return self._config
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist triplets to graph store."""
@@ -113,29 +119,33 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store.explore(keywords, limit=topk)
+        subgraph = self._graph_store.explore(keywords, limit=topk).format()
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
+        if not subgraph:
+            return []
+
         content = (
-            "The following vertices and edges data after [Subgraph Data] "
+            "The following entities and relations provided after [SUBGRAPH] "
             "are retrieved from the knowledge graph based on the keywords:\n"
-            f"Keywords:\n{','.join(keywords)}\n"
+            f"\"{','.join(keywords)}\".\n"
             "---------------------\n"
-            "You can refer to the sample vertices and edges to understand "
-            "the real knowledge graph data provided by [Subgraph Data].\n"
-            "Sample vertices:\n"
+            "The following examples after [ENTITIES] and [RELATIONS] that "
+            "can help you understand the data format of the knowledge graph, "
+            "but do not use them in the answer.\n"
+            "[ENTITIES]:\n"
             "(alice)\n"
             "(bob:{age:28})\n"
             '(carry:{age:18;role:"teacher"})\n\n'
-            "Sample edges:\n"
+            "[RELATIONS]:\n"
             "(alice)-[reward]->(alice)\n"
             '(alice)-[notify:{method:"email"}]->'
             '(carry:{age:18;role:"teacher"})\n'
             '(bob:{age:28})-[teach:{course:"math";hour:180}]->(alice)\n'
             "---------------------\n"
-            f"Subgraph Data:\n{subgraph.format()}\n"
+            f"[SUBGRAPH]:\n{subgraph}\n"
         )
-        return [Chunk(content=content, metadata=subgraph.schema())]
+        return [Chunk(content=content)]
 
     def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Query graph."""
@@ -143,5 +153,11 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def delete_vector_name(self, index_name: str):
         """Delete vector name."""
-        logger.info(f"Remove graph index {index_name}")
+        logger.info(f"Remove graph {index_name}")
         self._graph_store.drop()
+
+        logger.info(f"Clean keyword extractor")
+        self._keyword_extractor.clean()
+
+        logger.info(f"Clean triplet extractor")
+        self._triplet_extractor.clean()

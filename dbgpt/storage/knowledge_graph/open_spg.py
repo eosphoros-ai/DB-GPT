@@ -24,6 +24,7 @@ class OpenSPG(KnowledgeGraphBase):
 
     def __init__(self, config: OpenSPGConfig):
         """Initialize the OpenSPG with config details."""
+        super().__init__()
         pass
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:

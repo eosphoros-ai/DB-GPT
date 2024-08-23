@@ -64,6 +64,8 @@ class PGVectorStore(VectorStoreBase):
                 "Please install the `langchain` package to use the PGVector."
             )
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         self.connection_string = vector_store_config.connection_string
         self.embeddings = vector_store_config.embedding_fn
         self.collection_name = vector_store_config.name
@@ -73,6 +75,10 @@ class PGVectorStore(VectorStoreBase):
             collection_name=self.collection_name,
             connection_string=self.connection_string,
         )
+
+    def get_config(self) -> PGVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None
