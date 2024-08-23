@@ -136,6 +136,7 @@ class TuGraphStore(GraphStoreBase):
                         f"'id', ['id',string,false],"
                         f"['name',string,false],"
                         f"['_document_id',string,true],"
+                        f"['_chunk_id',string,true],"
                         f"['_community_id',string,true],"
                         f"['_weight',double,true],"
                         f"['description',string,true])"
@@ -212,6 +213,7 @@ class TuGraphStore(GraphStoreBase):
                 'name': escape_quotes(node.vid),
                 'description': escape_quotes(node.get_prop('description')) or '',
                 '_document_id': '0',
+                '_chunk_id': '0',
                 '_community_id': '1',
                 '_weight': 10
             })
@@ -290,7 +292,7 @@ class TuGraphStore(GraphStoreBase):
 
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""
-
+        
         def _format_paths(paths):
             formatted_paths = []
             for path in paths:

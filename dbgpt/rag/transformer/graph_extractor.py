@@ -7,6 +7,7 @@ from typing import List, Optional
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.llm_extractor import LLMExtractor
 from dbgpt.storage.vector_store.base import VectorStoreBase
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +124,7 @@ class GraphExtractor(LLMExtractor):
     def _parse_response(self, text: str, limit: Optional[int] = None) -> List[dict]:
         results = []
         current_section = None
-
+        graph = MemoryGraph()
         for line in text.split("\n"):
             line = line.strip()
             if line in [
@@ -150,8 +151,10 @@ class GraphExtractor(LLMExtractor):
                                 },
                             }
                         )
+                        vertex = Vertex(entity_name,description=entity_description)
+                        graph.upsert_vertex(vertex)
                 elif current_section == "Relationships":
-                    match = re.match(r"\((.*?),(.*?),(.*?),(\d+)\)", line)
+                    match = re.match(r"\s*\((.*?),\s*(.*?),\s*(.*?),\s*(\d+)\)\s*", line)
                     if match:
                         source, target, description, strength = [
                             part.strip() for part in match.groups()
@@ -167,6 +170,8 @@ class GraphExtractor(LLMExtractor):
                                 },
                             }
                         )
+                        edge = Edge(source,target,label=description,description = description)
+                        graph.append_edge(edge)
                 elif current_section == "Keywords":
                     keywords = [k.strip() for k in line.strip("[]").split(",")]
                     results.append({"type": "keywords", "data": keywords})
@@ -182,9 +187,9 @@ class GraphExtractor(LLMExtractor):
                         )
 
             if limit and len(results) >= limit:
-                return results
+                return graph
 
-        return results
+        return graph
 
     def clean(self):
         self._chunk_history.delete_vector_name(self._vector_space)

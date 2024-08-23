@@ -119,38 +119,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         # Load documents as chunks
-        memory_graph = MemoryGraph()
         # todo add doc node
         for chunk in chunks:
             # Extract triplets from each chunk
-            triplets = await self._triplet_extractor.extract(chunk.content)
+            graph = await self._triplet_extractor.extract(chunk.content)
             # todo add chunk node
             # todo add relation doc-chunk
-            for triplet in triplets:
-                # Insert each triplet into the graph store
-                # if triplet.get("type") == "triplet":
-                #     data = triplet.get("data")
-                #     self._graph_store.insert_triplet(*data)
-                if triplet.get("type") == "node":
-                    data = triplet.get("data")
-                    id = data.get('node')
-                    desc = data.get("description")
-                    vertex = Vertex(id,description=desc)
-                    memory_graph.upsert_vertex(vertex)
-                    # todo add relation chunk-vertex
-                elif triplet.get("type") == "edge":
-                    data = triplet.get("data")
-                    edge_data = data.get("triplet")
-                    desc = data.get("description")
-                    sid = edge_data[0]
-                    tid = edge_data[2]
-                    label = edge_data[1]
-                    edge = Edge(sid,tid,label=label,description = desc)
-                    memory_graph.append_edge(edge)
-            logger.info(
-                f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
+            self._graph_store.insert_graph(graph)
         # Build communities after loading all triplets
-        self._graph_store.insert_graph(memory_graph)
         await self._community_store.build_communities()
         return [chunk.chunk_id for chunk in chunks]
 
