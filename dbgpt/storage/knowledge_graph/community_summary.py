@@ -10,6 +10,8 @@ from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community_store import CommunityStore
 from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
+from dbgpt.storage.knowledge_graph.community.factory import \
+    CommunityStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -99,12 +101,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 configure
             )
         )
-        self._community_summarizer = CommunitySummarizer(
-            self._llm_client, self._model_name
-        )
         self._community_store = CommunityStore(
-            self._graph_store,
-            self._community_summarizer,
+            CommunityStoreAdapterFactory.create(self._graph_store),
+            CommunitySummarizer(
+                self._llm_client, self._model_name
+            ),
             VectorStoreFactory.create(
                 self._vector_store_type,
                 config.name + "_COMMUNITY_SUMMARY",

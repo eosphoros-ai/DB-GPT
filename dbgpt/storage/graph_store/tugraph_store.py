@@ -1,14 +1,15 @@
 """TuGraph store."""
-import logging
-import os
 import base64
 import json
+import logging
+import os
 from typing import List, Optional, Tuple, Generator, Iterator
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex, Graph
+from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, \
+    Vertex, Graph
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +35,13 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="73@TuGraph",
         description="login password",
     )
-    vertex_type: str = Field(
+    entity_type: str = Field(
         default="entity",
         description="The type of graph vertex, `entity` by default.",
     )
-    edge_type: str = Field(
+    relation_type: str = Field(
         default="relation",
         description="The type of graph edge, `relation` by default.",
-    )
-    edge_name_key: str = Field(
-        default="label",
-        description="The label of edge name, `label` by default.",
     )
     plugin_names: List[str] = Field(
         default=["leiden"],
@@ -68,15 +65,15 @@ class TuGraphStore(GraphStoreBase):
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", '').lower() == 'true'
             or config.summary_enabled
         )
-        self._plugin_names = config.plugin_names
-        self._node_label = (
-            os.getenv("TUGRAPH_VERTEX_TYPE", config.vertex_type)
+        self._plugin_names = (
+            os.getenv("TUGRAPH_PLUGIN_NAMES", 'leiden').split(',')
+            or config.plugin_names
         )
-        self._edge_label = (
-            os.getenv("TUGRAPH_EDGE_TYPE", config.edge_type)
+        self._entity_type = (
+            os.getenv("TUGRAPH_VERTEX_TYPE", config.entity_type)
         )
-        self.edge_name_key = (
-            os.getenv("TUGRAPH_EDGE_NAME_KEY", config.edge_name_key)
+        self._relation_type = (
+            os.getenv("TUGRAPH_EDGE_TYPE", config.relation_type)
         )
         self._graph_name = config.name
         self.conn = TuGraphConnector.from_uri_db(
@@ -87,7 +84,15 @@ class TuGraphStore(GraphStoreBase):
             db_name=config.name,
         )
         self._create_graph(config.name)
-    
+
+    @property
+    def entity_type(self) -> str:
+        return self._entity_type
+
+    @property
+    def relation_type(self) -> str:
+        return self._relation_type
+
     def _create_graph(self,graph_name:str):
         self.conn.create_graph(graph_name=graph_name)
         self._create_schema()
@@ -97,12 +102,12 @@ class TuGraphStore(GraphStoreBase):
     def _check_label(self, elem_type: str):
         result = self.conn.get_table_names()
         if elem_type == "vertex":
-            return self._node_label in result["vertex_tables"]
+            return self._entity_type in result["vertex_tables"]
         if elem_type == "edge":
-            return self._edge_label in result["edge_tables"]
+            return self._relation_type in result["edge_tables"]
 
     def _add_vertex_index(self, field_name):
-        gql = f"CALL db.addIndex('{self._node_label}', '{field_name}', false)"
+        gql = f"CALL db.addIndex('{self._entity_type}', '{field_name}', false)"
         self.conn.run(gql)
 
     def _upload_plugin(self):
@@ -127,7 +132,7 @@ class TuGraphStore(GraphStoreBase):
             if self._summary_enabled:
                 create_vertex_gql = (
                         f"CALL db.createLabel("
-                        f"'vertex', '{self._node_label}', "
+                        f"'vertex', '{self._entity_type}', "
                         f"'id', ['id',string,false],"
                         f"['name',string,false],"
                         f"['_document_id',string,true],"
@@ -140,7 +145,7 @@ class TuGraphStore(GraphStoreBase):
             else:
                 create_vertex_gql = (
                     f"CALL db.createLabel("
-                    f"'vertex', '{self._node_label}', "
+                    f"'vertex', '{self._entity_type}', "
                     f"'id', ['id',string,false],"
                     f"['name',string,false])"
                 )
@@ -148,12 +153,12 @@ class TuGraphStore(GraphStoreBase):
 
         if not self._check_label("edge"):
             create_edge_gql = f"""CALL db.createLabel(
-                    'edge', '{self._edge_label}', '[["{self._node_label}",
-                    "{self._node_label}"]]', ["id",STRING,false],["name",STRING,false])"""
+                    'edge', '{self._relation_type}', '[["{self._entity_type}",
+                    "{self._entity_type}"]]', ["id",STRING,false],["name",STRING,false])"""
             if(self._summary_enabled):
                 create_edge_gql = f"""CALL db.createLabel(
-                    'edge', '{self._edge_label}', '[["{self._node_label}",
-                    "{self._node_label}"]]', ["id",STRING,false],["name",STRING,false],["description",STRING,true])"""
+                    'edge', '{self._relation_type}', '[["{self._entity_type}",
+                    "{self._entity_type}"]]', ["id",STRING,false],["name",STRING,false],["description",STRING,true])"""
             self.conn.run(create_edge_gql)   
 
     def get_config(self):
@@ -163,7 +168,7 @@ class TuGraphStore(GraphStoreBase):
     def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""
         query = (
-            f"MATCH (n1:{self._node_label})-[r]->(n2:{self._node_label}) "
+            f"MATCH (n1:{self._entity_type})-[r]->(n2:{self._entity_type}) "
             f'WHERE n1.id = "{subj}" RETURN r.id as rel, n2.id as obj;'
         )
         data = self.conn.run(query)
@@ -180,14 +185,14 @@ class TuGraphStore(GraphStoreBase):
         rel_escaped = escape_quotes(rel)
         obj_escaped = escape_quotes(obj)
 
-        node_query = f"CALL db.upsertVertex('{self._node_label}', [{{id:'{subj_escaped}',name:'{subj_escaped}'}},{{id:'{obj_escaped}',name:'{obj_escaped}'}}])"
-        edge_query = f"""CALL db.upsertEdge('{self._edge_label}', {{type:"{self._node_label}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{{sid:"{subj_escaped}", tid: "{obj_escaped}",id:"{rel_escaped}", name: "{rel_escaped}"}}])"""
+        node_query = f"CALL db.upsertVertex('{self._entity_type}', [{{id:'{subj_escaped}',name:'{subj_escaped}'}},{{id:'{obj_escaped}',name:'{obj_escaped}'}}])"
+        edge_query = f"""CALL db.upsertEdge('{self._relation_type}', {{type:"{self._entity_type}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{{sid:"{subj_escaped}", tid: "{obj_escaped}",id:"{rel_escaped}", name: "{rel_escaped}"}}])"""
 
         self.conn.run(query=node_query)
         self.conn.run(query=edge_query)
 
     def insert_graph(self, graph:Graph) -> None:
-        """Add triplet."""
+        """Add graph."""
 
         def escape_quotes(value: str) -> str:
             """Escape single and double quotes in a string for queries."""
@@ -210,7 +215,7 @@ class TuGraphStore(GraphStoreBase):
                 '_community_id': '1',
                 '_weight': 10
             })
-        node_query = f"""CALL db.upsertVertex("{self._node_label}", [{parser(node_list)}])"""
+        node_query = f"""CALL db.upsertVertex("{self._entity_type}", [{parser(node_list)}])"""
         for edge in edges:
             edge_list.append({
                 'sid':escape_quotes(edge.sid),
@@ -220,7 +225,7 @@ class TuGraphStore(GraphStoreBase):
                 'description':escape_quotes(edge.get_prop('description'))
             })    
         
-        edge_query = f"""CALL db.upsertEdge("{self._edge_label}", {{type:"{self._node_label}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{parser(edge_list)}])"""
+        edge_query = f"""CALL db.upsertEdge("{self._relation_type}", {{type:"{self._entity_type}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{parser(edge_list)}])"""
         self.conn.run(query=node_query)
         self.conn.run(query=edge_query)
 
@@ -231,9 +236,9 @@ class TuGraphStore(GraphStoreBase):
     def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         del_query = (
-            f"MATCH (n1:{self._node_label} {{id:'{sub}'}})"
-            f"-[r:{self._edge_label} {{id:'{rel}'}}]->"
-            f"(n2:{self._node_label} {{id:'{obj}'}}) DELETE n1,n2,r"
+            f"MATCH (n1:{self._entity_type} {{id:'{sub}'}})"
+            f"-[r:{self._relation_type} {{id:'{rel}'}}]->"
+            f"(n2:{self._entity_type} {{id:'{obj}'}}) DELETE n1,n2,r"
         )
         self.conn.run(query=del_query)
 
@@ -271,14 +276,14 @@ class TuGraphStore(GraphStoreBase):
             if limit is None:
                 limit_string = ""
             if direct.name == 'OUT':
-                rel = f"-[r:{self._edge_label}*{depth_string}]->"
+                rel = f"-[r:{self._relation_type}*{depth_string}]->"
             elif direct.name == 'IN':
-                rel = f"<-[r:{self._edge_label}*{depth_string}]-"
+                rel = f"<-[r:{self._relation_type}*{depth_string}]-"
             else:
-                rel = f"-[r:{self._edge_label}*{depth_string}]-"
+                rel = f"-[r:{self._relation_type}*{depth_string}]-"
             query = (
-                f"MATCH p=(n:{self._node_label})"
-                f"{rel}(m:{self._node_label}) "
+                f"MATCH p=(n:{self._entity_type})"
+                f"{rel}(m:{self._entity_type}) "
                 f"WHERE n.id IN {subs} RETURN p {limit_string}"
             )
             return self.query(query)
