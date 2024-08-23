@@ -12,6 +12,7 @@ from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 logger = logging.getLogger(__name__)
 
 GRAPH_EXTRACT_PT = (
+    # todo: optimize prompt if needed
     "Given the HISTORY provided before TEXT (maybe empty), which means relevant information of TEXT, "
     "extract TEXT and summarize knowledge in the following forms:\n"
     "1. Entities: (entity_name, entity_type, entity_description)\n"

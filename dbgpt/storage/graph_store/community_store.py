@@ -5,7 +5,6 @@ from typing import List
 
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.storage.graph_store.community import Community
-from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter
 from dbgpt.storage.knowledge_graph.community.community_metastore import \
     BuiltinCommunityMetastore
@@ -40,32 +39,19 @@ class CommunityStore:
                 self._community_store_adapter.get_community(community_id)
             )
             community.summary = await (
-                self.__summarize_community(community.data)
+                # todo: use concise format
+                self._community_summarizer.summarize(
+                    graph=community.data.format()
+                )
             )
             communities.append(community)
+            logger.info(
+                f"Summarize community {community_id}: "
+                f"{community.summary[:50]}..."
+            )
 
-        # reset metastore
-        await self._meta_store.drop()
+        # save summaries
         await self._meta_store.save(communities)
-
-    async def __summarize_community(self, graph: Graph):
-        """Generate summary for a given graph using an LLM."""
-        nodes = "\n".join(
-            [
-                f"- {v.vid}: {v.get_prop('description')}"
-                for v in graph.vertices()
-            ]
-        )
-        relationships = "\n".join(
-            [
-                f"- {e.sid} -> {e.tid}: {e.get_prop('label')} ({e.get_prop('description')})"
-                for e in graph.edges()
-            ]
-        )
-
-        return await self._community_summarizer.summarize(
-            nodes=nodes, relationships=relationships
-        )
 
     async def search_communities(self, query: str) -> List[Community]:
         return await self._meta_store.search(query)

@@ -119,28 +119,31 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store.explore(keywords, limit=topk)
+        subgraph = self._graph_store.explore(keywords, limit=topk).format()
         logger.info(f"Search subgraph from {len(keywords)} keywords")
+
+        if not subgraph:
+            return []
 
         content = (
             "The following entities and relations provided after [SUBGRAPH] "
             "are retrieved from the knowledge graph based on the keywords:\n"
             f"\"{','.join(keywords)}\".\n"
             "---------------------\n"
-            "These are some examples of entities and relations that "
+            "The following examples after [ENTITIES] and [RELATIONS] that "
             "can help you understand the data format of the knowledge graph, "
-            "but they cannot be used in the answer.\n"
-            "Entities:\n"
+            "but do not use them in the answer.\n"
+            "[ENTITIES]:\n"
             "(alice)\n"
             "(bob:{age:28})\n"
             '(carry:{age:18;role:"teacher"})\n\n'
-            "Relations:\n"
+            "[RELATIONS]:\n"
             "(alice)-[reward]->(alice)\n"
             '(alice)-[notify:{method:"email"}]->'
             '(carry:{age:18;role:"teacher"})\n'
             '(bob:{age:28})-[teach:{course:"math";hour:180}]->(alice)\n'
             "---------------------\n"
-            f"[SUBGRAPH]:\n{subgraph.format()}\n"
+            f"[SUBGRAPH]:\n{subgraph}\n"
         )
         return [Chunk(content=content)]
 
