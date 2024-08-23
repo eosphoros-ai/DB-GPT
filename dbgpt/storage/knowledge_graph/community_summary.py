@@ -9,7 +9,6 @@ from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community_store import CommunityStore
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 from dbgpt.storage.knowledge_graph.community.factory import \
     CommunityStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -137,74 +136,49 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        # Perform both global and local searches
-        global_results = await self._global_search(text, topk, score_threshold,
-                                                   filters)
-        local_results = await self._local_search(text, topk, score_threshold,
-                                                 filters)
+        # global search: retrieve relevant community summaries
+        communities = await self._community_store.search_communities(text)
+        summaries = "\n".join([c.summary for c in communities])
 
-        # Combine results, keeping original order and scores
-        combined_results = global_results + local_results
-       
-        # Add a source field to distinguish between global and local results
-        for chunk in combined_results[: len(global_results)]:
-            chunk.metadata["source"] = "global"
-        for chunk in combined_results[len(local_results):]:
-            chunk.metadata["source"] = "local"
+        # local search: extract keywords and explore subgraph
+        keywords = await self._keyword_extractor.extract(text)
+        subgraph = self._graph_store.explore(keywords, limit=topk)
+        logger.info(f"Search subgraph from {len(keywords)} keywords")
 
-        # Return all results
-        return combined_results
-
-    async def _global_search(
-        self,
-        text,
-        topk,
-        score_threshold: float,
-        filters: Optional[MetadataFilters] = None,
-    ) -> List[Chunk]:
-        # Use the community metastore to perform vector search
-        relevant_communities = await self._community_store.search_communities(text)
-
-        return [
-            Chunk(content=c.summary, metadata={"cluster_id": c.id})
-            for c in relevant_communities
-        ]
-
-        # # Generate answers from the top-k community summaries
-        # chunks = []
-        # for community in relevant_communities[:topk]:
-        #     answer = await self._generate_answer_from_summary(
-        #         community.summary, text
-        #     )
-        #     chunks.append(
-        #         Chunk(content=answer, metadata={"cluster_id": community.id})
-        #     )
-        #
-        # return chunks
-
-    async def _local_search(
-        self,
-        text,
-        topk,
-        score_threshold: float,
-        filters: Optional[MetadataFilters] = None,
-    ) -> List[Chunk]:
-        return await super().asimilar_search_with_scores(
-            text, topk, score_threshold, filters
+        content = (
+            "The following entities and relations provided after [SUBGRAPH] "
+            "are retrieved from the knowledge graph based on the keywords:\n"
+            f"\"{','.join(keywords)}\".\n"
+            "The text provided after [SUMMARY] is a summary supplement "
+            "to the entities and relations."
+            "---------------------\n"
+            "These are some examples of entities and relations that "
+            "can help you understand the data format of the knowledge graph, "
+            "but they cannot be used in the answer.\n"
+            "Entities:\n"
+            "(alice)\n"
+            "(bob:{age:28})\n"
+            '(carry:{age:18;role:"teacher"})\n\n'
+            "Relations:\n"
+            "(alice)-[reward]->(alice)\n"
+            '(alice)-[notify:{method:"email"}]->'
+            '(carry:{age:18;role:"teacher"})\n'
+            '(bob:{age:28})-[teach:{course:"math";hour:180}]->(alice)\n'
+            "---------------------\n"
+            f"[SUBGRAPH]:\n{subgraph.format()}\n"
+            f"[SUMMARY]:\n{summaries}\n"
         )
 
-    async def _generate_answer_from_summary(self, community_summary, query):
-        """Generate an answer from a community summary based on a given query using LLM."""
-        prompt_template = """Given the community summary: {summary}, answer the following query.
-
-        Query: {query}
-
-        Answer:"""
-
-        return await self._triplet_extractor.extract(
-            prompt_template.format(summary=community_summary, query=query)
-        )
+        return [Chunk(content=content)]
 
     def delete_vector_name(self, index_name: str):
-        super().delete_vector_name(index_name)
+        logger.info(f"Remove community store")
         self._community_store.drop()
+
+        logger.info(f"Clean keyword extractor")
+        self._keyword_extractor.clean()
+
+        logger.info(f"Clean triplet extractor")
+        self._triplet_extractor.clean()
+
+
