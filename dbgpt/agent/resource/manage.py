@@ -62,11 +62,14 @@ class RegisterResource(BaseModel):
             values["resource_type_alias"] = values["resource_cls"].type_alias()
         return values
 
-    def get_parameter_class(self) -> Type[ResourceParameters]:
+    def get_parameter_class(
+        self,
+        **kwargs,
+    ) -> Type[ResourceParameters]:
         """Return the parameter description."""
         if self.is_class:
-            return self.resource_cls.resource_parameters_class()
-        return self.resource_instance.prefer_resource_parameters_class()  # type: ignore
+            return self.resource_cls.resource_parameters_class(**kwargs)
+        return self.resource_instance.prefer_resource_parameters_class(**kwargs)  # type: ignore # noqa
 
 
 class ResourceManager(BaseComponent):
@@ -126,18 +129,29 @@ class ResourceManager(BaseComponent):
         self._resources[resource.key] = resource
         self._type_to_resources[resource.type_unique_key].append(resource)
 
+    def get_supported_resources_type(self) -> List[str]:
+        """Get supported resources types."""
+        unique_types = []
+        for key, resource in self._resources.items():
+            if resource.type_unique_key not in unique_types:
+                unique_types.append(resource.type_unique_key)
+        return unique_types
+
     def get_supported_resources(
-        self, version: Optional[str] = None
+        self, version: Optional[str] = None, type: Optional[str] = None, **kwargs
     ) -> Dict[str, Union[List[ParameterDescription], List[str]]]:
         """Return the resources."""
         results: Dict[str, Union[List[ParameterDescription], List[str]]] = defaultdict(
             list
         )
         for key, resource in self._resources.items():
-            parameter_class = resource.get_parameter_class()
+            if type and type != resource.type_unique_key:
+                continue
+            parameter_class = resource.get_parameter_class(**kwargs)
             resource_type = resource.type_unique_key
             configs: Any = parameter_class.to_configurations(
-                parameter_class, version=version
+                parameter_class,
+                version=version,
             )
             if (
                 version == "v1"
@@ -146,12 +160,19 @@ class ResourceManager(BaseComponent):
                 and isinstance(configs[0], ParameterDescription)
             ):
                 # v1, not compatible with class
-                set_configs = set(results[resource_type])
+                # set_configs_name = set(results[resource_type])
+                set_configs: list = []
                 if not resource.is_class:
                     for r in self._type_to_resources[resource_type]:
                         if not r.is_class:
-                            set_configs.add(r.resource_instance.name)  # type: ignore
-                configs = list(set_configs)
+                            set_configs.append(
+                                {
+                                    "label": r.resource_instance.name,  # type: ignore
+                                    "key": r.resource_instance.name,  # type: ignore
+                                    "description": r.resource_instance.description,  # type: ignore # noqa
+                                }
+                            )  # type: ignore
+                configs = set_configs
             results[resource_type] = configs
 
         return results

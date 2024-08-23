@@ -24,6 +24,9 @@ class Agent(ABC):
         reviewer: Optional[Agent] = None,
         request_reply: Optional[bool] = True,
         is_recovery: Optional[bool] = False,
+        silent: Optional[bool] = False,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
     ) -> None:
         """Send a message to recipient agent.
 
@@ -47,6 +50,8 @@ class Agent(ABC):
         request_reply: Optional[bool] = None,
         silent: Optional[bool] = False,
         is_recovery: Optional[bool] = False,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
     ) -> None:
         """Receive a message from another agent.
 
@@ -69,6 +74,8 @@ class Agent(ABC):
         sender: Agent,
         reviewer: Optional[Agent] = None,
         rely_messages: Optional[List[AgentMessage]] = None,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
         **kwargs,
     ) -> AgentMessage:
         """Generate a reply based on the received messages.
@@ -85,7 +92,10 @@ class Agent(ABC):
 
     @abstractmethod
     async def thinking(
-        self, messages: List[AgentMessage], prompt: Optional[str] = None
+        self,
+        messages: List[AgentMessage],
+        sender: Optional[Agent] = None,
+        prompt: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
         """Think and reason about the current task goal.
 
@@ -118,11 +128,13 @@ class Agent(ABC):
     @abstractmethod
     async def act(
         self,
-        message: Optional[str],
-        sender: Optional[Agent] = None,
+        message: AgentMessage,
+        sender: Agent,
         reviewer: Optional[Agent] = None,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
         **kwargs,
-    ) -> Optional[ActionOutput]:
+    ) -> ActionOutput:
         """Act based on the LLM inference results.
 
         Parse the inference results for the current target and execute the inference
@@ -180,6 +192,7 @@ class AgentContext:
     """A class to represent the context of an Agent."""
 
     conv_id: str
+    gpts_app_code: Optional[str] = None
     gpts_app_name: Optional[str] = None
     language: Optional[str] = None
     max_chat_round: int = 100
@@ -188,6 +201,10 @@ class AgentContext:
     temperature: float = 0.5
     allow_format_str_template: Optional[bool] = False
     verbose: bool = False
+
+    app_link_start: bool = False
+    # 是否开启VIS协议消息模式，默认开启
+    enable_vis_message: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
         """Return a dictionary representation of the AgentContext."""
@@ -200,9 +217,15 @@ class AgentGenerateContext:
     """A class to represent the input of a Agent."""
 
     message: Optional[AgentMessage]
-    sender: Optional[Agent] = None
+    sender: Agent
     reviewer: Optional[Agent] = None
     silent: Optional[bool] = False
+
+    already_failed: bool = False
+    last_speaker: Optional[Agent] = None
+
+    already_started: bool = False
+    begin_agent: Optional[str] = None
 
     rely_messages: List[AgentMessage] = dataclasses.field(default_factory=list)
     final: Optional[bool] = True
@@ -218,8 +241,9 @@ class AgentGenerateContext:
         return dataclasses.asdict(self)
 
 
-ActionReportType = Dict[str, Any]
+ActionReportType = ActionOutput
 MessageContextType = Union[str, Dict[str, Any]]
+ResourceReferType = Dict[str, Any]
 
 
 @dataclasses.dataclass
@@ -234,6 +258,10 @@ class AgentReviewInfo:
         """Return a copy of the current AgentReviewInfo."""
         return AgentReviewInfo(approve=self.approve, comments=self.comments)
 
+    def to_dict(self) -> Dict:
+        """Return a dictionary representation of the AgentMessage."""
+        return dataclasses.asdict(self)
+
 
 @dataclasses.dataclass
 @PublicAPI(stability="beta")
@@ -242,17 +270,25 @@ class AgentMessage:
 
     content: Optional[str] = None
     name: Optional[str] = None
+    rounds: int = 0
     context: Optional[MessageContextType] = None
     action_report: Optional[ActionReportType] = None
     review_info: Optional[AgentReviewInfo] = None
     current_goal: Optional[str] = None
     model_name: Optional[str] = None
     role: Optional[str] = None
-    success: Optional[bool] = None
+    success: bool = True
+    resource_info: Optional[ResourceReferType] = None
 
     def to_dict(self) -> Dict:
         """Return a dictionary representation of the AgentMessage."""
-        return dataclasses.asdict(self)
+        result = dataclasses.asdict(self)
+
+        if self.action_report:
+            result[
+                "action_report"
+            ] = self.action_report.to_dict()  # 将 action_report 转换为字典
+        return result
 
     def to_llm_message(self) -> Dict[str, Any]:
         """Return a dictionary representation of the AgentMessage."""
@@ -269,6 +305,7 @@ class AgentMessage:
             content=message.get("content"),
             context=message.get("context"),
             role=message.get("role"),
+            rounds=message.get("rounds", 0),
         )
 
     @classmethod
@@ -291,18 +328,20 @@ class AgentMessage:
                 copied_context = self.context.copy()
             else:
                 copied_context = self.context
-        copied_action_report = self.action_report.copy() if self.action_report else None
+
         copied_review_info = self.review_info.copy() if self.review_info else None
         return AgentMessage(
             content=self.content,
             name=self.name,
             context=copied_context,
-            action_report=copied_action_report,
+            rounds=self.rounds,
+            action_report=self.action_report,
             review_info=copied_review_info,
             current_goal=self.current_goal,
             model_name=self.model_name,
             role=self.role,
             success=self.success,
+            resource_info=self.resource_info,
         )
 
     def get_dict_context(self) -> Dict[str, Any]:

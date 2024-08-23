@@ -34,12 +34,14 @@ class RetrieverSimilarityMetric(RetrieverEvaluationMetric):
         self,
         prediction: List[str],
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute the evaluation metric.
 
         Args:
             prediction(List[str]): The retrieved chunks from the retriever.
             contexts(Sequence[str]): The contexts from dataset.
+            query:(Optional[str]) The query text.
 
         Returns:
             BaseEvaluationResult: The evaluation result.
@@ -81,12 +83,14 @@ class RetrieverMRRMetric(RetrieverEvaluationMetric):
         self,
         prediction: List[str],
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute MRR metric.
 
         Args:
             prediction(Optional[List[str]]): The retrieved chunks from the retriever.
             contexts(Optional[List[str]]): The contexts from dataset.
+            query:(Optional[str]) The query text.
         Returns:
             BaseEvaluationResult: The evaluation result.
                 The score is the reciprocal rank of the first relevant chunk.
@@ -119,12 +123,14 @@ class RetrieverHitRateMetric(RetrieverEvaluationMetric):
         self,
         prediction: List[str],
         contexts: Optional[Sequence[str]] = None,
+        query: Optional[str] = None,
     ) -> BaseEvaluationResult:
         """Compute HitRate metric.
 
         Args:
             prediction(Optional[List[str]]): The retrieved chunks from the retriever.
             contexts(Optional[List[str]]): The contexts from dataset.
+            query:(Optional[str]) The query text.
         Returns:
             BaseEvaluationResult: The evaluation result.
         """

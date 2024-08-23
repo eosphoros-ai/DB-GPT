@@ -185,3 +185,6 @@ thirdparty
 /examples/**/*.gv.pdf
 /i18n/locales/**/**/*_ai_translated.po
 /i18n/locales/**/**/*~
+
+/web_new/node_modules
+/web_new/.next

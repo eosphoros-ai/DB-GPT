@@ -7,6 +7,8 @@ from typing import Dict, List, Optional, Set, Tuple, Type, cast
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
+from ..expand.Indicator_assistant_agent import IndicatorAssistantAgent
+from ..expand.simple_assistant_agent import SimpleAssistantAgent
 from .agent import Agent
 from .base_agent import ConversableAgent
 
@@ -77,6 +79,9 @@ class AgentManager(BaseComponent):
         core_agents.add(self.register_agent(DataScientistAgent))
         core_agents.add(self.register_agent(SummaryAssistantAgent))
         core_agents.add(self.register_agent(ToolAssistantAgent))
+        core_agents.add(self.register_agent(IndicatorAssistantAgent))
+        core_agents.add(self.register_agent(SimpleAssistantAgent))
+
         self._core_agents = core_agents
 
     def register_agent(
@@ -122,6 +127,9 @@ class AgentManager(BaseComponent):
     def list_agents(self):
         """Return a list of all registered agents and their descriptions."""
         result = []
+        from datetime import datetime
+
+        logger.info(f"List Agent Begin:{datetime.now()}")
         for name, value in self._agents.items():
             result.append(
                 {
@@ -129,6 +137,7 @@ class AgentManager(BaseComponent):
                     "desc": value[1].goal,
                 }
             )
+        logger.info(f"List Agent End:{datetime.now()}")
         return result
 
 

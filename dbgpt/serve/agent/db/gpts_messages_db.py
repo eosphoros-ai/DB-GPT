@@ -1,7 +1,19 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text, and_, desc, or_
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    Text,
+    and_,
+    desc,
+    func,
+    or_,
+)
 
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -25,6 +37,17 @@ class GptsMessagesEntity(Model):
     )
     model_name = Column(String(255), nullable=True, comment="message generate model")
     rounds = Column(Integer, nullable=False, comment="dialogue turns")
+    is_success = Column(Boolean, default=True, nullable=True, comment="is success")
+    app_code = Column(
+        String(255),
+        nullable=False,
+        comment="The message in which app",
+    )
+    app_name = Column(
+        String(255),
+        nullable=False,
+        comment="The message in which app name",
+    )
     content = Column(
         Text(length=2**31 - 1), nullable=True, comment="Content of the speech"
     )
@@ -40,7 +63,11 @@ class GptsMessagesEntity(Model):
         nullable=True,
         comment="Current conversation action report",
     )
-
+    resource_info = Column(
+        Text,
+        nullable=True,
+        comment="Current conversation resource info",
+    )
     role = Column(
         String(255), nullable=True, comment="The role of the current message content"
     )
@@ -63,13 +90,17 @@ class GptsMessagesDao(BaseDao):
             sender=entity.get("sender"),
             receiver=entity.get("receiver"),
             content=entity.get("content"),
+            is_success=entity.get("is_success", True),
             role=entity.get("role", None),
             model_name=entity.get("model_name", None),
             context=entity.get("context", None),
             rounds=entity.get("rounds", None),
+            app_code=entity.get("app_code", None),
+            app_name=entity.get("app_name", None),
             current_goal=entity.get("current_goal", None),
             review_info=entity.get("review_info", None),
             action_report=entity.get("action_report", None),
+            resource_info=entity.get("resource_info", None),
         )
         session.add(message)
         session.commit()

@@ -3,7 +3,7 @@ import { Advice, Advisor, Datum } from '@antv/ava';
 import { Chart, ChartRef } from '@berryv/g2-react';
 import i18n, { I18nKeys } from '@/app/i18n';
 import { customizeAdvisor, getVisAdvices } from './advisor/pipeline';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { defaultAdvicesFilter } from './advisor/utils';
 import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
 import { customCharts } from './charts';
@@ -16,8 +16,7 @@ import { DownloadOutlined } from '@ant-design/icons';
 const { Option } = Select;
 
 export const AutoChart = (props: AutoChartProps) => {
-  const { chartType, scopeOfCharts, ruleConfig, data: originalData } = props;
-
+  const { data: originalData, chartType, scopeOfCharts, ruleConfig } = props;
   // 处理空值数据 (为'-'的数据)
   const data = processNilData(originalData) as Datum[];
   const { mode } = useContext(ChatContext);
@@ -99,7 +98,7 @@ export const AutoChart = (props: AutoChartProps) => {
           // 处理 ava 内置折线图的排序问题
           const dataAnalyzerOutput = advisor?.dataAnalyzer.execute({ data })
           if (dataAnalyzerOutput && 'dataProps' in dataAnalyzerOutput) {
-            spec.data = sortData({ data: spec.data, xField: dataAnalyzerOutput.dataProps?.find(field => field.recommendation === 'date'), chartType: chartTypeInput });
+            spec.data = sortData({ data: spec.data, xField: dataAnalyzerOutput.dataProps?.find((field: any) => field.recommendation === 'date'), chartType: chartTypeInput });
           }
         }
         if (chartTypeInput === 'pie_chart' && spec?.encode?.color) {
@@ -111,8 +110,8 @@ export const AutoChart = (props: AutoChartProps) => {
             key={chartTypeInput}
             options={{
               ...spec,
-              theme: mode,
               autoFit: true,
+              theme: mode,
               height: 300,
             }}
             ref={chartRef}
@@ -120,7 +119,7 @@ export const AutoChart = (props: AutoChartProps) => {
         );
       }
     }
-  }, [advices, renderChartType]);
+  }, [advices, mode, renderChartType]);
 
   if (renderChartType) {
     return (
@@ -159,7 +158,7 @@ export const AutoChart = (props: AutoChartProps) => {
             </Tooltip>
           </Col>
         </Row>
-        <div className="auto-chart-content">{visComponent}</div>
+        <div className="flex">{visComponent}</div>
       </div>
     );
   }

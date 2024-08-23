@@ -32,7 +32,7 @@ export type IAgentPlugin = {
   author: string;
   type: string;
   storage_channel: string;
-  created_at: string;
+  gmt_created: string;
 };
 
 export type PostAgentPluginResponse = {

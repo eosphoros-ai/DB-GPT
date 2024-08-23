@@ -1,6 +1,7 @@
 """Base Action class for defining agent actions."""
 
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -29,6 +30,9 @@ from dbgpt.vis.base import Vis
 
 from ...resource.base import AgentResource, Resource, ResourceType
 
+logger = logging.getLogger(__name__)
+
+
 T = TypeVar("T", bound=Union[BaseModel, List[BaseModel], None])
 
 JsonMessageType = Union[Dict[str, Any], List[Dict[str, Any]]]
@@ -45,6 +49,10 @@ class ActionOutput(BaseModel):
     action: Optional[str] = None
     thoughts: Optional[str] = None
     observations: Optional[str] = None
+    have_retry: Optional[bool] = True
+    ask_user: Optional[bool] = False
+    # 如果当前agent能确定下个发言者，需要在这里指定
+    next_speakers: Optional[List[str]] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -77,6 +85,7 @@ class Action(ABC, Generic[T]):
     def __init__(self):
         """Create an action."""
         self.resource: Optional[Resource] = None
+        self.language: str = "en"
 
     def init_resource(self, resource: Optional[Resource]):
         """Initialize the resource."""
@@ -101,7 +110,7 @@ class Action(ABC, Generic[T]):
 
     def _create_example(
         self,
-        model_type: Union[Type[BaseModel], List[Type[BaseModel]]],
+        model_type,
     ) -> Optional[Union[Dict[str, Any], List[Dict[str, Any]]]]:
         if model_type is None:
             return None
@@ -134,9 +143,18 @@ class Action(ABC, Generic[T]):
             )
 
     @property
-    def out_model_type(self) -> Optional[Union[Type[T], List[Type[T]]]]:
+    def out_model_type(self):
         """Return the output model type."""
         return None
+
+    @property
+    def ai_out_schema_json(self) -> Optional[str]:
+        """Return the AI output json schema."""
+        if self.out_model_type is None:
+            return None
+        return json.dumps(
+            self._create_example(self.out_model_type), indent=2, ensure_ascii=False
+        )
 
     @property
     def ai_out_schema(self) -> Optional[str]:
@@ -147,15 +165,14 @@ class Action(ABC, Generic[T]):
         json_format_data = json.dumps(
             self._create_example(self.out_model_type), indent=2, ensure_ascii=False
         )
-        return f"""Please response in the following json format:
-            {json_format_data}
-        Make sure the response is correct json and can be parsed by Python json.loads.
-        """
+        return f"""Please reply strictly in the following json format:
+        {json_format_data}
+        Make sure the reply content only has the correct json."""  # noqa: E501
 
     def _ai_message_2_json(self, ai_message: str) -> JsonMessageType:
         json_objects = find_json_objects(ai_message)
         json_count = len(json_objects)
-        if json_count != 1:
+        if json_count < 1:
             raise ValueError("Unable to obtain valid output.")
         return json_objects[0]
 

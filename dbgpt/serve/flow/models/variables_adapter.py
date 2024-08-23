@@ -29,6 +29,7 @@ class VariablesAdapter(StorageItemAdapter[StorageVariables, VariablesEntity]):
             scope_key=item.scope_key,
             sys_code=item.sys_code,
             user_name=item.user_name,
+            description=item.description,
         )
 
     def from_storage_format(self, model: VariablesEntity) -> StorageVariables:
@@ -46,6 +47,7 @@ class VariablesAdapter(StorageItemAdapter[StorageVariables, VariablesEntity]):
             scope_key=model.scope_key,
             sys_code=model.sys_code,
             user_name=model.user_name,
+            description=model.description,
         )
 
     def get_query_for_identifier(

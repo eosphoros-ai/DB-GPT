@@ -6,15 +6,23 @@ import { t } from 'i18next';
 import type { GetProp, UploadFile, UploadProps } from 'antd';
 import React, { useState } from 'react';
 
+
 type Props = {
   isImportModalOpen: boolean;
-  setNodes: React.Dispatch<React.SetStateAction<Node<any, string | undefined>[]>>;
+  setNodes: React.Dispatch<
+    React.SetStateAction<Node<any, string | undefined>[]>
+  >;
   setEdges: React.Dispatch<React.SetStateAction<Edge<any>[]>>;
   setIsImportFlowModalOpen: (value: boolean) => void;
 };
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
-export const ImportFlowModal: React.FC<Props> = ({ setNodes, setEdges, isImportModalOpen, setIsImportFlowModalOpen }) => {
+export const ImportFlowModal: React.FC<Props> = ({
+  setNodes,
+  setEdges,
+  isImportModalOpen,
+  setIsImportFlowModalOpen,
+}) => {
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -30,7 +38,7 @@ export const ImportFlowModal: React.FC<Props> = ({ setNodes, setEdges, isImportM
     const [, , res] = await apiInterceptors(importFlow(formData));
 
     if (res?.success) {
-      messageApi.success(t('export_flow_success'));
+      messageApi.success(t("Export_Flow_Success"));
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
     }
@@ -54,14 +62,24 @@ export const ImportFlowModal: React.FC<Props> = ({ setNodes, setEdges, isImportM
   };
   return (
     <>
-      <Modal title="Import Flow" open={isImportModalOpen} onCancel={() => setIsImportFlowModalOpen(false)} footer={null}>
-        <Form form={form} labelCol={{ span: 6 }} wrapperCol={{ span: 16 }} onFinish={onFlowImport}>
+      <Modal
+        title="Import Flow"
+        open={isImportModalOpen}
+        onCancel={() => setIsImportFlowModalOpen(false)}
+        footer={null}
+      >
+        <Form
+          form={form}
+          labelCol={{ span: 6 }}
+          wrapperCol={{ span: 16 }}
+          onFinish={onFlowImport}
+        >
           <Form.Item
             name="file"
             label="File"
             valuePropName="fileList"
             getValueFromEvent={(e) => (Array.isArray(e) ? e : e && e.fileList)}
-            rules={[{ required: true, message: 'Please upload a file' }]}
+            rules={[{ required: true, message: "Please upload a file" }]}
           >
             <Upload {...props} accept=".json,.zip"  maxCount={1}>
               <Button icon={<UploadOutlined />}>Click to Upload</Button>
@@ -74,7 +92,9 @@ export const ImportFlowModal: React.FC<Props> = ({ setNodes, setEdges, isImportM
 
           <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
             <Space>
-              <Button onClick={() => setIsImportFlowModalOpen(false)}>Cancel</Button>
+              <Button onClick={() => setIsImportFlowModalOpen(false)}>
+                Cancel
+              </Button>
               <Button type="primary" htmlType="submit">
                 Import
               </Button>

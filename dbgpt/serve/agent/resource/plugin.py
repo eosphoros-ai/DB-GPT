@@ -28,6 +28,7 @@ class PluginPackResourceParameters(PackResourceParameters):
         cls,
         parameters: Type["PluginPackResourceParameters"],
         version: Optional[str] = None,
+        **kwargs,
     ) -> Any:
         """Convert the parameters to configurations."""
         conf: List[ParameterDescription] = cast(
@@ -65,13 +66,16 @@ class PluginToolPack(ToolPack):
         return "tool(autogpt_plugins)"
 
     @classmethod
-    def resource_parameters_class(cls) -> Type[PluginPackResourceParameters]:
+    def resource_parameters_class(cls, **kwargs) -> Type[PluginPackResourceParameters]:
         agent_module: ModulePlugin = CFG.SYSTEM_APP.get_component(
             ComponentType.PLUGIN_HUB, ModulePlugin
         )
+
         tool_names = []
         for name, sub_tool in agent_module.tools._resources.items():
-            tool_names.append(name)
+            tool_names.append(
+                {"label": name, "key": name, "description": sub_tool.description}
+            )
 
         @dataclasses.dataclass
         class _DynPluginPackResourceParameters(PluginPackResourceParameters):

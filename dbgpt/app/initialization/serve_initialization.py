@@ -73,6 +73,16 @@ def register_serve_apps(system_app: SystemApp, cfg: Config, webserver_port: int)
 
     # ################################ Datasource Serve Register End ########################################
 
+    # ################################ Chat Feedback Serve Register End ########################################
+    from dbgpt.serve.feedback.serve import (
+        SERVE_CONFIG_KEY_PREFIX as Feedback_SERVE_CONFIG_KEY_PREFIX,
+    )
+    from dbgpt.serve.feedback.serve import Serve as FeedbackServe
+
+    # Register serve feedback
+    system_app.register(FeedbackServe)
+    # ################################ Chat Feedback Register End ########################################
+
     # ################################ File Serve Register Begin ######################################
 
     from dbgpt.configs.model_config import FILE_SERVER_LOCAL_STORAGE_PATH

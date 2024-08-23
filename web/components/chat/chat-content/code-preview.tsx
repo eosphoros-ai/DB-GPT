@@ -25,7 +25,7 @@ export function CodePreview({ code, light, dark, language, customStyle }: Props)
         icon={<CopyOutlined />}
         onClick={() => {
           const success = copy(code);
-          message[success ? 'success' : 'error'](success ? 'Copy success' : 'Copy failed');
+          message[success ? 'success' : 'error'](success ? '复制成功' : '复制失败');
         }}
       />
       <SyntaxHighlighter customStyle={customStyle} language={language} style={mode === 'dark' ? dark ?? coldarkDark : light ?? oneDark}>

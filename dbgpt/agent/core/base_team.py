@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
-from .action.base import ActionOutput
 from .agent import Agent, AgentMessage
 from .base_agent import ConversableAgent
 from .profile import ProfileConfig
@@ -142,7 +141,10 @@ class ManagerAgent(ConversableAgent, Team):
         Team.__init__(self, **kwargs)
 
     async def thinking(
-        self, messages: List[AgentMessage], prompt: Optional[str] = None
+        self,
+        messages: List[AgentMessage],
+        sender: Optional[Agent] = None,
+        prompt: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
         """Think and reason about the current task goal."""
         # TeamManager, which is based on processes and plans by default, only needs to
@@ -160,16 +162,7 @@ class ManagerAgent(ConversableAgent, Team):
         sender: Agent,
         rely_messages: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
-    ) -> List[AgentMessage]:
+        is_retry_chat: Optional[bool] = False,
+    ) -> Tuple[List[AgentMessage], Optional[Dict]]:
         """Load messages for thinking."""
-        return [AgentMessage(content=received_message.content)]
-
-    async def act(
-        self,
-        message: Optional[str],
-        sender: Optional[Agent] = None,
-        reviewer: Optional[Agent] = None,
-        **kwargs,
-    ) -> Optional[ActionOutput]:
-        """Perform actions based on the received message."""
-        return None
+        return [AgentMessage(content=received_message.content)], None

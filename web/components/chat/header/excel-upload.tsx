@@ -101,7 +101,7 @@ function ExcelUpload({ convUid, chatMode, onComplete, ...props }: PropsWithChild
           {loading ? (percent === 100 ? 'Analysis' : 'Uploading') : 'Upload'}
         </Button>
         {!!fileList.length && (
-          <div className="mt-2 text-gray-500 text-sm flex items-center">
+          <div className="mt-2 text-gray-500 text-sm flex items-center" onClick={() => setFileList([])}>
             <LinkOutlined className="mr-2" />
             <span>{fileList[0]?.name}</span>
           </div>
