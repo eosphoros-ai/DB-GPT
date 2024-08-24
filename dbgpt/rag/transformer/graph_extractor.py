@@ -154,7 +154,7 @@ class GraphExtractor(LLMExtractor):
         current_section = None
         for line in text.split("\n"):
             line = line.strip()
-            if line in ["Entities:", "Relationships:", ]:
+            if line in ["Entities:", "Relationships:"]:
                 current_section = line[:-1]
             elif line and current_section:
                 if current_section == "Entities":

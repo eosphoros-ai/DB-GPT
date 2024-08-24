@@ -9,7 +9,8 @@ from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community_store import CommunityStore
-from dbgpt.storage.knowledge_graph.community.factory import CommunityStoreAdapterFactory
+from dbgpt.storage.knowledge_graph.community.factory import \
+    CommunityStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -94,14 +95,16 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             self._llm_client,
             self._model_name,
             VectorStoreFactory.create(
-                self._vector_store_type, config.name + "_CHUNK_HISTORY", configure
+                self._vector_store_type, config.name + "_CHUNK_HISTORY",
+                configure
             ),
         )
         self._community_store = CommunityStore(
             CommunityStoreAdapterFactory.create(self._graph_store),
             CommunitySummarizer(self._llm_client, self._model_name),
             VectorStoreFactory.create(
-                self._vector_store_type, config.name + "_COMMUNITY_SUMMARY", configure
+                self._vector_store_type, config.name + "_COMMUNITY_SUMMARY",
+                configure
             ),
         )
 
@@ -110,16 +113,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         return self._config
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
-        # Load documents as chunks
+        """Extract and persist graph."""
         # todo add doc node
         for chunk in chunks:
-            # Extract triplets from each chunk
-            graph = await self._triplet_extractor.extract(chunk.content)
             # todo add chunk node
             # todo add relation doc-chunk
-            self._graph_store.insert_graph(graph)
-        # Build communities after loading all triplets
+
+            # extract graphs and save
+            graphs = await self._triplet_extractor.extract(chunk.content)
+            for graph in graphs:
+                self._graph_store.insert_graph(graph)
+
+        # build communities and save
         await self._community_store.build_communities()
+
         return [chunk.chunk_id for chunk in chunks]
 
     async def asimilar_search_with_scores(
