@@ -57,7 +57,7 @@ class LLMExtractor(ExtractorBase, ABC):
         return self._parse_response(response.text, limit)
 
     def clean(self):
-        """Do nothing by default"""
+        """Do nothing by default."""
 
     @abstractmethod
     def _parse_response(self, text: str, limit: Optional[int] = None) -> List:
