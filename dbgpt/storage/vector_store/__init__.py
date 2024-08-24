@@ -114,11 +114,7 @@ __vector_store__ = [
     "ElasticSearch",
 ]
 
-__knowledge_graph__ = [
-    "KnowledgeGraph",
-    "CommunitySummaryKnowledgeGraph",
-    "OpenSPG"
-]
+__knowledge_graph__ = ["KnowledgeGraph", "CommunitySummaryKnowledgeGraph", "OpenSPG"]
 
 __document_store__ = ["FullText"]
 

@@ -279,6 +279,10 @@ class VectorStoreConnector:
         """
         return self.client.delete_by_ids(ids=ids)
 
+    def truncate(self):
+        """Truncate data."""
+        return self.client.truncate()
+
     @property
     def current_embeddings(self) -> Optional[Embeddings]:
         """Return the current embeddings."""

@@ -1,7 +1,7 @@
 """Graph store base class."""
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple, Generator
+from typing import Generator, List, Optional, Tuple
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
@@ -49,7 +49,7 @@ class GraphStoreBase(ABC):
         """Add triplet."""
 
     @abstractmethod
-    def insert_graph(self, graph:Graph):
+    def insert_graph(self, graph: Graph):
         """Add graph."""
 
     @abstractmethod

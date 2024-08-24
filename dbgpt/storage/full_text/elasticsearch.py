@@ -5,7 +5,7 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import List, Optional
 
 from dbgpt.core import Chunk
-from dbgpt.rag.index.base import logger, IndexStoreConfig
+from dbgpt.rag.index.base import IndexStoreConfig, logger
 from dbgpt.storage.full_text.base import FullTextStoreBase
 from dbgpt.storage.vector_store.elastic_store import ElasticsearchVectorConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters

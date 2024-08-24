@@ -3,8 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, \
-    ModelRequest
+from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
 from dbgpt.rag.transformer.base import ExtractorBase
 
 logger = logging.getLogger(__name__)
@@ -13,12 +12,7 @@ logger = logging.getLogger(__name__)
 class LLMExtractor(ExtractorBase, ABC):
     """LLMExtractor class."""
 
-    def __init__(
-        self,
-        llm_client: LLMClient,
-        model_name: str,
-        prompt_template: str
-    ):
+    def __init__(self, llm_client: LLMClient, model_name: str, prompt_template: str):
         """Initialize the LLMExtractor."""
         self._llm_client = llm_client
         self._model_name = model_name
@@ -29,16 +23,16 @@ class LLMExtractor(ExtractorBase, ABC):
         return await self._extract(text, None, limit)
 
     async def _extract(
-        self,
-        text: str,
-        history: str = None,
-        limit: Optional[int] = None
+        self, text: str, history: str = None, limit: Optional[int] = None
     ) -> List:
         """Inner extract by LLM."""
         template = HumanPromptTemplate.from_template(self._prompt_template)
 
-        messages = template.format_messages(text=text, history=history) \
-            if history is not None else template.format_messages(text=text)
+        messages = (
+            template.format_messages(text=text, history=history)
+            if history is not None
+            else template.format_messages(text=text)
+        )
 
         # use default model if needed
         if not self._model_name:

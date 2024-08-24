@@ -6,8 +6,8 @@ from typing import List, Optional
 
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.llm_extractor import LLMExtractor
-from dbgpt.storage.vector_store.base import VectorStoreBase
 from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
+from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
 
@@ -152,10 +152,12 @@ class GraphExtractor(LLMExtractor):
                                 },
                             }
                         )
-                        vertex = Vertex(entity_name,description=entity_description)
+                        vertex = Vertex(entity_name, description=entity_description)
                         graph.upsert_vertex(vertex)
                 elif current_section == "Relationships":
-                    match = re.match(r"\s*\((.*?),\s*(.*?),\s*(.*?),\s*(\d+)\)\s*", line)
+                    match = re.match(
+                        r"\s*\((.*?),\s*(.*?),\s*(.*?),\s*(\d+)\)\s*", line
+                    )
                     if match:
                         source, target, description, strength = [
                             part.strip() for part in match.groups()
@@ -171,7 +173,9 @@ class GraphExtractor(LLMExtractor):
                                 },
                             }
                         )
-                        edge = Edge(source,target,label=description,description = description)
+                        edge = Edge(
+                            source, target, label=description, description=description
+                        )
                         graph.append_edge(edge)
                 elif current_section == "Keywords":
                     keywords = [k.strip() for k in line.strip("[]").split(",")]

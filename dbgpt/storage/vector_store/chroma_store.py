@@ -11,6 +11,7 @@ from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
+
 from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
 from .filters import FilterOperator, MetadataFilters
 
@@ -185,6 +186,20 @@ class ChromaStore(VectorStoreBase):
         ids = ids.split(",")
         if len(ids) > 0:
             self._collection.delete(ids=ids)
+
+    def truncate(self) -> List[str]:
+        """Truncate data index_name."""
+
+        logger.info(f"begin truncate chroma collection:{self._collection.name}")
+        results = self._collection.get()
+        ids = results.get("ids")
+        if ids:
+            self._collection.delete(ids=ids)
+            logger.info(
+                f"truncate chroma collection {self._collection.name} "
+                f"{len(ids)} chunks success"
+            )
+        return ids
 
     def convert_metadata_filters(
         self,

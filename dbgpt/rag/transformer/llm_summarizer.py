@@ -2,8 +2,7 @@
 import logging
 from abc import ABC
 
-from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, \
-    ModelRequest
+from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
 from dbgpt.rag.transformer.base import SummarizerBase
 
 logger = logging.getLogger(__name__)
@@ -12,12 +11,7 @@ logger = logging.getLogger(__name__)
 class LLMSummarizer(SummarizerBase, ABC):
     """LLMSummarizer class."""
 
-    def __init__(
-        self,
-        llm_client: LLMClient,
-        model_name: str,
-        prompt_template: str
-    ):
+    def __init__(self, llm_client: LLMClient, model_name: str, prompt_template: str):
         """Initialize the LLMSummarizer."""
         self._llm_client = llm_client
         self._model_name = model_name

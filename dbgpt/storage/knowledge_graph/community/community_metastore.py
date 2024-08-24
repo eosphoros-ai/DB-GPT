@@ -14,11 +14,7 @@ logger = logging.getLogger(__name__)
 class BuiltinCommunityMetastore(CommunityMetastore):
     """Builtin Community metastore."""
 
-    def __init__(
-        self,
-        vector_store: VectorStoreBase,
-        rdb_store: RDBMSConnector = None
-    ):
+    def __init__(self, vector_store: VectorStoreBase, rdb_store: RDBMSConnector = None):
         self._vector_store = vector_store
         self._rdb_store = rdb_store
 
@@ -42,9 +38,7 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         chunks = await self._vector_store.asimilar_search_with_scores(
             query, self._topk, self._score_threshold
         )
-        return [
-            Community(id=chunk.chunk_id, summary=chunk.content) for chunk in chunks
-        ]
+        return [Community(id=chunk.chunk_id, summary=chunk.content) for chunk in chunks]
 
     async def save(self, communities: List[Community]):
         """Save communities."""

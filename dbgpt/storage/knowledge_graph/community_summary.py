@@ -9,8 +9,7 @@ from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.community_store import CommunityStore
-from dbgpt.storage.knowledge_graph.community.factory import \
-    CommunityStoreAdapterFactory
+from dbgpt.storage.knowledge_graph.community.factory import CommunityStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -80,7 +79,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         )
         self._community_score_threshold = os.getenv(
             "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
-            config.community_score_threshold
+            config.community_score_threshold,
         )
 
         def configure(name: str, cfg: VectorStoreConfig):
@@ -95,21 +94,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             self._llm_client,
             self._model_name,
             VectorStoreFactory.create(
-                self._vector_store_type,
-                config.name + "_CHUNK_HISTORY",
-                configure
-            )
+                self._vector_store_type, config.name + "_CHUNK_HISTORY", configure
+            ),
         )
         self._community_store = CommunityStore(
             CommunityStoreAdapterFactory.create(self._graph_store),
-            CommunitySummarizer(
-                self._llm_client, self._model_name
-            ),
+            CommunitySummarizer(self._llm_client, self._model_name),
             VectorStoreFactory.create(
-                self._vector_store_type,
-                config.name + "_COMMUNITY_SUMMARY",
-                configure
-            )
+                self._vector_store_type, config.name + "_COMMUNITY_SUMMARY", configure
+            ),
         )
 
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
@@ -183,5 +176,3 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         logger.info(f"Clean triplet extractor")
         self._triplet_extractor.clean()
-
-

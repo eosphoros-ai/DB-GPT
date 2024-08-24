@@ -1,7 +1,7 @@
 """Memory graph store."""
 import json
 import logging
-from typing import List, Optional, Tuple, Generator
+from typing import Generator, List, Optional, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig

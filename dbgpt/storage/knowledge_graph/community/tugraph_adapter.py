@@ -20,7 +20,7 @@ class TuGraphCommunityStoreAdapter(CommunityStoreAdapter):
             "CALL db.plugin.callPlugin"
             "('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)"
         )
-        result = mg.get_vertex("json_node").get_prop('description')
+        result = mg.get_vertex("json_node").get_prop("description")
         community_ids = json.loads(result)["community_id_list"]
         logger.info(f"Discovered {len(community_ids)} communities.")
         return community_ids

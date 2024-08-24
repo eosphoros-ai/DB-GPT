@@ -1,7 +1,7 @@
 """TuGraph Connector."""
 
-import json, re
-from typing import Dict, List, cast, Union, Generator
+import json
+from typing import Dict, Generator, List, cast
 
 from .base import BaseConnector
 
@@ -28,7 +28,9 @@ class TuGraphConnector(BaseConnector):
                 graph_list = session.run("CALL dbms.graph.listGraphs()").data()
                 exists = any(item["graph_name"] == graph_name for item in graph_list)
                 if not exists:
-                    session.run(f"CALL dbms.graph.createGraph('{graph_name}', '', 2048)")
+                    session.run(
+                        f"CALL dbms.graph.createGraph('{graph_name}', '', 2048)"
+                    )
         except Exception as e:
             raise Exception(f"Failed to create graph '{graph_name}': {str(e)}")
 
@@ -98,7 +100,7 @@ class TuGraphConnector(BaseConnector):
                 return list(result)
             except Exception as e:
                 raise Exception(f"Query execution failed: {e}")
-            
+
     def run_stream(self, query: str) -> Generator:
         """Run GQL."""
         with self._driver.session(database=self._graph) as session:

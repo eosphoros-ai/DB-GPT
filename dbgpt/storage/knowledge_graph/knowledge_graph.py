@@ -8,11 +8,10 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
-from dbgpt.storage.graph_store.base import GraphStoreConfig, GraphStoreBase
+from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
-from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
-    KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
@@ -54,9 +53,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             cfg.name = config.name
             cfg.embedding_fn = config.embedding_fn
 
-        graph_store_type = (
-            os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
-        )
+        graph_store_type = os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
         return GraphStoreFactory.create(graph_store_type, configure)
 
     def get_config(self) -> BuiltinKnowledgeGraphConfig:

@@ -6,20 +6,20 @@ from typing import List
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.storage.graph_store.community import Community
 from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter
-from dbgpt.storage.knowledge_graph.community.community_metastore import \
-    BuiltinCommunityMetastore
+from dbgpt.storage.knowledge_graph.community.community_metastore import (
+    BuiltinCommunityMetastore,
+)
 from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
 
 
 class CommunityStore:
-
     def __init__(
         self,
         community_store_adapter: CommunityStoreAdapter,
         community_summarizer: CommunitySummarizer,
-        vector_store: VectorStoreBase
+        vector_store: VectorStoreBase,
     ):
         """Initialize the CommunityStore"""
         self._community_store_adapter = community_store_adapter
@@ -28,9 +28,7 @@ class CommunityStore:
 
     async def build_communities(self):
         """discover communities."""
-        community_ids = await (
-            self._community_store_adapter.discover_communities()
-        )
+        community_ids = await (self._community_store_adapter.discover_communities())
 
         # summarize communities
         communities = []
@@ -40,14 +38,11 @@ class CommunityStore:
             )
             community.summary = await (
                 # todo: use concise format
-                self._community_summarizer.summarize(
-                    graph=community.data.format()
-                )
+                self._community_summarizer.summarize(graph=community.data.format())
             )
             communities.append(community)
             logger.info(
-                f"Summarize community {community_id}: "
-                f"{community.summary[:50]}..."
+                f"Summarize community {community_id}: " f"{community.summary[:50]}..."
             )
 
         # save summaries

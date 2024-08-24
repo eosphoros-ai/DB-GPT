@@ -7,8 +7,7 @@ from dbgpt.rag.transformer.llm_summarizer import LLMSummarizer
 
 logger = logging.getLogger(__name__)
 
-COMMUNITY_SUMMARY_EXTRACT_PT = (
-    """Task: Summarize Knowledge Graph Community
+COMMUNITY_SUMMARY_EXTRACT_PT = """Task: Summarize Knowledge Graph Community
 
         You are given a community from a knowledge graph with the following information:
         1. Nodes (entities) with their descriptions
@@ -24,7 +23,6 @@ COMMUNITY_SUMMARY_EXTRACT_PT = (
 
         Summary:
     """
-)
 
 
 class CommunitySummarizer(LLMSummarizer):

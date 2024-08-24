@@ -4,8 +4,9 @@ import logging
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
 from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter
-from dbgpt.storage.knowledge_graph.community.tugraph_adapter import \
-    TuGraphCommunityStoreAdapter
+from dbgpt.storage.knowledge_graph.community.tugraph_adapter import (
+    TuGraphCommunityStoreAdapter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,5 +27,5 @@ class CommunityStoreAdapterFactory:
         else:
             raise Exception(
                 "create community store adapter for %s failed",
-                graph_store.__class__.__name__
+                graph_store.__class__.__name__,
             )

@@ -13,9 +13,7 @@ class VectorStoreFactory:
 
     @staticmethod
     def create(
-        vector_store_type: str,
-        vector_space_name: str,
-        vector_store_configure=None
+        vector_store_type: str, vector_space_name: str, vector_store_configure=None
     ) -> VectorStoreBase:
         """Create a VectorStore instance.
 
