@@ -161,7 +161,6 @@ class TuGraphStore(GraphStoreBase):
                     f"['_document_id',string,true],"
                     f"['_chunk_id',string,true],"
                     f"['_community_id',string,true],"
-                    f"['_weight',double,true],"
                     f"['description',string,true])"
                 )
                 self.conn.run(create_vertex_gql)
@@ -239,8 +238,7 @@ class TuGraphStore(GraphStoreBase):
                     "description": escape_quotes(node.get_prop("description")) or "",
                     "_document_id": "0",
                     "_chunk_id": "0",
-                    "_community_id": "1",
-                    "_weight": 10,
+                    "_community_id": "0"
                 }
             )
         node_query = (
