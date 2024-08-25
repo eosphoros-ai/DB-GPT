@@ -56,7 +56,10 @@ class LLMExtractor(ExtractorBase, ABC):
             ValueError("optional argument limit >= 1")
         return self._parse_response(response.text, limit)
 
-    def clean(self):
+    def truncate(self):
+        """Do nothing by default."""
+
+    def drop(self):
         """Do nothing by default."""
 
     @abstractmethod

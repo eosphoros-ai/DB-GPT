@@ -287,6 +287,10 @@ class GraphExtractor(LLMExtractor):
 
         return [graph]
 
-    def clean(self):
-        """Clean chunk history."""
+    def truncate(self):
+        """truncate chunk history."""
+        self._chunk_history.truncate()
+
+    def drop(self):
+        """drop chunk history."""
         self._chunk_history.delete_vector_name(self._vector_space)

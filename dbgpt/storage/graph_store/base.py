@@ -61,6 +61,10 @@ class GraphStoreBase(ABC):
         """Delete triplet."""
 
     @abstractmethod
+    def truncate(self):
+        """Truncate Graph."""
+
+    @abstractmethod
     def drop(self):
         """Drop graph."""
 

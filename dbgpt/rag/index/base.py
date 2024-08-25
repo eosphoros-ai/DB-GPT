@@ -107,6 +107,9 @@ class IndexStoreBase(ABC):
         Args:
             ids(str): The vector ids to delete, separated by comma.
         """
+    @abstractmethod
+    def truncate(self) -> List[str]:
+        """Truncate data by name."""
 
     @abstractmethod
     def delete_vector_name(self, index_name: str):
@@ -119,12 +122,6 @@ class IndexStoreBase(ABC):
     def vector_name_exists(self) -> bool:
         """Whether name exists."""
         return True
-
-    @abstractmethod
-    def truncate(self) -> List[str]:
-        """Truncate data by name."""
-
-        raise NotImplementedError
 
     def load_document_with_limit(
         self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
@@ -141,7 +138,7 @@ class IndexStoreBase(ABC):
         """
         # Group the chunks into chunks of size max_chunks
         chunk_groups = [
-            chunks[i : i + max_chunks_once_load]
+            chunks[i: i + max_chunks_once_load]
             for i in range(0, len(chunks), max_chunks_once_load)
         ]
         logger.info(

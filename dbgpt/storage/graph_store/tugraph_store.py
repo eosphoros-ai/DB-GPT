@@ -238,6 +238,10 @@ class TuGraphStore(GraphStoreBase):
         self.conn.run(query=node_query)
         self.conn.run(query=edge_query)
 
+    def truncate(self):
+        """Truncate Graph."""
+        # todo: self.conn.truncate_graph(self._graph_name)
+
     def drop(self):
         """Delete Graph."""
         self.conn.delete_graph(self._graph_name)

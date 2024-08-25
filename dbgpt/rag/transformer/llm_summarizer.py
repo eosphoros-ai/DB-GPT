@@ -41,5 +41,8 @@ class LLMSummarizer(SummarizerBase, ABC):
 
         return response.text
 
-    def clean(self):
-        """Do nothing by default"""
+    def truncate(self):
+        """Do nothing by default."""
+
+    def drop(self):
+        """Do nothing by default."""

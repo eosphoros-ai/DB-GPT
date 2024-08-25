@@ -28,7 +28,9 @@ class CommunityStore:
 
     async def build_communities(self):
         """discover communities."""
-        community_ids = await (self._community_store_adapter.discover_communities())
+        community_ids = await (
+            self._community_store_adapter.discover_communities()
+        )
 
         # summarize communities
         communities = []
@@ -38,22 +40,40 @@ class CommunityStore:
             )
             community.summary = await (
                 # todo: use concise format
-                self._community_summarizer.summarize(graph=community.data.format())
+                self._community_summarizer.summarize(
+                    graph=community.data.format()
+                )
             )
             communities.append(community)
             logger.info(
                 f"Summarize community {community_id}: " f"{community.summary[:50]}..."
             )
 
-        # save summaries
+        # truncate then save new summaries
+        await self._meta_store.truncate()
         await self._meta_store.save(communities)
 
     async def search_communities(self, query: str) -> List[Community]:
         return await self._meta_store.search(query)
 
-    def drop(self):
-        logger.info(f"Remove graph")
-        self._community_store_adapter.graph_store.drop()
+    def truncate(self):
+        """Truncate community store."""
+        logger.info(f"Truncate community metastore")
+        self._meta_store.truncate()
 
+        logger.info(f"Truncate community summarizer")
+        self._community_summarizer.truncate()
+
+        logger.info(f"Truncate graph")
+        self._community_store_adapter.graph_store.truncate()
+
+    def drop(self):
+        """Drop community store."""
         logger.info(f"Remove community metastore")
         self._meta_store.drop()
+
+        logger.info(f"Remove community summarizer")
+        self._community_summarizer.drop()
+
+        logger.info(f"Remove graph")
+        self._community_store_adapter.graph_store.drop()

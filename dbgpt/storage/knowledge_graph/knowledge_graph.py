@@ -44,8 +44,12 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             raise ValueError("No llm client provided.")
 
         self._model_name = config.model_name
-        self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
-        self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
+        self._triplet_extractor = TripletExtractor(
+            self._llm_client, self._model_name
+        )
+        self._keyword_extractor = KeywordExtractor(
+            self._llm_client, self._model_name
+        )
         self._graph_store = self.__init_graph_store(config)
 
     def __init_graph_store(self, config) -> GraphStoreBase:
@@ -123,24 +127,25 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             return []
 
         content = (
-            "The following entities and relations provided after [SUBGRAPH] "
-            "are retrieved from the knowledge graph based on the keywords:\n"
+            "The following entities and relationships provided after "
+            "[Subgraph] are retrieved from the knowledge graph "
+            "based on the keywords:\n"
             f"\"{','.join(keywords)}\".\n"
             "---------------------\n"
-            "The following examples after [ENTITIES] and [RELATIONS] that "
+            "The following examples after [Entities] and [Relationships] that "
             "can help you understand the data format of the knowledge graph, "
             "but do not use them in the answer.\n"
-            "[ENTITIES]:\n"
+            "[Entities]:\n"
             "(alice)\n"
             "(bob:{age:28})\n"
             '(carry:{age:18;role:"teacher"})\n\n'
-            "[RELATIONS]:\n"
+            "[Relationships]:\n"
             "(alice)-[reward]->(alice)\n"
             '(alice)-[notify:{method:"email"}]->'
             '(carry:{age:18;role:"teacher"})\n'
             '(bob:{age:28})-[teach:{course:"math";hour:180}]->(alice)\n'
             "---------------------\n"
-            f"[SUBGRAPH]:\n{subgraph}\n"
+            f"[Subgraph]:\n{subgraph}\n"
         )
         return [Chunk(content=content)]
 
@@ -148,13 +153,26 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         """Query graph."""
         return self._graph_store.get_full_graph(limit)
 
+    def truncate(self) -> List[str]:
+        """Truncate knowledge graph."""
+        logger.info(f"Truncate graph {self._config.name}")
+        self._graph_store.truncate()
+
+        logger.info(f"Truncate keyword extractor")
+        self._keyword_extractor.truncate()
+
+        logger.info(f"Truncate triplet extractor")
+        self._triplet_extractor.truncate()
+
+        return [self._config.name]
+
     def delete_vector_name(self, index_name: str):
         """Delete vector name."""
-        logger.info(f"Remove graph {index_name}")
+        logger.info(f"Drop graph {index_name}")
         self._graph_store.drop()
 
-        logger.info(f"Clean keyword extractor")
-        self._keyword_extractor.clean()
+        logger.info(f"Drop keyword extractor")
+        self._keyword_extractor.drop()
 
-        logger.info(f"Clean triplet extractor")
-        self._triplet_extractor.clean()
+        logger.info(f"Drop triplet extractor")
+        self._triplet_extractor.drop()

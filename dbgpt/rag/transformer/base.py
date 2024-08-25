@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 class TransformerBase:
     """Transformer base class."""
 
+    @abstractmethod
+    def truncate(self):
+        """Truncate operation."""
+
+    @abstractmethod
+    def drop(self):
+        """Clean operation."""
+
 
 class EmbedderBase(TransformerBase, ABC):
     """Embedder base class."""
@@ -21,10 +29,6 @@ class SummarizerBase(TransformerBase, ABC):
     async def summarize(self, **args) -> str:
         """Summarize result."""
 
-    @abstractmethod
-    def clean(self):
-        """Clean when finish summarization."""
-
 
 class ExtractorBase(TransformerBase, ABC):
     """Extractor base class."""
@@ -32,10 +36,6 @@ class ExtractorBase(TransformerBase, ABC):
     @abstractmethod
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
         """Extract results from text."""
-
-    @abstractmethod
-    def clean(self):
-        """Clean when finish extraction."""
 
 
 class TranslatorBase(TransformerBase, ABC):

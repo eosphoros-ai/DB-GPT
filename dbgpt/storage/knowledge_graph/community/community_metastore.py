@@ -42,7 +42,6 @@ class BuiltinCommunityMetastore(CommunityMetastore):
 
     async def save(self, communities: List[Community]):
         """Save communities."""
-        # todo: clean before save
         chunks = [
             Chunk(id=c.id, content=c.summary, metadata={"total": len(communities)})
             for c in communities
@@ -52,6 +51,11 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         )
         logger.info(f"Save {len(communities)} communities")
 
+    def truncate(self):
+        """Truncate community metastore."""
+        self._vector_store.truncate()
+
     def drop(self):
+        """Drop community metastore."""
         if self._vector_store.vector_name_exists():
             self._vector_store.delete_vector_name(self._vector_space)
