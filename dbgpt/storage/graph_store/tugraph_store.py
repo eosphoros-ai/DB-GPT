@@ -240,7 +240,8 @@ class TuGraphStore(GraphStoreBase):
 
     def truncate(self):
         """Truncate Graph."""
-        # todo: self.conn.truncate_graph(self._graph_name)
+        gql = 'MATCH (n) DELETE n'
+        self.conn.run(gql)
 
     def drop(self):
         """Delete Graph."""
