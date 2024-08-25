@@ -18,7 +18,7 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         self._vector_store = vector_store
         self._rdb_store = rdb_store
 
-        config = self._vector_store.get_config()
+        config = self._vector_store.config
         self._vector_space = config.name
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads

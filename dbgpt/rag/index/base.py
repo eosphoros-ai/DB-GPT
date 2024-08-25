@@ -54,8 +54,9 @@ class IndexStoreBase(ABC):
         """Init index store."""
         self._executor = executor or ThreadPoolExecutor()
 
+    @property
     @abstractmethod
-    def get_config(self) -> IndexStoreConfig:
+    def config(self) -> IndexStoreConfig:
         """Get the index store config."""
 
     @abstractmethod

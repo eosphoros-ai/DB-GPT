@@ -30,17 +30,25 @@ class MemoryGraphStore(GraphStoreBase):
         self._edge_name_key = graph_store_config.edge_name_key
         self._graph = MemoryGraph(edge_label=self._edge_name_key)
 
-    def get_config(self):
+    def config(self):
         """Get the graph store config."""
         return self._graph_store_config
 
-    def relation_type(self) -> str:
-        """Get the relation type."""
+    def edge_type(self) -> str:
+        """Get the edge type."""
         pass
 
-    def entity_type(self) -> str:
-        """Get the entity type."""
+    def vertex_type(self) -> str:
+        """Get the vertex type."""
         pass
+
+    def vertex_name_key(self) -> str:
+        """Get the vertex name key."""
+        pass
+
+    def edge_name_key(self) -> str:
+        """Get the edge name key."""
+        return self._edge_name_key
 
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Insert a triplet into the graph."""
@@ -63,6 +71,10 @@ class MemoryGraphStore(GraphStoreBase):
         """Delete a specific triplet from the graph."""
         self._graph.del_edges(sub, obj, **{self._edge_name_key: rel})
 
+    def truncate(self):
+        """Truncate graph."""
+        self._graph = MemoryGraph(edge_label=self._edge_name_key)
+
     def drop(self):
         """Drop graph."""
         self._graph = None
@@ -71,12 +83,12 @@ class MemoryGraphStore(GraphStoreBase):
         """Return the graph schema as a JSON string."""
         return json.dumps(self._graph.schema())
 
-    def get_full_graph(self, limit: Optional[int] = None) -> MemoryGraph:
+    def get_full_graph(self, limit: Optional[int] = None) -> Graph:
         """Return self."""
         if not limit:
             return self._graph
 
-        subgraph = MemoryGraph()
+        subgraph = MemoryGraph(edge_label=self._edge_name_key)
         for count, edge in enumerate(self._graph.edges()):
             if count >= limit:
                 break
@@ -93,7 +105,7 @@ class MemoryGraphStore(GraphStoreBase):
         depth: Optional[int] = None,
         fan: Optional[int] = None,
         limit: Optional[int] = None,
-    ) -> MemoryGraph:
+    ) -> Graph:
         """Explore the graph from given subjects up to a depth."""
         return self._graph.search(subs, direct, depth, fan, limit)
 

@@ -91,7 +91,7 @@ class ChromaStore(VectorStoreBase):
             metadata=collection_metadata,
         )
 
-    def get_config(self) -> ChromaVectorConfig:
+    def config(self) -> ChromaVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
 

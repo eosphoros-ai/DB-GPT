@@ -28,9 +28,9 @@ class TuGraphCommunityStoreAdapter(CommunityStoreAdapter):
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
         query = (
-            f"MATCH (n:{self._graph_store.entity_type})-"
-            f"[r:{self._graph_store.relation_type}]-"
-            f"(m:{self._graph_store.entity_type}) "
+            f"MATCH (n:{self._graph_store.vertex_type})-"
+            f"[r:{self._graph_store.edge_type}]-"
+            f"(m:{self._graph_store.vertex_type}) "
             f"WHERE n._community_id = '{community_id}' RETURN n,r,m"
         )
         return Community(id=community_id, data=self._graph_store.aquery(query))

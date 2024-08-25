@@ -5,7 +5,7 @@ from dbgpt.storage.graph_store.graph import MemoryGraph, Edge, Vertex, Direction
 
 @pytest.fixture
 def g():
-    g = MemoryGraph()
+    g = MemoryGraph(edge_label="label")
     g.append_edge(Edge("A", "A", label="0"))
     g.append_edge(Edge("A", "A", label="1"))
     g.append_edge(Edge("A", "B", label="2"))

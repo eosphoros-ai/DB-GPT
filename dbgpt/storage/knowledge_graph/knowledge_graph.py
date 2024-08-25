@@ -60,7 +60,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         graph_store_type = os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
         return GraphStoreFactory.create(graph_store_type, configure)
 
-    def get_config(self) -> BuiltinKnowledgeGraphConfig:
+    def config(self) -> BuiltinKnowledgeGraphConfig:
         """Get the knowledge graph config."""
         return self._config
 

@@ -19,8 +19,9 @@ class KnowledgeGraphConfig(IndexStoreConfig):
 class KnowledgeGraphBase(IndexStoreBase, ABC):
     """Knowledge graph base class."""
 
+    @property
     @abstractmethod
-    def get_config(self) -> KnowledgeGraphConfig:
+    def config(self) -> KnowledgeGraphConfig:
         """Get the knowledge graph config."""
 
     @abstractmethod

@@ -236,7 +236,7 @@ class ElasticStore(VectorStoreBase):
         except Exception as e:
             logger.error(f"ElasticSearch connection failed: {e}")
 
-    def get_config(self) -> ElasticsearchVectorConfig:
+    def config(self) -> ElasticsearchVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
 

@@ -365,7 +365,7 @@ class MilvusStore(VectorStoreBase):
 
         return res.primary_keys
 
-    def get_config(self) -> MilvusVectorConfig:
+    def config(self) -> MilvusVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
 

@@ -32,17 +32,30 @@ class GraphStoreConfig(BaseModel):
 class GraphStoreBase(ABC):
     """Graph store base class."""
 
+    @property
     @abstractmethod
-    def get_config(self) -> GraphStoreConfig:
+    def config(self) -> GraphStoreConfig:
         """Get the graph store config."""
 
+    @property
     @abstractmethod
-    def entity_type(self) -> str:
-        """Get the entity type."""
+    def vertex_type(self) -> str:
+        """Get the vertex type."""
 
+    @property
     @abstractmethod
-    def relation_type(self) -> str:
-        """Get the relation type."""
+    def edge_type(self) -> str:
+        """Get the edge type."""
+
+    @property
+    @abstractmethod
+    def vertex_name_key(self) -> str:
+        """Get the vertex name key."""
+
+    @property
+    @abstractmethod
+    def edge_name_key(self) -> str:
+        """Get the edge name key."""
 
     @abstractmethod
     def insert_triplet(self, sub: str, rel: str, obj: str):

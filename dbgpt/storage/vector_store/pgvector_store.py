@@ -76,7 +76,7 @@ class PGVectorStore(VectorStoreBase):
             connection_string=self.connection_string,
         )
 
-    def get_config(self) -> PGVectorConfig:
+    def config(self) -> PGVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
 

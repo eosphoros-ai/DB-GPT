@@ -213,15 +213,21 @@ class GraphExtractor(LLMExtractor):
     """GraphExtractor class."""
 
     def __init__(
-        self, llm_client: LLMClient, model_name: str,
+        self,
+        llm_client: LLMClient,
+        model_name: str,
+        vertex_label: str,
+        edge_label: str,
         chunk_history: VectorStoreBase
     ):
         """Initialize the GraphExtractor."""
         super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT_CN)
 
+        self._vertex_label = vertex_label
+        self._edge_label = edge_label
         self._chunk_history = chunk_history
 
-        config = self._chunk_history.get_config()
+        config = self._chunk_history.config
         self._vector_space = config.name
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads
@@ -253,7 +259,10 @@ class GraphExtractor(LLMExtractor):
         text: str,
         limit: Optional[int] = None
     ) -> List[Graph]:
-        graph = MemoryGraph()
+        graph = MemoryGraph(
+            vertex_label=self._vertex_label,
+            edge_label=self._edge_label
+        )
         edge_count = 0
         current_section = None
         for line in text.split("\n"):

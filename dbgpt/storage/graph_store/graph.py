@@ -73,8 +73,11 @@ class Vertex(Elem):
         """Return the vertex ID."""
         return self._vid
 
-    def format(self, label_key: Optional[str] = None):
+    def format(self, label_key: Optional[str] = None, concise: bool = False):
         """Format vertex properties into a string."""
+        if concise:
+            return f"({self._vid})"
+
         label = self.get_prop(label_key) if label_key else self._vid
         props_str = super().format(label_key)
         if props_str == "{}":
@@ -207,7 +210,7 @@ class Graph(ABC):
 class MemoryGraph(Graph):
     """Graph class."""
 
-    def __init__(self, vertex_label: Optional[str] = None, edge_label: str = "label"):
+    def __init__(self, edge_label: str, vertex_label: str = None):
         """Initialize MemoryGraph with vertex label and edge label."""
         assert edge_label, "Edge label is needed"
 
@@ -388,7 +391,10 @@ class MemoryGraph(Graph):
         limit: Optional[int] = None,
     ) -> "MemoryGraph":
         """Search the graph from a vertex with specified parameters."""
-        subgraph = MemoryGraph()
+        subgraph = MemoryGraph(
+            vertex_label=self._vertex_label,
+            edge_label=self._edge_label
+        )
 
         for vid in vids:
             self.__search(vid, direct, depth, fan, limit, 0, set(), subgraph)
@@ -454,13 +460,15 @@ class MemoryGraph(Graph):
         """Format graph to string."""
         vs_str = "\n".join(v.format(self.vertex_label) for v in self.vertices())
         es_str = "\n".join(
-            f"{self.get_vertex(e.sid).format(self.vertex_label)}"
+            f"{self.get_vertex(e.sid).format(self.vertex_label, concise=True)}"
             f"{e.format(self.edge_label)}"
-            f"{self.get_vertex(e.tid).format(self.vertex_label)}"
+            f"{self.get_vertex(e.tid).format(self.vertex_label, concise=True)}"
             for e in self.edges()
         )
         return (
-            f"Entities:\n{vs_str}\n\nRelations:\n{es_str}" if (vs_str or es_str) else ""
+            f"Entities:\n{vs_str}\n\n"
+            f"Relationships:\n{es_str}"
+            if (vs_str or es_str) else ""
         )
 
     def graphviz(self, name="g"):

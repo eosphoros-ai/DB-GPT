@@ -762,7 +762,7 @@ class OceanBaseStore(VectorStoreBase):
             enable_normalize_vector=self.OB_ENABLE_NORMALIZE_VECTOR,
         )
 
-    def get_config(self) -> OceanBaseConfig:
+    def config(self) -> OceanBaseConfig:
         """Get the vector store config."""
         return self._vector_store_config
 
