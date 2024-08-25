@@ -16,13 +16,13 @@ def store():
 def test_insert_graph(store):
     graph = MemoryGraph()
     vertex_list = [
-        Vertex('A', description="Vertex A", _document_id="Test doc"),
-        Vertex('B', description="Vertex B", _document_id="Test doc"),
-        Vertex('C', description="Vertex C", _document_id="Test doc"),
-        Vertex('D', description="Vertex D", _document_id="Test doc"),
-        Vertex('E', description="Vertex E", _document_id="Test doc"),
-        Vertex('F', description="Vertex F", _document_id="Test doc"),
-        Vertex('G', description="Vertex G", _document_id="Test doc")
+        Vertex('A','A', description="Vertex A", _document_id="Test doc"),
+        Vertex('B','B', description="Vertex B", _document_id="Test doc"),
+        Vertex('C','C', description="Vertex C", _document_id="Test doc"),
+        Vertex('D','D', description="Vertex D", _document_id="Test doc"),
+        Vertex('E','E', description="Vertex E", _document_id="Test doc"),
+        Vertex('F','F', description="Vertex F", _document_id="Test doc"),
+        Vertex('G','G', description="Vertex G", _document_id="Test doc")
     ]
     edge_list = [
         Edge("A", "B", name='A-B', description="description of edge"),

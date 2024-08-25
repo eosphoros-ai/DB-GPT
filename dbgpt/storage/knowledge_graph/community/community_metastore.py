@@ -51,7 +51,7 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         )
         logger.info(f"Save {len(communities)} communities")
 
-    def truncate(self):
+    async def truncate(self):
         """Truncate community metastore."""
         self._vector_store.truncate()
 

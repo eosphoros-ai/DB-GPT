@@ -431,14 +431,14 @@ class TuGraphStore(GraphStoreBase):
                                 {"id": "json_node", "description": value})
 
             nodes = [
-                Vertex(node["id"], description=node["description"])
+                Vertex(node["id"],name=node['id'], description=node["description"])
                 for node in nodes_list
             ]
             rels = [
                 Edge(
                     edge["src_id"],
                     edge["dst_id"],
-                    label=edge["prop_id"],
+                    name=edge["prop_id"],
                     description=edge["description"],
                 )
                 for edge in rels_list
@@ -465,7 +465,7 @@ class TuGraphStore(GraphStoreBase):
                 if isinstance(value, graph.Node):
                     node_id = value._properties["id"]
                     description = value._properties["description"]
-                    vertex = Vertex(node_id, description=description)
+                    vertex = Vertex(node_id,name=node_id, description=description)
                     mg.upsert_vertex(vertex)
                 elif isinstance(value, graph.Relationship):
                     rel_nodes = value.nodes
@@ -473,7 +473,7 @@ class TuGraphStore(GraphStoreBase):
                     src_id = rel_nodes[0]._properties["id"]
                     dst_id = rel_nodes[1]._properties["id"]
                     description = value._properties["description"]
-                    edge = Edge(src_id, dst_id, label=prop_id,
+                    edge = Edge(src_id, dst_id, name=prop_id,
                                 description=description)
                     mg.append_edge(edge)
                 elif isinstance(value, graph.Path):
@@ -500,6 +500,7 @@ class TuGraphStore(GraphStoreBase):
                         mg.upsert_vertex(
                             Vertex(
                                 formatted_path[i]["id"],
+                                name=formatted_path[i]["id"],
                                 description=formatted_path[i]["description"],
                             )
                         )
@@ -508,12 +509,12 @@ class TuGraphStore(GraphStoreBase):
                                 Edge(
                                     formatted_path[i]["id"],
                                     formatted_path[i + 2]["id"],
-                                    label=formatted_path[i + 1]["id"],
+                                    name=formatted_path[i + 1]["id"],
                                     description=formatted_path[i + 1][
                                         "description"],
                                 )
                             )
                 else:
-                    vertex = Vertex("json_node", description=value)
+                    vertex = Vertex("json_node",name='json_node', description=value)
                     mg.upsert_vertex(vertex)
             yield mg
