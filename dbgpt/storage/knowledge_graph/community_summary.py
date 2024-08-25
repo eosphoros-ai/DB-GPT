@@ -94,8 +94,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._triplet_extractor = GraphExtractor(
             self._llm_client,
             self._model_name,
-            self._graph_store.vertex_name_key(),
-            self._graph_store.edge_name_key(),
             VectorStoreFactory.create(
                 self._vector_store_type, config.name + "_CHUNK_HISTORY",
                 configure
@@ -110,7 +108,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             ),
         )
 
-    def config(self) -> BuiltinKnowledgeGraphConfig:
+    def get_config(self) -> BuiltinKnowledgeGraphConfig:
         """Get the knowledge graph config."""
         return self._config
 

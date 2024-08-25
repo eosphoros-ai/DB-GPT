@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Generator, List, Optional, Tuple
 
-from dbgpt._private.pydantic import ConfigDict, Field
+from dbgpt._private.pydantic import ConfigDict
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.graph import Direction, Edge, Graph, MemoryGraph
 
@@ -15,11 +15,6 @@ class MemoryGraphStoreConfig(GraphStoreConfig):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    edge_name_key: str = Field(
-        default="label",
-        description="The label of edge name, `label` by default.",
-    )
-
 
 class MemoryGraphStore(GraphStoreBase):
     """Memory graph store."""
@@ -27,32 +22,23 @@ class MemoryGraphStore(GraphStoreBase):
     def __init__(self, graph_store_config: MemoryGraphStoreConfig):
         """Initialize MemoryGraphStore with a memory graph."""
         self._graph_store_config = graph_store_config
-        self._edge_name_key = graph_store_config.edge_name_key
-        self._graph = MemoryGraph(edge_label=self._edge_name_key)
+        self._graph = MemoryGraph()
 
-    def config(self):
+    def get_config(self):
         """Get the graph store config."""
         return self._graph_store_config
 
-    def edge_type(self) -> str:
+    def get_edge_type(self) -> str:
         """Get the edge type."""
         pass
 
-    def vertex_type(self) -> str:
+    def get_vertex_type(self) -> str:
         """Get the vertex type."""
         pass
 
-    def vertex_name_key(self) -> str:
-        """Get the vertex name key."""
-        pass
-
-    def edge_name_key(self) -> str:
-        """Get the edge name key."""
-        return self._edge_name_key
-
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Insert a triplet into the graph."""
-        self._graph.append_edge(Edge(sub, obj, **{self._edge_name_key: rel}))
+        self._graph.append_edge(Edge(sub, obj, rel))
 
     def insert_graph(self, graph: Graph):
         """Add graph."""
@@ -65,15 +51,15 @@ class MemoryGraphStore(GraphStoreBase):
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
         """Retrieve triplets originating from a subject."""
         subgraph = self.explore([sub], direct=Direction.OUT, depth=1)
-        return [(e.get_prop(self._edge_name_key), e.tid) for e in subgraph.edges()]
+        return [(e.name, e.tid) for e in subgraph.edges()]
 
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete a specific triplet from the graph."""
-        self._graph.del_edges(sub, obj, **{self._edge_name_key: rel})
+        self._graph.del_edges(sub, obj, rel)
 
     def truncate(self):
         """Truncate graph."""
-        self._graph = MemoryGraph(edge_label=self._edge_name_key)
+        self._graph.truncate()
 
     def drop(self):
         """Drop graph."""
@@ -88,7 +74,7 @@ class MemoryGraphStore(GraphStoreBase):
         if not limit:
             return self._graph
 
-        subgraph = MemoryGraph(edge_label=self._edge_name_key)
+        subgraph = MemoryGraph()
         for count, edge in enumerate(self._graph.edges()):
             if count >= limit:
                 break
@@ -105,7 +91,7 @@ class MemoryGraphStore(GraphStoreBase):
         depth: Optional[int] = None,
         fan: Optional[int] = None,
         limit: Optional[int] = None,
-    ) -> Graph:
+    ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         return self._graph.search(subs, direct, depth, fan, limit)
 

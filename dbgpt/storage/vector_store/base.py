@@ -116,9 +116,8 @@ class VectorStoreBase(IndexStoreBase, ABC):
         """Initialize vector store."""
         super().__init__(executor)
 
-    @property
     @abstractmethod
-    def config(self) -> VectorStoreConfig:
+    def get_config(self) -> VectorStoreConfig:
         """Get the vector store config."""
 
     def filter_by_score_threshold(

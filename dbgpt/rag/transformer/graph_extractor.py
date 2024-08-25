@@ -46,7 +46,7 @@ GRAPH_EXTRACT_PT_CN = (
     "- 尽可能多地使用关联上下文中的信息丰富实体和关系的内容，这非常重要。\n"
     "- 如果实体或关系的总结描述为空，不提供总结描述信息，不要生成无关的描述信息。\n"
     "- 如果提供的描述信息相互矛盾，请解决矛盾并提供一个单一、连贯的描述。\n"
-    "- 实体和关系的名称或者描述文本中如果出现#字符，请使用_字符代替。"
+    "- 实体和关系的名称或者描述文本中如果出现#或:字符，请使用_字符代替。"
     "- 避免使用停用词和过于常见的词汇。\n"
     "\n"
     "## 输出格式\n"
@@ -65,9 +65,8 @@ GRAPH_EXTRACT_PT_CN = (
     "\n"
     "[文本]:\n"
     "菲尔兹咖啡由菲尔・贾伯于1978年在加利福尼亚州伯克利创立。"
-    "因其独特的混合咖啡而闻名，\n"
-    "菲尔兹已扩展到美国多地。他的儿子于2005年成为首席执行官，"
-    "并带领公司实现了显著增长。\n"
+    "因其独特的混合咖啡而闻名，菲尔兹已扩展到美国多地。"
+    "他的儿子于2005年成为首席执行官，并带领公司实现了显著增长。\n"
     "```\n"
     "\n"
     "输出:\n"
@@ -149,8 +148,8 @@ GRAPH_EXTRACT_PT_EN = (
     "summary information, and do not generate irrelevant descriptions.\n"
     "- If provided descriptions are contradictory, resolve the conflict "
     "and provide a single, coherent description.\n"
-    "- Replace any # characters in entity and relation names or descriptions "
-    "with an _ character.\n"
+    "- Replace any # or : characters in entity's and relation's "
+    "names or descriptions with an _ character.\n"
     "- Avoid using stop words and overly common terms.\n"
     "\n"
     "## Output Format\n"
@@ -216,18 +215,13 @@ class GraphExtractor(LLMExtractor):
         self,
         llm_client: LLMClient,
         model_name: str,
-        vertex_label: str,
-        edge_label: str,
         chunk_history: VectorStoreBase
     ):
         """Initialize the GraphExtractor."""
         super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT_CN)
-
-        self._vertex_label = vertex_label
-        self._edge_label = edge_label
         self._chunk_history = chunk_history
 
-        config = self._chunk_history.config
+        config = self._chunk_history.get_config()
         self._vector_space = config.name
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads
@@ -259,10 +253,7 @@ class GraphExtractor(LLMExtractor):
         text: str,
         limit: Optional[int] = None
     ) -> List[Graph]:
-        graph = MemoryGraph(
-            vertex_label=self._vertex_label,
-            edge_label=self._edge_label
-        )
+        graph = MemoryGraph()
         edge_count = 0
         current_section = None
         for line in text.split("\n"):
@@ -279,8 +270,7 @@ class GraphExtractor(LLMExtractor):
                         graph.upsert_vertex(Vertex(name, description=summary))
                 elif current_section == "Relationships":
                     match = re.match(
-                        r"\((.*?)#(.*?)#(.*?)#(.*?)\)",
-                        line
+                        r"\((.*?)#(.*?)#(.*?)#(.*?)\)", line
                     )
                     if match:
                         source, name, target, summary = [
@@ -288,7 +278,7 @@ class GraphExtractor(LLMExtractor):
                         ]
                         edge_count += 1
                         graph.append_edge(Edge(
-                            source, target, label=name, description=summary
+                            source, target, name, description=summary
                         ))
 
             if limit and edge_count >= limit:

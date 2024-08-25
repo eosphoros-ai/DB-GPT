@@ -28,18 +28,18 @@ class IndexStoreConfig(BaseModel):
     embedding_fn: Optional[Embeddings] = Field(
         default=None,
         description="The embedding function of vector store, if not set, will use the "
-        "default embedding function.",
+                    "default embedding function.",
     )
     max_chunks_once_load: int = Field(
         default=10,
         description="The max number of chunks to load at once. If your document is "
-        "large, you can set this value to a larger number to speed up the loading "
-        "process. Default is 10.",
+                    "large, you can set this value to a larger number to speed up the loading "
+                    "process. Default is 10.",
     )
     max_threads: int = Field(
         default=1,
         description="The max number of threads to use. Default is 1. If you set this "
-        "bigger than 1, please make sure your vector store is thread-safe.",
+                    "bigger than 1, please make sure your vector store is thread-safe.",
     )
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
@@ -54,9 +54,8 @@ class IndexStoreBase(ABC):
         """Init index store."""
         self._executor = executor or ThreadPoolExecutor()
 
-    @property
     @abstractmethod
-    def config(self) -> IndexStoreConfig:
+    def get_config(self) -> IndexStoreConfig:
         """Get the index store config."""
 
     @abstractmethod
@@ -108,6 +107,7 @@ class IndexStoreBase(ABC):
         Args:
             ids(str): The vector ids to delete, separated by comma.
         """
+
     @abstractmethod
     def truncate(self) -> List[str]:
         """Truncate data by name."""
@@ -125,7 +125,8 @@ class IndexStoreBase(ABC):
         return True
 
     def load_document_with_limit(
-        self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
+        self, chunks: List[Chunk], max_chunks_once_load: int = 10,
+        max_threads: int = 1
     ) -> List[str]:
         """Load document in index database with specified limit.
 
@@ -157,14 +158,16 @@ class IndexStoreBase(ABC):
                 success_ids = future.result()
                 ids.extend(success_ids)
                 loaded_cnt += len(success_ids)
-                logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
+                logger.info(
+                    f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
         logger.info(
             f"Loaded {len(chunks)} chunks in {time.time() - start_time} seconds"
         )
         return ids
 
     async def aload_document_with_limit(
-        self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
+        self, chunks: List[Chunk], max_chunks_once_load: int = 10,
+        max_threads: int = 1
     ) -> List[str]:
         """Load document in index database with specified limit.
 

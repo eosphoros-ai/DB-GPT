@@ -95,7 +95,7 @@ class ElasticDocumentStore(FullTextStoreBase):
             )
         self._executor = executor or ThreadPoolExecutor()
 
-    def config(self) -> IndexStoreConfig:
+    def get_config(self) -> IndexStoreConfig:
         """Get the es store config."""
         return self._es_config
 

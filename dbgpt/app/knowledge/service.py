@@ -652,7 +652,7 @@ class KnowledgeService:
                 {
                     "src": edge.sid,
                     "dst": edge.tid,
-                    "label": edge.props[graph.edge_label],
+                    "label": edge.name,
                 }
             )
         return res

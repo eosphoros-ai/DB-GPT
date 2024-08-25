@@ -80,7 +80,7 @@ class WeaviateStore(VectorStoreBase):
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
 
-    def config(self) -> WeaviateVectorConfig:
+    def get_config(self) -> WeaviateVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
 

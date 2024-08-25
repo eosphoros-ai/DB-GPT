@@ -43,14 +43,6 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="relation",
         description="The type of edge, `relation` by default.",
     )
-    vertex_name_key: str = Field(
-        default="name",
-        description="The name of vertex, `name` by default.",
-    )
-    edge_name_key: str = Field(
-        default="name",
-        description="The name of edge, `name` by default.",
-    )
     plugin_names: List[str] = Field(
         default=["leiden"],
         description=(
@@ -82,9 +74,7 @@ class TuGraphStore(GraphStoreBase):
         self._graph_name = config.name
         self._vertex_type = os.getenv("TUGRAPH_VERTEX_TYPE", config.vertex_type)
         self._edge_type = os.getenv("TUGRAPH_EDGE_TYPE", config.edge_type)
-        self._vertex_name_key = os.getenv("TUGRAPH_VERTEX_NAME_KEY", config.vertex_name_key)
-        self._edge_name_key = os.getenv("TUGRAPH_EDGE_NAME_KEY", config.edge_name_key)
-        
+
         self.conn = TuGraphConnector.from_uri_db(
             host=self._host,
             port=self._port,
@@ -92,24 +82,16 @@ class TuGraphStore(GraphStoreBase):
             pwd=self._password,
             db_name=config.name,
         )
-        
+
         self._create_graph(config.name)
 
-    def vertex_type(self) -> str:
+    def get_vertex_type(self) -> str:
         """Get the vertex type."""
         return self._vertex_type
 
-    def edge_type(self) -> str:
+    def get_edge_type(self) -> str:
         """Get the edge type."""
         return self._edge_type
-
-    def vertex_name_key(self) -> str:
-        """Get the vertex name key."""
-        return self._vertex_name_key
-
-    def edge_name_key(self) -> str:
-        """Get the edge name key."""
-        return self._edge_name_key
 
     def _create_graph(self, graph_name: str):
         self.conn.create_graph(graph_name=graph_name)
@@ -132,7 +114,8 @@ class TuGraphStore(GraphStoreBase):
         gql = f"CALL db.plugin.listPlugin('CPP','v1')"
         result = self.conn.run(gql)
         result_names = [
-            json.loads(record["plugin_description"])["name"] for record in result
+            json.loads(record["plugin_description"])["name"] for record in
+            result
         ]
         missing_plugins = [
             name for name in self._plugin_names if name not in result_names
@@ -184,7 +167,7 @@ class TuGraphStore(GraphStoreBase):
                     "{self._vertex_type}"]]', ["id",STRING,false],["name",STRING,false],["description",STRING,true])"""
             self.conn.run(create_edge_gql)
 
-    def config(self):
+    def get_config(self):
         """Get the graph store config."""
         return self._config
 
@@ -234,8 +217,9 @@ class TuGraphStore(GraphStoreBase):
             node_list.append(
                 {
                     "id": escape_quotes(node.vid),
-                    "name": escape_quotes(node.vid),
-                    "description": escape_quotes(node.get_prop("description")) or "",
+                    "name": escape_quotes(node.name),
+                    "description": escape_quotes(
+                        node.get_prop("description")) or "",
                     "_document_id": "0",
                     "_chunk_id": "0",
                     "_community_id": "0"
@@ -249,8 +233,8 @@ class TuGraphStore(GraphStoreBase):
                 {
                     "sid": escape_quotes(edge.sid),
                     "tid": escape_quotes(edge.tid),
-                    "id": escape_quotes(edge.get_prop("label")),
-                    "name": escape_quotes(edge.get_prop("label")),
+                    "id": escape_quotes(edge.name),
+                    "name": escape_quotes(edge.name),
                     "description": escape_quotes(edge.get_prop("description")),
                 }
             )
@@ -299,10 +283,7 @@ class TuGraphStore(GraphStoreBase):
         limit: Optional[int] = None,
     ) -> Graph:
         if not subs:
-            return MemoryGraph(
-                vertex_label=self._vertex_name_key,
-                edge_label=self._edge_name_key
-            )
+            return MemoryGraph()
 
         """Explore the graph from given subjects up to a depth."""
         if fan is not None:
@@ -345,7 +326,8 @@ class TuGraphStore(GraphStoreBase):
                             "community_id": nodes[i]._properties.get(
                                 "_community_id", ""
                             ),
-                            "description": nodes[i]._properties.get("description", ""),
+                            "description": nodes[i]._properties.get(
+                                "description", ""),
                         }
                     )
                     if i < len(rels):
@@ -405,7 +387,8 @@ class TuGraphStore(GraphStoreBase):
 
                             for i in range(0, len(formatted_path), 2):
                                 if not any(
-                                    existing_node.get("id") == formatted_path[i]["id"]
+                                    existing_node.get("id") ==
+                                    formatted_path[i]["id"]
                                     for existing_node in nodes_list
                                 ):
                                     nodes_list.append(
@@ -422,8 +405,10 @@ class TuGraphStore(GraphStoreBase):
                                     prop_id = formatted_path[i + 1]["id"]
                                     if not any(
                                         existing_edge.get("prop_id") == prop_id
-                                        and existing_edge.get("src_id") == src_id
-                                        and existing_edge.get("dst_id") == dst_id
+                                        and existing_edge.get(
+                                            "src_id") == src_id
+                                        and existing_edge.get(
+                                            "dst_id") == dst_id
                                         for existing_edge in rels_list
                                     ):
                                         rels_list.append(
@@ -431,9 +416,10 @@ class TuGraphStore(GraphStoreBase):
                                                 "src_id": src_id,
                                                 "dst_id": dst_id,
                                                 "prop_id": prop_id,
-                                                "description": formatted_path[i + 1][
-                                                    "description"
-                                                ],
+                                                "description":
+                                                    formatted_path[i + 1][
+                                                        "description"
+                                                    ],
                                             }
                                         )
                     else:
@@ -441,7 +427,8 @@ class TuGraphStore(GraphStoreBase):
                             existing_node.get("id") == node_id
                             for existing_node in nodes_list
                         ):
-                            nodes_list.append({"id": "json_node", "description": value})
+                            nodes_list.append(
+                                {"id": "json_node", "description": value})
 
             nodes = [
                 Vertex(node["id"], description=node["description"])
@@ -460,10 +447,7 @@ class TuGraphStore(GraphStoreBase):
 
         result = self.conn.run(query=query)
         graph = _format_query_data(result)
-        mg = MemoryGraph(
-            vertex_label=self._vertex_name_key,
-            edge_label=self._edge_name_key
-        )
+        mg = MemoryGraph()
         for vertex in graph["nodes"]:
             mg.upsert_vertex(vertex)
         for edge in graph["edges"]:
@@ -475,10 +459,7 @@ class TuGraphStore(GraphStoreBase):
         from neo4j import graph
 
         for record in self.conn.run_stream(query):
-            mg = MemoryGraph(
-                vertex_label=self._vertex_name_key,
-                edge_label=self._edge_name_key
-            )
+            mg = MemoryGraph()
             for key in record.keys():
                 value = record[key]
                 if isinstance(value, graph.Node):
@@ -492,7 +473,8 @@ class TuGraphStore(GraphStoreBase):
                     src_id = rel_nodes[0]._properties["id"]
                     dst_id = rel_nodes[1]._properties["id"]
                     description = value._properties["description"]
-                    edge = Edge(src_id, dst_id, label=prop_id, description=description)
+                    edge = Edge(src_id, dst_id, label=prop_id,
+                                description=description)
                     mg.append_edge(edge)
                 elif isinstance(value, graph.Path):
                     nodes = list(record["p"].nodes)
@@ -502,14 +484,16 @@ class TuGraphStore(GraphStoreBase):
                         formatted_path.append(
                             {
                                 "id": nodes[i]._properties["id"],
-                                "description": nodes[i]._properties["description"],
+                                "description": nodes[i]._properties[
+                                    "description"],
                             }
                         )
                         if i < len(rels):
                             formatted_path.append(
                                 {
                                     "id": rels[i]._properties["id"],
-                                    "description": rels[i]._properties["description"],
+                                    "description": rels[i]._properties[
+                                        "description"],
                                 }
                             )
                     for i in range(0, len(formatted_path), 2):
@@ -525,7 +509,8 @@ class TuGraphStore(GraphStoreBase):
                                     formatted_path[i]["id"],
                                     formatted_path[i + 2]["id"],
                                     label=formatted_path[i + 1]["id"],
-                                    description=formatted_path[i + 1]["description"],
+                                    description=formatted_path[i + 1][
+                                        "description"],
                                 )
                             )
                 else:

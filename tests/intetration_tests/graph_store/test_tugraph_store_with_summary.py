@@ -14,7 +14,7 @@ def store():
 
 
 def test_insert_graph(store):
-    graph = MemoryGraph(edge_label="name")
+    graph = MemoryGraph()
     vertex_list = [
         Vertex('A', description="Vertex A", _document_id="Test doc"),
         Vertex('B', description="Vertex B", _document_id="Test doc"),
