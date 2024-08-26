@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import List, Optional, Tuple
 
 from dbgpt.agent import PluginStorageType
@@ -156,11 +157,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     )
                     continue
                 old_hub_info = self.get(ServeRequest(name=name, type=package))
-                if (
-                    get_repo_path(repo)
-                    == "/Users/tuyang.yhj/.dbgpts/repos/eosphoros/dbgpts/dbgpts.toml"
-                ):
-                    logger.info("xxx")
                 base_package: BasePackage = parse_package_metadata(
                     InstalledPackage(
                         name=name,
@@ -185,8 +181,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     request.name = name
                     request.storage_channel = repo
                     request.storage_url = str(gpts_path)
-                    request.author = ",".join(base_package.authors)
-                    request.email = ",".join(base_package.authors)
+                    request.author = self._get_dbgpts_author(base_package.authors)
+                    request.email = self._get_dbgpts_email(base_package.authors)
 
                     request.download_param = None
                     request.installed = 0
@@ -196,3 +192,17 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
         except Exception as e:
             raise ValueError(f"Update Agent Hub Db Info Faild!{str(e)}")
+
+    def _get_dbgpts_author(self, authors):
+        pattern = r"(.+?)<"
+        names = []
+        for item in authors:
+            names.extend(re.findall(pattern, item))
+        return ",".join(names)
+
+    def _get_dbgpts_email(self, authors):
+        pattern = r"<(.*?)>"
+        emails: List[str] = []
+        for item in authors:
+            emails.extend(re.findall(pattern, item))
+        return ",".join(emails)
