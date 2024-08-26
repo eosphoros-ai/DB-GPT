@@ -1,3 +1,5 @@
+import { Select } from 'antd';
+
 export const FlowZn = {
   Upload_Data_Successfully: '文件上传成功',
   Upload_Data_Failed: '文件上传失败',
@@ -10,4 +12,10 @@ export const FlowZn = {
   Export: '导出',
   Import_Flow: '导入工作流',
   Export_Flow: '导出工作流',
+  Select_File: '选择文件',
+  Save_After_Import: '导入后保存',
+  Export_File_Type: '文件类型',
+  Export_File_Format: '文件格式',
+  Yes: '是',
+  No: '否',
 };

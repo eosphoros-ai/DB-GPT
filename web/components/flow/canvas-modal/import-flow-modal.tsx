@@ -3,11 +3,11 @@ import {
   Form,
   Button,
   message,
-  Checkbox,
   Upload,
   UploadFile,
   UploadProps,
   GetProp,
+  Radio,
 } from 'antd';
 import { apiInterceptors, importFlow } from '@/client/api';
 import { Node, Edge } from 'reactflow';
@@ -36,7 +36,6 @@ export const ImportFlowModal: React.FC<Props> = ({
   const [messageApi, contextHolder] = message.useMessage();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
 
-  // TODO: Implement onFlowImport
   const onFlowImport = async (values: any) => {
     values.file = values.file?.[0];
 
@@ -55,23 +54,10 @@ export const ImportFlowModal: React.FC<Props> = ({
     setIsImportFlowModalOpen(false);
   };
 
-  const props: UploadProps = {
-    onRemove: (file) => {
-      const index = fileList.indexOf(file);
-      const newFileList = fileList.slice();
-      newFileList.splice(index, 1);
-      setFileList(newFileList);
-    },
-    beforeUpload: (file) => {
-      setFileList([...fileList, file]);
-
-      return false;
-    },
-    fileList,
-  };
   return (
     <>
       <Modal
+        centered
         title={t('Import_Flow')}
         open={isImportModalOpen}
         onCancel={() => setIsImportFlowModalOpen(false)}
@@ -86,13 +72,17 @@ export const ImportFlowModal: React.FC<Props> = ({
       >
         <Form
           form={form}
+          className='mt-6'
           labelCol={{ span: 6 }}
           wrapperCol={{ span: 16 }}
           onFinish={onFlowImport}
+          initialValues={{
+            save_flow: false,
+          }}
         >
           <Form.Item
             name='file'
-            label='File'
+            label={t('Select_File')}
             valuePropName='fileList'
             getValueFromEvent={(e) => (Array.isArray(e) ? e : e && e.fileList)}
             rules={[{ required: true, message: 'Please upload a file' }]}
@@ -102,8 +92,15 @@ export const ImportFlowModal: React.FC<Props> = ({
             </Upload>
           </Form.Item>
 
-          <Form.Item label='save flow' name='save_flow' valuePropName='checked'>
-            <Checkbox />
+          <Form.Item
+            name='save_flow'
+            label={t('Save_After_Import')}
+            valuePropName='checked'
+          >
+            <Radio.Group>
+              <Radio value={true}>{t('Yes')}</Radio>
+              <Radio value={false}>{t('No')}</Radio>
+            </Radio.Group>
           </Form.Item>
         </Form>
       </Modal>

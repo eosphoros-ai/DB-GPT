@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Modal, Form, Input, Button, Space, message, Checkbox } from "antd";
-import { IFlowData, IFlowUpdateParam } from "@/types/flow";
-import { apiInterceptors, addFlow, updateFlowById } from "@/client/api";
-import { mapHumpToUnderline } from "@/utils/flow";
-import { useTranslation } from "react-i18next";
-import { ReactFlowInstance } from "reactflow";
-import { useSearchParams } from "next/navigation";
+import { useState } from 'react';
+import { Modal, Form, Input, Button, Space, message, Checkbox } from 'antd';
+import { IFlowData, IFlowUpdateParam } from '@/types/flow';
+import { apiInterceptors, addFlow, updateFlowById } from '@/client/api';
+import { mapHumpToUnderline } from '@/utils/flow';
+import { useTranslation } from 'react-i18next';
+import { ReactFlowInstance } from 'reactflow';
+import { useSearchParams } from 'next/navigation';
 
 const { TextArea } = Input;
 
@@ -25,7 +25,7 @@ export const SaveFlowModal: React.FC<Props> = ({
   const [deploy, setDeploy] = useState(true);
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const id = searchParams?.get("id") || "";
+  const id = searchParams?.get('id') || '';
   const [form] = Form.useForm<IFlowUpdateParam>();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -33,8 +33,8 @@ export const SaveFlowModal: React.FC<Props> = ({
     const label = e.target.value;
     // replace spaces with underscores, convert uppercase letters to lowercase, remove characters other than digits, letters, _, and -.
     let result = label
-      .replace(/\s+/g, "_")
-      .replace(/[^a-z0-9_-]/g, "")
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_-]/g, '')
       .toLowerCase();
     result = result;
     form.setFieldsValue({ name: result });
@@ -44,9 +44,9 @@ export const SaveFlowModal: React.FC<Props> = ({
     const {
       name,
       label,
-      description = "",
+      description = '',
       editable = false,
-      state = "deployed",
+      state = 'deployed',
     } = form.getFieldsValue();
     console.log(form.getFieldsValue());
     const reactFlowObject = mapHumpToUnderline(
@@ -67,7 +67,7 @@ export const SaveFlowModal: React.FC<Props> = ({
       );
 
       if (res?.success) {
-        messageApi.success(t("save_flow_success"));
+        messageApi.success(t('save_flow_success'));
       } else if (res?.err_msg) {
         messageApi.error(res?.err_msg);
       }
@@ -83,9 +83,9 @@ export const SaveFlowModal: React.FC<Props> = ({
         })
       );
       if (res?.uid) {
-        messageApi.success(t("save_flow_success"));
+        messageApi.success(t('save_flow_success'));
         const history = window.history;
-        history.pushState(null, "", `/flow/canvas?id=${res.uid}`);
+        history.pushState(null, '', `/flow/canvas?id=${res.uid}`);
       }
     }
     setIsSaveFlowModalOpen(false);
@@ -94,58 +94,59 @@ export const SaveFlowModal: React.FC<Props> = ({
   return (
     <>
       <Modal
-        title={t("flow_modal_title")}
+        centered
+        title={t('flow_modal_title')}
         open={isSaveFlowModalOpen}
         onCancel={() => {
           setIsSaveFlowModalOpen(false);
         }}
-        cancelButtonProps={{ className: "hidden" }}
-        okButtonProps={{ className: "hidden" }}
+        cancelButtonProps={{ className: 'hidden' }}
+        okButtonProps={{ className: 'hidden' }}
         footer={[
           <Button
-            htmlType="button"
+            htmlType='button'
             onClick={() => {
               setIsSaveFlowModalOpen(false);
             }}
           >
-            {t("cancel")}
+            {t('cancel')}
           </Button>,
-          <Button type="primary" htmlType="submit">
-            {t("verify")}
+          <Button type='primary' htmlType='submit'>
+            {t('verify')}
           </Button>,
         ]}
       >
         <Form
-          name="flow_form"
+          name='flow_form'
           form={form}
           labelCol={{ span: 6 }}
           wrapperCol={{ span: 16 }}
-          style={{ maxWidth: 600 }}
+          className='mt-6 max-w-2xl'
           initialValues={{ remember: true }}
           onFinish={onSaveFlow}
-          autoComplete="off"
+          autoComplete='off'
         >
           <Form.Item
-            label="Title"
-            name="label"
+            label='Title'
+            name='label'
             initialValue={flowInfo?.label}
-            rules={[{ required: true, message: "Please input flow title!" }]}
+            rules={[{ required: true, message: 'Please input flow title!' }]}
           >
             <Input onChange={onLabelChange} />
           </Form.Item>
 
           <Form.Item
-            label="Name"
-            name="name"
+            label='Name'
+            name='name'
             initialValue={flowInfo?.name}
             rules={[
-              { required: true, message: "Please input flow name!" },
+              { required: true, message: 'Please input flow name!' },
               () => ({
                 validator(_, value) {
                   const regex = /^[a-zA-Z0-9_\-]+$/;
                   if (!regex.test(value)) {
                     return Promise.reject(
-                      "Can only contain numbers, letters, underscores, and dashes"
+                      'Can only contain numbers, letters, underscores, and dashes'
                     );
                   }
                   return Promise.resolve();
@@ -157,35 +158,35 @@ export const SaveFlowModal: React.FC<Props> = ({
           </Form.Item>
 
           <Form.Item
-            label="Description"
+            label='Description'
             initialValue={flowInfo?.description}
-            name="description"
+            name='description'
           >
             <TextArea rows={3} />
           </Form.Item>
 
           <Form.Item
-            label="Editable"
-            name="editable"
+            label='Editable'
+            name='editable'
             initialValue={flowInfo?.editable}
-            valuePropName="checked"
+            valuePropName='checked'
           >
             <Checkbox />
           </Form.Item>
 
-          <Form.Item hidden name="state">
+          <Form.Item hidden name='state'>
             <Input />
           </Form.Item>
 
-          <Form.Item label="Deploy">
+          <Form.Item label='Deploy'>
             <Checkbox
               defaultChecked={
-                flowInfo?.state === "deployed" || flowInfo?.state === "running"
+                flowInfo?.state === 'deployed' || flowInfo?.state === 'running'
               }
               checked={deploy}
               onChange={(e) => {
                 const val = e.target.checked;
-                form.setFieldValue("state", val ? "deployed" : "developing");
+                form.setFieldValue('state', val ? 'deployed' : 'developing');
                 setDeploy(val);
               }}
             />

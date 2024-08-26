@@ -10,4 +10,10 @@ export const FlowEn = {
   Export: 'Export',
   Import_Flow: 'Import Flow',
   Export_Flow: 'Export Flow',
+  Select_File: 'Select File',
+  Save_After_Import: 'Save after import',
+  Export_File_Type: 'File_Type',
+  Export_File_Format: 'File_Format',
+  Yes: 'Yes',
+  No: 'No',
 };
