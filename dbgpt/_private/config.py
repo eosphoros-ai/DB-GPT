@@ -332,7 +332,7 @@ class Config(metaclass=Singleton):
             os.getenv("MULTI_INSTANCE", "False").lower() == "true"
         )
 
-        # file server configuration 
+        # file server configuration
         # The host of the current file server, if None, get the host automatically
         self.FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
         self.FILE_SERVER_LOCAL_STORAGE_PATH = os.getenv(

@@ -164,7 +164,11 @@ def clone_repo(
     if branch:
         clone_command += ["-b", branch]
 
-    subprocess.run(clone_command, check=True)
+    # subprocess.run(clone_command, check=True)
+    process = subprocess.Popen(
+        clone_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = process.communicate()
     if branch:
         cl.info(
             f"Repo '{repo}' cloned from {repo_url} with branch '{branch}' successfully."
@@ -230,6 +234,27 @@ def uninstall(name: str):
     cl.info(f"Uninstalling dbgpt '{name}'...")
 
 
+async def inner_uninstall(name: str):
+    """Uninstall the specified dbgpt
+
+    Args:
+        name (str): The name of the dbgpt
+    """
+    install_path = INSTALL_DIR / name
+    if not install_path.exists():
+        logger.warning(f"The dbgpt '{name}' has not been installed yet.")
+        return
+    os.chdir(install_path)
+    # subprocess.run(["pip", "uninstall", name, "-y"], check=True)
+    process = subprocess.Popen(
+        ["pip", "uninstall", name, "-y"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = process.communicate()
+    logger.info(f"{out},{err}")
+    shutil.rmtree(install_path)
+    logger.info(f"Uninstalling dbgpt '{name}'...")
+
+
 def inner_copy_and_install(repo: str, name: str, package_path: Path):
     if not package_path.exists():
         raise ValueError(
@@ -247,7 +272,13 @@ def inner_copy_and_install(repo: str, name: str, package_path: Path):
         shutil.copytree(package_path, install_path)
         logger.info(f"Installing dbgpts '{name}' from {repo}...")
         os.chdir(install_path)
-        subprocess.run(["poetry", "build"], check=True)
+        # subprocess.run(["poetry", "build"], check=True)
+        process = subprocess.Popen(
+            ["poetry", "build"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out, err = process.communicate()
+        logger.info(f"{out},{err}")
+
         wheel_files = list(install_path.glob("dist/*.whl"))
         if not wheel_files:
             logger.error(
@@ -259,7 +290,14 @@ def inner_copy_and_install(repo: str, name: str, package_path: Path):
         logger.info(
             f"Installing dbgpts '{name}' wheel file {_print_path(wheel_file)}..."
         )
-        subprocess.run(["pip", "install", str(wheel_file)], check=True)
+        # subprocess.run(["pip", "install", str(wheel_file)], check=True)
+        process = subprocess.Popen(
+            ["pip", "install", str(wheel_file)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out, err = process.communicate()
+        logger.info(f"{out},{err}")
         _write_install_metadata(name, repo, install_path)
         logger.info(f"Installed dbgpts at {_print_path(install_path)}.")
         logger.info(f"dbgpts '{name}' installed successfully.")
@@ -392,6 +430,29 @@ def list_repo_apps(repo: str | None = None, with_update: bool = True):
     cl.print(table)
 
 
+async def update_repo_inner(repo: str):
+    logger.info(f"Updating repo '{repo}'...")
+    repo_path = os.path.join(DBGPTS_REPO_HOME, repo)
+    if not os.path.exists(repo_path):
+        if repo in DEFAULT_REPO_MAP:
+            add_repo(repo, DEFAULT_REPO_MAP[repo])
+            if not os.path.exists(repo_path):
+                raise ValueError(f"The repo '{repo}' does not exist.")
+        else:
+            raise ValueError(f"The repo '{repo}' does not exist.")
+    os.chdir(repo_path)
+    if not os.path.exists(".git"):
+        logger.info(f"Repo '{repo}' is not a git repository.")
+        return
+    logger.info(f"Updating repo '{repo}'...")
+
+    process = subprocess.Popen(
+        ["git", "pull"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = process.communicate()
+    logger.info(f"{out},{err}")
+
+
 async def list_dbgpts(
     spec_repo: str | None = None, with_update: bool = True
 ) -> List[Tuple[str, str, str, str]]:
@@ -410,7 +471,7 @@ async def list_dbgpts(
             raise ValueError(f"The specified repo '{spec_repo}' does not exist.")
     if with_update:
         for repo in repos:
-            update_repo(repo[0])
+            await update_repo_inner(repo[0])
     data = []
     for repo in repos:
         repo_path = Path(repo[1])

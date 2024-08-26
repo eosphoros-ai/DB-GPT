@@ -92,8 +92,16 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             RES: The response
         """
-        gmt_created_str = entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
-        gmt_modified_str = entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+        gmt_created_str = (
+            entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+            if entity.gmt_created
+            else ""
+        )
+        gmt_modified_str = (
+            entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+            if entity.gmt_modified
+            else ""
+        )
         request = self.to_request(entity)
 
         return ServerResponse(

@@ -183,11 +183,11 @@ async def agent_uninstall(
 ):
     logger.info(f"dbgpts uninstall:{name},{user}")
     try:
-        service.uninstall_gpts(name=name, type=type, user_code=user)
+        await service.uninstall_gpts(name=name, type=type, user_code=user)
         return Result.succ(None)
     except Exception as e:
         logger.error("Plugin Uninstall Error!", e)
-        return Result.failed(code="E0022", msg=f"Plugin Uninstall Error {e}")
+        return Result.failed(err_code="E0022", msg=f"Plugin Uninstall Error {e}")
 
 
 def init_endpoints(system_app: SystemApp) -> None:

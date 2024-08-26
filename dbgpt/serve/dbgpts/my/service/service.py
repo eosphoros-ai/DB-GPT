@@ -8,6 +8,7 @@ from dbgpt.util.dbgpts.base import INSTALL_DIR
 from dbgpt.util.dbgpts.repo import (
     copy_and_install,
     inner_copy_and_install,
+    inner_uninstall,
     install,
     uninstall,
 )
@@ -90,10 +91,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
         # TODO: implement your own logic here
         # Build the query request from the request
-        query_request = {
-            # "id": request.id
-        }
-        self.dao.delete(query_request)
+
+        self.dao.delete(request)
 
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:
         """Get a list of DbgptsMy entities
@@ -173,7 +172,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             return self.create(request)
         else:
             dbgpts_entity.version = base_package.version
-            return self.update(dbgpts_entity)
+
+            return self.update(ServeRequest(**dbgpts_entity.to_dict()))
 
     async def uninstall_gpts(
         self,
@@ -184,7 +184,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     ):
         logger.info(f"install_gpts {name}")
         try:
-            uninstall(name)
+            await inner_uninstall(name)
         except Exception as e:
+            logger.warning(f"Uninstall dbgpts [{type}:{name}] Failed! {str(e)}", e)
             raise ValueError(f"Uninstall dbgpts [{type}:{name}] Failed! {str(e)}", e)
         self.delete(ServeRequest(name=name, type=type))

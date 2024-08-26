@@ -60,9 +60,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         # TODO: implement your own logic here
         # Build the query request from the request
-        query_request = {
-            # "id": request.id
-        }
+        query_request = {"id": request.id}
         return self.dao.update(query_request, update_request=request)
 
     def get(self, request: ServeRequest) -> Optional[ServerResponse]:
