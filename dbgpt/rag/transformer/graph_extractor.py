@@ -11,6 +11,97 @@ from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
 
+
+class GraphExtractor(LLMExtractor):
+    """GraphExtractor class."""
+
+    def __init__(
+        self,
+        llm_client: LLMClient,
+        model_name: str,
+        chunk_history: VectorStoreBase
+    ):
+        """Initialize the GraphExtractor."""
+        super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT_CN)
+        self._chunk_history = chunk_history
+
+        config = self._chunk_history.get_config()
+        self._vector_space = config.name
+        self._max_chunks_once_load = config.max_chunks_once_load
+        self._max_threads = config.max_threads
+        self._topk = config.topk
+        self._score_threshold = config.score_threshold
+
+    async def extract(self, text: str, limit: Optional[int] = None) -> List:
+        # load similar chunks
+        chunks = await self._chunk_history.asimilar_search_with_scores(
+            text, self._topk, self._score_threshold
+        )
+        history = [
+            f"Section {i + 1}:\n{chunk.content}"
+            for i, chunk in enumerate(chunks)
+        ]
+        context = "\n".join(history) if history else ""
+
+        try:
+            # extract with chunk history
+            return await super()._extract(text, context, limit)
+
+        finally:
+            # save chunk to history
+            await self._chunk_history.aload_document_with_limit(
+                [Chunk(content=text, metadata={"relevant_cnt": len(history)})],
+                self._max_chunks_once_load,
+                self._max_threads,
+            )
+
+    def _parse_response(
+        self,
+        text: str,
+        limit: Optional[int] = None
+    ) -> List[Graph]:
+        graph = MemoryGraph()
+        edge_count = 0
+        current_section = None
+        for line in text.split("\n"):
+            line = line.strip()
+            if line in ["Entities:", "Relationships:"]:
+                current_section = line[:-1]
+            elif line and current_section:
+                if current_section == "Entities":
+                    match = re.match(r"\((.*?)#(.*?)\)", line)
+                    if match:
+                        name, summary = [
+                            part.strip() for part in match.groups()
+                        ]
+                        graph.upsert_vertex(Vertex(name, description=summary))
+                elif current_section == "Relationships":
+                    match = re.match(
+                        r"\((.*?)#(.*?)#(.*?)#(.*?)\)", line
+                    )
+                    if match:
+                        source, name, target, summary = [
+                            part.strip() for part in match.groups()
+                        ]
+                        edge_count += 1
+                        graph.append_edge(Edge(
+                            source, target, name, description=summary
+                        ))
+
+            if limit and edge_count >= limit:
+                break
+
+        return [graph]
+
+    def truncate(self):
+        """truncate chunk history."""
+        self._chunk_history.truncate()
+
+    def drop(self):
+        """drop chunk history."""
+        self._chunk_history.delete_vector_name(self._vector_space)
+
+
 GRAPH_EXTRACT_PT_CN = (
     "## 角色\n"
     "你是一个知识图谱工程专家，非常擅长从文本中精确抽取知识图谱的实体"
@@ -61,12 +152,16 @@ GRAPH_EXTRACT_PT_CN = (
     "输入:\n"
     "```\n"
     "[上下文]:\n"
-    "菲尔・贾伯的儿子叫雅各布・贾伯。\n"
+    "Section 1:\n"
+    "菲尔・贾伯的大儿子叫雅各布・贾伯。\n"
+    "Section 2:\n"
+    "菲尔・贾伯的小儿子叫比尔・贾伯。\n"
+    "..."
     "\n"
     "[文本]:\n"
     "菲尔兹咖啡由菲尔・贾伯于1978年在加利福尼亚州伯克利创立。"
     "因其独特的混合咖啡而闻名，菲尔兹已扩展到美国多地。"
-    "他的儿子于2005年成为首席执行官，并带领公司实现了显著增长。\n"
+    "他的大儿子于2005年成为首席执行官，并带领公司实现了显著增长。\n"
     "```\n"
     "\n"
     "输出:\n"
@@ -74,14 +169,14 @@ GRAPH_EXTRACT_PT_CN = (
     "Entities:\n"
     "(菲尔・贾伯#菲尔兹咖啡创始人)\n"
     "(菲尔兹咖啡#加利福尼亚州伯克利创立的咖啡品牌)\n"
-    "(雅各布・贾伯#菲尔・贾伯的儿子)\n"
+    "(雅各布・贾伯#菲尔・贾伯的大儿子)\n"
     "(美国多地#菲尔兹咖啡的扩展地区)\n"
     "\n"
     "Relationships:\n"
     "(菲尔・贾伯#创建#菲尔兹咖啡#1978年在加利福尼亚州伯克利创立)\n"
     "(菲尔兹咖啡#位于#加利福尼亚州伯克利#菲尔兹咖啡的创立地点)\n"
-    "(菲尔・贾伯#拥有#雅各布・贾伯#菲尔・贾伯的儿子)\n"
-    "(雅各布・贾伯#担任#首席执行官#在2005年成为菲尔兹咖啡的首席执行官)\n"
+    "(菲尔・贾伯#拥有#雅各布・贾伯#菲尔・贾伯的大儿子)\n"
+    "(雅各布・贾伯#管理#菲尔兹咖啡#在2005年担任首席执行官)\n"
     "(菲尔兹咖啡#扩展至#美国多地#菲尔兹咖啡的扩展范围)\n"
     "```\n"
     "\n"
@@ -164,12 +259,16 @@ GRAPH_EXTRACT_PT_EN = (
     "Input:\n"
     "```\n"
     "[Context]:\n"
-    "Phil Jabber's son is named Jacob Jabber.\n"
+    "Section 1:\n"
+    "Phil Jabber's eldest son is named Jacob Jabber.\n"
+    "Section 2:\n"
+    "Phil Jabber's youngest son is named Bill Jabber.\n"
+    "..."
     "\n"
     "[Text]:\n"
     "Philz Coffee was founded by Phil Jabber in 1978 in Berkeley, California. "
     "Known for its distinctive blend coffee, Philz has expanded to multiple "
-    "locations in the USA. His son became CEO in 2005, "
+    "locations in the USA. His eldest son became CEO in 2005, "
     "leading significant growth for the company.\n"
     "```\n"
     "\n"
@@ -178,7 +277,7 @@ GRAPH_EXTRACT_PT_EN = (
     "Entities:\n"
     "(Phil Jabber#Founder of Philz Coffee)\n"
     "(Philz Coffee#Coffee brand founded in Berkeley, California)\n"
-    "(Jacob Jabber#Phil Jabber's son)\n"
+    "(Jacob Jabber#Phil Jabber's eldest son)\n"
     "(Multiple locations in the USA#Philz Coffee's expansion area)\n"
     "\n"
     "Relationships:\n"
@@ -186,8 +285,8 @@ GRAPH_EXTRACT_PT_EN = (
     "#Founded in 1978 in Berkeley, California)\n"
     "(Philz Coffee#Located in#Berkeley, California"
     "#Philz Coffee's founding location)\n"
-    "(Phil Jabber#Has#Jacob Jabber#Phil Jabber's son)\n"
-    "(Jacob Jabber#Serves as#CEO#Became CEO of Philz Coffee in 2005)\n"
+    "(Phil Jabber#Has#Jacob Jabber#Phil Jabber's eldest son)\n"
+    "(Jacob Jabber#Manage#Philz Coffee#Serve as CEO in 2005)\n"
     "(Philz Coffee#Expanded to#Multiple locations in the USA"
     "#Philz Coffee's expansion area)\n"
     "```\n"
@@ -206,90 +305,3 @@ GRAPH_EXTRACT_PT_EN = (
     "[Results]:\n"
     "\n"
 )
-
-
-class GraphExtractor(LLMExtractor):
-    """GraphExtractor class."""
-
-    def __init__(
-        self,
-        llm_client: LLMClient,
-        model_name: str,
-        chunk_history: VectorStoreBase
-    ):
-        """Initialize the GraphExtractor."""
-        super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT_CN)
-        self._chunk_history = chunk_history
-
-        config = self._chunk_history.get_config()
-        self._vector_space = config.name
-        self._max_chunks_once_load = config.max_chunks_once_load
-        self._max_threads = config.max_threads
-        self._topk = config.topk
-        self._score_threshold = config.score_threshold
-
-    async def extract(self, text: str, limit: Optional[int] = None) -> List:
-        # load similar chunks
-        chunks = await self._chunk_history.asimilar_search_with_scores(
-            text, self._topk, self._score_threshold
-        )
-        history = [chunk.content for chunk in chunks]
-        context = "\n".join(history) if history else ""
-
-        try:
-            # extract with chunk history
-            return await super()._extract(text, context, limit)
-
-        finally:
-            # save chunk to history
-            await self._chunk_history.aload_document_with_limit(
-                [Chunk(content=text, metadata={"relevant_cnt": len(history)})],
-                self._max_chunks_once_load,
-                self._max_threads,
-            )
-
-    def _parse_response(
-        self,
-        text: str,
-        limit: Optional[int] = None
-    ) -> List[Graph]:
-        graph = MemoryGraph()
-        edge_count = 0
-        current_section = None
-        for line in text.split("\n"):
-            line = line.strip()
-            if line in ["Entities:", "Relationships:"]:
-                current_section = line[:-1]
-            elif line and current_section:
-                if current_section == "Entities":
-                    match = re.match(r"\((.*?)#(.*?)\)", line)
-                    if match:
-                        name, summary = [
-                            part.strip() for part in match.groups()
-                        ]
-                        graph.upsert_vertex(Vertex(name, description=summary))
-                elif current_section == "Relationships":
-                    match = re.match(
-                        r"\((.*?)#(.*?)#(.*?)#(.*?)\)", line
-                    )
-                    if match:
-                        source, name, target, summary = [
-                            part.strip() for part in match.groups()
-                        ]
-                        edge_count += 1
-                        graph.append_edge(Edge(
-                            source, target, name, description=summary
-                        ))
-
-            if limit and edge_count >= limit:
-                break
-
-        return [graph]
-
-    def truncate(self):
-        """truncate chunk history."""
-        self._chunk_history.truncate()
-
-    def drop(self):
-        """drop chunk history."""
-        self._chunk_history.delete_vector_name(self._vector_space)

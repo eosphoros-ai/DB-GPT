@@ -8,7 +8,8 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
+from dbgpt.storage.knowledge_graph.community.community_store import \
+    CommunityStore
 from dbgpt.storage.knowledge_graph.community.factory import \
     CommunityStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -68,43 +69,56 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._vector_store_type = os.getenv(
             "VECTOR_STORE_TYPE", config.vector_store_type
         )
-        self._extract_topk = os.getenv(
+        self._extract_topk = int(os.getenv(
             "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk
-        )
-        self._extract_score_threshold = os.getenv(
+        ))
+        self._extract_score_threshold = float(os.getenv(
             "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
             config.extract_score_threshold,
-        )
-        self._community_topk = os.getenv(
+        ))
+        self._community_topk = int(os.getenv(
             "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk
-        )
-        self._community_score_threshold = os.getenv(
+        ))
+        self._community_score_threshold = float(os.getenv(
             "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
             config.community_score_threshold,
-        )
+        ))
 
-        def configure(name: str, cfg: VectorStoreConfig):
+        def extractor_configure(name: str, cfg: VectorStoreConfig):
             cfg.name = name
             cfg.embedding_fn = config.embedding_fn
             cfg.max_chunks_once_load = config.max_chunks_once_load
             cfg.max_threads = config.max_threads
             cfg.user = config.user
             cfg.password = config.password
+            cfg.topk = self._extract_topk
+            cfg.score_threshold = self._extract_score_threshold
 
         self._triplet_extractor = GraphExtractor(
             self._llm_client,
             self._model_name,
             VectorStoreFactory.create(
                 self._vector_store_type, config.name + "_CHUNK_HISTORY",
-                configure
+                extractor_configure
             ),
         )
+
+        def community_store_configure(name: str, cfg: VectorStoreConfig):
+            cfg.name = name
+            cfg.embedding_fn = config.embedding_fn
+            cfg.max_chunks_once_load = config.max_chunks_once_load
+            cfg.max_threads = config.max_threads
+            cfg.user = config.user
+            cfg.password = config.password
+            cfg.topk = self._community_topk
+            cfg.score_threshold = self._community_score_threshold
+
         self._community_store = CommunityStore(
             CommunityStoreAdapterFactory.create(self._graph_store),
             CommunitySummarizer(self._llm_client, self._model_name),
             VectorStoreFactory.create(
                 self._vector_store_type, config.name + "_COMMUNITY_SUMMARY",
-                configure
+                community_store_configure
             ),
         )
 

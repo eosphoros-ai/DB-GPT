@@ -7,6 +7,15 @@ from dbgpt.rag.transformer.llm_summarizer import LLMSummarizer
 
 logger = logging.getLogger(__name__)
 
+
+class CommunitySummarizer(LLMSummarizer):
+    """CommunitySummarizer class."""
+
+    def __init__(self, llm_client: LLMClient, model_name: str):
+        """Initialize the CommunitySummaryExtractor."""
+        super().__init__(llm_client, model_name, COMMUNITY_SUMMARY_PT_CN)
+
+
 COMMUNITY_SUMMARY_PT_CN = (
     "## 角色\n"
     "你非常擅长知识图谱的信息总结，能根据给定的知识图谱中的实体和关系的名称以及描述"
@@ -190,11 +199,3 @@ COMMUNITY_SUMMARY_PT_EN = (
     "[Summary]:\n"
     "\n"
 )
-
-
-class CommunitySummarizer(LLMSummarizer):
-    """CommunitySummarizer class."""
-
-    def __init__(self, llm_client: LLMClient, model_name: str):
-        """Initialize the CommunitySummaryExtractor."""
-        super().__init__(llm_client, model_name, COMMUNITY_SUMMARY_PT_CN)
