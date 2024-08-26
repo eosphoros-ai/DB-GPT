@@ -38,17 +38,20 @@ class RetrieverChain(BaseRetriever):
     async def _aretrieve(
         self, query: str, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
-        """Retrieve knowledge chunks.
+        """Async retrieve knowledge chunks.
         Args:
             query (str): query text
             filters: (Optional[MetadataFilters]) metadata filters.
         Return:
             List[Chunk]: list of chunks
         """
-        candidates = await blocking_func_to_async(
-            self._executor, self._retrieve, query, filters
-        )
-        return candidates
+        for retriever in self._retrievers:
+            candidates = await retriever.aretrieve(
+                query=query, filters=filters
+            )
+            if candidates:
+                return candidates
+        return []
 
     def _retrieve_with_score(
         self,
