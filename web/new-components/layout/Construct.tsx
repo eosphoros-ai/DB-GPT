@@ -63,16 +63,16 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
     //   icon: <BuildOutlined />,
     // },
     {
-      key: 'dbgpts',
-      name: t('dbgpts_community'),
-      path: '/dbgpts',
-      icon: <BuildOutlined />,
-    },
-    {
       key: 'prompt',
       name: t('Prompt'),
       icon: <MessageOutlined />,
       path: '/prompt',
+    },
+    {
+      key: 'dbgpts',
+      name: t('dbgpts_community'),
+      path: '/dbgpts',
+      icon: <BuildOutlined />,
     },
   ];
   const router = useRouter();
