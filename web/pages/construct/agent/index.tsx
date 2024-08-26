@@ -94,7 +94,6 @@ function Agent() {
       label: t('My_Plugins'),
     },
   ];
-  console.log(agents);
 
   return (
     <ConstructLayout>

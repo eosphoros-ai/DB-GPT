@@ -623,6 +623,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     async def _wrapper_chat_stream_flow_str(
         self, stream_iter: AsyncIterator[ModelOutput]
     ) -> AsyncIterator[str]:
+
         async for output in stream_iter:
             text = output.text
             if text:

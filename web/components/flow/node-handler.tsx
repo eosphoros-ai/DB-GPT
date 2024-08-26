@@ -94,15 +94,15 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
       })}
     >
       <Handle
-        className="w-2 h-2"
+        className={classNames('w-2 h-2', type === 'source' ? '-mr-4' : '-ml-4')}
         type={type}
         position={type === 'source' ? Position.Right : Position.Left}
         id={`${node.id}|${label}|${index}`}
         isValidConnection={(connection) => isValidConnection(connection)}
       />
       <Typography
-        className={classNames('p-2', {
-          'pr-4': label === 'outputs',
+        className={classNames('bg-white dark:bg-[#232734] w-full px-2 py-1 rounded text-neutral-500', {
+          'text-right': label === 'outputs',
         })}
       >
         <Popconfirm
@@ -117,9 +117,10 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
             </div>
           }
         >
-          {['inputs', 'parameters'].includes(label) && <PlusOutlined className="mr-2 cursor-pointer" onClick={showRelatedNodes} />}
+          {['inputs', 'parameters'].includes(label) && <PlusOutlined className="cursor-pointer" onClick={showRelatedNodes} />}
         </Popconfirm>
-        {data.type_name}:{label !== 'outputs' && <RequiredIcon optional={data.optional} />}
+        {label !== 'outputs' && <RequiredIcon optional={data.optional} />}
+        {data.type_name}
         {data.description && (
           <Tooltip title={data.description}>
             <InfoCircleOutlined className="ml-2 cursor-pointer" />

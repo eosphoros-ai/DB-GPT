@@ -122,7 +122,7 @@ const AddNodes: React.FC = () => {
         className="flex items-center justify-center rounded-full left-4 top-4"
         style={{ zIndex: 1050 }}
         icon={<PlusOutlined />}
-      ></Button>
+      />
     </Popover>
   );
 };

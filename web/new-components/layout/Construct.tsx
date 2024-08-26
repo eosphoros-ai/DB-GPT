@@ -56,10 +56,16 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
       icon: <PartitionOutlined />,
       path: '/knowledge',
     },
+    // {
+    //   key: 'agent',
+    //   name: t('Plugins'),
+    //   path: '/agent',
+    //   icon: <BuildOutlined />,
+    // },
     {
-      key: 'agent',
-      name: t('Plugins'),
-      path: '/agent',
+      key: 'dbgpts',
+      name: t('dbgpts_community'),
+      path: '/dbgpts',
       icon: <BuildOutlined />,
     },
     {
