@@ -50,9 +50,9 @@ const BlurredCard: React.FC<{
               {name.length > 6 ? (
                 <Tooltip title={name}>
                   <span
-                    className="truncate font-semibold text-base"
+                    className="line-clamp-1 text-ellipsis font-semibold text-base"
                     style={{
-                      maxWidth: '60%',
+                      // maxWidth: '60%',
                     }}
                   >
                     {name}
@@ -60,9 +60,9 @@ const BlurredCard: React.FC<{
                 </Tooltip>
               ) : (
                 <span
-                  className="truncate font-semibold text-base"
+                  className="line-clamp-1 text-ellipsis font-semibold text-base"
                   style={{
-                    maxWidth: '60%',
+                    // maxWidth: '60%',
                   }}
                 >
                   {name}

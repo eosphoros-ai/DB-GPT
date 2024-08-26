@@ -127,12 +127,20 @@ function Agent() {
     },
   ];
 
-  const logoUrl = { 
-    workflow: '/pictures/flow.png',
-    agents: '/pictures/agent.png',
-    resources: '/pictures/database.png',
-    apps: '/pictures/app.png',
-    operators: '/pictures/knowledge.png',
+  const logoFn = (type: string) => {
+    switch(type) {
+      case 'workflow':
+        return '/pictures/flow.png';
+      case 'resources':
+        return '/pictures/database.png';
+      case 'apps':
+        return '/pictures/app.png';
+      case 'operators':
+        return '/pictures/knowledge.png';
+      case 'agents':
+      default:
+        return '/pictures/agent.png';
+    };
   }
 
   return (
@@ -196,7 +204,7 @@ function Agent() {
           <div className='flex flex-wrap'>
             {agents.map((agent, index) => (
               <BlurredCard
-                logo={logoUrl[agent.type]}
+                logo={logoFn(agent.type)}
                 onClick={() => {
                   if (agent.storage_url) window.open(agent.storage_url, '_blank');
                 }}
