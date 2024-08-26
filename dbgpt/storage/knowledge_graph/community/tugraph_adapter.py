@@ -2,7 +2,7 @@
 import json
 import logging
 from typing import List
-
+from dbgpt.storage.graph_store.graph import Vertex, Edge, MemoryGraph
 from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter, \
     Community
 
@@ -28,9 +28,22 @@ class TuGraphCommunityStoreAdapter(CommunityStoreAdapter):
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
         query = (
+            f"MATCH (n:{self._graph_store.get_vertex_type()})"
+            f"WHERE n._community_id = '{community_id}' RETURN n"
+        )
+        edge_query = (
             f"MATCH (n:{self._graph_store.get_vertex_type()})-"
             f"[r:{self._graph_store.get_edge_type()}]-"
-            f"(m:{self._graph_store.get_vertex_type()}) "
+            f"MATCH (m:{self._graph_store.get_vertex_type()})"
             f"WHERE n._community_id = '{community_id}' RETURN n,r,m"
         )
-        return Community(id=community_id, data=self._graph_store.aquery(query))
+
+        all_vertex_graph = self._graph_store.aquery(query)
+        all_edge_graph = self._graph_store.aquery(edge_query)
+        all_graph = MemoryGraph()
+        for vertex in all_vertex_graph.vertices():
+            all_graph.upsert_vertex(vertex)
+        for edge in all_edge_graph.edges():
+            all_graph.append_edge(edge)
+        
+        return Community(id=community_id, data=all_graph)
