@@ -175,11 +175,11 @@ function Flow() {
     <ConstructLayout>
       <Spin spinning={loading}>
         <div
-          className="relative h-screen w-full p-4 md:p-6 overflow-y-auto"
+          className='relative h-screen w-full p-4 md:p-6 overflow-y-auto'
           ref={scrollRef}
         >
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
+          <div className='flex justify-between items-center mb-6'>
+            <div className='flex items-center gap-4'>
               {/* <Input
               variant="filled"
               prefix={<SearchOutlined />}
@@ -191,9 +191,9 @@ function Flow() {
             /> */}
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className='flex items-center gap-4'>
               <Button
-                className="border-none text-white bg-button-gradient"
+                className='border-none text-white bg-button-gradient'
                 icon={<PlusOutlined />}
                 onClick={() => {
                   router.push('/construct/flow/canvas');
@@ -203,13 +203,13 @@ function Flow() {
               </Button>
             </div>
           </div>
-          <div className="flex flex-wrap mx-[-8px] pb-12 justify-start items-stretch">
+          <div className='flex flex-wrap mx-[-8px] pb-12 justify-start items-stretch'>
             {flowList.map((flow) => (
               <BlurredCard
                 description={flow.description}
                 name={flow.name}
                 key={flow.uid}
-                logo="/pictures/flow.png"
+                logo='/pictures/flow.png'
                 onClick={() => {
                   router.push('/construct/flow/canvas?id=' + flow.uid);
                 }}
@@ -233,10 +233,10 @@ function Flow() {
                           key: 'del',
                           label: (
                             <Popconfirm
-                              title="Are you sure to delete this flow?"
+                              title='Are you sure to delete this flow?'
                               onConfirm={() => deleteFlow(flow)}
                             >
-                              <span className="text-red-400">
+                              <span className='text-red-400'>
                                 {t('Delete_Btn')}
                               </span>
                             </Popconfirm>
@@ -269,7 +269,7 @@ function Flow() {
                   </div>
                 }
                 LeftBottom={
-                  <div key={i18n.language + 'flow'} className="flex gap-2">
+                  <div key={i18n.language + 'flow'} className='flex gap-2'>
                     <span>{flow?.nick_name}</span>
                     <span>•</span>
                     {flow?.gmt_modified && (
@@ -291,26 +291,26 @@ function Flow() {
                 }
               />
             ))}
-            {flowList.length === 0 && <MyEmpty description="No flow found" />}
+            {flowList.length === 0 && <MyEmpty description='No flow found' />}
           </div>
         </div>
       </Spin>
       <Modal
         open={showModal}
-        title="Copy AWEL Flow"
+        title='Copy AWEL Flow'
         onCancel={() => {
           setShowModal(false);
         }}
         footer={false}
       >
-        <Form form={form} onFinish={onFinish} className="mt-6">
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+        <Form form={form} onFinish={onFinish} className='mt-6'>
+          <Form.Item name='name' label='Name' rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="label" label="Label" rules={[{ required: true }]}>
+          <Form.Item name='label' label='Label' rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label="editable">
+          <Form.Item label='editable'>
             <Checkbox
               value={editable}
               checked={editable}
@@ -320,7 +320,7 @@ function Flow() {
               }}
             />
           </Form.Item>
-          <Form.Item label="deploy">
+          <Form.Item label='deploy'>
             <Checkbox
               value={deploy}
               checked={deploy}
@@ -330,8 +330,8 @@ function Flow() {
               }}
             />
           </Form.Item>
-          <div className="flex justify-end">
-            <Button type="primary" htmlType="submit">
+          <div className='flex justify-end'>
+            <Button type='primary' htmlType='submit'>
               {t('Submit')}
             </Button>
           </div>
