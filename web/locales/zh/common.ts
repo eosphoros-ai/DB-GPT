@@ -327,6 +327,7 @@ export const CommonZh: Resources["translation"] = {
   Copy_Btn: '复制',
   Delete_Btn: '删除',
   dbgpts_community: 'DBGPTS社区',
+  community_dbgpts: '社区DBGPTS',
   my_dbgpts: '我的DBGPTS',
   Refresh_dbgpts: '从社区Git仓库刷新',
   workflow: '工作流',

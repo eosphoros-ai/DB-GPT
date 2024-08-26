@@ -325,6 +325,7 @@ export const CommonEn = {
   Copy_Btn: 'Copy',
   Delete_Btn: 'Delete',
   dbgpts_community: 'DBGPTS Community',
+  community_dbgpts: 'Community DBGPTS',
   my_dbgpts: 'My DBGPTS',
   Refresh_dbgpts: 'Refresh from the community Git repository',
   workflow: 'Workflow',
