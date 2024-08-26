@@ -8,7 +8,7 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.community_store import CommunityStore
+from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.community.factory import \
     CommunityStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (

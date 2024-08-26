@@ -4,8 +4,8 @@ from typing import List
 
 from dbgpt.core import Chunk
 from dbgpt.datasource.rdbms.base import RDBMSConnector
-from dbgpt.storage.graph_store.community_store import Community
-from dbgpt.storage.knowledge_graph.community.base import CommunityMetastore
+from dbgpt.storage.knowledge_graph.community.base import CommunityMetastore, \
+    Community
 from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 class BuiltinCommunityMetastore(CommunityMetastore):
     """Builtin Community metastore."""
 
-    def __init__(self, vector_store: VectorStoreBase, rdb_store: RDBMSConnector = None):
+    def __init__(
+        self,
+        vector_store: VectorStoreBase,
+        rdb_store: RDBMSConnector = None
+    ):
         self._vector_store = vector_store
         self._rdb_store = rdb_store
 
@@ -38,12 +42,19 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         chunks = await self._vector_store.asimilar_search_with_scores(
             query, self._topk, self._score_threshold
         )
-        return [Community(id=chunk.chunk_id, summary=chunk.content) for chunk in chunks]
+        return [
+            Community(id=chunk.chunk_id, summary=chunk.content)
+            for chunk in chunks
+        ]
 
     async def save(self, communities: List[Community]):
         """Save communities."""
         chunks = [
-            Chunk(id=c.id, content=c.summary, metadata={"total": len(communities)})
+            Chunk(
+                id=c.id,
+                content=c.summary,
+                metadata={"total": len(communities)}
+            )
             for c in communities
         ]
         await self._vector_store.aload_document_with_limit(

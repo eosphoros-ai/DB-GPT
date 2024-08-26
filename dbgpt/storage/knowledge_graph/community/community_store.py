@@ -4,8 +4,8 @@ import logging
 from typing import List
 
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
-from dbgpt.storage.graph_store.community import Community
-from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter
+from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter, \
+    Community
 from dbgpt.storage.knowledge_graph.community.community_metastore import (
     BuiltinCommunityMetastore,
 )
@@ -38,11 +38,12 @@ class CommunityStore:
             community = await (
                 self._community_store_adapter.get_community(community_id)
             )
+            graph = community.data.format()
+            if not graph:
+                break
 
             community.summary = await (
-                self._community_summarizer.summarize(
-                    graph=community.data.format()
-                )
+                self._community_summarizer.summarize(graph=graph)
             )
             communities.append(community)
             logger.info(

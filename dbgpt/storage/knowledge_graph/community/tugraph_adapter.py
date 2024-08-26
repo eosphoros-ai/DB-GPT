@@ -3,8 +3,8 @@ import json
 import logging
 from typing import List
 
-from dbgpt.storage.graph_store.community import Community
-from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter
+from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter, \
+    Community
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,26 @@
-"""Community metastore."""
+"""Define Classes about Community."""
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.graph_store.community_store import Community
+from dbgpt.storage.graph_store.graph import Graph
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Community:
+    """Community class"""
+    id: str
+    data: Graph = None
+    summary: str = None
+
+
+@dataclass
+class CommunityTree:
+    """Represents a community tree."""
 
 
 class CommunityStoreAdapter(ABC):
