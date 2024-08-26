@@ -21,6 +21,7 @@ import {
 } from './node-renderer';
 
 interface NodeParamHandlerProps {
+  formValuesChange:any;
   node: IFlowNode;
   paramData: IFlowNodeParameter;
   label: 'inputs' | 'outputs' | 'parameters';
@@ -28,7 +29,7 @@ interface NodeParamHandlerProps {
 }
 
 // render node parameters item
-const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, label, index }) => {
+const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ formValuesChange,node, paramData, label, index }) => {
   // render node parameters based on AWEL1.0
   function renderNodeWithoutUiParam(data: IFlowNodeParameter) {
     let defaultValue = data.value ?? data.default;
@@ -85,7 +86,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, la
     }
   }
 
-  function renderComponentByType(type: string, data: IFlowNodeParameter) {
+  function renderComponentByType(type: string, data: IFlowNodeParameter,formValuesChange:any) {
     switch (type) {
       case 'select':
         return renderSelect(data);
@@ -102,15 +103,15 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, la
       case 'slider':
         return renderSlider(data);
       case 'date_picker':
-        return renderDatePicker(data);
+        return renderDatePicker( data );
       case 'time_picker':
-        return renderTimePicker(data);
+        return renderTimePicker({ data,formValuesChange });
       case 'tree_select':
         return renderTreeSelect(data);
       case 'password':
         return renderPassword(data);
       case 'upload':
-        return renderUpload({ data });
+        return renderUpload({ data,formValuesChange });
       case 'variables':
         return renderVariables(data);
       case 'code_editor':
@@ -121,10 +122,12 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, la
   }
 
   // render node parameters based on AWEL2.0
-  function renderNodeWithUiParam(data: IFlowNodeParameter) {
+  function renderNodeWithUiParam(data: IFlowNodeParameter,formValuesChange:any) {
     const { refresh_depends, ui_type } = data.ui;
     let defaultValue = data.value ?? data.default;
-
+    if (ui_type === 'slider' && data.is_list) {
+      defaultValue = [0,1]
+    }
     return (
       <Form.Item
         className="mb-2"
@@ -135,7 +138,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, la
         {...(refresh_depends && { dependencies: refresh_depends })}
         {...(data.description && { tooltip: { title: data.description, icon: <InfoCircleOutlined /> } })}
       >
-        {renderComponentByType(ui_type, data)}
+        {renderComponentByType(ui_type, data,formValuesChange)}
       </Form.Item>
     );
   }
@@ -143,7 +146,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, paramData, la
   if (paramData.category === 'resource') {
     return <NodeHandler node={node} data={paramData} type="target" label={label} index={index} />;
   } else if (paramData.category === 'common') {
-    return paramData?.ui ? renderNodeWithUiParam(paramData) : renderNodeWithoutUiParam(paramData);
+    return paramData?.ui ? renderNodeWithUiParam(paramData,formValuesChange) : renderNodeWithoutUiParam(paramData);
   }
 };
 

@@ -1,19 +1,21 @@
 import React, { useState, useRef } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
-import { Button, Upload, message } from 'antd';
+import { Button, Upload, message,Form } from 'antd';
 import { convertKeysToCamelCase } from '@/utils/flow';
 import { IFlowNodeParameter } from '@/types/flow';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
+  formValuesChange:any,
   data: IFlowNodeParameter;
   onChange?: (value: any) => void;
 };
 export const renderUpload = (params: Props) => {
   const { t } = useTranslation();
   const urlList = useRef<string[]>([]);
-  const { data, onChange } = params;
+  const { data ,formValuesChange} = params;
+  const form = Form.useFormInstance()
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
@@ -24,8 +26,11 @@ export const renderUpload = (params: Props) => {
       urlList.current.pop();
     }
     urlList.current.push(url);
-
-    onChange?.(urlList.current.toString());
+    if (data.ui.attr.max_count === 1) {
+      formValuesChange({file:urlList.current.toString()},{force:true})
+    }else{
+      formValuesChange({multiple_files:urlList.current},{force:true})
+    }
   };
 
   const handleFileRemove = (file: any) => {
@@ -33,7 +38,11 @@ export const renderUpload = (params: Props) => {
     if (index !== -1) {
       urlList.current.splice(index, 1);
     }
-    onChange?.(urlList.current.toString());
+    if (data.ui.attr.max_count === 1) {
+      formValuesChange({file:urlList.current.toString()},{force:true})
+    }else{
+      formValuesChange({multiple_files:urlList.current},{force:true})
+    }
   };
 
   const props: UploadProps = {

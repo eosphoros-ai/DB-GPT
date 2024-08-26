@@ -5,6 +5,7 @@ import { UploadOutlined } from "@mui/icons-material";
 import { t } from "i18next";
 import { useTranslation } from "react-i18next";
 
+
 type Props = {
   isImportModalOpen: boolean;
   setNodes: React.Dispatch<
@@ -13,6 +14,7 @@ type Props = {
   setEdges: React.Dispatch<React.SetStateAction<Edge<any>[]>>;
   setIsImportFlowModalOpen: (value: boolean) => void;
 };
+type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
 export const ImportFlowModal: React.FC<Props> = ({
   setNodes,
@@ -23,27 +25,17 @@ export const ImportFlowModal: React.FC<Props> = ({
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
 
   // TODO: Implement onFlowImport
   const onFlowImport = async (values: any) => {
-    // const input = document.createElement('input');
-    // input.type = 'file';
-    // input.accept = '.json';
-    // input.onchange = async (e: any) => {
-    //   const file = e.target.files[0];
-    //   const reader = new FileReader();
-    //   reader.onload = async (event) => {
-    //     const flowData = JSON.parse(event.target?.result as string) as IFlowData;
-    //     setNodes(flowData.nodes);
-    //     setEdges(flowData.edges);
-    //   };
-    //   reader.readAsText(file);
-    // };
-    // input.click;
-    console.log(values);
     values.file = values.file?.[0];
 
-    const [, , res] = await apiInterceptors(importFlow(values));
+    const formData:any = new FormData();
+    fileList.forEach((file) => {
+      formData.append('file', file as FileType);
+    });
+    const [, , res] = await apiInterceptors(importFlow(formData));
 
     if (res?.success) {
       messageApi.success(t("Export_Flow_Success"));
@@ -54,6 +46,20 @@ export const ImportFlowModal: React.FC<Props> = ({
     setIsImportFlowModalOpen(false);
   };
 
+  const props: UploadProps = {
+    onRemove: (file) => {
+      const index = fileList.indexOf(file);
+      const newFileList = fileList.slice();
+      newFileList.splice(index, 1);
+      setFileList(newFileList);
+    },
+    beforeUpload: (file) => {
+      setFileList([...fileList, file]);
+
+      return false;
+    },
+    fileList,
+  };
   return (
     <>
       <Modal
@@ -84,6 +90,7 @@ export const ImportFlowModal: React.FC<Props> = ({
           >
             <Upload accept=".json,.zip" beforeUpload={() => false} maxCount={1}>
               <Button icon={<UploadOutlined />}> {t("Upload")}</Button>
+
             </Upload>
           </Form.Item>
 
