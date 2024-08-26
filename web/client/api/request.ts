@@ -4,6 +4,7 @@ import {
   PostAgentMyPluginResponse,
   PostAgentPluginResponse,
   PostAgentQueryParams,
+  PostDbgptMyQueryParams,
 } from "@/types/agent";
 import { GetAppInfoParams, IApp, IAgent, IAppData } from "@/types/app";
 import {
@@ -312,9 +313,21 @@ export const postAgentQuery = (data: PostAgentQueryParams) => {
     data
   );
 };
+export const postDbgptsQuery = (data: PostAgentQueryParams) => {
+  return POST<PostAgentQueryParams, PostAgentPluginResponse>(
+    `/api/v1/serve/dbgpts/hub/query_page?page=${data?.page_index}&page_size=${data?.page_size}`,
+    data
+  );
+};
 export const postAgentHubUpdate = (data?: PostAgentHubUpdateParams) => {
   return POST<PostAgentHubUpdateParams>(
     "/api/v1/agent/hub/update",
+    data ?? { channel: "", url: "", branch: "", authorization: "" }
+  );
+};
+export const postDbgptsHubUpdate = (data?: PostAgentHubUpdateParams) => {
+  return POST<PostAgentHubUpdateParams>(
+    "/api/v1/serve/dbgpts/hub/source/refresh",
     data ?? { channel: "", url: "", branch: "", authorization: "" }
   );
 };
@@ -325,14 +338,32 @@ export const postAgentMy = (user?: string) => {
     { params: { user } }
   );
 };
+export const postDbgptsMy = (data?: PostDbgptMyQueryParams) => {
+  return POST<PostDbgptMyQueryParams, PostAgentMyPluginResponse>(
+    `/api/v1/serve/dbgpts/my/query_page?page=${data?.page_index}&page_size=${data?.page_size}`,
+    data
+  );
+};
 export const postAgentInstall = (pluginName: string, user?: string) => {
   return POST("/api/v1/agent/install", undefined, {
     params: { plugin_name: pluginName, user },
     timeout: 60000,
   });
 };
+export const postDbgptsInstall = (pluginName: string, user?: string) => {
+  return POST("/api/v1/serve/dbgpts/hub/install", undefined, {
+    params: { plugin_name: pluginName, user },
+    timeout: 60000,
+  });
+};
 export const postAgentUninstall = (pluginName: string, user?: string) => {
   return POST("/api/v1/agent/uninstall", undefined, {
+    params: { plugin_name: pluginName, user },
+    timeout: 60000,
+  });
+};
+export const postDbgptsUninstall = (pluginName: string, user?: string) => {
+  return POST("/api/v1/serve/dbgpts/my/uninstall", undefined, {
     params: { plugin_name: pluginName, user },
     timeout: 60000,
   });

@@ -37,7 +37,7 @@ const BlurredCard: React.FC<{
         className="backdrop-filter backdrop-blur-lg cursor-pointer  bg-white bg-opacity-70 border-2 border-white rounded-lg shadow p-4 relative w-full h-full dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
       >
         <div className="flex items-end relative bottom-8 justify-between w-full">
-          <div className="flex items-end gap-4 w-11/12">
+          <div className="flex items-end gap-4 w-11/12  flex-1">
             <div className="bg-white rounded-lg shadow-sm w-14 h-14 flex items-center p-3">
               {scene ? (
                 <AppDefaultIcon scene={scene} width={14} height={14} />
@@ -45,7 +45,7 @@ const BlurredCard: React.FC<{
                 logo && <Image src={logo} width={44} height={44} alt={name} className="w-8 min-w-8 rounded-full max-w-none" />
               )}
             </div>
-            <div>
+            <div className='flex-1'>
               {/** 先简单判断下 */}
               {name.length > 6 ? (
                 <Tooltip title={name}>
@@ -71,7 +71,7 @@ const BlurredCard: React.FC<{
             </div>
           </div>
           <span
-            className={cls({
+            className={cls('shrink-0', {
               hidden: rightTopHover,
               'group-hover:block': rightTopHover,
             })}

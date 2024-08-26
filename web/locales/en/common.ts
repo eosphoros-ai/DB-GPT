@@ -323,5 +323,11 @@ export const CommonEn = {
   All: "All",
   Please_input_prompt_name: "Please input prompt name",
   Copy_Btn: 'Copy',
-  Delete_Btn: 'Delete'
+  Delete_Btn: 'Delete',
+  dbgpts_community: 'DBGPTS Community',
+  my_dbgpts: 'My DBGPTS',
+  Refresh_dbgpts: 'Refresh from the community Git repository',
+  workflow: 'Workflow',
+  resources: 'Resources',
+  app: 'App',
 } as const;
