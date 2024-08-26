@@ -81,7 +81,7 @@ function Agent() {
   }, [activeKey, typeStr]);
 
   const pluginAction = useCallback(
-    async (agent: { name: string }, index: number, isInstall: boolean) => {
+    async (agent: { name: string, type: string }, index: number, isInstall: boolean) => {
       if (actionIndex) return;
       setActionIndex(index);
       setLoading(true);
@@ -90,7 +90,10 @@ function Agent() {
         const [err] = await apiInterceptors(postDbgptsInstall(agent));
         errs = err;
       } else {
-        const [err] = await apiInterceptors(postDbgptsUninstall(agent.name));
+        const [err] = await apiInterceptors(postDbgptsUninstall({
+          name: agent.name,
+          type: agent.type
+        }));
         errs = err;
       }
       setLoading(false);
@@ -105,7 +108,7 @@ function Agent() {
   const items: SegmentedProps['options'] = [
     {
       value: 'market',
-      label: 'DBGPTS',
+      label: t('community_dbgpts'),
     },
     {
       value: 'my',

@@ -362,9 +362,9 @@ export const postAgentUninstall = (pluginName: string, user?: string) => {
     timeout: 60000,
   });
 };
-export const postDbgptsUninstall = (pluginName: string, user?: string) => {
+export const postDbgptsUninstall = (data: { name: string, type: string }, user?: string) => {
   return POST("/api/v1/serve/dbgpts/my/uninstall", undefined, {
-    params: { name: pluginName, user },
+    params: { ...data, user },
     timeout: 60000,
   });
 };

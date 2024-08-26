@@ -52,7 +52,7 @@ const BlurredCard: React.FC<{
                   <span
                     className="line-clamp-1 text-ellipsis font-semibold text-base"
                     style={{
-                      // maxWidth: '60%',
+                      maxWidth: '60%',
                     }}
                   >
                     {name}
@@ -62,7 +62,7 @@ const BlurredCard: React.FC<{
                 <span
                   className="line-clamp-1 text-ellipsis font-semibold text-base"
                   style={{
-                    // maxWidth: '60%',
+                    maxWidth: '60%',
                   }}
                 >
                   {name}
