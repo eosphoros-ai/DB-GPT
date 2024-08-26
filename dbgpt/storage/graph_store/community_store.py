@@ -38,8 +38,8 @@ class CommunityStore:
             community = await (
                 self._community_store_adapter.get_community(community_id)
             )
+
             community.summary = await (
-                # todo: use concise format
                 self._community_summarizer.summarize(
                     graph=community.data.format()
                 )

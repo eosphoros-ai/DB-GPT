@@ -48,7 +48,7 @@ class CommunityMetastore(ABC):
         """Save communities."""
 
     @abstractmethod
-    def truncate(self):
+    async def truncate(self):
         """Truncate all communities."""
 
     @abstractmethod
