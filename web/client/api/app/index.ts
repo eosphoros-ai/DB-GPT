@@ -61,13 +61,7 @@ export const getNativeAppScenes = () => {
 export const getAppStrategyValues = (type: string) => {
   return GET<string, string[]>(`/api/v1/llm-strategy/value/list?type=${type}`);
 };
-/**
- * 创建awel_layout应用
- * 获取工作流
- */
-export const getFlows = ({ page, page_size }: { page: number; page_size: number }) => {
-  return GET<{ page: number; page_size: number }, IFlowResponse>(`/api/v1/serve/awel/flows?page=${page}&page_size=${page_size}`);
-};
+
 /**
  * 查询应用权限
  */

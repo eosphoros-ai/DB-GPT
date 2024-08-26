@@ -1,7 +1,14 @@
-import { File } from 'buffer';
-import { Node } from 'reactflow';
+import { File } from "buffer";
+import { Node } from "reactflow";
 
-export type FlowState = 'deployed' | 'developing' | 'initializing' | 'testing' | 'disabled' | 'running' | 'load_failed';
+export type FlowState =
+  | "deployed"
+  | "developing"
+  | "initializing"
+  | "testing"
+  | "disabled"
+  | "running"
+  | "load_failed";
 
 export type IFlowUpdateParam = {
   name: string;
@@ -18,7 +25,7 @@ export type IFlowRefreshParams = {
   id: string;
   type_name: string;
   type_cls: string;
-  flow_type: 'resource' | 'operator';
+  flow_type: "resource" | "operator";
   refresh: {
     name: string;
     depends?: Array<{
@@ -121,7 +128,7 @@ export type IFlowNode = Node & {
   description: string;
   category: string;
   category_label: string;
-  flow_type: 'resource' | 'operator';
+  flow_type: "resource" | "operator";
   icon?: string;
   documentation_url?: null;
   id: string;
@@ -176,8 +183,8 @@ export type IFlowData = {
 
 export type IFlowExportParams = {
   uid: string;
-  export_type?: 'json' | 'dbgpts';
-  format?: 'json' | 'file';
+  export_type?: "json" | "dbgpts";
+  format?: "json" | "file";
   file_name?: string;
   user_name?: string;
   sys_code?: string;
