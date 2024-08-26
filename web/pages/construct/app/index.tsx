@@ -297,7 +297,7 @@ export default function AppContent() {
               </Button>
             </div>
           </div>
-          <div className=" w-full flex flex-wrap pb-12 mx-[-8px]">
+          <div className="w-full flex flex-wrap pb-12 mx-[-8px]">
             {apps.map((item) => {
               return (
                 <BlurredCard

@@ -350,9 +350,9 @@ export const postAgentInstall = (pluginName: string, user?: string) => {
     timeout: 60000,
   });
 };
-export const postDbgptsInstall = (pluginName: string, user?: string) => {
-  return POST("/api/v1/serve/dbgpts/hub/install", undefined, {
-    params: { plugin_name: pluginName, user },
+export const postDbgptsInstall = (data: object, user?: string) => {
+  return POST("/api/v1/serve/dbgpts/hub/install", data, {
+    params: { user },
     timeout: 60000,
   });
 };
@@ -364,7 +364,7 @@ export const postAgentUninstall = (pluginName: string, user?: string) => {
 };
 export const postDbgptsUninstall = (pluginName: string, user?: string) => {
   return POST("/api/v1/serve/dbgpts/my/uninstall", undefined, {
-    params: { plugin_name: pluginName, user },
+    params: { name: pluginName, user },
     timeout: 60000,
   });
 };
