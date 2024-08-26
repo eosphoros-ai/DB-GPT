@@ -211,8 +211,8 @@ const AddNodesSider: React.FC = () => {
 
         <h2 className="font-semibold">{t("operators")}</h2>
         <Collapse
-          ghost
           size="small"
+          bordered={false}
           className="max-h-[310px] overflow-hidden overflow-y-auto scrollbar-default"
           defaultActiveKey={[""]}
           items={operatorItems}
@@ -220,8 +220,8 @@ const AddNodesSider: React.FC = () => {
 
         <h2 className="font-semibold">{t("resource")}</h2>
         <Collapse
-          ghost
           size="small"
+          bordered={false}
           className="max-h-[310px] overflow-hidden overflow-y-auto scrollbar-default"
           defaultActiveKey={[""]}
           items={resourceItems}

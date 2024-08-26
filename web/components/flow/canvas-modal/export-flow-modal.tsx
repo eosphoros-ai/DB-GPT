@@ -49,7 +49,14 @@ export const ExportFlowModal: React.FC<Props> = ({
         title="Export Flow"
         open={isExportFlowModalOpen}
         onCancel={() => setIsExportFlowModalOpen(false)}
-        footer={null}
+        footer={[
+          <Button onClick={() => setIsExportFlowModalOpen(false)}>
+            {t("cancel")}
+          </Button>,
+          <Button type="primary" htmlType="submit">
+            {t("verify")}
+          </Button>,
+        ]}
       >
         <Form
           form={form}
@@ -58,19 +65,10 @@ export const ExportFlowModal: React.FC<Props> = ({
           initialValues={{
             export_type: "json",
             format: "file",
-            file_name: "flow.json",
             uid: flowInfo?.uid,
           }}
           onFinish={onFlowExport}
         >
-          <Form.Item
-            label="File Name"
-            name="file_name"
-            rules={[{ required: true, message: "Please input file name!" }]}
-          >
-            <Input placeholder="file.json" />
-          </Form.Item>
-
           <Form.Item label="Export Type" name="export_type">
             <Radio.Group>
               <Radio value="json">JSON</Radio>
@@ -87,17 +85,6 @@ export const ExportFlowModal: React.FC<Props> = ({
 
           <Form.Item hidden name="uid">
             <Input />
-          </Form.Item>
-
-          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
-            <Space>
-              <Button onClick={() => setIsExportFlowModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Export
-              </Button>
-            </Space>
           </Form.Item>
         </Form>
       </Modal>
