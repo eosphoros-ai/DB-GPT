@@ -1,20 +1,20 @@
 import BlurredCard, {
   ChatButton,
   InnerDropdown,
-} from "@/new-components/common/blurredCard";
-import ConstructLayout from "@/new-components/layout/Construct";
-import { ChatContext } from "@/app/chat-context";
+} from '@/new-components/common/blurredCard';
+import ConstructLayout from '@/new-components/layout/Construct';
+import { ChatContext } from '@/app/chat-context';
 import {
   apiInterceptors,
   deleteFlowById,
   getFlows,
   newDialogue,
   addFlow,
-} from "@/client/api";
-import MyEmpty from "@/components/common/MyEmpty";
-import { IFlow, IFlowUpdateParam } from "@/types/flow";
-import { PlusOutlined } from "@ant-design/icons";
-import { useRequest } from "ahooks";
+} from '@/client/api';
+import MyEmpty from '@/components/common/MyEmpty';
+import { IFlow, IFlowUpdateParam } from '@/types/flow';
+import { PlusOutlined } from '@ant-design/icons';
+import { useRequest } from 'ahooks';
 import {
   Button,
   Modal,
@@ -25,20 +25,20 @@ import {
   Form,
   Input,
   Checkbox,
-} from "antd";
-import { t } from "i18next";
-import { concat, debounce } from "lodash";
-import moment from "moment";
-import { useRouter } from "next/router";
-import qs from "querystring";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+} from 'antd';
+import { t } from 'i18next';
+import { concat, debounce } from 'lodash';
+import moment from 'moment';
+import { useRouter } from 'next/router';
+import qs from 'querystring';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function Flow() {
   const router = useRouter();
   const { model } = useContext(ChatContext);
   const [messageApi, contextHolder] = message.useMessage();
-  const [form] = Form.useForm<Pick<IFlow, "label" | "name">>();
+  const [form] = Form.useForm<Pick<IFlow, 'label' | 'name'>>();
 
   const [flowList, setFlowList] = useState<Array<IFlow>>([]);
   const copyFlowTemp = useRef<IFlow>();
@@ -66,7 +66,7 @@ function Flow() {
         })
       ),
     {
-      cacheKey: "query-flow-list",
+      cacheKey: 'query-flow-list',
       onSuccess: (data) => {
         const [, res] = data;
         setFlowList((prev) => concat([...prev], res?.items || []));
@@ -110,25 +110,25 @@ function Flow() {
     }
     const currentScrollRef = scrollRef.current;
     if (currentScrollRef) {
-      currentScrollRef?.addEventListener("scroll", handleScroll);
+      currentScrollRef?.addEventListener('scroll', handleScroll);
       if (currentScrollRef.scrollHeight === currentScrollRef.clientHeight) {
         loadMoreData();
       }
     }
     return () => {
       if (currentScrollRef) {
-        currentScrollRef?.removeEventListener("scroll", handleScroll);
+        currentScrollRef?.removeEventListener('scroll', handleScroll);
       }
     };
   }, [loading, handleScroll, loadMoreData]);
 
   const handleChat = async (flow: IFlow) => {
     const [, res] = await apiInterceptors(
-      newDialogue({ chat_mode: "chat_agent" })
+      newDialogue({ chat_mode: 'chat_agent' })
     );
     if (res) {
       const queryStr = qs.stringify({
-        scene: "chat_flow",
+        scene: 'chat_flow',
         id: res.conv_uid,
         model: model,
         select_param: flow.uid,
@@ -146,8 +146,8 @@ function Flow() {
 
   const handleCopy = (flow: IFlow) => {
     copyFlowTemp.current = flow;
-    form.setFieldValue("label", `${flow.label} Copy`);
-    form.setFieldValue("name", `${flow.name}_copy`);
+    form.setFieldValue('label', `${flow.label} Copy`);
+    form.setFieldValue('name', `${flow.name}_copy`);
     setDeploy(true);
     setEditable(true);
     setShowModal(true);
@@ -160,12 +160,12 @@ function Flow() {
     const data: IFlowUpdateParam = {
       ...params,
       editable,
-      state: deploy ? "deployed" : "developing",
+      state: deploy ? 'deployed' : 'developing',
       ...val,
     };
     const [err] = await apiInterceptors(addFlow(data));
     if (!err) {
-      messageApi.success(t("save_flow_success"));
+      messageApi.success(t('save_flow_success'));
       setShowModal(false);
       getFlowListRun({});
     }
@@ -196,10 +196,10 @@ function Flow() {
                 className="border-none text-white bg-button-gradient"
                 icon={<PlusOutlined />}
                 onClick={() => {
-                  router.push("/construct/flow/canvas");
+                  router.push('/construct/flow/canvas');
                 }}
               >
-                {t("create_flow")}
+                {t('create_flow')}
               </Button>
             </div>
           </div>
@@ -211,33 +211,33 @@ function Flow() {
                 key={flow.uid}
                 logo="/pictures/flow.png"
                 onClick={() => {
-                  router.push("/construct/flow/canvas?id=" + flow.uid);
+                  router.push('/construct/flow/canvas?id=' + flow.uid);
                 }}
                 RightTop={
                   <InnerDropdown
                     menu={{
                       items: [
                         {
-                          key: "copy",
+                          key: 'copy',
                           label: (
                             <span
                               onClick={() => {
                                 handleCopy(flow);
                               }}
                             >
-                              {t("Copy_Btn")}
+                              {t('Copy_Btn')}
                             </span>
                           ),
                         },
                         {
-                          key: "del",
+                          key: 'del',
                           label: (
                             <Popconfirm
                               title="Are you sure to delete this flow?"
                               onConfirm={() => deleteFlow(flow)}
                             >
                               <span className="text-red-400">
-                                {t("Delete_Btn")}
+                                {t('Delete_Btn')}
                               </span>
                             </Popconfirm>
                           ),
@@ -249,19 +249,19 @@ function Flow() {
                 rightTopHover={false}
                 Tags={
                   <div>
-                    <Tag color={flow.source === "DBGPT-WEB" ? "green" : "blue"}>
+                    <Tag color={flow.source === 'DBGPT-WEB' ? 'green' : 'blue'}>
                       {flow.source}
                     </Tag>
-                    <Tag color={flow.editable ? "green" : "gray"}>
-                      {flow.editable ? "Editable" : "Can not Edit"}
+                    <Tag color={flow.editable ? 'green' : 'gray'}>
+                      {flow.editable ? 'Editable' : 'Can not Edit'}
                     </Tag>
                     <Tag
                       color={
-                        flow.state === "load_failed"
-                          ? "red"
-                          : flow.state === "running"
-                          ? "green"
-                          : "blue"
+                        flow.state === 'load_failed'
+                          ? 'red'
+                          : flow.state === 'running'
+                          ? 'green'
+                          : 'blue'
                       }
                     >
                       {flow.state}
@@ -269,14 +269,14 @@ function Flow() {
                   </div>
                 }
                 LeftBottom={
-                  <div key={i18n.language + "flow"} className="flex gap-2">
+                  <div key={i18n.language + 'flow'} className="flex gap-2">
                     <span>{flow?.nick_name}</span>
                     <span>•</span>
                     {flow?.gmt_modified && (
                       <span>
                         {moment(flow?.gmt_modified).fromNow() +
-                          " " +
-                          t("update")}
+                          ' ' +
+                          t('update')}
                       </span>
                     )}
                   </div>
@@ -286,7 +286,7 @@ function Flow() {
                     onClick={() => {
                       handleChat(flow);
                     }}
-                    text={t("start_chat")}
+                    text={t('start_chat')}
                   />
                 }
               />
@@ -332,7 +332,7 @@ function Flow() {
           </Form.Item>
           <div className="flex justify-end">
             <Button type="primary" htmlType="submit">
-              {t("Submit")}
+              {t('Submit')}
             </Button>
           </div>
         </Form>

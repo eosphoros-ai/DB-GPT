@@ -4,8 +4,8 @@ import {
   PostAgentMyPluginResponse,
   PostAgentPluginResponse,
   PostAgentQueryParams,
-} from "@/types/agent";
-import { GetAppInfoParams, IApp } from "@/types/app";
+} from '@/types/agent';
+import { GetAppInfoParams, IApp } from '@/types/app';
 import {
   ChatHistoryResponse,
   DialogueListResponse,
@@ -16,14 +16,14 @@ import {
   SceneResponse,
   UserParam,
   UserParamResponse,
-} from "@/types/chat";
+} from '@/types/chat';
 import {
   ChatFeedBackSchema,
   DbListResponse,
   DbSupportTypeResponse,
   PostDbParams,
   PostDbRefreshParams,
-} from "@/types/db";
+} from '@/types/db';
 import {
   GetEditorSQLRoundRequest,
   GetEditorySqlParams,
@@ -31,7 +31,7 @@ import {
   PostEditorChartRunResponse,
   PostEditorSQLRunParams,
   PostSQLEditorSubmitParams,
-} from "@/types/editor";
+} from '@/types/editor';
 import {
   AddKnowledgeParams,
   ArgumentsParams,
@@ -46,19 +46,19 @@ import {
   ISyncBatchParameter,
   ISyncBatchResponse,
   SpaceConfig,
-} from "@/types/knowledge";
+} from '@/types/knowledge';
 import {
   BaseModelParams,
   IModelData,
   StartModelParams,
   SupportModel,
-} from "@/types/model";
-import { AxiosRequestConfig } from "axios";
-import { GET, POST } from ".";
+} from '@/types/model';
+import { AxiosRequestConfig } from 'axios';
+import { GET, POST } from '.';
 
 /** App */
 export const postScenes = () => {
-  return POST<null, Array<SceneResponse>>("/api/v1/chat/dialogue/scenes");
+  return POST<null, Array<SceneResponse>>('/api/v1/chat/dialogue/scenes');
 };
 export const newDialogue = (data: NewDialogueParam) => {
   return POST<NewDialogueParam, IChatDialogueSchema>(
@@ -68,38 +68,38 @@ export const newDialogue = (data: NewDialogueParam) => {
 };
 
 export const addUser = (data: UserParam) => {
-  return POST<UserParam, UserParamResponse>("/api/v1/user/add", data);
+  return POST<UserParam, UserParamResponse>('/api/v1/user/add', data);
 };
 
 /** Database Page */
 export const getDbList = () => {
-  return GET<null, DbListResponse>("/api/v1/chat/db/list");
+  return GET<null, DbListResponse>('/api/v1/chat/db/list');
 };
 export const getDbSupportType = () => {
-  return GET<null, DbSupportTypeResponse>("/api/v1/chat/db/support/type");
+  return GET<null, DbSupportTypeResponse>('/api/v1/chat/db/support/type');
 };
 export const postDbDelete = (dbName: string) => {
   return POST(`/api/v1/chat/db/delete?db_name=${dbName}`);
 };
 export const postDbEdit = (data: PostDbParams) => {
-  return POST<PostDbParams, null>("/api/v1/chat/db/edit", data);
+  return POST<PostDbParams, null>('/api/v1/chat/db/edit', data);
 };
 export const postDbAdd = (data: PostDbParams) => {
-  return POST<PostDbParams, null>("/api/v1/chat/db/add", data);
+  return POST<PostDbParams, null>('/api/v1/chat/db/add', data);
 };
 export const postDbTestConnect = (data: PostDbParams) => {
-  return POST<PostDbParams, null>("/api/v1/chat/db/test/connect", data);
+  return POST<PostDbParams, null>('/api/v1/chat/db/test/connect', data);
 };
 export const postDbRefresh = (data: PostDbRefreshParams) => {
-  return POST<PostDbRefreshParams, boolean>("/api/v1/chat/db/refresh", data);
+  return POST<PostDbRefreshParams, boolean>('/api/v1/chat/db/refresh', data);
 };
 
 /** Chat Page */
 export const getDialogueList = () => {
-  return GET<null, DialogueListResponse>("/api/v1/chat/dialogue/list");
+  return GET<null, DialogueListResponse>('/api/v1/chat/dialogue/list');
 };
 export const getUsableModels = () => {
-  return GET<null, Array<string>>("/api/v1/model/types");
+  return GET<null, Array<string>>('/api/v1/model/types');
 };
 export const postChatModeParamsList = (chatMode: string) => {
   return POST<null, IDB[]>(
@@ -131,14 +131,14 @@ export const postChatModeParamsFileLoad = ({
   model: string;
   userName?: string;
   sysCode?: string;
-  config?: Omit<AxiosRequestConfig, "headers">;
+  config?: Omit<AxiosRequestConfig, 'headers'>;
 }) => {
   return POST<FormData, any>(
     `/api/v1/resource/file/upload?conv_uid=${convUid}&chat_mode=${chatMode}&model_name=${model}&user_name=${userName}&sys_code=${sysCode}`,
     data,
     {
       headers: {
-        "Content-Type": "multipart/form-data",
+        'Content-Type': 'multipart/form-data',
       },
       ...config,
     }
@@ -175,7 +175,7 @@ export const postSqlEditorSubmit = (data: PostSQLEditorSubmitParams) => {
   return POST<PostSQLEditorSubmitParams>(`/api/v1/sql/editor/submit`, data);
 };
 export const getEditorSql = (id: string, round: string | number) => {
-  return POST<GetEditorySqlParams, string | Array<any>>("/api/v1/editor/sql", {
+  return POST<GetEditorySqlParams, string | Array<any>>('/api/v1/editor/sql', {
     con_uid: id,
     round,
   });
@@ -193,7 +193,7 @@ export const saveArguments = (knowledgeName: string, data: ArgumentsParams) => {
 };
 
 export const getSpaceList = (data: any) => {
-  return POST<any, Array<ISpace>>("/knowledge/space/list", data);
+  return POST<any, Array<ISpace>>('/knowledge/space/list', data);
 };
 export const getDocumentList = (
   spaceName: string,
@@ -224,7 +224,7 @@ export const addSpace = (data: AddKnowledgeParams) => {
 
 export const getChunkStrategies = () => {
   return GET<null, Array<IChunkStrategyResponse>>(
-    "/knowledge/document/chunkstrategies"
+    '/knowledge/document/chunkstrategies'
   );
 };
 
@@ -278,68 +278,68 @@ export const delSpace = (data: Record<string, string>) => {
 
 /** models */
 export const getModelList = () => {
-  return GET<null, Array<IModelData>>("/api/v1/worker/model/list");
+  return GET<null, Array<IModelData>>('/api/v1/worker/model/list');
 };
 
 export const stopModel = (data: BaseModelParams) => {
-  return POST<BaseModelParams, boolean>("/api/v1/worker/model/stop", data);
+  return POST<BaseModelParams, boolean>('/api/v1/worker/model/stop', data);
 };
 
 export const startModel = (data: StartModelParams) => {
-  return POST<StartModelParams, boolean>("/api/v1/worker/model/start", data);
+  return POST<StartModelParams, boolean>('/api/v1/worker/model/start', data);
 };
 
 export const getSupportModels = () => {
-  return GET<null, Array<SupportModel>>("/api/v1/worker/model/params");
+  return GET<null, Array<SupportModel>>('/api/v1/worker/model/params');
 };
 
 /** Agent */
 export const postAgentQuery = (data: PostAgentQueryParams) => {
   return POST<PostAgentQueryParams, PostAgentPluginResponse>(
-    "/api/v1/agent/query",
+    '/api/v1/agent/query',
     data
   );
 };
 export const postAgentHubUpdate = (data?: PostAgentHubUpdateParams) => {
   return POST<PostAgentHubUpdateParams>(
-    "/api/v1/agent/hub/update",
-    data ?? { channel: "", url: "", branch: "", authorization: "" }
+    '/api/v1/agent/hub/update',
+    data ?? { channel: '', url: '', branch: '', authorization: '' }
   );
 };
 export const postAgentMy = (user?: string) => {
   return POST<undefined, PostAgentMyPluginResponse>(
-    "/api/v1/agent/my",
+    '/api/v1/agent/my',
     undefined,
     { params: { user } }
   );
 };
 export const postAgentInstall = (pluginName: string, user?: string) => {
-  return POST("/api/v1/agent/install", undefined, {
+  return POST('/api/v1/agent/install', undefined, {
     params: { plugin_name: pluginName, user },
     timeout: 60000,
   });
 };
 export const postAgentUninstall = (pluginName: string, user?: string) => {
-  return POST("/api/v1/agent/uninstall", undefined, {
+  return POST('/api/v1/agent/uninstall', undefined, {
     params: { plugin_name: pluginName, user },
     timeout: 60000,
   });
 };
 export const postAgentUpload = (
-  user = "",
+  user = '',
   data: FormData,
-  config?: Omit<AxiosRequestConfig, "headers">
+  config?: Omit<AxiosRequestConfig, 'headers'>
 ) => {
-  return POST<FormData>("/api/v1/personal/agent/upload", data, {
+  return POST<FormData>('/api/v1/personal/agent/upload', data, {
     params: { user },
     headers: {
-      "Content-Type": "multipart/form-data",
+      'Content-Type': 'multipart/form-data',
     },
     ...config,
   });
 };
 export const getDbgptsList = () => {
-  return GET<undefined, GetDBGPTsListResponse>("/api/v1/dbgpts/list");
+  return GET<undefined, GetDBGPTsListResponse>('/api/v1/dbgpts/list');
 };
 
 /** chat feedback **/
@@ -357,11 +357,11 @@ export const postChatFeedBackForm = ({
   config,
 }: {
   data: ChatFeedBackSchema;
-  config?: Omit<AxiosRequestConfig, "headers">;
+  config?: Omit<AxiosRequestConfig, 'headers'>;
 }) => {
   return POST<ChatFeedBackSchema, any>(`/api/v1/feedback/commit`, data, {
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     ...config,
   });
@@ -372,46 +372,46 @@ export const postChatFeedBackForm = ({
 /** app */
 
 export const collectApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>("/api/v1/app/collect", data);
+  return POST<Record<string, string>, []>('/api/v1/app/collect', data);
 };
 
 export const unCollectApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>("/api/v1/app/uncollect", data);
+  return POST<Record<string, string>, []>('/api/v1/app/uncollect', data);
 };
 
 export const getResourceType = () => {
-  return GET<null, string[]>("/api/v1/resource-type/list");
+  return GET<null, string[]>('/api/v1/resource-type/list');
 };
 
 export const publishApp = (app_code: string) => {
-  return POST<Record<string, any>, []>("/api/v1/app/publish", { app_code });
+  return POST<Record<string, any>, []>('/api/v1/app/publish', { app_code });
 };
 
 export const unPublishApp = (app_code: string) => {
-  return POST<Record<string, any>, []>("/api/v1/app/unpublish", { app_code });
+  return POST<Record<string, any>, []>('/api/v1/app/unpublish', { app_code });
 };
 export const addOmcDB = (params: Record<string, string>) => {
-  return POST<Record<string, any>, []>("/api/v1/chat/db/add", params);
+  return POST<Record<string, any>, []>('/api/v1/chat/db/add', params);
 };
 
 export const getAppInfo = (data: GetAppInfoParams) => {
-  return GET<GetAppInfoParams, IApp>("/api/v1/app/info", data);
+  return GET<GetAppInfoParams, IApp>('/api/v1/app/info', data);
 };
 
-export const getSupportDBList = (db_name = "") => {
+export const getSupportDBList = (db_name = '') => {
   return GET<null, Record<string, any>>(
     `/api/v1/permission/db/list?db_name=${db_name}`
   );
 };
 
 export const recommendApps = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>("/api/v1/app/hot/list", data);
+  return POST<Record<string, string>, []>('/api/v1/app/hot/list', data);
 };
 export const flowSearch = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>("/api/v1/serve/awel/flows", data);
+  return POST<Record<string, string>, []>('/api/v1/serve/awel/flows', data);
 };
 export const modelSearch = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>("/api/controller/models", data);
+  return POST<Record<string, string>, []>('/api/controller/models', data);
 };
 
 export const getKnowledgeAdmins = (spaceId: string) => {
@@ -427,7 +427,7 @@ export const updateKnowledgeAdmins = (data: Record<string, string>) => {
 
 /** app */
 export const delApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>("/api/v1/app/remove", data);
+  return POST<Record<string, string>, []>('/api/v1/app/remove', data);
 };
 
 export const getSpaceConfig = () => {
