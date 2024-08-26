@@ -11,6 +11,12 @@ export const getUniqueNodeId = (nodeData: IFlowNode, nodes: Node[]) => {
   return `${nodeData.id}_${count}`;
 };
 
+// function getUniqueNodeId will add '_${count}' to id, so we need to remove it when we want to get the original id
+export const removeIndexFromNodeId = (id: string) => {
+  const indexPattern = /_\d+$/;
+  return id.replace(indexPattern, '');
+};
+
 // 驼峰转下划线，接口协议字段命名规范
 export const mapHumpToUnderline = (flowData: IFlowData) => {
   /**
@@ -97,4 +103,32 @@ export const checkFlowDataRequied = (flowData: IFlowData) => {
     }
   }
   return result;
+};
+
+export const convertKeysToCamelCase = (obj: Record<string, any>): Record<string, any> => {
+  function toCamelCase(str: string): string {
+    return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
+
+  function isObject(value: any): boolean {
+    return value && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function convert(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map((item) => convert(item));
+    } else if (isObject(obj)) {
+      const newObj: Record<string, any> = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const newKey = toCamelCase(key);
+          newObj[newKey] = convert(obj[key]);
+        }
+      }
+      return newObj;
+    }
+    return obj;
+  }
+
+  return convert(obj);
 };

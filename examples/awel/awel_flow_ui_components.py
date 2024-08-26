@@ -440,6 +440,7 @@ class ExampleFlowTextAreaOperator(MapOperator[str, str]):
 
 
 class ExampleFlowSliderOperator(MapOperator[float, float]):
+
     metadata = ViewMetadata(
         label="Example Flow Slider",
         name="example_flow_slider",

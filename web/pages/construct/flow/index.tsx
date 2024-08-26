@@ -251,7 +251,7 @@ function Flow() {
                                 handleCopy(flow);
                               }}
                             >
-                              {t('copy')}
+                              {t('Copy_Btn')}
                             </span>
                           ),
                         },
@@ -259,7 +259,7 @@ function Flow() {
                           key: 'del',
                           label: (
                             <Popconfirm title="Are you sure to delete this flow?" onConfirm={() => deleteFlow(flow)}>
-                              <span className="text-red-400">删除</span>
+                              <span className="text-red-400">{t('Delete_Btn')}</span>
                             </Popconfirm>
                           ),
                         },
