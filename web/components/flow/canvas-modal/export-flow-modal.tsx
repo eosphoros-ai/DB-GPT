@@ -46,7 +46,7 @@ export const ExportFlowModal: React.FC<Props> = ({
   return (
     <>
       <Modal
-        title="Export Flow"
+        title={t('Export_Flow')}
         open={isExportFlowModalOpen}
         onCancel={() => setIsExportFlowModalOpen(false)}
         footer={[

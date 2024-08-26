@@ -1,10 +1,19 @@
-import { Modal, Form, Button, Space, message, Checkbox, Upload } from "antd";
-import { apiInterceptors, importFlow } from "@/client/api";
-import { Node, Edge } from "reactflow";
-import { UploadOutlined } from "@mui/icons-material";
-import { t } from "i18next";
-import { useTranslation } from "react-i18next";
-
+import {
+  Modal,
+  Form,
+  Button,
+  message,
+  Checkbox,
+  Upload,
+  UploadFile,
+  UploadProps,
+  GetProp,
+} from 'antd';
+import { apiInterceptors, importFlow } from '@/client/api';
+import { Node, Edge } from 'reactflow';
+import { UploadOutlined } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 
 type Props = {
   isImportModalOpen: boolean;
@@ -31,14 +40,14 @@ export const ImportFlowModal: React.FC<Props> = ({
   const onFlowImport = async (values: any) => {
     values.file = values.file?.[0];
 
-    const formData:any = new FormData();
+    const formData: any = new FormData();
     fileList.forEach((file) => {
       formData.append('file', file as FileType);
     });
     const [, , res] = await apiInterceptors(importFlow(formData));
 
     if (res?.success) {
-      messageApi.success(t("Export_Flow_Success"));
+      messageApi.success(t('Export_Flow_Success'));
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
     }
@@ -63,15 +72,15 @@ export const ImportFlowModal: React.FC<Props> = ({
   return (
     <>
       <Modal
-        title="Import Flow"
+        title={t('Import_Flow')}
         open={isImportModalOpen}
         onCancel={() => setIsImportFlowModalOpen(false)}
         footer={[
           <Button onClick={() => setIsImportFlowModalOpen(false)}>
-            {t("cancel")}
+            {t('cancel')}
           </Button>,
-          <Button type="primary" htmlType="submit">
-            {t("verify")}
+          <Button type='primary' htmlType='submit'>
+            {t('verify')}
           </Button>,
         ]}
       >
@@ -82,19 +91,18 @@ export const ImportFlowModal: React.FC<Props> = ({
           onFinish={onFlowImport}
         >
           <Form.Item
-            name="file"
-            label="File"
-            valuePropName="fileList"
+            name='file'
+            label='File'
+            valuePropName='fileList'
             getValueFromEvent={(e) => (Array.isArray(e) ? e : e && e.fileList)}
-            rules={[{ required: true, message: "Please upload a file" }]}
+            rules={[{ required: true, message: 'Please upload a file' }]}
           >
-            <Upload accept=".json,.zip" beforeUpload={() => false} maxCount={1}>
-              <Button icon={<UploadOutlined />}> {t("Upload")}</Button>
-
+            <Upload accept='.json,.zip' beforeUpload={() => false} maxCount={1}>
+              <Button icon={<UploadOutlined />}> {t('Upload')}</Button>
             </Upload>
           </Form.Item>
 
-          <Form.Item label="save flow" name="save_flow" valuePropName="checked">
+          <Form.Item label='save flow' name='save_flow' valuePropName='checked'>
             <Checkbox />
           </Form.Item>
         </Form>
