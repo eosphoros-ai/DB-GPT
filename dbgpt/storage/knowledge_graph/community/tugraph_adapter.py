@@ -34,7 +34,7 @@ class TuGraphCommunityStoreAdapter(CommunityStoreAdapter):
         edge_query = (
             f"MATCH (n:{self._graph_store.get_vertex_type()})-"
             f"[r:{self._graph_store.get_edge_type()}]-"
-            f"MATCH (m:{self._graph_store.get_vertex_type()})"
+            f"(m:{self._graph_store.get_vertex_type()})"
             f"WHERE n._community_id = '{community_id}' RETURN n,r,m"
         )
 
