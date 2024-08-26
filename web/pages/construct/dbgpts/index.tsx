@@ -17,6 +17,7 @@ function Agent() {
   const [searchValue, setSearchValue] = useState('');
   const [activeKey, setActiveKey] = useState<string>('market');
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [actionIndex, setActionIndex] = useState<number | undefined>();
 
@@ -33,10 +34,10 @@ function Agent() {
 
   const {
     data: agents = [],
-    loading,
     refresh,
   } = useRequest<IAgentPlugin[], []>(
     async () => {
+      setLoading(true);
       if (activeKey === 'my') {
         const [err, res] = await apiInterceptors(postDbgptsMy({
           name: searchValue || undefined,
@@ -44,6 +45,7 @@ function Agent() {
           page_index: pagination.pageNo,
           page_size: pagination.pageSize,
         }));
+        setLoading(false);
         setIsError(!!err);
         return res?.items ?? [];
       }
@@ -54,6 +56,7 @@ function Agent() {
         type: typeStr === 'all' ? undefined : typeStr,
       };
       const [err, res] = await apiInterceptors(postDbgptsQuery(queryParams));
+      setLoading(false);
       setIsError(!!err);
       return res?.items ?? [];
     },
@@ -76,12 +79,22 @@ function Agent() {
   useEffect(() => {
     refresh();
   }, [activeKey, typeStr]);
+
   const pluginAction = useCallback(
-    async (name: string, index: number, isInstall: boolean) => {
+    async (agent: { name: string }, index: number, isInstall: boolean) => {
       if (actionIndex) return;
       setActionIndex(index);
-      const [err] = await apiInterceptors((isInstall ? postDbgptsInstall : postDbgptsUninstall)(name));
-      if (!err) {
+      setLoading(true);
+      let errs = null;
+      if (isInstall) {
+        const [err] = await apiInterceptors(postDbgptsInstall(agent));
+        errs = err;
+      } else {
+        const [err] = await apiInterceptors(postDbgptsUninstall(agent.name));
+        errs = err;
+      }
+      setLoading(false);
+      if (!errs) {
         message.success('success');
         refresh();
       }
@@ -145,8 +158,8 @@ function Agent() {
 
   return (
     <ConstructLayout>
-      <div className="px-6">
-        <Spin spinning={loading}>
+      <Spin spinning={loading}>
+        <div className="h-screen w-full p-4 md:p-6 overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
               <Segmented
@@ -181,7 +194,7 @@ function Agent() {
               </Button>
             </div>
           </div>
-          <div className='flex justify-start'>
+          <div className='w-full flex flex-wrap pb-12 mx-[-8px]'>
             <Segmented
               className="backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
               options={typeItems}
@@ -201,7 +214,7 @@ function Agent() {
               className="w-[230px] h-[40px] border-1 border-white ml-4 backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
             />
           </div>
-          <div className='flex flex-wrap'>
+          <div className='flex flex-wrap pb-12'>
             {agents.map((agent, index) => (
               <BlurredCard
                 logo={logoFn(agent.type)}
@@ -236,7 +249,7 @@ function Agent() {
                       Icon={<ClearOutlined />}
                       text="Uninstall"
                       onClick={() => {
-                        pluginAction(agent.name, index, false);
+                        pluginAction(agent, index, false);
                       }}
                     />
                   ) : (
@@ -244,7 +257,7 @@ function Agent() {
                       Icon={<DownloadOutlined />}
                       text="Install"
                       onClick={() => {
-                        pluginAction(agent.name, index, true);
+                        pluginAction(agent, index, true);
                       }}
                     />
                   )
@@ -253,8 +266,8 @@ function Agent() {
             ))}
           </div>
           {/* {activeKey !== 'market' ? <MyPlugins /> : <MarketPlugins />} */}
-        </Spin>
-      </div>
+        </div>
+      </Spin>
     </ConstructLayout>
   );
 }
