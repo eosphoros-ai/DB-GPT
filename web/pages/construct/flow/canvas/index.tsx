@@ -214,7 +214,7 @@ const Canvas: React.FC<Props> = () => {
           <Space className="my-2 mx-4 flex flex-row justify-end">
             {[
               {
-                title: "import",
+                title: t("Import"),
                 icon: (
                   <ImportOutlined
                     className="block text-xl"
@@ -223,7 +223,7 @@ const Canvas: React.FC<Props> = () => {
                 ),
               },
               {
-                title: "export",
+                title: t("Export"),
                 icon: (
                   <ExportOutlined
                     className="block text-xl"
@@ -232,7 +232,7 @@ const Canvas: React.FC<Props> = () => {
                 ),
               },
               {
-                title: "save",
+                title: t("save"),
                 icon: (
                   <SaveOutlined className="block text-xl" onClick={onSave} />
                 ),
@@ -250,7 +250,7 @@ const Canvas: React.FC<Props> = () => {
 
           <Divider className="mt-0 mb-0" />
 
-          <div className="h-[calc(100vh-60px)] w-full" ref={reactFlowWrapper}>
+          <div className="h-[calc(100vh-48px)] w-full" ref={reactFlowWrapper}>
             <ReactFlow
               nodes={nodes}
               edges={edges}

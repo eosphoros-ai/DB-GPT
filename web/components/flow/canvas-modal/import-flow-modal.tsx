@@ -3,6 +3,7 @@ import { apiInterceptors, importFlow } from "@/client/api";
 import { Node, Edge } from "reactflow";
 import { UploadOutlined } from "@mui/icons-material";
 import { t } from "i18next";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   isImportModalOpen: boolean;
@@ -19,6 +20,7 @@ export const ImportFlowModal: React.FC<Props> = ({
   isImportModalOpen,
   setIsImportFlowModalOpen,
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -58,7 +60,14 @@ export const ImportFlowModal: React.FC<Props> = ({
         title="Import Flow"
         open={isImportModalOpen}
         onCancel={() => setIsImportFlowModalOpen(false)}
-        footer={null}
+        footer={[
+          <Button onClick={() => setIsImportFlowModalOpen(false)}>
+            {t("cancel")}
+          </Button>,
+          <Button type="primary" htmlType="submit">
+            {t("verify")}
+          </Button>,
+        ]}
       >
         <Form
           form={form}
@@ -74,23 +83,12 @@ export const ImportFlowModal: React.FC<Props> = ({
             rules={[{ required: true, message: "Please upload a file" }]}
           >
             <Upload accept=".json,.zip" beforeUpload={() => false} maxCount={1}>
-              <Button icon={<UploadOutlined />}>Click to Upload</Button>
+              <Button icon={<UploadOutlined />}> {t("Upload")}</Button>
             </Upload>
           </Form.Item>
 
           <Form.Item label="save flow" name="save_flow" valuePropName="checked">
             <Checkbox />
-          </Form.Item>
-
-          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
-            <Space>
-              <Button onClick={() => setIsImportFlowModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Import
-              </Button>
-            </Space>
           </Form.Item>
         </Form>
       </Modal>
