@@ -21,7 +21,7 @@ export const ExportFlowModal: React.FC<Props> = ({
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
 
-  const onFlowExport = async (values: any) => {    
+  const onFlowExport = async (values: any) => {
     const flowData = reactFlow.toObject() as IFlowData;
     const blob = new Blob([JSON.stringify(flowData)], {
       type: 'text/plain;charset=utf-8',
@@ -32,7 +32,7 @@ export const ExportFlowModal: React.FC<Props> = ({
     a.download = values.file_name || 'flow.json';
     a.click();
 
-    const [, , res] = await apiInterceptors(exportFlow(values));
+    const [, , res] = await apiInterceptors(exportFlow(values), '*');
 
     if (res?.success) {
       messageApi.success(t('Export_Flow_Success'));
@@ -50,14 +50,8 @@ export const ExportFlowModal: React.FC<Props> = ({
         title={t('Export_Flow')}
         open={isExportFlowModalOpen}
         onCancel={() => setIsExportFlowModalOpen(false)}
-        footer={[
-          <Button onClick={() => setIsExportFlowModalOpen(false)}>
-            {t('cancel')}
-          </Button>,
-          <Button type='primary' htmlType='submit'>
-            {t('verify')}
-          </Button>,
-        ]}
+        cancelButtonProps={{ className: 'hidden' }}
+        okButtonProps={{ className: 'hidden' }}
       >
         <Form
           form={form}
@@ -87,6 +81,20 @@ export const ExportFlowModal: React.FC<Props> = ({
 
           <Form.Item hidden name='uid'>
             <Input />
+          </Form.Item>
+
+          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
+            <Space>
+              <Button
+                htmlType='button'
+                onClick={() => setIsExportFlowModalOpen(false)}
+              >
+                {t('cancel')}
+              </Button>
+              <Button type='primary' htmlType='submit'>
+                {t('verify')}
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>

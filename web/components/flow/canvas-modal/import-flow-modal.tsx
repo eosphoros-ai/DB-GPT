@@ -8,10 +8,11 @@ import {
   UploadProps,
   GetProp,
   Radio,
+  Space,
 } from 'antd';
 import { apiInterceptors, importFlow } from '@/client/api';
 import { Node, Edge } from 'reactflow';
-import { UploadOutlined } from '@mui/icons-material';
+import { UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 
@@ -61,14 +62,8 @@ export const ImportFlowModal: React.FC<Props> = ({
         title={t('Import_Flow')}
         open={isImportModalOpen}
         onCancel={() => setIsImportFlowModalOpen(false)}
-        footer={[
-          <Button onClick={() => setIsImportFlowModalOpen(false)}>
-            {t('cancel')}
-          </Button>,
-          <Button type='primary' htmlType='submit'>
-            {t('verify')}
-          </Button>,
-        ]}
+        cancelButtonProps={{ className: 'hidden' }}
+        okButtonProps={{ className: 'hidden' }}
       >
         <Form
           form={form}
@@ -92,15 +87,22 @@ export const ImportFlowModal: React.FC<Props> = ({
             </Upload>
           </Form.Item>
 
-          <Form.Item
-            name='save_flow'
-            label={t('Save_After_Import')}
-            valuePropName='checked'
-          >
+          <Form.Item name='save_flow' label={t('Save_After_Import')}>
             <Radio.Group>
               <Radio value={true}>{t('Yes')}</Radio>
               <Radio value={false}>{t('No')}</Radio>
             </Radio.Group>
+          </Form.Item>
+
+          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
+            <Space>
+              <Button onClick={() => setIsImportFlowModalOpen(false)}>
+                {t('cancel')}
+              </Button>
+              <Button type='primary' htmlType='submit'>
+                {t('verify')}
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>

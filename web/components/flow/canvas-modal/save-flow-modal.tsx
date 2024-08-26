@@ -102,19 +102,6 @@ export const SaveFlowModal: React.FC<Props> = ({
         }}
         cancelButtonProps={{ className: 'hidden' }}
         okButtonProps={{ className: 'hidden' }}
-        footer={[
-          <Button
-            htmlType='button'
-            onClick={() => {
-              setIsSaveFlowModalOpen(false);
-            }}
-          >
-            {t('cancel')}
-          </Button>,
-          <Button type='primary' htmlType='submit'>
-            {t('verify')}
-          </Button>,
-        ]}
       >
         <Form
           name='flow_form'
@@ -190,6 +177,22 @@ export const SaveFlowModal: React.FC<Props> = ({
                 setDeploy(val);
               }}
             />
+          </Form.Item>
+
+          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
+            <Space>
+              <Button
+                htmlType='button'
+                onClick={() => {
+                  setIsSaveFlowModalOpen(false);
+                }}
+              >
+                {t('cancel')}
+              </Button>
+              <Button type='primary' htmlType='submit'>
+                {t('verify')}
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>
