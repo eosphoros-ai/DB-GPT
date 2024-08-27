@@ -62,7 +62,8 @@ class Elem(ABC):
             return str(next(iter(self._props.values())))
 
         formatted_props = [
-            f"{k}:{json.dumps(v)}" for k, v in self._props.items()
+            f"{k}:{json.dumps(v, ensure_ascii=False)}"
+            for k, v in self._props.items()
         ]
         return f"{{{';'.join(formatted_props)}}}"
 
