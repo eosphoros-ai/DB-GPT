@@ -7,10 +7,7 @@ const { TextArea } = Input;
 
 export const renderTextArea = (data: IFlowNodeParameter) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
-
   return (
-    <div className={classNames({ 'mb-3': attr.showCount === true })}>
-      <TextArea className="nowheel" {...attr} />
-    </div>
+      <TextArea className="nowheel mb-3" {...attr} />
   );
 };

@@ -9,8 +9,8 @@ export const renderSlider = (data: IFlowNodeParameter) => {
   return (
     <>
     {data.is_list? 
-    (<Slider range className="mt-8 nodrag" {...attr} tooltip={{ open: true }} />)
-    :(<Slider className="mt-8 nodrag" {...attr} tooltip={{ open: true }} />)}
+    (<Slider range className="mt-8 nodrag" {...attr}  />)
+    :(<Slider className="mt-8 nodrag" {...attr}  />)}
     </>
   )
 };

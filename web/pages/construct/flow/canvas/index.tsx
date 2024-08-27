@@ -222,15 +222,16 @@ const Canvas: React.FC<Props> = () => {
                   />
                 ),
               },
-              {
+              (id !== '' && {
                 title: t("Export"),
                 icon: (
                   <ExportOutlined
                     className="block text-xl"
                     onClick={onExport}
                   />
-                ),
-              },
+                )
+              }
+              ),
               {
                 title: t("save"),
                 icon: (
