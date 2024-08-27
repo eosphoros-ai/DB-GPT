@@ -65,8 +65,8 @@ export const renderUpload = (params: Props) => {
       }
     },
   };
-
-  if (data.ui?.file_types && Array.isArray(data.ui?.file_types)) {
+  
+  if (!uploadType && data.ui?.file_types && Array.isArray(data.ui?.file_types)) {
     setUploadType(data.ui?.file_types.toString());
   }
 
