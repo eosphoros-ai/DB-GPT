@@ -1,25 +1,25 @@
-import { useState, useRef, useEffect, useMemo, useContext } from 'react';
-import { useSearchParams } from 'next/navigation';
-import MonacoEditor from './monaco-editor';
-import ChatContent from './chat-content';
-import ChatFeedback from './chat-feedback';
 import { ChatContext } from '@/app/chat-context';
-import { FeedBack, IChatDialogueMessageSchema } from '@/types/chat';
-import classNames from 'classnames';
-import { Modal, message, Tooltip } from 'antd';
-import { renderModelIcon } from './header/model-selector';
-import { cloneDeep } from 'lodash';
-import copy from 'copy-to-clipboard';
-import { useTranslation } from 'react-i18next';
-import CompletionInput from '../common/completion-input';
-import { useAsyncEffect } from 'ahooks';
-import { STORAGE_INIT_MESSAGE_KET } from '@/utils';
-import { Button, IconButton } from '@mui/joy';
-import { CopyOutlined, RedoOutlined } from '@ant-design/icons';
-import { getInitMessage } from '@/utils';
 import { apiInterceptors, getChatFeedBackSelect } from '@/client/api';
 import useSummary from '@/hooks/use-summary';
+import { FeedBack, IChatDialogueMessageSchema } from '@/types/chat';
+import { STORAGE_INIT_MESSAGE_KET, getInitMessage } from '@/utils';
+import { CopyOutlined, RedoOutlined } from '@ant-design/icons';
+import { Button, IconButton } from '@mui/joy';
+import { useAsyncEffect } from 'ahooks';
+import { Modal, Tooltip, message } from 'antd';
+import classNames from 'classnames';
+import copy from 'copy-to-clipboard';
+import { cloneDeep } from 'lodash';
+import { useSearchParams } from 'next/navigation';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import CompletionInput from '../common/completion-input';
 import AgentContent from './agent-content';
+import ChatContent from './chat-content';
+import ChatFeedback from './chat-feedback';
+import { renderModelIcon } from './header/model-selector';
+import MonacoEditor from './monaco-editor';
 import MyEmpty from '../common/MyEmpty';
 
 type Props = {
@@ -93,12 +93,12 @@ const Completion = ({ messages, onSubmit }: Props) => {
     const result = copy(pureStr);
     if (result) {
       if (pureStr) {
-        messageApi.open({ type: 'success', content: t('Copy_success') });
+        messageApi.open({ type: 'success', content: t('copy_success') });
       } else {
-        messageApi.open({ type: 'warning', content: t('Copy_nothing') });
+        messageApi.open({ type: 'warning', content: t('copy_nothing') });
       }
     } else {
-      messageApi.open({ type: 'error', content: t('Copry_error') });
+      messageApi.open({ type: 'error', content: t('copy_failed') });
     }
   };
 
@@ -184,7 +184,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
                           question={showMessages?.filter((e) => e?.role === 'human' && e?.order === content.order)[0]?.context}
                           knowledge_space={spaceNameOriginal || dbParam || ''}
                         />
-                        <Tooltip title={t('Copy')}>
+                        <Tooltip title={t('copy')}>
                           <Button
                             onClick={() => onCopyContext(content?.context)}
                             slots={{ root: IconButton }}

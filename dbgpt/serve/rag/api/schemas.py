@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import File, UploadFile
 
@@ -38,11 +38,13 @@ class DocumentServeRequest(BaseModel):
     """content: description"""
     content: Optional[str] = Field(None, description="content")
     """doc file"""
-    doc_file: UploadFile = File(...)
-    """doc_source: doc source"""
-    doc_source: Optional[str] = Field(None, description="doc source")
-    """doc_source: doc source"""
+    doc_file: Union[UploadFile, str] = File(None)
+    """space id: space id"""
     space_id: Optional[str] = Field(None, description="space id")
+    """space name: space name"""
+    space_name: Optional[str] = Field(None, description="space name")
+    """questions: questions"""
+    questions: Optional[List[str]] = Field(None, description="questions")
 
 
 class DocumentServeResponse(BaseModel):
@@ -54,10 +56,46 @@ class DocumentServeResponse(BaseModel):
     content: Optional[str] = Field(None, description="content")
     """vector ids"""
     vector_ids: Optional[str] = Field(None, description="vector ids")
-    """doc_source: doc source"""
-    doc_source: Optional[str] = Field(None, description="doc source")
-    """doc_source: doc source"""
+    """space: space name"""
     space: Optional[str] = Field(None, description="space name")
+    """status: status"""
+    status: Optional[str] = Field(None, description="status")
+    """last_sync: last sync time"""
+    last_sync: Optional[str] = Field(None, description="last sync time")
+    """result: result"""
+    result: Optional[str] = Field(None, description="result")
+    """summary: summary"""
+    summary: Optional[str] = Field(None, description="summary")
+    """gmt_created: created time"""
+    gmt_created: Optional[str] = Field(None, description="created time")
+    """gmt_modified: modified time"""
+    gmt_modified: Optional[str] = Field(None, description="modified time")
+    """chunk_size: chunk size"""
+    chunk_size: Optional[int] = Field(None, description="chunk size")
+    """questions: questions"""
+    questions: Optional[str] = Field(None, description="questions")
+
+
+class ChunkServeRequest(BaseModel):
+    id: Optional[int] = Field(None, description="The primary id")
+    document_id: Optional[int] = Field(None, description="document id")
+    doc_name: Optional[str] = Field(None, description="document name")
+    doc_type: Optional[str] = Field(None, description="document type")
+    content: Optional[str] = Field(None, description="chunk content")
+    meta_info: Optional[str] = Field(None, description="chunk meta info")
+    questions: Optional[List[str]] = Field(None, description="chunk questions")
+    gmt_created: Optional[str] = Field(None, description="chunk create time")
+    gmt_modified: Optional[str] = Field(None, description="chunk modify time")
+
+
+class ChunkServeResponse(BaseModel):
+    id: Optional[int] = Field(None, description="The primary id")
+    document_id: Optional[int] = Field(None, description="document id")
+    doc_name: Optional[str] = Field(None, description="document name")
+    doc_type: Optional[str] = Field(None, description="document type")
+    content: Optional[str] = Field(None, description="chunk content")
+    meta_info: Optional[str] = Field(None, description="chunk meta info")
+    questions: Optional[str] = Field(None, description="chunk questions")
 
 
 class KnowledgeSyncRequest(BaseModel):
@@ -79,6 +117,26 @@ class KnowledgeSyncRequest(BaseModel):
     )
 
 
+class KnowledgeRetrieveRequest(BaseModel):
+    """Retrieve request"""
+
+    """space id"""
+    space_id: int = Field(None, description="space id")
+
+    """query: query"""
+    query: str = Field(None, description="query")
+
+    """top_k: top k"""
+    top_k: Optional[int] = Field(5, description="top k")
+
+    """score_threshold: score threshold
+    """
+    score_threshold: Optional[float] = Field(0.0, description="score threshold")
+
+
+# 复用这里代码
+
+
 class SpaceServeResponse(BaseModel):
     """Flow response model"""
 
@@ -97,12 +155,14 @@ class SpaceServeResponse(BaseModel):
     context: Optional[str] = Field(None, description="The context")
     """owner: owner"""
     owner: Optional[str] = Field(None, description="The owner")
+    """user_id: user_id"""
+    user_id: Optional[str] = Field(None, description="user id")
+    """user_id: user_ids"""
+    user_ids: Optional[str] = Field(None, description="user ids")
     """sys code"""
     sys_code: Optional[str] = Field(None, description="The sys code")
     """domain type"""
     domain_type: Optional[str] = Field(None, description="domain_type")
-
-    # TODO define your own fields here
 
 
 class DocumentChunkVO(BaseModel):

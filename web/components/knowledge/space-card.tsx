@@ -8,6 +8,7 @@ import moment from 'moment';
 import { apiInterceptors, delSpace, newDialogue } from '@/client/api';
 import { useTranslation } from 'react-i18next';
 import GptCard from '../common/gpt-card';
+import IconFont from '@/new-components/common/Icon';
 
 interface IProps {
   space: ISpace;

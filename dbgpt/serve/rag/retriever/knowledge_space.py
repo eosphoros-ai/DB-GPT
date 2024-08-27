@@ -5,8 +5,12 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import Chunk
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
+from dbgpt.rag.retriever import EmbeddingRetriever, QueryRewrite, Ranker
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.serve.rag.connector import VectorStoreConnector
+from dbgpt.serve.rag.models.models import KnowledgeSpaceDao
+from dbgpt.serve.rag.retriever.qa_retriever import QARetriever
+from dbgpt.serve.rag.retriever.retriever_chain import RetrieverChain
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 
@@ -18,18 +22,24 @@ class KnowledgeSpaceRetriever(BaseRetriever):
 
     def __init__(
         self,
-        space_name: str = None,
+        space_id: str = None,
         top_k: Optional[int] = 4,
+        query_rewrite: Optional[QueryRewrite] = None,
+        rerank: Optional[Ranker] = None,
     ):
         """
         Args:
-            space_name (str): knowledge space name
+            space_id (str): knowledge space name
             top_k (Optional[int]): top k
+            query_rewrite: (Optional[QueryRewrite]) query rewrite
+            rerank: (Optional[Ranker]) rerank
         """
-        if space_name is None:
-            raise ValueError("space_name is required")
-        self._space_name = space_name
+        if space_id is None:
+            raise ValueError("space_id is required")
+        self._space_id = space_id
         self._top_k = top_k
+        self._query_rewrite = query_rewrite
+        self._rerank = rerank
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
@@ -38,7 +48,9 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        config = VectorStoreConfig(name=self._space_name, embedding_fn=embedding_fn)
+        space_dao = KnowledgeSpaceDao()
+        space = space_dao.get_one({"id": space_id})
+        config = VectorStoreConfig(name=space.name, embedding_fn=embedding_fn)
         self._vector_store_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=config,
@@ -46,6 +58,19 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         self._executor = CFG.SYSTEM_APP.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
+
+        self._retriever_chain = RetrieverChain(
+            retrievers=[
+                QARetriever(space_id=space_id, top_k=top_k, embedding_fn=embedding_fn),
+                EmbeddingRetriever(
+                    index_store=self._vector_store_connector.index_client,
+                    top_k=top_k,
+                    query_rewrite=self._query_rewrite,
+                    rerank=self._rerank,
+                ),
+            ],
+            executor=self._executor,
+        )
 
     def _retrieve(
         self, query: str, filters: Optional[MetadataFilters] = None
@@ -59,9 +84,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         Return:
             List[Chunk]: list of chunks
         """
-        candidates = self._vector_store_connector.similar_search(
-            doc=query, topk=self._top_k, filters=filters
-        )
+        candidates = self._retriever_chain.retrieve(query=query, filters=filters)
         return candidates
 
     def _retrieve_with_score(
@@ -80,13 +103,10 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         Return:
             List[Chunk]: list of chunks with score
         """
-        candidates_with_score = self._vector_store_connector.similar_search_with_scores(
-            doc=query,
-            topk=self._top_k,
-            score_threshold=score_threshold,
-            filters=filters,
+        candidates_with_scores = self._retriever_chain.retrieve_with_scores(
+            query, score_threshold, filters
         )
-        return candidates_with_score
+        return candidates_with_scores
 
     async def _aretrieve(
         self, query: str, filters: Optional[MetadataFilters] = None

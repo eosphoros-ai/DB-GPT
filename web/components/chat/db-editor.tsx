@@ -1,8 +1,8 @@
 import React, { ChangeEvent, Key, useEffect, useMemo, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { Button, Select, Table, Tooltip } from 'antd';
-import { Input, Tree } from 'antd';
 import Icon from '@ant-design/icons';
+import { Input, Tree } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import MonacoEditor, { ISession } from './monaco-editor';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
@@ -10,6 +10,7 @@ import { useSearchParams } from 'next/navigation';
 import { OnChange } from '@monaco-editor/react';
 import Header from './header';
 import Chart from '../chart';
+
 import { CaretRightOutlined, LeftOutlined, RightOutlined, SaveFilled } from '@ant-design/icons';
 import { ColumnType } from 'antd/es/table';
 import Database from '../icons/database';
@@ -62,7 +63,6 @@ interface ITableTreeItem {
 function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, tables, handleChange }: IProps) {
   const chartWrapper = useMemo(() => {
     if (!chartData) return null;
-
     return (
       <div className="flex-1 overflow-auto p-2" style={{ flexShrink: 0, overflow: 'hidden' }}>
         <Chart chartsData={[chartData]} />
@@ -87,7 +87,6 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, tab
     return {
       columns: tbCols,
       dataSource: tbDatas,
-
     };
   }, [tableData]);
   const session: ISession = useMemo(() => {
@@ -103,13 +102,13 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, tab
       })
     });
     return {
-      async getTableList(schemaName) {
+      async getTableList(schemaName: any) {
         if (schemaName && schemaName!== db?.title) {
           return [];
         }
         return tableList?.map((table: ITableTreeItem) => table.title) || [];
       },
-      async getTableColumns(tableName) {
+      async getTableColumns(tableName: any) {
         return map[tableName] || [];
       },
       async getSchemaList() {
@@ -146,7 +145,7 @@ function DbEditor() {
   const [searchValue, setSearchValue] = useState('');
   const [currentRound, setCurrentRound] = useState<null | string | number>();
   const [autoExpandParent, setAutoExpandParent] = useState(true);
-  const [chartData, setChartData] = useState();
+  const [chartData, setChartData] = useState<any>();
   const [editorValue, setEditorValue] = useState<EditorValueProps | EditorValueProps[]>();
   const [newEditorValue, setNewEditorValue] = useState<EditorValueProps>();
   const [tableData, setTableData] = useState<{ columns: string[]; values: (string | number)[] }>();
@@ -175,7 +174,7 @@ function DbEditor() {
 
   const { run: runSql, loading: runLoading } = useRequest(
     async () => {
-      const db_name = rounds?.data?.find((item) => item.round === currentRound)?.db_name;
+      const db_name = rounds?.data?.find((item: any) => item.round === currentRound)?.db_name;
       return await sendSpacePostRequest(`/api/v1/editor/sql/run`, {
         db_name,
         sql: newEditorValue?.sql,
@@ -194,7 +193,7 @@ function DbEditor() {
 
   const { run: runCharts, loading: runChartsLoading } = useRequest(
     async () => {
-      const db_name = rounds?.data?.find((item) => item.round === currentRound)?.db_name;
+      const db_name = rounds?.data?.find((item: any) => item.round === currentRound)?.db_name;
       const params: {
         db_name: string;
         sql?: string;
@@ -257,7 +256,7 @@ function DbEditor() {
 
   const { run: submitChart, loading: submitChartLoading } = useRequest(
     async () => {
-      const db_name = rounds?.data?.find((item) => item.round === currentRound)?.db_name;
+      const db_name = rounds?.data?.find((item: any) => item.round === currentRound)?.db_name;
       return await sendSpacePostRequest(`/api/v1/chart/editor/submit`, {
         conv_uid: id,
         chart_title: newEditorValue?.title,
@@ -365,7 +364,6 @@ function DbEditor() {
               </div>
             </Tooltip>
           );
-
         if (item.children) {
           const itemKey = parentKey ? String(parentKey) + '_' + item.key : item.key;
           return { title: strTitle, showTitle, key: itemKey, children: loop(item.children, itemKey) };
@@ -392,7 +390,6 @@ function DbEditor() {
       for (let i = 0; i < data.length; i++) {
         const node = data[i];
         const { key, title } = node;
-
         res.push({ key, title: title as string, parentKey });
         if (node.children) {
           generateList(node.children, key);
@@ -477,8 +474,7 @@ function DbEditor() {
     <div className="flex flex-col w-full h-full overflow-hidden">
       <Header />
       <div className="relative flex flex-1 p-4 pt-0 overflow-hidden">
-        {/* Database Tree Node */}
-        <div className="group/side relative mr-4">
+        <div className="relative flex overflow-hidden mr-4">
           <div
             className={classNames('h-full relative transition-[width] overflow-hidden', {
               'w-0': isMenuExpand,

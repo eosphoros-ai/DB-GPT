@@ -22,7 +22,7 @@ interface Props {
 }
 
 function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: Props) {
-  const chat = useChat({ queryAgentURL: completionApi });
+  const { chat } = useChat({ queryAgentURL: completionApi });
 
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<IChatDialogueMessageSchema[]>([]);

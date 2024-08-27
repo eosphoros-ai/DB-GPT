@@ -3,6 +3,7 @@ from typing import cast
 
 import pytest
 
+from dbgpt.configs import VARIABLES_SCOPE_FLOW_PRIVATE
 from dbgpt.core.awel import BaseOperator, DAGVar, MapOperator
 from dbgpt.core.awel.flow import (
     IOField,
@@ -12,7 +13,12 @@ from dbgpt.core.awel.flow import (
     ViewMetadata,
     ui,
 )
-from dbgpt.core.awel.flow.flow_factory import FlowData, FlowFactory, FlowPanel
+from dbgpt.core.awel.flow.flow_factory import (
+    FlowData,
+    FlowFactory,
+    FlowPanel,
+    FlowVariables,
+)
 
 from ...tests.conftest import variables_provider
 
@@ -46,6 +52,28 @@ class MyVariablesOperator(MapOperator[str, str]):
                     key="dbgpt.model.openai.model",
                 ),
             ),
+            Parameter.build_from(
+                "DAG Var 1",
+                "dag_var1",
+                type=str,
+                placeholder="Please select the DAG variable 1",
+                description="The DAG variable 1.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key="dbgpt.core.flow.params", scope=VARIABLES_SCOPE_FLOW_PRIVATE
+                ),
+            ),
+            Parameter.build_from(
+                "DAG Var 2",
+                "dag_var2",
+                type=str,
+                placeholder="Please select the DAG variable 2",
+                description="The DAG variable 2.",
+                options=VariablesDynamicOptions(),
+                ui=ui.UIVariablesInput(
+                    key="dbgpt.core.flow.params", scope=VARIABLES_SCOPE_FLOW_PRIVATE
+                ),
+            ),
         ],
         inputs=[
             IOField.build_from(
@@ -65,15 +93,21 @@ class MyVariablesOperator(MapOperator[str, str]):
         ],
     )
 
-    def __init__(self, openai_api_key: str, model: str, **kwargs):
+    def __init__(
+        self, openai_api_key: str, model: str, dag_var1: str, dag_var2: str, **kwargs
+    ):
         super().__init__(**kwargs)
         self._openai_api_key = openai_api_key
         self._model = model
+        self._dag_var1 = dag_var1
+        self._dag_var2 = dag_var2
 
     async def map(self, user_name: str) -> str:
         dict_dict = {
             "openai_api_key": self._openai_api_key,
             "model": self._model,
+            "dag_var1": self._dag_var1,
+            "dag_var2": self._dag_var2,
         }
         json_data = json.dumps(dict_dict, ensure_ascii=False)
         return "Your name is %s, and your model info is %s." % (user_name, json_data)
@@ -117,6 +151,10 @@ def json_flow():
         "my_test_variables_operator": {
             "openai_api_key": "${dbgpt.model.openai.api_key:my_key@global}",
             "model": "${dbgpt.model.openai.model:default_model@global}",
+            "dag_var1": "${dbgpt.core.flow.params:name1@%s}"
+            % VARIABLES_SCOPE_FLOW_PRIVATE,
+            "dag_var2": "${dbgpt.core.flow.params:name2@%s}"
+            % VARIABLES_SCOPE_FLOW_PRIVATE,
         }
     }
     name_to_metadata_dict = {metadata["name"]: metadata for metadata in metadata_list}
@@ -208,16 +246,49 @@ def json_flow():
 async def test_build_flow(json_flow, variables_provider):
     DAGVar.set_variables_provider(variables_provider)
     flow_data = FlowData(**json_flow)
+    variables = [
+        FlowVariables(
+            key="dbgpt.core.flow.params",
+            name="name1",
+            label="Name 1",
+            value="value1",
+            value_type="str",
+            category="common",
+            scope=VARIABLES_SCOPE_FLOW_PRIVATE,
+            # scope_key="my_test_flow",
+        ),
+        FlowVariables(
+            key="dbgpt.core.flow.params",
+            name="name2",
+            label="Name 2",
+            value="value2",
+            value_type="str",
+            category="common",
+            scope=VARIABLES_SCOPE_FLOW_PRIVATE,
+            # scope_key="my_test_flow",
+        ),
+    ]
     flow_panel = FlowPanel(
-        label="My Test Flow", name="my_test_flow", flow_data=flow_data, state="deployed"
+        label="My Test Flow",
+        name="my_test_flow",
+        flow_data=flow_data,
+        state="deployed",
+        variables=variables,
     )
     factory = FlowFactory()
     dag = factory.build(flow_panel)
 
     leaf_node: BaseOperator = cast(BaseOperator, dag.leaf_nodes[0])
     result = await leaf_node.call("Alice")
+    expected_dict = {
+        "openai_api_key": "my_openai_api_key",
+        "model": "GPT-4o",
+        "dag_var1": "value1",
+        "dag_var2": "value2",
+    }
+    expected_dict_str = json.dumps(expected_dict, ensure_ascii=False)
     assert (
         result
-        == "End operator received input: Your name is Alice, and your model info is "
-        '{"openai_api_key": "my_openai_api_key", "model": "GPT-4o"}.'
+        == f"End operator received input: Your name is Alice, and your model info is "
+        f"{expected_dict_str}."
     )

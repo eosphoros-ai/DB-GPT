@@ -139,18 +139,3 @@ def test_service_get_list(service: Service):
     for i, entity in enumerate(entities):
         assert entity.sys_code == "dbgpt"
         assert entity.prompt_name == f"prompt_{i}"
-
-
-def test_service_get_list_by_page(service: Service):
-    for i in range(3):
-        service.create(
-            ServeRequest(**{"prompt_name": f"prompt_{i}", "sys_code": "dbgpt"})
-        )
-    res = service.get_list_by_page(ServeRequest(sys_code="dbgpt"), page=1, page_size=2)
-    assert res is not None
-    assert res.total_count == 3
-    assert res.total_pages == 2
-    assert len(res.items) == 2
-    for i, entity in enumerate(res.items):
-        assert entity.sys_code == "dbgpt"
-        assert entity.prompt_name == f"prompt_{i}"

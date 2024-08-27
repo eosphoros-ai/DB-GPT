@@ -90,6 +90,8 @@ class VariablesService(
             scope_key=request.scope_key,
             user_name=request.user_name,
             sys_code=request.sys_code,
+            enabled=1 if request.enabled else 0,
+            description=request.description,
         )
         self.variables_provider.save(variables)
         query = {
@@ -123,6 +125,8 @@ class VariablesService(
             scope_key=request.scope_key,
             user_name=request.user_name,
             sys_code=request.sys_code,
+            enabled=1 if request.enabled else 0,
+            description=request.description,
         )
         exist_value = self.variables_provider.get(
             variables.identifier.str_identifier, None

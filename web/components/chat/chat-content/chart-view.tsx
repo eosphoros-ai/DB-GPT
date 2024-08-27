@@ -20,11 +20,10 @@ function ChartView({ data, type, sql }: { data: Datum[]; type: BackEndChartType;
     label: 'Chart',
     children: <AutoChart data={data} chartType={getChartType(type)} />,
   };
-
   const SqlItem = {
     key: 'sql',
     label: 'SQL',
-    children: <CodePreview language="sql" code={formatSql(sql)} />,
+    children: <CodePreview language="sql" code={formatSql(sql ?? '', 'mysql') as string} />,
   };
   const DataItem = {
     key: 'data',

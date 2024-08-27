@@ -212,11 +212,18 @@ class VariablesIdentifier(ResourceIdentifier):
         }
 
     @classmethod
-    def from_str_identifier(cls, str_identifier: str) -> "VariablesIdentifier":
+    def from_str_identifier(
+        cls,
+        str_identifier: str,
+        default_identifier_map: Optional[Dict[str, str]] = None,
+    ) -> "VariablesIdentifier":
         """Create a VariablesIdentifier from a string identifier.
 
         Args:
             str_identifier (str): The string identifier.
+            default_identifier_map (Optional[Dict[str, str]]): The default identifier
+                map, which contains the default values for the identifier. Defaults to
+                None.
 
         Returns:
             VariablesIdentifier: The VariablesIdentifier.
@@ -229,13 +236,20 @@ class VariablesIdentifier(ResourceIdentifier):
         if not variable_dict.get("name"):
             raise ValueError("Invalid string identifier, must have name")
 
+        def _get_value(key, default_value: Optional[str] = None) -> Optional[str]:
+            if variable_dict.get(key) is not None:
+                return variable_dict.get(key)
+            if default_identifier_map is not None and default_identifier_map.get(key):
+                return default_identifier_map.get(key)
+            return default_value
+
         return cls(
             key=variable_dict["key"],
             name=variable_dict["name"],
-            scope=variable_dict.get("scope", "global"),
-            scope_key=variable_dict.get("scope_key"),
-            sys_code=variable_dict.get("sys_code"),
-            user_name=variable_dict.get("user_name"),
+            scope=variable_dict["scope"],
+            scope_key=_get_value("scope_key"),
+            sys_code=_get_value("sys_code"),
+            user_name=_get_value("user_name"),
         )
 
 
@@ -256,6 +270,7 @@ class StorageVariables(StorageItem):
     encryption_method: Optional[str] = None
     salt: Optional[str] = None
     enabled: int = 1
+    description: Optional[str] = None
 
     _identifier: VariablesIdentifier = dataclasses.field(init=False)
 
@@ -297,6 +312,8 @@ class StorageVariables(StorageItem):
             "category": self.category,
             "encryption_method": self.encryption_method,
             "salt": self.salt,
+            "enabled": self.enabled,
+            "description": self.description,
         }
 
     def from_object(self, other: "StorageVariables") -> None:
@@ -311,6 +328,8 @@ class StorageVariables(StorageItem):
         self.user_name = other.user_name
         self.encryption_method = other.encryption_method
         self.salt = other.salt
+        self.enabled = other.enabled
+        self.description = other.description
 
     @classmethod
     def from_identifier(
@@ -347,7 +366,10 @@ class VariablesProvider(BaseComponent, ABC):
 
     @abstractmethod
     def get(
-        self, full_key: str, default_value: Optional[str] = _EMPTY_DEFAULT_VALUE
+        self,
+        full_key: str,
+        default_value: Optional[str] = _EMPTY_DEFAULT_VALUE,
+        default_identifier_map: Optional[Dict[str, str]] = None,
     ) -> Any:
         """Query variables from storage."""
 
@@ -416,9 +438,23 @@ class VariablesPlaceHolder:
         self.full_key = full_key
         self.default_value = default_value
 
-    def parse(self, variables_provider: VariablesProvider) -> Any:
+    def parse(
+        self,
+        variables_provider: VariablesProvider,
+        ignore_not_found_error: bool = False,
+        default_identifier_map: Optional[Dict[str, str]] = None,
+    ):
         """Parse the variables."""
-        return variables_provider.get(self.full_key, self.default_value)
+        try:
+            return variables_provider.get(
+                self.full_key,
+                self.default_value,
+                default_identifier_map=default_identifier_map,
+            )
+        except ValueError as e:
+            if ignore_not_found_error:
+                return None
+            raise e
 
     def __repr__(self):
         """Return the representation of the variables place holder."""
@@ -449,10 +485,13 @@ class StorageVariablesProvider(VariablesProvider):
         self.system_app = system_app
 
     def get(
-        self, full_key: str, default_value: Optional[str] = _EMPTY_DEFAULT_VALUE
+        self,
+        full_key: str,
+        default_value: Optional[str] = _EMPTY_DEFAULT_VALUE,
+        default_identifier_map: Optional[Dict[str, str]] = None,
     ) -> Any:
         """Query variables from storage."""
-        key = VariablesIdentifier.from_str_identifier(full_key)
+        key = VariablesIdentifier.from_str_identifier(full_key, default_identifier_map)
         variable: Optional[StorageVariables] = self.storage.load(key, StorageVariables)
         if variable is None:
             if default_value == _EMPTY_DEFAULT_VALUE:
@@ -641,7 +680,10 @@ class BuiltinVariablesProvider(VariablesProvider, ABC):
         self.system_app = system_app
 
     def get(
-        self, full_key: str, default_value: Optional[str] = _EMPTY_DEFAULT_VALUE
+        self,
+        full_key: str,
+        default_value: Optional[str] = _EMPTY_DEFAULT_VALUE,
+        default_identifier_map: Optional[Dict[str, str]] = None,
     ) -> Any:
         """Query variables from storage."""
         raise NotImplementedError("BuiltinVariablesProvider does not support get.")

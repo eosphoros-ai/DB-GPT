@@ -1,6 +1,6 @@
 """Dashboard Assistant Agent."""
 
-from typing import List
+from typing import List, Optional
 
 from ..core.agent import AgentMessage
 from ..core.base_agent import ConversableAgent
@@ -58,8 +58,12 @@ class DashboardAssistantAgent(ConversableAgent):
         super().__init__(**kwargs)
         self._init_actions([DashboardAction])
 
-    def _init_reply_message(self, received_message: AgentMessage) -> AgentMessage:
-        reply_message = super()._init_reply_message(received_message)
+    def _init_reply_message(
+        self,
+        received_message: AgentMessage,
+        rely_messages: Optional[List[AgentMessage]] = None,
+    ) -> AgentMessage:
+        reply_message = super()._init_reply_message(received_message, rely_messages)
 
         dbs: List[DBResource] = DBResource.from_resource(self.resource)
 

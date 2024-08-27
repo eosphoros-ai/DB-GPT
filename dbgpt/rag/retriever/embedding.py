@@ -270,3 +270,8 @@ class EmbeddingRetriever(BaseRetriever):
             return await self._index_store.asimilar_search_with_scores(
                 query, self._top_k, score_threshold, filters
             )
+
+    @classmethod
+    def name(cls):
+        """Return retriever name."""
+        return "embedding_retriever"

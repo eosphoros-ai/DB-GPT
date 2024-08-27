@@ -1,4 +1,5 @@
 import re
+import string
 from typing import Dict
 
 
@@ -98,3 +99,33 @@ def _to_str(x, charset="utf8", errors="strict"):
         return x.decode(charset, errors)
 
     return str(x)
+
+
+def remove_trailing_punctuation(s):
+    """Remove trailing punctuation from a string."""
+    punctuation = set(string.punctuation)
+    chinese_punctuation = {
+        "。",
+        "，",
+        "！",
+        "？",
+        "；",
+        "：",
+        "“",
+        "”",
+        "‘",
+        "’",
+        "（",
+        "）",
+        "【",
+        "】",
+        "—",
+        "…",
+        "《",
+        "》",
+    }
+    punctuation.update(chinese_punctuation)
+    while s and s[-1] in punctuation:
+        s = s[:-1]
+
+    return s

@@ -20,6 +20,7 @@ from typing import (
 )
 
 from dbgpt.component import ComponentType, SystemApp
+from dbgpt.configs import VARIABLES_SCOPE_FLOW_PRIVATE
 from dbgpt.util.executor_utils import (
     AsyncToSyncIterator,
     BlockingFunction,
@@ -28,7 +29,7 @@ from dbgpt.util.executor_utils import (
 )
 from dbgpt.util.tracer import root_tracer
 
-from ..dag.base import DAG, DAGContext, DAGNode, DAGVar
+from ..dag.base import DAG, DAGContext, DAGNode, DAGVar, DAGVariables
 from ..task.base import EMPTY_DATA, OUT, T, TaskOutput, is_empty_data
 
 if TYPE_CHECKING:
@@ -58,6 +59,7 @@ class WorkflowRunner(ABC, Generic[T]):
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
         exist_dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> DAGContext:
         """Execute the workflow starting from a given operator.
 
@@ -67,6 +69,7 @@ class WorkflowRunner(ABC, Generic[T]):
             streaming_call (bool): Whether the call is a streaming call.
             exist_dag_ctx (DAGContext): The context of the DAG when this node is run,
                 Defaults to None.
+            dag_variables (DAGVariables): The DAG variables.
         Returns:
             DAGContext: The context after executing the workflow, containing the final
                 state and data.
@@ -243,6 +246,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
         dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> OUT:
         """Execute the node and return the output.
 
@@ -252,6 +256,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             call_data (CALL_DATA): The data pass to root operator node.
             dag_ctx (DAGContext): The context of the DAG when this node is run,
                 Defaults to None.
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
         Returns:
             OUT: The output of the node after execution.
         """
@@ -259,13 +264,15 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             call_data = {"data": call_data}
         with root_tracer.start_span("dbgpt.awel.operator.call"):
             out_ctx = await self._runner.execute_workflow(
-                self, call_data, exist_dag_ctx=dag_ctx
+                self, call_data, exist_dag_ctx=dag_ctx, dag_variables=dag_variables
             )
             return out_ctx.current_task_context.task_output.output
 
     def _blocking_call(
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
+        dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
         loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> OUT:
         """Execute the node and return the output.
@@ -275,7 +282,10 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
-
+            dag_ctx (DAGContext): The context of the DAG when this node is run,
+                Defaults to None.
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
+            loop (asyncio.BaseEventLoop): The event loop to run the operator.
         Returns:
             OUT: The output of the node after execution.
         """
@@ -284,12 +294,13 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         if not loop:
             loop = get_or_create_event_loop()
         loop = cast(asyncio.BaseEventLoop, loop)
-        return loop.run_until_complete(self.call(call_data))
+        return loop.run_until_complete(self.call(call_data, dag_ctx, dag_variables))
 
     async def call_stream(
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
         dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> AsyncIterator[OUT]:
         """Execute the node and return the output as a stream.
 
@@ -299,16 +310,19 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             call_data (CALL_DATA): The data pass to root operator node.
             dag_ctx (DAGContext): The context of the DAG when this node is run,
                 Defaults to None.
-
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
         Returns:
             AsyncIterator[OUT]: An asynchronous iterator over the output stream.
         """
         if call_data != EMPTY_DATA:
             call_data = {"data": call_data}
         with root_tracer.start_span("dbgpt.awel.operator.call_stream"):
-
             out_ctx = await self._runner.execute_workflow(
-                self, call_data, streaming_call=True, exist_dag_ctx=dag_ctx
+                self,
+                call_data,
+                streaming_call=True,
+                exist_dag_ctx=dag_ctx,
+                dag_variables=dag_variables,
             )
 
             task_output = out_ctx.current_task_context.task_output
@@ -317,7 +331,6 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
                     out_ctx.current_task_context.task_output.output_stream
                 )
             else:
-
                 # No stream output, wrap the output in a stream
                 async def _gen():
                     yield task_output.output
@@ -330,6 +343,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     def _blocking_call_stream(
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
+        dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
         loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> Iterator[OUT]:
         """Execute the node and return the output as a stream.
@@ -339,7 +354,10 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
-
+            dag_ctx (DAGContext): The context of the DAG when this node is run,
+                Defaults to None.
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
+            loop (asyncio.BaseEventLoop): The event loop to run the operator.
         Returns:
             Iterator[OUT]: An iterator over the output stream.
         """
@@ -347,7 +365,9 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         if not loop:
             loop = get_or_create_event_loop()
-        return AsyncToSyncIterator(self.call_stream(call_data), loop)
+        return AsyncToSyncIterator(
+            self.call_stream(call_data, dag_ctx, dag_variables), loop
+        )
 
     async def blocking_func_to_async(
         self, func: BlockingFunction, *args, **kwargs
@@ -375,20 +395,77 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         """Check if the operator can be skipped in the branch."""
         return self._can_skip_in_branch
 
-    async def _resolve_variables(self, _: DAGContext):
-        from ...interface.variables import VariablesPlaceHolder
+    async def _resolve_variables(self, dag_ctx: DAGContext):
+        """Resolve variables in the operator.
+
+        Some attributes of the operator may be VariablesPlaceHolder, which need to be
+        resolved before the operator is executed.
+
+        Args:
+            dag_ctx (DAGContext): The context of the DAG when this node is run.
+        """
+        from ...interface.variables import VariablesIdentifier, VariablesPlaceHolder
 
         if not self._variables_provider:
             return
+
+        if dag_ctx._dag_variables:
+            # Resolve variables in DAG context
+            resolve_tasks = []
+            resolve_items = []
+            for item in dag_ctx._dag_variables.items:
+                # TODO: Resolve variables just once?
+                if isinstance(item.value, VariablesPlaceHolder):
+                    resolve_tasks.append(
+                        self.blocking_func_to_async(
+                            item.value.parse, self._variables_provider
+                        )
+                    )
+                    resolve_items.append(item)
+            resolved_values = await asyncio.gather(*resolve_tasks)
+            for item, rv in zip(resolve_items, resolved_values):
+                item.value = rv
+        dag_provider: Optional["VariablesProvider"] = None
+        if dag_ctx._dag_variables:
+            dag_provider = dag_ctx._dag_variables.to_provider()
+
         # TODO: Resolve variables parallel
         for attr, value in self.__dict__.items():
+            # Handle all attributes that are VariablesPlaceHolder
             if isinstance(value, VariablesPlaceHolder):
-                resolved_value = await self.blocking_func_to_async(
-                    value.parse, self._variables_provider
-                )
-                logger.debug(
-                    f"Resolve variable {attr} with value {resolved_value} for {self}"
-                )
+                resolved_value: Any = None
+                default_identifier_map = None
+                id_key = VariablesIdentifier.from_str_identifier(value.full_key)
+                if (
+                    id_key.scope == VARIABLES_SCOPE_FLOW_PRIVATE
+                    and id_key.scope_key is None
+                    and self.dag
+                ):
+                    default_identifier_map = {"scope_key": self.dag.dag_id}
+
+                if dag_provider:
+                    # First try to resolve the variable with the DAG variables
+                    resolved_value = await self.blocking_func_to_async(
+                        value.parse,
+                        dag_provider,
+                        ignore_not_found_error=True,
+                        default_identifier_map=default_identifier_map,
+                    )
+                if resolved_value is None:
+                    resolved_value = await self.blocking_func_to_async(
+                        value.parse,
+                        self._variables_provider,
+                        default_identifier_map=default_identifier_map,
+                    )
+                    logger.debug(
+                        f"Resolve variable {attr} with value {resolved_value} for "
+                        f"{self} from system variables"
+                    )
+                else:
+                    logger.debug(
+                        f"Resolve variable {attr} with value {resolved_value} for "
+                        f"{self} from DAG variables"
+                    )
                 setattr(self, attr, resolved_value)
 
 

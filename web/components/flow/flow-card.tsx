@@ -25,6 +25,8 @@ interface FlowCardProps {
 }
 
 const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => {
+  console.log(flow, 'flow');
+
   const { model } = useContext(ChatContext);
   const { t } = useTranslation();
   const [modal, contextHolder] = Modal.useModal();
@@ -76,8 +78,8 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => 
         title={flow.name}
         desc={flow.description}
         tags={[
-          { text: flow.source, color: flow.source === 'DBGPT-WEB' ? 'green' : 'blue', border: true },
-          { text: flow.editable ? 'Editable' : 'Can not Edit', color: flow.editable ? 'green' : 'gray', border: true },
+          { text: flow.source, border: true, color: flow.source === 'DBGPT-WEB' ? 'green' : 'blue' },
+          { text: flow.editable ? 'Editable' : 'Can not Edit', color: flow.editable ? 'green' : 'gray' },
           {
             text: (
               <>
@@ -120,7 +122,7 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => 
           },
         ]}
       >
-        <div className="w-full h-40 shadow-[inset_0_0_16px_rgba(50,50,50,.05)]">
+        <div className="w-full h-[150px] shadow-[inset_0_0_16px_rgba(50,50,50,.05)]">
           <FlowPreview flowData={flow.flow_data} />
         </div>
       </GptCard>

@@ -2,9 +2,8 @@
 
 import json
 import logging
-from typing import List, Optional, Tuple, cast
+from typing import List, Optional, Tuple
 
-from ..core.action.base import ActionOutput
 from ..core.agent import AgentMessage
 from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
@@ -29,28 +28,34 @@ class DataScientistAgent(ConversableAgent):
             key="dbgpt_agent_expand_dashboard_assistant_agent_profile_role",
         ),
         goal=DynConfig(
-            "Use correct {{ dialect }} SQL to analyze and solve tasks based on the data"
-            " structure information of the database given in the resource.",
+            "Use correct {{dialect}} SQL to analyze and resolve user "
+            "input targets based on the data structure information of the "
+            "database given in the resource.",
             category="agent",
             key="dbgpt_agent_expand_dashboard_assistant_agent_profile_goal",
         ),
         constraints=DynConfig(
             [
-                "Please check the generated SQL carefully. Please strictly abide by "
-                "the data structure definition given. It is prohibited to use "
-                "non-existent fields and data values. Do not use fields from table A "
-                "to table B. You can perform multi-table related queries.",
+                "Please ensure that the output is in the required format. "
+                "Please ensure that each analysis only outputs one analysis "
+                "result SQL, including as much analysis target content as possible.",
+                "If there is a recent message record, pay attention to refer to "
+                "the answers and execution results inside when analyzing, "
+                "and do not generate the same wrong answer.Please check carefully "
+                "to make sure the correct SQL is generated. Please strictly adhere "
+                "to the data structure definition given. The use of non-existing "
+                "fields is prohibited. Be careful not to confuse fields from "
+                "different tables, and you can perform multi-table related queries.",
                 "If the data and fields that need to be analyzed in the target are in "
                 "different tables, it is recommended to use multi-table correlation "
                 "queries first, and pay attention to the correlation between multiple "
                 "table structures.",
-                "It is forbidden to construct data by yourself as a query condition. "
-                "If you want to query a specific field, if the value of the field is "
-                "provided, then you can perform a group statistical query on the "
-                "field.",
+                "It is prohibited to construct data yourself as query conditions. "
+                "Only the data values given by the famous songs in the input can "
+                "be used as query conditions.",
                 "Please select an appropriate one from the supported display methods "
                 "for data display. If no suitable display type is found, "
-                "table display is used by default. Supported display types: \n"
+                "use 'response_table' as default value. Supported display types: \n"
                 "{{ display_type }}",
             ],
             category="agent",
@@ -65,14 +70,19 @@ class DataScientistAgent(ConversableAgent):
     )
 
     max_retry_count: int = 5
+    language: str = "zh"
 
     def __init__(self, **kwargs):
         """Create a new DataScientistAgent instance."""
         super().__init__(**kwargs)
         self._init_actions([ChartAction])
 
-    def _init_reply_message(self, received_message: AgentMessage) -> AgentMessage:
-        reply_message = super()._init_reply_message(received_message)
+    def _init_reply_message(
+        self,
+        received_message: AgentMessage,
+        rely_messages: Optional[List[AgentMessage]] = None,
+    ) -> AgentMessage:
+        reply_message = super()._init_reply_message(received_message, rely_messages)
         reply_message.context = {
             "display_type": self.actions[0].render_prompt(),
             "dialect": self.database.dialect,
@@ -93,13 +103,13 @@ class DataScientistAgent(ConversableAgent):
         self, message: AgentMessage
     ) -> Tuple[bool, Optional[str]]:
         """Verify whether the current execution results meet the target expectations."""
-        action_reply = message.action_report
-        if action_reply is None:
+        action_out = message.action_report
+        if action_out is None:
             return (
                 False,
                 f"No executable analysis SQL is generated,{message.content}.",
             )
-        action_out = cast(ActionOutput, ActionOutput.from_dict(action_reply))
+
         if not action_out.is_exe_success:
             return (
                 False,

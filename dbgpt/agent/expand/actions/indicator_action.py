@@ -1,11 +1,11 @@
-"""Indicator Action."""
-
+"""Indicator Agent action."""
 import json
 import logging
 from typing import Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
+from dbgpt.vis.tags.vis_api_response import VisApiResponse
+from dbgpt.vis.tags.vis_plugin import Vis
 
 from ...core.action.base import Action, ActionOutput
 from ...core.schema import Status
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class IndicatorInput(BaseModel):
-    """Indicator input model."""
+    """Indicator llm out model."""
 
     indicator_name: str = Field(
         ...,
@@ -31,19 +31,20 @@ class IndicatorInput(BaseModel):
     )
     args: dict = Field(
         default={"arg name1": "", "arg name2": ""},
-        description="The tool selected for the current target, the parameter "
-        "information required for execution",
+        description="The tool selected for the current target, "
+        "the parameter information required for execution",
     )
     thought: str = Field(..., description="Summary of thoughts to the user")
+    display: str = Field(None, description="How to display return information")
 
 
 class IndicatorAction(Action[IndicatorInput]):
-    """Indicator action class."""
+    """Indicator Action."""
 
     def __init__(self):
-        """Create a indicator action."""
+        """Init Indicator Action."""
         super().__init__()
-        self._render_protocol = VisPlugin()
+        self._render_protocol = VisApiResponse()
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
@@ -64,8 +65,7 @@ class IndicatorAction(Action[IndicatorInput]):
     def ai_out_schema(self) -> Optional[str]:
         """Return the AI output schema."""
         out_put_schema = {
-            "indicator_name": "The name of a tool that can be used to answer the "
-            "current question or solve the current task.",
+            "indicator_name": "The name of a tool that can be used to answer the current question or solve the current task.",  # noqa
             "api": "",
             "method": "",
             "args": {
@@ -80,6 +80,10 @@ class IndicatorAction(Action[IndicatorInput]):
         Make sure the response is correct json and can be parsed by Python json.loads.
         """
 
+    def build_headers(self):
+        """Build headers."""
+        return None
+
     async def run(
         self,
         ai_message: str,
@@ -93,40 +97,43 @@ class IndicatorAction(Action[IndicatorInput]):
         from requests.exceptions import HTTPError
 
         try:
-            input_param = self._input_convert(ai_message, IndicatorInput)
+            logger.info(
+                f"_input_convert: {type(self).__name__} ai_message: {ai_message}"
+            )
+            param: IndicatorInput = self._input_convert(ai_message, IndicatorInput)
         except Exception as e:
-            logger.exception((str(e)))
+            logger.exception(str(e))
             return ActionOutput(
                 is_exe_success=False,
                 content="The requested correctly structured answer could not be found.",
             )
-        if isinstance(input_param, list):
-            return ActionOutput(
-                is_exe_success=False,
-                content="The requested correctly structured answer could not be found.",
-            )
-        param: IndicatorInput = input_param
-        response_success = True
-        result: Optional[str] = None
+
         try:
-            status = Status.COMPLETE.value
+            status = Status.RUNNING.value
+            response_success = True
+            response_text = ""
             err_msg = None
             try:
-                status = Status.RUNNING.value
                 if param.method.lower() == "get":
-                    response = requests.get(param.api, params=param.args)
+                    response = requests.get(
+                        param.api, params=param.args, headers=self.build_headers()
+                    )
                 elif param.method.lower() == "post":
-                    response = requests.post(param.api, data=param.args)
+                    response = requests.post(
+                        param.api, json=param.args, headers=self.build_headers()
+                    )
                 else:
                     response = requests.request(
-                        param.method.lower(), param.api, data=param.args
+                        param.method.lower(),
+                        param.api,
+                        data=param.args,
+                        headers=self.build_headers(),
                     )
-                # Raise an HTTPError if the HTTP request returned an unsuccessful
-                # status code
-                response.raise_for_status()
-                result = response.text
+                response_text = response.text
+                logger.info(f"API:{param.api}\nResult:{response_text}")
+                response.raise_for_status()  # 如果请求返回一个错误状态码，则抛出HTTPError异常
+                status = Status.COMPLETE.value
             except HTTPError as http_err:
-                response_success = False
                 print(f"HTTP error occurred: {http_err}")
             except Exception as e:
                 response_success = False
@@ -139,16 +146,18 @@ class IndicatorAction(Action[IndicatorInput]):
                 "args": param.args,
                 "status": status,
                 "logo": None,
-                "result": result,
+                "result": response_text,
                 "err_msg": err_msg,
             }
 
-            if not self.render_protocol:
-                raise NotImplementedError("The render_protocol should be implemented.")
-            view = await self.render_protocol.display(content=plugin_param)
+            view = (
+                await self.render_protocol.display(content=plugin_param)
+                if self.render_protocol
+                else response_text
+            )
 
             return ActionOutput(
-                is_exe_success=response_success, content=result, view=view
+                is_exe_success=response_success, content=response_text, view=view
             )
         except Exception as e:
             logger.exception("Indicator Action Run Failed！")

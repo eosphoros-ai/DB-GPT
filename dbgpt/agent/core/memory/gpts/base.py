@@ -1,4 +1,5 @@
-"""Base memory interface for agents."""
+"""Gpts memory define."""
+from __future__ import annotations
 
 import dataclasses
 from abc import ABC, abstractmethod
@@ -58,11 +59,15 @@ class GptsMessage:
     role: str
     content: str
     rounds: Optional[int]
+    is_success: bool = True
+    app_code: Optional[str] = None
+    app_name: Optional[str] = None
     current_goal: Optional[str] = None
     context: Optional[str] = None
     review_info: Optional[str] = None
     action_report: Optional[str] = None
     model_name: Optional[str] = None
+    resource_info: Optional[str] = None
     created_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
     updated_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
 
@@ -76,11 +81,15 @@ class GptsMessage:
             role=d["role"],
             content=d["content"],
             rounds=d["rounds"],
+            is_success=d["is_success"],
+            app_code=d["app_code"],
+            app_name=d["app_name"],
             model_name=d["model_name"],
             current_goal=d["current_goal"],
             context=d["context"],
             review_info=d["review_info"],
             action_report=d["action_report"],
+            resource_info=d["resource_info"],
             created_at=d["created_at"],
             updated_at=d["updated_at"],
         )

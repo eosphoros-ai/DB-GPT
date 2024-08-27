@@ -153,11 +153,13 @@ class AutoPlanChatManager(ManagerAgent):
 
     async def act(
         self,
-        message: Optional[str],
-        sender: Optional[Agent] = None,
+        message: AgentMessage,
+        sender: Agent,
         reviewer: Optional[Agent] = None,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
         **kwargs,
-    ) -> Optional[ActionOutput]:
+    ) -> ActionOutput:
         """Perform an action based on the received message."""
         if not sender:
             return ActionOutput(
@@ -165,7 +167,7 @@ class AutoPlanChatManager(ManagerAgent):
                 content="The sender cannot be empty!",
             )
         speaker: Agent = sender
-        final_message = message
+        final_message = message.content
         for i in range(self.max_round):
             if not self.memory:
                 return ActionOutput(
@@ -194,7 +196,7 @@ class AutoPlanChatManager(ManagerAgent):
 
                 plan_message = await planner.generate_reply(
                     received_message=AgentMessage.from_llm_message(
-                        {"content": message}
+                        {"content": message.content}
                     ),
                     sender=self,
                     reviewer=reviewer,
@@ -269,8 +271,8 @@ class AutoPlanChatManager(ManagerAgent):
                             if reply_message:
                                 action_report = agent_reply_message.action_report
                                 if action_report:
-                                    plan_result = action_report.get("content", "")
-                                    final_message = action_report["view"]
+                                    plan_result = action_report.content
+                                    final_message = action_report.view
 
                             # The current planned Agent generation verification is
                             # successful

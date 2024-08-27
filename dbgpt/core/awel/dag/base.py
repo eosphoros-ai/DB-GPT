@@ -5,6 +5,7 @@ DAG is the core component of AWEL, it is used to define the relationship between
 
 import asyncio
 import contextvars
+import dataclasses
 import logging
 import threading
 import uuid
@@ -17,6 +18,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
@@ -489,6 +491,100 @@ def _build_task_key(task_name: str, key: str) -> str:
     return f"{task_name}___$$$$$$___{key}"
 
 
+@dataclasses.dataclass
+class _DAGVariablesItem:
+    """The DAG variables item.
+
+    It is a private class, just used for internal.
+    """
+
+    key: str
+    name: str
+    label: str
+    value: Any
+    category: Literal["common", "secret"] = "common"
+    scope: str = "global"
+    value_type: Optional[str] = None
+    scope_key: Optional[str] = None
+    sys_code: Optional[str] = None
+    user_name: Optional[str] = None
+    description: Optional[str] = None
+
+
+@dataclasses.dataclass
+class DAGVariables:
+    """The DAG variables."""
+
+    items: List[_DAGVariablesItem] = dataclasses.field(default_factory=list)
+    _cached_provider: Optional["VariablesProvider"] = None
+    _lock: threading.Lock = dataclasses.field(default_factory=threading.Lock)
+
+    def merge(self, dag_variables: "DAGVariables") -> "DAGVariables":
+        """Merge the DAG variables.
+
+        Args:
+            dag_variables (DAGVariables): The DAG variables to merge
+        """
+
+        def _build_key(item: _DAGVariablesItem):
+            key = "_".join([item.key, item.name, item.scope])
+            if item.scope_key:
+                key += f"_{item.scope_key}"
+            if item.sys_code:
+                key += f"_{item.sys_code}"
+            if item.user_name:
+                key += f"_{item.user_name}"
+            return key
+
+        new_items = []
+        exist_vars = set()
+        for item in self.items:
+            new_items.append(item)
+            exist_vars.add(_build_key(item))
+        for item in dag_variables.items:
+            key = _build_key(item)
+            if key not in exist_vars:
+                new_items.append(item)
+        return DAGVariables(
+            items=new_items,
+            _cached_provider=self._cached_provider or dag_variables._cached_provider,
+        )
+
+    def to_provider(self) -> "VariablesProvider":
+        """Convert the DAG variables to variables provider.
+
+        Returns:
+            VariablesProvider: The variables provider
+        """
+        if not self._cached_provider:
+            from ...interface.variables import (
+                StorageVariables,
+                StorageVariablesProvider,
+            )
+
+            with self._lock:
+                # Create a new provider safely
+                provider = StorageVariablesProvider()
+                for item in self.items:
+                    storage_vars = StorageVariables(
+                        key=item.key,
+                        name=item.name,
+                        label=item.label,
+                        value=item.value,
+                        category=item.category,
+                        scope=item.scope,
+                        value_type=item.value_type,
+                        scope_key=item.scope_key,
+                        sys_code=item.sys_code,
+                        user_name=item.user_name,
+                        description=item.description,
+                    )
+                    provider.save(storage_vars)
+                self._cached_provider = provider
+
+        return self._cached_provider
+
+
 class DAGContext:
     """The context of current DAG, created when the DAG is running.
 
@@ -502,6 +598,7 @@ class DAGContext:
         event_loop_task_id: int,
         streaming_call: bool = False,
         node_name_to_ids: Optional[Dict[str, str]] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> None:
         """Initialize a DAGContext.
 
@@ -511,6 +608,7 @@ class DAGContext:
             streaming_call (bool, optional): Whether the current DAG is streaming call.
                 Defaults to False.
             node_name_to_ids (Optional[Dict[str, str]], optional): The node name to node
+            dag_variables (Optional[DAGVariables], optional): The DAG variables.
         """
         if not node_name_to_ids:
             node_name_to_ids = {}
@@ -520,6 +618,7 @@ class DAGContext:
         self._node_to_outputs: Dict[str, TaskContext] = node_to_outputs
         self._node_name_to_ids: Dict[str, str] = node_name_to_ids
         self._event_loop_task_id = event_loop_task_id
+        self._dag_variables = dag_variables
 
     @property
     def _task_outputs(self) -> Dict[str, TaskContext]:
@@ -653,6 +752,7 @@ class DAG:
         resource_group: Optional[ResourceGroup] = None,
         tags: Optional[Dict[str, str]] = None,
         description: Optional[str] = None,
+        default_dag_variables: Optional[DAGVariables] = None,
     ) -> None:
         """Initialize a DAG."""
         self._dag_id = dag_id
@@ -666,6 +766,7 @@ class DAG:
         self._resource_group: Optional[ResourceGroup] = resource_group
         self._lock = asyncio.Lock()
         self._event_loop_task_id_to_ctx: Dict[int, DAGContext] = {}
+        self._default_dag_variables = default_dag_variables
 
     def _append_node(self, node: DAGNode) -> None:
         if node.node_id in self.node_map:
