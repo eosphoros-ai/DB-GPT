@@ -174,7 +174,7 @@ function Database() {
                                 onDelete(item);
                               }}
                             >
-                              删除
+                              {t('Delete_Btn')}
                             </span>
                           ),
                         },

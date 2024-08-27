@@ -10,7 +10,6 @@ export const ChatZh: Resources['translation'] = {
   dialog_list: '对话列表',
   delete_chat: '删除会话',
   delete_chat_confirm: '您确认要删除会话吗？',
-
   input_tips: '可以问我任何问题，shift + Enter 换行',
   sent: '发送',
   answer_again: '重新回答',
@@ -18,7 +17,6 @@ export const ChatZh: Resources['translation'] = {
   thinking: '正在思考中',
   stop_replying: '停止回复',
   erase_memory: '清除记忆',
-  copy: '复制',
   copy_success: '复制成功',
   copy_failed: '复制失败',
   copy_nothing: '内容复制为空',
