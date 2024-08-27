@@ -27,10 +27,15 @@ class DatasourceDBParameters(DBParameters):
         cls,
         parameters: Type["DatasourceDBParameters"],
         version: Optional[str] = None,
+        **kwargs,
     ) -> Any:
         """Convert the parameters to configurations."""
         conf: List[ParameterDescription] = cast(
-            List[ParameterDescription], super().to_configurations(parameters)
+            List[ParameterDescription],
+            super().to_configurations(
+                parameters,
+                **kwargs,
+            ),
         )
         version = version or cls._resource_version()
         if version != "v1":
@@ -58,9 +63,16 @@ class DatasourceResource(RDBMSConnectorResource):
         super().__init__(name, connector=conn, db_name=db_name, **kwargs)
 
     @classmethod
-    def resource_parameters_class(cls) -> Type[DatasourceDBParameters]:
-        dbs = CFG.local_db_manager.get_db_list()
-        results = [db["db_name"] for db in dbs]
+    def resource_parameters_class(cls, **kwargs) -> Type[DatasourceDBParameters]:
+        dbs = CFG.local_db_manager.get_db_list(user_id=kwargs.get("user_id", None))
+        results = [
+            {
+                "label": "[" + db["db_type"] + "]" + db["db_name"],
+                "key": db["db_name"],
+                "description": db["comment"],
+            }
+            for db in dbs
+        ]
 
         @dataclasses.dataclass
         class _DynDBParameters(DatasourceDBParameters):

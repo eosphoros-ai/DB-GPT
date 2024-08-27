@@ -1,11 +1,15 @@
-"""Agent Plans Vis Protocol."""
+"""Viss Agent Plans."""
 from ..base import Vis
 
 
 class VisAgentPlans(Vis):
-    """Agent Plans Vis Protocol."""
+    """VisAgentPlans."""
 
     @classmethod
-    def vis_tag(cls) -> str:
-        """Return the tag name of the vis protocol module."""
+    def vis_tag(cls):
+        """Vis tag name.
+
+        Returns:
+            str: The tag name associated with the visualization.
+        """
         return "agent-plans"

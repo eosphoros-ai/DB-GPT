@@ -13,7 +13,10 @@ interface Props {
 }
 
 function VisChart({ data }: Props) {
-  return <ChartView data={data.data} type={data.type} sql={data.sql} />;
+  if (!data) {
+    return null;
+  }
+  return <ChartView data={data?.data} type={data?.type} sql={data?.sql} />;
 }
 
 export default VisChart;

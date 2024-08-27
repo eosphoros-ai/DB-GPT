@@ -168,9 +168,9 @@ class ConnectorManager(BaseComponent):
             logger.error(f"{db_info.db_name} Test connect Failure!{str(e)}")
             raise ValueError(f"{db_info.db_name} Test connect Failure!{str(e)}")
 
-    def get_db_list(self):
+    def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
         """Get db list."""
-        return self.storage.get_db_list()
+        return self.storage.get_db_list(db_name, user_id)
 
     def delete_db(self, db_name: str):
         """Delete db connect info."""
@@ -197,7 +197,7 @@ class ConnectorManager(BaseComponent):
         executor.submit(self.db_summary_client.db_summary_embedding, db_name, db_type)
         return True
 
-    def add_db(self, db_info: DBConfig):
+    def add_db(self, db_info: DBConfig, user_id: Optional[str] = None):
         """Add db connect info.
 
         Args:
@@ -210,7 +210,11 @@ class ConnectorManager(BaseComponent):
                 raise ValueError("Unsupported Db Type！" + db_info.db_type)
             if db_type.is_file_db():
                 self.storage.add_file_db(
-                    db_info.db_name, db_info.db_type, db_info.file_path
+                    db_info.db_name,
+                    db_info.db_type,
+                    db_info.file_path,
+                    db_info.comment,
+                    user_id,
                 )
             else:
                 self.storage.add_url_db(
@@ -221,6 +225,7 @@ class ConnectorManager(BaseComponent):
                     db_info.db_user,
                     db_info.db_pwd,
                     db_info.comment,
+                    user_id,
                 )
             # async embedding
             executor = self.system_app.get_component(

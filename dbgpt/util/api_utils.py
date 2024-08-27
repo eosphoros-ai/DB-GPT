@@ -57,7 +57,6 @@ class APIMixin(ABC):
             time.sleep(self._health_check_interval_secs)
 
     def __del__(self):
-
         self._heartbeat_stop_event.set()
 
     def _check_health(self, url: str) -> Tuple[bool, str]:

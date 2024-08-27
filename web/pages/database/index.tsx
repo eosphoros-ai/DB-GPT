@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAsyncEffect } from 'ahooks';
-import { Badge, Button, Card, Drawer, Empty, Modal, Spin, message } from 'antd';
+import { Badge, Button, Card, Drawer, Empty, Modal, message, Spin } from 'antd';
 import FormDialog from '@/components/database/form-dialog';
 import { apiInterceptors, getDbList, getDbSupportType, postDbDelete, postDbRefresh } from '@/client/api';
 import { DeleteFilled, EditFilled, PlusOutlined, RedoOutlined } from '@ant-design/icons';
@@ -182,6 +182,7 @@ function Database() {
                       }}
                     />
                     <EditFilled
+                      className="mr-2"
                       style={{ color: '#1b7eff' }}
                       onClick={() => {
                         onModify(item);

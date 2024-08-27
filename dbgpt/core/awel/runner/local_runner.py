@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Set, cast
 from dbgpt.component import SystemApp
 from dbgpt.util.tracer import root_tracer
 
-from ..dag.base import DAGContext, DAGVar
+from ..dag.base import DAGContext, DAGVar, DAGVariables
 from ..operators.base import CALL_DATA, BaseOperator, WorkflowRunner
 from ..operators.common_operator import BranchOperator
 from ..task.base import SKIP_DATA, TaskContext, TaskState
@@ -46,6 +46,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
         exist_dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> DAGContext:
         """Execute the workflow.
 
@@ -57,6 +58,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
                 Defaults to False.
             exist_dag_ctx (Optional[DAGContext], optional): The exist DAG context.
                 Defaults to None.
+            dag_variables (Optional[DAGVariables], optional): The DAG variables.
         """
         # Save node output
         # dag = node.dag
@@ -71,12 +73,19 @@ class DefaultWorkflowRunner(WorkflowRunner):
             node_outputs = exist_dag_ctx._node_to_outputs
             share_data = exist_dag_ctx._share_data
             event_loop_task_id = exist_dag_ctx._event_loop_task_id
+            if dag_variables and exist_dag_ctx._dag_variables:
+                # Merge dag variables, prefer the `dag_variables` in the parameter
+                dag_variables = dag_variables.merge(exist_dag_ctx._dag_variables)
+        if node.dag and not dag_variables and node.dag._default_dag_variables:
+            # Use default dag variables if not set
+            dag_variables = node.dag._default_dag_variables
         dag_ctx = DAGContext(
             event_loop_task_id=event_loop_task_id,
             node_to_outputs=node_outputs,
             share_data=share_data,
             streaming_call=streaming_call,
             node_name_to_ids=job_manager._node_name_to_ids,
+            dag_variables=dag_variables,
         )
         # if node.dag:
         #     self._running_dag_ctx[node.dag.dag_id] = dag_ctx

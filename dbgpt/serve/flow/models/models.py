@@ -49,6 +49,7 @@ class ServeEntity(Model):
     editable = Column(
         Integer, nullable=True, comment="Editable, 0: editable, 1: not editable"
     )
+    variables = Column(Text, nullable=True, comment="Flow variables, JSON format")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -109,14 +110,14 @@ class VariablesEntity(Model):
         String(32),
         default="global",
         nullable=True,
-        comment="Variable scope(global,flow,app,agent,datasource,flow:uid,"
-        "flow:dag_name,agent:agent_name) etc",
+        comment="Variable scope(global,flow,app,agent,datasource,flow_priv,agent_priv, "
+        "etc)",
     )
     scope_key = Column(
         String(256),
         nullable=True,
-        comment="Variable scope key, default is empty, for scope is 'flow:uid', "
-        "the scope_key is uid of flow",
+        comment="Variable scope key, default is empty, for scope is 'flow_priv', "
+        "the scope_key is dag id of flow",
     )
     enabled = Column(
         Integer,
@@ -124,6 +125,7 @@ class VariablesEntity(Model):
         nullable=True,
         comment="Variable enabled, 0: disabled, 1: enabled",
     )
+    description = Column(Text, nullable=True, comment="Variable description")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -154,6 +156,11 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         error_message = request_dict.get("error_message")
         if error_message:
             error_message = error_message[:500]
+
+        variables_raw = request_dict.get("variables")
+        variables = (
+            json.dumps(variables_raw, ensure_ascii=False) if variables_raw else None
+        )
         new_dict = {
             "uid": request_dict.get("uid"),
             "dag_id": request_dict.get("dag_id"),
@@ -169,6 +176,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "define_type": request_dict.get("define_type"),
             "editable": ServeEntity.parse_editable(request_dict.get("editable")),
             "description": request_dict.get("description"),
+            "variables": variables,
             "user_name": request_dict.get("user_name"),
             "sys_code": request_dict.get("sys_code"),
         }
@@ -185,6 +193,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             REQ: The request
         """
         flow_data = json.loads(entity.flow_data)
+        variables_raw = json.loads(entity.variables) if entity.variables else None
+        variables = ServeRequest.parse_variables(variables_raw)
         return ServeRequest(
             uid=entity.uid,
             dag_id=entity.dag_id,
@@ -200,6 +210,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             define_type=entity.define_type,
             editable=ServeEntity.to_bool_editable(entity.editable),
             description=entity.description,
+            variables=variables,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
         )
@@ -216,6 +227,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         flow_data = json.loads(entity.flow_data)
         gmt_created_str = entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
         gmt_modified_str = entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+        variables_raw = json.loads(entity.variables) if entity.variables else None
+        variables = ServeRequest.parse_variables(variables_raw)
         return ServerResponse(
             uid=entity.uid,
             dag_id=entity.dag_id,
@@ -231,6 +244,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             version=entity.version,
             editable=ServeEntity.to_bool_editable(entity.editable),
             define_type=entity.define_type,
+            variables=variables,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
@@ -271,6 +285,14 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             entry.editable = ServeEntity.parse_editable(update_request.editable)
             if update_request.define_type:
                 entry.define_type = update_request.define_type
+
+            if update_request.variables:
+                variables_raw = update_request.get_variables_dict()
+                entry.variables = (
+                    json.dumps(variables_raw, ensure_ascii=False)
+                    if variables_raw
+                    else None
+                )
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:
@@ -317,6 +339,7 @@ class VariablesDao(BaseDao[VariablesEntity, VariablesRequest, VariablesResponse]
             "enabled": enabled,
             "user_name": request_dict.get("user_name"),
             "sys_code": request_dict.get("sys_code"),
+            "description": request_dict.get("description"),
         }
         entity = VariablesEntity(**new_dict)
         return entity
@@ -348,6 +371,7 @@ class VariablesDao(BaseDao[VariablesEntity, VariablesRequest, VariablesResponse]
             enabled=enabled,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
+            description=entity.description,
         )
 
     def to_response(self, entity: VariablesEntity) -> VariablesResponse:
@@ -382,4 +406,5 @@ class VariablesDao(BaseDao[VariablesEntity, VariablesRequest, VariablesResponse]
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
             gmt_modified=gmt_modified_str,
+            description=entity.description,
         )

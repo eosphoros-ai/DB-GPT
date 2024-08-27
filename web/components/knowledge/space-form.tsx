@@ -1,7 +1,7 @@
 import { addSpace, apiInterceptors } from '@/client/api';
-import { IStorage, StepChangeParams } from '@/types/knowledge';
+import { StepChangeParams, IStorage } from '@/types/knowledge';
 import { Button, Form, Input, Spin, Select } from 'antd';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type FieldType = {
@@ -50,6 +50,7 @@ export default function SpaceForm(props: IProps) {
     );
     setSpinning(false);
     const is_financial = domain_type === 'FinancialReport';
+    localStorage.setItem('cur_space_id', JSON.stringify(data));
     res?.success && handleStepChange({ label: 'forward', spaceName, pace: is_financial ? 2 : 1, docType: is_financial ? 'DOCUMENT' : '' });
   };
 
@@ -80,14 +81,11 @@ export default function SpaceForm(props: IProps) {
             }),
           ]}
         >
-          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
-        </Form.Item>
-        <Form.Item<FieldType> label={t('Owner')} name="owner" rules={[{ required: true, message: t('Please_input_the_owner') }]}>
-          <Input className="mb-5  h-12" placeholder={t('Please_input_the_owner')} />
+          <Input className="h-12" placeholder={t('Please_input_the_name')} />
         </Form.Item>
         <Form.Item<FieldType> label={t('Storage')} name="storage" rules={[{ required: true, message: t('Please_select_the_storage') }]}>
           <Select className="mb-5 h-12" placeholder={t('Please_select_the_storage')} onChange={handleStorageChange}>
-            {spaceConfig?.map((item) => {
+            {spaceConfig?.map((item: any) => {
               return <Select.Option value={item.name}>{item.desc}</Select.Option>;
             })}
           </Select>
@@ -95,14 +93,14 @@ export default function SpaceForm(props: IProps) {
         <Form.Item<FieldType> label={t('Domain')} name="field" rules={[{ required: true, message: t('Please_select_the_domain_type') }]}>
           <Select className="mb-5 h-12" placeholder={t('Please_select_the_domain_type')}>
             {spaceConfig
-              ?.find((item) => item.name === storage)
-              ?.domain_types.map((item) => {
+              ?.find((item: any) => item.name === storage)
+              ?.domain_types.map((item: any) => {
                 return <Select.Option value={item.name}>{item.desc}</Select.Option>;
               })}
           </Select>
         </Form.Item>
         <Form.Item<FieldType> label={t('Description')} name="description" rules={[{ required: true, message: t('Please_input_the_description') }]}>
-          <Input className="mb-5  h-12" placeholder={t('Please_input_the_description')} />
+          <Input className="h-12" placeholder={t('Please_input_the_description')} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit">

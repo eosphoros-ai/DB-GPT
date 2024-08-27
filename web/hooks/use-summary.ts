@@ -6,7 +6,7 @@ import { apiInterceptors, getChatHistory } from '@/client/api';
 
 const useSummary = () => {
   const { history, setHistory, chatId, model, docId } = useContext(ChatContext);
-  const chat = useChat({ queryAgentURL: '/knowledge/document/summary' });
+  const { chat } = useChat({ queryAgentURL: '/knowledge/document/summary' });
 
   const summary = useCallback(
     async (curDocId?: number) => {

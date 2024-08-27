@@ -2,10 +2,10 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js';
 import Editor, { OnChange, loader } from '@monaco-editor/react';
 import classNames from 'classnames';
 import { useContext, useMemo } from 'react';
+import { ChatContext } from '@/app/chat-context';
 import { formatSql } from '@/utils';
 import { getModelService } from './ob-editor/service';
 import { useLatest } from 'ahooks';
-import { ChatContext } from '@/app/chat-context';
 import { github, githubDark } from './ob-editor/theme';
 import { register } from './ob-editor/ob-plugin';
 
@@ -24,7 +24,6 @@ interface MonacoEditorProps {
   onChange?: OnChange;
   thoughts?: string;
   session?: ISession;
-
 }
 
 let plugin = null;
@@ -33,6 +32,7 @@ monaco.editor.defineTheme('githubDark', githubDark as any);
 
 export default function MonacoEditor({ className, value, language = 'mysql', onChange, thoughts, session }: MonacoEditorProps) {
   // merge value and thoughts
+
   const editorValue = useMemo(() => {
     if (language !== 'mysql') {
       return value;
@@ -57,7 +57,6 @@ export default function MonacoEditor({ className, value, language = 'mysql', onC
       }, () => sessionRef.current || null)
     )
   }
-
 
   return (
     <Editor

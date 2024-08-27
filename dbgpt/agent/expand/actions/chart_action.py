@@ -66,7 +66,7 @@ class ChartAction(Action[SqlInput]):
             logger.exception(f"{str(e)}! \n {ai_message}")
             return ActionOutput(
                 is_exe_success=False,
-                content="The requested correctly structured answer could not be found.",
+                content="Error:The answer is not output in the required format.",
             )
         try:
             if not self.resource_need:
@@ -96,5 +96,5 @@ class ChartAction(Action[SqlInput]):
             logger.exception("Check your answers, the sql run failed！")
             return ActionOutput(
                 is_exe_success=False,
-                content=f"Check your answers, the sql run failed!Reason:{str(e)}",
+                content=f"Error:Check your answers, the sql run failed!Reason:{str(e)}",
             )

@@ -1,13 +1,16 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict
+from dbgpt.rag import ChunkParameters
 
 
 class KnowledgeQueryRequest(BaseModel):
     """query: knowledge query"""
 
     query: str
+    """space: space name"""
+    space: str
     """top_k: return topK documents"""
     top_k: int
 
@@ -17,15 +20,17 @@ class KnowledgeSpaceRequest(BaseModel):
 
     """vector_type: vector type"""
     id: Optional[int] = None
-    name: str = None
+    name: Optional[str] = None
     """vector_type: vector type"""
-    vector_type: str = None
+    vector_type: Optional[str] = None
     """vector_type: vector type"""
     domain_type: str = "Normal"
     """desc: description"""
     desc: str = None
     """owner: owner"""
-    owner: str = None
+    owner: Optional[str] = None
+
+    space_id: Optional[Union[int, str]] = None
 
 
 class BusinessFieldType(Enum):
@@ -37,25 +42,40 @@ class BusinessFieldType(Enum):
 class KnowledgeDocumentRequest(BaseModel):
     """doc_name: doc path"""
 
-    doc_name: str = None
+    doc_name: Optional[str] = None
+    """doc_id: doc id"""
+    doc_id: Optional[int] = None
     """doc_type: doc type"""
-    doc_type: str = None
+    doc_type: Optional[str] = None
+    """doc_token: doc token"""
+    doc_token: Optional[str] = None
     """content: content"""
-    content: str = None
+    content: Optional[str] = None
     """content: content"""
-    source: str = None
+    source: Optional[str] = None
+
+    labels: Optional[str] = None
+
+    questions: Optional[List[str]] = None
+
+
+class DocumentRecallTestRequest(BaseModel):
+    question: Optional[str] = None
+    recall_top_k: Optional[int] = 1
+    recall_retrievers: Optional[List[str]] = None
+    recall_score_threshold: Optional[float] = -100
 
 
 class DocumentQueryRequest(BaseModel):
     """doc_name: doc path"""
 
-    doc_name: str = None
+    doc_name: Optional[str] = None
     """doc_ids: doc ids"""
     doc_ids: Optional[List] = None
     """doc_type: doc type"""
-    doc_type: str = None
+    doc_type: Optional[str] = None
     """status: status"""
-    status: str = None
+    status: Optional[str] = None
     """page: page"""
     page: int = 1
     """page_size: page size"""
@@ -91,20 +111,72 @@ class DocumentSyncRequest(BaseModel):
     chunk_overlap: Optional[int] = None
 
 
+class KnowledgeSyncRequest(BaseModel):
+    """Sync request"""
+
+    """doc_ids: doc ids"""
+    doc_id: int
+
+    """model_name: model name"""
+    model_name: Optional[str] = None
+
+    """chunk_parameters: chunk parameters 
+    """
+    chunk_parameters: ChunkParameters
+
+    def to_dict(self):
+        return {k: self._serialize(v) for k, v in self.__dict__.items()}
+
+    def _serialize(self, value):
+        if isinstance(value, BaseModel):
+            return value.to_dict()
+        elif isinstance(value, list):
+            return [self._serialize(item) for item in value]
+        elif isinstance(value, dict):
+            return {k: self._serialize(v) for k, v in value.items()}
+        else:
+            return value
+
+
 class ChunkQueryRequest(BaseModel):
     """id: id"""
 
-    id: int = None
+    id: Optional[int] = None
     """document_id: doc id"""
-    document_id: int = None
+    document_id: Optional[int] = None
     """doc_name: doc path"""
-    doc_name: str = None
+    doc_name: Optional[str] = None
     """doc_type: doc type"""
-    doc_type: str = None
+    doc_type: Optional[str] = None
+    """chunk content: content"""
+    content: Optional[str] = None
     """page: page"""
     page: int = 1
     """page_size: page size"""
     page_size: int = 20
+
+
+class ChunkEditRequest(BaseModel):
+    """id: id"""
+
+    """chunk_id: chunk_id"""
+    chunk_id: Optional[int] = None
+    """chunk content: content"""
+    content: Optional[str] = None
+    """label: label"""
+    label: Optional[str] = None
+    """questions: questions"""
+    questions: Optional[List[str]] = None
+
+
+class KnowledgeQueryResponse:
+    """source: knowledge reference source"""
+
+    source: Optional[str]
+    """score: knowledge vector query similarity score"""
+    score: float = 0.0
+    """text: raw text info"""
+    text: Optional[str]
 
 
 class SpaceArgumentRequest(BaseModel):
@@ -124,6 +196,12 @@ class DocumentSummaryRequest(BaseModel):
     conv_uid: str
 
 
+class DocumentDynamicText(BaseModel):
+    space_id: int
+    doc_id: int
+    text_snippets: List[str]
+
+
 class EntityExtractRequest(BaseModel):
     """argument: argument"""
 
@@ -131,3 +209,21 @@ class EntityExtractRequest(BaseModel):
 
     text: str
     model_name: str
+
+
+class SpaceEvaluationRequest(BaseModel):
+    """RAG Evaluation Reques.t"""
+
+    datasets: List[dict]
+    """space: space name"""
+    space_id: Optional[int] = None
+    """top_k: return topK documents"""
+    top_k: int
+    """type: evaluation type"""
+    type: Optional[str] = "recall"
+    """model_name: evaluation model_name"""
+    model_name: Optional[str] = None
+    """app_id: app_id"""
+    app_id: Optional[str] = None
+    """evaluate prompt id: prompt_id"""
+    prompt_code: Optional[str] = None

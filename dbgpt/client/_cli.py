@@ -309,7 +309,6 @@ def _parse_and_check_local_dag(
     filepath: str | None = None,
     data: Dict[str, Any] | None = None,
 ) -> Tuple[BaseOperator, DAG, DAGMetadata, Any]:
-
     dag, dag_metadata = _parse_local_dag(name, filepath)
 
     return _check_local_dag(dag, dag_metadata, data)
@@ -344,7 +343,6 @@ def _check_local_dag(
 
 
 def _parse_local_dag(name: str, filepath: str | None = None) -> Tuple[DAG, DAGMetadata]:
-
     system_app = SystemApp()
     DAGVar.set_current_system_app(system_app)
 

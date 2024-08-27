@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, Modal, Steps } from 'antd';
 import SpaceCard from '@/components/knowledge/space-card';
-import { File, ISpace, IStorage, SpaceConfig, StepChangeParams } from '@/types/knowledge';
-import { apiInterceptors, getSpaceConfig, getSpaceList } from '@/client/api';
+import { File, ISpace, StepChangeParams, IStorage, SpaceConfig } from '@/types/knowledge';
+import { apiInterceptors, getSpaceList, getSpaceConfig } from '@/client/api';
 import { useTranslation } from 'react-i18next';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
 import SpaceForm from '@/components/knowledge/space-form';
@@ -50,7 +50,6 @@ const Knowledge = () => {
       getSpaces();
       setSpaceName('');
       setDocType('');
-      getSpaces();
     } else if (label === 'forward') {
       activeStep === 0 && getSpaces();
       setActiveStep((step) => step + pace);

@@ -826,6 +826,38 @@ class ExampleFlowUploadOperator(MapOperator[str, str]):
                     attr=ui.UIUpload.UIAttribute(max_count=5),
                 ),
             ),
+            Parameter.build_from(
+                "CSV File Selector",
+                "csv_file",
+                type=str,
+                optional=True,
+                default=None,
+                placeholder="Select the CSV file",
+                description="The CSV file you want to upload.",
+                ui=ui.UIUpload(
+                    max_file_size=1024 * 1024 * 100,
+                    up_event="after_select",
+                    file_types=[".csv"],
+                    attr=ui.UIUpload.UIAttribute(max_count=1),
+                ),
+            ),
+            Parameter.build_from(
+                "Images Selector",
+                "images",
+                type=str,
+                is_list=True,
+                optional=True,
+                default=None,
+                placeholder="Select the images",
+                description="The images you want to upload.",
+                ui=ui.UIUpload(
+                    max_file_size=1024 * 1024 * 100,
+                    up_event="button_click",
+                    file_types=["image/*", "*.pdf"],
+                    drag=True,
+                    attr=ui.UIUpload.UIAttribute(max_count=5),
+                ),
+            ),
         ],
         inputs=[
             IOField.build_from(
@@ -849,11 +881,15 @@ class ExampleFlowUploadOperator(MapOperator[str, str]):
         self,
         file: Optional[str] = None,
         multiple_files: Optional[List[str]] = None,
+        csv_file: Optional[str] = None,
+        images: Optional[List[str]] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.file = file
         self.multiple_files = multiple_files or []
+        self.csv_file = csv_file
+        self.images = images or []
 
     async def map(self, user_name: str) -> str:
         """Map the user name to the file."""
@@ -874,7 +910,7 @@ class ExampleFlowUploadOperator(MapOperator[str, str]):
             raise ValueError("The file is not uploaded.")
         if not self.multiple_files:
             raise ValueError("The multiple files are not uploaded.")
-        files = [self.file] + self.multiple_files
+        files = [self.file] + self.multiple_files + [self.csv_file] + self.images
         results = []
         for file in files:
             _, metadata = fsc.get_file(file)

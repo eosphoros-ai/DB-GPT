@@ -1,14 +1,25 @@
 from functools import cache
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    UploadFile,
+)
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import SystemApp
+from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.serve.core import Result
 from dbgpt.serve.rag.api.schemas import (
     DocumentServeRequest,
     DocumentServeResponse,
+    KnowledgeRetrieveRequest,
     KnowledgeSyncRequest,
     SpaceServeRequest,
     SpaceServeResponse,
@@ -99,9 +110,10 @@ async def test_auth():
     return {"status": "ok"}
 
 
-@router.post("/spaces", dependencies=[Depends(check_api_key)])
+@router.post("/spaces")
 async def create(
-    request: SpaceServeRequest, service: Service = Depends(get_service)
+    request: SpaceServeRequest,
+    service: Service = Depends(get_service),
 ) -> Result:
     """Create a new Space entity
 
@@ -150,11 +162,11 @@ async def delete(
 
 @router.get(
     "/spaces/{space_id}",
-    dependencies=[Depends(check_api_key)],
     response_model=Result[List],
 )
 async def query(
-    space_id: str, service: Service = Depends(get_service)
+    space_id: str,
+    service: Service = Depends(get_service),
 ) -> Result[List[SpaceServeResponse]]:
     """Query Space entities
 
@@ -170,7 +182,6 @@ async def query(
 
 @router.get(
     "/spaces",
-    dependencies=[Depends(check_api_key)],
     response_model=Result[PaginationResult[SpaceServeResponse]],
 )
 async def query_page(
@@ -190,13 +201,36 @@ async def query_page(
     return Result.succ(service.get_list_by_page({}, page, page_size))
 
 
-@router.post("/documents", dependencies=[Depends(check_api_key)])
+@router.post("/spaces/{space_id}/retrieve")
+async def space_retrieve(
+    space_id: int,
+    request: KnowledgeRetrieveRequest,
+    service: Service = Depends(get_service),
+) -> Result:
+    """Create a new Document entity
+
+    Args:
+        space_id (int): The space id
+        request (SpaceServeRequest): The request
+        service (Service): The service
+    Returns:
+        ServerResponse: The response
+    """
+    request.space_id = space_id
+    space_request = service.build_space_request(token, space_id)
+    spaces = service.get_list(space_request)
+    if not spaces:
+        raise HTTPException(status_code=404, detail="Space not found")
+    return Result.succ(await service.retrieve(request))
+
+
+@router.post("/documents")
 async def create_document(
     doc_name: str = Form(...),
     doc_type: str = Form(...),
     space_id: str = Form(...),
     content: Optional[str] = Form(None),
-    doc_file: Optional[UploadFile] = File(None),
+    doc_file: Union[UploadFile, str] = Form(None),
     service: Service = Depends(get_service),
 ) -> Result:
     """Create a new Document entity
@@ -219,11 +253,11 @@ async def create_document(
 
 @router.get(
     "/documents/{document_id}",
-    dependencies=[Depends(check_api_key)],
     response_model=Result[List],
 )
 async def query(
-    document_id: str, service: Service = Depends(get_service)
+    document_id: int,
+    service: Service = Depends(get_service),
 ) -> Result[List[SpaceServeResponse]]:
     """Query Space entities
 
@@ -239,7 +273,6 @@ async def query(
 
 @router.get(
     "/documents",
-    dependencies=[Depends(check_api_key)],
     response_model=Result[PaginationResult[SpaceServeResponse]],
 )
 async def query_page(
@@ -259,6 +292,16 @@ async def query_page(
     return Result.succ(service.get_document_list({}, page, page_size))
 
 
+@router.post("/documents/chunks/add")
+async def add_documents_chunks(
+    doc_name: str = Form(...),
+    space_id: int = Form(...),
+    content: List[str] = Form(None),
+    service: Service = Depends(get_service),
+) -> Result:
+    """ """
+
+
 @router.post("/documents/sync", dependencies=[Depends(check_api_key)])
 async def sync_documents(
     requests: List[KnowledgeSyncRequest], service: Service = Depends(get_service)
@@ -272,6 +315,42 @@ async def sync_documents(
         ServerResponse: The response
     """
     return Result.succ(service.sync_document(requests))
+
+
+@router.post("/documents/batch_sync")
+async def sync_documents(
+    requests: List[KnowledgeSyncRequest],
+    service: Service = Depends(get_service),
+) -> Result:
+    """Create a new Document entity
+
+    Args:
+        request (SpaceServeRequest): The request
+        service (Service): The service
+    Returns:
+        ServerResponse: The response
+    """
+    return Result.succ(service.sync_document(requests))
+
+
+@router.post("/documents/{document_id}/sync")
+async def sync_document(
+    document_id: int,
+    request: KnowledgeSyncRequest,
+    service: Service = Depends(get_service),
+) -> Result:
+    """Create a new Document entity
+
+    Args:
+        request (SpaceServeRequest): The request
+        service (Service): The service
+    Returns:
+        ServerResponse: The response
+    """
+    request.doc_id = document_id
+    if request.chunk_parameters is None:
+        request.chunk_parameters = ChunkParameters(chunk_strategy="Automatic")
+    return Result.succ(service.sync_document([request]))
 
 
 @router.delete(
