@@ -36,6 +36,7 @@ export const ExportFlowModal: React.FC<Props> = ({
     }else{
         const linkUrl = `${process.env.API_BASE_URL}/api/v2/serve/awel/flow/export/${values.uid}?export_type=${values.export_type}&format=${values.format}`
         window.open(linkUrl)
+
     }
     messageApi.success(t('Export_Flow_Success'));
 
