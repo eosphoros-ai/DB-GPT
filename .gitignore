@@ -171,6 +171,7 @@ thirdparty
 /web/npm-debug.log*
 /web/yarn-debug.log*
 /web/yarn-error.log*
+/web/yarn.lock
 
 # local env files
 /web/.env.prod
@@ -185,6 +186,3 @@ thirdparty
 /examples/**/*.gv.pdf
 /i18n/locales/**/**/*_ai_translated.po
 /i18n/locales/**/**/*~
-
-/web_new/node_modules
-/web_new/.next
