@@ -7,7 +7,6 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
-
 from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
 from .filters import MetadataFilters
 
@@ -69,6 +68,8 @@ class WeaviateStore(VectorStoreBase):
                 "Please install it with `pip install weaviate-client`."
             )
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         self.weaviate_url = vector_store_config.weaviate_url
         self.embedding = vector_store_config.embedding_fn
         self.vector_name = vector_store_config.name
@@ -77,6 +78,10 @@ class WeaviateStore(VectorStoreBase):
         )
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
+
+    def get_config(self) -> WeaviateVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

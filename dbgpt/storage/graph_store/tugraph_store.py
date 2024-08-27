@@ -1,12 +1,15 @@
-"""TuGraph vector store."""
+"""TuGraph store."""
+import base64
+import json
 import logging
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Generator, Iterator
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, \
+    Vertex, Graph
 
 logger = logging.getLogger(__name__)
 
@@ -29,20 +32,22 @@ class TuGraphStoreConfig(GraphStoreConfig):
         description="login username",
     )
     password: str = Field(
-        default="123456",
+        default="73@TuGraph",
         description="login password",
     )
-    vertex_type: str = Field(
+    entity_type: str = Field(
         default="entity",
         description="The type of graph vertex, `entity` by default.",
     )
-    edge_type: str = Field(
+    relation_type: str = Field(
         default="relation",
         description="The type of graph edge, `relation` by default.",
     )
-    edge_name_key: str = Field(
-        default="label",
-        description="The label of edge name, `label` by default.",
+    plugin_names: List[str] = Field(
+        default=["leiden"],
+        description="Plugins need to be loaded when initialize TuGraph, "
+                    "code: https://github.com/TuGraph-family"
+                    "/dbgpt-tugraph-plugins/tree/master/cpp"
     )
 
 
@@ -51,18 +56,24 @@ class TuGraphStore(GraphStoreBase):
 
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
-        self._host = os.getenv("TUGRAPH_HOST", "127.0.0.1") or config.host
-        self._port = int(os.getenv("TUGRAPH_PORT", 7687)) or config.port
-        self._username = os.getenv("TUGRAPH_USERNAME", "admin") or config.username
-        self._password = os.getenv("TUGRAPH_PASSWORD", "73@TuGraph") or config.password
-        self._node_label = (
-            os.getenv("TUGRAPH_VERTEX_TYPE", "entity") or config.vertex_type
+        self._config = config
+        self._host = os.getenv("TUGRAPH_HOST", config.host)
+        self._port = int(os.getenv("TUGRAPH_PORT", config.port))
+        self._username = os.getenv("TUGRAPH_USERNAME", config.username)
+        self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
+        self._summary_enabled = (
+            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", '').lower() == 'true'
+            or config.summary_enabled
         )
-        self._edge_label = (
-            os.getenv("TUGRAPH_EDGE_TYPE", "relation") or config.edge_type
+        self._plugin_names = (
+            os.getenv("TUGRAPH_PLUGIN_NAMES", 'leiden').split(',')
+            or config.plugin_names
         )
-        self.edge_name_key = (
-            os.getenv("TUGRAPH_EDGE_NAME_KEY", "label") or config.edge_name_key
+        self._entity_type = (
+            os.getenv("TUGRAPH_VERTEX_TYPE", config.entity_type)
+        )
+        self._relation_type = (
+            os.getenv("TUGRAPH_EDGE_TYPE", config.relation_type)
         )
         self._graph_name = config.name
         self.conn = TuGraphConnector.from_uri_db(
@@ -72,35 +83,93 @@ class TuGraphStore(GraphStoreBase):
             pwd=self._password,
             db_name=config.name,
         )
-        self.conn.create_graph(graph_name=config.name)
+        self._create_graph(config.name)
 
+    @property
+    def entity_type(self) -> str:
+        return self._entity_type
+
+    @property
+    def relation_type(self) -> str:
+        return self._relation_type
+
+    def _create_graph(self,graph_name:str):
+        self.conn.create_graph(graph_name=graph_name)
         self._create_schema()
-
+        if self._summary_enabled:
+            self._upload_plugin()
+        
     def _check_label(self, elem_type: str):
         result = self.conn.get_table_names()
         if elem_type == "vertex":
-            return self._node_label in result["vertex_tables"]
+            return self._entity_type in result["vertex_tables"]
         if elem_type == "edge":
-            return self._edge_label in result["edge_tables"]
+            return self._relation_type in result["edge_tables"]
+
+    def _add_vertex_index(self, field_name):
+        gql = f"CALL db.addIndex('{self._entity_type}', '{field_name}', false)"
+        self.conn.run(gql)
+
+    def _upload_plugin(self):
+        gql = f"CALL db.plugin.listPlugin('CPP','v1')"
+        result = self.conn.run(gql)
+        result_names = [json.loads(record['plugin_description'])['name'] for record in result]
+        missing_plugins = [name for name in self._plugin_names if name not in result_names]
+        
+        if len(missing_plugins):
+            for name in missing_plugins:
+                from dbgpt_tugraph_plugins import get_plugin_binary_path
+                plugin_path = get_plugin_binary_path("leiden")
+                print(plugin_path)
+                with open(plugin_path, 'rb') as f:
+                    content = f.read()
+                content = base64.b64encode(content).decode()
+                gql = f"CALL db.plugin.loadPlugin('CPP','{name}','{content}','SO','{name} Plugin',false,'v1')"
+                self.conn.run(gql)
 
     def _create_schema(self):
         if not self._check_label("vertex"):
-            create_vertex_gql = (
-                f"CALL db.createLabel("
-                f"'vertex', '{self._node_label}', "
-                f"'id', ['id',string,false])"
-            )
-            self.conn.run(create_vertex_gql)
+            if self._summary_enabled:
+                create_vertex_gql = (
+                        f"CALL db.createLabel("
+                        f"'vertex', '{self._entity_type}', "
+                        f"'id', ['id',string,false],"
+                        f"['name',string,false],"
+                        f"['_document_id',string,true],"
+                        f"['_chunk_id',string,true],"
+                        f"['_community_id',string,true],"
+                        f"['_weight',double,true],"
+                        f"['description',string,true])"
+                    )   
+                self.conn.run(create_vertex_gql)
+                self._add_vertex_index('_community_id')
+            else:
+                create_vertex_gql = (
+                    f"CALL db.createLabel("
+                    f"'vertex', '{self._entity_type}', "
+                    f"'id', ['id',string,false],"
+                    f"['name',string,false])"
+                )
+                self.conn.run(create_vertex_gql)
+
         if not self._check_label("edge"):
             create_edge_gql = f"""CALL db.createLabel(
-                'edge', '{self._edge_label}', '[["{self._node_label}",
-                "{self._node_label}"]]', ["id",STRING,false])"""
-            self.conn.run(create_edge_gql)
+                    'edge', '{self._relation_type}', '[["{self._entity_type}",
+                    "{self._entity_type}"]]', ["id",STRING,false],["name",STRING,false])"""
+            if(self._summary_enabled):
+                create_edge_gql = f"""CALL db.createLabel(
+                    'edge', '{self._relation_type}', '[["{self._entity_type}",
+                    "{self._entity_type}"]]', ["id",STRING,false],["name",STRING,false],["description",STRING,true])"""
+            self.conn.run(create_edge_gql)   
+
+    def get_config(self):
+        """Get the graph store config."""
+        return self._config
 
     def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""
         query = (
-            f"MATCH (n1:{self._node_label})-[r]->(n2:{self._node_label}) "
+            f"MATCH (n1:{self._entity_type})-[r]->(n2:{self._entity_type}) "
             f'WHERE n1.id = "{subj}" RETURN r.id as rel, n2.id as obj;'
         )
         data = self.conn.run(query)
@@ -117,16 +186,50 @@ class TuGraphStore(GraphStoreBase):
         rel_escaped = escape_quotes(rel)
         obj_escaped = escape_quotes(obj)
 
-        subj_query = f"MERGE (n1:{self._node_label} {{id:'{subj_escaped}'}})"
-        obj_query = f"MERGE (n1:{self._node_label} {{id:'{obj_escaped}'}})"
-        rel_query = (
-            f"MERGE (n1:{self._node_label} {{id:'{subj_escaped}'}})"
-            f"-[r:{self._edge_label} {{id:'{rel_escaped}'}}]->"
-            f"(n2:{self._node_label} {{id:'{obj_escaped}'}})"
-        )
-        self.conn.run(query=subj_query)
-        self.conn.run(query=obj_query)
-        self.conn.run(query=rel_query)
+        node_query = f"CALL db.upsertVertex('{self._entity_type}', [{{id:'{subj_escaped}',name:'{subj_escaped}'}},{{id:'{obj_escaped}',name:'{obj_escaped}'}}])"
+        edge_query = f"""CALL db.upsertEdge('{self._relation_type}', {{type:"{self._entity_type}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{{sid:"{subj_escaped}", tid: "{obj_escaped}",id:"{rel_escaped}", name: "{rel_escaped}"}}])"""
+
+        self.conn.run(query=node_query)
+        self.conn.run(query=edge_query)
+
+    def insert_graph(self, graph:Graph) -> None:
+        """Add graph."""
+
+        def escape_quotes(value: str) -> str:
+            """Escape single and double quotes in a string for queries."""
+            if value is not None:
+                return value.replace("'", "").replace('"', '')
+
+        nodes:Iterator[Vertex] = graph.vertices()
+        edges:Iterator[Edge] = graph.edges()
+        node_list = []
+        edge_list = []
+        def parser(node_list):
+            return f"""{', '.join(['{' + ', '.join([f'{k}: "{v}"' if isinstance(v, str) else f'{k}: {v}' for k, v in node.items()]) + '}' for node in node_list])}"""
+            
+        for node in nodes:
+            node_list.append({
+                'id': escape_quotes(node.vid),
+                'name': escape_quotes(node.vid),
+                'description': escape_quotes(node.get_prop('description')) or '',
+                '_document_id': '0',
+                '_chunk_id': '0',
+                '_community_id': '1',
+                '_weight': 10
+            })
+        node_query = f"""CALL db.upsertVertex("{self._entity_type}", [{parser(node_list)}])"""
+        for edge in edges:
+            edge_list.append({
+                'sid':escape_quotes(edge.sid),
+                'tid':escape_quotes(edge.tid),
+                'id':escape_quotes(edge.get_prop('label')),
+                'name':escape_quotes(edge.get_prop('label')),
+                'description':escape_quotes(edge.get_prop('description'))
+            })    
+        
+        edge_query = f"""CALL db.upsertEdge("{self._relation_type}", {{type:"{self._entity_type}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{parser(edge_list)}])"""
+        self.conn.run(query=node_query)
+        self.conn.run(query=edge_query)
 
     def drop(self):
         """Delete Graph."""
@@ -135,9 +238,9 @@ class TuGraphStore(GraphStoreBase):
     def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         del_query = (
-            f"MATCH (n1:{self._node_label} {{id:'{sub}'}})"
-            f"-[r:{self._edge_label} {{id:'{rel}'}}]->"
-            f"(n2:{self._node_label} {{id:'{obj}'}}) DELETE n1,n2,r"
+            f"MATCH (n1:{self._entity_type} {{id:'{sub}'}})"
+            f"-[r:{self._relation_type} {{id:'{rel}'}}]->"
+            f"(n2:{self._entity_type} {{id:'{obj}'}}) DELETE n1,n2,r"
         )
         self.conn.run(query=del_query)
 
@@ -162,6 +265,9 @@ class TuGraphStore(GraphStoreBase):
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
+        if not subs:
+            return MemoryGraph()
+
         """Explore the graph from given subjects up to a depth."""
         if fan is not None:
             raise ValueError("Fan functionality is not supported at this time.")
@@ -171,19 +277,25 @@ class TuGraphStore(GraphStoreBase):
                 depth_string = ".."
 
             limit_string = f"LIMIT {limit}"
+            print(direct.name)
             if limit is None:
                 limit_string = ""
-
+            if direct.name == 'OUT':
+                rel = f"-[r:{self._relation_type}*{depth_string}]->"
+            elif direct.name == 'IN':
+                rel = f"<-[r:{self._relation_type}*{depth_string}]-"
+            else:
+                rel = f"-[r:{self._relation_type}*{depth_string}]-"
             query = (
-                f"MATCH p=(n:{self._node_label})"
-                f"-[r:{self._edge_label}*{depth_string}]-(m:{self._node_label}) "
+                f"MATCH p=(n:{self._entity_type})"
+                f"{rel}(m:{self._entity_type}) "
                 f"WHERE n.id IN {subs} RETURN p {limit_string}"
             )
             return self.query(query)
 
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""
-
+        
         def _format_paths(paths):
             formatted_paths = []
             for path in paths:
@@ -191,15 +303,22 @@ class TuGraphStore(GraphStoreBase):
                 nodes = list(path["p"].nodes)
                 rels = list(path["p"].relationships)
                 for i in range(len(nodes)):
-                    formatted_path.append(nodes[i]._properties["id"])
+                    formatted_path.append({
+                            "id":nodes[i]._properties["id"],
+                            "community_id":nodes[i]._properties.get("_community_id",""),
+                            "description":nodes[i]._properties.get("description","")
+                        })
                     if i < len(rels):
-                        formatted_path.append(rels[i]._properties["id"])
+                        formatted_path.append({
+                            "id":rels[i]._properties["id"],
+                            "description":rels[i]._properties.get("description",""),
+                        })    
                 formatted_paths.append(formatted_path)
             return formatted_paths
 
         def _format_query_data(data):
-            node_ids_set = set()
-            rels_set = set()
+            nodes_list = []
+            rels_list = []
             from neo4j import graph
 
             for record in data:
@@ -207,28 +326,60 @@ class TuGraphStore(GraphStoreBase):
                     value = record[key]
                     if isinstance(value, graph.Node):
                         node_id = value._properties["id"]
-                        node_ids_set.add(node_id)
+                        description = value._properties.get("description","")
+                        community_id = value._properties.get("community_id","")
+                        if not any(existing_node.get("id") == node_id  for existing_node in nodes_list):
+                            nodes_list.append({
+                                "id":node_id,
+                                "description":description
+                            })
                     elif isinstance(value, graph.Relationship):
                         rel_nodes = value.nodes
                         prop_id = value._properties["id"]
                         src_id = rel_nodes[0]._properties["id"]
                         dst_id = rel_nodes[1]._properties["id"]
-                        rels_set.add((src_id, dst_id, prop_id))
+                        description = value._properties.get("description","")
+                        if not any(existing_edge.get("prop_id") == prop_id and existing_edge.get("src_id")== src_id and existing_edge.get("dst_id")== dst_id for existing_edge in rels_list):
+                            rels_list.append({
+                                "src_id":src_id, 
+                                "dst_id":dst_id, 
+                                "prop_id":prop_id,
+                                "description":description
+                            })
                     elif isinstance(value, graph.Path):
                         formatted_paths = _format_paths(data)
-                        for path in formatted_paths:
-                            for i in range(0, len(path), 2):
-                                node_ids_set.add(path[i])
-                                if i + 2 < len(path):
-                                    rels_set.add((path[i], path[i + 2], path[i + 1]))
+                        for formatted_path in formatted_paths:
+                            
+                            for i in range(0, len(formatted_path), 2):
+                                if not any(existing_node.get("id") == formatted_path[i]['id']  for existing_node in nodes_list):
+                                    nodes_list.append({
+                                            "id":formatted_path[i]['id'],
+                                            "description":formatted_path[i]['description']    
+                                        })
+                                if i + 2 < len(formatted_path):
+                                    src_id = formatted_path[i]['id']
+                                    dst_id = formatted_path[i+2]['id']
+                                    prop_id = formatted_path[i + 1]['id']
+                                    if not any(existing_edge.get("prop_id") == prop_id and existing_edge.get("src_id")== src_id and existing_edge.get("dst_id")== dst_id for existing_edge in rels_list):
+                                        rels_list.append({
+                                            "src_id":src_id, 
+                                            "dst_id":dst_id, 
+                                            "prop_id":prop_id,
+                                            "description":formatted_path[i + 1]['description']
+                                        })             
+                    else:
+                        if not any(existing_node.get("id") == node_id  for existing_node in nodes_list):
+                            nodes_list.append({
+                                "id":"json_node",
+                                "description":value
+                            })
 
-            nodes = [Vertex(node_id) for node_id in node_ids_set]
+            nodes = [Vertex(node['id'],description=node['description']) for node in nodes_list]
             rels = [
-                Edge(src_id, dst_id, label=prop_id)
-                for (src_id, dst_id, prop_id) in rels_set
+                Edge(edge["src_id"], edge["dst_id"], label=edge["prop_id"],description=edge["description"])
+                for edge in rels_list
             ]
             return {"nodes": nodes, "edges": rels}
-
         result = self.conn.run(query=query)
         graph = _format_query_data(result)
         mg = MemoryGraph()
@@ -237,3 +388,46 @@ class TuGraphStore(GraphStoreBase):
         for edge in graph["edges"]:
             mg.append_edge(edge)
         return mg
+    
+    def stream_query(self, query: str) -> Generator[MemoryGraph, None, None]:
+        """Execute a stream query."""
+        from neo4j import graph
+        for record in self.conn.run_stream(query):
+            mg = MemoryGraph()
+            for key in record.keys():
+                value = record[key]
+                if isinstance(value, graph.Node):
+                    node_id = value._properties["id"]
+                    description = value._properties["description"]
+                    vertex = Vertex(node_id,description=description)
+                    mg.upsert_vertex(vertex)
+                elif isinstance(value, graph.Relationship):
+                    rel_nodes = value.nodes
+                    prop_id = value._properties["id"]
+                    src_id = rel_nodes[0]._properties["id"]
+                    dst_id = rel_nodes[1]._properties["id"]
+                    description = value._properties["description"]
+                    edge = Edge(src_id, dst_id, label=prop_id, description = description)
+                    mg.append_edge(edge)
+                elif isinstance(value, graph.Path):
+                    nodes = list(record["p"].nodes)
+                    rels = list(record["p"].relationships)
+                    formatted_path = []
+                    for i in range(len(nodes)):
+                        formatted_path.append({
+                            "id":nodes[i]._properties["id"],
+                            "description":nodes[i]._properties["description"]
+                        })
+                        if i < len(rels):
+                            formatted_path.append({
+                                "id":rels[i]._properties["id"],
+                                "description":rels[i]._properties["description"],
+                            })
+                    for i in range(0, len(formatted_path), 2):
+                        mg.upsert_vertex(Vertex(formatted_path[i]['id'],description=formatted_path[i]['description']))
+                        if i + 2 < len(formatted_path):
+                            mg.append_edge(Edge(formatted_path[i]['id'], formatted_path[i + 2]['id'], label = formatted_path[i + 1]['id'], description=formatted_path[i + 1]['description']))    
+                else:
+                    vertex = Vertex('json_node',description=value)
+                    mg.upsert_vertex(vertex)
+            yield mg
