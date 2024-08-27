@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 function Flow() {
   const router = useRouter();
-  const { model } = useContext(ChatContext);
+  const { model, currentDialogInfo, setCurrentDialogInfo } = useContext(ChatContext);
   const [messageApi, contextHolder] = message.useMessage();
 
   const [flowList, setFlowList] = useState<Array<IFlow>>([]);
@@ -114,6 +114,10 @@ function Flow() {
   const handleChat = async (flow: IFlow) => {
     const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
     if (res) {
+      setCurrentDialogInfo?.({
+        ...currentDialogInfo,
+        app_code: '',
+      });
       const queryStr = qs.stringify({
         scene: 'chat_flow',
         id: res.conv_uid,
