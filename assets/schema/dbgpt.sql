@@ -464,7 +464,7 @@ CREATE TABLE `user_recent_apps` (
   KEY `idx_user_r_app_code` (`app_code`),
   KEY `idx_last_accessed` (`last_accessed`),
   KEY `idx_user_code` (`user_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User recently used apps'
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User recently used apps';
 
 -- dbgpt.dbgpt_serve_dbgpts_my definition
 CREATE TABLE `dbgpts_my` (
@@ -483,7 +483,7 @@ CREATE TABLE `dbgpts_my` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`, `user_code`),
   KEY `ix_my_plugin_sys_code` (`sys_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- dbgpt.dbgpt_serve_dbgpts_hub definition
 CREATE TABLE `dbgpts_hub` (
@@ -502,7 +502,7 @@ CREATE TABLE `dbgpts_hub` (
   `installed` int DEFAULT NULL COMMENT 'plugin already installed count',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE
