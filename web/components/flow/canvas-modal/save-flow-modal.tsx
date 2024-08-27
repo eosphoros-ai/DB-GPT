@@ -16,7 +16,12 @@ type Props = {
   setIsSaveFlowModalOpen: (value: boolean) => void;
 };
 
-export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen, flowInfo, setIsSaveFlowModalOpen }) => {
+export const SaveFlowModal: React.FC<Props> = ({
+  reactFlow,
+  isSaveFlowModalOpen,
+  flowInfo,
+  setIsSaveFlowModalOpen,
+}) => {
   const [deploy, setDeploy] = useState(true);
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -36,12 +41,30 @@ export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen,
   }
 
   async function onSaveFlow() {
-    const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
+    const {
+      name,
+      label,
+      description = '',
+      editable = false,
+      state = 'deployed',
+    } = form.getFieldsValue();
     console.log(form.getFieldsValue());
-    const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
+    const reactFlowObject = mapHumpToUnderline(
+      reactFlow.toObject() as IFlowData
+    );
 
     if (id) {
-      const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject, state }));
+      const [, , res] = await apiInterceptors(
+        updateFlowById(id, {
+          name,
+          label,
+          description,
+          editable,
+          uid: id,
+          flow_data: reactFlowObject,
+          state,
+        })
+      );
 
       if (res?.success) {
         messageApi.success(t('save_flow_success'));
@@ -49,7 +72,16 @@ export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen,
         messageApi.error(res?.err_msg);
       }
     } else {
-      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject, state }));
+      const [_, res] = await apiInterceptors(
+        addFlow({
+          name,
+          label,
+          description,
+          editable,
+          flow_data: reactFlowObject,
+          state,
+        })
+      );
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
         const history = window.history;
@@ -62,6 +94,7 @@ export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen,
   return (
     <>
       <Modal
+        centered
         title={t('flow_modal_title')}
         open={isSaveFlowModalOpen}
         onCancel={() => {
@@ -71,22 +104,27 @@ export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen,
         okButtonProps={{ className: 'hidden' }}
       >
         <Form
-          name="flow_form"
+          name='flow_form'
           form={form}
           labelCol={{ span: 6 }}
           wrapperCol={{ span: 16 }}
-          style={{ maxWidth: 600 }}
+          className='mt-6 max-w-2xl'
           initialValues={{ remember: true }}
           onFinish={onSaveFlow}
-          autoComplete="off"
+          autoComplete='off'
         >
-          <Form.Item label="Title" name="label" initialValue={flowInfo?.label} rules={[{ required: true, message: 'Please input flow title!' }]}>
+          <Form.Item
+            label='Title'
+            name='label'
+            initialValue={flowInfo?.label}
+            rules={[{ required: true, message: 'Please input flow title!' }]}
+          >
             <Input onChange={onLabelChange} />
           </Form.Item>
 
           <Form.Item
-            label="Name"
-            name="name"
+            label='Name'
+            name='name'
             initialValue={flowInfo?.name}
             rules={[
               { required: true, message: 'Please input flow name!' },
@@ -94,7 +132,9 @@ export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen,
                 validator(_, value) {
                   const regex = /^[a-zA-Z0-9_\-]+$/;
                   if (!regex.test(value)) {
-                    return Promise.reject('Can only contain numbers, letters, underscores, and dashes');
+                    return Promise.reject(
+                      'Can only contain numbers, letters, underscores, and dashes'
+                    );
                   }
                   return Promise.resolve();
                 },
@@ -104,21 +144,32 @@ export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen,
             <Input />
           </Form.Item>
 
-          <Form.Item label="Description" initialValue={flowInfo?.description} name="description">
+          <Form.Item
+            label='Description'
+            initialValue={flowInfo?.description}
+            name='description'
+          >
             <TextArea rows={3} />
           </Form.Item>
 
-          <Form.Item label="Editable" name="editable" initialValue={flowInfo?.editable} valuePropName="checked">
+          <Form.Item
+            label='Editable'
+            name='editable'
+            initialValue={flowInfo?.editable}
+            valuePropName='checked'
+          >
             <Checkbox />
           </Form.Item>
 
-          <Form.Item hidden name="state">
+          <Form.Item hidden name='state'>
             <Input />
           </Form.Item>
 
-          <Form.Item label="Deploy">
+          <Form.Item label='Deploy'>
             <Checkbox
-              defaultChecked={flowInfo?.state === 'deployed' || flowInfo?.state === 'running'}
+              defaultChecked={
+                flowInfo?.state === 'deployed' || flowInfo?.state === 'running'
+              }
               checked={deploy}
               onChange={(e) => {
                 const val = e.target.checked;
@@ -131,15 +182,15 @@ export const SaveFlowModal: React.FC<Props> = ({ reactFlow, isSaveFlowModalOpen,
           <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
             <Space>
               <Button
-                htmlType="button"
+                htmlType='button'
                 onClick={() => {
                   setIsSaveFlowModalOpen(false);
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
-              <Button type="primary" htmlType="submit">
-                Submit
+              <Button type='primary' htmlType='submit'>
+                {t('verify')}
               </Button>
             </Space>
           </Form.Item>

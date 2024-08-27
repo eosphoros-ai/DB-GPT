@@ -184,7 +184,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
                           question={showMessages?.filter((e) => e?.role === 'human' && e?.order === content.order)[0]?.context}
                           knowledge_space={spaceNameOriginal || dbParam || ''}
                         />
-                        <Tooltip title={t('copy')}>
+                        <Tooltip title={t('Copy_Btn')}>
                           <Button
                             onClick={() => onCopyContext(content?.context)}
                             slots={{ root: IconButton }}
