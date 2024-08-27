@@ -16,7 +16,7 @@
     "@ant-design/icons": "^5.2.5",
     "@antv/ava": "3.5.0-alpha.4",
     "@antv/g2": "^5.1.8",
-    "@antv/gpt-vis": "^0.0.2",
+    "@antv/gpt-vis": "^0.0.5",
     "@antv/s2": "^1.51.2",
     "@berryv/g2-react": "^0.1.0",
     "@emotion/react": "^11.11.4",
