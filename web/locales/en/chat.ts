@@ -10,7 +10,6 @@ export const ChatEn = {
   thinking: 'Thinking',
   stop_replying: 'Stop replying',
   erase_memory: 'Erase Memory',
-  copy: 'Copy',
   copy_nothing: 'Content copied is empty',
   copy_success: 'Copy success',
   copy_failed: 'Copy failed',

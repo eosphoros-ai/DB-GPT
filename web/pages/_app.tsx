@@ -1,8 +1,11 @@
 import { ChatContext, ChatContextProvider } from '@/app/chat-context';
-import { addUser, apiInterceptors } from '@/client/api';
 import SideBar from '@/components/layout/side-bar';
 import TopProgressBar from '@/components/layout/top-progress-bar';
-import { STORAGE_LANG_KEY, STORAGE_USERINFO_KEY, STORAGE_USERINFO_VALID_TIME_KEY } from '@/utils/constants/index';
+import {
+  STORAGE_LANG_KEY,
+  STORAGE_USERINFO_KEY,
+  STORAGE_USERINFO_VALID_TIME_KEY,
+} from '@/utils/constants/index';
 import { App, ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
@@ -43,7 +46,9 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
   }, [mode]);
 
   useEffect(() => {
-    i18n.changeLanguage && i18n.changeLanguage(window.localStorage.getItem(STORAGE_LANG_KEY) || 'zh');
+    i18n.changeLanguage?.(
+      window.localStorage.getItem(STORAGE_LANG_KEY) || 'zh'
+    );
   }, [i18n]);
 
   return (
@@ -61,7 +66,6 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
 
-
   // 登录检测
   const handleAuth = async () => {
     setIsLogin(false);
@@ -74,14 +78,17 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
     var user_not_login_url = process.env.LOGIN_URL;
     // MOCK User info
     var user = {
-          user_channel: `dbgpt`,
-          user_no: `001`,
-          nick_name: `dbgpt`,
-        }
+      user_channel: `dbgpt`,
+      user_no: `001`,
+      nick_name: `dbgpt`,
+    };
     if (user) {
-        localStorage.setItem(STORAGE_USERINFO_KEY, JSON.stringify(user));
-        localStorage.setItem(STORAGE_USERINFO_VALID_TIME_KEY, Date.now().toString());
-        setIsLogin(true);
+      localStorage.setItem(STORAGE_USERINFO_KEY, JSON.stringify(user));
+      localStorage.setItem(
+        STORAGE_USERINFO_VALID_TIME_KEY,
+        Date.now().toString()
+      );
+      setIsLogin(true);
     }
   };
 
@@ -98,16 +105,28 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
       return <>{children}</>;
     }
     return (
-      <div className="flex w-screen h-screen overflow-hidden">
+      <div className='flex w-screen h-screen overflow-hidden'>
         <Head>
-          <meta name="viewport" content="initial-scale=1.0, width=device-width, maximum-scale-1" />
+          <meta
+            name='viewport'
+            content='initial-scale=1.0, width=device-width, maximum-scale=1'
+          />
         </Head>
         {router.pathname !== '/construct/app/extra' && (
-          <div className={classNames('transition-[width]', isMenuExpand ? 'w-60' : 'w-20', 'hidden', 'md:block')}>
+          <div
+            className={classNames(
+              'transition-[width]',
+              isMenuExpand ? 'w-60' : 'w-20',
+              'hidden',
+              'md:block'
+            )}
+          >
             <SideBar />
           </div>
         )}
-        <div className="flex flex-col flex-1 relative overflow-hidden">{children}</div>
+        <div className='flex flex-col flex-1 relative overflow-hidden'>
+          {children}
+        </div>
         <FloatHelper />
       </div>
     );
