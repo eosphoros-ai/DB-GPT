@@ -158,6 +158,7 @@ thirdparty
 #web
 # dependencies
 /web/node_modules
+/web/yarn.lock
 
 .idea
 # next.js
@@ -171,7 +172,6 @@ thirdparty
 /web/npm-debug.log*
 /web/yarn-debug.log*
 /web/yarn-error.log*
-/web/yarn.lock
 
 # local env files
 /web/.env.prod
