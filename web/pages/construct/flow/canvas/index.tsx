@@ -1,31 +1,31 @@
-import { apiInterceptors, getFlowById } from "@/client/api";
-import MuiLoading from "@/components/common/loading";
-import AddNodes from "@/components/flow/add-nodes";
-import AddNodesSider from "@/components/flow/add-nodes-sider";
-import ButtonEdge from "@/components/flow/button-edge";
-import CanvasNode from "@/components/flow/canvas-node";
-import { IFlowData, IFlowUpdateParam } from "@/types/flow";
+import { apiInterceptors, getFlowById } from '@/client/api';
+import MuiLoading from '@/components/common/loading';
+import AddNodes from '@/components/flow/add-nodes';
+import AddNodesSider from '@/components/flow/add-nodes-sider';
+import ButtonEdge from '@/components/flow/button-edge';
+import CanvasNode from '@/components/flow/canvas-node';
+import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import {
   checkFlowDataRequied,
   getUniqueNodeId,
   mapUnderlineToHump,
-} from "@/utils/flow";
+} from '@/utils/flow';
 import {
   ExportOutlined,
   FrownOutlined,
   ImportOutlined,
   SaveOutlined,
-} from "@ant-design/icons";
-import { Divider, Space, Tooltip, message, notification } from "antd";
-import { useSearchParams } from "next/navigation";
+} from '@ant-design/icons';
+import { Divider, Space, Tooltip, message, notification } from 'antd';
+import { useSearchParams } from 'next/navigation';
 import React, {
   DragEvent,
   useCallback,
   useEffect,
   useRef,
   useState,
-} from "react";
-import { useTranslation } from "react-i18next";
+} from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactFlow, {
   Background,
   Connection,
@@ -36,13 +36,13 @@ import ReactFlow, {
   useNodesState,
   useReactFlow,
   Node,
-} from "reactflow";
-import "reactflow/dist/style.css";
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import {
   SaveFlowModal,
   ExportFlowModal,
   ImportFlowModal,
-} from "@/components/flow/canvas-modal";
+} from '@/components/flow/canvas-modal';
 
 interface Props {
   // Define your component props here
@@ -54,7 +54,7 @@ const Canvas: React.FC<Props> = () => {
   const { t } = useTranslation();
 
   const searchParams = useSearchParams();
-  const id = searchParams?.get("id") || "";
+  const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
 
   const [loading, setLoading] = useState(false);
@@ -87,10 +87,10 @@ const Canvas: React.FC<Props> = () => {
       event.returnValue = message;
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 
@@ -116,7 +116,7 @@ const Canvas: React.FC<Props> = () => {
   function onConnect(connection: Connection) {
     const newEdge = {
       ...connection,
-      type: "buttonedge",
+      type: 'buttonedge',
       id: `${connection.source}|${connection.target}`,
     };
     setEdges((eds) => addEdge(newEdge, eds));
@@ -126,13 +126,18 @@ const Canvas: React.FC<Props> = () => {
     (event: DragEvent) => {
       event.preventDefault();
       const reactFlowBounds = reactFlowWrapper.current!.getBoundingClientRect();
-      let nodeStr = event.dataTransfer.getData("application/reactflow");
-      if (!nodeStr || typeof nodeStr === "undefined") {
+      const sidebarWidth = (
+        document.getElementsByClassName('ant-layout-sider')?.[0] as HTMLElement
+      )?.offsetWidth; // get sidebar width
+
+      let nodeStr = event.dataTransfer.getData('application/reactflow');
+      if (!nodeStr || typeof nodeStr === 'undefined') {
         return;
       }
+
       const nodeData = JSON.parse(nodeStr);
       const position = reactFlow.screenToFlowPosition({
-        x: event.clientX - reactFlowBounds.left,
+        x: event.clientX - reactFlowBounds.left + sidebarWidth,
         y: event.clientY - reactFlowBounds.top,
       });
       const nodeId = getUniqueNodeId(nodeData, reactFlow.getNodes());
@@ -140,7 +145,7 @@ const Canvas: React.FC<Props> = () => {
       const newNode = {
         id: nodeId,
         position,
-        type: "customNode",
+        type: 'customNode',
         data: nodeData,
       };
       setNodes((nds) =>
@@ -165,7 +170,7 @@ const Canvas: React.FC<Props> = () => {
 
   const onDragOver = useCallback((event: DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
+    event.dataTransfer.dropEffect = 'move';
   }, []);
 
   function onSave() {
@@ -189,9 +194,9 @@ const Canvas: React.FC<Props> = () => {
         })
       );
       return notification.error({
-        message: "Error",
+        message: 'Error',
         description: message,
-        icon: <FrownOutlined className="text-red-600" />,
+        icon: <FrownOutlined className='text-red-600' />,
       });
     }
     setIsSaveFlowModalOpen(true);
@@ -205,53 +210,49 @@ const Canvas: React.FC<Props> = () => {
     setIsImportFlowModalOpen(true);
   }
 
+  const getButtonList = () => {
+    const buttonList = [
+      {
+        title: t('Import'),
+        icon: <ImportOutlined className='block text-xl' onClick={onImport} />,
+      },
+      {
+        title: t('save'),
+        icon: <SaveOutlined className='block text-xl' onClick={onSave} />,
+      },
+    ];
+
+    if (id !== '') {
+      buttonList.unshift({
+        title: t('Export'),
+        icon: <ExportOutlined className='block text-xl' onClick={onExport} />,
+      });
+    }
+
+    return buttonList;
+  };
+
   return (
     <>
-      <div className="flex flex-row">
+      <div className='flex flex-row'>
         <AddNodesSider />
 
-        <div className="flex flex-col flex-1">
-          <Space className="my-2 mx-4 flex flex-row justify-end">
-            {[
-              {
-                title: t("Import"),
-                icon: (
-                  <ImportOutlined
-                    className="block text-xl"
-                    onClick={onImport}
-                  />
-                ),
-              },
-              (id !== '' && {
-                title: t("Export"),
-                icon: (
-                  <ExportOutlined
-                    className="block text-xl"
-                    onClick={onExport}
-                  />
-                )
-              }
-              ),
-              {
-                title: t("save"),
-                icon: (
-                  <SaveOutlined className="block text-xl" onClick={onSave} />
-                ),
-              },
-            ].map(({ title, icon }) => (
+        <div className='flex flex-col flex-1'>
+          <Space className='my-2 mx-4 flex flex-row justify-end'>
+            {getButtonList().map(({ title, icon }) => (
               <Tooltip
                 key={title}
                 title={title}
-                className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 hover:text-blue-500 dark:hover:text-zinc-100"
+                className='w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 hover:text-blue-500 dark:hover:text-zinc-100'
               >
                 {icon}
               </Tooltip>
             ))}
           </Space>
 
-          <Divider className="mt-0 mb-0" />
+          <Divider className='mt-0 mb-0' />
 
-          <div className="h-[calc(100vh-48px)] w-full" ref={reactFlowWrapper}>
+          <div className='h-[calc(100vh-48px)] w-full' ref={reactFlowWrapper}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -265,13 +266,13 @@ const Canvas: React.FC<Props> = () => {
               onDragOver={onDragOver}
               minZoom={0.1}
               fitView
-              deleteKeyCode={["Backspace", "Delete"]}
+              deleteKeyCode={['Backspace', 'Delete']}
             >
               <Controls
-                className="flex flex-row items-center"
-                position="bottom-center"
+                className='flex flex-row items-center'
+                position='bottom-center'
               />
-              <Background color="#aaa" gap={16} />
+              <Background color='#aaa' gap={16} />
               {/* <AddNodes /> */}
             </ReactFlow>
           </div>

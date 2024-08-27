@@ -183,7 +183,7 @@ const AddNodesSider: React.FC = () => {
 
   return (
     <Sider
-      className=' flex justify-center items-start nodrag bg-[#ffffff80] border-r border-[#d5e5f6] dark:bg-[#ffffff29] dark:border-[#ffffff66]'
+      className='flex justify-center items-start nodrag bg-[#ffffff80] border-r border-[#d5e5f6] dark:bg-[#ffffff29] dark:border-[#ffffff66]'
       theme={mode}
       width={280}
       collapsible={true}
