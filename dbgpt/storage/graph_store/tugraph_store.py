@@ -63,8 +63,6 @@ class TuGraphStore(GraphStoreBase):
         self._port = int(os.getenv("TUGRAPH_PORT", config.port))
         self._username = os.getenv("TUGRAPH_USERNAME", config.username)
         self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
-        self._vertex_white_prop = ['_community_id']
-        self._edge_white_prop = []
         self._summary_enabled = (
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
             or config.summary_enabled
@@ -166,9 +164,10 @@ class TuGraphStore(GraphStoreBase):
                     'edge', '{self._edge_type}', '[["{self._vertex_type}",
                     "{self._vertex_type}"]]', ["id",STRING,false],["name",STRING,false],["description",STRING,true])"""
             self.conn.run(create_edge_gql)
-    def _format_query_data(self, data):
+    def _format_query_data(self, data, white_prop_list:List[str]):
         nodes_list = []
         rels_list = []
+        _white_list = white_prop_list
         from neo4j import graph
         def get_filtered_properties(properties, white_list):
             return {
@@ -179,7 +178,7 @@ class TuGraphStore(GraphStoreBase):
         def process_node(node: graph.Node):
             node_id = node._properties.get("id")
             node_name = node._properties.get("name")
-            node_properties = get_filtered_properties(node._properties, self._vertex_white_prop)
+            node_properties = get_filtered_properties(node._properties, _white_list)
             nodes_list.append({"id": node_id, "name": node_name, "properties": node_properties})
 
         def process_relationship(rel: graph.Relationship):
@@ -189,7 +188,7 @@ class TuGraphStore(GraphStoreBase):
             dst_id = rel_nodes[1]._properties.get("id")
             for node in rel_nodes:
                 process_node(node)
-            edge_properties = get_filtered_properties(rel._properties, self._edge_white_prop)
+            edge_properties = get_filtered_properties(rel._properties, _white_list)
             if not any(
                 existing_edge.get("name") == name
                 and existing_edge.get("src_id") == src_id
@@ -339,14 +338,13 @@ class TuGraphStore(GraphStoreBase):
         """Get full graph."""
         if not limit:
             raise Exception("limit must be set")
-        all_vertex_graph = self.query(f"MATCH (n) RETURN n LIMIT {limit}")
-        all_edge_graph = self.query(f"MATCH (n)-[r]-(m) RETURN n,r,m LIMIT {limit}")
+        all_vertex_graph = self.query(f"MATCH (n) RETURN n LIMIT {limit}",white_list=['_community_id'])
+        all_edge_graph = self.query(f"MATCH (n)-[r]-(m) RETURN n,r,m LIMIT {limit}", white_list=['_community_id'])
         all_graph = MemoryGraph()
         for vertex in all_vertex_graph.vertices():
             all_graph.upsert_vertex(vertex)
         for edge in all_edge_graph.edges():
             all_graph.append_edge(edge)
-
         return all_graph
 
     def explore(
@@ -387,7 +385,8 @@ class TuGraphStore(GraphStoreBase):
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""
         result = self.conn.run(query=query)
-        graph = self._format_query_data(result)
+        white_list = args.get('white_list',[]) 
+        graph = self._format_query_data(result,white_list)
         mg = MemoryGraph()
         for vertex in graph["nodes"]:
             mg.upsert_vertex(vertex)
