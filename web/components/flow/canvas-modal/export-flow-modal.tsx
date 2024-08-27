@@ -22,23 +22,23 @@ export const ExportFlowModal: React.FC<Props> = ({
   const [messageApi, contextHolder] = message.useMessage();
 
   const onFlowExport = async (values: any) => {
-    const flowData = reactFlow.toObject() as IFlowData;
-    const blob = new Blob([JSON.stringify(flowData)], {
-      type: 'text/plain;charset=utf-8',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = values.file_name || 'flow.json';
-    a.click();
 
-    const [, , res] = await apiInterceptors(exportFlow(values), '*');
+    if (values.format === 'json') {
+      const flowData = reactFlow.toObject() as IFlowData;
+      const blob = new Blob([JSON.stringify(flowData)], {
+        type: 'text/plain;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = values.file_name || 'flow.json';
+      a.click();
+    }else{
+        const linkUrl = `${process.env.API_BASE_URL}/api/v2/serve/awel/flow/export/${values.uid}?export_type=${values.export_type}&format=${values.format}`
+        window.open(linkUrl)
 
-    if (res?.success) {
-      messageApi.success(t('Export_Flow_Success'));
-    } else if (res?.err_msg) {
-      messageApi.error(res?.err_msg);
     }
+    messageApi.success(t('Export_Flow_Success'));
 
     setIsExportFlowModalOpen(false);
   };
