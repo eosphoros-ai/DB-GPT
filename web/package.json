@@ -16,6 +16,7 @@
     "@ant-design/icons": "^5.2.5",
     "@antv/ava": "3.5.0-alpha.4",
     "@antv/g2": "^5.1.8",
+    "@antv/gpt-vis": "^0.0.5",
     "@antv/s2": "^1.51.2",
     "@berryv/g2-react": "^0.1.0",
     "@emotion/react": "^11.11.4",
@@ -55,13 +56,12 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^13.2.0",
-    "react-markdown": "^8.0.7",
     "react-markdown-editor-lite": "^1.3.4",
     "react-syntax-highlighter": "^15.5.0",
     "react-virtualized": "^9.22.5",
     "reactflow": "^11.10.3",
-    "rehype-raw": "6.1.1",
-    "remark-gfm": "^3.0.1",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.0",
     "sequelize": "^6.33.0",
     "sql-formatter": "^12.2.4",
     "tailwindcss": "3.3.2",
@@ -69,8 +69,8 @@
     "typescript": "5.1.3"
   },
   "devDependencies": {
-    "@types/cytoscape": "^3.21.0",
     "@types/crypto-js": "^4.1.2",
+    "@types/cytoscape": "^3.21.0",
     "@types/google-one-tap": "^1.2.4",
     "@types/lodash": "^4.14.195",
     "@types/markdown-it": "^14.1.1",
@@ -94,5 +94,20 @@
   },
   "author": "",
   "license": "ISC",
-  "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git"
+  "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
+  "resolutions": {
+    "d3-color": "2",
+    "d3-array": "2",
+    "d3-shape": "2",
+    "d3-path": "2",
+    "d3-dsv": "2",
+    "d3-hierarchy": "2",
+    "d3-scale-chromatic": "2",
+    "d3-format": "2",
+    "d3-timer": "2",
+    "d3-dispatch": "2",
+    "d3-quadtree": "2",
+    "d3-force": "2",
+    "d3-geo": "2"
+  }
 }

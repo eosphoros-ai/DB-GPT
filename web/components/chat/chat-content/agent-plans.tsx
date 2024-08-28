@@ -1,6 +1,6 @@
 import { CaretRightOutlined, CheckOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { Collapse } from 'antd';
-import ReactMarkdown from 'react-markdown';
+import { GPTVis } from '@antv/gpt-vis';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
@@ -32,7 +32,7 @@ function AgentPlans({ data }: Props) {
               <span>
                 {item.name} - {item.agent}
               </span>
-              {item.status === 'complete' ? (
+              {item.status === "complete" ? (
                 <CheckOutlined className="!text-green-500 ml-2" />
               ) : (
                 <ClockCircleOutlined className="!text-gray-500 ml-2" />
@@ -40,9 +40,13 @@ function AgentPlans({ data }: Props) {
             </div>
           ),
           children: (
-            <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+            <GPTVis
+              components={markdownComponents}
+              rehypePlugins={[rehypeRaw]}
+              remarkPlugins={[remarkGfm]}
+            >
               {item.markdown}
-            </ReactMarkdown>
+            </GPTVis>
           ),
         };
       })}
