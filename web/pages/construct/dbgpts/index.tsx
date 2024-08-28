@@ -222,7 +222,7 @@ function Agent() {
               <BlurredCard
                 logo={logoFn(agent.type)}
                 onClick={() => {
-                  if (agent.storage_url) window.open(agent.storage_url, '_blank');
+                  window.open(`https://github.com/eosphoros-ai/dbgpts/tree/main/${agent.type}/${agent.name}`, '_blank');
                 }}
                 description={agent.description}
                 name={agent.name}
