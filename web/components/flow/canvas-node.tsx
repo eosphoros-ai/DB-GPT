@@ -23,7 +23,7 @@ type CanvasNodeProps = {
 function TypeLabel({ label }: { label: string }) {
   return <div className='w-full h-8 align-middle font-semibold'>{label}</div>;
 }
-const forceTypeList = ['file', 'multiple_files', 'time'];
+const forceTypeList = ['file', 'multiple_files', 'time','images','csv_file'];
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const node = data;
