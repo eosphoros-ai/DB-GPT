@@ -23,7 +23,6 @@ type CanvasNodeProps = {
 function TypeLabel({ label }: { label: string }) {
   return <div className='w-full h-8 align-middle font-semibold'>{label}</div>;
 }
-const forceTypeList = ['file', 'multiple_files', 'time','images','csv_file'];
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const node = data;
@@ -135,10 +134,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
 
   function onParameterValuesChange(changedValues: any, allValues: any) {
     const [changedKey, changedVal] = Object.entries(changedValues)[0];
-
-    if (!allValues?.force && forceTypeList.includes(changedKey)) {
-      return;
-    }
+   
     updateCurrentNodeValue(changedKey, changedVal);
     if (changedVal) {
       updateDependsNodeValue(changedKey, changedVal);
