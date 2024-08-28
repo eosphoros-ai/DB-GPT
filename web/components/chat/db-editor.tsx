@@ -460,7 +460,7 @@ function DbEditor() {
     if (!value) {
       return { sql: '', thoughts: '' };
     }
-    const match = value && value.match(/(--.*)\n([\s\S]*)/);
+    const match = value && value.match(/(--.*)?\n?([\s\S]*)/);
     let thoughts = '';
     let sql;
     if (match && match.length >= 3) {
