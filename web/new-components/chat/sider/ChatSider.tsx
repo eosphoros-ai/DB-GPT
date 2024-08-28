@@ -28,7 +28,6 @@ const zeroWidthTriggerDefaultStyle: React.CSSProperties = {
 };
 
 /**
- *
  * 会话项
  */
 const MenuItem: React.FC<{ item: any; refresh?: any; order: React.MutableRefObject<number>; historyLoading?: boolean }> = ({
@@ -41,7 +40,7 @@ const MenuItem: React.FC<{ item: any; refresh?: any; order: React.MutableRefObje
   const router = useRouter();
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
-  const scene = searchParams?.get('scene') ?? '';
+  const scene = searchParams?.get('scene') ?? '';  
 
   const { setCurrentDialogInfo } = useContext(ChatContext);
 

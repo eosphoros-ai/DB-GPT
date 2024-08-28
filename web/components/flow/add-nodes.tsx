@@ -100,6 +100,7 @@ const AddNodes: React.FC = () => {
         <div className="w-[320px] overflow-hidden overflow-y-auto scrollbar-default">
           <p className="my-2 font-bold">{t('add_node')}</p>
           <Search placeholder="Search node" onSearch={searchNode} />
+
           <h2 className="my-2 ml-2 font-semibold">{t('operators')}</h2>
           <Collapse
             className="max-h-[300px] overflow-hidden overflow-y-auto scrollbar-default"
@@ -107,6 +108,7 @@ const AddNodes: React.FC = () => {
             defaultActiveKey={['']}
             items={operatorItems}
           />
+          
           <h2 className="my-2 ml-2 font-semibold">{t('resource')}</h2>
           <Collapse
             className="max-h-[300px] overflow-hidden overflow-y-auto scrollbar-default"
@@ -122,7 +124,7 @@ const AddNodes: React.FC = () => {
         className="flex items-center justify-center rounded-full left-4 top-4"
         style={{ zIndex: 1050 }}
         icon={<PlusOutlined />}
-      ></Button>
+      />
     </Popover>
   );
 };

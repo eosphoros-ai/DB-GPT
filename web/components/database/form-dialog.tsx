@@ -3,7 +3,7 @@ import { Button, Form, Input, InputNumber, Modal, Select, Spin, Tooltip, message
 import { useEffect, useMemo, useState } from 'react';
 import { addOmcDB, apiInterceptors, getSupportDBList, postDbAdd, postDbEdit, postDbTestConnect } from '@/client/api';
 import { DBOption, DBType, DbListResponse, PostDbParams } from '@/types/db';
-import { isFileDb } from '@/pages/database';
+import { isFileDb } from '@/pages/construct/database';
 import { useTranslation } from 'react-i18next';
 import { useDebounceFn } from 'ahooks';
 

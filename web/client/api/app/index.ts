@@ -1,5 +1,12 @@
-import { AppListResponse, CreateAppParams, IAgent, IApp, NativeAppScenesResponse, StrategyResponse, TeamMode } from '@/types/app';
-import { IFlowResponse } from '@/types/flow';
+import {
+  AppListResponse,
+  CreateAppParams,
+  IAgent,
+  IApp,
+  NativeAppScenesResponse,
+  StrategyResponse,
+  TeamMode,
+} from '@/types/app';
 
 import { GET, POST } from '../index';
 
@@ -45,7 +52,9 @@ export const getAppStrategy = () => {
  *  获取资源参数
  */
 export const getResource = (data: Record<string, string>) => {
-  return GET<Record<string, string>, Record<string, any>[]>(`/api/v1/app/resources/list?type=${data.type}`);
+  return GET<Record<string, string>, Record<string, any>[]>(
+    `/api/v1/app/resources/list?type=${data.type}`
+  );
 };
 /**
  *  创建native_app应用
@@ -61,13 +70,7 @@ export const getNativeAppScenes = () => {
 export const getAppStrategyValues = (type: string) => {
   return GET<string, string[]>(`/api/v1/llm-strategy/value/list?type=${type}`);
 };
-/**
- * 创建awel_layout应用
- * 获取工作流
- */
-export const getFlows = ({ page, page_size }: { page: number; page_size: number }) => {
-  return GET<{ page: number; page_size: number }, IFlowResponse>(`/api/v1/serve/awel/flows?page=${page}&page_size=${page_size}`);
-};
+
 /**
  * 查询应用权限
  */
@@ -77,6 +80,12 @@ export const getAppAdmins = (appCode: string) => {
 /**
  * 更新应用权限
  */
-export const updateAppAdmins = (data: { app_code: string; admins: string[] }) => {
-  return POST<{ app_code: string; admins: string[] }, null>(`/api/v1/app/admins/update`, data);
+export const updateAppAdmins = (data: {
+  app_code: string;
+  admins: string[];
+}) => {
+  return POST<{ app_code: string; admins: string[] }, null>(
+    `/api/v1/app/admins/update`,
+    data
+  );
 };
