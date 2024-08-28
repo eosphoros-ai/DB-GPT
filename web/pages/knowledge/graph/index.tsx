@@ -13,12 +13,7 @@ import type {
 } from "@antv/g6";
 import type { GraphVisResult } from "../../../types/knowledge";
 import { Graphin } from "@antv/graphin";
-import {
-  getCommunityId,
-  getNodeDegree,
-  getNodeSize,
-  isInCommunity,
-} from "./util";
+import { getNodeDegree, getNodeSize, isInCommunity } from "./util";
 import { ConnectedComponent } from "./extension/connected-component";
 import { groupBy } from "lodash";
 
@@ -62,10 +57,6 @@ function GraphVis() {
       data: edge,
     }));
 
-    nodes.forEach((datum) => {
-      datum.data.communityId = getCommunityId(edges, idOf(datum));
-    });
-
     return { nodes, edges };
   };
 
@@ -91,7 +82,7 @@ function GraphVis() {
       );
       const plugins: PluginOptions = [];
       Object.entries(groupedNodes).forEach(([key, nodes]) => {
-        if (nodes.length < 2) return;
+        if (!key || nodes.length < 2) return;
         const color = graphRef.current?.getElementRenderStyle(
           idOf(nodes[0])
         ).fill;
@@ -124,6 +115,8 @@ function GraphVis() {
           labelBackgroundFill: "#e5e7eb",
           labelPadding: [0, 6],
           labelBackgroundRadius: 4,
+          labelMaxWidth: "400%",
+          labelWordWrap: true,
         };
         if (!isInCommunity(graphData, idOf(d))) {
           Object.assign(style, { fill: "#b0b0b0" });
@@ -131,6 +124,10 @@ function GraphVis() {
         return style;
       },
       state: {
+        selected: {
+          lineWidth: 2,
+          labelWordWrap: false,
+        },
         inactive: {
           label: false,
         },
@@ -154,8 +151,14 @@ function GraphVis() {
         labelBackgroundFill: "#e5e7eb",
         labelPadding: [0, 6],
         labelBackgroundRadius: 4,
+        labelMaxWidth: "60%",
+        labelWordWrap: true,
       },
       state: {
+        selected: {
+          stroke: "#b0b0b0",
+          labelWordWrap: false,
+        },
         inactive: {
           label: false,
         },
@@ -168,9 +171,8 @@ function GraphVis() {
       {
         type: "hover-activate",
         degree: 1,
-        inactiveState: "inactive",
-        enable: (event: IPointerEvent) =>
-          ["node", "edge"].includes(event.targetType),
+        state: "selected",
+        enable: (event: IPointerEvent) => ["node"].includes(event.targetType),
       },
     ],
     animation: false,
@@ -178,11 +180,7 @@ function GraphVis() {
       { type: "connected-component" },
       {
         type: "force",
-        preventOverlap: true,
-        leafCluster: true,
-        clustering: false,
-        nodeClusterBy: "communityId",
-        clusterNodeStrength: 600,
+        clustering: true,
       },
     ],
     transforms: ["process-parallel-edges"],
