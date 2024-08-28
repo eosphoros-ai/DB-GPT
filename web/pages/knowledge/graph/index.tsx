@@ -13,8 +13,12 @@ import type {
 } from "@antv/g6";
 import type { GraphVisResult } from "../../../types/knowledge";
 import { Graphin } from "@antv/graphin";
-import { getNodeDegree, getNodeSize, isInCommunity } from "./util";
-import { ConnectedComponent } from "./extension/connected-component";
+import {
+  getNodeDegree,
+  getNodeSize,
+  isInCommunity,
+  ConnectedComponent,
+} from "../../../utils/graph";
 import { groupBy } from "lodash";
 
 type GraphVisData = GraphVisResult | null;

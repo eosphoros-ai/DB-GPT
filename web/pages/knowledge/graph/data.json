@@ -1,0 +1,4902 @@
+{
+  "nodes": [
+    {
+      "vid": "A Distributed In-Memory Graph Database",
+      "communityId": "0",
+      "props": {
+        "description": "一篇涉及分布式内存图数据库的论文",
+        "_community_id": "0"
+      }
+    },
+    {
+      "vid": "ASPIRE",
+      "communityId": "1",
+      "props": {
+        "description": "利用异步并行性进行迭代算法的放松一致性基础DSM系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "AeonG",
+      "communityId": "2",
+      "props": {
+        "description": "一个高效内置时间支持的图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "AsynGraph",
+      "communityId": "1",
+      "props": {
+        "description": "一个异步图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Auxo",
+      "communityId": "1",
+      "props": {
+        "description": "时间图管理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "BG3",
+      "communityId": "2",
+      "props": {
+        "description": "字节跳动的高性价比及I/O高效图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "Blaze",
+      "communityId": "1",
+      "props": {
+        "description": "快速的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "BlitzG",
+      "communityId": "1",
+      "props": {
+        "description": "高带宽网络下的快速图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Blogel",
+      "communityId": "1",
+      "props": {
+        "description": "图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "ByteGraph",
+      "communityId": "2",
+      "props": {
+        "description": "基于字节跳动的高性能分布式图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "CGgraph",
+      "communityId": "1",
+      "props": {
+        "description": "在现代商品CPU-GPU协同处理器上实现的超快图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "CGraph",
+      "communityId": "1",
+      "props": {
+        "description": "有效并发迭代图处理的相关性感知方法",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "CLIP",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphABCD的连接实体",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "CSMqGraph",
+      "communityId": "1",
+      "props": {
+        "description": "一种用于图计算的粗粒度多外部存储多队列I/O管理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Chaos",
+      "communityId": "1",
+      "props": {
+        "description": "用于二级存储的扩展图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Chronograph",
+      "communityId": "1",
+      "props": {
+        "description": "在线与批处理计算的分布式处理平台",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Chronos",
+      "communityId": "1",
+      "props": {
+        "description": "时间图分析的图引擎",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "CoRAL",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphPulse相关的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "CommonGraph",
+      "communityId": "1",
+      "props": {
+        "description": "图数据分析平台，用于处理动态数据",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "CuSha",
+      "communityId": "1",
+      "props": {
+        "description": "基于GPU的顶点中心图处理方法",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Cymbalo",
+      "communityId": "1",
+      "props": {
+        "description": "高效的图处理框架，用于机器学习",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "D2Graph",
+      "communityId": "1",
+      "props": {
+        "description": "与EPGraph相关的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "DD-Graph",
+      "communityId": "1",
+      "props": {
+        "description": "一种高性价比的分布式磁盘图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "DFOGraph",
+      "communityId": "1",
+      "props": {
+        "description": "为分布式全核心图处理提供I/O和通信效率的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "DZiG",
+      "communityId": "1",
+      "props": {
+        "description": "稀疏感知增量处理流图的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "DepGraph",
+      "communityId": "1",
+      "props": {
+        "description": "依赖驱动的高效迭代图处理加速器",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "DiGraph",
+      "communityId": "1",
+      "props": {
+        "description": "多GPU上高效的迭代有向图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Differential dataflow",
+      "communityId": "1",
+      "props": {
+        "description": "一种数据流模型",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Distributed GraphLab",
+      "communityId": "1",
+      "props": {
+        "description": "用于云中机器学习和数据挖掘的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "DiterGraph",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphPulse相关的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "DynamoGraph",
+      "communityId": "1",
+      "props": {
+        "description": "一个用于大规模时间图处理的分布式系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "论文标题",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "EGraph",
+      "communityId": "1",
+      "props": {
+        "description": "高效的并发GPU动态图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "EPGraph",
+      "communityId": "1",
+      "props": {
+        "description": "持久性内存系统中的高效图计算模型",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "EmptyHeaded",
+      "communityId": "1",
+      "props": {
+        "description": "用于图处理的关系引擎",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "FBSGraph",
+      "communityId": "1",
+      "props": {
+        "description": "高吞吐量并发图处理的高效存储系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "FENNEL",
+      "communityId": "5",
+      "props": {
+        "description": "流式图形分区系统",
+        "_community_id": "5"
+      }
+    },
+    {
+      "vid": "FOG",
+      "communityId": "1",
+      "props": {
+        "description": "快速的外存图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Fargraph+",
+      "communityId": "1",
+      "props": {
+        "description": "基于RDMA的远程内存系统中的图处理工作负载并行性挖掘",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "FlashGraph",
+      "communityId": "1",
+      "props": {
+        "description": "处理十亿节点图的系统，基于商品级SSD",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "ForeGraph",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphABCD的连接实体",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Frog",
+      "communityId": "1",
+      "props": {
+        "description": "异步图处理的GPU混合着色模型",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "G-Sdstre",
+      "communityId": "1",
+      "props": {
+        "description": "图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "G-Tran",
+      "communityId": "2",
+      "props": {
+        "description": "具有去中心化架构的高性能分布式图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "GBASE",
+      "communityId": "1",
+      "props": {
+        "description": "图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GFlink",
+      "communityId": "1",
+      "props": {
+        "description": "一种内存计算架构，适用于异构CPU-GPU集群",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GGraph",
+      "communityId": "1",
+      "props": {
+        "description": "未提供具体描述的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GPOP",
+      "communityId": "1",
+      "props": {
+        "description": "可扩展的缓存和内存高效的框架用于图处理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GPS",
+      "communityId": "1",
+      "props": {
+        "description": "图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GRAM",
+      "communityId": "1",
+      "props": {
+        "description": "支持到万亿的图计算框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GRAPE",
+      "communityId": "1",
+      "props": {
+        "description": "将顺序图计算并行化的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GRE",
+      "communityId": "8",
+      "props": {
+        "description": "大规模分布式图并行应用的图运行时引擎",
+        "_community_id": "8"
+      }
+    },
+    {
+      "vid": "GStream",
+      "communityId": "1",
+      "props": {
+        "description": "大规模图数据流处理方法",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Garaph",
+      "communityId": "1",
+      "props": {
+        "description": "高性能图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GasCL",
+      "communityId": "1",
+      "props": {
+        "description": "基于GPU的顶点中心图模型",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GeaFlow",
+      "communityId": "2",
+      "props": {
+        "description": "图形扩展和加速的数据流系统",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "Gemini",
+      "communityId": "1",
+      "props": {
+        "description": "计算中心的分布式图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Giraph_Unchained",
+      "communityId": "9",
+      "props": {
+        "description": "未提供描述的图形处理系统",
+        "_community_id": "9"
+      }
+    },
+    {
+      "vid": "Giraph Unchained",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Giraph",
+      "communityId": "1",
+      "props": {
+        "description": "图处理系统，支持分布式计算",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GoFFish",
+      "communityId": "1",
+      "props": {
+        "description": "用于大规模图分析的子图中心框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraPU",
+      "communityId": "1",
+      "props": {
+        "description": "图处理单元",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraVF",
+      "communityId": "1",
+      "props": {
+        "description": "FPGA上的一种顶点中心分布式图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Gradoop",
+      "communityId": "2",
+      "props": {
+        "description": "分析时间图的系统",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "GrapH",
+      "communityId": "1",
+      "props": {
+        "description": "图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "http://giraph.apache.org",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graph Database",
+      "communityId": "1",
+      "props": {
+        "description": "图数据库类型",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graph3S",
+      "communityId": "1",
+      "props": {
+        "description": "简单、快速且可扩展的分布式图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphA",
+      "communityId": "1",
+      "props": {
+        "description": "高效的ReRAM架构，用于加速大规模图处理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphABCD",
+      "communityId": "1",
+      "props": {
+        "description": "缩放图分析的异步块坐标下降系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphBolt",
+      "communityId": "1",
+      "props": {
+        "description": "依赖驱动的同步流图处理方法",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Analyzing Temporal Graphs with Gradoop",
+      "communityId": "2",
+      "props": {
+        "description": "",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "GrapH: Traffic-Aware Graph Processing",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "图形数据库",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graph3S: A Simple, Speedy and Scalable Distributed Graph Processing System",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphA: An efficient ReRAM-based architecture to accelerate large scale graph processing",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphABCD: Scaling Out Graph Analytics with Asynchronous Block Coordinate Descent",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphBolt: Dependency-Driven Synchronous Processing of Streaming Graphs",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphBuilder",
+      "communityId": "1",
+      "props": {
+        "description": "可扩展的图ETL框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphCP",
+      "communityId": "1",
+      "props": {
+        "description": "高效的I/O并发图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphCage",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphPEG连接的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphChi",
+      "communityId": "1",
+      "props": {
+        "description": "在PC上进行大规模图计算的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphD",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphDuo",
+      "communityId": "1",
+      "props": {
+        "description": "与Graspan相关的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphFly",
+      "communityId": "2",
+      "props": {
+        "description": "高效的异步流图处理系统",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "GraphGen",
+      "communityId": "1",
+      "props": {
+        "description": "图生成系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphGrind",
+      "communityId": "1",
+      "props": {
+        "description": "解决图划分负载不平衡的问题的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphH(1)",
+      "communityId": "1",
+      "props": {
+        "description": "小集群高性能大图分析系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphH(2)",
+      "communityId": "1",
+      "props": {
+        "description": "大型图处理的内存架构",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphIA",
+      "communityId": "1",
+      "props": {
+        "description": "大规模图处理的原位加速器",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphIn",
+      "communityId": "1",
+      "props": {
+        "description": "在线高性能增量图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphLab",
+      "communityId": "1",
+      "props": {
+        "description": "用于并行机器学习的新框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphM",
+      "communityId": "1",
+      "props": {
+        "description": "高通量并发图处理的高效存储系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphMP(1)",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphMP(2)",
+      "communityId": "1",
+      "props": {
+        "description": "单一商品机器上的I/O高效大图分析系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphMap",
+      "communityId": "1",
+      "props": {
+        "description": "一种可扩展的迭代图处理方法，使用NoSQL",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphMat",
+      "communityId": "1",
+      "props": {
+        "description": "高性能图分析工具",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphOne",
+      "communityId": "1",
+      "props": {
+        "description": "实时动态图分析的数据存储",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphP",
+      "communityId": "1",
+      "props": {
+        "description": "属性图的处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphPEG",
+      "communityId": "1",
+      "props": {
+        "description": "在GPU上加速图处理的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphPIM",
+      "communityId": "1",
+      "props": {
+        "description": "启用图计算框架中指令级PIM卸载的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphPhi",
+      "communityId": "1",
+      "props": {
+        "description": "高效并行图处理在新兴高通量架构上的应用",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphPulse",
+      "communityId": "1",
+      "props": {
+        "description": "事件驱动的异步图处理硬件加速器",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphQ",
+      "communityId": "1",
+      "props": {
+        "description": "图查询处理的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphR",
+      "communityId": "1",
+      "props": {
+        "description": "通过ReRAM加速图处理的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphReduce",
+      "communityId": "1",
+      "props": {
+        "description": "在加速器基础系统上处理大规模图的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphSD",
+      "communityId": "1",
+      "props": {
+        "description": "状态和依赖关系感知的外存图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphScSh",
+      "communityId": "1",
+      "props": {
+        "description": "高效I/O调度和并行图共享的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphScope",
+      "communityId": "1",
+      "props": {
+        "description": "大图处理的统一引擎",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphTides",
+      "communityId": "1",
+      "props": {
+        "description": "流式图处理平台评估框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphTinker",
+      "communityId": "1",
+      "props": {
+        "description": "动态图处理的高性能数据结构",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphTune",
+      "communityId": "1",
+      "props": {
+        "description": "未提供具体描述的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphTwist",
+      "communityId": "1",
+      "props": {
+        "description": "一种快速迭代图计算的方法，采用双层优化",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphX",
+      "communityId": "1",
+      "props": {
+        "description": "抵抗故障的分布式图系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraphZ",
+      "communityId": "1",
+      "props": {
+        "description": "改善大规模图分析性能的小规模机器",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graphene",
+      "communityId": "1",
+      "props": {
+        "description": "用于图计算的细粒度IO管理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graphflow",
+      "communityId": "2",
+      "props": {
+        "description": "一种主动图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "Graphie",
+      "communityId": "1",
+      "props": {
+        "description": "大规模异步图遍历系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graspan",
+      "communityId": "1",
+      "props": {
+        "description": "单机磁盘图系统用于大型系统代码的静态分析",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Grasper",
+      "communityId": "1",
+      "props": {
+        "description": "高性能的分布式OLAP系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graphene: Fine-Grained IO Management for Graph Computing",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graphflow: An Active Graph Database",
+      "communityId": "2",
+      "props": {
+        "description": "",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "Graphie: Large-Scale Asynchronous Graph Traversals on Just a GPU",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Graspan: A Single-machine Disk-based Graph System for Interprocedural Static Analyses of Large-scale Systems Code",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Grasper: A High Performance Distributed System for OLAP on Property Graphs",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GridGraph",
+      "communityId": "1",
+      "props": {
+        "description": "在单一机器上进行大规模图处理的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Groute",
+      "communityId": "1",
+      "props": {
+        "description": "异步多GPU编程模型，应用于大规模图处理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HGraph",
+      "communityId": "1",
+      "props": {
+        "description": "基于混合推拉的高效分布式和迭代图计算系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HPGraph",
+      "communityId": "1",
+      "props": {
+        "description": "基于Flash Array的高并行图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HUS-Graph",
+      "communityId": "1",
+      "props": {
+        "description": "具有混合更新策略的I/O高效外部核心图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HaLoop",
+      "communityId": "1",
+      "props": {
+        "description": "在大型集群上进行高效迭代数据处理的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HipG",
+      "communityId": "1",
+      "props": {
+        "description": "并行处理大规模图的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HitGraph",
+      "communityId": "1",
+      "props": {
+        "description": "高吞吐量的FPGA图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HotGraph",
+      "communityId": "1",
+      "props": {
+        "description": "高效异步图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HyTGraph",
+      "communityId": "1",
+      "props": {
+        "description": "GPU加速的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HUS-Graph: I/O-Efficient Out-of-Core Graph Processing with Hybrid Update Strategy",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HaLoop: Efficient Iterative Data Processing on Large Clusters",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HipG: Parallel Processing of Large-Scale Graphs",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HitGraph: High-throughput Graph Processing Framework on FPGA",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HotGraph: Efficient Asynchronous Processing for Real-World Graphs",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HyTGraph: GPU-Accelerated Graph Processing with Hybrid Transfer Management",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HyVE",
+      "communityId": "1",
+      "props": {
+        "description": "节能高效图处理的混合顶点-边内存层次",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HybridGraph",
+      "communityId": "1",
+      "props": {
+        "description": "I/O-Efficient分布式和迭代图计算的混合拉取/推送系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "ImmortalGraph",
+      "communityId": "1",
+      "props": {
+        "description": "时间图的存储与分析系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "JanusGraph",
+      "communityId": "1",
+      "props": {
+        "description": "支持事务OLTP和分析工作负载的分布式图数据库",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "JetStream",
+      "communityId": "1",
+      "props": {
+        "description": "一种用于流数据的图分析系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "KickStarter",
+      "communityId": "1",
+      "props": {
+        "description": "基于修剪近似的流图快速准确计算的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Kineograph",
+      "communityId": "1",
+      "props": {
+        "description": "快速变化和连接世界的脉动监测系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "L-PowerGraph",
+      "communityId": "1",
+      "props": {
+        "description": "轻量级分布式图并行通信机制",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LCC-Graph",
+      "communityId": "1",
+      "props": {
+        "description": "高性能图处理框架，具有低通信成本",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LFGraph",
+      "communityId": "1",
+      "props": {
+        "description": "简单快速的分布式图分析系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LLAMA",
+      "communityId": "1",
+      "props": {
+        "description": "高效的图分析系统，使用大型多版本数组",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LOSC",
+      "communityId": "1",
+      "props": {
+        "description": "高效的局部优化子图构建的外部核心图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LSGraph",
+      "communityId": "1",
+      "props": {
+        "description": "面向局部性的高性能流图引擎",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LargeGraph",
+      "communityId": "1",
+      "props": {
+        "description": "高效的依赖感知GPU加速的大规模图处理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LazyGraph",
+      "communityId": "1",
+      "props": {
+        "description": "支持分布式图并行计算的懒数据一致性管理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LightGraph",
+      "communityId": "1",
+      "props": {
+        "description": "优化分布式图并行处理中的通信效率",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Ligra",
+      "communityId": "1",
+      "props": {
+        "description": "轻量级共享内存图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LiveGraph",
+      "communityId": "2",
+      "props": {
+        "description": "一个事务图存储系统，采用纯顺序邻接表扫描",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "Lumos",
+      "communityId": "1",
+      "props": {
+        "description": "依赖驱动的基于磁盘的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "MMap",
+      "communityId": "1",
+      "props": {
+        "description": "快速的十亿规模图计算工具，基于内存映射",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LightGraph: Lighten Communication in Distributed Graph-Parallel Processing",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Ligra: A Lightweight Graph Processing Framework for Shared Memory",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "LiveGraph: A Transactional Graph Storage System with Purely Sequential Adjacency List Scans",
+      "communityId": "2",
+      "props": {
+        "description": "",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "Lumos: Dependency-Driven Disk-based Graph Processing",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "MMap: Fast Billion-Scale Graph Computation on a PC via Memory Mapping",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "MOCgraph",
+      "communityId": "1",
+      "props": {
+        "description": "可扩展的分布式图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "MOSAIC",
+      "communityId": "1",
+      "props": {
+        "description": "在单台机器上处理万亿边图的框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Maiter",
+      "communityId": "1",
+      "props": {
+        "description": "用于增量累积迭代计算的异步图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "MapGraph",
+      "communityId": "1",
+      "props": {
+        "description": "高性能图分析的高层API",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Medusa",
+      "communityId": "1",
+      "props": {
+        "description": "简化的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Mizan",
+      "communityId": "1",
+      "props": {
+        "description": "大型图处理中的动态负载均衡系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "MultiLogVC",
+      "communityId": "1",
+      "props": {
+        "description": "高效的外部存储图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "NGraph",
+      "communityId": "1",
+      "props": {
+        "description": "并行图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "NPGraph",
+      "communityId": "1",
+      "props": {
+        "description": "高效的图计算模型",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "NScale",
+      "communityId": "1",
+      "props": {
+        "description": "邻域中心的大型图分析系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "dinámica负载平衡系统在大规模图处理中的应用",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "高效的闪存存储外部图处理框架",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "在混合内存系统中的并行图处理",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "在NUMA基础的持久内存系统中高效的图计算模型",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "在大型图上的邻域中心分析",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "NXgraph",
+      "communityId": "1",
+      "props": {
+        "description": "单机高效图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Naiad",
+      "communityId": "1",
+      "props": {
+        "description": "及时数据流系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Neo4j",
+      "communityId": "23",
+      "props": {
+        "description": "图数据库",
+        "_community_id": "23"
+      }
+    },
+    {
+      "vid": "PGAbB",
+      "communityId": "24",
+      "props": {
+        "description": "异构平台的块基图处理框架",
+        "_community_id": "24"
+      }
+    },
+    {
+      "vid": "PGX.D",
+      "communityId": "25",
+      "props": {
+        "description": "快速分布式图处理引擎",
+        "_community_id": "25"
+      }
+    },
+    {
+      "vid": "PartitionedVC",
+      "communityId": "26",
+      "props": {
+        "description": "分区外存内存图分析框架",
+        "_community_id": "26"
+      }
+    },
+    {
+      "vid": "PathGraph",
+      "communityId": "27",
+      "props": {
+        "description": "路径导向图处理系统",
+        "_community_id": "27"
+      }
+    },
+    {
+      "vid": "Pimiendst",
+      "communityId": "28",
+      "props": {
+        "description": "单机上的顶点中心图处理框架",
+        "_community_id": "28"
+      }
+    },
+    {
+      "vid": "PowerGraph",
+      "communityId": "1",
+      "props": {
+        "description": "自然图的分布式图并行计算",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "PowerLyra",
+      "communityId": "1",
+      "props": {
+        "description": "针对偏斜图的差异化图计算和分区框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "PrIter",
+      "communityId": "29",
+      "props": {
+        "description": "优先迭代计算的分布式框架",
+        "_community_id": "29"
+      }
+    },
+    {
+      "vid": "Pregel",
+      "communityId": "1",
+      "props": {
+        "description": "大规模图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Pregelix",
+      "communityId": "1",
+      "props": {
+        "description": "一个数据流引擎上的更大图分析系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Quegel",
+      "communityId": "30",
+      "props": {
+        "description": "通用的查询中心框架，用于查询大型图",
+        "_community_id": "30"
+      }
+    },
+    {
+      "vid": "Raphdstry",
+      "communityId": "2",
+      "props": {
+        "description": "分布式时间图的流分析系统",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "ReGraph",
+      "communityId": "1",
+      "props": {
+        "description": "与DiGraph相关的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Ringo",
+      "communityId": "31",
+      "props": {
+        "description": "大内存机器上的交互式图分析工具",
+        "_community_id": "31"
+      }
+    },
+    {
+      "vid": "RisGraph",
+      "communityId": "2",
+      "props": {
+        "description": "一个图处理系统",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "SGraph",
+      "communityId": "2",
+      "props": {
+        "description": "待处理实体",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "STINGER",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphIn连接的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "SaGraph",
+      "communityId": "32",
+      "props": {
+        "description": "相似性感知硬件加速器，用于时间图处理",
+        "_community_id": "32"
+      }
+    },
+    {
+      "vid": "ScalaGraph",
+      "communityId": "2",
+      "props": {
+        "description": "连接的图处理系统",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "ScaleG",
+      "communityId": "33",
+      "props": {
+        "description": "分布式磁盘系统，用于以顶点为中心的图处理",
+        "_community_id": "33"
+      }
+    },
+    {
+      "vid": "Scaph",
+      "communityId": "34",
+      "props": {
+        "description": "可扩展的GPU加速图处理系统",
+        "_community_id": "34"
+      }
+    },
+    {
+      "vid": "Seraph",
+      "communityId": "1",
+      "props": {
+        "description": "未定义的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "ShenTu",
+      "communityId": "35",
+      "props": {
+        "description": "在数秒内处理多万亿边图的系统",
+        "_community_id": "35"
+      }
+    },
+    {
+      "vid": "Subway",
+      "communityId": "36",
+      "props": {
+        "description": "在图处理过程中最小化数据传输的系统",
+        "_community_id": "36"
+      }
+    },
+    {
+      "vid": "SympleGraph",
+      "communityId": "37",
+      "props": {
+        "description": "具循环依赖保证的分布式图处理系统",
+        "_community_id": "37"
+      }
+    },
+    {
+      "vid": "TDGraph",
+      "communityId": "1",
+      "props": {
+        "description": "与CommonGraph相关的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Scaph: Scalable GPU-Accelerated Graph Processing with Value-Driven Differential Scheduling",
+      "communityId": "34",
+      "props": {
+        "description": "",
+        "_community_id": "34"
+      }
+    },
+    {
+      "vid": "Seraph: an Efficient, Low-cost System for Concurrent Graph Processing",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "ShenTu: Processing Multi-Trillion Edge Graphs on Millions of Cores in Seconds",
+      "communityId": "35",
+      "props": {
+        "description": "",
+        "_community_id": "35"
+      }
+    },
+    {
+      "vid": "Subway: Minimizing Data Transfer during Out-of-GPU-Memory Graph Processing",
+      "communityId": "36",
+      "props": {
+        "description": "",
+        "_community_id": "36"
+      }
+    },
+    {
+      "vid": "SympleGraph: Distributed Graph Processing with Precise Loop-Carried Dependency Guarantee",
+      "communityId": "37",
+      "props": {
+        "description": "",
+        "_community_id": "37"
+      }
+    },
+    {
+      "vid": "TIDE",
+      "communityId": "1",
+      "props": {
+        "description": "图计算系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "TeGraph",
+      "communityId": "39",
+      "props": {
+        "description": "新型通用时间图计算引擎",
+        "_community_id": "39"
+      }
+    },
+    {
+      "vid": "TeGraph+",
+      "communityId": "40",
+      "props": {
+        "description": "可扩展的时间图处理，允许灵活的边修改",
+        "_community_id": "40"
+      }
+    },
+    {
+      "vid": "Tegra",
+      "communityId": "1",
+      "props": {
+        "description": "图处理平台",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "ThunderGP",
+      "communityId": "41",
+      "props": {
+        "description": "基于HLS的FPGA图处理框架",
+        "_community_id": "41"
+      }
+    },
+    {
+      "vid": "TigerGraph",
+      "communityId": "2",
+      "props": {
+        "description": "原生MPP图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "https://www.tigergraph.com",
+      "communityId": "42",
+      "props": {
+        "description": "TigerGraph的相关网站",
+        "_community_id": "42"
+      }
+    },
+    {
+      "vid": "Tigr",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphPEG连接的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "dstrnado",
+      "communityId": "43",
+      "props": {
+        "description": "一个用于实时迭代分析演变数据的系统",
+        "_community_id": "43"
+      }
+    },
+    {
+      "vid": "Trinity",
+      "communityId": "1",
+      "props": {
+        "description": "基于内存云的分布式图引擎",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Tripoline",
+      "communityId": "1",
+      "props": {
+        "description": "与GraphPulse相关的图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "TuGraph",
+      "communityId": "2",
+      "props": {
+        "description": "一种分布式图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "https://tugraph.tech",
+      "communityId": "2",
+      "props": {
+        "description": "与TuGraph相关的官方网站",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "TurboGraph",
+      "communityId": "1",
+      "props": {
+        "description": "快速并行图引擎，处理十亿规模的图",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "数据库",
+      "communityId": "2",
+      "props": {
+        "description": "一种数据管理系统",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "图处理",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "实时分析",
+      "communityId": "43",
+      "props": {
+        "description": "",
+        "_community_id": "43"
+      }
+    },
+    {
+      "vid": "图引擎",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "增量图处理",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "VENUS",
+      "communityId": "1",
+      "props": {
+        "description": "单PC流线化图计算系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "VGL",
+      "communityId": "45",
+      "props": {
+        "description": "一个用于NEC SX-Aurora TSUBASA向量架构的高性能图处理框架",
+        "_community_id": "45"
+      }
+    },
+    {
+      "vid": "VeilGraph",
+      "communityId": "46",
+      "props": {
+        "description": "一个用于近似图流的框架",
+        "_community_id": "46"
+      }
+    },
+    {
+      "vid": "Version_Traveler",
+      "communityId": "47",
+      "props": {
+        "description": "一个在图处理系统中进行快速且内存高效的版本切换的系统",
+        "_community_id": "47"
+      }
+    },
+    {
+      "vid": "未提供的实体",
+      "communityId": "2",
+      "props": {
+        "description": "",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "TurboGraph: A Fast Parallel Graph Engine Handling Billion-scale Graphs in a Single PC",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "VENUS: A System for Streamlined Graph Computation on a Single PC",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "VGL: a high-performance graph processing framework for the NEC SX-Aurora TSUBASA vector architecture",
+      "communityId": "45",
+      "props": {
+        "description": "",
+        "_community_id": "45"
+      }
+    },
+    {
+      "vid": "VeilGraph: Approximating Graph Streams",
+      "communityId": "46",
+      "props": {
+        "description": "",
+        "_community_id": "46"
+      }
+    },
+    {
+      "vid": "Version Traveler: Fast and Memory-Efficient Version Switching in Graph Processing Systems",
+      "communityId": "47",
+      "props": {
+        "description": "",
+        "_community_id": "47"
+      }
+    },
+    {
+      "vid": "Weaver",
+      "communityId": "2",
+      "props": {
+        "description": "基于可细化时间戳的高性能事务图数据库",
+        "_community_id": "2"
+      }
+    },
+    {
+      "vid": "WolfGraph",
+      "communityId": "1",
+      "props": {
+        "description": "面向GPU的边中心图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Wonderland",
+      "communityId": "1",
+      "props": {
+        "description": "图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "X-Stream",
+      "communityId": "1",
+      "props": {
+        "description": "边中心的图处理系统，采用流分区",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "XPGraph",
+      "communityId": "49",
+      "props": {
+        "description": "适用于大规模演变图的XPline友好的持久内存图存储",
+        "_community_id": "49"
+      }
+    },
+    {
+      "vid": "Zorro",
+      "communityId": "1",
+      "props": {
+        "description": "在分布式图处理中的零成本反应故障恢复系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "faimGraph",
+      "communityId": "50",
+      "props": {
+        "description": "在紧张内存限制下对完全动态图的高性能管理",
+        "_community_id": "50"
+      }
+    },
+    {
+      "vid": "iGraph",
+      "communityId": "1",
+      "props": {
+        "description": "图处理系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "iMapReduce",
+      "communityId": "1",
+      "props": {
+        "description": "用于迭代计算的分布式计算框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "iPregel",
+      "communityId": "51",
+      "props": {
+        "description": "基于组合器的内存共享顶点中心框架",
+        "_community_id": "51"
+      }
+    },
+    {
+      "vid": "iTurboGraph",
+      "communityId": "52",
+      "props": {
+        "description": "旨在扩展和自动化增量图分析的系统",
+        "_community_id": "52"
+      }
+    },
+    {
+      "vid": "Zorro: Zero-Cost Reactive Failure Recovery in Distributed Graph Processing",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "faimGraph: High Performance Management of Fully-Dynamic Graphs under tight Memory Constraints on the GPU",
+      "communityId": "50",
+      "props": {
+        "description": "",
+        "_community_id": "50"
+      }
+    },
+    {
+      "vid": "iGraph: an incremental data processing system for dynamic graph",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "iMapReduce: A Distributed Computing Framework for Iterative Computation",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "iPregel: A Combiner-Based In-Memory Shared Memory Vertex-Centric Framework",
+      "communityId": "51",
+      "props": {
+        "description": "",
+        "_community_id": "51"
+      }
+    },
+    {
+      "vid": "iTurboGraph的论文标题未提供具体信息",
+      "communityId": "52",
+      "props": {
+        "description": "",
+        "_community_id": "52"
+      }
+    },
+    {
+      "vid": "xDGP",
+      "communityId": "53",
+      "props": {
+        "description": "具有自适应分区的动态图处理系统",
+        "_community_id": "53"
+      }
+    },
+    {
+      "vid": "A1",
+      "communityId": "1",
+      "props": {
+        "description": "待处理实体",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Version Traveler",
+      "communityId": "1",
+      "props": {
+        "description": "与图处理相关的系统",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "其他系统",
+      "communityId": "1",
+      "props": {
+        "description": "",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Differential_dataflow",
+      "communityId": "1",
+      "props": {
+        "description": "差分数据流",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "Distributed_GraphLab",
+      "communityId": "29",
+      "props": {
+        "description": "用于云中的机器学习和数据挖掘的框架",
+        "_community_id": "29"
+      }
+    },
+    {
+      "vid": "GraphCP+",
+      "communityId": "1",
+      "props": {
+        "description": "高效的并发图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "HUS-Graph+",
+      "communityId": "1",
+      "props": {
+        "description": "带有混合更新策略的高效外部图处理",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "FENNEL+",
+      "communityId": "54",
+      "props": {
+        "description": "大规模图的流式图划分",
+        "_community_id": "54"
+      }
+    },
+    {
+      "vid": "PowerGraph+",
+      "communityId": "54",
+      "props": {
+        "description": "自然图的分布式图并行计算",
+        "_community_id": "54"
+      }
+    },
+    {
+      "vid": "FOG+",
+      "communityId": "55",
+      "props": {
+        "description": "外部图处理框架",
+        "_community_id": "55"
+      }
+    },
+    {
+      "vid": "FlashGraph+",
+      "communityId": "55",
+      "props": {
+        "description": "在商品SSD阵列上处理十亿节点图",
+        "_community_id": "55"
+      }
+    },
+    {
+      "vid": "GridGraph+",
+      "communityId": "55",
+      "props": {
+        "description": "图处理系统",
+        "_community_id": "55"
+      }
+    },
+    {
+      "vid": "GraphMP",
+      "communityId": "1",
+      "props": {
+        "description": "图处理框架",
+        "_community_id": "1"
+      }
+    },
+    {
+      "vid": "GraPhD",
+      "communityId": "56",
+      "props": {
+        "description": "一个用于图处理的系统",
+        "_community_id": "56"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "src": "A1",
+      "dst": "Trinity",
+      "label": "关联",
+      "props": {
+        "description": "描述了“A1”和“Trinity”之间的关联"
+      }
+    },
+    {
+      "src": "G-Tran",
+      "dst": "A1",
+      "label": "连接",
+      "props": {
+        "description": "与A1实体的连接"
+      }
+    },
+    {
+      "src": "G-Tran",
+      "dst": "G-Tran",
+      "label": "论题",
+      "props": {
+        "description": "论文标题：G-Tran: A High Performance Distributed Graph Database with a Decentralized Architecture"
+      }
+    },
+    {
+      "src": "G-Tran",
+      "dst": "PowerLyra",
+      "label": "连接",
+      "props": {
+        "description": "与PowerLyra图处理框架的连接"
+      }
+    },
+    {
+      "src": "G-Tran",
+      "dst": "SGraph",
+      "label": "连接",
+      "props": {
+        "description": "与SGraph实体的连接"
+      }
+    },
+    {
+      "src": "G-Tran",
+      "dst": "TigerGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示了与TigerGraph的系统关系"
+      }
+    },
+    {
+      "src": "G-Tran",
+      "dst": "Weaver",
+      "label": "连接",
+      "props": {
+        "description": "展示了与Weaver的系统关系"
+      }
+    },
+    {
+      "src": "ASPIRE",
+      "dst": "Ligra",
+      "label": "连接",
+      "props": {
+        "description": "连接了“ASPIRE”和“Ligra”"
+      }
+    },
+    {
+      "src": "CoRAL",
+      "dst": "ASPIRE",
+      "label": "连接",
+      "props": {
+        "description": "与ASPIRE之间的连接"
+      }
+    },
+    {
+      "src": "CoRAL",
+      "dst": "Trinity",
+      "label": "连接",
+      "props": {
+        "description": "与Trinity之间的连接"
+      }
+    },
+    {
+      "src": "AeonG",
+      "dst": "Auxo",
+      "label": "连接",
+      "props": {
+        "description": "与多个图数据库系统之间的关系"
+      }
+    },
+    {
+      "src": "AeonG",
+      "dst": "G-Tran",
+      "label": "连接",
+      "props": {
+        "description": "与多个图数据库系统之间的关系"
+      }
+    },
+    {
+      "src": "AeonG",
+      "dst": "Gradoop",
+      "label": "连接",
+      "props": {
+        "description": "与多个图数据库系统之间的关系"
+      }
+    },
+    {
+      "src": "AeonG",
+      "dst": "Graphflow",
+      "label": "连接",
+      "props": {
+        "description": "与多个图数据库系统之间的关系"
+      }
+    },
+    {
+      "src": "AeonG",
+      "dst": "LiveGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个图数据库系统之间的关系"
+      }
+    },
+    {
+      "src": "Gradoop",
+      "dst": "Analyzing Temporal Graphs with Gradoop",
+      "label": "为",
+      "props": {
+        "description": "论文标题"
+      }
+    },
+    {
+      "src": "Gradoop",
+      "dst": "Gradoop",
+      "label": "书写于",
+      "props": {
+        "description": "关于时间图分析的描述"
+      }
+    },
+    {
+      "src": "Gradoop",
+      "dst": "Raphdstry",
+      "label": "连接",
+      "props": {
+        "description": "与分布式时间图分析的连接"
+      }
+    },
+    {
+      "src": "AsynGraph",
+      "dst": "DiGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "AsynGraph",
+      "dst": "Garaph",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "AsynGraph",
+      "dst": "Maiter",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "AsynGraph",
+      "dst": "Tigr",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "DepGraph",
+      "dst": "AsynGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的连接"
+      }
+    },
+    {
+      "src": "DepGraph",
+      "dst": "GGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的连接"
+      }
+    },
+    {
+      "src": "DepGraph",
+      "dst": "GraphABCD",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的连接"
+      }
+    },
+    {
+      "src": "DepGraph",
+      "dst": "GraphM",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "DepGraph",
+      "dst": "GraphPIM",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "DepGraph",
+      "dst": "GraphR",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的连接"
+      }
+    },
+    {
+      "src": "DepGraph",
+      "dst": "NGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的连接"
+      }
+    },
+    {
+      "src": "Auxo",
+      "dst": "Chronos",
+      "label": "连接",
+      "props": {
+        "description": "描述Auxo与Chronos之间的关系"
+      }
+    },
+    {
+      "src": "BG3",
+      "dst": "ByteGraph",
+      "label": "表示",
+      "props": {
+        "description": "描述BG3与ByteGraph之间的关系"
+      }
+    },
+    {
+      "src": "Blaze",
+      "dst": "Lumos",
+      "label": "连接",
+      "props": {
+        "description": "描述Blaze与Lumos之间的关系"
+      }
+    },
+    {
+      "src": "BlitzG",
+      "dst": "DD-Graph",
+      "label": "连接",
+      "props": {
+        "description": "与BlitzG相关的系统"
+      }
+    },
+    {
+      "src": "BlitzG",
+      "dst": "GRAM",
+      "label": "连接",
+      "props": {
+        "description": "与BlitzG相关的系统"
+      }
+    },
+    {
+      "src": "BlitzG",
+      "dst": "GoFFish",
+      "label": "连接",
+      "props": {
+        "description": "描述BlitzG与GoFFish之间的关系"
+      }
+    },
+    {
+      "src": "BlitzG",
+      "dst": "MOCgraph",
+      "label": "连接",
+      "props": {
+        "description": "描述BlitzG与MOCgraph之间的关系"
+      }
+    },
+    {
+      "src": "BlitzG",
+      "dst": "Seraph",
+      "label": "连接",
+      "props": {
+        "description": "描述BlitzG与Seraph之间的关系"
+      }
+    },
+    {
+      "src": "Blogel",
+      "dst": "Giraph",
+      "label": "连接",
+      "props": {
+        "description": "与Blogel相关的图处理系统"
+      }
+    },
+    {
+      "src": "Blogel",
+      "dst": "PowerGraph",
+      "label": "连接",
+      "props": {
+        "description": "与Blogel相关的图并行计算"
+      }
+    },
+    {
+      "src": "GRAPE",
+      "dst": "Blogel",
+      "label": "连接",
+      "props": {
+        "description": "连接GRAPE和Blogel之间的关系"
+      }
+    },
+    {
+      "src": "GraphD",
+      "dst": "Blogel",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphD",
+      "dst": "G-Sdstre",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphD",
+      "dst": "Pregelix",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphD",
+      "dst": "VENUS",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "ByteGraph",
+      "dst": "G-Tran",
+      "label": "连接",
+      "props": {
+        "description": "与G-Tran的关系展示"
+      }
+    },
+    {
+      "src": "ByteGraph",
+      "dst": "Graphflow",
+      "label": "连接",
+      "props": {
+        "description": "与Graphflow的关系展示"
+      }
+    },
+    {
+      "src": "ByteGraph",
+      "dst": "LiveGraph",
+      "label": "连接",
+      "props": {
+        "description": "与ByteGraph相关的系统"
+      }
+    },
+    {
+      "src": "GeaFlow",
+      "dst": "ByteGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示GeaFlow与ByteGraph的关系"
+      }
+    },
+    {
+      "src": "GeaFlow",
+      "dst": "GeaFlow",
+      "label": "论文标题",
+      "props": {
+        "description": "A Graph Extended and Accelerated Dataflow System"
+      }
+    },
+    {
+      "src": "GeaFlow",
+      "dst": "RisGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示GeaFlow与RisGraph的关系"
+      }
+    },
+    {
+      "src": "GeaFlow",
+      "dst": "TuGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示GeaFlow与TuGraph的关系"
+      }
+    },
+    {
+      "src": "GeaFlow",
+      "dst": "iGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示GeaFlow与iGraph的关系"
+      }
+    },
+    {
+      "src": "CGgraph",
+      "dst": "CGgraph",
+      "label": "包含",
+      "props": {
+        "description": "一款超快速的图处理系统"
+      }
+    },
+    {
+      "src": "CGgraph",
+      "dst": "GPOP",
+      "label": "连接",
+      "props": {
+        "description": "与GPOP的连接"
+      }
+    },
+    {
+      "src": "CGgraph",
+      "dst": "HyTGraph",
+      "label": "连接",
+      "props": {
+        "description": "与HyTGraph的连接"
+      }
+    },
+    {
+      "src": "CGgraph",
+      "dst": "LargeGraph",
+      "label": "连接",
+      "props": {
+        "description": "与LargeGraph的连接"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "CGraph",
+      "label": "包含",
+      "props": {
+        "description": "一种高效的并发迭代图处理方法"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "GRAM",
+      "label": "连接",
+      "props": {
+        "description": "与GRAM的连接"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "HUS-Graph",
+      "label": "连接",
+      "props": {
+        "description": "与HUS-Graph的连接"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "MOSAIC",
+      "label": "连接",
+      "props": {
+        "description": "与MOSAIC的连接"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "NXgraph",
+      "label": "连接",
+      "props": {
+        "description": "与NXgraph的连接"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "Seraph",
+      "label": "连接",
+      "props": {
+        "description": "与Seraph的连接"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "Version Traveler",
+      "label": "连接",
+      "props": {
+        "description": "与Version Traveler的连接"
+      }
+    },
+    {
+      "src": "CGraph",
+      "dst": "其他系统",
+      "label": "与",
+      "props": {
+        "description": "描述了相互关系"
+      }
+    },
+    {
+      "src": "GraphCP",
+      "dst": "CGraph",
+      "label": "展示",
+      "props": {
+        "description": "展示高效的I/O并发图处理框架与多个其他系统之间的关系"
+      }
+    },
+    {
+      "src": "GraphCP",
+      "dst": "GraphM",
+      "label": "展示",
+      "props": {
+        "description": "展示高效的I/O并发图处理框架与多个其他系统之间的关系"
+      }
+    },
+    {
+      "src": "GraphCP",
+      "dst": "GraphZ",
+      "label": "展示",
+      "props": {
+        "description": "展示高效的I/O并发图处理框架与多个其他系统之间的关系"
+      }
+    },
+    {
+      "src": "GraphCP",
+      "dst": "Seraph",
+      "label": "展示",
+      "props": {
+        "description": "展示高效的I/O并发图处理框架与多个其他系统之间的关系"
+      }
+    },
+    {
+      "src": "GraphCP",
+      "dst": "VENUS",
+      "label": "展示",
+      "props": {
+        "description": "展示高效的I/O并发图处理框架与多个其他系统之间的关系"
+      }
+    },
+    {
+      "src": "CLIP",
+      "dst": "CLIP",
+      "label": "包含",
+      "props": {
+        "description": "一个磁盘I/O专注的并行图处理系统"
+      }
+    },
+    {
+      "src": "CLIP",
+      "dst": "Graphene",
+      "label": "连接",
+      "props": {
+        "description": "与Graphene之间的连接"
+      }
+    },
+    {
+      "src": "GraphABCD",
+      "dst": "CLIP",
+      "label": "连接",
+      "props": {
+        "description": "与GraphABCD的连接"
+      }
+    },
+    {
+      "src": "GraphABCD",
+      "dst": "ForeGraph",
+      "label": "连接",
+      "props": {
+        "description": "与GraphABCD的连接"
+      }
+    },
+    {
+      "src": "GraphABCD",
+      "dst": "GraphABCD: Scaling Out Graph Analytics with Asynchronous Block Coordinate Descent",
+      "label": "为",
+      "props": {
+        "description": "论文标题"
+      }
+    },
+    {
+      "src": "GraphABCD",
+      "dst": "GraphP",
+      "label": "连接",
+      "props": {
+        "description": "与GraphABCD的连接"
+      }
+    },
+    {
+      "src": "GraphABCD",
+      "dst": "Tigr",
+      "label": "连接",
+      "props": {
+        "description": "与GraphABCD的连接"
+      }
+    },
+    {
+      "src": "GraphABCD",
+      "dst": "Wonderland",
+      "label": "连接",
+      "props": {
+        "description": "与GraphABCD的连接"
+      }
+    },
+    {
+      "src": "CSMqGraph",
+      "dst": "CSMqGraph",
+      "label": "包含",
+      "props": {
+        "description": "一种用于图计算的I/O管理系统"
+      }
+    },
+    {
+      "src": "CSMqGraph",
+      "dst": "Graphene",
+      "label": "与",
+      "props": {
+        "description": "描述了相互关系"
+      }
+    },
+    {
+      "src": "CSMqGraph",
+      "dst": "HGraph",
+      "label": "与",
+      "props": {
+        "description": "描述了相互关系"
+      }
+    },
+    {
+      "src": "CSMqGraph",
+      "dst": "NXgraph",
+      "label": "与",
+      "props": {
+        "description": "描述了相互关系"
+      }
+    },
+    {
+      "src": "Chaos",
+      "dst": "Chaos",
+      "label": "包含",
+      "props": {
+        "description": "一款支持次级存储的图处理系统"
+      }
+    },
+    {
+      "src": "Chaos",
+      "dst": "GRAM",
+      "label": "与",
+      "props": {
+        "description": "展示了双向连接"
+      }
+    },
+    {
+      "src": "Chaos",
+      "dst": "GridGraph",
+      "label": "与",
+      "props": {
+        "description": "展示了连接"
+      }
+    },
+    {
+      "src": "DD-Graph",
+      "dst": "Chaos",
+      "label": "连接",
+      "props": {
+        "description": "与二级存储的图处理系统的连接"
+      }
+    },
+    {
+      "src": "G-Sdstre",
+      "dst": "Chaos",
+      "label": "连接",
+      "props": {
+        "description": "与Chaos图处理系统的连接"
+      }
+    },
+    {
+      "src": "G-Sdstre",
+      "dst": "G-Sdstre",
+      "label": "论题",
+      "props": {
+        "description": "论文标题：G-Sdstre: High-Performance Graph Storage for Trillion-Edge Processing"
+      }
+    },
+    {
+      "src": "Garaph",
+      "dst": "Chaos",
+      "label": "连接",
+      "props": {
+        "description": "关联的图处理系统"
+      }
+    },
+    {
+      "src": "Garaph",
+      "dst": "CuSha",
+      "label": "连接",
+      "props": {
+        "description": "关联的图处理系统"
+      }
+    },
+    {
+      "src": "Garaph",
+      "dst": "GStream",
+      "label": "连接",
+      "props": {
+        "description": "关联的图处理系统"
+      }
+    },
+    {
+      "src": "Garaph",
+      "dst": "Garaph",
+      "label": "论文标题",
+      "props": {
+        "description": "Efficient GPU-accelerated Graph Processing on a Single Machine with Balanced Replication"
+      }
+    },
+    {
+      "src": "Garaph",
+      "dst": "Gemini",
+      "label": "连接",
+      "props": {
+        "description": "关联的图处理系统"
+      }
+    },
+    {
+      "src": "GraphH(1)",
+      "dst": "Chaos",
+      "label": "连接",
+      "props": {
+        "description": "高性能大图分析框架与扩展图处理框架之间的关联"
+      }
+    },
+    {
+      "src": "GraphH(1)",
+      "dst": "GraphH(1)",
+      "label": "出版",
+      "props": {
+        "description": "论文标题：GraphH(1"
+      }
+    },
+    {
+      "src": "GraphH(1)",
+      "dst": "MOCgraph",
+      "label": "连接",
+      "props": {
+        "description": "高性能大图分析框架与可扩展分布式图处理框架之间的关联"
+      }
+    },
+    {
+      "src": "Chronograph",
+      "dst": "Chronos",
+      "label": "包含",
+      "props": {
+        "description": "Chronograph中的图引擎"
+      }
+    },
+    {
+      "src": "Chronograph",
+      "dst": "CoRAL",
+      "label": "实现",
+      "props": {
+        "description": "Chronograph中的图处理恢复方法"
+      }
+    },
+    {
+      "src": "Chronograph",
+      "dst": "CommonGraph",
+      "label": "应用于",
+      "props": {
+        "description": "Chronograph对演变数据的图分析"
+      }
+    },
+    {
+      "src": "Chronograph",
+      "dst": "CuSha",
+      "label": "支持",
+      "props": {
+        "description": "Chronograph与GPU顶点集中图处理框架相关"
+      }
+    },
+    {
+      "src": "Chronograph",
+      "dst": "Cymbalo",
+      "label": "结合",
+      "props": {
+        "description": "Chronograph与机器学习图处理框架的应用"
+      }
+    },
+    {
+      "src": "Chronograph",
+      "dst": "ImmortalGraph",
+      "label": "连接",
+      "props": {
+        "description": "连接在线与批处理计算平台与时间图分析系统"
+      }
+    },
+    {
+      "src": "Chronos",
+      "dst": "Ligra",
+      "label": "连接",
+      "props": {
+        "description": "展示时间图引擎与轻量级共享内存图处理框架之间的关系"
+      }
+    },
+    {
+      "src": "Chronos",
+      "dst": "Naiad",
+      "label": "连接",
+      "props": {
+        "description": "展示时间图引擎与及时数据流系统之间的关系"
+      }
+    },
+    {
+      "src": "FBSGraph",
+      "dst": "CoRAL",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统的关系"
+      }
+    },
+    {
+      "src": "FBSGraph",
+      "dst": "FBSGraph",
+      "label": "描述",
+      "props": {
+        "description": "加速异步图处理的系统"
+      }
+    },
+    {
+      "src": "FBSGraph",
+      "dst": "PowerLyra",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系展示"
+      }
+    },
+    {
+      "src": "FBSGraph",
+      "dst": "Pregelix",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系展示"
+      }
+    },
+    {
+      "src": "GraphPulse",
+      "dst": "CoRAL",
+      "label": "展示关系",
+      "props": {
+        "description": "图Pulse与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphPulse",
+      "dst": "DiterGraph",
+      "label": "展示关系",
+      "props": {
+        "description": "图Pulse与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphPulse",
+      "dst": "HipG",
+      "label": "展示关系",
+      "props": {
+        "description": "图Pulse与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphPulse",
+      "dst": "Tripoline",
+      "label": "展示关系",
+      "props": {
+        "description": "图Pulse与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphPulse",
+      "dst": "WolfGraph",
+      "label": "展示关系",
+      "props": {
+        "description": "图Pulse与多个系统的连接"
+      }
+    },
+    {
+      "src": "CommonGraph",
+      "dst": "GraphOne",
+      "label": "关联",
+      "props": {
+        "description": "与实时分析动态图的数据存储的关系"
+      }
+    },
+    {
+      "src": "CommonGraph",
+      "dst": "JetStream",
+      "label": "关联",
+      "props": {
+        "description": "与基于事件驱动硬件加速的图分析算法的关系"
+      }
+    },
+    {
+      "src": "CommonGraph",
+      "dst": "TDGraph",
+      "label": "连接",
+      "props": {
+        "description": "与TDGraph之间的连接"
+      }
+    },
+    {
+      "src": "CommonGraph",
+      "dst": "Tripoline",
+      "label": "连接",
+      "props": {
+        "description": "与Tripoline之间的连接"
+      }
+    },
+    {
+      "src": "CuSha",
+      "dst": "Medusa",
+      "label": "连接",
+      "props": {
+        "description": "与简化图处理系统的关系"
+      }
+    },
+    {
+      "src": "Frog",
+      "dst": "CuSha",
+      "label": "连接",
+      "props": {
+        "description": "与CuSha图处理框架的连接"
+      }
+    },
+    {
+      "src": "Frog",
+      "dst": "Frog",
+      "label": "论题",
+      "props": {
+        "description": "论文标题：Frog: Asynchronous graph processing on GPU with hybrid coloring model"
+      }
+    },
+    {
+      "src": "Frog",
+      "dst": "Ligra",
+      "label": "连接",
+      "props": {
+        "description": "与Ligra图处理框架的连接"
+      }
+    },
+    {
+      "src": "Frog",
+      "dst": "X-Stream",
+      "label": "连接",
+      "props": {
+        "description": "与X-Stream图处理框架的连接"
+      }
+    },
+    {
+      "src": "GStream",
+      "dst": "CuSha",
+      "label": "连接",
+      "props": {
+        "description": "连接GStream和CuSha之间的关系"
+      }
+    },
+    {
+      "src": "GStream",
+      "dst": "GStream",
+      "label": "论文标题",
+      "props": {
+        "description": "A Graph Streaming Processing Method for Large-scale Graphs on GPUs"
+      }
+    },
+    {
+      "src": "GStream",
+      "dst": "Trinity",
+      "label": "连接",
+      "props": {
+        "description": "连接GStream和Trinity之间的关系"
+      }
+    },
+    {
+      "src": "GStream",
+      "dst": "TurboGraph",
+      "label": "连接",
+      "props": {
+        "description": "连接GStream和TurboGraph之间的关系"
+      }
+    },
+    {
+      "src": "HyTGraph",
+      "dst": "CuSha",
+      "label": "展示",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "HybridGraph",
+      "dst": "CuSha",
+      "label": "展示与",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "JetStream",
+      "dst": "CuSha",
+      "label": "展示了",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "JetStream",
+      "dst": "GraphD",
+      "label": "展示了",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "Cymbalo",
+      "dst": "GraphD",
+      "label": "连接到",
+      "props": {
+        "description": "描述了与分布式顶点中心图处理的关系"
+      }
+    },
+    {
+      "src": "Cymbalo",
+      "dst": "Wonderland",
+      "label": "连接到",
+      "props": {
+        "description": "描述了与外部内存图处理系统的关系"
+      }
+    },
+    {
+      "src": "D2Graph",
+      "dst": "GraphMP(2)",
+      "label": "连接",
+      "props": {
+        "description": "与其他图处理系统的连接，包括I/O高效大图分析"
+      }
+    },
+    {
+      "src": "D2Graph",
+      "dst": "Graphene",
+      "label": "连接",
+      "props": {
+        "description": "与图处理系统的连接"
+      }
+    },
+    {
+      "src": "D2Graph",
+      "dst": "MMap",
+      "label": "连接",
+      "props": {
+        "description": "与内存映射文件的连接"
+      }
+    },
+    {
+      "src": "D2Graph",
+      "dst": "WolfGraph",
+      "label": "连接",
+      "props": {
+        "description": "与GPU上边缘中心的图处理系统的连接"
+      }
+    },
+    {
+      "src": "EPGraph",
+      "dst": "D2Graph",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的关系"
+      }
+    },
+    {
+      "src": "EPGraph",
+      "dst": "DFOGraph",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的关系"
+      }
+    },
+    {
+      "src": "EPGraph",
+      "dst": "EPGraph",
+      "label": "描述",
+      "props": {
+        "description": "持久内存系统中的高效图计算模型"
+      }
+    },
+    {
+      "src": "EPGraph",
+      "dst": "HyVE",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的关系"
+      }
+    },
+    {
+      "src": "DFOGraph",
+      "dst": "HGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的关系"
+      }
+    },
+    {
+      "src": "DFOGraph",
+      "dst": "HybridGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的关系"
+      }
+    },
+    {
+      "src": "DFOGraph",
+      "dst": "Lumos",
+      "label": "连接",
+      "props": {
+        "description": "与多个图处理系统的关系"
+      }
+    },
+    {
+      "src": "DZiG",
+      "dst": "GraphOne",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "DZiG",
+      "dst": "ImmortalGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "DZiG",
+      "dst": "Lumos",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "EGraph",
+      "dst": "DZiG",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统的关系"
+      }
+    },
+    {
+      "src": "EGraph",
+      "dst": "DiGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统的关系"
+      }
+    },
+    {
+      "src": "EGraph",
+      "dst": "EGraph",
+      "label": "描述",
+      "props": {
+        "description": "高效的GPU-based动态图处理系统"
+      }
+    },
+    {
+      "src": "EGraph",
+      "dst": "GraphTinker",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统的关系"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "论文标题",
+      "label": "包含",
+      "props": {
+        "description": "DiGraph: An Efficient Path-based Iterative Directed Graph Processing System on Multiple GPUs"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "FBSGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "GraphGrind",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "Graphie",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "HotGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "NXgraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "ReGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "DiGraph",
+      "dst": "Wonderland",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统之间的连接"
+      }
+    },
+    {
+      "src": "GraphM",
+      "dst": "DiGraph",
+      "label": "连接",
+      "props": {
+        "description": "与GraphM之间的连接"
+      }
+    },
+    {
+      "src": "GraphM",
+      "dst": "GraphR",
+      "label": "连接",
+      "props": {
+        "description": "与GraphM之间的连接"
+      }
+    },
+    {
+      "src": "GraphM",
+      "dst": "Lumos",
+      "label": "连接",
+      "props": {
+        "description": "与GraphM之间的连接"
+      }
+    },
+    {
+      "src": "GraphMap",
+      "dst": "DiGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphMap",
+      "dst": "GraphD",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphMap",
+      "dst": "GraphTwist",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphMap",
+      "dst": "Pregelix",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphPEG",
+      "dst": "DiGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示与其他系统的连接"
+      }
+    },
+    {
+      "src": "GraphPEG",
+      "dst": "GraphCage",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的连接"
+      }
+    },
+    {
+      "src": "GraphPEG",
+      "dst": "Tigr",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的连接"
+      }
+    },
+    {
+      "src": "Differential dataflow",
+      "dst": "论文标题",
+      "label": "包含",
+      "props": {
+        "description": "Differential dataflow"
+      }
+    },
+    {
+      "src": "Differential_dataflow",
+      "dst": "Pregel",
+      "label": "关联",
+      "props": {
+        "description": "描述了差分数据流与大规模图处理系统的关系"
+      }
+    },
+    {
+      "src": "Differential_dataflow",
+      "dst": "iMapReduce",
+      "label": "关联",
+      "props": {
+        "description": "描述了差分数据流与用于迭代计算的分布式计算框架的关系"
+      }
+    },
+    {
+      "src": "Distributed GraphLab",
+      "dst": "论文标题",
+      "label": "包含",
+      "props": {
+        "description": "Distributed GraphLab: A Framework for Machine Learning and Data Mining in the Cloud"
+      }
+    },
+    {
+      "src": "Distributed_GraphLab",
+      "dst": "PrIter",
+      "label": "连接",
+      "props": {
+        "description": "连接了用于云中的机器学习和数据挖掘的框架与优先迭代计算的分布式框架"
+      }
+    },
+    {
+      "src": "DiterGraph",
+      "dst": "论文标题",
+      "label": "包含",
+      "props": {
+        "description": "DiterGraph: Toward I/O-Efficient Incremental Computation over Large Graphs with Billion Edges"
+      }
+    },
+    {
+      "src": "DiterGraph",
+      "dst": "HybridGraph",
+      "label": "连接",
+      "props": {
+        "description": "致力于提高大规模图增量计算的系统与一个用于I/O高效分布式和迭代图计算的系统之间的连接"
+      }
+    },
+    {
+      "src": "DynamoGraph",
+      "dst": "DynamoGraph",
+      "label": "描述",
+      "props": {
+        "description": "大规模时间图处理的分布式系统，及其实现和初步观察"
+      }
+    },
+    {
+      "src": "DynamoGraph",
+      "dst": "论文标题",
+      "label": "包含",
+      "props": {
+        "description": "DynamoGraph: 未提供更多描述的信息"
+      }
+    },
+    {
+      "src": "DynamoGraph",
+      "dst": "ImmortalGraph",
+      "label": "连接",
+      "props": {
+        "description": "一个用于大规模时间图处理的分布式系统与一个用于存储和分析时间图的系统之间的连接"
+      }
+    },
+    {
+      "src": "EmptyHeaded",
+      "dst": "EmptyHeaded",
+      "label": "描述",
+      "props": {
+        "description": "用于图处理的关系引擎"
+      }
+    },
+    {
+      "src": "EmptyHeaded",
+      "dst": "GraphX",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统的关系"
+      }
+    },
+    {
+      "src": "EmptyHeaded",
+      "dst": "Ligra",
+      "label": "连接",
+      "props": {
+        "description": "与多个其他系统的关系"
+      }
+    },
+    {
+      "src": "GGraph",
+      "dst": "FBSGraph",
+      "label": "连接",
+      "props": {
+        "description": "连接高效结构感知方法与高吞吐量并发图处理存储系统"
+      }
+    },
+    {
+      "src": "GGraph",
+      "dst": "GrapH",
+      "label": "连接",
+      "props": {
+        "description": "连接高效结构感知图处理方法与图处理框架"
+      }
+    },
+    {
+      "src": "GGraph",
+      "dst": "GraphA",
+      "label": "连接",
+      "props": {
+        "description": "连接高效结构感知图处理方法与图处理框架"
+      }
+    },
+    {
+      "src": "GGraph",
+      "dst": "GraphM",
+      "label": "连接",
+      "props": {
+        "description": "连接高效结构感知图处理方法与高吞吐量并发图处理存储系统"
+      }
+    },
+    {
+      "src": "GGraph",
+      "dst": "HGraph",
+      "label": "连接",
+      "props": {
+        "description": "连接高效结构感知图处理方法与I/O高效的分布式与迭代图计算"
+      }
+    },
+    {
+      "src": "GGraph",
+      "dst": "HUS-Graph",
+      "label": "连接",
+      "props": {
+        "description": "连接高效结构感知图处理方法与图处理框架"
+      }
+    },
+    {
+      "src": "FENNEL+",
+      "dst": "PowerGraph+",
+      "label": "连接",
+      "props": {
+        "description": "与PowerGraph的连接"
+      }
+    },
+    {
+      "src": "FOG",
+      "dst": "FlashGraph",
+      "label": "连接",
+      "props": {
+        "description": "FOG与FlashGraph之间的系统连接"
+      }
+    },
+    {
+      "src": "FOG",
+      "dst": "GridGraph",
+      "label": "连接",
+      "props": {
+        "description": "FOG与GridGraph之间的系统连接"
+      }
+    },
+    {
+      "src": "FOG+",
+      "dst": "FlashGraph+",
+      "label": "连接",
+      "props": {
+        "description": "与FlashGraph的连接"
+      }
+    },
+    {
+      "src": "FOG+",
+      "dst": "GridGraph+",
+      "label": "连接",
+      "props": {
+        "description": "与GridGraph的连接"
+      }
+    },
+    {
+      "src": "Fargraph+",
+      "dst": "GraphCP",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的关系"
+      }
+    },
+    {
+      "src": "Fargraph+",
+      "dst": "HUS-Graph",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的关系"
+      }
+    },
+    {
+      "src": "Fargraph+",
+      "dst": "GraphCP+",
+      "label": "连接",
+      "props": {
+        "description": "与GraphCP的连接"
+      }
+    },
+    {
+      "src": "Fargraph+",
+      "dst": "HUS-Graph+",
+      "label": "连接",
+      "props": {
+        "description": "与HUS-Graph的连接"
+      }
+    },
+    {
+      "src": "FlashGraph",
+      "dst": "Maiter",
+      "label": "连接",
+      "props": {
+        "description": "展示了FlashGraph与Maiter之间的关系"
+      }
+    },
+    {
+      "src": "FlashGraph",
+      "dst": "TurboGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示了FlashGraph与TurboGraph之间的关系"
+      }
+    },
+    {
+      "src": "ForeGraph",
+      "dst": "Gemini",
+      "label": "连接",
+      "props": {
+        "description": "展示了ForeGraph与Gemini之间的关系"
+      }
+    },
+    {
+      "src": "ForeGraph",
+      "dst": "GraVF",
+      "label": "连接",
+      "props": {
+        "description": "展示了ForeGraph与GraVF之间的关系"
+      }
+    },
+    {
+      "src": "ForeGraph",
+      "dst": "GraphGen",
+      "label": "连接",
+      "props": {
+        "description": "展示了ForeGraph与GraphGen之间的关系"
+      }
+    },
+    {
+      "src": "ForeGraph",
+      "dst": "NXgraph",
+      "label": "连接",
+      "props": {
+        "description": "展示了ForeGraph与NXgraph之间的关系"
+      }
+    },
+    {
+      "src": "Graphflow",
+      "dst": "G-Tran",
+      "label": "展示与",
+      "props": {
+        "description": "主动图数据库与其他系统的关系"
+      }
+    },
+    {
+      "src": "GBASE",
+      "dst": "GBASE",
+      "label": "论题",
+      "props": {
+        "description": "论文标题：GBASE: A Scalable and General Graph Management System"
+      }
+    },
+    {
+      "src": "GBASE",
+      "dst": "Pregel",
+      "label": "连接",
+      "props": {
+        "description": "描述了与Pregel的系统连接"
+      }
+    },
+    {
+      "src": "GraphOne",
+      "dst": "GBASE",
+      "label": "展示",
+      "props": {
+        "description": "与GBASE的关系"
+      }
+    },
+    {
+      "src": "GraphOne",
+      "dst": "GraPU",
+      "label": "展示",
+      "props": {
+        "description": "与GraPU的关系"
+      }
+    },
+    {
+      "src": "GraphOne",
+      "dst": "GraphBolt",
+      "label": "展示",
+      "props": {
+        "description": "与GraphBolt的关系"
+      }
+    },
+    {
+      "src": "GraphOne",
+      "dst": "GraphD",
+      "label": "展示",
+      "props": {
+        "description": "与GraphD的关系"
+      }
+    },
+    {
+      "src": "GraphOne",
+      "dst": "Graphene",
+      "label": "展示",
+      "props": {
+        "description": "与Graphene的关系"
+      }
+    },
+    {
+      "src": "GraphOne",
+      "dst": "MOSAIC",
+      "label": "展示",
+      "props": {
+        "description": "与MOSAIC的关系"
+      }
+    },
+    {
+      "src": "GraphOne",
+      "dst": "TIDE",
+      "label": "展示",
+      "props": {
+        "description": "与TIDE的关系"
+      }
+    },
+    {
+      "src": "GraphSD",
+      "dst": "GBASE",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphSD",
+      "dst": "Giraph",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphSD",
+      "dst": "GraphMap",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphSD",
+      "dst": "论文标题",
+      "label": "有",
+      "props": {
+        "description": "GraphSD: A State and Dependency aware Out-of-Core Graph Processing System"
+      }
+    },
+    {
+      "src": "GFlink",
+      "dst": "GFlink",
+      "label": "论题",
+      "props": {
+        "description": "论文标题：GFlink: An In-Memory Computing Architecture on Heterogeneous CPU-GPU Clusters for Big Data"
+      }
+    },
+    {
+      "src": "GFlink",
+      "dst": "Medusa",
+      "label": "连接",
+      "props": {
+        "description": "连接异构CPU-GPU集群的内存计算架构与简化的GPU图处理系统"
+      }
+    },
+    {
+      "src": "GraphA",
+      "dst": "GFlink",
+      "label": "连接到",
+      "props": {
+        "description": "、GraphR#"
+      }
+    },
+    {
+      "src": "GraphA",
+      "dst": "GraphA: An efficient ReRAM-based architecture to accelerate large scale graph processing",
+      "label": "为",
+      "props": {
+        "description": "论文标题"
+      }
+    },
+    {
+      "src": "LiveGraph",
+      "dst": "GGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示与多个系统的关系"
+      }
+    },
+    {
+      "src": "GPOP",
+      "dst": "GoFFish",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的连接"
+      }
+    },
+    {
+      "src": "GPOP",
+      "dst": "GridGraph",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的连接"
+      }
+    },
+    {
+      "src": "GPS",
+      "dst": "iMapReduce",
+      "label": "连接",
+      "props": {
+        "description": "与迭代计算框架的连接"
+      }
+    },
+    {
+      "src": "GraphChi",
+      "dst": "GPS",
+      "label": "展示",
+      "props": {
+        "description": "大规模图计算系统与图处理系统的双向连接"
+      }
+    },
+    {
+      "src": "GraphChi",
+      "dst": "PowerGraph",
+      "label": "展示",
+      "props": {
+        "description": "大规模图计算系统与分布式图并行计算的双向连接"
+      }
+    },
+    {
+      "src": "GRAM",
+      "dst": "PowerLyra",
+      "label": "连接",
+      "props": {
+        "description": "连接GRAM和PowerLyra之间的关系"
+      }
+    },
+    {
+      "src": "GraphH(2)",
+      "dst": "Garaph",
+      "label": "关联",
+      "props": {
+        "description": "展示GraphH(2与Garaph之间的关系"
+      }
+    },
+    {
+      "src": "GraphH(2)",
+      "dst": "GraphH(2)",
+      "label": "出版",
+      "props": {
+        "description": "论文标题：GraphH(2"
+      }
+    },
+    {
+      "src": "GraphH(2)",
+      "dst": "GraphPIM",
+      "label": "关联",
+      "props": {
+        "description": "展示GraphH(2与GraphPIM之间的关系"
+      }
+    },
+    {
+      "src": "GraphH(2)",
+      "dst": "MOCgraph",
+      "label": "关联",
+      "props": {
+        "description": "展示GraphH(2与MOCgraph之间的关系"
+      }
+    },
+    {
+      "src": "GraphH(2)",
+      "dst": "NXgraph",
+      "label": "关联",
+      "props": {
+        "description": "展示GraphH(2与NXgraph之间的关系"
+      }
+    },
+    {
+      "src": "GasCL",
+      "dst": "GasCL",
+      "label": "论文标题",
+      "props": {
+        "description": "A Vertex-Centric Graph Model for GPUs"
+      }
+    },
+    {
+      "src": "GasCL",
+      "dst": "Medusa",
+      "label": "连接",
+      "props": {
+        "description": "关联的图处理系统"
+      }
+    },
+    {
+      "src": "GasCL",
+      "dst": "X-Stream",
+      "label": "连接",
+      "props": {
+        "description": "关联的图处理系统"
+      }
+    },
+    {
+      "src": "Gemini",
+      "dst": "Gemini",
+      "label": "论文标题",
+      "props": {
+        "description": "A Computation-Centric Distributed Graph Processing System"
+      }
+    },
+    {
+      "src": "Gemini",
+      "dst": "GridGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示Gemini与GridGraph的关系"
+      }
+    },
+    {
+      "src": "Gemini",
+      "dst": "LazyGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示Gemini与LazyGraph的关系"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "Gemini",
+      "label": "连接",
+      "props": {
+        "description": "展示GraPU与Gemini的关系"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "GoFFish",
+      "label": "连接",
+      "props": {
+        "description": "展示GraPU与GoFFish的关系"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "GraPU",
+      "label": "书写于",
+      "props": {
+        "description": "关于流图分析加速的描述"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "KickStarter",
+      "label": "连接",
+      "props": {
+        "description": "展示GraPU与KickStarter的关系"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "Tigr",
+      "label": "连接",
+      "props": {
+        "description": "展示GraPU与Tigr的关系"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "Wonderland",
+      "label": "连接",
+      "props": {
+        "description": "展示GraPU与Wonderland的关系"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "Zorro",
+      "label": "连接",
+      "props": {
+        "description": "展示GraPU与Zorro的关系"
+      }
+    },
+    {
+      "src": "GraPU",
+      "dst": "Version Traveler",
+      "label": "连接",
+      "props": {
+        "description": "展示GraPU与Version Traveler的关系"
+      }
+    },
+    {
+      "src": "GraphIA",
+      "dst": "Gemini",
+      "label": "连接",
+      "props": {
+        "description": "展示GraphIA与Gemini之间的链接"
+      }
+    },
+    {
+      "src": "GraphIA",
+      "dst": "GraphH(2)",
+      "label": "连接",
+      "props": {
+        "description": "展示GraphIA与GraphH(2之间的链接"
+      }
+    },
+    {
+      "src": "GraphIA",
+      "dst": "GraphMP(1)",
+      "label": "包含",
+      "props": {
+        "description": "GraphIA论文标题中的系统"
+      }
+    },
+    {
+      "src": "GraphIA",
+      "dst": "GraphP",
+      "label": "连接",
+      "props": {
+        "description": "展示GraphIA与GraphP之间的连接"
+      }
+    },
+    {
+      "src": "GraphIA",
+      "dst": "NXgraph",
+      "label": "连接",
+      "props": {
+        "description": "展示GraphIA与NXgraph之间的连接"
+      }
+    },
+    {
+      "src": "Giraph",
+      "dst": "http://giraph.apache.org",
+      "label": "相关网站",
+      "props": {
+        "description": "提供Giraph的相关信息"
+      }
+    },
+    {
+      "src": "Giraph",
+      "dst": "Graph Database",
+      "label": "连接",
+      "props": {
+        "description": "连接了Giraph和图数据库"
+      }
+    },
+    {
+      "src": "Giraph Unchained",
+      "dst": "Giraph Unchained",
+      "label": "书写于",
+      "props": {
+        "description": "关于无障碍异步并行执行的描述"
+      }
+    },
+    {
+      "src": "Giraph Unchained",
+      "dst": "Pregelix",
+      "label": "连接",
+      "props": {
+        "description": "连接了Giraph Unchained和Pregelix"
+      }
+    },
+    {
+      "src": "GraphScSh",
+      "dst": "Giraph Unchained",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphScSh",
+      "dst": "GraphMP",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphScSh",
+      "dst": "论文标题",
+      "label": "有",
+      "props": {
+        "description": "GraphScSh: Efficient I/O Scheduling and Graph Sharing for Concurrent Graph Processing"
+      }
+    },
+    {
+      "src": "Giraph_Unchained",
+      "dst": "Giraph_Unchained",
+      "label": "论文标题",
+      "props": {
+        "description": "未提供详细标题"
+      }
+    },
+    {
+      "src": "GoFFish",
+      "dst": "GoFFish",
+      "label": "书写于",
+      "props": {
+        "description": "关于大规模图分析的描述"
+      }
+    },
+    {
+      "src": "GoFFish",
+      "dst": "Trinity",
+      "label": "连接",
+      "props": {
+        "description": "连接了GoFFish和Trinity"
+      }
+    },
+    {
+      "src": "GraVF",
+      "dst": "GraVF",
+      "label": "书写于",
+      "props": {
+        "description": "关于FPGA图处理框架的描述"
+      }
+    },
+    {
+      "src": "GraVF",
+      "dst": "GraphGen",
+      "label": "连接",
+      "props": {
+        "description": "将GraVF与GraphGen连接"
+      }
+    },
+    {
+      "src": "GrapH",
+      "dst": "GrapH: Traffic-Aware Graph Processing",
+      "label": "为",
+      "props": {
+        "description": "论文标题"
+      }
+    },
+    {
+      "src": "GrapH",
+      "dst": "GridGraph",
+      "label": "连接",
+      "props": {
+        "description": "将GrapH与GridGraph连接"
+      }
+    },
+    {
+      "src": "GraphDuo",
+      "dst": "GrapH",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphDuo",
+      "dst": "GraphD",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphDuo",
+      "dst": "GraphIn",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphDuo",
+      "dst": "GraphP",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphDuo",
+      "dst": "Wonderland",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "Graph Database",
+      "dst": "图形数据库",
+      "label": "属于",
+      "props": {
+        "description": "数据库类型"
+      }
+    },
+    {
+      "src": "Graph3S",
+      "dst": "Graph3S: A Simple, Speedy and Scalable Distributed Graph Processing System",
+      "label": "为",
+      "props": {
+        "description": "论文标题"
+      }
+    },
+    {
+      "src": "Graph3S",
+      "dst": "Graphene",
+      "label": "展示了与",
+      "props": {
+        "description": "、HybridGraph之间的关系"
+      }
+    },
+    {
+      "src": "Graph3S",
+      "dst": "HybridGraph",
+      "label": "连接",
+      "props": {
+        "description": "将Graph3S与HybridGraph连接"
+      }
+    },
+    {
+      "src": "GraphBolt",
+      "dst": "GraphBolt: Dependency-Driven Synchronous Processing of Streaming Graphs",
+      "label": "为",
+      "props": {
+        "description": "论文标题"
+      }
+    },
+    {
+      "src": "GraphBolt",
+      "dst": "GraphIn",
+      "label": "连接",
+      "props": {
+        "description": "依赖驱动的同步流图处理系统与高性能增量图处理框架的连接"
+      }
+    },
+    {
+      "src": "GraphBolt",
+      "dst": "KickStarter",
+      "label": "连接",
+      "props": {
+        "description": "依赖驱动的同步流图处理系统与流图计算框架的连接"
+      }
+    },
+    {
+      "src": "KickStarter",
+      "dst": "GraphBolt",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphBuilder",
+      "dst": "Trinity",
+      "label": "连接",
+      "props": {
+        "description": "连接可扩展的图ETL框架与基于内存云的分布式图引擎"
+      }
+    },
+    {
+      "src": "GraphCage",
+      "dst": "GraphMat",
+      "label": "连接",
+      "props": {
+        "description": "连接图Cage与高性能图分析系统"
+      }
+    },
+    {
+      "src": "GraphCage",
+      "dst": "GraphPhi",
+      "label": "连接",
+      "props": {
+        "description": "连接图Cage与高效并行图处理架构"
+      }
+    },
+    {
+      "src": "GraphGen",
+      "dst": "GraphChi",
+      "label": "连接",
+      "props": {
+        "description": "与大规模图计算的连接"
+      }
+    },
+    {
+      "src": "GraphGen",
+      "dst": "GraphGen",
+      "label": "出版",
+      "props": {
+        "description": "论文标题：GraphGen: An FPGA Framework for Vertex-Centric Graph Computation"
+      }
+    },
+    {
+      "src": "GraphPIM",
+      "dst": "GraphChi",
+      "label": "连接",
+      "props": {
+        "description": "启用图计算框架中的指令级PIM卸载"
+      }
+    },
+    {
+      "src": "GraphMP(1)",
+      "dst": "GraphD",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphMP(1)",
+      "dst": "GraphH(1)",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的连接"
+      }
+    },
+    {
+      "src": "GraphMP(1)",
+      "dst": "MOSAIC",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "Groute",
+      "dst": "GraphD",
+      "label": "连接",
+      "props": {
+        "description": "连接了Groute与多个系统，其中包括GraphD"
+      }
+    },
+    {
+      "src": "LCC-Graph",
+      "dst": "GraphD",
+      "label": "展现关系",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "LargeGraph",
+      "dst": "GraphD",
+      "label": "连接",
+      "props": {
+        "description": "高效的依赖感知GPU加速的大规模图处理系统与分布式顶点中心图处理系统的关系"
+      }
+    },
+    {
+      "src": "Graspan",
+      "dst": "GraphDuo",
+      "label": "展示",
+      "props": {
+        "description": "展示Graspan与GraphDuo的关系"
+      }
+    },
+    {
+      "src": "GraphFly",
+      "dst": "GraphFly",
+      "label": "出版",
+      "props": {
+        "description": "论文标题：GraphFly: Efficient Asynchronous Streaming Graphs Processing via Dependency-Flow"
+      }
+    },
+    {
+      "src": "GraphFly",
+      "dst": "LiveGraph",
+      "label": "连接",
+      "props": {
+        "description": "与事务性图存储系统的连接"
+      }
+    },
+    {
+      "src": "GraphFly",
+      "dst": "ScalaGraph",
+      "label": "连接",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "GraphFly",
+      "dst": "Tripoline",
+      "label": "连接",
+      "props": {
+        "description": "与基于图三角不等式的增量图处理系统的连接"
+      }
+    },
+    {
+      "src": "GraphGrind",
+      "dst": "GraphGrind",
+      "label": "出版",
+      "props": {
+        "description": "论文标题：GraphGrind: addressing load imbalance of graph partitioning"
+      }
+    },
+    {
+      "src": "GraphGrind",
+      "dst": "Ligra",
+      "label": "连接",
+      "props": {
+        "description": "解决图划分负载不平衡的框架与轻量级图处理框架之间的关联"
+      }
+    },
+    {
+      "src": "GraphIn",
+      "dst": "GraphMP(2)",
+      "label": "包含",
+      "props": {
+        "description": "GraphIn论文标题中的框架"
+      }
+    },
+    {
+      "src": "GraphIn",
+      "dst": "GraphMat",
+      "label": "连接",
+      "props": {
+        "description": "与GraphIn之间的连接"
+      }
+    },
+    {
+      "src": "GraphIn",
+      "dst": "GraphReduce",
+      "label": "连接",
+      "props": {
+        "description": "与GraphIn之间的连接"
+      }
+    },
+    {
+      "src": "GraphIn",
+      "dst": "STINGER",
+      "label": "连接",
+      "props": {
+        "description": "与GraphIn之间的连接"
+      }
+    },
+    {
+      "src": "GraphPhi",
+      "dst": "GraphIn",
+      "label": "连接",
+      "props": {
+        "description": "高效并行图处理与增量图处理框架的连接"
+      }
+    },
+    {
+      "src": "GraphLab",
+      "dst": "Pregel",
+      "label": "连接",
+      "props": {
+        "description": "与Pregel之间的连接"
+      }
+    },
+    {
+      "src": "GraphMP(2)",
+      "dst": "GraphMP(1)",
+      "label": "连接",
+      "props": {
+        "description": "I/O高效大图分析系统与高效半外存系统连接"
+      }
+    },
+    {
+      "src": "GraphMP(2)",
+      "dst": "GraphMap",
+      "label": "包含",
+      "props": {
+        "description": "揭示新的图处理方法"
+      }
+    },
+    {
+      "src": "GraphMP(2)",
+      "dst": "GraphMat",
+      "label": "包含",
+      "props": {
+        "description": "提供高性能的图分析手段"
+      }
+    },
+    {
+      "src": "GraphMP(2)",
+      "dst": "GraphOne",
+      "label": "包含",
+      "props": {
+        "description": "支持实时分析功能"
+      }
+    },
+    {
+      "src": "GraphMP(2)",
+      "dst": "GraphP",
+      "label": "包含",
+      "props": {
+        "description": "优化通信效率"
+      }
+    },
+    {
+      "src": "GraphMP(2)",
+      "dst": "GraphPEG",
+      "label": "包含",
+      "props": {
+        "description": "利用GPU加速处理能力"
+      }
+    },
+    {
+      "src": "GraphMP(2)",
+      "dst": "GraphPIM",
+      "label": "与",
+      "props": {
+        "description": "关注图处理技术"
+      }
+    },
+    {
+      "src": "HUS-Graph",
+      "dst": "GraphMP(1)",
+      "label": "展示",
+      "props": {
+        "description": "与多个系统的关系"
+      }
+    },
+    {
+      "src": "LSGraph",
+      "dst": "GraphMP(1)",
+      "label": "展示",
+      "props": {
+        "description": "面向局部性的高性能流图引擎与多个系统的关系"
+      }
+    },
+    {
+      "src": "Graphene",
+      "dst": "GraphMP(2)",
+      "label": "连接",
+      "props": {
+        "description": "图计算IO管理与大图分析系统之间的连接"
+      }
+    },
+    {
+      "src": "GraphTune",
+      "dst": "GraphMap",
+      "label": "连接",
+      "props": {
+        "description": "将GraphTune与GraphMap进行连接"
+      }
+    },
+    {
+      "src": "GraphTune",
+      "dst": "GraphTune",
+      "label": "论文标题",
+      "props": {
+        "description": "GraphTune: An Efficient Dependency-Aware Substrate to Alleviate Irregularity in Concurrent Graph Processing"
+      }
+    },
+    {
+      "src": "GraphMat",
+      "dst": "GraphX",
+      "label": "连接",
+      "props": {
+        "description": "与图X的关系"
+      }
+    },
+    {
+      "src": "GraphMat",
+      "dst": "MapGraph",
+      "label": "连接",
+      "props": {
+        "description": "与MapGraph的关系"
+      }
+    },
+    {
+      "src": "GraphReduce",
+      "dst": "GraphMat",
+      "label": "连接",
+      "props": {
+        "description": "加速器基础系统与高性能图分析的关系"
+      }
+    },
+    {
+      "src": "GraphReduce",
+      "dst": "论文标题",
+      "label": "有",
+      "props": {
+        "description": "GraphReduce: Processing Large-Scale Graphs on Accelerator-Based Systems"
+      }
+    },
+    {
+      "src": "GraphTwist",
+      "dst": "GraphMat",
+      "label": "连接",
+      "props": {
+        "description": "将GraphTwist与GraphMat进行连接"
+      }
+    },
+    {
+      "src": "Graphie",
+      "dst": "GraphMat",
+      "label": "连接",
+      "props": {
+        "description": "连接Graphie与GraphMat的关系"
+      }
+    },
+    {
+      "src": "GraphP",
+      "dst": "GraphPIM",
+      "label": "连接",
+      "props": {
+        "description": "与GraphPIM的关系"
+      }
+    },
+    {
+      "src": "GraphP",
+      "dst": "GridGraph",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统的连接"
+      }
+    },
+    {
+      "src": "Grasper",
+      "dst": "GraphP",
+      "label": "连接",
+      "props": {
+        "description": "高性能分布式OLAP系统与属性图处理系统之间的关系"
+      }
+    },
+    {
+      "src": "HipG",
+      "dst": "GraphPulse",
+      "label": "连接",
+      "props": {
+        "description": "连接了HipG与事件驱动硬件加速器"
+      }
+    },
+    {
+      "src": "GraphQ",
+      "dst": "GraphTune",
+      "label": "连接",
+      "props": {
+        "description": "图查询处理与并发图处理基础设施的关系"
+      }
+    },
+    {
+      "src": "GraphR",
+      "dst": "Medusa",
+      "label": "连接",
+      "props": {
+        "description": "图处理与GPU简化处理系统的关系"
+      }
+    },
+    {
+      "src": "GraphScope",
+      "dst": "GraphScSh",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphScope",
+      "dst": "论文标题",
+      "label": "有",
+      "props": {
+        "description": "GraphScope: A Unified Engine For Big Graph Processing"
+      }
+    },
+    {
+      "src": "GraphScope",
+      "dst": "Tegra",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphScope",
+      "dst": "TurboGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphScope",
+      "dst": "iGraph",
+      "label": "连接",
+      "props": {
+        "description": "展示关系"
+      }
+    },
+    {
+      "src": "GraphTides",
+      "dst": "论文标题",
+      "label": "有",
+      "props": {
+        "description": "GraphTides: A Framework for Evaluating Stream-based Graph Processing Platforms"
+      }
+    },
+    {
+      "src": "GraphTides",
+      "dst": "GraphTune",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统相关"
+      }
+    },
+    {
+      "src": "GraphTides",
+      "dst": "GraphTwist",
+      "label": "连接",
+      "props": {
+        "description": "与其他系统相关"
+      }
+    },
+    {
+      "src": "GraphTinker",
+      "dst": "GraphTinker",
+      "label": "论文标题",
+      "props": {
+        "description": "GraphTinker: A High Performance Data Structure for Dynamic Graph Processing"
+      }
+    },
+    {
+      "src": "GraphTinker",
+      "dst": "GraphTune",
+      "label": "连接",
+      "props": {
+        "description": "与有效依赖意识基础设施相关"
+      }
+    }
+  ]
+}
