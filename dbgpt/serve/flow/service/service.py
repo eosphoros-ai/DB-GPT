@@ -27,7 +27,7 @@ from dbgpt.core.schema.api import (
     ChatCompletionStreamResponse,
     DeltaMessage,
 )
-from dbgpt.serve.core import BaseService
+from dbgpt.serve.core import BaseService, blocking_func_to_async
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.util.dbgpts.loader import DBGPTsLoader
@@ -590,7 +590,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         from dbgpt.core.awel.dag.dag_manager import DAGMetadata, _parse_metadata
 
-        dag = self._flow_factory.build(request.flow)
+        dag = await blocking_func_to_async(
+            self._system_app,
+            self._flow_factory.build,
+            request.flow,
+        )
         leaf_nodes = dag.leaf_nodes
         if len(leaf_nodes) != 1:
             raise ValueError("Chat Flow just support one leaf node in dag")

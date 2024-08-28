@@ -254,6 +254,18 @@ class ChatPromptTemplate(BasePromptTemplate):
             values["input_variables"] = sorted(input_variables)
         return values
 
+    def get_placeholders(self) -> List[str]:
+        """Get all placeholders in the prompt template.
+
+        Returns:
+            List[str]: The placeholders.
+        """
+        placeholders = set()
+        for message in self.messages:
+            if isinstance(message, MessagesPlaceholder):
+                placeholders.add(message.variable_name)
+        return sorted(placeholders)
+
 
 @dataclasses.dataclass
 class PromptTemplateIdentifier(ResourceIdentifier):

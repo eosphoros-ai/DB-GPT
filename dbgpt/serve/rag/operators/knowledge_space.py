@@ -223,7 +223,7 @@ class KnowledgeSpacePromptBuilderOperator(
         self._prompt = prompt
         self._history_key = history_key
         self._str_history = str_history
-        BasePromptBuilderOperator.__init__(self, check_storage=check_storage)
+        BasePromptBuilderOperator.__init__(self, check_storage=check_storage, **kwargs)
         JoinOperator.__init__(self, combine_function=self.merge_context, **kwargs)
 
     @rearrange_args_by_type

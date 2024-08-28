@@ -133,7 +133,10 @@ async def create(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.create_and_save_dag(request))
+    res = await blocking_func_to_async(
+        global_system_app, service.create_and_save_dag, request
+    )
+    return Result.succ(res)
 
 
 @router.put(
@@ -153,7 +156,8 @@ async def update(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.update_flow(request))
+    res = await blocking_func_to_async(global_system_app, service.update_flow, request)
+    return Result.succ(res)
 
 
 @router.delete("/flows/{uid}")
@@ -173,9 +177,7 @@ async def delete(
 
 
 @router.get("/flows/{uid}")
-async def get_flows(
-    uid: str, service: Service = Depends(get_service)
-) -> Result[ServerResponse]:
+async def get_flows(uid: str, service: Service = Depends(get_service)):
     """Get a Flow entity by uid
 
     Args:
@@ -188,7 +190,7 @@ async def get_flows(
     flow = service.get({"uid": uid})
     if not flow:
         raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
-    return Result.succ(flow)
+    return Result.succ(flow.model_dump())
 
 
 @router.get(
@@ -464,7 +466,10 @@ async def import_flow(
             status_code=400, detail=f"invalid file extension {file_extension}"
         )
     if save_flow:
-        return Result.succ(service.create_and_save_dag(flow))
+        res = await blocking_func_to_async(
+            global_system_app, service.create_and_save_dag, flow
+        )
+        return Result.succ(res)
     else:
         return Result.succ(flow)
 
