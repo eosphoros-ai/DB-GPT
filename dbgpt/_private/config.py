@@ -332,6 +332,17 @@ class Config(metaclass=Singleton):
             os.getenv("MULTI_INSTANCE", "False").lower() == "true"
         )
 
+        # file server configuration
+        # The host of the current file server, if None, get the host automatically
+        self.FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST")
+        self.FILE_SERVER_LOCAL_STORAGE_PATH = os.getenv(
+            "FILE_SERVER_LOCAL_STORAGE_PATH"
+        )
+        # multi-instance flag
+        self.WEBSERVER_MULTI_INSTANCE = (
+            os.getenv("MULTI_INSTANCE", "False").lower() == "true"
+        )
+
     @property
     def local_db_manager(self) -> "ConnectorManager":
         from dbgpt.datasource.manages import ConnectorManager
