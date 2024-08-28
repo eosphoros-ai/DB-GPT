@@ -47,6 +47,7 @@ export const ImportFlowModal: React.FC<Props> = ({
     const [, , res] = await apiInterceptors(importFlow(formData));
 
     if (res?.success) {
+      setFileList([])
       messageApi.success(t('Export_Flow_Success'));
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
