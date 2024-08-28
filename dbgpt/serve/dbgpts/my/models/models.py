@@ -34,7 +34,7 @@ class ServeEntity(Model):
         onupdate=datetime.utcnow,
         comment="Record update time",
     )
-    UniqueConstraint("user_code", "name", name="uk_name")
+    UniqueConstraint("user_name", "name", name="uk_name")
 
 
 class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):

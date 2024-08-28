@@ -117,7 +117,7 @@ CREATE TABLE `dbgpt_serve_variables` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- dbgpt.dbgpt_serve_dbgpts_my definition
-CREATE TABLE `dbgpts_my` (
+CREATE TABLE `dbgpt_serve_dbgpts_my` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `name` varchar(255)  NOT NULL COMMENT 'plugin name',
   `user_name` varchar(255)  DEFAULT NULL COMMENT 'user name',
@@ -130,12 +130,12 @@ CREATE TABLE `dbgpts_my` (
   `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'plugin install time',
   `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`, `user_code`),
+  UNIQUE KEY `name` (`name`, `user_name`),
   KEY `ix_my_plugin_sys_code` (`sys_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- dbgpt.dbgpt_serve_dbgpts_hub definition
-CREATE TABLE `dbgpts_hub` (
+CREATE TABLE `dbgpt_serve_dbgpts_hub` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `name` varchar(255) NOT NULL COMMENT 'plugin name',
   `description` varchar(255)  NULL COMMENT 'plugin description',
