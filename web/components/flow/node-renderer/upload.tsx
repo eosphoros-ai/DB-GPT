@@ -29,7 +29,7 @@ export const renderUpload = (params: Props) => {
     if (data.ui.attr.max_count === 1) {
       formValuesChange({file:urlList.current.toString()},{force:true})
     }else{
-      formValuesChange({multiple_files:JSON.stringify(urlList.current)},{force:true})
+      formValuesChange({multiple_files:urlList.current},{force:true})
     }
   };
 
@@ -41,7 +41,7 @@ export const renderUpload = (params: Props) => {
     if (data.ui.attr.max_count === 1) {
       formValuesChange({file:urlList.current.toString()},{force:true})
     }else{
-      formValuesChange({multiple_files:JSON.stringify(urlList.current)},{force:true})
+      formValuesChange({multiple_files:urlList.current},{force:true})
     }
   };
 
