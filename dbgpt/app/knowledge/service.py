@@ -646,13 +646,14 @@ class KnowledgeService:
         graph = vector_store_connector.client.query_graph(limit=limit)
         res = {"nodes": [], "edges": []}
         for node in graph.vertices():
-            res["nodes"].append({"vid": node.vid})
+            res["nodes"].append({"vid": node.vid,"communityId":node.get_prop('_community_id'),"props":node.props})
         for edge in graph.edges():
             res["edges"].append(
                 {
                     "src": edge.sid,
                     "dst": edge.tid,
                     "label": edge.name,
+                    "props":edge.props
                 }
             )
         return res
