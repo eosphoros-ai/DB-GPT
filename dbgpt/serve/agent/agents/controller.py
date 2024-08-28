@@ -264,6 +264,7 @@ class MultiAgents(BaseComponent, ABC):
             # init agent memory
             agent_memory = self.get_or_build_agent_memory(conv_id, gpts_name)
 
+            task = None
             try:
                 task = asyncio.create_task(
                     multi_agents.agent_team_chat_new(
@@ -364,6 +365,7 @@ class MultiAgents(BaseComponent, ABC):
         current_message.add_user_message(user_query)
         agent_conv_id = None
         agent_task = None
+        default_final_message = None
         try:
             async for task, chunk, agent_conv_id in multi_agents.agent_chat_v2(
                 conv_uid,
@@ -377,6 +379,7 @@ class MultiAgents(BaseComponent, ABC):
                 **ext_info,
             ):
                 agent_task = task
+                default_final_message = chunk
                 yield chunk
 
         except asyncio.CancelledError:
@@ -390,10 +393,13 @@ class MultiAgents(BaseComponent, ABC):
             raise
         finally:
             logger.info(f"save agent chat info！{conv_uid}")
-            if agent_conv_id:
+            if agent_task:
                 final_message = await self.stable_message(agent_conv_id)
                 if final_message:
                     current_message.add_view_message(final_message)
+            else:
+                current_message.add_view_message(default_final_message)
+
             current_message.end_current_round()
             current_message.save_to_storage()
 

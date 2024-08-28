@@ -464,7 +464,45 @@ CREATE TABLE `user_recent_apps` (
   KEY `idx_user_r_app_code` (`app_code`),
   KEY `idx_last_accessed` (`last_accessed`),
   KEY `idx_user_code` (`user_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User recently used apps'
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User recently used apps';
+
+-- dbgpt.dbgpt_serve_dbgpts_my definition
+CREATE TABLE `dbgpt_serve_dbgpts_my` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `name` varchar(255)  NOT NULL COMMENT 'plugin name',
+  `user_code` varchar(255)  DEFAULT NULL COMMENT 'user code',
+  `user_name` varchar(255)  DEFAULT NULL COMMENT 'user name',
+  `file_name` varchar(255)  NOT NULL COMMENT 'plugin package file name',
+  `type` varchar(255)  DEFAULT NULL COMMENT 'plugin type',
+  `version` varchar(255)  DEFAULT NULL COMMENT 'plugin version',
+  `use_count` int DEFAULT NULL COMMENT 'plugin total use count',
+  `succ_count` int DEFAULT NULL COMMENT 'plugin total success count',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
+  `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'plugin install time',
+  `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`, `user_name`),
+  KEY `ix_my_plugin_sys_code` (`sys_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- dbgpt.dbgpt_serve_dbgpts_hub definition
+CREATE TABLE `dbgpt_serve_dbgpts_hub` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `name` varchar(255) NOT NULL COMMENT 'plugin name',
+  `description` varchar(255)  NULL COMMENT 'plugin description',
+  `author` varchar(255) DEFAULT NULL COMMENT 'plugin author',
+  `email` varchar(255) DEFAULT NULL COMMENT 'plugin author email',
+  `type` varchar(255) DEFAULT NULL COMMENT 'plugin type',
+  `version` varchar(255) DEFAULT NULL COMMENT 'plugin version',
+  `storage_channel` varchar(255) DEFAULT NULL COMMENT 'plugin storage channel',
+  `storage_url` varchar(255) DEFAULT NULL COMMENT 'plugin download url',
+  `download_param` varchar(255) DEFAULT NULL COMMENT 'plugin download param',
+  `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'plugin upload time',
+  `gmt_modified` TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  `installed` int DEFAULT NULL COMMENT 'plugin already installed count',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE

@@ -78,27 +78,6 @@ export default function DocUploadForm(props: IProps) {
           }),
         );
         break;
-      case 'DOCUMENT':
-        const file = originFileObj as any;
-        const formData = new FormData();
-        const filename = file?.name;
-        const ques = questions.map((item) => item.question);
-        formData.append('doc_name', filename);
-        formData.append('doc_file', file);
-        formData.append('doc_type', 'DOCUMENT');
-        formData.append('questions', JSON.stringify(ques));
-        [, docId] = await apiInterceptors(uploadDocument(spaceName, formData));
-        console.log(docId);
-        if (Number.isInteger(docId)) {
-          setFiles((files: any) => {
-            files.push({
-              name: filename,
-              doc_id: docId || -1,
-            });
-            return files;
-          });
-        }
-        break;
     }
     setSpinning(false);
     if (docType === 'DOCUMENT' && files.length < 1) {
@@ -123,8 +102,6 @@ export default function DocUploadForm(props: IProps) {
   const handleFileChange = ({ file, fileList }: UploadChangeParam) => {
     if (fileList.length === 0) {
       form.setFieldValue('originFileObj', null);
-    } else {
-      form.setFieldValue('originFileObj', file);
     }
   };
 
@@ -294,23 +271,45 @@ export default function DocUploadForm(props: IProps) {
     );
   };
 
+  const uploadFile = async (options: any) => {
+    const { onSuccess, onError, file } = options;
+    const formData = new FormData();
+    const filename = file?.name;
+    formData.append('doc_name', filename);
+    formData.append('doc_file', file);
+    formData.append('doc_type', 'DOCUMENT');
+    const [, docId] = await apiInterceptors(uploadDocument(spaceName, formData));
+    if (Number.isInteger(docId)) {
+      onSuccess && onSuccess(docId || 0);
+      setFiles((files: any) => {
+        files.push({
+          name: filename,
+          doc_id: docId || -1,
+        });
+        return files;
+      });
+    } else {
+      onError && onError({ name: '', message: '' });
+    }
+  };
+
   const renderDocument = () => {
     return (
       <>
         <Form.Item<FieldType> name="originFileObj" rules={[{ required: true, message: t('Please_select_file') }]}>
           <Dragger
             multiple
-            beforeUpload={() => false}
             onChange={handleFileChange}
-            maxCount={1}
-            accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md,.zip"
+            maxCount={100}
+            accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md,.zip,.csv"
+            customRequest={uploadFile}
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p style={{ color: 'rgb(22, 108, 255)', fontSize: '20px' }}>{t('Select_or_Drop_file')}</p>
             <p className="ant-upload-hint" style={{ color: 'rgb(22, 108, 255)' }}>
-              PDF, PowerPoint, Excel, Word, Text, Markdown, Zip1
+              PDF, PowerPoint, Excel, Word, Text, Markdown, Zip1, Csv
             </p>
           </Dragger>
         </Form.Item>

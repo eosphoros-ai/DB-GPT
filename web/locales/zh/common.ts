@@ -325,5 +325,12 @@ export const CommonZh: Resources["translation"] = {
   All: "全部",
   Please_input_prompt_name: "请输入prompt名称",
   Copy_Btn: '复制',
-  Delete_Btn: '删除'
+  Delete_Btn: '删除',
+  dbgpts_community: 'DBGPTS社区',
+  community_dbgpts: '社区DBGPTS',
+  my_dbgpts: '我的DBGPTS',
+  Refresh_dbgpts: '从社区Git仓库刷新',
+  workflow: '工作流',
+  resources: '资源',
+  app: '应用',
 } as const;

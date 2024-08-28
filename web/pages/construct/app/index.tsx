@@ -6,11 +6,11 @@ import { IApp } from '@/types/app';
 import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import { BulbOutlined, DingdingOutlined, PlusOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
 import { useDebounceFn, useRequest } from 'ahooks';
-import { App, Button, Input, Modal, Popover, Segmented, SegmentedProps, Select, Space, Spin, Tag, Typography } from 'antd';
+import { App, Button, Input, Modal, Popover, Segmented, SegmentedProps, Select, Space, Spin, Tag, Pagination } from 'antd';
 import copy from 'copy-to-clipboard';
 import moment from 'moment';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import CreateAppModal from './components/create-app-modal';
@@ -33,6 +33,12 @@ export default function AppContent() {
   const [curApp, setCurApp] = useState<IApp>();
   const [adminOpen, setAdminOpen] = useState<boolean>(false);
   const [admins, setAdmins] = useState<string[]>([]);
+  // 分页信息
+  const totalRef = useRef<{
+    current_page: number;
+    total_count: number;
+    total_page: number;
+  }>();
   // 区分是单击还是双击
   const [clickTimeout, setClickTimeout] = useState(null);
 
@@ -86,16 +92,25 @@ export default function AppContent() {
   );
 
   const initData = useDebounceFn(
-    async (params = {}) => {
+    async (params) => {
       setSpinning(true);
-      const [error, data] = await apiInterceptors(getAppList(params));
+      const obj: any = {
+        page: 1,
+        page_size: 12,
+        ...params,
+      };
+      const [error, data] = await apiInterceptors(getAppList(obj));
       if (error) {
         setSpinning(false);
         return;
       }
       if (!data) return;
-
       setApps(data?.app_list || []);
+      totalRef.current = {
+        current_page: data?.current_page || 1,
+        total_count: data?.total_count || 0,
+        total_page: data?.total_page || 0,
+      };
       setSpinning(false);
     },
     {
@@ -297,7 +312,7 @@ export default function AppContent() {
               </Button>
             </div>
           </div>
-          <div className=" w-full flex flex-wrap pb-12 mx-[-8px]">
+          <div className="w-full flex flex-wrap pb-12 mx-[-8px]">
             {apps.map((item) => {
               return (
                 <BlurredCard
@@ -401,8 +416,17 @@ export default function AppContent() {
                 />
               );
             })}
+            <div className='w-full flex justify-end shrink-0 pb-12'>
+              <Pagination
+                total={totalRef.current?.total_count || 0}
+                pageSize={12}
+                current={totalRef.current?.current_page}
+                onChange={async (page, page_size) => {
+                  await initData({ page });
+                }}
+              />
+            </div>
           </div>
-
           {open && (
             <CreateAppModal
               open={open}

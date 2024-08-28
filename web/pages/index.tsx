@@ -95,7 +95,7 @@ const Playground: NextPage = () => {
     {
       manual: true,
       onSuccess: (res) => {
-        const [error, data] = res;
+        const [error, data]: any = res;
         if (activeKey === 'recommend') {
           return setApps({
             app_list: data,
@@ -110,7 +110,7 @@ const Playground: NextPage = () => {
             {
               app_list: apps.app_list.toSpliced(finallyIndex, 12, ...data?.app_list) || [],
               total_count: data?.total_count || 0,
-            } || {},
+            },
           );
         } else {
           console.log('concat');
@@ -118,7 +118,7 @@ const Playground: NextPage = () => {
             {
               app_list: apps.app_list.concat(data?.app_list) || [],
               total_count: data?.total_count || 0,
-            } || {},
+            },
           );
         }
       },

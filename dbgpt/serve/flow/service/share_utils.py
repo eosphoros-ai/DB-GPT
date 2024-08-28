@@ -15,7 +15,6 @@ from ..api.schemas import ServeRequest
 
 
 def _generate_dbgpts_zip(package_name: str, flow: ServeRequest) -> io.BytesIO:
-
     zip_buffer = io.BytesIO()
     flow_name = flow.name
     flow_label = flow.label

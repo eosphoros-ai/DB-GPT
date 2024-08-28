@@ -25,6 +25,7 @@ import {
   Form,
   Input,
   Checkbox,
+  Pagination,
 } from 'antd';
 import { t } from 'i18next';
 import { concat, debounce } from 'lodash';
@@ -69,7 +70,8 @@ function Flow() {
       cacheKey: 'query-flow-list',
       onSuccess: (data) => {
         const [, res] = data;
-        setFlowList((prev) => concat([...prev], res?.items || []));
+        // setFlowList((prev) => concat([...prev], res?.items || []));
+        setFlowList(res?.items || []);
         totalRef.current = {
           current_page: res?.page || 1,
           total_count: res?.total_count || 0,
@@ -83,44 +85,44 @@ function Flow() {
   const { i18n } = useTranslation();
 
   // 触底加载更多
-  const loadMoreData = useCallback(() => {
-    const current = totalRef.current;
-    if (!current) {
-      return;
-    }
-    if (current.current_page < current.total_page) {
-      getFlowListRun({
-        page: current.current_page + 1,
-      });
-      current.current_page = current.current_page + 1;
-    }
-  }, [getFlowListRun]);
+  // const loadMoreData = useCallback(() => {
+  //   const current = totalRef.current;
+  //   if (!current) {
+  //     return;
+  //   }
+  //   if (current.current_page < current.total_page) {
+  //     getFlowListRun({
+  //       page: current.current_page + 1,
+  //     });
+  //     current.current_page = current.current_page + 1;
+  //   }
+  // }, [getFlowListRun]);
 
-  // 滚动时间
-  const handleScroll = debounce((e: Event) => {
-    const target = e.target as HTMLDivElement;
-    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 200) {
-      loadMoreData();
-    }
-  }, 200);
+  // // 滚动事件
+  // const handleScroll = debounce((e: Event) => {
+  //   const target = e.target as HTMLDivElement;
+  //   if (target.scrollHeight - target.scrollTop <= target.clientHeight + 200) {
+  //     loadMoreData();
+  //   }
+  // }, 200);
 
-  useEffect(() => {
-    if (loading) {
-      return;
-    }
-    const currentScrollRef = scrollRef.current;
-    if (currentScrollRef) {
-      currentScrollRef?.addEventListener('scroll', handleScroll);
-      if (currentScrollRef.scrollHeight === currentScrollRef.clientHeight) {
-        loadMoreData();
-      }
-    }
-    return () => {
-      if (currentScrollRef) {
-        currentScrollRef?.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, [loading, handleScroll, loadMoreData]);
+  // useEffect(() => {
+  //   if (loading) {
+  //     return;
+  //   }
+  //   const currentScrollRef = scrollRef.current;
+  //   if (currentScrollRef) {
+  //     currentScrollRef?.addEventListener('scroll', handleScroll);
+  //     if (currentScrollRef.scrollHeight === currentScrollRef.clientHeight) {
+  //       loadMoreData();
+  //     }
+  //   }
+  //   return () => {
+  //     if (currentScrollRef) {
+  //       currentScrollRef?.removeEventListener('scroll', handleScroll);
+  //     }
+  //   };
+  // }, [loading, handleScroll, loadMoreData]);
 
   const handleChat = async (flow: IFlow) => {
     const [, res] = await apiInterceptors(
@@ -203,7 +205,7 @@ function Flow() {
               </Button>
             </div>
           </div>
-          <div className='flex flex-wrap mx-[-8px] pb-12 justify-start items-stretch'>
+          <div className='flex flex-wrap mx-[-8px] pb-12 justify-start items-stretch flex-1'>
             {flowList.map((flow) => (
               <BlurredCard
                 description={flow.description}
@@ -292,6 +294,16 @@ function Flow() {
               />
             ))}
             {flowList.length === 0 && <MyEmpty description='No flow found' />}
+            <div className='w-full flex justify-end shrink-0 pb-12'>
+              <Pagination
+                total={totalRef.current?.total_count || 0}
+                pageSize={12}
+                current={totalRef.current?.current_page}
+                onChange={async (page, page_size) => {
+                  await getFlowListRun({ page });
+                }}
+              />
+            </div>
           </div>
         </div>
       </Spin>
