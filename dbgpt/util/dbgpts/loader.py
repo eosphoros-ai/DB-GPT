@@ -253,7 +253,7 @@ def _get_from_module(module, predicates: Optional[List[str]] = None):
     return results
 
 
-def _parse_package_metadata(package: InstalledPackage) -> BasePackage:
+def parse_package_metadata(package: InstalledPackage) -> BasePackage:
     with open(
         Path(package.root) / DBGPTS_METADATA_FILE, mode="r+", encoding="utf-8"
     ) as f:
@@ -321,7 +321,7 @@ def _load_package_from_path(path: str):
     parsed_packages = []
     for package in packages:
         try:
-            parsed_packages.append(_parse_package_metadata(package))
+            parsed_packages.append(parse_package_metadata(package))
         except Exception as e:
             logger.warning(f"Load package failed!{str(e)}", e)
 
@@ -343,7 +343,7 @@ def _load_flow_package_from_path(
         packages = raw_packages
     if not packages:
         raise ValueError(f"Can't find the package {name} or {new_name}")
-    flow_package = _parse_package_metadata(packages[0])
+    flow_package = parse_package_metadata(packages[0])
     if flow_package.package_type != "flow":
         raise ValueError(f"Unsupported package type: {flow_package.package_type}")
     return cast(FlowPackage, flow_package)

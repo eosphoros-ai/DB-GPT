@@ -32,7 +32,7 @@ export const updateApp = (data: CreateAppParams) => {
  *  应用列表
  */
 export const getAppList = (data: Record<string, any>) => {
-  return POST<Record<string, any>, AppListResponse>('/api/v1/app/list', data);
+  return POST<Record<string, any>, AppListResponse>(`/api/v1/app/list?page=${data.page || 1}&page_size=${data.page_size || 12}`, data);
 };
 /**
  *  获取创建应用agents

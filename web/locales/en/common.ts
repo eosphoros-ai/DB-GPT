@@ -84,8 +84,7 @@ export const CommonEn = {
   max_token: 'max_token',
   max_iteration: 'max_iteration',
   concurrency_limit: 'concurrency_limit',
-  The_maximum_number_of_tokens:
-    'The maximum number of tokens or words allowed in a prompt',
+  The_maximum_number_of_tokens: 'The maximum number of tokens or words allowed in a prompt',
   Theme: 'Theme',
   Port: 'Port',
   Username: 'Username',
@@ -98,8 +97,7 @@ export const CommonEn = {
   Show_Sidebar: 'UnFold',
   language: 'Language',
   choose_model: 'Please choose a model',
-  data_center_desc:
-    'DB-GPT also offers a user-friendly data center management interface for efficient data maintenance.',
+  data_center_desc: 'DB-GPT also offers a user-friendly data center management interface for efficient data maintenance.',
   create_database: 'Create Database',
   create_knowledge: 'Create Knowledge',
   path: 'Path',
@@ -324,4 +322,11 @@ export const CommonEn = {
   Please_input_prompt_name: 'Please input prompt name',
   Copy_Btn: 'Copy',
   Delete_Btn: 'Delete',
+  dbgpts_community: 'DBGPTS Community',
+  community_dbgpts: 'Community DBGPTS',
+  my_dbgpts: 'My DBGPTS',
+  Refresh_dbgpts: 'Refresh from the community Git repository',
+  workflow: 'Workflow',
+  resources: 'Resources',
+  app: 'App',
 } as const;

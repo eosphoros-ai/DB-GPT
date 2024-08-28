@@ -15,6 +15,7 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
 
   const searchParams = useSearchParams();
   const scene = searchParams?.get('scene') ?? '';
+  const select_param = searchParams?.get('select_param') ?? '';
 
   const [userInput, setUserInput] = useState<string>('');
   const [isFocus, setIsFocus] = useState<boolean>(false);
@@ -36,8 +37,9 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
       setUserInput('');
     }, 0);
     await handleChat(userInput, {
-      app_code: appInfo.app_code,
+      app_code: appInfo.app_code || '',
       ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
+      select_param,
       ...(paramKey.includes('resource') && {
         select_param: typeof resourceValue === 'string' ? resourceValue : JSON.stringify(resourceValue) || currentDialogue.select_param,
       }),

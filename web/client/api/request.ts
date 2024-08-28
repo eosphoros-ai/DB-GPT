@@ -4,8 +4,9 @@ import {
   PostAgentMyPluginResponse,
   PostAgentPluginResponse,
   PostAgentQueryParams,
-} from '@/types/agent';
-import { GetAppInfoParams, IApp } from '@/types/app';
+  PostDbgptMyQueryParams,
+} from "@/types/agent";
+import { GetAppInfoParams, IApp, IAgent, IAppData } from "@/types/app";
 import {
   ChatHistoryResponse,
   DialogueListResponse,
@@ -16,14 +17,14 @@ import {
   SceneResponse,
   UserParam,
   UserParamResponse,
-} from '@/types/chat';
+} from "@/types/chat";
 import {
   ChatFeedBackSchema,
   DbListResponse,
   DbSupportTypeResponse,
   PostDbParams,
   PostDbRefreshParams,
-} from '@/types/db';
+} from "@/types/db";
 import {
   GetEditorSQLRoundRequest,
   GetEditorySqlParams,
@@ -54,7 +55,19 @@ import {
   SupportModel,
 } from '@/types/model';
 import { AxiosRequestConfig } from 'axios';
-import { GET, POST } from '.';
+import { DELETE, GET, POST, PUT } from ".";
+import { UpdatePromptParams, IPrompt, PromptParams } from "@/types/prompt";
+import {
+  IFlow,
+  IFlowNode,
+  IFlowResponse,
+  IFlowUpdateParam,
+  IFlowRefreshParams,
+  IFlowExportParams,
+  IFlowImportParams,
+  IUploadFileRequestParams,
+  IUploadFileResponse,
+} from "@/types/flow";
 
 /** App */
 export const postScenes = () => {
@@ -224,7 +237,7 @@ export const addSpace = (data: AddKnowledgeParams) => {
 
 export const getChunkStrategies = () => {
   return GET<null, Array<IChunkStrategyResponse>>(
-    '/knowledge/document/chunkstrategies'
+    "/knowledge/document/chunkstrategies"
   );
 };
 
@@ -296,41 +309,71 @@ export const getSupportModels = () => {
 /** Agent */
 export const postAgentQuery = (data: PostAgentQueryParams) => {
   return POST<PostAgentQueryParams, PostAgentPluginResponse>(
-    '/api/v1/agent/query',
+    "/api/v1/agent/query",
+    data
+  );
+};
+export const postDbgptsQuery = (data: PostAgentQueryParams) => {
+  return POST<PostAgentQueryParams, PostAgentPluginResponse>(
+    `/api/v1/serve/dbgpts/hub/query_page?page=${data?.page_index}&page_size=${data?.page_size}`,
     data
   );
 };
 export const postAgentHubUpdate = (data?: PostAgentHubUpdateParams) => {
   return POST<PostAgentHubUpdateParams>(
-    '/api/v1/agent/hub/update',
-    data ?? { channel: '', url: '', branch: '', authorization: '' }
+    "/api/v1/agent/hub/update",
+    data ?? { channel: "", url: "", branch: "", authorization: "" }
+  );
+};
+export const postDbgptsHubUpdate = (data?: PostAgentHubUpdateParams) => {
+  return POST<PostAgentHubUpdateParams>(
+    "/api/v1/serve/dbgpts/hub/source/refresh",
+    data ?? { channel: "", url: "", branch: "", authorization: "" }
   );
 };
 export const postAgentMy = (user?: string) => {
   return POST<undefined, PostAgentMyPluginResponse>(
-    '/api/v1/agent/my',
+    "/api/v1/agent/my",
     undefined,
     { params: { user } }
   );
 };
+export const postDbgptsMy = (data?: PostDbgptMyQueryParams) => {
+  return POST<PostDbgptMyQueryParams, PostAgentMyPluginResponse>(
+    `/api/v1/serve/dbgpts/my/query_page?page=${data?.page_index}&page_size=${data?.page_size}`,
+    data
+  );
+};
 export const postAgentInstall = (pluginName: string, user?: string) => {
-  return POST('/api/v1/agent/install', undefined, {
+  return POST("/api/v1/agent/install", undefined, {
     params: { plugin_name: pluginName, user },
+    timeout: 60000,
+  });
+};
+export const postDbgptsInstall = (data: object, user?: string) => {
+  return POST("/api/v1/serve/dbgpts/hub/install", data, {
+    params: { user },
     timeout: 60000,
   });
 };
 export const postAgentUninstall = (pluginName: string, user?: string) => {
-  return POST('/api/v1/agent/uninstall', undefined, {
+  return POST("/api/v1/agent/uninstall", undefined, {
     params: { plugin_name: pluginName, user },
     timeout: 60000,
   });
 };
+export const postDbgptsUninstall = (data: { name: string, type: string }, user?: string) => {
+  return POST("/api/v1/serve/dbgpts/my/uninstall", undefined, {
+    params: { ...data, user },
+    timeout: 60000,
+  });
+};
 export const postAgentUpload = (
-  user = '',
+  user = "",
   data: FormData,
-  config?: Omit<AxiosRequestConfig, 'headers'>
+  config?: Omit<AxiosRequestConfig, "headers">
 ) => {
-  return POST<FormData>('/api/v1/personal/agent/upload', data, {
+  return POST<FormData>("/api/v1/personal/agent/upload", data, {
     params: { user },
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -357,7 +400,7 @@ export const postChatFeedBackForm = ({
   config,
 }: {
   data: ChatFeedBackSchema;
-  config?: Omit<AxiosRequestConfig, 'headers'>;
+  config?: Omit<AxiosRequestConfig, "headers">;
 }) => {
   return POST<ChatFeedBackSchema, any>(`/api/v1/feedback/commit`, data, {
     headers: {
@@ -368,6 +411,73 @@ export const postChatFeedBackForm = ({
 };
 
 /** prompt */
+
+/** AWEL Flow */
+export const addFlow = (data: IFlowUpdateParam) => {
+  return POST<IFlowUpdateParam, IFlow>("/api/v2/serve/awel/flows", data);
+};
+
+export const getFlows = ({ page, page_size }: { page?: number, page_size?: number }) => {
+  return GET<any, IFlowResponse>(`/api/v2/serve/awel/flows?page=${page || 1}&page_size=${page_size || 12}`);
+};
+
+export const getFlowById = (id: string) => {
+  return GET<null, IFlow>(`/api/v2/serve/awel/flows/${id}`);
+};
+
+export const updateFlowById = (id: string, data: IFlowUpdateParam) => {
+  return PUT<IFlowUpdateParam, IFlow>(`/api/v2/serve/awel/flows/${id}`, data);
+};
+
+export const deleteFlowById = (id: string) => {
+  return DELETE<null, null>(`/api/v2/serve/awel/flows/${id}`);
+};
+
+export const getFlowNodes = () => {
+  return GET<null, Array<IFlowNode>>(`/api/v2/serve/awel/nodes`);
+};
+
+export const refreshFlowNodeById = (data: IFlowRefreshParams) => {
+  return POST<IFlowRefreshParams, IFlowNode>(
+    "/api/v2/serve/awel/nodes/refresh",
+    data
+  );
+};
+
+export const debugFlow = (data: any) => {
+  return POST<any, IFlowNode>("/api/v2/serve/awel/flow/debug", data);
+};
+
+export const exportFlow = (data: IFlowExportParams) => {
+  return GET<IFlowExportParams, any>(
+    `/api/v2/serve/awel/flow/export/${data.uid}`,
+    data
+  );
+};
+
+export const importFlow = (data: IFlowImportParams) => {
+  return POST<IFlowImportParams, any>("/api/v2/serve/awel/flow/import", data);
+};
+
+export const uploadFile = (data: IUploadFileRequestParams) => {
+  return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>(
+    "/api/v2/serve/file/files/dbgpt",
+    data
+  );
+};
+
+export const downloadFile = (fileId: string) => {
+  return GET<null, any>(`/api/v2/serve/file/files/dbgpt/${fileId}`);
+};
+
+// TODO：wait for interface update
+export const getFlowTemplateList = () => {
+  return GET<null, Array<any>>("/api/v2/serve/awel/flow/templates");
+};
+
+export const getFlowTemplateById = (id: string) => {
+  return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
+};
 
 /** app */
 
@@ -398,7 +508,7 @@ export const getAppInfo = (data: GetAppInfoParams) => {
   return GET<GetAppInfoParams, IApp>('/api/v1/app/info', data);
 };
 
-export const getSupportDBList = (db_name = '') => {
+export const getSupportDBList = (db_name = "") => {
   return GET<null, Record<string, any>>(
     `/api/v1/permission/db/list?db_name=${db_name}`
   );

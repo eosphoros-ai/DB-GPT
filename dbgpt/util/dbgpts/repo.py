@@ -1,4 +1,5 @@
 import functools
+import logging
 import os
 import shutil
 import subprocess
@@ -23,6 +24,8 @@ from .loader import _load_package_from_path
 cl = CliLogger()
 
 _DEFAULT_REPO = "eosphoros/dbgpts"
+
+logger = logging.getLogger(__name__)
 
 
 @functools.cache
@@ -161,7 +164,11 @@ def clone_repo(
     if branch:
         clone_command += ["-b", branch]
 
-    subprocess.run(clone_command, check=True)
+    # subprocess.run(clone_command, check=True)
+    process = subprocess.Popen(
+        clone_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = process.communicate()
     if branch:
         cl.info(
             f"Repo '{repo}' cloned from {repo_url} with branch '{branch}' successfully."
@@ -209,7 +216,7 @@ def install(
     if not repo_info:
         cl.error(f"The specified dbgpt '{name}' does not exist.", exit_code=1)
     repo, dbgpt_path = repo_info
-    _copy_and_install(repo, name, dbgpt_path)
+    copy_and_install(repo, name, dbgpt_path)
 
 
 def uninstall(name: str):
@@ -227,7 +234,80 @@ def uninstall(name: str):
     cl.info(f"Uninstalling dbgpt '{name}'...")
 
 
-def _copy_and_install(repo: str, name: str, package_path: Path):
+def inner_uninstall(name: str):
+    """Uninstall the specified dbgpt
+
+    Args:
+        name (str): The name of the dbgpt
+    """
+    install_path = INSTALL_DIR / name
+    if not install_path.exists():
+        logger.warning(f"The dbgpt '{name}' has not been installed yet.")
+        return
+    os.chdir(install_path)
+    # subprocess.run(["pip", "uninstall", name, "-y"], check=True)
+    process = subprocess.Popen(
+        ["pip", "uninstall", name, "-y"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = process.communicate()
+    logger.info(f"{out},{err}")
+    shutil.rmtree(install_path)
+    logger.info(f"Uninstalling dbgpt '{name}'...")
+
+
+def inner_copy_and_install(repo: str, name: str, package_path: Path):
+    if not package_path.exists():
+        raise ValueError(
+            f"The specified dbgpt '{name}' does not exist in the {repo} tap."
+        )
+    install_path = INSTALL_DIR / name
+    if install_path.exists():
+        logger.info(
+            f"The dbgpt '{name}' has already been installed"
+            f"({_print_path(install_path)})."
+        )
+        return True
+
+    try:
+        shutil.copytree(package_path, install_path)
+        logger.info(f"Installing dbgpts '{name}' from {repo}...")
+        os.chdir(install_path)
+        # subprocess.run(["poetry", "build"], check=True)
+        process = subprocess.Popen(
+            ["poetry", "build"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out, err = process.communicate()
+        logger.info(f"{out},{err}")
+
+        wheel_files = list(install_path.glob("dist/*.whl"))
+        if not wheel_files:
+            logger.error(
+                "No wheel file found after building the package.",
+            )
+            raise ValueError("No wheel file found after building the package.")
+        # Install the wheel file using pip
+        wheel_file = wheel_files[0]
+        logger.info(
+            f"Installing dbgpts '{name}' wheel file {_print_path(wheel_file)}..."
+        )
+        # subprocess.run(["pip", "install", str(wheel_file)], check=True)
+        process = subprocess.Popen(
+            ["pip", "install", str(wheel_file)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out, err = process.communicate()
+        logger.info(f"{out},{err}")
+        _write_install_metadata(name, repo, install_path)
+        logger.info(f"Installed dbgpts at {_print_path(install_path)}.")
+        logger.info(f"dbgpts '{name}' installed successfully.")
+    except Exception as e:
+        if install_path.exists():
+            shutil.rmtree(install_path)
+        raise e
+
+
+def copy_and_install(repo: str, name: str, package_path: Path):
     if not package_path.exists():
         cl.error(
             f"The specified dbgpt '{name}' does not exist in the {repo} tap.",
@@ -348,6 +428,65 @@ def list_repo_apps(repo: str | None = None, with_update: bool = True):
     for repo, package, app in data:
         table.add_row(repo, package, app)
     cl.print(table)
+
+
+def update_repo_inner(repo: str):
+    logger.info(f"Updating repo '{repo}'...")
+    repo_path = os.path.join(DBGPTS_REPO_HOME, repo)
+    if not os.path.exists(repo_path):
+        if repo in DEFAULT_REPO_MAP:
+            add_repo(repo, DEFAULT_REPO_MAP[repo])
+            if not os.path.exists(repo_path):
+                raise ValueError(f"The repo '{repo}' does not exist.")
+        else:
+            raise ValueError(f"The repo '{repo}' does not exist.")
+    os.chdir(repo_path)
+    if not os.path.exists(".git"):
+        logger.info(f"Repo '{repo}' is not a git repository.")
+        return
+    logger.info(f"Updating repo '{repo}'...")
+
+    process = subprocess.Popen(
+        ["git", "pull"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, err = process.communicate()
+    logger.info(f"{out},{err}")
+
+
+def list_dbgpts(
+    spec_repo: str | None = None, with_update: bool = True
+) -> List[Tuple[str, str, str, str]]:
+    """scan dbgpts in repo
+
+    Args:
+        spec_repo:  The name of the repo
+
+    Returns:
+        Tuple[str, Path] | None: The repo and the path of the dbgpt
+    """
+    repos = _list_repos_details()
+    if spec_repo:
+        repos = list(filter(lambda x: x[0] == spec_repo, repos))
+        if not repos:
+            raise ValueError(f"The specified repo '{spec_repo}' does not exist.")
+    if with_update:
+        for repo in repos:
+            update_repo_inner(repo[0])
+    data = []
+    for repo in repos:
+        repo_path = Path(repo[1])
+        for package in DEFAULT_PACKAGES:
+            dbgpt_path = repo_path / package
+            for app in os.listdir(dbgpt_path):
+                gpts_path = dbgpt_path / app
+                dbgpt_metadata_path = dbgpt_path / app / DBGPTS_METADATA_FILE
+                if (
+                    dbgpt_path.exists()
+                    and dbgpt_path.is_dir()
+                    and dbgpt_metadata_path.exists()
+                ):
+                    data.append((repo[0], package, app, gpts_path))
+    return data
 
 
 def list_installed_apps():
