@@ -15,8 +15,8 @@ export const renderTimePicker = (params: Props) => {
 
   const onChangeTime: TimePickerProps['onChange'] = (time, timeString) => {
     formValuesChange({
-      time:timeString
-    },{force:true})
+      [data.name]:timeString
+    })
   };
 
   return <TimePicker {...attr} onChange={onChangeTime}  className="w-full" placeholder="please select a moment" />;
