@@ -13,7 +13,6 @@ export const renderDatePicker = (params: Props) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
   const onChange: DatePickerProps['onChange'] = (date, dateString) => {
-    console.log(date, dateString);
     formValuesChange({
       [data.name]:dateString
     })
