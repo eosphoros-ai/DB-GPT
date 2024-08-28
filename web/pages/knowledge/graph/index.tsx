@@ -1,135 +1,215 @@
-import React, { useEffect,useRef, useState } from 'react';
-import cytoscape from 'cytoscape';
-import euler from 'cytoscape-euler';
-import { Button } from 'antd';
-import { RollbackOutlined } from '@ant-design/icons';
-cytoscape.use(euler)
-import { apiInterceptors,getGraphVis } from '@/client/api';
-import { useRouter } from 'next/router';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Button, Spin } from "antd";
+import { RollbackOutlined } from "@ant-design/icons";
+import { apiInterceptors, getGraphVis } from "@/client/api";
+import { useRouter } from "next/router";
+import { ExtensionCategory, idOf, register } from "@antv/g6";
+import type {
+  Graph,
+  GraphData,
+  GraphOptions,
+  IPointerEvent,
+  PluginOptions,
+} from "@antv/g6";
+import type { GraphVisResult } from "../../../types/knowledge";
+import { Graphin } from "@antv/graphin";
+import {
+  getCommunityId,
+  getNodeDegree,
+  getNodeSize,
+  isInCommunity,
+} from "./util";
+import { ConnectedComponent } from "./extension/connected-component";
+import { groupBy } from "lodash";
 
-const LAYOUTCONFIG = {
-  name: 'euler',
-  springLength: 340,
-  fit: false,
-  springCoeff: 0.0008,
-  mass: 20,
-  dragCoeff: 1,
-  gravity: -20,
-  pull: 0.009,
-  randomize: false,
-  padding: 0,
-  maxIterations: 1000,
-  maxSimulationTime: 4000,    
-}
+type GraphVisData = GraphVisResult | null;
+
+register(ExtensionCategory.LAYOUT, "connected-component", ConnectedComponent);
+
+const PALETTE = [
+  "#5F95FF",
+  "#61DDAA",
+  "#F6BD16",
+  "#7262FD",
+  "#78D3F8",
+  "#9661BC",
+  "#F6903D",
+  "#008685",
+  "#F08BB4",
+];
 
 function GraphVis() {
-  const myRef = useRef<HTMLDivElement>(null);
-  const LIMIT = 500
+  const LIMIT = 500;
   const router = useRouter();
+  const [data, setData] = useState<GraphVisData>(null);
+  const graphRef = useRef<Graph | null>();
+  const [isReady, setIsReady] = useState(false);
+
   const fetchGraphVis = async () => {
-    const [_, data] =  await apiInterceptors(getGraphVis(spaceName as string,{limit:LIMIT}))
-    if(myRef.current && data){
-      let processedData = processResult(data)
-      renderGraphVis(processedData)
-    }
-  }
-  const processResult = (data:{nodes:Array<any>,edges:Array<any>}) => {
-    let nodes:any[] = []
-    let edges:any[] = []
-    data.nodes.forEach((node:any)=>{
-      let n = {
-        data:{
-          id:node.vid,
-          displayName:node.vid,
-        }
-      }
-      nodes.push(n)
-    })
-    data.edges.forEach((edge:any)=>{
-      let e = {
-        data:{
-          id:edge.src+'_'+edge.dst+'_'+edge.label,
-          source:edge.src,
-          target:edge.dst,
-          displayName:edge.label
-        }
-      }
-      edges.push(e)
-    })
-    return {
-      nodes,
-      edges
-    }
-  }
-  const renderGraphVis = (data:any)=> {
-    let dom = myRef.current as HTMLDivElement
-    let cy = cytoscape(
-      {
-        container:myRef.current,
-        elements:data,
-        zoom:0.3,
-        pixelRatio: 'auto',
-        style:[
-          {
-            selector: 'node',
-            style: {
-              width: 60,
-              height: 60,
-              color: '#fff',
-              'text-outline-color': '#37D4BE',
-              'text-outline-width': 2,
-              'text-valign': 'center',
-              'text-halign': 'center',
-              'background-color': '#37D4BE',
-              'label': 'data(displayName)'
-            }
-          },
-          {
-            selector: 'edge',
-            style: {
-              'width': 1,
-              color: '#fff',
-              'label': 'data(displayName)',
-              'line-color': '#66ADFF',
-              'font-size': 14,
-              'target-arrow-shape': 'vee',
-              'control-point-step-size': 40,
-              'curve-style': 'bezier',
-              'text-background-opacity': 1,
-              'text-background-color': '#66ADFF',
-              'target-arrow-color': '#66ADFF',
-              'text-background-shape': 'roundrectangle',
-              'text-border-color': '#000',
-              'text-wrap': 'wrap',
-              'text-valign': 'top',
-              'text-halign': 'center',
-              'text-background-padding':'5',
-            }
-          }
-        ]
-      }
-    )
-    cy.layout(LAYOUTCONFIG).run()
-    cy.pan({
-      x: dom.clientWidth / 2,
-      y: dom.clientHeight / 2
-     })
-  }
-  const back = ()=>{
+    const [_, data] = await apiInterceptors(
+      getGraphVis(spaceName as string, { limit: LIMIT })
+    );
+    setData(data);
+  };
+
+  const transformData = (data: GraphVisData): GraphData => {
+    if (!data) return { nodes: [], edges: [] };
+
+    const nodes = data.nodes.map((node) => ({ id: node.vid, data: node }));
+    const edges = data.edges.map((edge) => ({
+      source: edge.src,
+      target: edge.dst,
+      data: edge,
+    }));
+
+    nodes.forEach((datum) => {
+      datum.data.communityId = getCommunityId(edges, idOf(datum));
+    });
+
+    return { nodes, edges };
+  };
+
+  const back = () => {
     router.push(`/knowledge`);
-  }
+  };
+
   const {
     query: { spaceName },
   } = useRouter();
-  useEffect(()=>{
-    spaceName && fetchGraphVis()
-  })
+
+  useEffect(() => {
+    if (spaceName) fetchGraphVis();
+  }, [spaceName]);
+
+  const graphData = useMemo(() => transformData(data), [data]);
+
+  useEffect(() => {
+    if (isReady && graphRef.current) {
+      const groupedNodes = groupBy(
+        graphData.nodes,
+        (node) => node.data!.communityId
+      );
+      const plugins: PluginOptions = [];
+      Object.entries(groupedNodes).forEach(([key, nodes]) => {
+        if (nodes.length < 2) return;
+        const color = graphRef.current?.getElementRenderStyle(
+          idOf(nodes[0])
+        ).fill;
+        plugins.push({
+          key,
+          type: "bubble-sets",
+          members: nodes.map(idOf),
+          stroke: color,
+          fill: color,
+          fillOpacity: 0.1,
+        });
+      });
+
+      graphRef.current.setPlugins((prev) => [...prev, ...plugins]);
+    }
+  }, [isReady]);
+
+  const options: GraphOptions = {
+    data: graphData,
+    autoFit: "center",
+    node: {
+      style: (d) => {
+        const style = {
+          size: getNodeSize(getNodeDegree(graphData.edges!, idOf(d))),
+          label: true,
+          labelLineWidth: 2,
+          labelText: d.id,
+          labelFontSize: 10,
+          labelBackground: true,
+          labelBackgroundFill: "#e5e7eb",
+          labelPadding: [0, 6],
+          labelBackgroundRadius: 4,
+        };
+        if (!isInCommunity(graphData, idOf(d))) {
+          Object.assign(style, { fill: "#b0b0b0" });
+        }
+        return style;
+      },
+      state: {
+        inactive: {
+          label: false,
+        },
+      },
+      palette: {
+        type: "group",
+        field: "communityId",
+        color: PALETTE,
+      },
+    },
+    edge: {
+      style: {
+        lineWidth: 1,
+        stroke: "#e2e2e2",
+        endArrow: true,
+        endArrowType: "vee",
+        label: true,
+        labelFontSize: 8,
+        labelBackground: true,
+        labelText: (d) => d.data!.label!.toString(),
+        labelBackgroundFill: "#e5e7eb",
+        labelPadding: [0, 6],
+        labelBackgroundRadius: 4,
+      },
+      state: {
+        inactive: {
+          label: false,
+        },
+      },
+    },
+    behaviors: [
+      "drag-canvas",
+      "zoom-canvas",
+      "drag-element",
+      {
+        type: "hover-activate",
+        degree: 1,
+        inactiveState: "inactive",
+        enable: (event: IPointerEvent) =>
+          ["node", "edge"].includes(event.targetType),
+      },
+    ],
+    animation: false,
+    layout: [
+      { type: "connected-component" },
+      {
+        type: "force",
+        preventOverlap: true,
+        leafCluster: true,
+        clustering: false,
+        nodeClusterBy: "communityId",
+        clusterNodeStrength: 600,
+      },
+    ],
+    transforms: ["process-parallel-edges"],
+  };
+
+  if (!data) return <Spin className="h-full justify-center content-center" />;
+
   return (
     <div className="p-4 h-full overflow-y-scroll relative px-2">
-       <div>
-        <Button onClick={back} icon={<RollbackOutlined />}> Back </Button>
-       </div>
-        <div className='h-full w-full' ref={myRef}></div>
+      <Graphin
+        ref={(ref) => {
+          graphRef.current = ref;
+        }}
+        style={{ height: "100%", width: "100%" }}
+        options={options}
+        onReady={() => {
+          setIsReady(true);
+        }}
+      >
+        <Button
+          style={{ background: "#fff" }}
+          onClick={back}
+          icon={<RollbackOutlined />}
+        >
+          Back
+        </Button>
+      </Graphin>
     </div>
   );
 }

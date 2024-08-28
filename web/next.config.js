@@ -46,7 +46,13 @@ const nextConfig = {
   }
 };
 
-const withTM = require('next-transpile-modules')(['@berryv/g2-react','@antv/g2','react-syntax-highlighter']);
+const withTM = require("next-transpile-modules")([
+  "@berryv/g2-react",
+  "@antv/g2",
+  "react-syntax-highlighter",
+  "@antv/g6",
+  "@antv/graphin",
+]);
 
 module.exports = withTM({
   ...nextConfig,
