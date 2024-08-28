@@ -156,6 +156,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             f"Section {i + 1}:\n{community.summary}"
             for i, community in enumerate(communities)
         ]
+        context = "\n".join(summaries) if summaries else ""
 
         # local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
@@ -166,11 +167,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             return []
 
         # merge search results into context
-        context = HYBRID_SEARCH_PT_CN.format(
-            context=summaries,
+        content = HYBRID_SEARCH_PT_CN.format(
+            context=context,
             graph=subgraph
         )
-        return [Chunk(content=context)]
+        return [Chunk(content=content)]
 
     def truncate(self) -> List[str]:
         """Truncate knowledge graph."""
@@ -263,7 +264,7 @@ HYBRID_SEARCH_PT_CN = (
     "\n"
     "----\n"
     "\n"
-    "接下来[上下文]和[知识图谱]的信息，可以帮助你回答更好地用户的问题。\n"
+    "接下来的[上下文]和[知识图谱]的信息，可以帮助你回答更好地用户的问题。\n"
     "\n"
     "[上下文]:\n"
     "{context}\n"
