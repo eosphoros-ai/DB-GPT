@@ -98,6 +98,7 @@ class ChatKnowledge(BaseChat):
             top_k=retriever_top_k,
             query_rewrite=query_rewrite,
             rerank=reranker,
+            llm_model=self.llm_model,
         )
 
         self.prompt_template.template_is_strict = False
