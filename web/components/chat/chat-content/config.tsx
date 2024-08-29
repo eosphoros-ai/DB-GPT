@@ -44,7 +44,7 @@ const codeComponents = {
    */
   code: withDefaultChartCode({
     languageRenderers: {
-      'agent-plans': ({ node, className, children, style }) => {
+      'agent-plans': ({ className, children }) => {
         const content = String(children);
         /**
          * @description
@@ -55,11 +55,11 @@ const codeComponents = {
         try {
           const data = JSON.parse(content) as Parameters<typeof AgentPlans>[0]['data'];
           return <AgentPlans data={data} />;
-        } catch (e) {
+        } catch {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'agent-messages': ({ node, className, children, style }) => {
+      'agent-messages': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {
@@ -69,7 +69,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-convert-error': ({ node, className, children, style }) => {
+      'vis-convert-error': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {
@@ -79,7 +79,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-dashboard': ({ node, className, children, style }) => {
+      'vis-dashboard': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {
@@ -89,7 +89,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-chart': ({ node, className, children, style }) => {
+      'vis-chart': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {
@@ -99,7 +99,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-plugin': ({ node, className, children, style }) => {
+      'vis-plugin': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {
@@ -109,7 +109,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-code': ({ node, className, children, style, ...props }) => {
+      'vis-code': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
 
@@ -120,7 +120,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-app-link': ({ node, className, children, style, ...props }) => {
+      'vis-app-link': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {
@@ -130,7 +130,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-api-response': ({ node, className, children, style, ...props }) => {
+      'vis-api-response': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {
@@ -146,7 +146,6 @@ const codeComponents = {
       const lang = className?.replace('language-', '') || '';
       const { context, matchValues } = matchCustomeTagValues(content);
 
-      console.log(111, { node, className, children, style, ...props }, lang);
       return (
         <>
           {lang ? (
@@ -302,7 +301,6 @@ const extraComponents: MarkdownComponent = {
         data: [],
       };
     }
-    console.log(111, data);
 
     const columns = data?.data?.[0]
       ? Object.keys(data?.data?.[0])?.map(item => {

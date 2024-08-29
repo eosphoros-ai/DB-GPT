@@ -40,7 +40,7 @@ export default function DocUploadForm(props: IProps) {
   const [files, setFiles] = useState<any>([]);
 
   const upload = async (data: FieldType) => {
-    const { docName, textSource, text, webPageUrl, doc_token, questions = [], originFileObj } = data;
+    const { docName, textSource, text, webPageUrl, doc_token, questions = [] } = data;
     let docId: any;
     setSpinning(true);
     switch (docType) {
@@ -98,7 +98,7 @@ export default function DocUploadForm(props: IProps) {
     });
   };
 
-  const handleFileChange = ({ file, fileList }: UploadChangeParam) => {
+  const handleFileChange = ({ fileList }: UploadChangeParam) => {
     if (fileList.length === 0) {
       form.setFieldValue('originFileObj', null);
     }

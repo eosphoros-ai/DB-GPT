@@ -183,7 +183,6 @@ const Evaluation = () => {
     {
       // manual: true,
       onSuccess: data => {
-        console.log(data);
         setEvaluationList(data?.items);
         setEvaluationTotal(data?.total_count);
       },
@@ -295,7 +294,6 @@ const Evaluation = () => {
                   code: record?.code,
                 }),
               );
-              console.log(res);
               if (res?.success == true) {
                 message.success('删除成功');
                 getDataSetsRefresh();
