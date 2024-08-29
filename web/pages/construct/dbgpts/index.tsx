@@ -1,16 +1,21 @@
-import ConstructLayout from '@/new-components/layout/Construct';
-import MarketPlugins from '@/components/agent/market-plugins';
-import MyPlugins from '@/components/agent/my-plugins';
-import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
-import { ClearOutlined, DownloadOutlined, PlusOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
-import { useRequest } from 'ahooks';
-import { Button, Input, Segmented, SegmentedProps, Tabs, Form, message, Spin, Tag } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiInterceptors, postDbgptsHubUpdate, postDbgptsInstall, postDbgptsQuery, postDbgptsUninstall, postDbgptsMy } from '@/client/api';
-import { useTranslation } from 'react-i18next';
+import {
+  apiInterceptors,
+  postDbgptsHubUpdate,
+  postDbgptsInstall,
+  postDbgptsMy,
+  postDbgptsQuery,
+  postDbgptsUninstall,
+} from '@/client/api';
 import BlurredCard, { ChatButton } from '@/new-components/common/blurredCard';
-import moment from 'moment';
+import ConstructLayout from '@/new-components/layout/Construct';
+import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
+import { ClearOutlined, DownloadOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
+import { useRequest } from 'ahooks';
+import { Button, Input, Segmented, SegmentedProps, Spin, Tag, message } from 'antd';
 import cls from 'classnames';
+import moment from 'moment';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 function Agent() {
   const { t } = useTranslation();
 
@@ -18,10 +23,8 @@ function Agent() {
   const [activeKey, setActiveKey] = useState<string>('market');
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [_error, setIsError] = useState(false); // _error is not used
   const [actionIndex, setActionIndex] = useState<number | undefined>();
-
-  const [form] = Form.useForm<PostAgentQueryParams['filter']>();
   const [typeStr, setTypeStr] = useState('all');
 
   const pagination = useMemo<{ pageNo: number; pageSize: number }>(
@@ -32,19 +35,18 @@ function Agent() {
     [],
   );
 
-  const {
-    data: agents = [],
-    refresh,
-  } = useRequest<IAgentPlugin[], []>(
+  const { data: agents = [], refresh } = useRequest<IAgentPlugin[], []>(
     async () => {
       setLoading(true);
       if (activeKey === 'my') {
-        const [err, res] = await apiInterceptors(postDbgptsMy({
-          name: searchValue || undefined,
-          type: typeStr === 'all' ? undefined : typeStr,
-          page_index: pagination.pageNo,
-          page_size: pagination.pageSize,
-        }));
+        const [err, res] = await apiInterceptors(
+          postDbgptsMy({
+            name: searchValue || undefined,
+            type: typeStr === 'all' ? undefined : typeStr,
+            page_index: pagination.pageNo,
+            page_size: pagination.pageSize,
+          }),
+        );
         setLoading(false);
         setIsError(!!err);
         return res?.items ?? [];
@@ -81,7 +83,7 @@ function Agent() {
   }, [activeKey, typeStr]);
 
   const pluginAction = useCallback(
-    async (agent: { name: string, type: string }, index: number, isInstall: boolean) => {
+    async (agent: { name: string; type: string }, index: number, isInstall: boolean) => {
       if (actionIndex) return;
       setActionIndex(index);
       setLoading(true);
@@ -90,10 +92,12 @@ function Agent() {
         const [err] = await apiInterceptors(postDbgptsInstall(agent));
         errs = err;
       } else {
-        const [err] = await apiInterceptors(postDbgptsUninstall({
-          name: agent.name,
-          type: agent.type
-        }));
+        const [err] = await apiInterceptors(
+          postDbgptsUninstall({
+            name: agent.name,
+            type: agent.type,
+          }),
+        );
         errs = err;
       }
       setLoading(false);
@@ -144,7 +148,7 @@ function Agent() {
   ];
 
   const logoFn = (type: string) => {
-    switch(type) {
+    switch (type) {
       case 'workflow':
         return '/pictures/flow.png';
       case 'resources':
@@ -156,19 +160,19 @@ function Agent() {
       case 'agents':
       default:
         return '/pictures/agent.png';
-    };
-  }
+    }
+  };
 
   return (
     <ConstructLayout>
       <Spin spinning={loading}>
-        <div className="h-screen w-full p-4 md:p-6 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
+        <div className='h-screen w-full p-4 md:p-6 overflow-y-auto'>
+          <div className='flex justify-between items-center mb-6'>
+            <div className='flex items-center gap-4'>
               <Segmented
-                className="backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+                className='backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
                 options={items}
-                onChange={(key) => {
+                onChange={key => {
                   setActiveKey(key as string);
                 }}
                 value={activeKey}
@@ -184,7 +188,7 @@ function Agent() {
                 className="w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
               /> */}
             </div>
-            <div className="flex items-center gap-4">
+            <div className='flex items-center gap-4'>
               <Button
                 className={cls('border-none text-white bg-button-gradient h-full', {
                   'opacity-40': false,
@@ -199,22 +203,22 @@ function Agent() {
           </div>
           <div className='w-full flex flex-wrap pb-12 mx-[-8px]'>
             <Segmented
-              className="backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+              className='backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
               options={typeItems}
-              onChange={(key) => {
+              onChange={key => {
                 setTypeStr(key as string);
               }}
               value={typeStr}
             />
             <Input
-              variant="filled"
+              variant='filled'
               prefix={<SearchOutlined />}
               placeholder={t('please_enter_the_keywords')}
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={e => setSearchValue(e.target.value)}
               onPressEnter={refresh}
               allowClear
-              className="w-[230px] h-[40px] border-1 border-white ml-4 backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+              className='w-[230px] h-[40px] border-1 border-white ml-4 backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
             />
           </div>
           <div className='flex flex-wrap pb-12'>
@@ -236,21 +240,19 @@ function Agent() {
                   </div>
                 }
                 LeftBottom={
-                  <div className="flex gap-2">
+                  <div className='flex gap-2'>
                     {agent.author && <span>{agent.author}</span>}
                     {agent.author && <span>•</span>}
                     {agent?.gmt_created && <span>{moment(agent?.gmt_created).fromNow() + ' ' + t('update')}</span>}
                   </div>
                 }
-                RightTop={
-                  agent.type && <Tag>{agent.type}</Tag>
-                }
+                RightTop={agent.type && <Tag>{agent.type}</Tag>}
                 rightTopHover={false}
                 RightBottom={
                   agent.installed || activeKey == 'my' ? (
                     <ChatButton
                       Icon={<ClearOutlined />}
-                      text="Uninstall"
+                      text='Uninstall'
                       onClick={() => {
                         pluginAction(agent, index, false);
                       }}
@@ -258,7 +260,7 @@ function Agent() {
                   ) : (
                     <ChatButton
                       Icon={<DownloadOutlined />}
-                      text="Install"
+                      text='Install'
                       onClick={() => {
                         pluginAction(agent, index, true);
                       }}

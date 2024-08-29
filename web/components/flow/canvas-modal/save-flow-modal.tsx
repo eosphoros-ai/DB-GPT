@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Modal, Form, Input, Button, Space, message, Checkbox } from 'antd';
+import { addFlow, apiInterceptors, updateFlowById } from '@/client/api';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { apiInterceptors, addFlow, updateFlowById } from '@/client/api';
 import { mapHumpToUnderline } from '@/utils/flow';
+import { Button, Checkbox, Form, Input, Modal, Space, message } from 'antd';
+import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactFlowInstance } from 'reactflow';
-import { useSearchParams } from 'next/navigation';
 
 const { TextArea } = Input;
 
@@ -32,26 +32,16 @@ export const SaveFlowModal: React.FC<Props> = ({
   function onLabelChange(e: React.ChangeEvent<HTMLInputElement>) {
     const label = e.target.value;
     // replace spaces with underscores, convert uppercase letters to lowercase, remove characters other than digits, letters, _, and -.
-    let result = label
+    const result = label
       .replace(/\s+/g, '_')
       .replace(/[^a-z0-9_-]/g, '')
       .toLowerCase();
-    result = result;
     form.setFieldsValue({ name: result });
   }
 
   async function onSaveFlow() {
-    const {
-      name,
-      label,
-      description = '',
-      editable = false,
-      state = 'deployed',
-    } = form.getFieldsValue();
-    console.log(form.getFieldsValue());
-    const reactFlowObject = mapHumpToUnderline(
-      reactFlow.toObject() as IFlowData
-    );
+    const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
+    const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
 
     if (id) {
       const [, , res] = await apiInterceptors(
@@ -63,7 +53,7 @@ export const SaveFlowModal: React.FC<Props> = ({
           uid: id,
           flow_data: reactFlowObject,
           state,
-        })
+        }),
       );
 
       if (res?.success) {
@@ -80,7 +70,7 @@ export const SaveFlowModal: React.FC<Props> = ({
           editable,
           flow_data: reactFlowObject,
           state,
-        })
+        }),
       );
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
@@ -130,11 +120,10 @@ export const SaveFlowModal: React.FC<Props> = ({
               { required: true, message: 'Please input flow name!' },
               () => ({
                 validator(_, value) {
+                  // eslint-disable-next-line no-useless-escape
                   const regex = /^[a-zA-Z0-9_\-]+$/;
                   if (!regex.test(value)) {
-                    return Promise.reject(
-                      'Can only contain numbers, letters, underscores, and dashes'
-                    );
+                    return Promise.reject('Can only contain numbers, letters, underscores, and dashes');
                   }
                   return Promise.resolve();
                 },
@@ -144,20 +133,11 @@ export const SaveFlowModal: React.FC<Props> = ({
             <Input />
           </Form.Item>
 
-          <Form.Item
-            label='Description'
-            initialValue={flowInfo?.description}
-            name='description'
-          >
+          <Form.Item label='Description' initialValue={flowInfo?.description} name='description'>
             <TextArea rows={3} />
           </Form.Item>
 
-          <Form.Item
-            label='Editable'
-            name='editable'
-            initialValue={flowInfo?.editable}
-            valuePropName='checked'
-          >
+          <Form.Item label='Editable' name='editable' initialValue={flowInfo?.editable} valuePropName='checked'>
             <Checkbox />
           </Form.Item>
 
@@ -167,11 +147,9 @@ export const SaveFlowModal: React.FC<Props> = ({
 
           <Form.Item label='Deploy'>
             <Checkbox
-              defaultChecked={
-                flowInfo?.state === 'deployed' || flowInfo?.state === 'running'
-              }
+              defaultChecked={flowInfo?.state === 'deployed' || flowInfo?.state === 'running'}
               checked={deploy}
-              onChange={(e) => {
+              onChange={e => {
                 const val = e.target.checked;
                 form.setFieldValue('state', val ? 'deployed' : 'developing');
                 setDeploy(val);

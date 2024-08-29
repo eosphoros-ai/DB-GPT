@@ -10,7 +10,7 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
   useEffect(() => {
     if (params) {
       const initialValues: ParamValues = {};
-      params.forEach((param) => {
+      params.forEach(param => {
         initialValues[param.param_name] = param.default_value;
       });
       form.setFieldsValue(initialValues); // 设置表单字段的初始值
@@ -36,7 +36,9 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
         <Form.Item
           key={param.param_name}
           label={
-            <p className="whitespace-normal overflow-wrap-break-word">{param.description?.length > 20 ? param.param_name : param.description}</p>
+            <p className='whitespace-normal overflow-wrap-break-word'>
+              {param.description?.length > 20 ? param.param_name : param.description}
+            </p>
           }
           name={param.param_name}
           initialValue={param.default_value}

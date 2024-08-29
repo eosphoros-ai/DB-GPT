@@ -1,52 +1,36 @@
-import {
-  Modal,
-  Form,
-  Button,
-  message,
-  Upload,
-  UploadFile,
-  UploadProps,
-  GetProp,
-  Radio,
-  Space,
-} from 'antd';
 import { apiInterceptors, importFlow } from '@/client/api';
-import { Node, Edge } from 'reactflow';
 import { UploadOutlined } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
+import { Button, Form, GetProp, Modal, Radio, Space, Upload, UploadFile, UploadProps, message } from 'antd';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Edge, Node } from 'reactflow';
 
 type Props = {
   isImportModalOpen: boolean;
-  setNodes: React.Dispatch<
-    React.SetStateAction<Node<any, string | undefined>[]>
-  >;
+  setNodes: React.Dispatch<React.SetStateAction<Node<any, string | undefined>[]>>;
   setEdges: React.Dispatch<React.SetStateAction<Edge<any>[]>>;
   setIsImportFlowModalOpen: (value: boolean) => void;
 };
 type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
-export const ImportFlowModal: React.FC<Props> = ({
-  setNodes,
-  setEdges,
-  isImportModalOpen,
-  setIsImportFlowModalOpen,
-}) => {
+export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImportFlowModalOpen }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+
   useEffect(() => {
     if (isImportModalOpen) {
       form.resetFields();
       setFileList([]);
     }
-  }, [isImportModalOpen]);
+  }, [isImportModalOpen, form]);
+
   const onFlowImport = async (values: any) => {
     values.file = values.file?.[0];
 
     const formData: any = new FormData();
-    fileList.forEach((file) => {
+    fileList.forEach(file => {
       formData.append('file', file as FileType);
       formData.append('save_flow', values.save_flow);
     });
@@ -59,6 +43,7 @@ export const ImportFlowModal: React.FC<Props> = ({
     }
     setIsImportFlowModalOpen(false);
   };
+
   const props: UploadProps = {
     onRemove: (file: any) => {
       const index = fileList.indexOf(file);
@@ -72,6 +57,7 @@ export const ImportFlowModal: React.FC<Props> = ({
     },
     fileList,
   };
+
   return (
     <>
       <Modal
@@ -96,11 +82,10 @@ export const ImportFlowModal: React.FC<Props> = ({
             name='file'
             label={t('Select_File')}
             valuePropName='fileList'
-            getValueFromEvent={(e) => (Array.isArray(e) ? e : e && e.fileList)}
+            getValueFromEvent={e => (Array.isArray(e) ? e : e && e.fileList)}
             rules={[{ required: true, message: 'Please upload a file' }]}
           >
-            <Upload {...props}
-              accept='.json,.zip' maxCount={1}>
+            <Upload {...props} accept='.json,.zip' maxCount={1}>
               <Button icon={<UploadOutlined />}> {t('Upload')}</Button>
             </Upload>
           </Form.Item>
@@ -114,9 +99,7 @@ export const ImportFlowModal: React.FC<Props> = ({
 
           <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
             <Space>
-              <Button onClick={() => setIsImportFlowModalOpen(false)}>
-                {t('cancel')}
-              </Button>
+              <Button onClick={() => setIsImportFlowModalOpen(false)}>{t('cancel')}</Button>
               <Button type='primary' htmlType='submit'>
                 {t('verify')}
               </Button>

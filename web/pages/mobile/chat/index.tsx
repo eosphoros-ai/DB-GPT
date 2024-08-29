@@ -31,7 +31,7 @@ interface MobileChatProps {
   conv_uid: string;
   resourceList?: Record<string, any>[];
   order: React.MutableRefObject<number>;
-  handleChat: (content?: string) => Promise<void>;
+  handleChat: (_content?: string) => Promise<void>;
   canAbort: boolean;
   setCarAbort: React.Dispatch<React.SetStateAction<boolean>>;
   canNewChat: boolean;
@@ -102,9 +102,9 @@ const MobileChat: React.FC = () => {
     async () => await apiInterceptors(getChatHistory(`${userInfo?.user_no}_${appCode}`)),
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         const [, res] = data;
-        const viewList = res?.filter((item) => item.role === 'view');
+        const viewList = res?.filter(item => item.role === 'view');
         if (viewList && viewList.length > 0) {
           order.current = viewList[viewList.length - 1].order + 1;
         }
@@ -152,8 +152,8 @@ const MobileChat: React.FC = () => {
     },
     {
       manual: true,
-      onSuccess: (data) => {
-        const filterDialogue = data?.filter((item) => item.conv_uid === conv_uid)?.[0];
+      onSuccess: data => {
+        const filterDialogue = data?.filter(item => item.conv_uid === conv_uid)?.[0];
         filterDialogue?.select_param && setResource(JSON.parse(filterDialogue?.select_param));
       },
     },
@@ -176,7 +176,7 @@ const MobileChat: React.FC = () => {
   useEffect(() => {
     if (modelList.length > 0) {
       // 获取应用信息中的model值
-      const infoModel = appInfo?.param_need?.filter((item) => item.type === 'model')?.[0]?.value;
+      const infoModel = appInfo?.param_need?.filter(item => item.type === 'model')?.[0]?.value;
       setModel(infoModel || modelList[0]);
     }
   }, [modelList, appInfo]);
@@ -184,15 +184,15 @@ const MobileChat: React.FC = () => {
   // 设置默认温度;
   useEffect(() => {
     // 获取应用信息中的model值
-    const infoTemperature = appInfo?.param_need?.filter((item) => item.type === 'temperature')?.[0]?.value;
+    const infoTemperature = appInfo?.param_need?.filter(item => item.type === 'temperature')?.[0]?.value;
     setTemperature(infoTemperature || 0.5);
   }, [appInfo]);
 
   // 获取可选择资源列表
   useEffect(() => {
     if (chatScene && appInfo?.app_code) {
-      const resourceVal = appInfo?.param_need?.filter((item) => item.type === 'resource')?.[0]?.value;
-      const bindResourceVal = appInfo?.param_need?.filter((item) => item.type === 'resource')?.[0]?.bind_value;
+      const resourceVal = appInfo?.param_need?.filter(item => item.type === 'resource')?.[0]?.value;
+      const bindResourceVal = appInfo?.param_need?.filter(item => item.type === 'resource')?.[0]?.bind_value;
       bindResourceVal && setResource(bindResourceVal);
       ['database', 'knowledge', 'plugin', 'awel_flow'].includes(resourceVal) && !bindResourceVal && run();
     }
@@ -212,12 +212,25 @@ const MobileChat: React.FC = () => {
       ...(resource && { select_param: resource }),
     };
     if (history && history.length > 0) {
-      const viewList = history?.filter((item) => item.role === 'view');
+      const viewList = history?.filter(item => item.role === 'view');
       order.current = viewList[viewList.length - 1].order + 1;
     }
     const tempHistory: ChatHistoryResponse = [
-      { role: 'human', context: content || userInput, model_name: model, order: order.current, time_stamp: 0 },
-      { role: 'view', context: '', model_name: model, order: order.current, time_stamp: 0, thinking: true },
+      {
+        role: 'human',
+        context: content || userInput,
+        model_name: model,
+        order: order.current,
+        time_stamp: 0,
+      },
+      {
+        role: 'view',
+        context: '',
+        model_name: model,
+        order: order.current,
+        time_stamp: 0,
+        thinking: true,
+      },
     ];
     const index = tempHistory.length - 1;
     setHistory([...history, ...tempHistory]);
@@ -245,11 +258,11 @@ const MobileChat: React.FC = () => {
         onerror(err) {
           throw new Error(err);
         },
-        onmessage: (event) => {
+        onmessage: event => {
           let message = event.data;
           try {
             message = JSON.parse(message).vis;
-          } catch (e) {
+          } catch {
             message.replaceAll('\\n', '\n');
           }
           if (message === '[DONE]') {
@@ -269,7 +282,7 @@ const MobileChat: React.FC = () => {
           }
         },
       });
-    } catch (err) {
+    } catch {
       ctrl.current?.abort();
       tempHistory[index].context = 'Sorry, we meet some error, please try again later.';
       tempHistory[index].thinking = false;
@@ -315,12 +328,12 @@ const MobileChat: React.FC = () => {
       }}
     >
       <Spin
-        size="large"
-        className="flex h-screen w-screen justify-center items-center max-h-screen"
+        size='large'
+        className='flex h-screen w-screen justify-center items-center max-h-screen'
         spinning={historyLoading || appInfoLoading || resourceLoading || dialogueListLoading}
       >
-        <div className="flex flex-col h-screen bg-gradient-light dark:bg-gradient-dark p-4 pt-0">
-          <div ref={scrollViewRef} className="flex flex-col flex-1 overflow-y-auto mb-3">
+        <div className='flex flex-col h-screen bg-gradient-light dark:bg-gradient-dark p-4 pt-0'>
+          <div ref={scrollViewRef} className='flex flex-col flex-1 overflow-y-auto mb-3'>
             <Header />
             <Content />
           </div>

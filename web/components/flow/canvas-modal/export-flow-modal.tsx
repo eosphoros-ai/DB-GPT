@@ -1,8 +1,7 @@
-import { Modal, Form, Input, Button, Space, Radio, message } from 'antd';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { apiInterceptors, exportFlow } from '@/client/api';
-import { ReactFlowInstance } from 'reactflow';
+import { Button, Form, Input, Modal, Radio, Space, message } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { ReactFlowInstance } from 'reactflow';
 
 type Props = {
   reactFlow: ReactFlowInstance<any, any>;
@@ -22,7 +21,6 @@ export const ExportFlowModal: React.FC<Props> = ({
   const [messageApi, contextHolder] = message.useMessage();
 
   const onFlowExport = async (values: any) => {
-
     if (values.format === 'json') {
       const flowData = reactFlow.toObject() as IFlowData;
       const blob = new Blob([JSON.stringify(flowData)], {
@@ -33,9 +31,9 @@ export const ExportFlowModal: React.FC<Props> = ({
       a.href = url;
       a.download = values.file_name || 'flow.json';
       a.click();
-    }else{
-        const linkUrl = `${process.env.API_BASE_URL}/api/v2/serve/awel/flow/export/${values.uid}?export_type=${values.export_type}&format=${values.format}`
-        window.open(linkUrl)
+    } else {
+      const linkUrl = `${process.env.API_BASE_URL}/api/v2/serve/awel/flow/export/${values.uid}?export_type=${values.export_type}&format=${values.format}`;
+      window.open(linkUrl);
     }
     messageApi.success(t('Export_Flow_Success'));
 
@@ -84,10 +82,7 @@ export const ExportFlowModal: React.FC<Props> = ({
 
           <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
             <Space>
-              <Button
-                htmlType='button'
-                onClick={() => setIsExportFlowModalOpen(false)}
-              >
+              <Button htmlType='button' onClick={() => setIsExportFlowModalOpen(false)}>
                 {t('cancel')}
               </Button>
               <Button type='primary' htmlType='submit'>

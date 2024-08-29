@@ -1,13 +1,13 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getFlowNodes } from '@/client/api';
+import { IFlowNode } from '@/types/flow';
+import { FLOW_NODES_KEY } from '@/utils';
 import { CaretLeftOutlined, CaretRightOutlined } from '@ant-design/icons';
 import type { CollapseProps } from 'antd';
 import { Badge, Collapse, Input, Layout, Space } from 'antd';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StaticNodes from './static-nodes';
-import { IFlowNode } from '@/types/flow';
-import { FLOW_NODES_KEY } from '@/utils';
 
 const { Search } = Input;
 const { Sider } = Layout;
@@ -50,12 +50,8 @@ const AddNodesSider: React.FC = () => {
     const [_, data] = await apiInterceptors(getFlowNodes());
     if (data && data.length > 0) {
       localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
-      const operatorNodes = data.filter(
-        (node) => node.flow_type === 'operator'
-      );
-      const resourceNodes = data.filter(
-        (node) => node.flow_type === 'resource'
-      );
+      const operatorNodes = data.filter(node => node.flow_type === 'operator');
+      const resourceNodes = data.filter(node => node.flow_type === 'resource');
       setOperators(operatorNodes);
       setResources(resourceNodes);
       setOperatorsGroup(groupNodes(operatorNodes));
@@ -80,11 +76,8 @@ const AddNodesSider: React.FC = () => {
 
   function groupNodes(data: IFlowNode[]) {
     const groups: GroupType[] = [];
-    const categoryMap: Record<
-      string,
-      { category: string; categoryLabel: string; nodes: IFlowNode[] }
-    > = {};
-    data.forEach((item) => {
+    const categoryMap: Record<string, { category: string; categoryLabel: string; nodes: IFlowNode[] }> = {};
+    data.forEach(item => {
       const { category, category_label } = item;
       if (!categoryMap[category]) {
         categoryMap[category] = {
@@ -116,25 +109,21 @@ const AddNodesSider: React.FC = () => {
         ),
       }));
     } else {
-      const searchedNodes = operators.filter((node) =>
-        node.label.toLowerCase().includes(searchValue.toLowerCase())
-      );
-      return groupNodes(searchedNodes).map(
-        ({ category, categoryLabel, nodes }) => ({
-          key: category,
-          label: categoryLabel,
-          children: <StaticNodes nodes={nodes} />,
-          extra: (
-            <Badge
-              showZero
-              count={nodes.length || 0}
-              style={{
-                backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474',
-              }}
-            />
-          ),
-        })
-      );
+      const searchedNodes = operators.filter(node => node.label.toLowerCase().includes(searchValue.toLowerCase()));
+      return groupNodes(searchedNodes).map(({ category, categoryLabel, nodes }) => ({
+        key: category,
+        label: categoryLabel,
+        children: <StaticNodes nodes={nodes} />,
+        extra: (
+          <Badge
+            showZero
+            count={nodes.length || 0}
+            style={{
+              backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474',
+            }}
+          />
+        ),
+      }));
     }
   }, [operatorsGroup, searchValue]);
 
@@ -155,25 +144,21 @@ const AddNodesSider: React.FC = () => {
         ),
       }));
     } else {
-      const searchedNodes = resources.filter((node) =>
-        node.label.toLowerCase().includes(searchValue.toLowerCase())
-      );
-      return groupNodes(searchedNodes).map(
-        ({ category, categoryLabel, nodes }) => ({
-          key: category,
-          label: categoryLabel,
-          children: <StaticNodes nodes={nodes} />,
-          extra: (
-            <Badge
-              showZero
-              count={nodes.length || 0}
-              style={{
-                backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474',
-              }}
-            />
-          ),
-        })
-      );
+      const searchedNodes = resources.filter(node => node.label.toLowerCase().includes(searchValue.toLowerCase()));
+      return groupNodes(searchedNodes).map(({ category, categoryLabel, nodes }) => ({
+        key: category,
+        label: categoryLabel,
+        children: <StaticNodes nodes={nodes} />,
+        extra: (
+          <Badge
+            showZero
+            count={nodes.length || 0}
+            style={{
+              backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474',
+            }}
+          />
+        ),
+      }));
     }
   }, [resourcesGroup, searchValue]);
 
@@ -189,20 +174,11 @@ const AddNodesSider: React.FC = () => {
       collapsible={true}
       collapsed={collapsed}
       collapsedWidth={0}
-      trigger={
-        collapsed ? (
-          <CaretRightOutlined className='text-base' />
-        ) : (
-          <CaretLeftOutlined className='text-base' />
-        )
-      }
+      trigger={collapsed ? <CaretRightOutlined className='text-base' /> : <CaretLeftOutlined className='text-base' />}
       zeroWidthTriggerStyle={triggerStyle}
-      onCollapse={(collapsed) => setCollapsed(collapsed)}
+      onCollapse={collapsed => setCollapsed(collapsed)}
     >
-      <Space
-        direction='vertical'
-        className='w-[280px] pt-4 px-4 overflow-hidden overflow-y-auto scrollbar-default'
-      >
+      <Space direction='vertical' className='w-[280px] pt-4 px-4 overflow-hidden overflow-y-auto scrollbar-default'>
         <p className='w-full text-base font-semibold text-[#1c2533] dark:text-[rgba(255,255,255,0.85)] line-clamp-1'>
           {t('add_node')}
         </p>

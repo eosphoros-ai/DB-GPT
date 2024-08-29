@@ -1,11 +1,11 @@
-import { ChartRef as G2Chart } from "@berryv/g2-react";
+import { ChartRef as G2Chart } from '@berryv/g2-react';
 
 const getChartCanvas = (chart: G2Chart) => {
   if (!chart) return;
   const chartContainer = chart.getContainer();
   const canvasNode = chartContainer.getElementsByTagName('canvas')[0];
-  return canvasNode
-}
+  return canvasNode;
+};
 
 /** 获得 g2 Chart 实例的 dataURL */
 function toDataURL(chart: G2Chart) {

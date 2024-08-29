@@ -1,12 +1,12 @@
 import { GPTVis } from '@antv/gpt-vis';
-import remarkGfm from 'remark-gfm';
-import markdownComponents from './config';
-import { CodePreview } from './code-preview';
+import { CheckOutlined, CloseOutlined } from '@mui/icons-material';
 import classNames from 'classnames';
 import { useState } from 'react';
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkGfm from 'remark-gfm';
+import { CodePreview } from './code-preview';
+import markdownComponents from './config';
 
 interface Props {
   data: {
@@ -23,18 +23,15 @@ function VisCode({ data }: Props) {
   const [show, setShow] = useState(0);
 
   return (
-    <div className="bg-[#EAEAEB] rounded overflow-hidden border border-theme-primary dark:bg-theme-dark text-sm">
+    <div className='bg-[#EAEAEB] rounded overflow-hidden border border-theme-primary dark:bg-theme-dark text-sm'>
       <div>
-        <div className="flex">
+        <div className='flex'>
           {data.code.map((item, index) => (
             <div
               key={index}
-              className={classNames(
-                "px-4 py-2 text-[#121417] dark:text-white cursor-pointer",
-                {
-                  "bg-white dark:bg-theme-dark-container": index === show,
-                }
-              )}
+              className={classNames('px-4 py-2 text-[#121417] dark:text-white cursor-pointer', {
+                'bg-white dark:bg-theme-dark-container': index === show,
+              })}
               onClick={() => {
                 setShow(index);
               }}
@@ -54,17 +51,17 @@ function VisCode({ data }: Props) {
         )}
       </div>
       <div>
-        <div className="flex">
-          <div className="bg-white dark:bg-theme-dark-container px-4 py-2 text-[#121417] dark:text-white">
-            {t("Terminal")}{" "}
+        <div className='flex'>
+          <div className='bg-white dark:bg-theme-dark-container px-4 py-2 text-[#121417] dark:text-white'>
+            {t('Terminal')}{' '}
             {data.exit_success ? (
-              <CheckOutlined className="text-green-600" />
+              <CheckOutlined className='text-green-600' />
             ) : (
-              <CloseOutlined className="text-red-600" />
+              <CloseOutlined className='text-red-600' />
             )}
           </div>
         </div>
-        <div className="p-4 max-h-72 overflow-y-auto whitespace-normal bg-white dark:dark:bg-theme-dark">
+        <div className='p-4 max-h-72 overflow-y-auto whitespace-normal bg-white dark:dark:bg-theme-dark'>
           <GPTVis components={markdownComponents} remarkPlugins={[remarkGfm]}>
             {data.log}
           </GPTVis>

@@ -1,7 +1,7 @@
-import React, { HtmlHTMLAttributes, PropsWithChildren, ReactNode, memo, useCallback, useMemo } from 'react';
 import { Popover, Tag, TagProps, Tooltip } from 'antd';
 import classNames from 'classnames';
 import Image from 'next/image';
+import { HtmlHTMLAttributes, PropsWithChildren, ReactNode, memo, useMemo } from 'react';
 
 interface Props {
   title: string;
@@ -65,17 +65,17 @@ function GPTCard({
   const tagNode = useMemo(() => {
     if (!tags || !tags.length) return null;
     return (
-      <div className="flex items-center mt-1 flex-wrap">
+      <div className='flex items-center mt-1 flex-wrap'>
         {tags.map((tag, index) => {
           if (typeof tag === 'string') {
             return (
-              <Tag key={index} className="text-xs" bordered={false} color="default">
+              <Tag key={index} className='text-xs' bordered={false} color='default'>
                 {tag}
               </Tag>
             );
           }
           return (
-            <Tag key={index} className="text-xs" bordered={tag.border ?? false} color={tag.color}>
+            <Tag key={index} className='text-xs' bordered={tag.border ?? false} color={tag.color}>
               {tag.text}
             </Tag>
           );
@@ -96,12 +96,12 @@ function GPTCard({
       )}
       {...props}
     >
-      <div className="p-4 0">
-        <div className="flex items-center">
+      <div className='p-4 0'>
+        <div className='flex items-center'>
           {iconNode}
-          <div className="flex flex-col">
+          <div className='flex flex-col'>
             <Popover title={title}>
-              <h2 className="text-sm font-semibold line-clamp-1 pr-8">{title}</h2>
+              <h2 className='text-sm font-semibold line-clamp-1 pr-8'>{title}</h2>
             </Popover>
 
             {tagNode}
@@ -109,32 +109,34 @@ function GPTCard({
         </div>
         {desc && (
           <Tooltip title={desc}>
-            <p className="mt-2 text-sm text-gray-500 font-normal line-clamp-2">{desc}</p>
+            <p className='mt-2 text-sm text-gray-500 font-normal line-clamp-2'>{desc}</p>
           </Tooltip>
         )}
       </div>
       <div>
         {children}
         {operations && !!operations.length && (
-          <div className="flex flex-wrap items-center justify-center border-t border-solid border-gray-100 dark:border-theme-dark">
+          <div className='flex flex-wrap items-center justify-center border-t border-solid border-gray-100 dark:border-theme-dark'>
             {operations.map((item, index) => (
               <Tooltip key={`operation-${index}`} title={item.label}>
                 <div
-                  className="relative flex flex-1 items-center justify-center h-11 text-gray-400 hover:text-blue-500 transition-colors duration-300 cursor-pointer"
-                  onClick={(e) => {
+                  className='relative flex flex-1 items-center justify-center h-11 text-gray-400 hover:text-blue-500 transition-colors duration-300 cursor-pointer'
+                  onClick={e => {
                     e.stopPropagation();
                     item.onClick?.();
                   }}
                 >
                   {item.children}
-                  {index < operations.length - 1 && <div className="w-[1px] h-6 absolute top-2 right-0 bg-gray-100 rounded dark:bg-theme-dark" />}
+                  {index < operations.length - 1 && (
+                    <div className='w-[1px] h-6 absolute top-2 right-0 bg-gray-100 rounded dark:bg-theme-dark' />
+                  )}
                 </div>
               </Tooltip>
             ))}
           </div>
         )}
       </div>
-      <div className="absolute top-2 right-4 ">{extraContent}</div>
+      <div className='absolute top-2 right-4 '>{extraContent}</div>
     </div>
   );
 }

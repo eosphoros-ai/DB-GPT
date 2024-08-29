@@ -1,44 +1,23 @@
-import BlurredCard, {
-  ChatButton,
-  InnerDropdown,
-} from '@/new-components/common/blurredCard';
-import ConstructLayout from '@/new-components/layout/Construct';
 import { ChatContext } from '@/app/chat-context';
-import {
-  apiInterceptors,
-  deleteFlowById,
-  getFlows,
-  newDialogue,
-  addFlow,
-} from '@/client/api';
+import { addFlow, apiInterceptors, deleteFlowById, getFlows, newDialogue } from '@/client/api';
 import MyEmpty from '@/components/common/MyEmpty';
+import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
+import ConstructLayout from '@/new-components/layout/Construct';
 import { IFlow, IFlowUpdateParam } from '@/types/flow';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import {
-  Button,
-  Modal,
-  Popconfirm,
-  Spin,
-  Tag,
-  message,
-  Form,
-  Input,
-  Checkbox,
-  Pagination,
-} from 'antd';
+import { Button, Checkbox, Form, Input, Modal, Pagination, Popconfirm, Spin, Tag, message } from 'antd';
 import { t } from 'i18next';
-import { concat, debounce } from 'lodash';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import qs from 'querystring';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Flow() {
   const router = useRouter();
   const { model } = useContext(ChatContext);
-  const [messageApi, contextHolder] = message.useMessage();
+  const [messageApi] = message.useMessage();
   const [form] = Form.useForm<Pick<IFlow, 'label' | 'name'>>();
 
   const [flowList, setFlowList] = useState<Array<IFlow>>([]);
@@ -47,7 +26,6 @@ function Flow() {
   const [deploy, setDeploy] = useState(false);
   const [editable, setEditable] = useState(false);
 
-  // 分页信息
   const totalRef = useRef<{
     current_page: number;
     total_count: number;
@@ -56,7 +34,7 @@ function Flow() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 获取列表
+  // get flow list
   const { run: getFlowListRun, loading } = useRequest(
     async (params: any) =>
       await apiInterceptors(
@@ -64,11 +42,11 @@ function Flow() {
           page: 1,
           page_size: 12,
           ...params,
-        })
+        }),
       ),
     {
       cacheKey: 'query-flow-list',
-      onSuccess: (data) => {
+      onSuccess: data => {
         const [, res] = data;
         // setFlowList((prev) => concat([...prev], res?.items || []));
         setFlowList(res?.items || []);
@@ -79,7 +57,7 @@ function Flow() {
         };
       },
       throttleWait: 300,
-    }
+    },
   );
 
   const { i18n } = useTranslation();
@@ -125,9 +103,7 @@ function Flow() {
   // }, [loading, handleScroll, loadMoreData]);
 
   const handleChat = async (flow: IFlow) => {
-    const [, res] = await apiInterceptors(
-      newDialogue({ chat_mode: 'chat_agent' })
-    );
+    const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
     if (res) {
       const queryStr = qs.stringify({
         scene: 'chat_flow',
@@ -142,7 +118,7 @@ function Flow() {
   async function deleteFlow(flow: IFlow) {
     const [, , res] = await apiInterceptors(deleteFlowById(flow.uid));
     if (res?.success) {
-      setFlowList((flows) => flows.filter((_flow) => _flow.uid !== flow.uid));
+      setFlowList(flows => flows.filter(_flow => _flow.uid !== flow.uid));
     }
   }
 
@@ -157,8 +133,7 @@ function Flow() {
 
   const onFinish = async (val: { name: string; label: string }) => {
     if (!copyFlowTemp.current) return;
-    const { source, uid, dag_id, gmt_created, gmt_modified, state, ...params } =
-      copyFlowTemp.current;
+    const { source, uid, dag_id, gmt_created, gmt_modified, state, ...params } = copyFlowTemp.current;
     const data: IFlowUpdateParam = {
       ...params,
       editable,
@@ -176,10 +151,7 @@ function Flow() {
   return (
     <ConstructLayout>
       <Spin spinning={loading}>
-        <div
-          className='relative h-screen w-full p-4 md:p-6 overflow-y-auto'
-          ref={scrollRef}
-        >
+        <div className='relative h-screen w-full p-4 md:p-6 overflow-y-auto' ref={scrollRef}>
           <div className='flex justify-between items-center mb-6'>
             <div className='flex items-center gap-4'>
               {/* <Input
@@ -205,8 +177,8 @@ function Flow() {
               </Button>
             </div>
           </div>
-          <div className='flex flex-wrap mx-[-8px] pb-12 justify-start items-stretch flex-1'>
-            {flowList.map((flow) => (
+          <div className='flex flex-wrap mx-[-8px] pb-12 justify-start items-stretch'>
+            {flowList.map(flow => (
               <BlurredCard
                 description={flow.description}
                 name={flow.name}
@@ -234,13 +206,8 @@ function Flow() {
                         {
                           key: 'del',
                           label: (
-                            <Popconfirm
-                              title='Are you sure to delete this flow?'
-                              onConfirm={() => deleteFlow(flow)}
-                            >
-                              <span className='text-red-400'>
-                                {t('Delete_Btn')}
-                              </span>
+                            <Popconfirm title='Are you sure to delete this flow?' onConfirm={() => deleteFlow(flow)}>
+                              <span className='text-red-400'>{t('Delete_Btn')}</span>
                             </Popconfirm>
                           ),
                         },
@@ -251,21 +218,9 @@ function Flow() {
                 rightTopHover={false}
                 Tags={
                   <div>
-                    <Tag color={flow.source === 'DBGPT-WEB' ? 'green' : 'blue'}>
-                      {flow.source}
-                    </Tag>
-                    <Tag color={flow.editable ? 'green' : 'gray'}>
-                      {flow.editable ? 'Editable' : 'Can not Edit'}
-                    </Tag>
-                    <Tag
-                      color={
-                        flow.state === 'load_failed'
-                          ? 'red'
-                          : flow.state === 'running'
-                          ? 'green'
-                          : 'blue'
-                      }
-                    >
+                    <Tag color={flow.source === 'DBGPT-WEB' ? 'green' : 'blue'}>{flow.source}</Tag>
+                    <Tag color={flow.editable ? 'green' : 'gray'}>{flow.editable ? 'Editable' : 'Can not Edit'}</Tag>
+                    <Tag color={flow.state === 'load_failed' ? 'red' : flow.state === 'running' ? 'green' : 'blue'}>
                       {flow.state}
                     </Tag>
                   </div>
@@ -274,13 +229,7 @@ function Flow() {
                   <div key={i18n.language + 'flow'} className='flex gap-2'>
                     <span>{flow?.nick_name}</span>
                     <span>•</span>
-                    {flow?.gmt_modified && (
-                      <span>
-                        {moment(flow?.gmt_modified).fromNow() +
-                          ' ' +
-                          t('update')}
-                      </span>
-                    )}
+                    {flow?.gmt_modified && <span>{moment(flow?.gmt_modified).fromNow() + ' ' + t('update')}</span>}
                   </div>
                 }
                 RightBottom={
@@ -300,7 +249,7 @@ function Flow() {
                 pageSize={12}
                 current={totalRef.current?.current_page}
                 onChange={async (page, page_size) => {
-                  await getFlowListRun({ page });
+                  await getFlowListRun({ page, page_size });
                 }}
               />
             </div>
@@ -326,7 +275,7 @@ function Flow() {
             <Checkbox
               value={editable}
               checked={editable}
-              onChange={(e) => {
+              onChange={e => {
                 const val = e.target.checked;
                 setEditable(val);
               }}
@@ -336,7 +285,7 @@ function Flow() {
             <Checkbox
               value={deploy}
               checked={deploy}
-              onChange={(e) => {
+              onChange={e => {
                 const val = e.target.checked;
                 setDeploy(val);
               }}

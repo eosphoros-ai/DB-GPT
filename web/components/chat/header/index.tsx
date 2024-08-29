@@ -1,10 +1,10 @@
-import { useContext } from 'react';
-import ChatExcel from './chat-excel';
 import { ChatContext } from '@/app/chat-context';
-import ModeTab from '@/components/chat/mode-tab';
 import ModelSelector from '@/components/chat/header/model-selector';
-import DBSelector from './db-selector';
+import ModeTab from '@/components/chat/mode-tab';
+import { useContext } from 'react';
 import AgentSelector from './agent-selector';
+import ChatExcel from './chat-excel';
+import DBSelector from './db-selector';
 
 /**
  * chat header
@@ -18,7 +18,7 @@ function Header({ refreshHistory, modelChange }: Props) {
   const { scene, refreshDialogList } = useContext(ChatContext);
 
   return (
-    <div className="w-full py-2 px-4 md:px-4 flex flex-wrap items-center justify-center gap-1 md:gap-4">
+    <div className='w-full py-2 px-4 md:px-4 flex flex-wrap items-center justify-center gap-1 md:gap-4'>
       {/* Models Selector */}
       <ModelSelector onChange={modelChange} />
       {/* DB Selector */}

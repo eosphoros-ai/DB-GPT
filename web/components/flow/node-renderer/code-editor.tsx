@@ -1,14 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Button, Form, Modal } from 'antd';
-import Editor from '@monaco-editor/react';
+/* eslint-disable react-hooks/rules-of-hooks */
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
+import Editor from '@monaco-editor/react';
+import { Button, Form, Modal } from 'antd';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-type Props = {
-  data: IFlowNodeParameter;
-  defaultValue?: any;
-};
 
 export const renderCodeEditor = (data: IFlowNodeParameter) => {
   const { t } = useTranslation();
@@ -35,8 +31,8 @@ export const renderCodeEditor = (data: IFlowNodeParameter) => {
   }, [data?.ui?.editor?.width]);
 
   return (
-    <div className="p-2 text-sm">
-      <Button type="default" onClick={showModal}>
+    <div className='p-2 text-sm'>
+      <Button type='default' onClick={showModal}>
         {t('Open_Code_Editor')}
       </Button>
 
@@ -47,7 +43,7 @@ export const renderCodeEditor = (data: IFlowNodeParameter) => {
             width={data?.ui?.editor?.width || '100%'}
             height={data?.ui?.editor?.height || 200}
             defaultLanguage={data?.ui?.language}
-            theme="vs-dark"
+            theme='vs-dark'
             options={{
               minimap: {
                 enabled: false,
