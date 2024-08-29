@@ -9,6 +9,7 @@ import {
   RobotOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { GPTVis } from '@antv/gpt-vis';
 import { Tag } from 'antd';
 import classNames from 'classnames';
 import { PropsWithChildren, ReactNode, memo, useContext, useMemo } from 'react';
@@ -30,7 +31,7 @@ interface Props {
   onLinkClick?: () => void;
 }
 
-type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
+type MarkdownComponent = Parameters<typeof GPTVis>['0']['components'];
 
 type DBGPTView = {
   name: string;
@@ -171,9 +172,9 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
         )}
         {/* Markdown */}
         {isRobot && typeof context === 'string' && (
-          <ReactMarkdown components={{ ...markdownComponents, ...extraMarkdownComponents }} rehypePlugins={[rehypeRaw]}>
+          <GPTVis components={{ ...markdownComponents, ...extraMarkdownComponents }} rehypePlugins={[rehypeRaw]}>
             {formatMarkdownVal(value)}
-          </ReactMarkdown>
+          </GPTVis>
         )}
         {!!relations?.length && (
           <div className='flex flex-wrap mt-2'>

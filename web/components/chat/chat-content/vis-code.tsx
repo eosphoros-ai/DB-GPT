@@ -1,8 +1,8 @@
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { GPTVis } from '@antv/gpt-vis';
+import { CheckOutlined, CloseOutlined } from '@mui/icons-material';
 import classNames from 'classnames';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 import { CodePreview } from './code-preview';
@@ -62,9 +62,9 @@ function VisCode({ data }: Props) {
           </div>
         </div>
         <div className='p-4 max-h-72 overflow-y-auto whitespace-normal bg-white dark:dark:bg-theme-dark'>
-          <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+          <GPTVis components={markdownComponents} remarkPlugins={[remarkGfm]}>
             {data.log}
-          </ReactMarkdown>
+          </GPTVis>
         </div>
       </div>
     </div>

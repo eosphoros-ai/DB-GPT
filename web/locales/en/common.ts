@@ -321,4 +321,11 @@ export const CommonEn = {
   publish_desc: 'Are you sure about releasing the application?',
   unPublish_desc: 'Are you sure you want to unpublish this application?',
   published_success: 'Published Success',
+  dbgpts_community: 'DBGPTS Community',
+  community_dbgpts: 'Community DBGPTS',
+  my_dbgpts: 'My DBGPTS',
+  Refresh_dbgpts: 'Refresh from the community Git repository',
+  workflow: 'Workflow',
+  resources: 'Resources',
+  app: 'App',
 } as const;

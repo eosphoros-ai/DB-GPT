@@ -326,4 +326,11 @@ export const CommonZh: Resources['translation'] = {
   publish_desc: '您确认发布该应用吗？',
   unPublish_desc: '您确认取消发布该应用吗？',
   published_success: '发布成功',
+  dbgpts_community: 'DBGPTS社区',
+  community_dbgpts: '社区DBGPTS',
+  my_dbgpts: '我的DBGPTS',
+  Refresh_dbgpts: '从社区Git仓库刷新',
+  workflow: '工作流',
+  resources: '资源',
+  app: '应用',
 } as const;

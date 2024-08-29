@@ -1,10 +1,9 @@
 import { CheckOutlined, ClockCircleOutlined, CloseOutlined, LoadingOutlined } from '@ant-design/icons';
+import { GPTVis } from '@antv/gpt-vis';
 import classNames from 'classnames';
 import { ReactNode } from 'react';
-import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
-
 import markdownComponents from './config';
 
 interface IVisPlugin {
@@ -52,9 +51,9 @@ function VisPlugin({ data }: Props) {
       </div>
       {data.result ? (
         <div className='px-4 md:px-6 py-4 text-sm whitespace-normal'>
-          <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+          <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
             {data.result ?? ''}
-          </ReactMarkdown>
+          </GPTVis>
         </div>
       ) : (
         <div className='px-4 md:px-6 py-4 text-sm'>{data.err_msg}</div>

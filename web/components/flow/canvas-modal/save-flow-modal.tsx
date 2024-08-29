@@ -41,7 +41,6 @@ export const SaveFlowModal: React.FC<Props> = ({
 
   async function onSaveFlow() {
     const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
-    console.log(form.getFieldsValue());
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
 
     if (id) {

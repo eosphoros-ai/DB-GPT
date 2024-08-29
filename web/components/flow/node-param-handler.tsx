@@ -106,7 +106,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ formValuesChange, n
       case 'slider':
         return renderSlider(data);
       case 'date_picker':
-        return renderDatePicker(data);
+        return renderDatePicker({ data, formValuesChange });
       case 'time_picker':
         return renderTimePicker({ data, formValuesChange });
       case 'tree_select':

@@ -14,11 +14,11 @@ import ConstructLayout from '@/new-components/layout/Construct';
 import { IApp } from '@/types/app';
 import { BulbOutlined, DingdingOutlined, PlusOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
 import { useDebounceFn, useRequest } from 'ahooks';
-import { App, Button, Input, Modal, Popover, Segmented, SegmentedProps, Select, Spin, Tag } from 'antd';
+import { App, Button, Input, Modal, Pagination, Popover, Segmented, SegmentedProps, Select, Spin, Tag } from 'antd';
 import copy from 'copy-to-clipboard';
 import moment from 'moment';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CreateAppModal from './components/create-app-modal';
 
@@ -39,6 +39,12 @@ export default function AppContent() {
   const [curApp] = useState<IApp>();
   const [adminOpen, setAdminOpen] = useState<boolean>(false);
   const [admins, setAdmins] = useState<string[]>([]);
+  // 分页信息
+  const totalRef = useRef<{
+    current_page: number;
+    total_count: number;
+    total_page: number;
+  }>();
   // 区分是单击还是双击
   const [clickTimeout, setClickTimeout] = useState(null);
 
@@ -92,16 +98,25 @@ export default function AppContent() {
   );
 
   const initData = useDebounceFn(
-    async (params = {}) => {
+    async params => {
       setSpinning(true);
-      const [error, data] = await apiInterceptors(getAppList(params));
+      const obj: any = {
+        page: 1,
+        page_size: 12,
+        ...params,
+      };
+      const [error, data] = await apiInterceptors(getAppList(obj));
       if (error) {
         setSpinning(false);
         return;
       }
       if (!data) return;
-
       setApps(data?.app_list || []);
+      totalRef.current = {
+        current_page: data?.current_page || 1,
+        total_count: data?.total_count || 0,
+        total_page: data?.total_page || 0,
+      };
       setSpinning(false);
     },
     {
@@ -407,8 +422,17 @@ export default function AppContent() {
                 />
               );
             })}
+            <div className='w-full flex justify-end shrink-0 pb-12'>
+              <Pagination
+                total={totalRef.current?.total_count || 0}
+                pageSize={12}
+                current={totalRef.current?.current_page}
+                onChange={async (page, _page_size) => {
+                  await initData({ page });
+                }}
+              />
+            </div>
           </div>
-
           {open && (
             <CreateAppModal
               open={open}

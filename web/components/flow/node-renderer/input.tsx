@@ -8,8 +8,10 @@ const getIconComponent = (iconString: string) => {
   if (match) {
     const iconName = match[1] as keyof typeof Icons;
     const IconComponent = Icons[iconName];
+    // @ts-ignore
     return IconComponent ? <IconComponent /> : null;
   }
+  return null;
 };
 
 export const renderInput = (data: IFlowNodeParameter) => {

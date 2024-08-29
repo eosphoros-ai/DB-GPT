@@ -1,7 +1,7 @@
 import { apiInterceptors, importFlow } from '@/client/api';
 import { UploadOutlined } from '@ant-design/icons';
 import { Button, Form, GetProp, Modal, Radio, Space, Upload, UploadFile, UploadProps, message } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edge, Node } from 'reactflow';
 
@@ -17,7 +17,14 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
-  const [fileList] = useState<UploadFile[]>([]);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+
+  useEffect(() => {
+    if (isImportModalOpen) {
+      form.resetFields();
+      setFileList([]);
+    }
+  }, [isImportModalOpen, form]);
 
   const onFlowImport = async (values: any) => {
     values.file = values.file?.[0];
@@ -25,6 +32,7 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
     const formData: any = new FormData();
     fileList.forEach(file => {
       formData.append('file', file as FileType);
+      formData.append('save_flow', values.save_flow);
     });
     const [, , res] = await apiInterceptors(importFlow(formData));
 
@@ -33,8 +41,21 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
     }
-
     setIsImportFlowModalOpen(false);
+  };
+
+  const props: UploadProps = {
+    onRemove: (file: any) => {
+      const index = fileList.indexOf(file);
+      const newFileList = fileList.slice();
+      newFileList.splice(index, 1);
+      setFileList(newFileList);
+    },
+    beforeUpload: (file: any) => {
+      setFileList([...fileList, file]);
+      return false;
+    },
+    fileList,
   };
 
   return (
@@ -64,7 +85,7 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
             getValueFromEvent={e => (Array.isArray(e) ? e : e && e.fileList)}
             rules={[{ required: true, message: 'Please upload a file' }]}
           >
-            <Upload accept='.json,.zip' beforeUpload={() => false} maxCount={1}>
+            <Upload {...props} accept='.json,.zip' maxCount={1}>
               <Button icon={<UploadOutlined />}> {t('Upload')}</Button>
             </Upload>
           </Form.Item>

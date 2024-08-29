@@ -20,16 +20,15 @@ export const renderUpload = (params: Props) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState('');
-
   const getUploadSuccessUrl = (url: string) => {
     if (urlList.current.length === data.ui.attr.max_count) {
       urlList.current.pop();
     }
     urlList.current.push(url);
     if (data.ui.attr.max_count === 1) {
-      formValuesChange({ file: urlList.current.toString() }, { force: true });
+      formValuesChange({ [data.name]: urlList.current.toString() });
     } else {
-      formValuesChange({ multiple_files: urlList.current }, { force: true });
+      formValuesChange({ [data.name]: urlList.current });
     }
   };
 
@@ -38,10 +37,11 @@ export const renderUpload = (params: Props) => {
     if (index !== -1) {
       urlList.current.splice(index, 1);
     }
+    setUploading(false);
     if (data.ui.attr.max_count === 1) {
-      formValuesChange({ file: urlList.current.toString() }, { force: true });
+      formValuesChange({ [data.name]: urlList.current.toString() });
     } else {
-      formValuesChange({ multiple_files: urlList.current }, { force: true });
+      formValuesChange({ [data.name]: urlList.current });
     }
   };
 
@@ -53,8 +53,9 @@ export const renderUpload = (params: Props) => {
     },
     onChange(info) {
       setUploading(true);
-      // if (info.file.status !== 'uploading') {
-      // }
+      if (info.file.status !== 'uploading') {
+        setUploading(false);
+      }
       if (info.file.status === 'done') {
         setUploading(false);
         message.success(`${info.file.response.data[0].file_name} ${t('Upload_Data_Successfully')}`);

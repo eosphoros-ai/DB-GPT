@@ -6,13 +6,12 @@ import ConstructLayout from '@/new-components/layout/Construct';
 import { IFlow, IFlowUpdateParam } from '@/types/flow';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Button, Checkbox, Form, Input, Modal, Popconfirm, Spin, Tag, message } from 'antd';
+import { Button, Checkbox, Form, Input, Modal, Pagination, Popconfirm, Spin, Tag, message } from 'antd';
 import { t } from 'i18next';
-import { concat, debounce } from 'lodash';
 import moment from 'moment';
 import { useRouter } from 'next/router';
 import qs from 'querystring';
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Flow() {
@@ -49,7 +48,8 @@ function Flow() {
       cacheKey: 'query-flow-list',
       onSuccess: data => {
         const [, res] = data;
-        setFlowList(prev => concat([...prev], res?.items || []));
+        // setFlowList((prev) => concat([...prev], res?.items || []));
+        setFlowList(res?.items || []);
         totalRef.current = {
           current_page: res?.page || 1,
           total_count: res?.total_count || 0,
@@ -63,44 +63,44 @@ function Flow() {
   const { i18n } = useTranslation();
 
   // 触底加载更多
-  const loadMoreData = useCallback(() => {
-    const current = totalRef.current;
-    if (!current) {
-      return;
-    }
-    if (current.current_page < current.total_page) {
-      getFlowListRun({
-        page: current.current_page + 1,
-      });
-      current.current_page = current.current_page + 1;
-    }
-  }, [getFlowListRun]);
+  // const loadMoreData = useCallback(() => {
+  //   const current = totalRef.current;
+  //   if (!current) {
+  //     return;
+  //   }
+  //   if (current.current_page < current.total_page) {
+  //     getFlowListRun({
+  //       page: current.current_page + 1,
+  //     });
+  //     current.current_page = current.current_page + 1;
+  //   }
+  // }, [getFlowListRun]);
 
-  // 滚动时间
-  const handleScroll = debounce((e: Event) => {
-    const target = e.target as HTMLDivElement;
-    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 200) {
-      loadMoreData();
-    }
-  }, 200);
+  // // 滚动事件
+  // const handleScroll = debounce((e: Event) => {
+  //   const target = e.target as HTMLDivElement;
+  //   if (target.scrollHeight - target.scrollTop <= target.clientHeight + 200) {
+  //     loadMoreData();
+  //   }
+  // }, 200);
 
-  useEffect(() => {
-    if (loading) {
-      return;
-    }
-    const currentScrollRef = scrollRef.current;
-    if (currentScrollRef) {
-      currentScrollRef?.addEventListener('scroll', handleScroll);
-      if (currentScrollRef.scrollHeight === currentScrollRef.clientHeight) {
-        loadMoreData();
-      }
-    }
-    return () => {
-      if (currentScrollRef) {
-        currentScrollRef?.removeEventListener('scroll', handleScroll);
-      }
-    };
-  }, [loading, handleScroll, loadMoreData]);
+  // useEffect(() => {
+  //   if (loading) {
+  //     return;
+  //   }
+  //   const currentScrollRef = scrollRef.current;
+  //   if (currentScrollRef) {
+  //     currentScrollRef?.addEventListener('scroll', handleScroll);
+  //     if (currentScrollRef.scrollHeight === currentScrollRef.clientHeight) {
+  //       loadMoreData();
+  //     }
+  //   }
+  //   return () => {
+  //     if (currentScrollRef) {
+  //       currentScrollRef?.removeEventListener('scroll', handleScroll);
+  //     }
+  //   };
+  // }, [loading, handleScroll, loadMoreData]);
 
   const handleChat = async (flow: IFlow) => {
     const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
@@ -133,13 +133,7 @@ function Flow() {
 
   const onFinish = async (val: { name: string; label: string }) => {
     if (!copyFlowTemp.current) return;
-
-    const keysToRemove = ['source', 'uid', 'dag_id', 'gmt_created', 'gmt_modified', 'state'];
-
-    const params = Object.fromEntries(
-      Object.entries(copyFlowTemp.current).filter(([key]) => !keysToRemove.includes(key)),
-    );
-
+    const { source, uid, dag_id, gmt_created, gmt_modified, state, ...params } = copyFlowTemp.current;
     const data: IFlowUpdateParam = {
       ...params,
       editable,
@@ -249,6 +243,16 @@ function Flow() {
               />
             ))}
             {flowList.length === 0 && <MyEmpty description='No flow found' />}
+            <div className='w-full flex justify-end shrink-0 pb-12'>
+              <Pagination
+                total={totalRef.current?.total_count || 0}
+                pageSize={12}
+                current={totalRef.current?.current_page}
+                onChange={async (page, page_size) => {
+                  await getFlowListRun({ page, page_size });
+                }}
+              />
+            </div>
           </div>
         </div>
       </Spin>

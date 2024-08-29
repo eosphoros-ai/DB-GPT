@@ -1,6 +1,6 @@
 import { CaretRightOutlined, CheckOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { GPTVis } from '@antv/gpt-vis';
 import { Collapse } from 'antd';
-import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
@@ -40,9 +40,9 @@ function AgentPlans({ data }: Props) {
             </div>
           ),
           children: (
-            <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+            <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
               {item.markdown}
-            </ReactMarkdown>
+            </GPTVis>
           ),
         };
       })}
