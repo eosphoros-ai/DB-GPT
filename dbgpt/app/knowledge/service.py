@@ -648,9 +648,10 @@ class KnowledgeService:
         for node in graph.vertices():
             res["nodes"].append(
                 {
-                    "vid": node.vid,
-                    "communityId": node.get_prop("_community_id"),
-                    "props": node.props,
+                    "id": node.vid,
+                    "communityid": node.get_prop("_community_id"),
+                    "name": node.vid,
+                    "type": ""
                 }
             )
         for edge in graph.edges():
@@ -658,8 +659,8 @@ class KnowledgeService:
                 {
                     "src": edge.sid,
                     "dst": edge.tid,
-                    "label": edge.name,
-                    "props": edge.props,
+                    "name": edge.name,
+                    "type": ""
                 }
             )
         return res
