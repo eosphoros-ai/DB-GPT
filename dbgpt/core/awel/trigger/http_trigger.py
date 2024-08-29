@@ -945,6 +945,16 @@ class StringHttpTrigger(HttpTrigger):
 class CommonLLMHttpTrigger(HttpTrigger):
     """Common LLM http trigger for AWEL."""
 
+    class MessagesOutputMapper(MapOperator[CommonLLMHttpRequestBody, str]):
+        """Messages output mapper."""
+
+        async def map(self, request_body: CommonLLMHttpRequestBody) -> str:
+            """Map the request body to messages."""
+            if isinstance(request_body.messages, str):
+                return request_body.messages
+            else:
+                raise ValueError("Messages to be transformed is not a string")
+
     metadata = ViewMetadata(
         label=_("Common LLM Http Trigger"),
         name="common_llm_http_trigger",
@@ -964,6 +974,16 @@ class CommonLLMHttpTrigger(HttpTrigger):
                     "The request body of the API endpoint, parse as a common "
                     "LLM http body"
                 ),
+            ),
+            IOField.build_from(
+                _("Request String Messages"),
+                "request_string_messages",
+                str,
+                description=_(
+                    "The request string messages of the API endpoint, parsed from "
+                    "'messages' field of the request body"
+                ),
+                mappers=[MessagesOutputMapper],
             ),
         ],
         parameters=[

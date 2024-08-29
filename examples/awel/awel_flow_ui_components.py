@@ -852,7 +852,7 @@ class ExampleFlowUploadOperator(MapOperator[str, str]):
                 ui=ui.UIUpload(
                     max_file_size=1024 * 1024 * 100,
                     up_event="button_click",
-                    file_types=["image/*", "*.pdf"],
+                    file_types=["image/*", ".pdf"],
                     drag=True,
                     attr=ui.UIUpload.UIAttribute(max_count=5),
                 ),
@@ -897,7 +897,7 @@ class ExampleFlowUploadOperator(MapOperator[str, str]):
         files_metadata = await self.blocking_func_to_async(
             self._parse_files_metadata, fsc
         )
-        files_metadata_str = json.dumps(files_metadata, ensure_ascii=False)
+        files_metadata_str = json.dumps(files_metadata, ensure_ascii=False, indent=4)
         return "Your name is %s, and you files are %s." % (
             user_name,
             files_metadata_str,
