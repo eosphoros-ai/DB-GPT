@@ -49,7 +49,7 @@ vis_client.register(VisApiResponse)
 def vis_name_change(vis_message: str) -> str:
     """Change vis tag name use new name."""
     replacements = {
-        "```vis-chart": "```vis-db-chart",
+        "```vis-chart": "```vis-chart",
     }
 
     for old_tag, new_tag in replacements.items():
