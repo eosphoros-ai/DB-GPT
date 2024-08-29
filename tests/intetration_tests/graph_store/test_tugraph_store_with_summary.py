@@ -57,22 +57,3 @@ def test_stream_query_path(store):
         print(v.get_prop("_community_id"))
     assert result.vertex_count == 7 and result.edge_count == 6
 
-
-# def test_stream_query_path(store):
-#     query = 'MATCH p=(n)-[r:relation*3]-(m) WHERE n._community_id = "1" RETURN p'
-#     store.stream_query(query)
-#     for graph in store.stream_query(query):
-#         print(len(list(graph.vertices())))
-
-
-# def test_stream_query_node_and_edge(store):
-#     query = 'MATCH (n)-[r]-(m) WHERE n._community_id = "1" RETURN n,r,m'
-#     store.stream_query(query)
-#     for graph in store.stream_query(query):
-#         print(len(list(graph.vertices())))
-
-
-# def test_leiden_stream_query(store):
-#     query = "CALL db.plugin.callPlugin('CPP','leiden','{\"leiden_val\":\"_community_id\"}',60.00,false)"
-#     for graph in store.stream_query(query):
-#         print(len(list(graph.vertices())))
