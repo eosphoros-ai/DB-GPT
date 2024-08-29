@@ -134,7 +134,7 @@ export interface AppListResponse {
   app_list: IApp[];
   current_page: number;
   total_page: number;
-  total_number: number;
+  total_count: number;
 }
 
 export interface StrategyResponse extends Omit<TeamMode, 'remark'> {}

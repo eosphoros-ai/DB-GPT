@@ -417,11 +417,8 @@ export const addFlow = (data: IFlowUpdateParam) => {
   return POST<IFlowUpdateParam, IFlow>("/api/v2/serve/awel/flows", data);
 };
 
-export const getFlows = (page?: number, page_size?: number) => {
-  return GET<any, IFlowResponse>("/api/v2/serve/awel/flows", {
-    page,
-    page_size,
-  });
+export const getFlows = ({ page, page_size }: { page?: number, page_size?: number }) => {
+  return GET<any, IFlowResponse>(`/api/v2/serve/awel/flows?page=${page || 1}&page_size=${page_size || 12}`);
 };
 
 export const getFlowById = (id: string) => {
