@@ -8,14 +8,15 @@ import type {
   Graph,
   GraphData,
   GraphOptions,
+  ID,
   IPointerEvent,
   PluginOptions,
 } from "@antv/g6";
 import type { GraphVisResult } from "../../../types/knowledge";
 import { Graphin } from "@antv/graphin";
 import {
-  getNodeDegree,
-  getNodeSize,
+  getDegree,
+  getSize,
   isInCommunity,
   ConnectedComponent,
 } from "../../../utils/graph";
@@ -104,13 +105,22 @@ function GraphVis() {
     }
   }, [isReady]);
 
+  const getNodeSize = (nodeId: ID) => {
+    return getSize(getNodeDegree(nodeId));
+  };
+
+  const getNodeDegree = (nodeId?: ID) => {
+    if (!nodeId) return 0;
+    return getDegree(graphData.edges!, nodeId);
+  };
+
   const options: GraphOptions = {
     data: graphData,
     autoFit: "center",
     node: {
       style: (d) => {
         const style = {
-          size: getNodeSize(getNodeDegree(graphData.edges!, idOf(d))),
+          size: getNodeSize(idOf(d)),
           label: true,
           labelLineWidth: 2,
           labelText: d.id,
@@ -128,9 +138,11 @@ function GraphVis() {
         return style;
       },
       state: {
-        selected: {
+        active: {
           lineWidth: 2,
           labelWordWrap: false,
+          labelFontSize: 12,
+          labelFontWeight: "bold",
         },
         inactive: {
           label: false,
@@ -159,9 +171,11 @@ function GraphVis() {
         labelWordWrap: true,
       },
       state: {
-        selected: {
+        active: {
           stroke: "#b0b0b0",
           labelWordWrap: false,
+          labelFontSize: 10,
+          labelFontWeight: "bold",
         },
         inactive: {
           label: false,
@@ -175,7 +189,7 @@ function GraphVis() {
       {
         type: "hover-activate",
         degree: 1,
-        state: "selected",
+        state: "active",
         enable: (event: IPointerEvent) => ["node"].includes(event.targetType),
       },
     ],
@@ -184,7 +198,16 @@ function GraphVis() {
       { type: "connected-component" },
       {
         type: "force",
-        clustering: true,
+        preventOverlap: true,
+        nodeSize: (d) => getNodeSize(d?.id as ID),
+        linkDistance: (edge) => {
+          const { source, target } = edge as { source: ID; target: ID };
+          const nodeSize = Math.min(getNodeSize(source), getNodeSize(target));
+          const degree = Math.min(getNodeDegree(source), getNodeDegree(target));
+          return degree === 1
+            ? nodeSize * 2
+            : Math.min(degree * nodeSize * 1.5, 700);
+        },
       },
     ],
     transforms: ["process-parallel-edges"],

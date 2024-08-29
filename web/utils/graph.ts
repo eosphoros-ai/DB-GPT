@@ -116,7 +116,7 @@ const getNodesSize = (nodes: NodeConfig[]) => {
  * @param maxDegree - maximum degree
  * @returns size of the node
  */
-export function getNodeSize(
+export function getSize(
   degree: number,
   minSize = 24,
   maxSize = 60,
@@ -138,7 +138,7 @@ export function getNodeSize(
  * @param nodeId - node id
  * @returns degree of the node
  */
-export function getNodeDegree(edges: EdgeData[], nodeId: ID) {
+export function getDegree(edges: EdgeData[], nodeId: ID) {
   return getRelatedEdgesData(edges, nodeId).length;
 }
 
