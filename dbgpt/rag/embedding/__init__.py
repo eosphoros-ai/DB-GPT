@@ -19,18 +19,18 @@ from .embeddings import (  # noqa: F401
 from .rerank import CrossEncoderRerankEmbeddings, OpenAPIRerankEmbeddings  # noqa: F401
 
 __ALL__ = [
+    "CrossEncoderRerankEmbeddings",
+    "DefaultEmbeddingFactory",
+    "EmbeddingFactory",
     "Embeddings",
     "HuggingFaceBgeEmbeddings",
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "HuggingFaceInstructEmbeddings",
     "JinaEmbeddings",
-    "OpenAPIEmbeddings",
     "OllamaEmbeddings",
-    "DefaultEmbeddingFactory",
-    "EmbeddingFactory",
-    "WrappedEmbeddingFactory",
-    "TongYiEmbeddings",
-    "CrossEncoderRerankEmbeddings",
+    "OpenAPIEmbeddings",
     "OpenAPIRerankEmbeddings",
+    "TongYiEmbeddings",
+    "WrappedEmbeddingFactory",
 ]

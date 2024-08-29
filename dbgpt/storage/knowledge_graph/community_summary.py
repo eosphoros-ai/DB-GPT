@@ -173,10 +173,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             return []
 
         # merge search results into context
-        content = HYBRID_SEARCH_PT_CN.format(
-            context=context,
-            graph=subgraph
-        )
+        content = HYBRID_SEARCH_PT_CN.format(context=context, graph=subgraph)
         return [Chunk(content=content)]
 
     def truncate(self) -> List[str]:
