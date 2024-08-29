@@ -8,7 +8,8 @@ from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
 from dbgpt.storage.knowledge_graph.community_summary import (
-    CommunitySummaryKnowledgeGraph, CommunitySummaryKnowledgeGraphConfig,
+    CommunitySummaryKnowledgeGraph,
+    CommunitySummaryKnowledgeGraphConfig,
 )
 from dbgpt.storage.knowledge_graph.knowledge_graph import BuiltinKnowledgeGraphConfig
 

@@ -199,7 +199,8 @@ class ChromaStore(VectorStoreBase):
                 f"truncate chroma collection {self._collection.name} "
                 f"{len(ids)} chunks success"
             )
-        return ids
+            return ids
+        return []
 
     def convert_metadata_filters(
         self,

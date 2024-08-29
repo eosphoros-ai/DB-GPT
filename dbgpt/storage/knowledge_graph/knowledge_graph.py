@@ -44,12 +44,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             raise ValueError("No llm client provided.")
 
         self._model_name = config.model_name
-        self._triplet_extractor = TripletExtractor(
-            self._llm_client, self._model_name
-        )
-        self._keyword_extractor = KeywordExtractor(
-            self._llm_client, self._model_name
-        )
+        self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
+        self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
         self._graph_store = self.__init_graph_store(config)
 
     def __init_graph_store(self, config) -> GraphStoreBase:

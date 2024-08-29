@@ -4,9 +4,10 @@ import pytest
 
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
 
+
 @pytest.fixture(scope="module")
 def store():
-    config = TuGraphStoreConfig(name="TestGraph",summary_enabled=False)
+    config = TuGraphStoreConfig(name="TestGraph", summary_enabled=False)
     store = TuGraphStore(config=config)
     yield store
     store.conn.close()

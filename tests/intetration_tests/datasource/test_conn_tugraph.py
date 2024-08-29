@@ -47,8 +47,8 @@ def test_run_without_stream(connector):
     result = connector.run(query)
     assert len(result) == 10
 
+
 def test_run_with_stream(connector):
     query = "MATCH (n) RETURN n limit 10"
     result = list(connector.run_stream(query))
     assert len(result) == 10
-

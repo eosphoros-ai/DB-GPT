@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.llm_extractor import LLMExtractor
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex, Graph
+from dbgpt.storage.graph_store.graph import Edge, Graph, MemoryGraph, Vertex
 from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
@@ -16,10 +16,7 @@ class GraphExtractor(LLMExtractor):
     """GraphExtractor class."""
 
     def __init__(
-        self,
-        llm_client: LLMClient,
-        model_name: str,
-        chunk_history: VectorStoreBase
+        self, llm_client: LLMClient, model_name: str, chunk_history: VectorStoreBase
     ):
         """Initialize the GraphExtractor."""
         super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT_CN)
@@ -38,8 +35,7 @@ class GraphExtractor(LLMExtractor):
             text, self._topk, self._score_threshold
         )
         history = [
-            f"Section {i + 1}:\n{chunk.content}"
-            for i, chunk in enumerate(chunks)
+            f"Section {i + 1}:\n{chunk.content}" for i, chunk in enumerate(chunks)
         ]
         context = "\n".join(history) if history else ""
 
@@ -55,11 +51,7 @@ class GraphExtractor(LLMExtractor):
                 self._max_threads,
             )
 
-    def _parse_response(
-        self,
-        text: str,
-        limit: Optional[int] = None
-    ) -> List[Graph]:
+    def _parse_response(self, text: str, limit: Optional[int] = None) -> List[Graph]:
         graph = MemoryGraph()
         edge_count = 0
         current_section = None
@@ -71,22 +63,18 @@ class GraphExtractor(LLMExtractor):
                 if current_section == "Entities":
                     match = re.match(r"\((.*?)#(.*?)\)", line)
                     if match:
-                        name, summary = [
-                            part.strip() for part in match.groups()
-                        ]
+                        name, summary = [part.strip() for part in match.groups()]
                         graph.upsert_vertex(Vertex(name, description=summary))
                 elif current_section == "Relationships":
-                    match = re.match(
-                        r"\((.*?)#(.*?)#(.*?)#(.*?)\)", line
-                    )
+                    match = re.match(r"\((.*?)#(.*?)#(.*?)#(.*?)\)", line)
                     if match:
                         source, name, target, summary = [
                             part.strip() for part in match.groups()
                         ]
                         edge_count += 1
-                        graph.append_edge(Edge(
-                            source, target, name, description=summary
-                        ))
+                        graph.append_edge(
+                            Edge(source, target, name, description=summary)
+                        )
 
             if limit and edge_count >= limit:
                 break

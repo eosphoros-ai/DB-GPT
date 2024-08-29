@@ -2,8 +2,7 @@
 import logging
 
 from dbgpt._private.pydantic import ConfigDict
-from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, \
-    KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
 
 logger = logging.getLogger(__name__)
 

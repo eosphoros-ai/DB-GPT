@@ -27,7 +27,7 @@ class Elem(ABC):
     def __init__(self, name: str):
         """Initialize Elem."""
         self._name = name
-        self._props = {}
+        self._props: Dict[str, Any] = {}
 
     @property
     def name(self) -> str:
@@ -62,8 +62,7 @@ class Elem(ABC):
             return str(next(iter(self._props.values())))
 
         formatted_props = [
-            f"{k}:{json.dumps(v, ensure_ascii=False)}"
-            for k, v in self._props.items()
+            f"{k}:{json.dumps(v, ensure_ascii=False)}" for k, v in self._props.items()
         ]
         return f"{{{';'.join(formatted_props)}}}"
 
@@ -71,9 +70,9 @@ class Elem(ABC):
 class Vertex(Elem):
     """Vertex class."""
 
-    def __init__(self, vid: str, name: str = None, **props):
+    def __init__(self, vid: str, name: Optional[str] = None, **props):
         """Initialize Vertex."""
-        super().__init__(name)
+        super().__init__(name)  # type: ignore # noqa
         self._vid = vid
         for k, v in props.items():
             self.set_prop(k, v)
@@ -197,12 +196,11 @@ class Graph(ABC):
         """Delete vertices and their neighbor edges."""
 
     @abstractmethod
-    def del_edges(self, sid: str, tid: str, name: str = None, **props):
+    def del_edges(self, sid: str, tid: str, name: str, **props):
         """Delete edges(sid -[name]-> tid) matches props."""
 
     @abstractmethod
-    def del_neighbor_edges(self, vid: str,
-        direction: Direction = Direction.OUT):
+    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
         """Delete neighbor edges."""
 
     @abstractmethod
@@ -339,9 +337,7 @@ class MemoryGraph(Graph):
 
     def edges(self) -> Iterator[Edge]:
         """Return edges."""
-        return iter(
-            e for nbs in self._oes.values() for es in nbs.values() for e in es
-        )
+        return iter(e for nbs in self._oes.values() for es in nbs.values() for e in es)
 
     def del_vertices(self, *vids: str):
         """Delete specified vertices."""
@@ -349,27 +345,26 @@ class MemoryGraph(Graph):
             self.del_neighbor_edges(vid, Direction.BOTH)
             self._vs.pop(vid, None)
 
-    def del_edges(self, sid: str, tid: str, name: str = None, **props):
+    def del_edges(self, sid: str, tid: str, name: str, **props):
         """Delete edges."""
         old_edge_cnt = len(self._oes[sid][tid])
 
         def remove_matches(es):
-            return set(filter(
-                lambda e: not (
-                    (name == e.name if name else True) and e.has_props(**props)
-                ), es
-            ))
+            return set(
+                filter(
+                    lambda e: not (
+                        (name == e.name if name else True) and e.has_props(**props)
+                    ),
+                    es,
+                )
+            )
 
         self._oes[sid][tid] = remove_matches(self._oes[sid][tid])
         self._ies[tid][sid] = remove_matches(self._ies[tid][sid])
 
         self._edge_count -= old_edge_cnt - len(self._oes[sid][tid])
 
-    def del_neighbor_edges(
-        self,
-        vid: str,
-        direction: Direction = Direction.OUT
-    ):
+    def del_neighbor_edges(self, vid: str, direction: Direction = Direction.OUT):
         """Delete all neighbor edges."""
 
         def del_index(idx, i_idx):
@@ -396,9 +391,7 @@ class MemoryGraph(Graph):
         subgraph = MemoryGraph()
 
         for vid in vids:
-            self.__search(
-                vid, direct, depth, fan, limit, 0, set(), subgraph
-            )
+            self.__search(vid, direct, depth, fan, limit, 0, set(), subgraph)
 
         return subgraph
 
@@ -465,9 +458,9 @@ class MemoryGraph(Graph):
             for e in self.edges()
         )
         return (
-            f"Entities:\n{vs_str}\n\n"
-            f"Relationships:\n{es_str}"
-            if (vs_str or es_str) else ""
+            f"Entities:\n{vs_str}\n\n" f"Relationships:\n{es_str}"
+            if (vs_str or es_str)
+            else ""
         )
 
     def truncate(self):

@@ -2,7 +2,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import Graph
@@ -13,9 +13,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Community:
     """Community class"""
+
     id: str
-    data: Graph = None
-    summary: str = None
+    data: Optional[Graph] = None
+    summary: Optional[str] = None
 
 
 @dataclass

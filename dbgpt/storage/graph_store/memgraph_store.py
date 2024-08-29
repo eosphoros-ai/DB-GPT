@@ -30,11 +30,11 @@ class MemoryGraphStore(GraphStoreBase):
 
     def get_edge_type(self) -> str:
         """Get the edge type."""
-        pass
+        raise NotImplementedError("Memory graph store does not have edge type")
 
     def get_vertex_type(self) -> str:
         """Get the vertex type."""
-        pass
+        raise NotImplementedError("Memory graph store does not have vertex type")
 
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Insert a triplet into the graph."""

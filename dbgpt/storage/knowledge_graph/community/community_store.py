@@ -4,8 +4,10 @@ import logging
 from typing import List
 
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
-from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter, \
-    Community
+from dbgpt.storage.knowledge_graph.community.base import (
+    Community,
+    CommunityStoreAdapter,
+)
 from dbgpt.storage.knowledge_graph.community.community_metastore import (
     BuiltinCommunityMetastore,
 )
@@ -28,9 +30,7 @@ class CommunityStore:
 
     async def build_communities(self):
         """discover communities."""
-        community_ids = await (
-            self._community_store_adapter.discover_communities()
-        )
+        community_ids = await (self._community_store_adapter.discover_communities())
 
         # summarize communities
         communities = []

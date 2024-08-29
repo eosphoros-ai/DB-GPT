@@ -2,9 +2,12 @@
 import json
 import logging
 from typing import List
-from dbgpt.storage.graph_store.graph import Vertex, Edge, MemoryGraph
-from dbgpt.storage.knowledge_graph.community.base import CommunityStoreAdapter, \
-    Community
+
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
+from dbgpt.storage.knowledge_graph.community.base import (
+    Community,
+    CommunityStoreAdapter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,5 +48,5 @@ class TuGraphCommunityStoreAdapter(CommunityStoreAdapter):
             all_graph.upsert_vertex(vertex)
         for edge in all_edge_graph.edges():
             all_graph.append_edge(edge)
-        
+
         return Community(id=community_id, data=all_graph)
