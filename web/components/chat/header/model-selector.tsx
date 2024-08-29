@@ -22,12 +22,12 @@ export function renderModelIcon(model?: string, props?: { width: number; height:
 
   return (
     <Image
-      className="rounded-full border border-gray-200 object-contain bg-white inline-block"
+      className='rounded-full border border-gray-200 object-contain bg-white inline-block'
       width={width || 24}
       height={height || 24}
       src={MODEL_ICON_MAP[model]?.icon || DEFAULT_ICON_URL}
       key={MODEL_ICON_MAP[model]?.icon || DEFAULT_ICON_URL}
-      alt="llm"
+      alt='llm'
     />
   );
 }
@@ -42,16 +42,16 @@ function ModelSelector({ onChange }: Props) {
     <Select
       value={model}
       placeholder={t('choose_model')}
-      className="w-52"
-      onChange={(val) => {
+      className='w-52'
+      onChange={val => {
         onChange?.(val);
       }}
     >
-      {modelList.map((item) => (
+      {modelList.map(item => (
         <Select.Option key={item}>
-          <div className="flex items-center">
+          <div className='flex items-center'>
             {renderModelIcon(item)}
-            <span className="ml-2">{MODEL_ICON_MAP[item]?.label || item}</span>
+            <span className='ml-2'>{MODEL_ICON_MAP[item]?.label || item}</span>
           </div>
         </Select.Option>
       ))}

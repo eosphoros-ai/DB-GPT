@@ -2,7 +2,7 @@ import { apiInterceptors, getResource } from '@/client/api';
 import { useRequest } from 'ahooks';
 import { Form, Select, Switch } from 'antd';
 import cls from 'classnames';
-import React, { useMemo, useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const ResourceContent: React.FC<{
@@ -25,12 +25,12 @@ const ResourceContent: React.FC<{
   const { t } = useTranslation();
   // 资源类型选项
   const options = useMemo(() => {
-    return resourceTypeOptions?.filter((item) => item.value !== 'all') || [];
+    return resourceTypeOptions?.filter(item => item.value !== 'all') || [];
   }, [resourceTypeOptions]);
 
   // 获取非动态情况下，知识库、数据库、插件、编排工作流参数列表
   const { run, data, loading } = useRequest(
-    async (type) => {
+    async type => {
       const [, res] = await apiInterceptors(getResource({ type }));
       form.setFieldsValue({
         value: initValue?.value || res?.[0]?.key,
@@ -51,7 +51,7 @@ const ResourceContent: React.FC<{
   // 动态参数value选项
   const dynamicOptions = useMemo(() => {
     return (
-      data?.map((item) => {
+      data?.map(item => {
         return {
           ...item,
           label: item.label,
@@ -95,8 +95,14 @@ const ResourceContent: React.FC<{
       // );
     }
     return (
-      <Form.Item label={t('resource_value')} name="value" required>
-        <Select placeholder={t('please_select_param')} options={dynamicOptions} loading={loading} className="w-3/5" allowClear />
+      <Form.Item label={t('resource_value')} name='value' required>
+        <Select
+          placeholder={t('please_select_param')}
+          options={dynamicOptions}
+          loading={loading}
+          className='w-3/5'
+          allowClear
+        />
       </Form.Item>
     );
   };
@@ -118,16 +124,16 @@ const ResourceContent: React.FC<{
           ...initValue,
         }}
       >
-        <Form.Item label={t('resource_type')} name="type">
+        <Form.Item label={t('resource_type')} name='type'>
           <Select
-            className="w-2/5"
+            className='w-2/5'
             options={options}
             onChange={(val: string) => {
               setCurIcon({ uid, icon: val });
             }}
           />
         </Form.Item>
-        <Form.Item label={t('resource_dynamic')} name="is_dynamic">
+        <Form.Item label={t('resource_dynamic')} name='is_dynamic'>
           <Switch style={{ background: isDynamic ? '#1677ff' : '#ccc' }} />
         </Form.Item>
         {/* 如果选择了动态参数这里就不需要参数了 */}

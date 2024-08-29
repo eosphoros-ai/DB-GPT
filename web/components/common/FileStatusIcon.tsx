@@ -1,5 +1,4 @@
 import { IDocument } from '@/types/knowledge';
-import React from 'react';
 import { FileDone, FileSync } from '../icons';
 import FileError from '../icons/file-error';
 

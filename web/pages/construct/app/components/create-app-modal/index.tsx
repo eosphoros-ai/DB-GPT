@@ -1,4 +1,4 @@
-import { addApp, apiInterceptors, getTeamMode, updateApp, getAppList } from '@/client/api';
+import { addApp, apiInterceptors, getAppList, getTeamMode, updateApp } from '@/client/api';
 import { CreateAppParams, TeamMode } from '@/types/app';
 import { useRequest } from 'ahooks';
 import { App, ConfigProvider, Divider, Form, Input, Modal, Spin } from 'antd';
@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import styles from './styles.module.css';
 
 interface WorkModeSelectProps {
@@ -32,14 +31,16 @@ const WorkModeSelect: React.FC<WorkModeSelectProps> = ({ disable = false, option
       );
     }
     return `flex items-center p-4  border dark:border-[rgba(217,217,217,0.85)] rounded-lg cursor-pointer hover:border-[#0c75fc] hover:bg-[#f5faff] dark:hover:border-[rgba(12,117,252,0.85)] dark:hover:bg-[#606264] relative transition-all duration-300 ease-in-out ${
-      item.value === selected?.value ? 'border-[#0c75fc] bg-[#f5faff] dark:bg-[#606264] dark:border-[#0c75fc]' : 'border-[#d9d9d9]'
+      item.value === selected?.value
+        ? 'border-[#0c75fc] bg-[#f5faff] dark:bg-[#606264] dark:border-[#0c75fc]'
+        : 'border-[#d9d9d9]'
     } `;
   };
   const language = i18n.language === 'en';
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      {options.map((item) => (
+    <div className='grid grid-cols-2 gap-4'>
+      {options.map(item => (
         <div
           className={returnOptionStyle(item)}
           key={item.value}
@@ -52,16 +53,20 @@ const WorkModeSelect: React.FC<WorkModeSelectProps> = ({ disable = false, option
           }}
         >
           <Image src={`/icons/app/${item.value}.png`} width={48} height={48} alt={item.value} />
-          <div className="flex flex-col ml-3">
-            <span className="text-xs font-medium text-[rgba(0,0,0,0.85)] dark:text-[rgba(255,255,255,0.85)] first-line:leading-6">
+          <div className='flex flex-col ml-3'>
+            <span className='text-xs font-medium text-[rgba(0,0,0,0.85)] dark:text-[rgba(255,255,255,0.85)] first-line:leading-6'>
               {language ? item.name_en : item.name_cn}
             </span>
-            <span className="text-xs text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.85)]">{language ? item.description_en : item.description}</span>
+            <span className='text-xs text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.85)]'>
+              {language ? item.description_en : item.description}
+            </span>
           </div>
           {item.value === selected?.value && (
             <div
-              className="w-3 h-3 rounded-tr-md absolute top-[1px] right-[1px] transition-all duration-300 ease-in-out"
-              style={{ background: `linear-gradient(to right top, transparent 50%, transparent 50%, ${disable ? '#d0d0d0' : '#0c75fc'} 0)` }}
+              className='w-3 h-3 rounded-tr-md absolute top-[1px] right-[1px] transition-all duration-300 ease-in-out'
+              style={{
+                background: `linear-gradient(to right top, transparent 50%, transparent 50%, ${disable ? '#d0d0d0' : '#0c75fc'} 0)`,
+              }}
             />
           )}
         </div>
@@ -113,12 +118,12 @@ const CreateAppModal: React.FC<{
     },
     {
       manual: true,
-      onSuccess: async (res) => {
+      onSuccess: async res => {
         const [error, data] = res;
         if (!error) {
           if (type === 'edit') {
             const [, res] = await apiInterceptors(getAppList({}));
-            const curApp = res?.app_list?.find((item) => item.app_code === appInfo?.app_code);
+            const curApp = res?.app_list?.find(item => item.app_code === appInfo?.app_code);
             localStorage.setItem('new_app_info', JSON.stringify({ ...curApp, isEdit: true }));
             message.success(t('Update_successfully'));
           } else {
@@ -136,7 +141,7 @@ const CreateAppModal: React.FC<{
   );
 
   const mode = useMemo(() => {
-    return data?.filter((item) => item.value === appInfo?.team_mode)?.[0];
+    return data?.filter(item => item.value === appInfo?.team_mode)?.[0];
   }, [appInfo, data]);
 
   if (loading) {
@@ -171,10 +176,10 @@ const CreateAppModal: React.FC<{
         centered={true}
       >
         <Spin spinning={createLoading}>
-          <div className="flex flex-1">
+          <div className='flex flex-1'>
             <Form
-              layout="vertical"
-              className="w-3/5"
+              layout='vertical'
+              className='w-3/5'
               form={form}
               initialValues={{
                 team_mode: mode || data?.[0],
@@ -182,14 +187,38 @@ const CreateAppModal: React.FC<{
                 app_describe: appInfo?.app_describe,
               }}
             >
-              <Form.Item label={t('team_modal')} name="team_mode" required rules={[{ required: true, message: t('Please_input_the_work_modal') }]}>
+              <Form.Item
+                label={t('team_modal')}
+                name='team_mode'
+                required
+                rules={[{ required: true, message: t('Please_input_the_work_modal') }]}
+              >
                 <WorkModeSelect disable={type === 'edit'} options={data || []} />
               </Form.Item>
-              <Form.Item label={`${t('app_name')}：`} name="app_name" required rules={[{ required: true, message: t('input_app_name') }]}>
-                <Input placeholder={t('input_app_name')} autoComplete="off" className="h-8" />
+              <Form.Item
+                label={`${t('app_name')}：`}
+                name='app_name'
+                required
+                rules={[{ required: true, message: t('input_app_name') }]}
+              >
+                <Input placeholder={t('input_app_name')} autoComplete='off' className='h-8' />
               </Form.Item>
-              <Form.Item label={`${t('Description')}：`} name="app_describe" required rules={[{ required: true, message: t('Please_input_the_description') }]}>
-                <Input.TextArea autoComplete="off" placeholder={t('Please_input_the_description')} autoSize={{ minRows: 2.5 }} />
+              <Form.Item
+                label={`${t('Description')}：`}
+                name='app_describe'
+                required
+                rules={[
+                  {
+                    required: true,
+                    message: t('Please_input_the_description'),
+                  },
+                ]}
+              >
+                <Input.TextArea
+                  autoComplete='off'
+                  placeholder={t('Please_input_the_description')}
+                  autoSize={{ minRows: 2.5 }}
+                />
               </Form.Item>
               {/* <Form.Item label="应用图标：" name="app_icon" valuePropName="fileList">
               <Upload listType="picture-card">
@@ -200,14 +229,14 @@ const CreateAppModal: React.FC<{
               </Upload>
             </Form.Item> */}
             </Form>
-            <Divider type="vertical" className="h-auto mx-6 bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.5)] " />
-            <div className="flex flex-col w-2/5 pl-6 pt-8 ">
-              <span className="text-base text-[rgba(0,0,0,0.85)] font-medium mb-6 dark:text-[rgba(255,255,255,0.85)]">
+            <Divider type='vertical' className='h-auto mx-6 bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.5)] ' />
+            <div className='flex flex-col w-2/5 pl-6 pt-8 '>
+              <span className='text-base text-[rgba(0,0,0,0.85)] font-medium mb-6 dark:text-[rgba(255,255,255,0.85)]'>
                 {language ? teamMode?.name_en : teamMode?.name_cn}
               </span>
-              <div className="flex items-start">
-                <span className="flex flex-shrink-0 w-1 h-1 rounded-full bg-[rgba(0,0,0,0.45)] mt-2 mr-1 dark:bg-[rgba(255,255,255,0.65)]" />
-                <span className="text-xs leading-5 text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.65)]">
+              <div className='flex items-start'>
+                <span className='flex flex-shrink-0 w-1 h-1 rounded-full bg-[rgba(0,0,0,0.45)] mt-2 mr-1 dark:bg-[rgba(255,255,255,0.65)]' />
+                <span className='text-xs leading-5 text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.65)]'>
                   {language ? teamMode?.remark_en : teamMode?.remark}
                 </span>
               </div>

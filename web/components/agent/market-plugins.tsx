@@ -1,13 +1,19 @@
-import { apiInterceptors, postAgentHubUpdate, postAgentInstall, postAgentQuery, postAgentUninstall } from '@/client/api';
-import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
+import {
+  apiInterceptors,
+  postAgentHubUpdate,
+  postAgentInstall,
+  postAgentQuery,
+  postAgentUninstall,
+} from '@/client/api';
+import BlurredCard, { ChatButton } from '@/new-components/common/blurredCard';
+import { PostAgentQueryParams } from '@/types/agent';
+import { ClearOutlined, DownloadOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Button, Card, Form, Input, Spin, Tag, Tooltip, message } from 'antd';
-import { useCallback, useMemo, useState } from 'react';
-import MyEmpty from '../common/MyEmpty';
-import { ClearOutlined, DownloadOutlined, GithubOutlined, LoadingOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
-import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
+import { Button, Form, Input, Spin, Tag, message } from 'antd';
 import moment from 'moment';
+import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import MyEmpty from '../common/MyEmpty';
 
 function MarketPlugins() {
   const { t } = useTranslation();
@@ -67,56 +73,57 @@ function MarketPlugins() {
     [actionIndex, refresh],
   );
 
-  const renderAction = useCallback(
-    (agent: IAgentPlugin, index: number) => {
-      if (index === actionIndex) {
-        return <LoadingOutlined />;
-      }
-      return agent.installed ? (
-        <Tooltip title="Uninstall">
-          <div
-            className="w-full h-full"
-            onClick={() => {
-              pluginAction(agent.name, index, false);
-            }}
-          >
-            <ClearOutlined />
-          </div>
-        </Tooltip>
-      ) : (
-        <Tooltip title="Install">
-          <div
-            className="w-full h-full"
-            onClick={() => {
-              pluginAction(agent.name, index, true);
-            }}
-          >
-            <DownloadOutlined />
-          </div>
-        </Tooltip>
-      );
-    },
-    [actionIndex, pluginAction],
-  );
+  // const renderAction = useCallback(
+  //   (agent: IAgentPlugin, index: number) => {
+  //     if (index === actionIndex) {
+  //       return <LoadingOutlined />;
+  //     }
+  //     return agent.installed ? (
+  //       <Tooltip title='Uninstall'>
+  //         <div
+  //           className='w-full h-full'
+  //           onClick={() => {
+  //             pluginAction(agent.name, index, false);
+  //           }}
+  //         >
+  //           <ClearOutlined />
+  //         </div>
+  //       </Tooltip>
+  //     ) : (
+  //       <Tooltip title='Install'>
+  //         <div
+  //           className='w-full h-full'
+  //           onClick={() => {
+  //             pluginAction(agent.name, index, true);
+  //           }}
+  //         >
+  //           <DownloadOutlined />
+  //         </div>
+  //       </Tooltip>
+  //     );
+  //   },
+  //   [actionIndex, pluginAction],
+  // );
+
   console.log(agents);
 
   return (
     <Spin spinning={loading}>
-      <Form form={form} layout="inline" onFinish={refresh} className="mb-2">
-        <Form.Item className="!mb-2" name="name" label={'Name'}>
-          <Input allowClear className="w-48" />
+      <Form form={form} layout='inline' onFinish={refresh} className='mb-2'>
+        <Form.Item className='!mb-2' name='name' label={'Name'}>
+          <Input allowClear className='w-48' />
         </Form.Item>
         <Form.Item>
-          <Button className="mr-2" type="primary" htmlType="submit" icon={<SearchOutlined />}>
+          <Button className='mr-2' type='primary' htmlType='submit' icon={<SearchOutlined />}>
             {t('Search')}
           </Button>
-          <Button loading={uploading} type="primary" icon={<SyncOutlined />} onClick={updateFromGithub}>
+          <Button loading={uploading} type='primary' icon={<SyncOutlined />} onClick={updateFromGithub}>
             {t('Update_From_Github')}
           </Button>
         </Form.Item>
       </Form>
       {!agents.length && !loading && <MyEmpty error={isError} refresh={refresh} />}
-      <div className="flex flex-wrap gap-2 md:gap-4">
+      <div className='flex flex-wrap gap-2 md:gap-4'>
         {/* <Card
             className="w-full md:w-1/2 lg:w-1/3 xl:w-1/4"
             key={agent.id}
@@ -162,7 +169,7 @@ function MarketPlugins() {
               </div>
             }
             LeftBottom={
-              <div className="flex gap-2">
+              <div className='flex gap-2'>
                 <span>{agent.author}</span>
                 <span>•</span>
                 {agent?.gmt_created && <span>{moment(agent?.gmt_created).fromNow() + ' ' + t('update')}</span>}
@@ -172,7 +179,7 @@ function MarketPlugins() {
               agent.installed ? (
                 <ChatButton
                   Icon={<ClearOutlined />}
-                  text="Uninstall"
+                  text='Uninstall'
                   onClick={() => {
                     pluginAction(agent.name, index, false);
                   }}
@@ -180,7 +187,7 @@ function MarketPlugins() {
               ) : (
                 <ChatButton
                   Icon={<DownloadOutlined />}
-                  text="Install"
+                  text='Install'
                   onClick={() => {
                     pluginAction(agent.name, index, true);
                   }}

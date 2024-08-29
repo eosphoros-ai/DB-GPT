@@ -23,7 +23,7 @@ export const agentIcon: Record<string, React.ReactNode> = {
   Reporter: <PieChartOutlined />,
   DataScientist: <BarChartOutlined />,
   Summarizer: <CopyOutlined />,
-  ToolExpert: <IconFont type="icon-plugin" style={{ fontSize: 17.25, marginTop: 2 }} />,
+  ToolExpert: <IconFont type='icon-plugin' style={{ fontSize: 17.25, marginTop: 2 }} />,
   Indicator: <RiseOutlined />,
   Dbass: <FolderOutlined />,
 };

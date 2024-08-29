@@ -1,11 +1,11 @@
 import { IFlowNodeParameter } from '@/types/flow';
-import { Input } from 'antd';
 import { convertKeysToCamelCase } from '@/utils/flow';
+import { Input } from 'antd';
 
 const { Password } = Input;
 
 export const renderPassword = (data: IFlowNodeParameter) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
-  return <Password {...attr} placeholder="input password" />;
+  return <Password {...attr} placeholder='input password' />;
 };

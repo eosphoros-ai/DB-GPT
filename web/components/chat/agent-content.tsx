@@ -3,8 +3,8 @@ import { IChatDialogueMessageSchema } from '@/types/chat';
 import classNames from 'classnames';
 import { memo, useContext } from 'react';
 import ReactMarkdown from 'react-markdown';
-import markdownComponents from './chat-content/config';
 import rehypeRaw from 'rehype-raw';
+import markdownComponents from './chat-content/config';
 
 interface Props {
   content: IChatDialogueMessageSchema;
@@ -31,7 +31,7 @@ function AgentContent({ content }: Props) {
           {formatMarkdownVal(content.context)}
         </ReactMarkdown>
       ) : (
-        <div className="">{content.context}</div>
+        <div className=''>{content.context}</div>
       )}
     </div>
   );

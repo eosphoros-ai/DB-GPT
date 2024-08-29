@@ -1,21 +1,21 @@
-import React, { useState, useRef } from 'react';
+/* eslint-disable react-hooks/rules-of-hooks */
+import { IFlowNodeParameter } from '@/types/flow';
+import { convertKeysToCamelCase } from '@/utils/flow';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
-import { Button, Upload, message,Form } from 'antd';
-import { convertKeysToCamelCase } from '@/utils/flow';
-import { IFlowNodeParameter } from '@/types/flow';
+import { Button, Upload, message } from 'antd';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
-  formValuesChange:any,
+  formValuesChange: any;
   data: IFlowNodeParameter;
   onChange?: (value: any) => void;
 };
 export const renderUpload = (params: Props) => {
   const { t } = useTranslation();
   const urlList = useRef<string[]>([]);
-  const { data ,formValuesChange} = params;
-  const form = Form.useFormInstance()
+  const { data, formValuesChange } = params;
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
@@ -27,9 +27,9 @@ export const renderUpload = (params: Props) => {
     }
     urlList.current.push(url);
     if (data.ui.attr.max_count === 1) {
-      formValuesChange({file:urlList.current.toString()},{force:true})
-    }else{
-      formValuesChange({multiple_files:urlList.current},{force:true})
+      formValuesChange({ file: urlList.current.toString() }, { force: true });
+    } else {
+      formValuesChange({ multiple_files: urlList.current }, { force: true });
     }
   };
 
@@ -39,9 +39,9 @@ export const renderUpload = (params: Props) => {
       urlList.current.splice(index, 1);
     }
     if (data.ui.attr.max_count === 1) {
-      formValuesChange({file:urlList.current.toString()},{force:true})
-    }else{
-      formValuesChange({multiple_files:urlList.current},{force:true})
+      formValuesChange({ file: urlList.current.toString() }, { force: true });
+    } else {
+      formValuesChange({ multiple_files: urlList.current }, { force: true });
     }
   };
 
@@ -53,8 +53,8 @@ export const renderUpload = (params: Props) => {
     },
     onChange(info) {
       setUploading(true);
-      if (info.file.status !== 'uploading') {
-      }
+      // if (info.file.status !== 'uploading') {
+      // }
       if (info.file.status === 'done') {
         setUploading(false);
         message.success(`${info.file.response.data[0].file_name} ${t('Upload_Data_Successfully')}`);
@@ -65,13 +65,13 @@ export const renderUpload = (params: Props) => {
       }
     },
   };
-  
+
   if (!uploadType && data.ui?.file_types && Array.isArray(data.ui?.file_types)) {
     setUploadType(data.ui?.file_types.toString());
   }
 
   return (
-    <div className="p-2 text-sm text-center">
+    <div className='p-2 text-sm text-center'>
       {data.is_list ? (
         <Upload onRemove={handleFileRemove} {...props} {...attr} multiple={true} accept={uploadType}>
           <Button loading={uploading} icon={<UploadOutlined />}>

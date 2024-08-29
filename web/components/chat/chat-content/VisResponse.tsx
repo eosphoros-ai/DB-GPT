@@ -32,14 +32,14 @@ const VisResponse: React.FC<{ data: VisResponseProps }> = ({ data }) => {
       case 'running':
         return 'warning';
       default:
-        undefined;
+        return undefined;
     }
   }, [data]);
   if (!data) return null;
   const theme = mode === 'dark' ? githubDarkTheme : githubLightTheme;
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className='flex flex-1 flex-col'>
       <Alert
         className={classNames('mb-4', {
           'bg-[#fafafa] border-[transparent]': !type,

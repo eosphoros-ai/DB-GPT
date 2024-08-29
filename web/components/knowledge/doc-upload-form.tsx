@@ -1,12 +1,11 @@
-import { addDocument, apiInterceptors, uploadDocument, addYuque } from '@/client/api';
+import { addDocument, addYuque, apiInterceptors, uploadDocument } from '@/client/api';
 import { StepChangeParams } from '@/types/knowledge';
 import { InboxOutlined, MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Spin, Upload, message } from 'antd';
+import { Button, Form, Input, Spin, Typography, Upload, message } from 'antd';
 import { RcFile, UploadChangeParam } from 'antd/es/upload';
 import { default as classNames, default as cls } from 'classnames';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Typography } from 'antd';
 
 type FileParams = {
   file: RcFile;
@@ -51,7 +50,7 @@ export default function DocUploadForm(props: IProps) {
             doc_name: docName,
             content: webPageUrl,
             doc_type: 'URL',
-            questions: questions?.map((item) => item.question),
+            questions: questions?.map(item => item.question),
           }),
         );
         break;
@@ -62,7 +61,7 @@ export default function DocUploadForm(props: IProps) {
             source: textSource,
             content: text,
             doc_type: 'TEXT',
-            questions: questions.map((item) => item.question),
+            questions: questions.map(item => item.question),
           }),
         );
         break;
@@ -74,15 +73,15 @@ export default function DocUploadForm(props: IProps) {
             content: webPageUrl,
             doc_type: 'YUQUEURL',
             doc_token: doc_token || '',
-            questions: questions?.map((item) => item.question),
+            questions: questions?.map(item => item.question),
           }),
         );
         break;
-      case 'DOCUMENT':
+      case 'DOCUMENT': {
         const file = originFileObj as any;
         const formData = new FormData();
         const filename = file?.name;
-        const ques = questions.map((item) => item.question);
+        const ques = questions.map(item => item.question);
         formData.append('doc_name', filename);
         formData.append('doc_file', file);
         formData.append('doc_type', 'DOCUMENT');
@@ -99,6 +98,7 @@ export default function DocUploadForm(props: IProps) {
           });
         }
         break;
+      }
     }
     setSpinning(false);
     if (docType === 'DOCUMENT' && files.length < 1) {
@@ -131,26 +131,34 @@ export default function DocUploadForm(props: IProps) {
   const renderText = () => {
     return (
       <>
-        <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
-          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
+        <Form.Item<FieldType>
+          label={`${t('Name')}:`}
+          name='docName'
+          rules={[{ required: true, message: t('Please_input_the_name') }]}
+        >
+          <Input className='mb-5 h-12' placeholder={t('Please_input_the_name')} />
         </Form.Item>
         <Form.Item<FieldType>
           label={`${t('Text_Source')}:`}
-          name="textSource"
+          name='textSource'
           rules={[{ required: true, message: t('Please_input_the_text_source') }]}
         >
-          <Input className="mb-5  h-12" placeholder={t('Please_input_the_text_source')} />
+          <Input className='mb-5  h-12' placeholder={t('Please_input_the_text_source')} />
         </Form.Item>
-        <Form.Item<FieldType> label={`${t('Text')}:`} name="text" rules={[{ required: true, message: t('Please_input_the_description') }]}>
+        <Form.Item<FieldType>
+          label={`${t('Text')}:`}
+          name='text'
+          rules={[{ required: true, message: t('Please_input_the_description') }]}
+        >
           <TextArea rows={4} />
         </Form.Item>
         <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
-          <Form.List name="questions">
+          <Form.List name='questions'>
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name }, index) => (
+                {fields.map(({ key, name }) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
-                    <Form.Item label="" name={[name, 'question']} className="grow">
+                    <Form.Item label='' name={[name, 'question']} className='grow'>
                       <Input placeholder={t('input_question')} />
                     </Form.Item>
                     <Form.Item>
@@ -164,7 +172,7 @@ export default function DocUploadForm(props: IProps) {
                 ))}
                 <Form.Item>
                   <Button
-                    type="dashed"
+                    type='dashed'
                     onClick={() => {
                       add();
                     }}
@@ -185,23 +193,27 @@ export default function DocUploadForm(props: IProps) {
   const renderWebPage = () => {
     return (
       <>
-        <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
-          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
+        <Form.Item<FieldType>
+          label={`${t('Name')}:`}
+          name='docName'
+          rules={[{ required: true, message: t('Please_input_the_name') }]}
+        >
+          <Input className='mb-5 h-12' placeholder={t('Please_input_the_name')} />
         </Form.Item>
         <Form.Item<FieldType>
           label={`${t('Web_Page_URL')}:`}
-          name="webPageUrl"
+          name='webPageUrl'
           rules={[{ required: true, message: t('Please_input_the_Web_Page_URL') }]}
         >
-          <Input className="mb-5  h-12" placeholder={t('Please_input_the_Web_Page_URL')} />
+          <Input className='mb-5  h-12' placeholder={t('Please_input_the_Web_Page_URL')} />
         </Form.Item>
         <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
-          <Form.List name="questions">
+          <Form.List name='questions'>
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name }, index) => (
+                {fields.map(({ key, name }) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
-                    <Form.Item label="" name={[name, 'question']} className="grow">
+                    <Form.Item label='' name={[name, 'question']} className='grow'>
                       <Input placeholder={t('input_question')} />
                     </Form.Item>
                     <Form.Item>
@@ -215,7 +227,7 @@ export default function DocUploadForm(props: IProps) {
                 ))}
                 <Form.Item>
                   <Button
-                    type="dashed"
+                    type='dashed'
                     onClick={() => {
                       add();
                     }}
@@ -236,33 +248,41 @@ export default function DocUploadForm(props: IProps) {
   const renderYuquePage = () => {
     return (
       <>
-        <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
-          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
+        <Form.Item<FieldType>
+          label={`${t('Name')}:`}
+          name='docName'
+          rules={[{ required: true, message: t('Please_input_the_name') }]}
+        >
+          <Input className='mb-5 h-12' placeholder={t('Please_input_the_name')} />
         </Form.Item>
-        <Form.Item<FieldType> label={t('document_url')} name="webPageUrl" rules={[{ required: true, message: t('input_document_url') }]}>
-          <Input className="mb-5  h-12" placeholder={t('input_document_url')} />
+        <Form.Item<FieldType>
+          label={t('document_url')}
+          name='webPageUrl'
+          rules={[{ required: true, message: t('input_document_url') }]}
+        >
+          <Input className='mb-5  h-12' placeholder={t('input_document_url')} />
         </Form.Item>
         <Form.Item<FieldType>
           label={t('document_token')}
-          name="doc_token"
+          name='doc_token'
           tooltip={
             <>
               {t('Get_token')}
-              <Typography.Link href="https://yuque.antfin-inc.com/lark/openapi/dh8zp4" target="_blank">
+              <Typography.Link href='https://yuque.antfin-inc.com/lark/openapi/dh8zp4' target='_blank'>
                 {t('Reference_link')}
               </Typography.Link>
             </>
           }
         >
-          <Input className="mb-5  h-12" placeholder={t('input_document_token')} />
+          <Input className='mb-5  h-12' placeholder={t('input_document_token')} />
         </Form.Item>
         <Form.Item<FieldType> label={`${t('Correlation_problem')}:`}>
-          <Form.List name="questions">
+          <Form.List name='questions'>
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name }, index) => (
+                {fields.map(({ key, name }) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
-                    <Form.Item label="" name={[name, 'question']} className="grow">
+                    <Form.Item label='' name={[name, 'question']} className='grow'>
                       <Input placeholder={t('input_question')} />
                     </Form.Item>
                     <Form.Item>
@@ -276,7 +296,7 @@ export default function DocUploadForm(props: IProps) {
                 ))}
                 <Form.Item>
                   <Button
-                    type="dashed"
+                    type='dashed'
                     onClick={() => {
                       add();
                     }}
@@ -297,31 +317,31 @@ export default function DocUploadForm(props: IProps) {
   const renderDocument = () => {
     return (
       <>
-        <Form.Item<FieldType> name="originFileObj" rules={[{ required: true, message: t('Please_select_file') }]}>
+        <Form.Item<FieldType> name='originFileObj' rules={[{ required: true, message: t('Please_select_file') }]}>
           <Dragger
             multiple
             beforeUpload={() => false}
             onChange={handleFileChange}
             maxCount={1}
-            accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md,.zip"
+            accept='.pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md,.zip'
           >
-            <p className="ant-upload-drag-icon">
+            <p className='ant-upload-drag-icon'>
               <InboxOutlined />
             </p>
             <p style={{ color: 'rgb(22, 108, 255)', fontSize: '20px' }}>{t('Select_or_Drop_file')}</p>
-            <p className="ant-upload-hint" style={{ color: 'rgb(22, 108, 255)' }}>
+            <p className='ant-upload-hint' style={{ color: 'rgb(22, 108, 255)' }}>
               PDF, PowerPoint, Excel, Word, Text, Markdown, Zip1
             </p>
           </Dragger>
         </Form.Item>
-        <Form.Item<FieldType> label="关联问题:">
-          <Form.List name="questions">
+        <Form.Item<FieldType> label='关联问题:'>
+          <Form.List name='questions'>
             {(fields, { add, remove }) => (
               <>
-                {fields.map(({ key, name }, index) => (
+                {fields.map(({ key, name }) => (
                   <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
-                    <Form.Item label="" name={[name, 'question']} className="grow">
-                      <Input placeholder="请输入问题" />
+                    <Form.Item label='' name={[name, 'question']} className='grow'>
+                      <Input placeholder='请输入问题' />
                     </Form.Item>
                     <Form.Item>
                       <MinusCircleOutlined
@@ -334,7 +354,7 @@ export default function DocUploadForm(props: IProps) {
                 ))}
                 <Form.Item>
                   <Button
-                    type="dashed"
+                    type='dashed'
                     onClick={() => {
                       add();
                     }}
@@ -369,12 +389,12 @@ export default function DocUploadForm(props: IProps) {
     <Spin spinning={spinning}>
       <Form
         form={form}
-        size="large"
+        size='large'
         className={classNames('mt-4', className)}
-        layout="vertical"
-        name="basic"
+        layout='vertical'
+        name='basic'
         initialValues={{ remember: true }}
-        autoComplete="off"
+        autoComplete='off'
         onFinish={upload}
       >
         {renderFormContainer()}
@@ -383,9 +403,9 @@ export default function DocUploadForm(props: IProps) {
             onClick={() => {
               handleStepChange({ label: 'back' });
             }}
-            className="mr-4"
+            className='mr-4'
           >{`${t('Back')}`}</Button>
-          <Button type="primary" loading={spinning} htmlType="submit">
+          <Button type='primary' loading={spinning} htmlType='submit'>
             {t('Next')}
           </Button>
         </Form.Item>

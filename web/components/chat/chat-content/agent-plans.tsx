@@ -22,7 +22,7 @@ function AgentPlans({ data }: Props) {
   return (
     <Collapse
       bordered
-      className="my-3"
+      className='my-3'
       expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
       items={data.map((item, index) => {
         return {
@@ -33,9 +33,9 @@ function AgentPlans({ data }: Props) {
                 {item.name} - {item.agent}
               </span>
               {item.status === 'complete' ? (
-                <CheckOutlined className="!text-green-500 ml-2" />
+                <CheckOutlined className='!text-green-500 ml-2' />
               ) : (
-                <ClockCircleOutlined className="!text-gray-500 ml-2" />
+                <ClockCircleOutlined className='!text-gray-500 ml-2' />
               )}
             </div>
           ),

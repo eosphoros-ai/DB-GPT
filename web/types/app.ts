@@ -131,6 +131,7 @@ export interface CreateAppParams {
 }
 
 export interface AppListResponse {
+  total_count: number;
   app_list: IApp[];
   current_page: number;
   total_page: number;
