@@ -60,6 +60,7 @@ class EmbeddingLoader:
                 return TongYiEmbeddings(**tongyi_param)
             elif model_name in ["proxy_qianfan"]:
                 from dbgpt.rag.embedding import QianFanEmbeddings
+
                 proxy_param = cast(ProxyEmbeddingParameters, param)
                 qianfan_param = {"api_key": proxy_param.proxy_api_key}
                 if proxy_param.proxy_backend:
