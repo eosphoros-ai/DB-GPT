@@ -65,7 +65,7 @@ function GraphVis() {
   };
 
   const back = () => {
-    router.push(`/knowledge`);
+    router.push(`/construct/knowledge`);
   };
 
   const {
