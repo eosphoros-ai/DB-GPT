@@ -184,7 +184,7 @@ execution succeeded,
 
 --------------------------------------------------------------------------------
 ```agent-plans
-[{"name": "What is the name and age of the user with age less than 18", "num": 1, "status": "complete", "agent": "Human", "markdown": "```agent-messages\n[{\"sender\": \"DataScientist\", \"receiver\": \"Human\", \"model\": \"gpt-3.5-turbo\", \"markdown\": \"```vis-chart\\n{\\\"sql\\\": \\\"SELECT name, age FROM user WHERE age < 18\\\", \\\"type\\\": \\\"response_table\\\", \\\"title\\\": \\\"\\\", \\\"describe\\\": \\\"I have selected a response_table to display the names and ages of users with an age less than 18. The SQL query retrieves the name and age columns from the user table where the age is less than 18.\\\", \\\"data\\\": [{\\\"name\\\": \\\"Tom\\\", \\\"age\\\": 10}, {\\\"name\\\": \\\"Jerry\\\", \\\"age\\\": 16}]}\\n```\"}]\n```"}]
+[{"name": "What is the name and age of the user with age less than 18", "num": 1, "status": "complete", "agent": "Human", "markdown": "```agent-messages\n[{\"sender\": \"DataScientist\", \"receiver\": \"Human\", \"model\": \"gpt-3.5-turbo\", \"markdown\": \"```vis-db-chart\\n{\\\"sql\\\": \\\"SELECT name, age FROM user WHERE age < 18\\\", \\\"type\\\": \\\"response_table\\\", \\\"title\\\": \\\"\\\", \\\"describe\\\": \\\"I have selected a response_table to display the names and ages of users with an age less than 18. The SQL query retrieves the name and age columns from the user table where the age is less than 18.\\\", \\\"data\\\": [{\\\"name\\\": \\\"Tom\\\", \\\"age\\\": 10}, {\\\"name\\\": \\\"Jerry\\\", \\\"age\\\": 16}]}\\n```\"}]\n```"}]
 ```
 ``````
 
@@ -197,7 +197,7 @@ Let's parse the result from above output, we just focus on the last part
         "num": 1,
         "status": "complete",
         "agent": "Human",
-        "markdown": "```agent-messages\n[{\"sender\": \"DataScientist\", \"receiver\": \"Human\", \"model\": \"gpt-3.5-turbo\", \"markdown\": \"```vis-chart\\n{\\\"sql\\\": \\\"SELECT name, age FROM user WHERE age < 18\\\", \\\"type\\\": \\\"response_table\\\", \\\"title\\\": \\\"\\\", \\\"describe\\\": \\\"I have selected a response_table to display the names and ages of users with an age less than 18. The SQL query retrieves the name and age columns from the user table where the age is less than 18.\\\", \\\"data\\\": [{\\\"name\\\": \\\"Tom\\\", \\\"age\\\": 10}, {\\\"name\\\": \\\"Jerry\\\", \\\"age\\\": 16}]}\\n```\"}]\n```"
+        "markdown": "```agent-messages\n[{\"sender\": \"DataScientist\", \"receiver\": \"Human\", \"model\": \"gpt-3.5-turbo\", \"markdown\": \"```vis-db-chart\\n{\\\"sql\\\": \\\"SELECT name, age FROM user WHERE age < 18\\\", \\\"type\\\": \\\"response_table\\\", \\\"title\\\": \\\"\\\", \\\"describe\\\": \\\"I have selected a response_table to display the names and ages of users with an age less than 18. The SQL query retrieves the name and age columns from the user table where the age is less than 18.\\\", \\\"data\\\": [{\\\"name\\\": \\\"Tom\\\", \\\"age\\\": 10}, {\\\"name\\\": \\\"Jerry\\\", \\\"age\\\": 16}]}\\n```\"}]\n```"
     }
 ]
 ```
