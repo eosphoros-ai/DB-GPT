@@ -657,8 +657,8 @@ class KnowledgeService:
         for edge in graph.edges():
             res["edges"].append(
                 {
-                    "src": edge.sid,
-                    "dst": edge.tid,
+                    "source": edge.sid,
+                    "target": edge.tid,
                     "name": edge.name,
                     "type": ""
                 }
