@@ -14,8 +14,8 @@ from .embeddings import (  # noqa: F401
     JinaEmbeddings,
     OllamaEmbeddings,
     OpenAPIEmbeddings,
-    TongYiEmbeddings,
     QianFanEmbeddings,
+    TongYiEmbeddings,
 )
 from .rerank import CrossEncoderRerankEmbeddings, OpenAPIRerankEmbeddings  # noqa: F401
 
@@ -34,5 +34,5 @@ __ALL__ = [
     "TongYiEmbeddings",
     "CrossEncoderRerankEmbeddings",
     "OpenAPIRerankEmbeddings",
-    "QianFanEmbeddings"
+    "QianFanEmbeddings",
 ]

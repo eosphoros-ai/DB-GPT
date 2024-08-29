@@ -563,7 +563,7 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
         metadata={
             "tags": "privacy",
             "help": "The api secret of the current embedding model(OPENAI_API_SECRET)",
-        }
+        },
     )
     proxy_api_version: Optional[str] = field(
         default=None,
