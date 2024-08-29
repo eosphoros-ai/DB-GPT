@@ -14,7 +14,7 @@ import { apiInterceptors, importFlow } from '@/client/api';
 import { Node, Edge } from 'reactflow';
 import { UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Props = {
   isImportModalOpen: boolean;
@@ -36,7 +36,12 @@ export const ImportFlowModal: React.FC<Props> = ({
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-
+  useEffect(() => {
+    if (isImportModalOpen) {
+      form.resetFields();
+      setFileList([]);
+    }
+  }, [isImportModalOpen]);
   const onFlowImport = async (values: any) => {
     values.file = values.file?.[0];
 
@@ -52,7 +57,6 @@ export const ImportFlowModal: React.FC<Props> = ({
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
     }
-
     setIsImportFlowModalOpen(false);
   };
   const props: UploadProps = {
