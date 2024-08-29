@@ -44,6 +44,7 @@ class ConnectorManager(BaseComponent):
         from dbgpt.datasource.rdbms.conn_clickhouse import (  # noqa: F401
             ClickhouseConnector,
         )
+        from dbgpt.datasource.rdbms.conn_cubejs import CubeJSConnector
         from dbgpt.datasource.rdbms.conn_doris import DorisConnector  # noqa: F401
         from dbgpt.datasource.rdbms.conn_duckdb import DuckDbConnector  # noqa: F401
         from dbgpt.datasource.rdbms.conn_hive import HiveConnector  # noqa: F401
@@ -127,8 +128,14 @@ class ConnectorManager(BaseComponent):
             db_port = db_config.get("db_port")
             db_user = db_config.get("db_user")
             db_pwd = db_config.get("db_pwd")
+            comment = db_config.get("comment")
             return connect_instance.from_uri_db(  # type: ignore
-                host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
+                host=db_host,
+                port=db_port,
+                user=db_user,
+                pwd=db_pwd,
+                db_name=db_name,
+                comment=comment,
             )
 
     def test_connect(self, db_info: DBConfig) -> BaseConnector:
@@ -157,12 +164,14 @@ class ConnectorManager(BaseComponent):
                 db_port = db_info.db_port
                 db_user = db_info.db_user
                 db_pwd = db_info.db_pwd
+                db_comment = db_info.comment
                 return connect_instance.from_uri_db(  # type: ignore
                     host=db_host,
                     port=db_port,
                     user=db_user,
                     pwd=db_pwd,
                     db_name=db_name,
+                    comment=db_comment,
                 )
         except Exception as e:
             logger.error(f"{db_info.db_name} Test connect Failure!{str(e)}")
