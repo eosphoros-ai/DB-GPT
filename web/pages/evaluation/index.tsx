@@ -115,12 +115,6 @@ const Evaluation = () => {
     {
       manual: true,
       onSuccess: data => {
-        console.log(
-          data,
-          data?.map((i: Record<string, string>) => {
-            return { label: i.describe, value: i.name };
-          }),
-        );
         setMetricOptions(
           data?.map((i: Record<string, string>) => {
             return { label: i.describe, value: i.name };
@@ -355,7 +349,6 @@ const Evaluation = () => {
                     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                   }),
                 );
-                console.log(url, response);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
@@ -501,7 +494,6 @@ const Evaluation = () => {
                     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                   }),
                 );
-                console.log(url, response);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
@@ -786,7 +778,6 @@ const Evaluation = () => {
 
                     uploadDataSetsFile(formData)
                       .then(response => {
-                        console.log(response);
                         if (response.data.success) {
                           message.success('上传成功');
                           runGetDataSets();
@@ -809,7 +800,6 @@ const Evaluation = () => {
                       content: values.content,
                     })
                       .then(res => {
-                        console.log(res);
                         if (res.data.success) {
                           message.success('上传成功');
                           runGetDataSets();
@@ -880,7 +870,6 @@ const Evaluation = () => {
                     name='dataSet'
                     maxCount={1}
                     beforeUpload={file => {
-                      // console.log(file, dataSetForm.getFieldsValue());
                       dataSetForm.setFieldsValue({
                         doc_file: file,
                       });

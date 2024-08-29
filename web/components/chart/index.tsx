@@ -10,7 +10,6 @@ type Props = {
 };
 
 function Chart({ chartsData }: Props) {
-  console.log(chartsData, 'xxx');
   const chartRows = useMemo(() => {
     if (chartsData) {
       const res = [];

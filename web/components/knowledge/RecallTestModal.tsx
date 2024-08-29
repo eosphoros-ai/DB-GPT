@@ -68,7 +68,6 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
   const onTest = async () => {
     form.validateFields().then(async values => {
       const extraVal = extraForm.getFieldsValue();
-      console.log(extraVal);
       await recallTestRun({ recall_top_k: 1, recall_retrievers: options, ...values, ...extraVal });
     });
   };

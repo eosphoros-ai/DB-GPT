@@ -104,7 +104,7 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
       setLoading(false);
     }
   };
-  console.log(form.getFieldValue('db_type'));
+
   const { run: fetchOmcList } = useDebounceFn(
     async (name: string) => {
       setOmcListLoading(true);
@@ -117,7 +117,6 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
       wait: 500,
     },
   );
-  console.log('omcDBList', omcDBList);
 
   const lockDBType = useMemo(() => !!editValue || !!choiceDBType, [editValue, choiceDBType]);
   return (
@@ -163,8 +162,6 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
               options={omcDBList}
               onSearch={fetchOmcList}
               onSelect={searchName => {
-                console.log(searchName, 'searchName');
-
                 const item = omcDBList?.find((item: any) => item.value === searchName) as any;
                 form.setFieldsValue({
                   db_arn: item?.arn,
