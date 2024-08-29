@@ -36,6 +36,8 @@ _ALLOWED_TYPES: Dict[str, Type] = {
 }
 
 _BASIC_TYPES = [str, int, float, bool, dict, list, set]
+_DYNAMIC_PARAMETER_TYPES = [str, int, float, bool]
+DefaultParameterType = Union[str, int, float, bool, None]
 
 T = TypeVar("T", bound="ViewMixin")
 TM = TypeVar("TM", bound="TypeMetadata")
@@ -292,9 +294,6 @@ class ParameterCategory(str, Enum):
             return cls.RESOURCER
 
 
-DefaultParameterType = Union[str, int, float, bool, None]
-
-
 class TypeMetadata(BaseModel):
     """The metadata of the type."""
 
@@ -313,7 +312,23 @@ class TypeMetadata(BaseModel):
         return self.__class__(**self.model_dump(exclude_defaults=True))
 
 
-class Parameter(TypeMetadata, Serializable):
+class BaseDynamic(BaseModel):
+    """The base dynamic field."""
+
+    dynamic: bool = Field(
+        default=False,
+        description="Whether current field is dynamic",
+        examples=[True, False],
+    )
+    dynamic_minimum: int = Field(
+        default=0,
+        description="The minimum count of the dynamic field, only valid when dynamic is"
+        " True",
+        examples=[0, 1, 2],
+    )
+
+
+class Parameter(BaseDynamic, TypeMetadata, Serializable):
     """Parameter for build operator."""
 
     label: str = Field(
@@ -332,11 +347,6 @@ class Parameter(TypeMetadata, Serializable):
         description="The category of the parameter",
         examples=["common", "resource"],
     )
-    # resource_category: Optional[str] = Field(
-    #     default=None,
-    #     description="The category of the resource, just for resource type",
-    #     examples=["llm_client", "common"],
-    # )
     resource_type: ResourceType = Field(
         default=ResourceType.INSTANCE,
         description="The type of the resource, just for resource type",
@@ -388,6 +398,17 @@ class Parameter(TypeMetadata, Serializable):
                     handled_v = cls._covert_to_real_type(type_cls, v, is_list)
                     values[k] = handled_v
         return values
+
+    @model_validator(mode="after")
+    def check_parameters(self) -> "Parameter":
+        """Check the parameters."""
+        if self.dynamic and not self.is_list:
+            raise FlowMetadataException("Dynamic parameter must be list.")
+        if self.dynamic and self.dynamic_minimum < 0:
+            raise FlowMetadataException(
+                "Dynamic minimum must be greater then or equal to 0."
+            )
+        return self
 
     @classmethod
     def _covert_to_real_type(cls, type_cls: str, v: Any, is_list: bool) -> Any:
@@ -450,6 +471,8 @@ class Parameter(TypeMetadata, Serializable):
         description: Optional[str] = None,
         options: Optional[Union[BaseDynamicOptions, List[OptionValue]]] = None,
         resource_type: ResourceType = ResourceType.INSTANCE,
+        dynamic: bool = False,
+        dynamic_minimum: int = 0,
         alias: Optional[List[str]] = None,
         ui: Optional[UIComponent] = None,
     ):
@@ -461,6 +484,8 @@ class Parameter(TypeMetadata, Serializable):
             raise ValueError(f"Default value is missing for optional parameter {name}.")
         if not optional:
             default = None
+        if dynamic and type not in _DYNAMIC_PARAMETER_TYPES:
+            raise ValueError("Dynamic parameter must be str, int, float or bool.")
         return cls(
             label=label,
             name=name,
@@ -474,6 +499,8 @@ class Parameter(TypeMetadata, Serializable):
             placeholder=placeholder,
             description=description or label,
             options=options,
+            dynamic=dynamic,
+            dynamic_minimum=dynamic_minimum,
             alias=alias,
             ui=ui,
         )
@@ -635,6 +662,11 @@ class BaseResource(Serializable, BaseModel):
         description="The label to display in UI",
         examples=["LLM Operator", "OpenAI LLM Client"],
     )
+    custom_label: Optional[str] = Field(
+        None,
+        description="The custom label to display in UI",
+        examples=["LLM Operator", "OpenAI LLM Client"],
+    )
     name: str = Field(
         ...,
         description="The name of the operator",
@@ -668,24 +700,13 @@ class IOFiledType(str, Enum):
     LIST = "list"
 
 
-class IOField(Resource):
+class IOField(BaseDynamic, Resource):
     """The input or output field of the operator."""
 
     is_list: bool = Field(
         default=False,
         description="Whether current field is list",
         examples=[True, False],
-    )
-    dynamic: bool = Field(
-        default=False,
-        description="Whether current field is dynamic",
-        examples=[True, False],
-    )
-    dynamic_minimum: int = Field(
-        default=0,
-        description="The minimum count of the dynamic field, only valid when dynamic is"
-        " True",
-        examples=[0, 1, 2],
     )
     mappers: Optional[List[str]] = Field(
         default=None,
@@ -723,18 +744,6 @@ class IOField(Resource):
             dynamic_minimum=dynamic_minimum,
             mappers=mappers_cls,
         )
-
-    @model_validator(mode="before")
-    @classmethod
-    def base_pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Pre fill the metadata."""
-        if not isinstance(values, dict):
-            return values
-        if "dynamic" not in values:
-            values["dynamic"] = False
-        if "dynamic_minimum" not in values:
-            values["dynamic_minimum"] = 0
-        return values
 
 
 class BaseMetadata(BaseResource):
@@ -1136,6 +1145,38 @@ class ViewMetadata(BaseMetadata):
                     raise ValueError("Outputs should be IOField.")
             values["outputs"] = new_outputs
         return values
+
+    @model_validator(mode="after")
+    def check_metadata(self) -> "ViewMetadata":
+        """Check the metadata."""
+        if self.inputs:
+            for field in self.inputs:
+                if field.mappers:
+                    raise ValueError("Input field can't have mappers.")
+            dyn_cnt, is_last_field_dynamic = 0, False
+            for field in self.inputs:
+                if field.dynamic:
+                    dyn_cnt += 1
+                    is_last_field_dynamic = True
+                else:
+                    if is_last_field_dynamic:
+                        raise ValueError("Dynamic field input must be the last field.")
+                    is_last_field_dynamic = False
+            if dyn_cnt > 1:
+                raise ValueError("Only one dynamic input field is allowed.")
+        if self.outputs:
+            dyn_cnt, is_last_field_dynamic = 0, False
+            for field in self.outputs:
+                if field.dynamic:
+                    dyn_cnt += 1
+                    is_last_field_dynamic = True
+                else:
+                    if is_last_field_dynamic:
+                        raise ValueError("Dynamic field output must be the last field.")
+                    is_last_field_dynamic = False
+            if dyn_cnt > 1:
+                raise ValueError("Only one dynamic output field is allowed.")
+        return self
 
     def get_operator_key(self) -> str:
         """Get the operator key."""
