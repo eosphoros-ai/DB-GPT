@@ -230,7 +230,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     continue
                 # Set state to DEPLOYED
                 flow.state = State.DEPLOYED
-                exist_inst = self.get({"name": flow.name})
+                exist_inst = self.dao.get_one({"name": flow.name})
                 if not exist_inst:
                     self.create_and_save_dag(flow, save_failed_flow=True)
                 elif is_first_load or exist_inst.state != State.RUNNING:

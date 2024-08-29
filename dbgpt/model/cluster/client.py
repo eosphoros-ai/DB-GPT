@@ -27,7 +27,7 @@ from dbgpt.util.i18n_utils import _
             name="auto_convert_message",
             type=bool,
             optional=True,
-            default=False,
+            default=True,
             description=_(
                 "Whether to auto convert the messages that are not supported "
                 "by the LLM to a compatible format"
@@ -128,7 +128,7 @@ class DefaultLLMClient(LLMClient):
             name="auto_convert_message",
             type=bool,
             optional=True,
-            default=False,
+            default=True,
             description=_(
                 "Whether to auto convert the messages that are not supported "
                 "by the LLM to a compatible format"
@@ -158,7 +158,7 @@ class RemoteLLMClient(DefaultLLMClient):
     def __init__(
         self,
         controller_address: str = "http://127.0.0.1:8000",
-        auto_convert_message: bool = False,
+        auto_convert_message: bool = True,
     ):
         """Initialize the RemoteLLMClient."""
         from dbgpt.model.cluster import ModelRegistryClient, RemoteWorkerManager

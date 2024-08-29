@@ -2,7 +2,11 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core.awel import CommonLLMHttpRequestBody
-from dbgpt.core.awel.flow.flow_factory import FlowPanel, VariablesRequest
+from dbgpt.core.awel.flow.flow_factory import (
+    FlowPanel,
+    VariablesRequest,
+    _VariablesRequestBase,
+)
 from dbgpt.core.awel.util.parameter_util import RefreshOptionRequest
 
 from ..config import SERVE_APP_NAME_HUMP
@@ -26,6 +30,13 @@ class VariablesResponse(VariablesRequest):
         description="The id of the variable",
         examples=[1],
     )
+
+
+class VariablesKeyResponse(_VariablesRequestBase):
+    """Variables Key response model.
+
+    Just include the key, for select options in the frontend.
+    """
 
 
 class RefreshNodeRequest(BaseModel):
