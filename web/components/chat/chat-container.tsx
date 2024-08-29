@@ -34,7 +34,6 @@ const ChatContainer = () => {
     if (contextTemp) {
       try {
         const contextObj = typeof contextTemp === 'string' ? JSON.parse(contextTemp) : contextTemp;
-        console.log('contextObj', contextObj);
         setChartsData(contextObj?.template_name === 'report' ? contextObj?.charts : undefined);
       } catch (e) {
         console.log(e);

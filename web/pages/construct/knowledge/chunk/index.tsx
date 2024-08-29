@@ -147,7 +147,6 @@ function ChunkList() {
                 onClick={() => {
                   setIsModalOpen(true);
                   setCurrentChunkInfo(chunk);
-                  console.log(chunk);
                 }}
               >
                 <p className='font-semibold'>{t('Content')}:</p>

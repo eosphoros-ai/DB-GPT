@@ -24,8 +24,6 @@ interface FlowCardProps {
 }
 
 const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => {
-  console.log(flow, 'flow');
-
   const { model } = useContext(ChatContext);
   const { t } = useTranslation();
   const [modal, contextHolder] = Modal.useModal();

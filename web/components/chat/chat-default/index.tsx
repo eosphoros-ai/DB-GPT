@@ -61,7 +61,6 @@ function Default() {
       onSuccess: res => {
         const [_, data] = res;
         if (activeKey === 'recommend') {
-          console.log(data);
           return setApps({
             app_list: data,
             total_count: data?.length || 0,

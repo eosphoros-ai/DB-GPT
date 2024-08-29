@@ -22,7 +22,6 @@ let intervalId: string | number | NodeJS.Timeout | undefined;
 
 export default function Segmentation(props: IProps) {
   const { spaceName, docType, uploadFiles, handleStepChange } = props;
-  console.log(docType, 'doctype');
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [files, setFiles] = useState(uploadFiles);

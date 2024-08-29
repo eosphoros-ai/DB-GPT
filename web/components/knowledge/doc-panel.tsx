@@ -234,7 +234,6 @@ export default function DocPanel(props: IProps) {
       manual: true,
       debounceWait: 500,
       onSuccess: data => {
-        console.log(data);
         setSearchDocuments(data?.data);
       },
     },

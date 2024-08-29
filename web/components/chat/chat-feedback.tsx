@@ -102,7 +102,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
       ques_type: ques_type,
       messages: text,
     };
-    console.log(formData);
+
     apiInterceptors(
       postChatFeedBackForm({
         data: formData,
