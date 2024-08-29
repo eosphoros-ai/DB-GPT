@@ -21,6 +21,7 @@ from .schemas import (
     RefreshNodeRequest,
     ServeRequest,
     ServerResponse,
+    VariablesKeyResponse,
     VariablesRequest,
     VariablesResponse,
 )
@@ -364,6 +365,62 @@ async def update_variables(
     return Result.succ(res)
 
 
+@router.get(
+    "/variables",
+    response_model=Result[PaginationResult[VariablesResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def get_variables_by_keys(
+    key: str = Query(..., description="variable key"),
+    scope: Optional[str] = Query(default=None, description="scope"),
+    scope_key: Optional[str] = Query(default=None, description="scope key"),
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    page: int = Query(default=1, description="current page"),
+    page_size: int = Query(default=20, description="page size"),
+) -> Result[PaginationResult[VariablesResponse]]:
+    """Get the variables by keys
+
+    Returns:
+        VariablesResponse: The response
+    """
+    res = await get_variable_service().get_list_by_page(
+        key,
+        scope,
+        scope_key,
+        user_name,
+        sys_code,
+        page,
+        page_size,
+    )
+    return Result.succ(res)
+
+
+@router.get(
+    "/variables/keys",
+    response_model=Result[List[VariablesKeyResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def get_variables_keys(
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    category: Optional[str] = Query(default=None, description="category"),
+) -> Result[List[VariablesKeyResponse]]:
+    """Get the variable keys
+
+    Returns:
+        VariablesKeyResponse: The response
+    """
+    res = await blocking_func_to_async(
+        global_system_app,
+        get_variable_service().list_keys,
+        user_name,
+        sys_code,
+        category,
+    )
+    return Result.succ(res)
+
+
 @router.post("/flow/debug", dependencies=[Depends(check_api_key)])
 async def debug_flow(
     flow_debug_request: FlowDebugRequest, service: Service = Depends(get_service)
@@ -482,10 +539,13 @@ async def import_flow(
 def init_endpoints(system_app: SystemApp) -> None:
     """Initialize the endpoints"""
     from .variables_provider import (
+        BuiltinAgentsVariablesProvider,
         BuiltinAllSecretVariablesProvider,
         BuiltinAllVariablesProvider,
+        BuiltinDatasourceVariablesProvider,
         BuiltinEmbeddingsVariablesProvider,
         BuiltinFlowVariablesProvider,
+        BuiltinKnowledgeSpacesVariablesProvider,
         BuiltinLLMVariablesProvider,
         BuiltinNodeVariablesProvider,
     )
@@ -499,4 +559,7 @@ def init_endpoints(system_app: SystemApp) -> None:
     system_app.register(BuiltinAllSecretVariablesProvider)
     system_app.register(BuiltinLLMVariablesProvider)
     system_app.register(BuiltinEmbeddingsVariablesProvider)
+    system_app.register(BuiltinDatasourceVariablesProvider)
+    system_app.register(BuiltinAgentsVariablesProvider)
+    system_app.register(BuiltinKnowledgeSpacesVariablesProvider)
     global_system_app = system_app

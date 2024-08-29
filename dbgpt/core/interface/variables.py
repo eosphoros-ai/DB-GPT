@@ -31,6 +31,7 @@ BUILTIN_VARIABLES_CORE_VARIABLES = "dbgpt.core.variables"
 BUILTIN_VARIABLES_CORE_SECRETS = "dbgpt.core.secrets"
 BUILTIN_VARIABLES_CORE_LLMS = "dbgpt.core.model.llms"
 BUILTIN_VARIABLES_CORE_EMBEDDINGS = "dbgpt.core.model.embeddings"
+# Not implemented yet
 BUILTIN_VARIABLES_CORE_RERANKERS = "dbgpt.core.model.rerankers"
 BUILTIN_VARIABLES_CORE_DATASOURCES = "dbgpt.core.datasources"
 BUILTIN_VARIABLES_CORE_AGENTS = "dbgpt.core.agent.agents"
