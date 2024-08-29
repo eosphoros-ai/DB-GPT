@@ -649,7 +649,7 @@ class KnowledgeService:
             res["nodes"].append(
                 {
                     "id": node.vid,
-                    "communityid": node.get_prop("_community_id"),
+                    "communityId": node.get_prop("_community_id"),
                     "name": node.vid,
                     "type": ""
                 }
