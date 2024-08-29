@@ -358,17 +358,17 @@ class TuGraphStore(GraphStoreBase):
         """Get full graph."""
         if not limit:
             raise Exception("limit must be set")
-        all_vertex_graph = self.query(
-            f"MATCH (n) RETURN n LIMIT {limit}", white_list=["_community_id"]
-        )
-        all_edge_graph = self.query(
+        # all_vertex_graph = self.query(
+        #     f"MATCH (n) RETURN n LIMIT {limit}", white_list=["_community_id"]
+        # )
+        graph_result = self.query(
             f"MATCH (n)-[r]-(m) RETURN n,r,m LIMIT {limit}",
             white_list=["_community_id"],
         )
         all_graph = MemoryGraph()
-        for vertex in all_vertex_graph.vertices():
+        for vertex in graph_result.vertices():
             all_graph.upsert_vertex(vertex)
-        for edge in all_edge_graph.edges():
+        for edge in graph_result.edges():
             all_graph.append_edge(edge)
         return all_graph
 
