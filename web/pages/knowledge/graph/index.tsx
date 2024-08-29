@@ -55,10 +55,10 @@ function GraphVis() {
   const transformData = (data: GraphVisData): GraphData => {
     if (!data) return { nodes: [], edges: [] };
 
-    const nodes = data.nodes.map((node) => ({ id: node.vid, data: node }));
+    const nodes = data.nodes.map((node) => ({ id: node.id, data: node }));
     const edges = data.edges.map((edge) => ({
-      source: edge.src,
-      target: edge.dst,
+      source: edge.source,
+      target: edge.target,
       data: edge,
     }));
 
