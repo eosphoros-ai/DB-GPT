@@ -3,12 +3,13 @@ import ConstructLayout from '@/new-components/layout/Construct';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getDbList, getDbSupportType, newDialogue, postDbDelete } from '@/client/api';
 import MuiLoading from '@/components/common/loading';
+import GPTCard from '@/components/common/gpt-card';
 import FormDialog from '@/components/database/form-dialog';
 import { DBOption, DBType, DbListResponse, DbSupportTypeResponse, IChatDbSchema } from '@/types/db';
 import { dbMapper } from '@/utils';
 import { DeleteFilled, EditFilled, PlusOutlined } from '@ant-design/icons';
 import { useAsyncEffect } from 'ahooks';
-import { Button, Card, Drawer, Empty, Modal, Tag, message } from 'antd';
+import { Button, Card, Drawer, Empty, Modal, Badge, message } from 'antd';
 import { useRouter } from 'next/router';
 import { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -152,56 +153,68 @@ function Database() {
           </div>
         </div>
 
-        <div className="flex flex-wrap mx-[-8px]">
-          {dbList.map((item) => {
-            let targetDBType = dbTypeList.find((i) => i?.value?.toLowerCase() === item.db_type);
+        <div className="flex flex-wrap mx-[-8px] gap-2 md:gap-4">
+          {dbTypeList.map((item) => {
             return (
-              <BlurredCard
-                description={item.db_path ?? ''}
-                name={item.db_name}
-                key={item.db_name}
-                logo={targetDBType?.icon}
-                RightTop={
-                  <InnerDropdown
-                    menu={{
-                      items: [
-                        {
-                          key: 'del',
-                          label: (
-                            <span
-                              className="text-red-400"
-                              onClick={() => {
-                                onDelete(item);
-                              }}
-                            >
-                              {t('Delete_Btn')}
-                            </span>
-                          ),
-                        },
-                      ],
-                    }}
-                  />
-                }
-                rightTopHover={false}
-                Tags={
-                  <div>
-                    <Tag>{item.db_type}</Tag>
-                  </div>
-                }
-                RightBottom={
-                  <ChatButton
-                    text={t('start_chat')}
-                    onClick={() => {
-                      handleChat(item);
-                    }}
-                  />
-                }
-                onClick={() => {
-                  // if (targetDBType?.disabled) return;
-                  // handleDbTypeClick(targetDBType);
-                  onModify(item);
-                }}
-              />
+              <Badge key={item.value} count={dbListByType[item.value]?.length} className="min-h-fit">
+                <GPTCard
+                  className="h-full"
+                  title={item.label}
+                  desc={item.desc ?? ''}
+                  disabled={item.disabled}
+                  icon={item.icon}
+                  onClick={() => {
+                    if (item.disabled) return;
+                    handleDbTypeClick(item);
+                  }}
+                />
+              </Badge>
+              // <BlurredCard
+              //   description={item.db_path ?? ''}
+              //   name={item.db_name}
+              //   key={item.db_name}
+              //   logo={targetDBType?.icon}
+              //   RightTop={
+              //     <InnerDropdown
+              //       menu={{
+              //         items: [
+              //           {
+              //             key: 'del',
+              //             label: (
+              //               <span
+              //                 className="text-red-400"
+              //                 onClick={() => {
+              //                   onDelete(item);
+              //                 }}
+              //               >
+              //                 {t('Delete_Btn')}
+              //               </span>
+              //             ),
+              //           },
+              //         ],
+              //       }}
+              //     />
+              //   }
+              //   rightTopHover={false}
+              //   Tags={
+              //     <div>
+              //       <Tag>{item.db_type}</Tag>
+              //     </div>
+              //   }
+              //   RightBottom={
+              //     <ChatButton
+              //       text={t('start_chat')}
+              //       onClick={() => {
+              //         handleChat(item);
+              //       }}
+              //     />
+              //   }
+              //   onClick={() => {
+              //     // if (targetDBType?.disabled) return;
+              //     // handleDbTypeClick(targetDBType);
+              //     onModify(item);
+              //   }}
+              // />
             );
           })}
         </div>

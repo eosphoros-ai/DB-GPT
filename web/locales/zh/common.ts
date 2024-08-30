@@ -95,7 +95,7 @@ export const CommonZh: Resources["translation"] = {
   Password: "密码",
   Remark: "备注",
   Edit: "编辑",
-  Database: "数据库",
+  Database: "数据源",
   Data_Source: "数据中心",
   Close_Sidebar: "收起",
   Show_Sidebar: "展开",

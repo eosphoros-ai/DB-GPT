@@ -185,7 +185,7 @@ class GptsApp(BaseModel):
 
 class GptsAppQuery(GptsApp):
     page_size: int = 100
-    page_no: int = 1
+    page: int = 1
     is_collected: Optional[str] = None
     is_recent_used: Optional[str] = None
     published: Optional[str] = None
@@ -557,9 +557,7 @@ class GptsAppDao(BaseDao):
         from dbgpt.storage.chat_history.chat_history_db import ChatHistoryDao
 
         chat_history_dao = ChatHistoryDao()
-        hot_app_map = chat_history_dao.get_hot_app_map(
-            query.page_no - 1, query.page_size
-        )
+        hot_app_map = chat_history_dao.get_hot_app_map(query.page - 1, query.page_size)
         logger.info(f"hot_app_map = {hot_app_map}")
         hot_map = {}
         for hp in hot_app_map:
@@ -621,7 +619,7 @@ class GptsAppDao(BaseDao):
                 app_qry = app_qry.filter(GptsAppEntity.app_code.in_(query.app_codes))
             total_count = app_qry.count()
             app_qry = app_qry.order_by(GptsAppEntity.id.desc())
-            app_qry = app_qry.offset((query.page_no - 1) * query.page_size).limit(
+            app_qry = app_qry.offset((query.page - 1) * query.page_size).limit(
                 query.page_size
             )
             results = app_qry.all()
@@ -664,7 +662,7 @@ class GptsAppDao(BaseDao):
             )
             app_resp.total_count = total_count
             app_resp.app_list = apps
-            app_resp.current_page = query.page_no
+            app_resp.current_page = query.page
             app_resp.total_page = (total_count + query.page_size - 1) // query.page_size
             return app_resp
 
