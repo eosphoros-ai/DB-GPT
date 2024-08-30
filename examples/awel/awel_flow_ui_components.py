@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from dbgpt.core.awel import MapOperator
+from dbgpt.core.awel import JoinOperator, MapOperator
 from dbgpt.core.awel.flow import (
     FunctionDynamicOptions,
     IOField,
@@ -852,7 +852,7 @@ class ExampleFlowUploadOperator(MapOperator[str, str]):
                 ui=ui.UIUpload(
                     max_file_size=1024 * 1024 * 100,
                     up_event="button_click",
-                    file_types=["image/*", "*.pdf"],
+                    file_types=["image/*", ".pdf"],
                     drag=True,
                     attr=ui.UIUpload.UIAttribute(max_count=5),
                 ),
@@ -897,7 +897,7 @@ class ExampleFlowUploadOperator(MapOperator[str, str]):
         files_metadata = await self.blocking_func_to_async(
             self._parse_files_metadata, fsc
         )
-        files_metadata_str = json.dumps(files_metadata, ensure_ascii=False)
+        files_metadata_str = json.dumps(files_metadata, ensure_ascii=False, indent=4)
         return "Your name is %s, and you files are %s." % (
             user_name,
             files_metadata_str,
@@ -1243,3 +1243,156 @@ class ExampleFlowCodeEditorOperator(MapOperator[str, str]):
             if exitcode != 0:
                 return exitcode, logs_all
         return exitcode, logs_all
+
+
+class ExampleFlowDynamicParametersOperator(MapOperator[str, str]):
+    """An example flow operator that includes dynamic parameters."""
+
+    metadata = ViewMetadata(
+        label="Example Dynamic Parameters Operator",
+        name="example_dynamic_parameters_operator",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes dynamic parameters.",
+        parameters=[
+            Parameter.build_from(
+                "Dynamic String",
+                "dynamic_1",
+                type=str,
+                is_list=True,
+                placeholder="Please input the dynamic parameter",
+                description="The dynamic parameter you want to use, you can add more, "
+                "at least 1 parameter.",
+                dynamic=True,
+                dynamic_minimum=1,
+                ui=ui.UIInput(),
+            ),
+            Parameter.build_from(
+                "Dynamic Integer",
+                "dynamic_2",
+                type=int,
+                is_list=True,
+                placeholder="Please input the dynamic parameter",
+                description="The dynamic parameter you want to use, you can add more, "
+                "at least 0 parameter.",
+                dynamic=True,
+                dynamic_minimum=0,
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Dynamic",
+                "dynamic",
+                str,
+                description="User's selected dynamic.",
+            ),
+        ],
+    )
+
+    def __init__(self, dynamic_1: List[str], dynamic_2: List[int], **kwargs):
+        super().__init__(**kwargs)
+        if not dynamic_1:
+            raise ValueError("The dynamic string is empty.")
+        self.dynamic_1 = dynamic_1
+        self.dynamic_2 = dynamic_2
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the dynamic."""
+        return "Your name is %s, and your dynamic is %s." % (
+            user_name,
+            f"dynamic_1: {self.dynamic_1}, dynamic_2: {self.dynamic_2}",
+        )
+
+
+class ExampleFlowDynamicOutputsOperator(MapOperator[str, str]):
+    """An example flow operator that includes dynamic outputs."""
+
+    metadata = ViewMetadata(
+        label="Example Dynamic Outputs Operator",
+        name="example_dynamic_outputs_operator",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes dynamic outputs.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Dynamic",
+                "dynamic",
+                str,
+                description="User's selected dynamic.",
+                dynamic=True,
+                dynamic_minimum=1,
+            ),
+        ],
+    )
+
+    async def map(self, user_name: str) -> str:
+        """Map the user name to the dynamic."""
+        return "Your name is %s, this operator has dynamic outputs." % user_name
+
+
+class ExampleFlowDynamicInputsOperator(JoinOperator[str]):
+    """An example flow operator that includes dynamic inputs."""
+
+    metadata = ViewMetadata(
+        label="Example Dynamic Inputs Operator",
+        name="example_dynamic_inputs_operator",
+        category=OperatorCategory.EXAMPLE,
+        description="An example flow operator that includes dynamic inputs.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "User Name",
+                "user_name",
+                str,
+                description="The name of the user.",
+            ),
+            IOField.build_from(
+                "Other Inputs",
+                "other_inputs",
+                str,
+                description="Other inputs.",
+                dynamic=True,
+                dynamic_minimum=0,
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Dynamic",
+                "dynamic",
+                str,
+                description="User's selected dynamic.",
+            ),
+        ],
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(combine_function=self.join, **kwargs)
+
+    async def join(self, user_name: str, *other_inputs: str) -> str:
+        """Map the user name to the dynamic."""
+        if not other_inputs:
+            dyn_inputs = ["You have no other inputs."]
+        else:
+            dyn_inputs = [
+                f"Input {i}: {input_data}" for i, input_data in enumerate(other_inputs)
+            ]
+        dyn_str = "\n".join(dyn_inputs)
+        return "Your name is %s, and your dynamic is %s." % (
+            user_name,
+            f"other_inputs:\n{dyn_str}",
+        )

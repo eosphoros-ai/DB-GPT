@@ -1,7 +1,7 @@
 import logging
 from typing import BinaryIO, List, Optional, Tuple
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 
 from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.core.interface.file import FileMetadata, FileStorageClient, FileStorageURI
@@ -10,7 +10,12 @@ from dbgpt.storage.metadata import BaseDao
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer, trace
 
-from ..api.schemas import ServeRequest, ServerResponse, UploadFileResponse
+from ..api.schemas import (
+    FileMetadataResponse,
+    ServeRequest,
+    ServerResponse,
+    UploadFileResponse,
+)
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
 
@@ -117,3 +122,33 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def delete_file(self, bucket: str, file_id: str) -> None:
         """Delete a file by file_id."""
         self.file_storage_client.delete_file_by_id(bucket, file_id)
+
+    def get_file_metadata(
+        self,
+        uri: Optional[str] = None,
+        bucket: Optional[str] = None,
+        file_id: Optional[str] = None,
+    ) -> Optional[FileMetadataResponse]:
+        """Get the metadata of a file by file_id."""
+        if uri:
+            parsed_uri = FileStorageURI.parse(uri)
+            bucket, file_id = parsed_uri.bucket, parsed_uri.file_id
+        if not (bucket and file_id):
+            raise ValueError("Either uri or bucket and file_id must be provided.")
+        metadata = self.file_storage_client.storage_system.get_file_metadata(
+            bucket, file_id
+        )
+        if not metadata:
+            raise HTTPException(
+                status_code=404,
+                detail=f"File metadata not found: bucket={bucket}, file_id={file_id}, uri={uri}",
+            )
+        return FileMetadataResponse(
+            file_name=metadata.file_name,
+            file_id=metadata.file_id,
+            bucket=metadata.bucket,
+            uri=metadata.uri,
+            file_size=metadata.file_size,
+            user_name=metadata.user_name,
+            sys_code=metadata.sys_code,
+        )
