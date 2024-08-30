@@ -16,12 +16,12 @@ function AgentSelector() {
 
   return (
     <Select
-      className="w-60"
+      className='w-60'
       value={agent}
       placeholder={t('Select_Plugins')}
-      options={data.map((item) => ({ label: item.app_name, value: item.app_code }))}
+      options={data.map(item => ({ label: item.app_name, value: item.app_code }))}
       allowClear
-      onChange={(val) => {
+      onChange={val => {
         setAgent?.(val);
       }}
     />

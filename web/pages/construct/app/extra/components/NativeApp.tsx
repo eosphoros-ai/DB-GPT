@@ -1,8 +1,8 @@
-import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { apiInterceptors, getAppStrategyValues, getNativeAppScenes, getResource } from '@/client/api';
+import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { ParamNeed } from '@/types/app';
 import { useRequest } from 'ahooks';
-import { Form, InputNumber, Select, Tooltip, Typography } from 'antd';
+import { Form, InputNumber, Select, Tooltip } from 'antd';
 import cls from 'classnames';
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,12 +39,15 @@ const NativeApp: React.FC<{
 
   // 获取应用类型&模型
   const { data, loading } = useRequest(async () => {
-    const res = await Promise.all([apiInterceptors(getNativeAppScenes()), apiInterceptors(getAppStrategyValues('priority'))]);
+    const res = await Promise.all([
+      apiInterceptors(getNativeAppScenes()),
+      apiInterceptors(getAppStrategyValues('priority')),
+    ]);
     const [types, models] = res;
     form.setFieldValue('chat_scene', team_context?.chat_scene);
-    form.setFieldValue('model', param_need?.find((param) => param.type === 'model')?.value);
-    form.setFieldValue('temperature', param_need?.find((param) => param.type === 'temperature')?.value);
-    await run(param_need?.find((param) => param.type === 'resource')?.value || '');
+    form.setFieldValue('model', param_need?.find(param => param.type === 'model')?.value);
+    form.setFieldValue('temperature', param_need?.find(param => param.type === 'temperature')?.value);
+    await run(param_need?.find(param => param.type === 'resource')?.value || '');
     return [types, models] ?? [];
   });
 
@@ -56,12 +59,14 @@ const NativeApp: React.FC<{
   } = useRequest(
     async (type: string) => {
       const [, res] = await apiInterceptors(getResource({ type }));
-      if (chatScene === team_context?.chat_scene && param_need?.find((param) => param.type === 'resource')?.bind_value) {
-        form.setFieldsValue({ bind_value: param_need?.find((param) => param.type === 'resource')?.bind_value });
+      if (chatScene === team_context?.chat_scene && param_need?.find(param => param.type === 'resource')?.bind_value) {
+        form.setFieldsValue({
+          bind_value: param_need?.find(param => param.type === 'resource')?.bind_value,
+        });
       }
 
       return (
-        res?.map((item) => {
+        res?.map(item => {
           return {
             ...item,
             value: item.key,
@@ -80,10 +85,10 @@ const NativeApp: React.FC<{
         return {
           ...type,
           label: (
-            <div className="flex items-center gap-1">
+            <div className='flex items-center gap-1'>
               <AppDefaultIcon width={4} height={4} scene={type.chat_scene} />
               <Tooltip title={`资源类型${type.param_need.find((param: any) => param.type === 'resource')?.value}`}>
-                <span className="text-[#525964] dark:text-[rgba(255,255,255,0.65)]  ml-1">{type.scene_name}</span>
+                <span className='text-[#525964] dark:text-[rgba(255,255,255,0.65)]  ml-1'>{type.scene_name}</span>
               </Tooltip>
             </div>
           ),
@@ -102,15 +107,16 @@ const NativeApp: React.FC<{
       [
         {
           chat_scene: rawVal.chat_scene,
-          scene_name: appTypeOptions.find((type) => type.chat_scene === rawVal.chat_scene)?.scene_name,
+          scene_name: appTypeOptions.find(type => type.chat_scene === rawVal.chat_scene)?.scene_name,
         },
         [
           { type: 'model', value: rawVal.model },
           { type: 'temperature', value: rawVal.temperature },
           {
             type: 'resource',
-            value: appTypeOptions.find((type) => type.chat_scene === rawVal.chat_scene)?.param_need?.find((param: any) => param.type === 'resource')
-              ?.value,
+            value: appTypeOptions
+              .find(type => type.chat_scene === rawVal.chat_scene)
+              ?.param_need?.find((param: any) => param.type === 'resource')?.value,
             bind_value: rawVal.bind_value,
           },
         ],
@@ -127,25 +133,45 @@ const NativeApp: React.FC<{
 
   return (
     <div className={cls(classNames)}>
-      <Form<FormProps> form={form} autoComplete="off" style={{ width: '100%' }} labelCol={{ span: 3 }} wrapperCol={{ span: 21 }}>
-        <Form.Item label={t('native_type')} tooltip name="chat_scene">
+      <Form<FormProps>
+        form={form}
+        autoComplete='off'
+        style={{ width: '100%' }}
+        labelCol={{ span: 3 }}
+        wrapperCol={{ span: 21 }}
+      >
+        <Form.Item label={t('native_type')} tooltip name='chat_scene'>
           <Select
-            className="w-1/2"
+            className='w-1/2'
             options={appTypeOptions}
             placeholder={t('app_type_select')}
             onChange={() => form.setFieldsValue({ bind_value: undefined })}
           />
         </Form.Item>
         {chatScene !== 'chat_excel' && (
-          <Form.Item label={t('Arguments')} name="bind_value">
-            <Select placeholder={t('please_select_param')} allowClear className="w-1/2" options={options} loading={paramsLoading} />
+          <Form.Item label={t('Arguments')} name='bind_value'>
+            <Select
+              placeholder={t('please_select_param')}
+              allowClear
+              className='w-1/2'
+              options={options}
+              loading={paramsLoading}
+            />
           </Form.Item>
         )}
-        <Form.Item label={t("model")} tooltip name="model">
-          <Select placeholder={t("please_select_model")} allowClear options={data?.[1]?.[1]?.map((item) => ({ label: item, value: item }))} className="w-1/2" />
+        <Form.Item label={t('model')} tooltip name='model'>
+          <Select
+            placeholder={t('please_select_model')}
+            allowClear
+            options={data?.[1]?.[1]?.map(item => ({
+              label: item,
+              value: item,
+            }))}
+            className='w-1/2'
+          />
         </Form.Item>
-        <Form.Item label={t("temperature")} tooltip name="temperature">
-          <InputNumber className="w-1/5 h-8" max={1} min={0} step={0.1} placeholder={t('please_input_temperature')} />
+        <Form.Item label={t('temperature')} tooltip name='temperature'>
+          <InputNumber className='w-1/5 h-8' max={1} min={0} step={0.1} placeholder={t('please_input_temperature')} />
         </Form.Item>
       </Form>
     </div>

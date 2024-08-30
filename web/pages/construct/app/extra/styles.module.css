@@ -1,11 +1,10 @@
 .extra-container :global .ant-btn-primary {
-    background-image: linear-gradient(to right, #00DAEF, #105EFF);
-    border: none;
-    color: white;
+  background-image: linear-gradient(to right, #00daef, #105eff);
+  border: none;
+  color: white;
 }
-
 
 /* 推荐问题 */
 .recommend-questions-container :global .ant-form-item {
-    margin: 0;
+  margin: 0;
 }

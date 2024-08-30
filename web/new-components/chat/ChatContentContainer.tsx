@@ -4,6 +4,7 @@ import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } f
 
 const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
+// eslint-disable-next-line no-empty-pattern
 const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrollToTop, setIsScrollToTop] = useState<boolean>(false);
@@ -30,8 +31,8 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   }, []);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <div ref={scrollRef} className="h-full w-full mx-auto overflow-y-auto">
+    <div className='flex flex-1 overflow-hidden'>
+      <div ref={scrollRef} className='h-full w-full mx-auto overflow-y-auto'>
         <ChatHeader isScrollToTop={isScrollToTop} />
         <ChatCompletion />
       </div>

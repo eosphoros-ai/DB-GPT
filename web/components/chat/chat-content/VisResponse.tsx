@@ -1,12 +1,12 @@
 import { ChatContext } from '@/app/chat-context';
 import { LoadingOutlined } from '@ant-design/icons';
+import { GPTVis } from '@antv/gpt-vis';
 import JsonView from '@uiw/react-json-view';
 import { githubDarkTheme } from '@uiw/react-json-view/githubDark';
 import { githubLightTheme } from '@uiw/react-json-view/githubLight';
 import { Alert, Spin } from 'antd';
 import classNames from 'classnames';
 import React, { useContext, useMemo } from 'react';
-import { GPTVis } from '@antv/gpt-vis'; 
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
@@ -32,43 +32,39 @@ const VisResponse: React.FC<{ data: VisResponseProps }> = ({ data }) => {
       case 'running':
         return 'warning';
       default:
-        undefined;
+        return undefined;
     }
   }, [data]);
   if (!data) return null;
   const theme = mode === 'dark' ? githubDarkTheme : githubLightTheme;
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className='flex flex-1 flex-col'>
       <Alert
-        className={classNames("mb-4", {
-          "bg-[#fafafa] border-[transparent]": !type,
+        className={classNames('mb-4', {
+          'bg-[#fafafa] border-[transparent]': !type,
         })}
         message={data.name}
         type={type}
         {...(type && { showIcon: true })}
-        {...(type === "warning" && {
+        {...(type === 'warning' && {
           icon: <Spin indicator={<LoadingOutlined spin />} />,
         })}
       />
       {data.result && (
         <JsonView
-          style={{ ...theme, width: "100%", padding: 10 }}
+          style={{ ...theme, width: '100%', padding: 10 }}
           className={classNames({
-            "bg-[#fafafa]": mode === "light",
+            'bg-[#fafafa]': mode === 'light',
           })}
-          value={JSON.parse(data.result || "{}")}
+          value={JSON.parse(data.result || '{}')}
           enableClipboard={false}
           displayDataTypes={false}
           objectSortKeys={false}
         />
       )}
       {data.err_msg && (
-        <GPTVis
-          components={markdownComponents}
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw]}
-        >
+        <GPTVis components={markdownComponents} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
           {data.err_msg}
         </GPTVis>
       )}

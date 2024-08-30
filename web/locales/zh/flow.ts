@@ -1,5 +1,3 @@
-import { Select } from 'antd';
-
 export const FlowZn = {
   Upload_Data_Successfully: '文件上传成功',
   Upload_Data_Failed: '文件上传失败',

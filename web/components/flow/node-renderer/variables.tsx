@@ -5,5 +5,5 @@ import { Input } from 'antd';
 export const renderVariables = (data: IFlowNodeParameter) => {
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
 
-  return <Input {...attr} className="w-full" placeholder="please input" allowClear />;
+  return <Input {...attr} className='w-full' placeholder='please input' allowClear />;
 };

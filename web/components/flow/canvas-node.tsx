@@ -1,20 +1,16 @@
+import { apiInterceptors, refreshFlowNodeById } from '@/client/api';
 import { IFlowNode } from '@/types/flow';
-import Image from 'next/image';
-import NodeParamHandler from './node-param-handler';
-import classNames from 'classnames';
-import { useState } from 'react';
-import NodeHandler from './node-handler';
+import { getUniqueNodeId, removeIndexFromNodeId } from '@/utils/flow';
+import { CopyOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Form, Popover, Tooltip } from 'antd';
-import {
-  CopyOutlined,
-  DeleteOutlined,
-  InfoCircleOutlined,
-} from '@ant-design/icons';
+import classNames from 'classnames';
+import { cloneDeep } from 'lodash';
+import Image from 'next/image';
+import { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 import IconWrapper from '../common/icon-wrapper';
-import { getUniqueNodeId, removeIndexFromNodeId } from '@/utils/flow';
-import { cloneDeep } from 'lodash';
-import { apiInterceptors, refreshFlowNodeById } from '@/client/api';
+import NodeHandler from './node-handler';
+import NodeParamHandler from './node-param-handler';
 
 type CanvasNodeProps = {
   data: IFlowNode;
@@ -23,7 +19,7 @@ type CanvasNodeProps = {
 function TypeLabel({ label }: { label: string }) {
   return <div className='w-full h-8 align-middle font-semibold'>{label}</div>;
 }
-const forceTypeList = ['file', 'multiple_files', 'time','images','csv_file'];
+const forceTypeList = ['file', 'multiple_files', 'time'];
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const node = data;
@@ -44,7 +40,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     e.preventDefault();
     e.stopPropagation();
     const nodes = reactFlow.getNodes();
-    const originalNode = nodes.find((item) => item.id === node.id);
+    const originalNode = nodes.find(item => item.id === node.id);
     if (originalNode) {
       const newNodeId = getUniqueNodeId(originalNode as IFlowNode, nodes);
       const cloneNode = cloneDeep(originalNode);
@@ -65,21 +61,19 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         },
         selected: false,
       };
-      reactFlow.setNodes((nodes) => [...nodes, duplicatedNode]);
+      reactFlow.setNodes(nodes => [...nodes, duplicatedNode]);
     }
   }
 
   function deleteNode(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.preventDefault();
     e.stopPropagation();
-    reactFlow.setNodes((nodes) => nodes.filter((item) => item.id !== node.id));
-    reactFlow.setEdges((edges) =>
-      edges.filter((edge) => edge.source !== node.id && edge.target !== node.id)
-    );
+    reactFlow.setNodes(nodes => nodes.filter(item => item.id !== node.id));
+    reactFlow.setEdges(edges => edges.filter(edge => edge.source !== node.id && edge.target !== node.id));
   }
 
   function updateCurrentNodeValue(changedKey: string, changedVal: any) {
-    parameters.forEach((item) => {
+    parameters.forEach(item => {
       if (item.name === changedKey) {
         item.value = changedVal;
       }
@@ -87,12 +81,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   }
 
   async function updateDependsNodeValue(changedKey: string, changedVal: any) {
-    const dependParamNodes = parameters.filter(({ ui }) =>
-      ui?.refresh_depends?.includes(changedKey)
-    );
+    const dependParamNodes = parameters.filter(({ ui }) => ui?.refresh_depends?.includes(changedKey));
 
     if (dependParamNodes?.length === 0) return;
-    dependParamNodes.forEach(async (item) => {
+    dependParamNodes.forEach(async item => {
       const params = {
         id: removeIndexFromNodeId(data?.id),
         type_name: data.type_name,
@@ -116,8 +108,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
 
       // update value of the node
       if (res) {
-        reactFlow.setNodes((nodes) =>
-          nodes.map((n) => {
+        reactFlow.setNodes(nodes =>
+          nodes.map(n => {
             return n.id === node.id
               ? {
                   ...n,
@@ -127,7 +119,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
                   },
                 }
               : n;
-          })
+          }),
         );
       }
     });
@@ -167,14 +159,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       return (
         <div className='bg-zinc-100 dark:bg-zinc-700 rounded p-2'>
           <TypeLabel label='Outputs' />
-          <NodeHandler
-            key={`${data.id}_input_0`}
-            node={data}
-            data={data}
-            type='source'
-            label='outputs'
-            index={0}
-          />
+          <NodeHandler key={`${data.id}_input_0`} node={data} data={data} type='source' label='outputs' index={0} />
         </div>
       );
     }
@@ -187,17 +172,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       content={
         <>
           <IconWrapper className='hover:text-blue-500'>
-            <CopyOutlined
-              className='h-full text-lg cursor-pointer'
-              onClick={copyNode}
-            />
+            <CopyOutlined className='h-full text-lg cursor-pointer' onClick={copyNode} />
           </IconWrapper>
 
           <IconWrapper className='mt-2 hover:text-red-500'>
-            <DeleteOutlined
-              className='h-full text-lg cursor-pointer'
-              onClick={deleteNode}
-            />
+            <DeleteOutlined className='h-full text-lg cursor-pointer' onClick={deleteNode} />
           </IconWrapper>
 
           <IconWrapper className='mt-2'>
@@ -224,7 +203,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
             'border-stone-400 dark:border-white': !node.selected && !isHovered,
             'border-dashed': flowType !== 'operator',
             'border-red-600': node.invalid,
-          }
+          },
         )}
         onMouseEnter={onHover}
         onMouseLeave={onLeave}
@@ -232,9 +211,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         {/* icon and label */}
         <div className='flex flex-row items-center'>
           <Image src={'/icons/node/vis.png'} width={24} height={24} alt='' />
-          <p className='ml-2 text-lg font-bold text-ellipsis overflow-hidden whitespace-nowrap'>
-            {node.label}
-          </p>
+          <p className='ml-2 text-lg font-bold text-ellipsis overflow-hidden whitespace-nowrap'>{node.label}</p>
         </div>
 
         {inputs?.length > 0 && (

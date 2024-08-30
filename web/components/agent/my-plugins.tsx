@@ -1,11 +1,11 @@
 import { apiInterceptors, postAgentMy, postAgentUninstall, postAgentUpload } from '@/client/api';
 import { IMyPlugin } from '@/types/agent';
+import { ClearOutlined, LoadingOutlined, UploadOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Button, Card, Spin, Tag, Tooltip, Upload, UploadProps, message } from 'antd';
 import { useCallback, useState } from 'react';
-import MyEmpty from '../common/MyEmpty';
-import { ClearOutlined, LoadingOutlined, UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import MyEmpty from '../common/MyEmpty';
 
 function MyPlugins() {
   const { t } = useTranslation();
@@ -40,9 +40,9 @@ function MyPlugins() {
         return <LoadingOutlined />;
       }
       return (
-        <Tooltip title="Uninstall">
+        <Tooltip title='Uninstall'>
           <div
-            className="w-full h-full"
+            className='w-full h-full'
             onClick={() => {
               uninstall(item.name, index);
             }}
@@ -55,7 +55,7 @@ function MyPlugins() {
     [actionIndex],
   );
 
-  const onChange: UploadProps['onChange'] = async (info) => {
+  const onChange: UploadProps['onChange'] = async info => {
     if (!info) {
       message.error('Please select the *.zip,*.rar file');
       return;
@@ -84,10 +84,10 @@ function MyPlugins() {
       <div>
         <Upload
           disabled={loading}
-          className="mr-1"
+          className='mr-1'
           beforeUpload={() => false}
-          name="file"
-          accept=".zip,.rar"
+          name='file'
+          accept='.zip,.rar'
           multiple={false}
           onChange={onChange}
           showUploadList={{
@@ -97,22 +97,22 @@ function MyPlugins() {
           }}
           itemRender={() => <></>}
         >
-          <Button loading={uploading} type="primary" icon={<UploadOutlined />}>
+          <Button loading={uploading} type='primary' icon={<UploadOutlined />}>
             {t('Upload')}
           </Button>
         </Upload>
       </div>
       {!data.length && !loading && <MyEmpty error={isError} refresh={refresh} />}
-      <div className="flex gap-2 md:gap-4">
+      <div className='flex gap-2 md:gap-4'>
         {data.map((item, index) => (
-          <Card className="w-full md:w-1/2 lg:w-1/3 xl:w-1/4" key={item.id} actions={[renderAction(item, index)]}>
+          <Card className='w-full md:w-1/2 lg:w-1/3 xl:w-1/4' key={item.id} actions={[renderAction(item, index)]}>
             <Tooltip title={item.name}>
-              <h2 className="mb-2 text-base font-semibold line-clamp-1">{item.name}</h2>
+              <h2 className='mb-2 text-base font-semibold line-clamp-1'>{item.name}</h2>
             </Tooltip>
             {item.version && <Tag>v{item.version}</Tag>}
             {item.type && <Tag>Type {item.type}</Tag>}
             <Tooltip title={item.description}>
-              <p className="mt-2 line-clamp-2 text-gray-400 text-sm">{item.description}</p>
+              <p className='mt-2 line-clamp-2 text-gray-400 text-sm'>{item.description}</p>
             </Tooltip>
           </Card>
         ))}

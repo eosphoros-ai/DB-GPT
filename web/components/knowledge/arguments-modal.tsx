@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Tabs, Button, Input, Form, Col, Row, Spin } from 'antd';
+import { Button, Col, Form, Input, Modal, Row, Spin, Tabs } from 'antd';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { AlertFilled, BookOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { apiInterceptors, getArguments, saveArguments } from '@/client/api';
 import { IArguments, ISpace } from '@/types/knowledge';
+import { AlertFilled, BookOutlined, FileSearchOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
@@ -32,8 +32,13 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
     return (
       <Row gutter={24}>
         <Col span={12} offset={0}>
-          <Form.Item<IArguments> tooltip={t(`the_top_k_vectors`)} rules={[{ required: true }]} label={t('topk')} name={['embedding', 'topk']}>
-            <Input className="mb-5 h-12" />
+          <Form.Item<IArguments>
+            tooltip={t(`the_top_k_vectors`)}
+            rules={[{ required: true }]}
+            label={t('topk')}
+            name={['embedding', 'topk']}
+          >
+            <Input className='mb-5 h-12' />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -43,17 +48,27 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
             label={t('recall_score')}
             name={['embedding', 'recall_score']}
           >
-            <Input className="mb-5  h-12" placeholder="请输入" />
+            <Input className='mb-5  h-12' placeholder='请输入' />
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item<IArguments> tooltip={t(`recall_type`)} rules={[{ required: true }]} label={t('recall_type')} name={['embedding', 'recall_type']}>
-            <Input className="mb-5  h-12" />
+          <Form.Item<IArguments>
+            tooltip={t(`recall_type`)}
+            rules={[{ required: true }]}
+            label={t('recall_type')}
+            name={['embedding', 'recall_type']}
+          >
+            <Input className='mb-5  h-12' />
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item<IArguments> tooltip={t(`A_model_used`)} rules={[{ required: true }]} label={t('model')} name={['embedding', 'model']}>
-            <Input className="mb-5  h-12" />
+          <Form.Item<IArguments>
+            tooltip={t(`A_model_used`)}
+            rules={[{ required: true }]}
+            label={t('model')}
+            name={['embedding', 'model']}
+          >
+            <Input className='mb-5  h-12' />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -63,7 +78,7 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
             label={t('chunk_size')}
             name={['embedding', 'chunk_size']}
           >
-            <Input className="mb-5  h-12" />
+            <Input className='mb-5  h-12' />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -73,7 +88,7 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
             label={t('chunk_overlap')}
             name={['embedding', 'chunk_overlap']}
           >
-            <Input className="mb-5  h-12" placeholder={t('Please_input_the_description')} />
+            <Input className='mb-5  h-12' placeholder={t('Please_input_the_description')} />
           </Form.Item>
         </Col>
       </Row>
@@ -84,13 +99,17 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
     return (
       <>
         <Form.Item<IArguments> tooltip={t(`A_contextual_parameter`)} label={t('scene')} name={['prompt', 'scene']}>
-          <TextArea rows={4} className="mb-2" />
+          <TextArea rows={4} className='mb-2' />
         </Form.Item>
         <Form.Item<IArguments> tooltip={t(`structure_or_format`)} label={t('template')} name={['prompt', 'template']}>
-          <TextArea rows={7} className="mb-2" />
+          <TextArea rows={7} className='mb-2' />
         </Form.Item>
-        <Form.Item<IArguments> tooltip={t(`The_maximum_number_of_tokens`)} label={t('max_token')} name={['prompt', 'max_token']}>
-          <Input className="mb-2" />
+        <Form.Item<IArguments>
+          tooltip={t(`The_maximum_number_of_tokens`)}
+          label={t('max_token')}
+          name={['prompt', 'max_token']}
+        >
+          <Input className='mb-2' />
         </Form.Item>
       </>
     );
@@ -99,11 +118,19 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
   const renderSummary = () => {
     return (
       <>
-        <Form.Item<IArguments> rules={[{ required: true }]} label={t('max_iteration')} name={['summary', 'max_iteration']}>
-          <Input className="mb-2" />
+        <Form.Item<IArguments>
+          rules={[{ required: true }]}
+          label={t('max_iteration')}
+          name={['summary', 'max_iteration']}
+        >
+          <Input className='mb-2' />
         </Form.Item>
-        <Form.Item<IArguments> rules={[{ required: true }]} label={t('concurrency_limit')} name={['summary', 'concurrency_limit']}>
-          <Input className="mb-2" />
+        <Form.Item<IArguments>
+          rules={[{ required: true }]}
+          label={t('concurrency_limit')}
+          name={['summary', 'concurrency_limit']}
+        >
+          <Input className='mb-2' />
         </Form.Item>
       </>
     );
@@ -144,7 +171,7 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
 
   const handleSubmit = async (fieldsValue: IArguments) => {
     setSpinning(true);
-    const [_, data, res] = await apiInterceptors(
+    const [, , res] = await apiInterceptors(
       saveArguments(space.name, {
         argument: JSON.stringify(fieldsValue),
       }),
@@ -164,17 +191,17 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
     >
       <Spin spinning={spinning}>
         <Form
-          size="large"
-          className="mt-4"
-          layout="vertical"
-          name="basic"
+          size='large'
+          className='mt-4'
+          layout='vertical'
+          name='basic'
           initialValues={{ ...newSpaceArguments }}
-          autoComplete="off"
+          autoComplete='off'
           onFinish={handleSubmit}
         >
           <Tabs items={items}></Tabs>
-          <div className="mt-3 mb-3">
-            <Button htmlType="submit" type="primary" className="mr-6">
+          <div className='mt-3 mb-3'>
+            <Button htmlType='submit' type='primary' className='mr-6'>
               {t('Submit')}
             </Button>
             <Button

@@ -13,21 +13,21 @@ function MenuModal({ items, modal }: Props) {
   const [currentMenuKey, setCurrentMenuKey] = useState('edit');
   return (
     <Modal {...modal}>
-      <div className="flex justify-between gap-4">
-        <div className="w-1/6">
+      <div className='flex justify-between gap-4'>
+        <div className='w-1/6'>
           <Menu
-            className="h-full"
+            className='h-full'
             selectedKeys={[currentMenuKey]}
-            mode="inline"
-            onSelect={(info) => {
+            mode='inline'
+            onSelect={info => {
               setCurrentMenuKey(info.key);
             }}
             inlineCollapsed={false}
-            items={items.map((item) => ({ key: item.key, label: item.label }))}
+            items={items.map(item => ({ key: item.key, label: item.label }))}
           />
         </div>
-        <div className="w-5/6">
-          {items.map((item) => {
+        <div className='w-5/6'>
+          {items.map(item => {
             if (item.key === currentMenuKey) {
               return <React.Fragment key={item.key}>{item.children}</React.Fragment>;
             }

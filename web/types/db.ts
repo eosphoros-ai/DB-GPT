@@ -1,4 +1,11 @@
-export type DBOption = { label: string; value: DBType; disabled?: boolean; isFileDb?: boolean; icon: string; desc?: string };
+export type DBOption = {
+  label: string;
+  value: DBType;
+  disabled?: boolean;
+  isFileDb?: boolean;
+  icon: string;
+  desc?: string;
+};
 
 export type DBType =
   | 'mysql'

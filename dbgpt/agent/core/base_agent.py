@@ -341,6 +341,9 @@ class ConversableAgent(Role, Agent):
                         received_message=received_message,
                         rely_messages=rely_messages,
                     )
+
+                    retry_message.rounds = reply_message.rounds + 1
+
                     retry_message.content = fail_reason
                     retry_message.current_goal = received_message.current_goal
 
@@ -351,6 +354,7 @@ class ConversableAgent(Role, Agent):
                     await sender.send(
                         retry_message, self, reviewer, request_reply=False
                     )
+                    reply_message.rounds = retry_message.rounds + 1
 
                 # In manual retry mode, load all messages of the last speaker as dependent messages # noqa
                 logger.info(

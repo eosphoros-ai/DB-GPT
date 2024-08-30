@@ -1,13 +1,13 @@
-import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
-import ConstructLayout from '@/new-components/layout/Construct';
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, delSpace, getSpaceList, newDialogue, getSpaceConfig } from '@/client/api';
+import { apiInterceptors, delSpace, getSpaceConfig, getSpaceList, newDialogue } from '@/client/api';
 import DocPanel from '@/components/knowledge/doc-panel';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
 import Segmentation from '@/components/knowledge/segmentation';
 import SpaceForm from '@/components/knowledge/space-form';
-import { File, ISpace, StepChangeParams, IStorage } from '@/types/knowledge';
+import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
+import ConstructLayout from '@/new-components/layout/Construct';
+import { File, ISpace, IStorage, StepChangeParams } from '@/types/knowledge';
 import { PlusOutlined, ReadOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
 import { Button, Input, Modal, Spin, Steps, Tag } from 'antd';
 import classNames from 'classnames';
@@ -91,9 +91,9 @@ const Knowledge = () => {
       localStorage.removeItem('cur_space_id');
     } else if (label === 'forward') {
       activeStep === 0 && getSpaces();
-      setActiveStep((step) => step + 1);
+      setActiveStep(step => step + 1);
     } else {
-      setActiveStep((step) => step - 1);
+      setActiveStep(step => step - 1);
     }
     files && setFiles(files);
     spaceName && setSpaceName(spaceName);
@@ -128,7 +128,7 @@ const Knowledge = () => {
   return (
     <ConstructLayout>
       <Spin spinning={loading}>
-        <div className="page-body p-4 md:p-6 h-[90vh] overflow-auto">
+        <div className='page-body p-4 md:p-6 h-[90vh] overflow-auto'>
           {/* <Button
             type="primary"
             className="flex items-center"
@@ -139,21 +139,21 @@ const Knowledge = () => {
           >
             Create
           </Button> */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
+          <div className='flex justify-between items-center mb-6'>
+            <div className='flex items-center gap-4'>
               <Input
-                variant="filled"
+                variant='filled'
                 prefix={<SearchOutlined />}
                 placeholder={t('please_enter_the_keywords')}
                 onChange={debounce(onSearch, 300)}
                 allowClear
-                className="w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+                className='w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
               />
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className='flex items-center gap-4'>
               <Button
-                className="border-none text-white bg-button-gradient"
+                className='border-none text-white bg-button-gradient'
                 icon={<PlusOutlined />}
                 onClick={() => {
                   setIsAddShow(true);
@@ -163,7 +163,7 @@ const Knowledge = () => {
               </Button>
             </div>
           </div>
-          <div className="flex flex-wrap mt-4 mx-[-8px]">
+          <div className='flex flex-wrap mt-4 mx-[-8px]'>
             {spaceList?.map((space: ISpace) => (
               <BlurredCard
                 onClick={() => {
@@ -178,10 +178,10 @@ const Knowledge = () => {
                   space.domain_type === 'FinancialReport'
                     ? '/models/fin_report.jpg'
                     : space.vector_type === 'KnowledgeGraph'
-                    ? '/models/knowledge-graph.png'
-                    : space.vector_type === 'FullText'
-                    ? '/models/knowledge-full-text.jpg'
-                    : '/models/knowledge-default.jpg'
+                      ? '/models/knowledge-graph.png'
+                      : space.vector_type === 'FullText'
+                        ? '/models/knowledge-full-text.jpg'
+                        : '/models/knowledge-default.jpg'
                 }
                 RightTop={
                   <InnerDropdown
@@ -190,7 +190,7 @@ const Knowledge = () => {
                         {
                           key: 'del',
                           label: (
-                            <span className="text-red-400" onClick={() => showDeleteConfirm(space)}>
+                            <span className='text-red-400' onClick={() => showDeleteConfirm(space)}>
                               {t('Delete')}
                             </span>
                           ),
@@ -203,29 +203,23 @@ const Knowledge = () => {
                 Tags={
                   <div className='flex item-center'>
                     <Tag>
-                      <span className="flex items-center gap-1">
-                        <ReadOutlined className="mt-[1px]" />
+                      <span className='flex items-center gap-1'>
+                        <ReadOutlined className='mt-[1px]' />
                         {space.docs}
                       </span>
                     </Tag>
                     <Tag>
-                      <span className="flex items-center gap-1">
-                        {space.domain_type || 'Normal'}
-                      </span>
+                      <span className='flex items-center gap-1'>{space.domain_type || 'Normal'}</span>
                     </Tag>
                     {space.vector_type ? (
                       <Tag>
-                        <span className="flex items-center gap-1">
-                          {space.vector_type}
-                        </span>
+                        <span className='flex items-center gap-1'>{space.vector_type}</span>
                       </Tag>
-                    ) :
-                    null
-                    }
+                    ) : null}
                   </div>
                 }
                 LeftBottom={
-                  <div className="flex gap-2">
+                  <div className='flex gap-2'>
                     <span>{space.owner}</span>
                     <span>•</span>
                     {space?.gmt_modified && <span>{moment(space?.gmt_modified).fromNow() + ' ' + t('update')}</span>}
@@ -244,7 +238,7 @@ const Knowledge = () => {
           </div>
         </div>
         <Modal
-          className="h-5/6 overflow-hidden"
+          className='h-5/6 overflow-hidden'
           open={isPanelShow}
           width={'70%'}
           onCancel={() => setIsPanelShow(false)}
@@ -277,7 +271,14 @@ const Knowledge = () => {
             docType={docType}
             handleStepChange={handleStepChange}
           />
-          {activeStep === 3 && <Segmentation spaceName={spaceName} docType={docType} uploadFiles={files} handleStepChange={handleStepChange} />}
+          {activeStep === 3 && (
+            <Segmentation
+              spaceName={spaceName}
+              docType={docType}
+              uploadFiles={files}
+              handleStepChange={handleStepChange}
+            />
+          )}
         </Modal>
       </Spin>
     </ConstructLayout>

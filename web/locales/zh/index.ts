@@ -1,6 +1,6 @@
-import { CommonZh } from "./common";
-import { ChatZh } from "./chat";
-import { FlowZn } from "./flow";
+import { ChatZh } from './chat';
+import { CommonZh } from './common';
+import { FlowZn } from './flow';
 
 const zh = {
   ...ChatZh,

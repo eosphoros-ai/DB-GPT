@@ -1,6 +1,6 @@
-import MarkDownContext from '@/new-components/common/MarkdownContext';
-import { apiInterceptors, getChunkList, chunkAddQuestion } from '@/client/api';
+import { apiInterceptors, chunkAddQuestion, getChunkList } from '@/client/api';
 import MenuModal from '@/components/MenuModal';
+import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { MinusCircleOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { App, Breadcrumb, Button, Card, Empty, Form, Input, Pagination, Space, Spin, Tag } from 'antd';
@@ -43,7 +43,7 @@ function ChunkList() {
       }),
     );
     setChunkList(data?.data);
-    setTotal(data?.total!);
+    setTotal(data?.total ?? 0);
     setLoading(false);
   };
 
@@ -97,9 +97,9 @@ function ChunkList() {
   );
 
   return (
-    <div className="flex flex-col h-full w-full px-6 pb-6">
+    <div className='flex flex-col h-full w-full px-6 pb-6'>
       <Breadcrumb
-        className="m-6"
+        className='m-6'
         items={[
           {
             title: 'Knowledge',
@@ -113,9 +113,9 @@ function ChunkList() {
           },
         ]}
       />
-      <div className="flex items-center gap-4">
+      <div className='flex items-center gap-4'>
         <Input
-          className="w-1/5 h-10 mb-4"
+          className='w-1/5 h-10 mb-4'
           prefix={<SearchOutlined />}
           placeholder={t('please_enter_the_keywords')}
           onChange={debounce(onSearch, 300)}
@@ -123,18 +123,21 @@ function ChunkList() {
         />
       </div>
       {chunkList?.length > 0 ? (
-        <div className="h-full grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4  grid-flow-row auto-rows-max gap-x-6 gap-y-10 overflow-y-auto relative">
-          <Spin className="flex flex-col items-center justify-center absolute bottom-0 top-0 left-0 right-0" spinning={loading} />
+        <div className='h-full grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4  grid-flow-row auto-rows-max gap-x-6 gap-y-10 overflow-y-auto relative'>
+          <Spin
+            className='flex flex-col items-center justify-center absolute bottom-0 top-0 left-0 right-0'
+            spinning={loading}
+          />
           {chunkList?.map((chunk: any, index: number) => {
             return (
               <Card
                 hoverable
                 key={chunk.id}
                 title={
-                  <Space className="flex justify-between">
-                    <Tag color="blue"># {index + (currentPage - 1) * DEDAULT_PAGE_SIZE}</Tag>
+                  <Space className='flex justify-between'>
+                    <Tag color='blue'># {index + (currentPage - 1) * DEDAULT_PAGE_SIZE}</Tag>
                     {/* <DocIcon type={chunk.doc_type} /> */}
-                    <span className="text-sm">{chunk.doc_name}</span>
+                    <span className='text-sm'>{chunk.doc_name}</span>
                   </Space>
                 }
                 className={cls('h-96 rounded-xl overflow-hidden', {
@@ -144,12 +147,11 @@ function ChunkList() {
                 onClick={() => {
                   setIsModalOpen(true);
                   setCurrentChunkInfo(chunk);
-                  console.log(chunk);
                 }}
               >
-                <p className="font-semibold">{t('Content')}:</p>
+                <p className='font-semibold'>{t('Content')}:</p>
                 <p>{chunk?.content}</p>
-                <p className="font-semibold">{t('Meta_Data')}: </p>
+                <p className='font-semibold'>{t('Meta_Data')}: </p>
                 <p>{chunk?.meta_info}</p>
                 {/* <Space
                   className="absolute bottom-0 right-0 left-0 flex items-center justify-center cursor-pointer text-[#1890ff] bg-[rgba(255,255,255,0.8)] z-30"
@@ -167,11 +169,11 @@ function ChunkList() {
         </Spin>
       )}
       <Pagination
-        className="flex w-full justify-end"
+        className='flex w-full justify-end'
         defaultCurrent={1}
         defaultPageSize={DEDAULT_PAGE_SIZE}
         total={total}
-        showTotal={(total) => `Total ${total} items`}
+        showTotal={total => `Total ${total} items`}
         onChange={loaderMore}
       />
       <MenuModal
@@ -181,7 +183,7 @@ function ChunkList() {
           open: isModalOpen,
           footer: false,
           onCancel: () => setIsModalOpen(false),
-          afterOpenChange: (open) => {
+          afterOpenChange: open => {
             if (open) {
               form.setFieldValue(
                 'questions',
@@ -195,11 +197,11 @@ function ChunkList() {
             key: 'edit',
             label: t('Data_content'),
             children: (
-              <div className="flex gap-4">
-                <Card size="small" title={t('Main_content')} className="w-2/3 flex-wrap overflow-y-auto">
+              <div className='flex gap-4'>
+                <Card size='small' title={t('Main_content')} className='w-2/3 flex-wrap overflow-y-auto'>
                   <MarkDownContext>{currentChunkInfo?.content}</MarkDownContext>
                 </Card>
-                <Card size="small" title={t('Auxiliary_data')} className="w-1/3">
+                <Card size='small' title={t('Auxiliary_data')} className='w-1/3'>
                   <MarkDownContext>{currentChunkInfo?.meta_info}</MarkDownContext>
                 </Card>
               </div>
@@ -210,11 +212,11 @@ function ChunkList() {
             label: t('Add_problem'),
             children: (
               <Card
-                size="small"
+                size='small'
                 extra={
                   <Button
-                    size="small"
-                    type="primary"
+                    size='small'
+                    type='primary'
                     onClick={async () => {
                       const formVal = form.getFieldsValue();
                       if (!formVal.questions) {
@@ -235,12 +237,12 @@ function ChunkList() {
                 }
               >
                 <Form form={form}>
-                  <Form.List name="questions">
+                  <Form.List name='questions'>
                     {(fields, { add, remove }) => (
                       <>
                         {fields.map(({ key, name }) => (
                           <div key={key} className={cls('flex flex-1 items-center gap-8')}>
-                            <Form.Item label="" name={[name, 'question']} className="grow">
+                            <Form.Item label='' name={[name, 'question']} className='grow'>
                               <Input placeholder={t('Please_Input')} />
                             </Form.Item>
                             <Form.Item>
@@ -254,7 +256,7 @@ function ChunkList() {
                         ))}
                         <Form.Item>
                           <Button
-                            type="dashed"
+                            type='dashed'
                             onClick={() => {
                               add();
                             }}

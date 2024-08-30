@@ -131,12 +131,13 @@ export interface CreateAppParams {
 }
 
 export interface AppListResponse {
+  total_count: number;
   app_list: IApp[];
   current_page: number;
   total_page: number;
-  total_count: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface StrategyResponse extends Omit<TeamMode, 'remark'> {}
 
 export interface ParamNeed {

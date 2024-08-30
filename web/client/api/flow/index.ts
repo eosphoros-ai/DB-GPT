@@ -1,11 +1,11 @@
 import {
   IFlow,
-  IFlowNode,
-  IFlowResponse,
-  IFlowUpdateParam,
-  IFlowRefreshParams,
   IFlowExportParams,
   IFlowImportParams,
+  IFlowNode,
+  IFlowRefreshParams,
+  IFlowResponse,
+  IFlowUpdateParam,
   IUploadFileRequestParams,
   IUploadFileResponse,
 } from '@/types/flow';
@@ -16,7 +16,7 @@ export const addFlow = (data: IFlowUpdateParam) => {
   return POST<IFlowUpdateParam, IFlow>('/api/v2/serve/awel/flows', data);
 };
 
-export const getFlows = (page?: number, page_size?: number) => {
+export const getFlows = ({ page, page_size }: { page?: number; page_size?: number }) => {
   return GET<any, IFlowResponse>('/api/v2/serve/awel/flows', {
     page,
     page_size,
@@ -40,10 +40,7 @@ export const getFlowNodes = () => {
 };
 
 export const refreshFlowNodeById = (data: IFlowRefreshParams) => {
-  return POST<IFlowRefreshParams, IFlowNode>(
-    '/api/v2/serve/awel/nodes/refresh',
-    data
-  );
+  return POST<IFlowRefreshParams, IFlowNode>('/api/v2/serve/awel/nodes/refresh', data);
 };
 
 export const debugFlow = (data: any) => {
@@ -51,10 +48,7 @@ export const debugFlow = (data: any) => {
 };
 
 export const exportFlow = (data: IFlowExportParams) => {
-  return GET<IFlowExportParams, any>(
-    `/api/v2/serve/awel/flow/export/${data.uid}`,
-    data
-  );
+  return GET<IFlowExportParams, any>(`/api/v2/serve/awel/flow/export/${data.uid}`, data);
 };
 
 export const importFlow = (data: IFlowImportParams) => {
@@ -62,10 +56,7 @@ export const importFlow = (data: IFlowImportParams) => {
 };
 
 export const uploadFile = (data: IUploadFileRequestParams) => {
-  return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>(
-    '/api/v2/serve/file/files/dbgpt',
-    data
-  );
+  return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>('/api/v2/serve/file/files/dbgpt', data);
 };
 
 export const downloadFile = (fileId: string) => {

@@ -1,5 +1,5 @@
-import { isNull } from 'lodash';
 import type { Advice } from '@antv/ava';
+import { isNull } from 'lodash';
 
 export function defaultAdvicesFilter(props: { advices: Advice[] }) {
   const { advices } = props;
@@ -19,11 +19,11 @@ export const compare = (f1: any, f2: any) => {
 };
 
 export function hasSubset(array1: any[], array2: any[]): boolean {
-  return array2.every((e) => array1.includes(e));
+  return array2.every(e => array1.includes(e));
 }
 
 export function intersects(array1: any[], array2: any[]): boolean {
-  return array2.some((e) => array1.includes(e));
+  return array2.some(e => array1.includes(e));
 }
 
 export function LOM2EncodingType(lom: string) {

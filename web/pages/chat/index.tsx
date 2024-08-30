@@ -1,19 +1,22 @@
+import { ChatContext } from '@/app/chat-context';
+import { apiInterceptors, getAppInfo, getChatHistory, getDialogueList } from '@/client/api';
+import useChat from '@/hooks/use-chat';
 import ChatContentContainer from '@/new-components/chat/ChatContentContainer';
 import ChatDefault from '@/new-components/chat/content/ChatDefault';
 import ChatInputPanel from '@/new-components/chat/input/ChatInputPanel';
 import ChatSider from '@/new-components/chat/sider/ChatSider';
-import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, getAppInfo, getChatHistory, getDialogueList } from '@/client/api';
-import useChat from '@/hooks/use-chat';
 import { IApp } from '@/types/app';
 import { ChartData, ChatHistoryResponse, IChatDialogueSchema } from '@/types/chat';
 import { getInitMessage } from '@/utils';
 import { useAsyncEffect, useRequest } from 'ahooks';
 import { Flex, Layout, Spin } from 'antd';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
-const DbEditor = dynamic(() => import('@/components/chat/db-editor'), { ssr: false });
+
+const DbEditor = dynamic(() => import('@/components/chat/db-editor'), {
+  ssr: false,
+});
 const ChatContainer = dynamic(() => import('@/components/chat/chat-container'), { ssr: false });
 
 const { Content } = Layout;
@@ -72,7 +75,9 @@ export const ChatContentContext = createContext<ChatContentProps>({
 const Chat: React.FC = () => {
   const { model, currentDialogInfo } = useContext(ChatContext);
   const { isContract, setIsContract, setIsMenuExpand } = useContext(ChatContext);
-  const { chat, ctrl } = useChat({ app_code: currentDialogInfo.app_code || '' });
+  const { chat, ctrl } = useChat({
+    app_code: currentDialogInfo.app_code || '',
+  });
 
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
@@ -84,7 +89,7 @@ const Chat: React.FC = () => {
   const order = useRef<number>(1);
 
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
-  const [chartsData, setChartsData] = useState<Array<ChartData>>();
+  const [chartsData] = useState<Array<ChartData>>();
   const [replyLoading, setReplyLoading] = useState<boolean>(false);
   const [canAbort, setCanAbort] = useState<boolean>(false);
   const [agent, setAgent] = useState<string>('');
@@ -94,9 +99,11 @@ const Chat: React.FC = () => {
   const [modelValue, setModelValue] = useState<string>('');
 
   useEffect(() => {
-    setTemperatureValue(appInfo?.param_need?.filter((item) => item.type === 'temperature')[0]?.value || 0.5);
-    setModelValue(appInfo?.param_need?.filter((item) => item.type === 'model')[0]?.value || model);
-    setResourceValue(knowledgeId || dbName || appInfo?.param_need?.filter((item) => item.type === 'resource')[0]?.bind_value);
+    setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.5);
+    setModelValue(appInfo?.param_need?.filter(item => item.type === 'model')[0]?.value || model);
+    setResourceValue(
+      knowledgeId || dbName || appInfo?.param_need?.filter(item => item.type === 'resource')[0]?.bind_value,
+    );
   }, [appInfo, dbName, knowledgeId, model]);
 
   useEffect(() => {
@@ -132,7 +139,7 @@ const Chat: React.FC = () => {
       ),
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         const [, res] = data;
         setAppInfo(res || ({} as IApp));
       },
@@ -142,7 +149,7 @@ const Chat: React.FC = () => {
   // 列表当前活跃对话
   const currentDialogue = useMemo(() => {
     const [, list] = dialogueList;
-    return list?.find((item) => item.conv_uid === chatId) || ({} as IChatDialogueSchema);
+    return list?.find(item => item.conv_uid === chatId) || ({} as IChatDialogueSchema);
   }, [chatId, dialogueList]);
 
   useEffect(() => {
@@ -159,9 +166,9 @@ const Chat: React.FC = () => {
     refresh: refreshHistory,
   } = useRequest(async () => await apiInterceptors(getChatHistory(chatId)), {
     manual: true,
-    onSuccess: (data) => {
+    onSuccess: data => {
       const [, res] = data;
-      const viewList = res?.filter((item) => item.role === 'view');
+      const viewList = res?.filter(item => item.role === 'view');
       if (viewList && viewList.length > 0) {
         order.current = viewList[viewList.length - 1].order + 1;
       }
@@ -172,19 +179,32 @@ const Chat: React.FC = () => {
   // 会话提问
   const handleChat = useCallback(
     (content: string, data?: Record<string, any>) => {
-      return new Promise<void>((resolve) => {
+      return new Promise<void>(resolve => {
         const initMessage = getInitMessage();
         const ctrl = new AbortController();
         setReplyLoading(true);
         if (history && history.length > 0) {
-          const viewList = history?.filter((item) => item.role === 'view');
-          const humanList = history?.filter((item) => item.role === 'human');
+          const viewList = history?.filter(item => item.role === 'view');
+          const humanList = history?.filter(item => item.role === 'human');
           order.current = (viewList[viewList.length - 1]?.order || humanList[humanList.length - 1]?.order) + 1;
         }
         const tempHistory: ChatHistoryResponse = [
           ...(initMessage && initMessage.id === chatId ? [] : history),
-          { role: 'human', context: content, model_name: data?.model_name || modelValue, order: order.current, time_stamp: 0 },
-          { role: 'view', context: '', model_name: data?.model_name || modelValue, order: order.current, time_stamp: 0, thinking: true },
+          {
+            role: 'human',
+            context: content,
+            model_name: data?.model_name || modelValue,
+            order: order.current,
+            time_stamp: 0,
+          },
+          {
+            role: 'view',
+            context: '',
+            model_name: data?.model_name || modelValue,
+            order: order.current,
+            time_stamp: 0,
+            thinking: true,
+          },
         ];
         const index = tempHistory.length - 1;
         setHistory([...tempHistory]);
@@ -197,7 +217,7 @@ const Chat: React.FC = () => {
           },
           ctrl,
           chatId,
-          onMessage: (message) => {
+          onMessage: message => {
             setCanAbort(true);
             if (data?.incremental) {
               tempHistory[index].context += message;
@@ -218,7 +238,7 @@ const Chat: React.FC = () => {
             setCanAbort(false);
             resolve();
           },
-          onError: (message) => {
+          onError: message => {
             setReplyLoading(false);
             setCanAbort(false);
             tempHistory[index].context = message;
@@ -253,24 +273,22 @@ const Chat: React.FC = () => {
 
   const contentRender = () => {
     if (scene === 'chat_dashboard') {
-      return (isContract ?
-        <DbEditor /> :
-        <ChatContainer />);
+      return isContract ? <DbEditor /> : <ChatContainer />;
     } else {
-      return (isChatDefault ? (
+      return isChatDefault ? (
         <Content>
           <ChatDefault />
         </Content>
       ) : (
-        <Spin spinning={historyLoading} className="w-full h-full m-auto">
-          <Content className="flex flex-col h-screen">
+        <Spin spinning={historyLoading} className='w-full h-full m-auto'>
+          <Content className='flex flex-col h-screen'>
             <ChatContentContainer ref={scrollRef} />
             <ChatInputPanel ctrl={ctrl} />
           </Content>
         </Spin>
-      ));
+      );
     }
-  }
+  };
 
   return (
     <ChatContentContext.Provider
@@ -301,7 +319,7 @@ const Chat: React.FC = () => {
       }}
     >
       <Flex flex={1}>
-        <Layout className="bg-gradient-light bg-cover bg-center dark:bg-gradient-dark">
+        <Layout className='bg-gradient-light bg-cover bg-center dark:bg-gradient-dark'>
           <ChatSider
             refresh={refreshDialogList}
             dialogueList={dialogueList}
@@ -309,9 +327,7 @@ const Chat: React.FC = () => {
             historyLoading={historyLoading}
             order={order}
           />
-          <Layout className="bg-transparent">
-            {contentRender()}
-          </Layout>
+          <Layout className='bg-transparent'>{contentRender()}</Layout>
         </Layout>
       </Flex>
     </ChatContentContext.Provider>

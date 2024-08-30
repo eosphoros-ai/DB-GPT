@@ -9,12 +9,11 @@ class MyDocument extends Document {
     const originalRenderPage = ctx.renderPage;
     ctx.renderPage = () =>
       originalRenderPage({
-        enhanceApp: (App) => (props) =>
-          (
-            <StyleProvider cache={cache} hashPriority="high">
-              <App {...props} />
-            </StyleProvider>
-          ),
+        enhanceApp: App => props => (
+          <StyleProvider cache={cache} hashPriority='high'>
+            <App {...props} />
+          </StyleProvider>
+        ),
       });
     const initialProps = await Document.getInitialProps(ctx);
 
@@ -28,7 +27,7 @@ class MyDocument extends Document {
         <>
           {initialProps.styles}
           {/* 1.2 inject css */}
-          {fileName && <link rel="stylesheet" href={`/${fileName}`} />}
+          {fileName && <link rel='stylesheet' href={`/${fileName}`} />}
         </>
       ),
     };
@@ -36,12 +35,12 @@ class MyDocument extends Document {
 
   render() {
     return (
-      <Html lang="en">
+      <Html lang='en'>
         <Head>
-          <link rel="icon" href="/favicon.ico" />
-          <meta name="description" content="Revolutionizing Database Interactions with Private LLM Technology" />
-          <meta property="og:description" content="eosphoros-ai" />
-          <meta property="og:title" content="DB-GPT" />
+          <link rel='icon' href='/favicon.ico' />
+          <meta name='description' content='Revolutionizing Database Interactions with Private LLM Technology' />
+          <meta property='og:description' content='eosphoros-ai' />
+          <meta property='og:title' content='DB-GPT' />
         </Head>
         <body>
           <Main />

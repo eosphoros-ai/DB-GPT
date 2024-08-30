@@ -32,7 +32,10 @@ export const updateApp = (data: CreateAppParams) => {
  *  应用列表
  */
 export const getAppList = (data: Record<string, any>) => {
-  return POST<Record<string, any>, AppListResponse>(`/api/v1/app/list?page=${data.page || 1}&page_size=${data.page_size || 12}`, data);
+  return POST<Record<string, any>, AppListResponse>(
+    `/api/v1/app/list?page=${data.page || 1}&page_size=${data.page_size || 12}`,
+    data,
+  );
 };
 /**
  *  获取创建应用agents
@@ -52,9 +55,7 @@ export const getAppStrategy = () => {
  *  获取资源参数
  */
 export const getResource = (data: Record<string, string>) => {
-  return GET<Record<string, string>, Record<string, any>[]>(
-    `/api/v1/app/resources/list?type=${data.type}`
-  );
+  return GET<Record<string, string>, Record<string, any>[]>(`/api/v1/app/resources/list?type=${data.type}`);
 };
 /**
  *  创建native_app应用
@@ -80,12 +81,6 @@ export const getAppAdmins = (appCode: string) => {
 /**
  * 更新应用权限
  */
-export const updateAppAdmins = (data: {
-  app_code: string;
-  admins: string[];
-}) => {
-  return POST<{ app_code: string; admins: string[] }, null>(
-    `/api/v1/app/admins/update`,
-    data
-  );
+export const updateAppAdmins = (data: { app_code: string; admins: string[] }) => {
+  return POST<{ app_code: string; admins: string[] }, null>(`/api/v1/app/admins/update`, data);
 };

@@ -1,14 +1,14 @@
-import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { apiInterceptors, getAppStrategyValues } from '@/client/api';
+import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { IResource } from '@/types/app';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Form, Modal, Select } from 'antd';
 import cls from 'classnames';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { v4 as uuid } from 'uuid';
 import ResourcesCard from './ResourcesCard';
-import { useTranslation } from 'react-i18next';
 
 type PromptSelectType = {
   promptList: Record<string, any>[];
@@ -22,20 +22,20 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
   const { t } = useTranslation();
   useEffect(() => {
     if (value) {
-      const filterPrompt = promptList?.filter((item) => item.prompt_code === value)[0];
+      const filterPrompt = promptList?.filter(item => item.prompt_code === value)[0];
       setCurPrompt(filterPrompt);
     }
   }, [promptList, value]);
 
   return (
-    <div className="w-2/5 flex items-center gap-2">
+    <div className='w-2/5 flex items-center gap-2'>
       <Select
-        className="w-1/2"
+        className='w-1/2'
         placeholder={t('please_select_prompt')}
         options={promptList}
         fieldNames={{ label: 'prompt_name', value: 'prompt_code' }}
-        onChange={(value) => {
-          const filterPrompt = promptList?.filter((item) => item.prompt_code === value)[0];
+        onChange={value => {
+          const filterPrompt = promptList?.filter(item => item.prompt_code === value)[0];
           setCurPrompt(filterPrompt);
           onChange?.(value);
         }}
@@ -44,12 +44,18 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
         showSearch
       />
       {curPrompt && (
-        <span className="text-sm text-blue-500 cursor-pointer" onClick={() => setShowPrompt(true)}>
-          <ExclamationCircleOutlined className="mr-1" />
+        <span className='text-sm text-blue-500 cursor-pointer' onClick={() => setShowPrompt(true)}>
+          <ExclamationCircleOutlined className='mr-1' />
           {t('View_details')}
         </span>
       )}
-      <Modal title={`Prompt ${t('details')}`} open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
+      <Modal
+        title={`Prompt ${t('details')}`}
+        open={showPrompt}
+        footer={false}
+        width={'60%'}
+        onCancel={() => setShowPrompt(false)}
+      >
         <MarkDownContext>{curPrompt?.content}</MarkDownContext>
       </Modal>
     </div>
@@ -70,8 +76,9 @@ const DetailsCard: React.FC<{
   const promptTemplate = Form.useWatch('prompt_template', form);
   const strategy = Form.useWatch('llm_strategy', form);
   const strategyValue = Form.useWatch('llm_strategy_value', form);
-  const [curPrompt, setCurPrompt] = useState<Record<string, any>>();
-  const [showPrompt, setShowPrompt] = useState<boolean>(false);
+
+  // const [curPrompt, setCurPrompt] = useState<Record<string, any>>();
+  // const [showPrompt, setShowPrompt] = useState<boolean>(false);
 
   const initVal = useMemo(() => {
     return initValue?.find((item: any) => item.agent_name === name) || [];
@@ -84,7 +91,7 @@ const DetailsCard: React.FC<{
     async () => {
       const [, res] = await apiInterceptors(getAppStrategyValues('priority'));
       return (
-        res?.map((item) => {
+        res?.map(item => {
           return {
             label: item,
             value: item,
@@ -121,20 +128,35 @@ const DetailsCard: React.FC<{
         style={{ width: '100%' }}
         labelCol={{ span: 4 }}
         form={form}
-        initialValues={{ llm_strategy: 'default', ...initVal, llm_strategy_value: initVal?.llm_strategy_value?.split(',') }}
+        initialValues={{
+          llm_strategy: 'default',
+          ...initVal,
+          llm_strategy_value: initVal?.llm_strategy_value?.split(','),
+        }}
       >
-        <Form.Item label={t('Prompt')} name="prompt_template">
+        <Form.Item label={t('Prompt')} name='prompt_template'>
           <PromptSelect promptList={promptList} />
         </Form.Item>
-        <Form.Item label={t('LLM_strategy')} required name="llm_strategy">
-          <Select className="w-1/5" placeholder={t('please_select_LLM_strategy')} options={modelStrategyOptions} allowClear />
+        <Form.Item label={t('LLM_strategy')} required name='llm_strategy'>
+          <Select
+            className='w-1/5'
+            placeholder={t('please_select_LLM_strategy')}
+            options={modelStrategyOptions}
+            allowClear
+          />
         </Form.Item>
         {strategy === 'priority' && (
-          <Form.Item label={t('LLM_strategy_value')} required name="llm_strategy_value">
-            <Select mode="multiple" className="w-2/5" placeholder={t('please_select_LLM_strategy_value')} options={data} allowClear />
+          <Form.Item label={t('LLM_strategy_value')} required name='llm_strategy_value'>
+            <Select
+              mode='multiple'
+              className='w-2/5'
+              placeholder={t('please_select_LLM_strategy_value')}
+              options={data}
+              allowClear
+            />
           </Form.Item>
         )}
-        <Form.Item label={t('available_resources')} name="resources">
+        <Form.Item label={t('available_resources')} name='resources'>
           <ResourcesCard
             resourceTypeOptions={resourceTypeOptions}
             initValue={initVal?.resources?.map((res: any) => {
@@ -143,7 +165,7 @@ const DetailsCard: React.FC<{
                 uid: uuid(),
               };
             })}
-            updateData={(data) => {
+            updateData={data => {
               resourcesRef.current = data?.[1];
               updateData({
                 agent_name: name,

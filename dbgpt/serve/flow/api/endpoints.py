@@ -157,8 +157,13 @@ async def update(
     Returns:
         ServerResponse: The response
     """
-    res = await blocking_func_to_async(global_system_app, service.update_flow, request)
-    return Result.succ(res)
+    try:
+        res = await blocking_func_to_async(
+            global_system_app, service.update_flow, request
+        )
+        return Result.succ(res)
+    except Exception as e:
+        return Result.failed(msg=str(e))
 
 
 @router.delete("/flows/{uid}")
