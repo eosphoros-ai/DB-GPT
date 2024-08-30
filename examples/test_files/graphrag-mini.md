@@ -1,6 +1,97 @@
-# TuGraph
+
+# TuGraph DB项目生态图谱
+Entities:
+(TuGraph-family/tugraph-db#github_repo)
+(vesoft-inc/nebula#github_repo)
+(PaddlePaddle/Paddle#github_repo)
+(apache/brpc#github_repo)
+(TuGraph-family/tugraph-web#github_repo)
+(TuGraph-family/tugraph-db-client-java#github_repo)
+(alibaba/GraphScope#github_repo)
+(ClickHouse/ClickHouse#github_repo)
+(TuGraph-family/fma-common#github_repo)
+(vesoft-inc/nebula-docs-cn#github_repo)
+(eosphoros-ai/DB-GPT#github_repo)
+(eosphoros-ai#github_organization)
+(yandex#github_organization)
+(alibaba#github_organization)
+(TuGraph-family#github_organization)
+(baidu#github_organization)
+(apache#github_organization)
+(vesoft-inc#github_organization)
+
+Relationships:
+(TuGraph-family/tugraph-db#common_developer#vesoft-inc/nebula#common_developer count 10)
+(TuGraph-family/tugraph-db#common_developer#PaddlePaddle/Paddle#common_developer count 9)
+(TuGraph-family/tugraph-db#common_developer#apache/brpc#common_developer count 7)
+(TuGraph-family/tugraph-db#common_developer#TuGraph-family/tugraph-web#common_developer count 7)
+(TuGraph-family/tugraph-db#common_developer#TuGraph-family/tugraph-db-client-java#common_developer count 7)
+(TuGraph-family/tugraph-db#common_developer#alibaba/GraphScope#common_developer count 6)
+(TuGraph-family/tugraph-db#common_developer#ClickHouse/ClickHouse#common_developer count 6)
+(TuGraph-family/tugraph-db#common_developer#TuGraph-family/fma-common#common_developer count 6)
+(TuGraph-family/tugraph-db#common_developer#vesoft-inc/nebula-docs-cn#common_developer count 6)
+(TuGraph-family/tugraph-db#common_developer#eosphoros-ai/DB-GPT#common_developer count 6)
+(eosphoros-ai/DB-GPT#belong_to#eosphoros-ai#belong_to)
+(ClickHouse/ClickHouse#belong_to#yandex#belong_to)
+(alibaba/GraphScope#belong_to#alibaba#belong_to)
+(TuGraph-family/tugraph-db#belong_to#TuGraph-family#belong_to)
+(TuGraph-family/tugraph-web#belong_to#TuGraph-family#belong_to)
+(TuGraph-family/fma-common#belong_to#TuGraph-family#belong_to)
+(TuGraph-family/tugraph-db-client-java#belong_to#TuGraph-family#belong_to)
+(PaddlePaddle/Paddle#belong_to#baidu#belong_to)
+(apache/brpc#belong_to#apache#belong_to)
+(vesoft-inc/nebula#belong_to#vesoft-inc#belong_to)
+(vesoft-inc/nebula-docs-cn#belong_to#vesoft-inc#belong_to)
+
+
+# DB-GPT项目生态图谱
+Entities:
+(eosphoros-ai/DB-GPT#github_repo)
+(chatchat-space/Langchain-Chatchat#github_repo)
+(hiyouga/LLaMA-Factory#github_repo)
+(lm-sys/FastChat#github_repo)
+(langchain-ai/langchain#github_repo)
+(eosphoros-ai/DB-GPT-Hub#github_repo)
+(THUDM/ChatGLM-6B#github_repo)
+(langgenius/dify#github_repo)
+(vllm-project/vllm#github_repo)
+(QwenLM/Qwen#github_repo)
+(PaddlePaddle/PaddleOCR#github_repo)
+(vllm-project#github_organization)
+(eosphoros-ai#github_organization)
+(PaddlePaddle#github_organization)
+(QwenLM#github_organization)
+(THUDM#github_organization)
+(lm-sys#github_organization)
+(chatchat-space#github_organization)
+(langchain-ai#github_organization)
+(langgenius#github_organization)
+
+Relationships:
+(eosphoros-ai/DB-GPT#common_developer#chatchat-space/Langchain-Chatchat#common_developer count 82)
+(eosphoros-ai/DB-GPT#common_developer#hiyouga/LLaMA-Factory#common_developer count 45)
+(eosphoros-ai/DB-GPT#common_developer#lm-sys/FastChat#common_developer count 39)
+(eosphoros-ai/DB-GPT#common_developer#langchain-ai/langchain#common_developer count 37)
+(eosphoros-ai/DB-GPT#common_developer#eosphoros-ai/DB-GPT-Hub#common_developer count 37)
+(eosphoros-ai/DB-GPT#common_developer#THUDM/ChatGLM-6B#common_developer count 31)
+(eosphoros-ai/DB-GPT#common_developer#langgenius/dify#common_developer count 30)
+(eosphoros-ai/DB-GPT#common_developer#vllm-project/vllm#common_developer count 27)
+(eosphoros-ai/DB-GPT#common_developer#QwenLM/Qwen#common_developer count 26)
+(eosphoros-ai/DB-GPT#common_developer#PaddlePaddle/PaddleOCR#common_developer count 24)
+(vllm-project/vllm#belong_to#vllm-project#belong_to)
+(eosphoros-ai/DB-GPT#belong_to#eosphoros-ai#belong_to)
+(eosphoros-ai/DB-GPT-Hub#belong_to#eosphoros-ai#belong_to)
+(PaddlePaddle/PaddleOCR#belong_to#PaddlePaddle#belong_to)
+(QwenLM/Qwen#belong_to#QwenLM#belong_to)
+(THUDM/ChatGLM-6B#belong_to#THUDM#belong_to)
+(lm-sys/FastChat#belong_to#lm-sys#belong_to)
+(chatchat-space/Langchain-Chatchat#belong_to#chatchat-space#belong_to)
+(langchain-ai/langchain#belong_to#langchain-ai#belong_to)
+(langgenius/dify#belong_to#langgenius#belong_to)
+
+
+# TuGraph简介
 TuGraph图数据库由蚂蚁集团与清华大学联合研发，构建了一套包含图存储、图计算、图学习、图研发平台的完善的图技术体系，支持海量多源的关联数据的实时处理，显著提升数据分析效率，支撑了蚂蚁支付、安全、社交、公益、数据治理等300多个场景应用。拥有业界领先规模的图集群，解决了图数据分析面临的大数据量、高吞吐率和低延迟等重大挑战，是蚂蚁集团金融风控能力的重要基础设施，显著提升了欺诈洗钱等金融风险的实时识别能力和审理分析效率，并面向金融、工业、政务服务等行业客户。TuGraph产品家族中，开源产品包括：TuGraph DB、TuGraph Analytics、OSGraph、ChatTuGraph等。内源产品包括：GeaBase、GeaFlow、GeaLearn、GeaMaker等。
 
-TuGraph企业级图数据管理平台提供对关联数据的复杂、深度分析功能。TuGraph以分布式集群架构，支持海量数据的高吞吐、高可用性、高并发读写和ACID事务操作。通过对数据的分片、分区，支持水平扩展，提供对点、边、属性、拓扑等结构的查询、过滤、索引等功能。TuGraph提供离线、近线、在线的图算法和图学习能力，内置数十种算法，能够对全图、子图、动态图的模式和特征进行处理，通过可视化或数据服务形式与外部数据源交互。此外，TuGraph提供可视化的展示和操作界面，覆盖图研发和服务的全生命周期，支持主流的图查询语言，提供便捷的访问和开发接口，能够与外部多模数据源进行导入导出、存量/增量/批量更新和备份。TuGraph还提供精美和实用的图生产环境管理监控，满足企业用户的技术和业务应用需要。
-
-TuGraph在金融风控方面的应用实践主要包括个人信贷业务、反欺诈、洗钱路径追踪等问题。利用多维交叉关联信息深度刻画申请和交易行为，识别多种复杂、规模化、隐蔽性的欺诈网络和洗钱网络；结合聚类分析、风险传播等算法，实时计算用户的风险评分，在风险行为发生前预先识别，帮助金融机构提升效率、降低风险。基于TuGraph企业级图数据管理平台，蚂蚁集团增加反欺诈稽核金额6%，反洗钱风险审理分析效率提升90%。每天计算近10亿用户大约200亿左右边关系，对疑似团伙类犯罪风险识别能力提高近10倍。此外，为某银行提供的信贷图平台提升了13%的风控模型区分度；为某银行完成的信用卡申请团伙欺诈分析方案，运算时间缩短至原有的1/60；为某银行搭建的企业风险图平台，在对小微企业评级放贷问题中，担保圈识别准确率达到90%以上。
+# DB-GPT简介
+DB-GPT是一个开源的AI原生数据应用开发框架(AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents)。目的是构建大模型领域的基础设施，通过开发多模型管理(SMMF)、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作、AWEL(智能体工作流编排)等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
