@@ -40,3 +40,15 @@ def test_get_indexes(connector):
     # Get the index information of the vertex table named 'person'.
     indexes = connector.get_indexes("person", "vertex")
     assert len(indexes) > 0
+
+
+def test_run_without_stream(connector):
+    query = "MATCH (n) RETURN n limit 10"
+    result = connector.run(query)
+    assert len(result) == 10
+
+
+def test_run_with_stream(connector):
+    query = "MATCH (n) RETURN n limit 10"
+    result = list(connector.run_stream(query))
+    assert len(result) == 10

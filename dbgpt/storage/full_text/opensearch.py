@@ -2,11 +2,11 @@
 from typing import List, Optional
 
 from dbgpt.core import Chunk
-from dbgpt.rag.index.base import IndexStoreBase
+from dbgpt.storage.full_text.base import FullTextStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 
-class OpenSearch(IndexStoreBase):
+class OpenSearch(FullTextStoreBase):
     """OpenSearch index store."""
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:

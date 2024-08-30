@@ -83,9 +83,9 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
       destroyOnClose={true}
     >
       <Card
-        title='召回配置'
-        size='small'
-        className='my-4'
+        title="召回配置"
+        size="small"
+        className="my-4"
         extra={
           <Popover
             placement='bottomRight'
@@ -160,7 +160,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
             )} */}
         </Form>
       </Card>
-      <Card title='召回结果' size='small'>
+      <Card title="召回结果" size="small">
         <Spin spinning={loading}>
           {resultList.length > 0 ? (
             <div
@@ -172,9 +172,9 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
               {resultList.map(item => (
                 <Card
                   title={
-                    <div className='flex items-center'>
-                      <Tag color='blue'># {item.chunk_id}</Tag>
-                      {item.metadata.prop_field.title}
+                    <div className="flex items-center">
+                      <Tag color="blue"># {item.chunk_id}</Tag>
+                      {item.metadata.source}
                     </div>
                   }
                   extra={

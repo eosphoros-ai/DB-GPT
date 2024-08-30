@@ -20,6 +20,10 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
     """Knowledge graph base class."""
 
     @abstractmethod
+    def get_config(self) -> KnowledgeGraphConfig:
+        """Get the knowledge graph config."""
+
+    @abstractmethod
     def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Get graph data."""
 

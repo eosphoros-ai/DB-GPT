@@ -2,17 +2,12 @@
 
 import pytest
 
-from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
-
-
-class TuGraphStoreConfig:
-    def __init__(self, name):
-        self.name = name
+from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
 
 
 @pytest.fixture(scope="module")
 def store():
-    config = TuGraphStoreConfig(name="TestGraph")
+    config = TuGraphStoreConfig(name="TestGraph", summary_enabled=False)
     store = TuGraphStore(config=config)
     yield store
     store.conn.close()
@@ -29,7 +24,7 @@ def test_insert_and_get_triplets(store):
     store.insert_triplet("F", "7", "E")
     store.insert_triplet("E", "8", "F")
     triplets = store.get_triplets("A")
-    assert len(triplets) == 3
+    assert len(triplets) == 2
     triplets = store.get_triplets("B")
     assert len(triplets) == 3
     triplets = store.get_triplets("C")
@@ -47,7 +42,7 @@ def test_query(store):
     result = store.query(query)
     v_c = result.vertex_count
     e_c = result.edge_count
-    assert v_c == 2 and e_c == 3
+    assert v_c == 3 and e_c == 3
 
 
 def test_explore(store):
@@ -55,13 +50,13 @@ def test_explore(store):
     result = store.explore(subs, depth=2, fan=None, limit=10)
     v_c = result.vertex_count
     e_c = result.edge_count
-    assert v_c == 2 and e_c == 3
+    assert v_c == 5 and e_c == 5
 
 
-# def test_delete_triplet(store):
-#     subj = "A"
-#     rel = "0"
-#     obj = "B"
-#     store.delete_triplet(subj, rel, obj)
-#     triplets = store.get_triplets(subj)
-#     assert len(triplets) == 0
+def test_delete_triplet(store):
+    subj = "A"
+    rel = "0"
+    obj = "B"
+    store.delete_triplet(subj, rel, obj)
+    triplets = store.get_triplets(subj)
+    assert len(triplets) == 0

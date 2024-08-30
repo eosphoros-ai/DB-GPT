@@ -55,6 +55,10 @@ class IndexStoreBase(ABC):
         self._executor = executor or ThreadPoolExecutor()
 
     @abstractmethod
+    def get_config(self) -> IndexStoreConfig:
+        """Get the index store config."""
+
+    @abstractmethod
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in index database.
 
@@ -103,6 +107,10 @@ class IndexStoreBase(ABC):
         Args:
             ids(str): The vector ids to delete, separated by comma.
         """
+
+    @abstractmethod
+    def truncate(self) -> List[str]:
+        """Truncate data by name."""
 
     @abstractmethod
     def delete_vector_name(self, index_name: str):
@@ -188,7 +196,7 @@ class IndexStoreBase(ABC):
         Return:
             List[Chunk]: The similar documents.
         """
-        return self.similar_search_with_scores(text, topk, 1.0, filters)
+        return self.similar_search_with_scores(text, topk, 0.0, filters)
 
     async def asimilar_search_with_scores(
         self,
