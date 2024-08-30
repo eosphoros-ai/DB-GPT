@@ -27,7 +27,7 @@ export const SaveFlowModal: React.FC<Props> = ({
   const [form] = Form.useForm<IFlowUpdateParam>();
   const [messageApi, contextHolder] = message.useMessage();
 
-  const [deploy, setDeploy] = useState(true);
+  const [deploy, setDeploy] = useState(false);
   const [id, setId] = useState(router.query.id || '');
 
   useEffect(() => {
