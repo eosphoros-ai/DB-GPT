@@ -56,4 +56,3 @@ def test_stream_query_path(store):
     for v in result.vertices():
         print(v.get_prop("_community_id"))
     assert result.vertex_count == 7 and result.edge_count == 6
-

@@ -651,16 +651,11 @@ class KnowledgeService:
                     "id": node.vid,
                     "communityId": node.get_prop("_community_id"),
                     "name": node.vid,
-                    "type": ""
+                    "type": "",
                 }
             )
         for edge in graph.edges():
             res["edges"].append(
-                {
-                    "source": edge.sid,
-                    "target": edge.tid,
-                    "name": edge.name,
-                    "type": ""
-                }
+                {"source": edge.sid, "target": edge.tid, "name": edge.name, "type": ""}
             )
         return res
