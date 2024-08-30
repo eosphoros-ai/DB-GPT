@@ -1,7 +1,14 @@
-import ModelIcon from '@/new-components/chat/content/ModelIcon';
 import { ChatContext } from '@/app/chat-context';
-import { addPrompt, apiInterceptors, llmOutVerify, promptTemplateLoad, promptTypeTarget, updatePrompt } from '@/client/api';
+import {
+  addPrompt,
+  apiInterceptors,
+  llmOutVerify,
+  promptTemplateLoad,
+  promptTypeTarget,
+  updatePrompt,
+} from '@/client/api';
 import useUser from '@/hooks/use-user';
+import ModelIcon from '@/new-components/chat/content/ModelIcon';
 import { DebugParams, OperatePromptParams } from '@/types/prompt';
 import { getUserId } from '@/utils';
 import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
@@ -18,10 +25,13 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import 'react-markdown-editor-lite/lib/index.css';
 import styles from '../styles.module.css';
 
-const MarkdownEditor = dynamic(() => import('react-markdown-editor-lite'), { ssr: false });
+const MarkdownEditor = dynamic(() => import('react-markdown-editor-lite'), {
+  ssr: false,
+});
 const mdParser = new MarkdownIt();
 
 const MarkdownContext = dynamic(() => import('@/new-components/common/MarkdownContext'), { ssr: false });
@@ -59,7 +69,10 @@ interface TopFormProps {
 }
 
 // 自定义温度选项
-const TemperatureItem: React.FC<{ value?: any; onChange?: (value: any) => void }> = ({ value, onChange }) => {
+const TemperatureItem: React.FC<{
+  value?: any;
+  onChange?: (value: any) => void;
+}> = ({ value, onChange }) => {
   // temperature变化;
   const onTemperatureChange = (value: any) => {
     if (isNaN(value)) {
@@ -69,9 +82,9 @@ const TemperatureItem: React.FC<{ value?: any; onChange?: (value: any) => void }
   };
 
   return (
-    <div className="flex items-center gap-8">
-      <Slider className="w-40" min={0} max={1} step={0.1} onChange={onTemperatureChange} value={value} />
-      <InputNumber className="w-16" min={0} max={1} step={0.1} value={value} onChange={onTemperatureChange} />
+    <div className='flex items-center gap-8'>
+      <Slider className='w-40' min={0} max={1} step={0.1} onChange={onTemperatureChange} value={value} />
+      <InputNumber className='w-16' min={0} max={1} step={0.1} value={value} onChange={onTemperatureChange} />
     </div>
   );
 };
@@ -110,13 +123,13 @@ const AddOrEditPrompt: React.FC = () => {
   const promptType = Form.useWatch('prompt_type', topForm);
 
   const modelOptions = useMemo(() => {
-    return modelList.map((item) => {
+    return modelList.map(item => {
       return {
         value: item,
         label: (
-          <div className="flex items-center">
+          <div className='flex items-center'>
             <ModelIcon model={item} />
-            <span className="ml-2">{item}</span>
+            <span className='ml-2'>{item}</span>
           </div>
         ),
       };
@@ -146,7 +159,7 @@ const AddOrEditPrompt: React.FC = () => {
       }),
     {
       manual: true,
-      onSuccess: (res) => {
+      onSuccess: res => {
         if (res) {
           const { data } = res.data;
           setValue(data.template);
@@ -181,7 +194,7 @@ const AddOrEditPrompt: React.FC = () => {
   );
 
   const operateFn = () => {
-    topForm.validateFields().then(async (values) => {
+    topForm.validateFields().then(async values => {
       const params: OperatePromptParams = {
         sub_chat_scene: '',
         model: bottomForm.getFieldValue('model'),
@@ -206,7 +219,7 @@ const AddOrEditPrompt: React.FC = () => {
       return;
     }
     const midVals = midForm.getFieldsValue();
-    if (!Object.values(midVals).every((value) => !!value)) {
+    if (!Object.values(midVals).every(value => !!value)) {
       message.warning(t('Please_complete_the_input_parameters'));
       return;
     }
@@ -214,7 +227,7 @@ const AddOrEditPrompt: React.FC = () => {
       message.warning(t('Please_fill_in_the_user_input'));
       return;
     }
-    topForm.validateFields().then(async (values) => {
+    topForm.validateFields().then(async values => {
       const params: DebugParams = {
         sub_chat_scene: '',
         model: bottomForm.getFieldValue('model'),
@@ -257,12 +270,12 @@ const AddOrEditPrompt: React.FC = () => {
           onerror(err) {
             throw new Error(err);
           },
-          onmessage: (event) => {
+          onmessage: event => {
             let message = event.data;
             if (!message) return;
             try {
               message = JSON.parse(message).vis;
-            } catch (e) {
+            } catch {
               message.replaceAll('\\n', '\n');
             }
             if (message === '[DONE]') {
@@ -276,7 +289,7 @@ const AddOrEditPrompt: React.FC = () => {
             }
           },
         });
-      } catch (err) {
+      } catch {
         setLlmLoading(false);
         tempHistory[index].context = 'Sorry, we meet some error, please try again later';
         setHistory([...tempHistory]);
@@ -294,7 +307,7 @@ const AddOrEditPrompt: React.FC = () => {
       }),
     {
       manual: true,
-      onSuccess: (res) => {
+      onSuccess: res => {
         if (res?.data?.success) {
           setErrorMessage({ msg: '验证通过', status: 'success' });
         } else {
@@ -350,31 +363,33 @@ const AddOrEditPrompt: React.FC = () => {
   }, [bottomForm, topForm, type]);
 
   return (
-    <div className={`flex flex-col w-full h-full justify-between dark:bg-gradient-dark ${styles['prompt-operate-container']}`}>
-      <header className="flex items-center justify-between px-6 py-2 h-14 border-b border-[#edeeef]">
-        <Space className="flex items-center">
+    <div
+      className={`flex flex-col w-full h-full justify-between dark:bg-gradient-dark ${styles['prompt-operate-container']}`}
+    >
+      <header className='flex items-center justify-between px-6 py-2 h-14 border-b border-[#edeeef]'>
+        <Space className='flex items-center'>
           <LeftOutlined
-            className="text-base cursor-pointer hover:text-[#0c75fc]"
+            className='text-base cursor-pointer hover:text-[#0c75fc]'
             onClick={() => {
               localStorage.removeItem('edit_prompt_data');
               router.replace('/construct/prompt');
             }}
           />
-          <span className="font-medium text-sm">{type === 'add' ? t('Add') : t('Edit')} Prompt</span>
+          <span className='font-medium text-sm'>{type === 'add' ? t('Add') : t('Edit')} Prompt</span>
         </Space>
         <Space>
-          <Button type="primary" onClick={operateFn} loading={operateLoading}>
+          <Button type='primary' onClick={operateFn} loading={operateLoading}>
             {type === 'add' ? t('save') : t('update')}
           </Button>
         </Space>
       </header>
-      <section className="flex h-full p-4 gap-4">
+      <section className='flex h-full p-4 gap-4'>
         {/* 编辑展示区 */}
-        <div className="flex flex-col flex-1 h-full overflow-y-auto pb-8 ">
+        <div className='flex flex-col flex-1 h-full overflow-y-auto pb-8 '>
           <MarkdownEditor
             value={value}
             onChange={onChange}
-            renderHTML={(text) => mdParser.render(text)}
+            renderHTML={text => mdParser.render(text)}
             view={{ html: false, md: true, menu: true }}
           />
           {/* llm 输出区域 */}
@@ -386,33 +401,38 @@ const AddOrEditPrompt: React.FC = () => {
                   {errorMessage && <Alert message={errorMessage.msg} type={errorMessage.status} showIcon />}
                 </Space>
               }
-              className="mt-2"
+              className='mt-2'
             >
-              <div className=" max-h-[400px] overflow-y-auto">
+              <div className=' max-h-[400px] overflow-y-auto'>
                 <MarkdownContext>{history?.[0]?.context.replace(/\\n/gm, '\n')}</MarkdownContext>
               </div>
             </Card>
           )}
         </div>
         {/* 功能区 */}
-        <div className="flex flex-col w-2/5 pb-8 overflow-y-auto">
-          <Card className="mb-4">
+        <div className='flex flex-col w-2/5 pb-8 overflow-y-auto'>
+          <Card className='mb-4'>
             <Form form={topForm}>
-              <div className="flex w-full gap-1 justify-between">
-                <Form.Item label="Type" name="prompt_type" className="w-2/5" rules={[{ required: true, message: t('select_type') }]}>
+              <div className='flex w-full gap-1 justify-between'>
+                <Form.Item
+                  label='Type'
+                  name='prompt_type'
+                  className='w-2/5'
+                  rules={[{ required: true, message: t('select_type') }]}
+                >
                   <Select options={TypeOptions} placeholder={t('select_type')} allowClear />
                 </Form.Item>
-                <Form.Item name="target" className="w-3/5" rules={[{ required: true, message: t('select_scene') }]}>
+                <Form.Item name='target' className='w-3/5' rules={[{ required: true, message: t('select_scene') }]}>
                   <Select
                     loading={loading}
                     placeholder={t('select_scene')}
                     allowClear
                     showSearch
-                    onChange={async (value) => {
+                    onChange={async value => {
                       await getTemplate(value);
                     }}
                   >
-                    {targetOptions?.map((option) => (
+                    {targetOptions?.map(option => (
                       <Select.Option key={option.value} title={option.desc}>
                         {option.label}
                       </Select.Option>
@@ -421,28 +441,33 @@ const AddOrEditPrompt: React.FC = () => {
                 </Form.Item>
               </div>
               {type === 'edit' && (
-                <Form.Item label="Code" name="prompt_code">
+                <Form.Item label='Code' name='prompt_code'>
                   <Input disabled />
                 </Form.Item>
               )}
-              <Form.Item label="Name" name="prompt_name" className="m-0" rules={[{ required: true, message: t('Please_input_prompt_name') }]}>
+              <Form.Item
+                label='Name'
+                name='prompt_name'
+                className='m-0'
+                rules={[{ required: true, message: t('Please_input_prompt_name') }]}
+              >
                 <Input placeholder={t('Please_input_prompt_name')} />
               </Form.Item>
             </Form>
           </Card>
-          <Card title={t('input_parameter')} className="mb-4">
+          <Card title={t('input_parameter')} className='mb-4'>
             <Form form={midForm}>
               {variables.length > 0 &&
                 variables
-                  .filter((item) => item !== 'out_schema')
-                  .map((item) => (
+                  .filter(item => item !== 'out_schema')
+                  .map(item => (
                     <Form.Item key={item} label={item} name={item} rules={[{ message: `${t('Please_Input')}${item}` }]}>
                       <Input placeholder={t('Please_Input')} />
                     </Form.Item>
                   ))}
             </Form>
           </Card>
-          <Card title={t('output_structure')} className="flex flex-col flex-1">
+          <Card title={t('output_structure')} className='flex flex-col flex-1'>
             <JsonView
               style={{ ...theme, width: '100%', padding: 4 }}
               className={classNames({
@@ -453,15 +478,22 @@ const AddOrEditPrompt: React.FC = () => {
               displayDataTypes={false}
               objectSortKeys={false}
             />
-            <div className="flex flex-col mt-4">
-              <Form form={bottomForm} initialValues={{ model: model, temperature: 0.5, prompt_language: 'en' }}>
-                <Form.Item label={t('model')} name="model">
-                  <Select className="h-8 rounded-3xl" options={modelOptions} allowClear showSearch />
+            <div className='flex flex-col mt-4'>
+              <Form
+                form={bottomForm}
+                initialValues={{
+                  model: model,
+                  temperature: 0.5,
+                  prompt_language: 'en',
+                }}
+              >
+                <Form.Item label={t('model')} name='model'>
+                  <Select className='h-8 rounded-3xl' options={modelOptions} allowClear showSearch />
                 </Form.Item>
-                <Form.Item label={t('temperature')} name="temperature">
+                <Form.Item label={t('temperature')} name='temperature'>
                   <TemperatureItem />
                 </Form.Item>
-                <Form.Item label={t('language')} name="prompt_language">
+                <Form.Item label={t('language')} name='prompt_language'>
                   <Select
                     options={[
                       {
@@ -475,17 +507,17 @@ const AddOrEditPrompt: React.FC = () => {
                     ]}
                   />
                 </Form.Item>
-                <Form.Item label={t('User_input')} name="user_input">
+                <Form.Item label={t('User_input')} name='user_input'>
                   <Input placeholder={t('Please_Input')} />
                 </Form.Item>
               </Form>
             </div>
-            <Space className="flex justify-between">
-              <Button type="primary" onClick={onLLMTest} loading={llmLoading}>
+            <Space className='flex justify-between'>
+              <Button type='primary' onClick={onLLMTest} loading={llmLoading}>
                 {t('LLM_test')}
               </Button>
               <Button
-                type="primary"
+                type='primary'
                 onClick={async () => {
                   if (verifyLoading || !history[0]?.context) {
                     return;

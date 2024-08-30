@@ -1,5 +1,4 @@
 import React, { memo, useContext, useMemo } from 'react';
-import { v4 as uuid } from 'uuid';
 import { MobileChatContext } from '../';
 import ChatDialog from './ChatDialog';
 
@@ -8,11 +7,11 @@ const Content: React.FC = () => {
 
   // 过滤出需要展示的消息
   const showMessages = useMemo(() => {
-    return history.filter((item) => ['view', 'human'].includes(item.role));
+    return history.filter(item => ['view', 'human'].includes(item.role));
   }, [history]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className='flex flex-col gap-4'>
       {!!showMessages.length &&
         showMessages.map((message, index) => {
           return <ChatDialog key={message.context + index} message={message} index={index} />;

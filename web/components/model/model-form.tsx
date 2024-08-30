@@ -1,9 +1,9 @@
 import { apiInterceptors, getSupportModels, startModel } from '@/client/api';
+import { renderModelIcon } from '@/components/chat/header/model-selector';
 import { SupportModel, SupportModelParams } from '@/types/model';
 import { Button, Form, Select, Tooltip, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { renderModelIcon } from '@/components/chat/header/model-selector';
 import ModelParams from './model-params';
 const { Option } = Select;
 
@@ -37,7 +37,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
     getModels();
   }, []);
 
-  function handleChange(value: string, option: any) {
+  function handleChange(_: string, option: any) {
     setSelectedModel(option.model);
     setParams(option.model.params);
   }
@@ -59,23 +59,23 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
     );
     setLoading(false);
     if (data?.success === true) {
-      onSuccess && onSuccess();
+      onSuccess?.();
       return message.success(t('start_model_success'));
     }
   }
 
   return (
     <Form labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} onFinish={onFinish} form={form}>
-      <Form.Item label="Model" name="model" rules={[{ required: true, message: t('model_select_tips') }]}>
+      <Form.Item label='Model' name='model' rules={[{ required: true, message: t('model_select_tips') }]}>
         <Select showSearch onChange={handleChange}>
-          {models?.map((model) => (
+          {models?.map(model => (
             <Option key={model.model} value={model.model} label={model.model} model={model} disabled={!model.enabled}>
               {renderModelIcon(model.model)}
               <Tooltip title={model.enabled ? model.model : t('download_model_tip')}>
-                <span className="ml-2">{model.model}</span>
+                <span className='ml-2'>{model.model}</span>
               </Tooltip>
               <Tooltip title={model.enabled ? `${model.host}:${model.port}` : t('download_model_tip')}>
-                <p className="inline-block absolute right-4">
+                <p className='inline-block absolute right-4'>
                   <span>{model.host}:</span>
                   <span>{model.port}</span>
                 </p>
@@ -85,11 +85,11 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
         </Select>
       </Form.Item>
       <ModelParams params={params} form={form} />
-      <div className="flex justify-center">
-        <Button type="primary" htmlType="submit" loading={loading}>
+      <div className='flex justify-center'>
+        <Button type='primary' htmlType='submit' loading={loading}>
           {t('submit')}
         </Button>
-        <Button className="ml-10" onClick={onCancel}>
+        <Button className='ml-10' onClick={onCancel}>
           Cancel
         </Button>
       </div>

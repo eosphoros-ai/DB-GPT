@@ -43,6 +43,7 @@ export type PostEditorSqlParams = {
   round: string | number;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type PostEditorSqlRequest = {};
 
 export type GetEditorySqlParams = { con_uid: string; round: string | number };

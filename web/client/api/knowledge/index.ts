@@ -1,12 +1,14 @@
-import { AddYuqueProps, RecallTestChunk, RecallTestProps } from '@/types/knowledge';
+import { AddYuqueProps, RecallTestChunk, RecallTestProps, SearchDocumentParams } from '@/types/knowledge';
 import { GET, POST } from '../index';
-import { SearchDocumentParams } from '@/types/knowledge';
 
 /**
  * 知识库编辑搜索
  */
 export const searchDocumentList = (spaceName: string, data: SearchDocumentParams) => {
-  return POST<SearchDocumentParams, { data: string[]; total: number; page: number }>(`/knowledge/${spaceName}/document/list`, data);
+  return POST<SearchDocumentParams, { data: string[]; total: number; page: number }>(
+    `/knowledge/${spaceName}/document/list`,
+    data,
+  );
 };
 
 /**
@@ -19,8 +21,14 @@ export const addYuque = (data: AddYuqueProps) => {
 /**
  * 编辑知识库切片
  */
-export const editChunk = (knowledgeName: string, data: { questions: string[]; doc_id: string | number; doc_name: string }) => {
-  return POST<{ questions: string[]; doc_id: string | number; doc_name: string }, null>(`/knowledge/${knowledgeName}/document/edit`, data);
+export const editChunk = (
+  knowledgeName: string,
+  data: { questions: string[]; doc_id: string | number; doc_name: string },
+) => {
+  return POST<{ questions: string[]; doc_id: string | number; doc_name: string }, null>(
+    `/knowledge/${knowledgeName}/document/edit`,
+    data,
+  );
 };
 /**
  * 召回测试推荐问题

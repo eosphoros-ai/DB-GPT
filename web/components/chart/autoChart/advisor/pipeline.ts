@@ -1,7 +1,7 @@
-import { Advisor, CkbConfig, DataFrame } from '@antv/ava';
 import type { Advice, AdviseParams, AdvisorConfig, ChartKnowledgeBase, Datum, FieldInfo } from '@antv/ava';
-import type { CustomAdvisorConfig, RuleConfig, Specification } from '../types';
+import { Advisor, CkbConfig, DataFrame } from '@antv/ava';
 import { size } from 'lodash';
+import type { CustomAdvisorConfig, RuleConfig, Specification } from '../types';
 
 export type CustomRecommendConfig = {
   customCKB?: Partial<AdvisorConfig['ckbCfg']>;
@@ -12,10 +12,10 @@ export const customizeAdvisor = (props: CustomAdvisorConfig): Advisor => {
   const { charts, scopeOfCharts: CKBCfg, ruleConfig: ruleCfg } = props;
 
   const customCKB: ChartKnowledgeBase = {};
-  charts?.forEach((chart) => {
+  charts?.forEach(chart => {
     /** 若用户自定义的图表 id 与内置图表 id 相同，内置图表将被覆盖 */
     if (!chart.chartKnowledge.toSpec) {
-      chart.chartKnowledge.toSpec = (data: any, dataProps: any) => {
+      chart.chartKnowledge.toSpec = (_: any, dataProps: any) => {
         return { dataProps } as Specification;
       };
     } else {
@@ -65,25 +65,29 @@ export const customizeAdvisor = (props: CustomAdvisorConfig): Advisor => {
 };
 
 /** 主推荐流程 */
-export const getVisAdvices = (props: { data: Datum[]; myChartAdvisor: Advisor; dataMetaMap?: Record<string, FieldInfo> }): Advice[] => {
+export const getVisAdvices = (props: {
+  data: Datum[];
+  myChartAdvisor: Advisor;
+  dataMetaMap?: Record<string, FieldInfo>;
+}): Advice[] => {
   const { data, dataMetaMap, myChartAdvisor } = props;
   /**
    * 若输入中有信息能够获取列的类型（ Interval, Nominal, Time ）,则将这个 信息传给 Advisor
    * 主要是读取 levelOfMeasureMents 这个字段，即 dataMetaMap[item].levelOfMeasurements
    */
   const customDataProps = dataMetaMap
-    ? Object.keys(dataMetaMap).map((item) => {
+    ? Object.keys(dataMetaMap).map(item => {
         return { name: item, ...dataMetaMap[item] };
       })
     : null;
-  
+
   // 可根据需要选择是否使用全部 fields 进行推荐
   const useAllFields = false;
   // 挑选出维值不只有一个的字段
   const allFieldsInfo = new DataFrame(data).info();
   const selectedFields =
     size(allFieldsInfo) > 2
-      ? allFieldsInfo?.filter((field) => {
+      ? allFieldsInfo?.filter(field => {
           if (field.recommendation === 'string' || field.recommendation === 'date') {
             return field.distinct && field.distinct > 1;
           }
@@ -95,7 +99,7 @@ export const getVisAdvices = (props: { data: Datum[]; myChartAdvisor: Advisor; d
     data,
     dataProps: customDataProps as AdviseParams['dataProps'],
     // 不传 fields 参数，内部默认使用全部 fields，否则使用业务选择的字段
-    fields: useAllFields ? undefined : selectedFields?.map((field) => field.name),
+    fields: useAllFields ? undefined : selectedFields?.map(field => field.name),
   });
   return allAdvices?.advices ?? [];
 };

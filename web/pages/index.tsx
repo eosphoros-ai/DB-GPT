@@ -6,24 +6,23 @@ import { Avatar, Button, ConfigProvider, Input, Segmented, Spin, message } from 
 import cls from 'classnames';
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';
-import { useContext, useDeferredValue, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GridCellRenderer, Index, IndexRange } from 'react-virtualized';
 import { AutoSizer, Grid, InfiniteLoader } from 'react-virtualized';
 
+import { ChatContext } from '@/app/chat-context';
 import IconFont from '@/new-components/common/Icon';
 import BlurredCard from '@/new-components/common/blurredCard';
-import { ChatContext } from '@/app/chat-context';
+import { AppListResponse } from '@/types/app';
 import moment from 'moment';
 
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t } = useTranslation();
-
   const { setAgent, setCurrentDialogInfo, model } = useContext(ChatContext);
 
   const [activeKey, setActiveKey] = useState<string>('all');
-  const preActiveKey = useDeferredValue(activeKey);
   const [apps, setApps] = useState<any>({
     app_list: [],
     total_count: 0,
@@ -61,11 +60,7 @@ const Playground: NextPage = () => {
       }),
     );
   // 获取应用列表
-  const {
-    run: getAppListFn,
-    loading,
-    refresh,
-  } = useRequest(
+  const { run: getAppListFn, loading } = useRequest(
     async (app_name = '', page_no = '1', page_size = '12') => {
       switch (activeKey) {
         case 'recommend':
@@ -94,32 +89,37 @@ const Playground: NextPage = () => {
     },
     {
       manual: true,
-      onSuccess: (res) => {
-        const [error, data]: any = res;
+      onSuccess: (res: [any, [] | AppListResponse]) => {
+        const [_error, data] = res;
         if (activeKey === 'recommend') {
-          return setApps({
-            app_list: data,
-            total_count: data.length,
-          });
-        }
-        let code = data?.app_list?.[0]?.app_code;
-        let index = code ? apps.app_list.findIndex((item: any) => item.app_code === code) : -1;
-        if (index !== -1) {
-          let finallyIndex = Math.floor(index / 12) * 12;
-          setApps(
-            {
-              app_list: apps.app_list.toSpliced(finallyIndex, 12, ...data?.app_list) || [],
-              total_count: data?.total_count || 0,
-            },
-          );
+          if (Array.isArray(data)) {
+            return setApps({
+              app_list: data,
+              total_count: data.length,
+            });
+          }
         } else {
-          console.log('concat');
-          setApps(
-            {
-              app_list: apps.app_list.concat(data?.app_list) || [],
-              total_count: data?.total_count || 0,
-            },
-          );
+          if ('app_list' in data) {
+            const code = data?.app_list?.[0]?.app_code;
+            const index = code ? apps.app_list.findIndex((item: any) => item.app_code === code) : -1;
+            if (index !== -1) {
+              const finallyIndex = Math.floor(index / 12) * 12;
+              setApps(
+                {
+                  app_list: apps.app_list.toSpliced(finallyIndex, 12, ...data.app_list) || [],
+                  total_count: data?.total_count || 0,
+                } || {},
+              );
+            } else {
+              console.log('concat');
+              setApps(
+                {
+                  app_list: apps.app_list.concat(data?.app_list) || [],
+                  total_count: data?.total_count || 0,
+                } || {},
+              );
+            }
+          }
         }
       },
       debounceWait: 500,
@@ -136,9 +136,11 @@ const Playground: NextPage = () => {
 
   const collect = async (data: Record<string, any>) => {
     const [error] = await apiInterceptors(
-      data.is_collected === 'true' ? unCollectApp({ app_code: data.app_code }) : collectApp({ app_code: data.app_code }),
+      data.is_collected === 'true'
+        ? unCollectApp({ app_code: data.app_code })
+        : collectApp({ app_code: data.app_code }),
     );
-    let index = apps.app_list.findIndex((item: any) => item.app_code === data.app_code);
+    const index = apps.app_list.findIndex((item: any) => item.app_code === data.app_code);
     if (error) return;
     if (data.is_collected === 'true') {
       message.success(t('cancel_success'));
@@ -165,14 +167,14 @@ const Playground: NextPage = () => {
     // 计算数组中的索引
     const index = rowIndex * columnCount + columnIndex;
     if (!isRowLoaded({ index })) return null;
-    let item = apps.app_list[index];
+    const item = apps.app_list[index];
     return (
       <div key={key} style={style}>
         <BlurredCard
           key={item.app_code}
           name={item.app_name}
           description={item.app_describe}
-          className="w-11/12"
+          className='w-11/12'
           RightTop={
             item.is_collected === 'true' ? (
               <StarFilled
@@ -234,19 +236,22 @@ const Playground: NextPage = () => {
             }
           }}
           LeftBottom={
-            <div className="flex gap-8 items-center text-[#878c93] text-sm dark:text-stone-200">
+            <div className='flex gap-8 items-center text-[#878c93] text-sm dark:text-stone-200'>
               {item.owner_name && (
-                <div className="flex gap-1 items-center">
-                  <Avatar src={item?.owner_avatar_url} className="bg-gradient-to-tr from-[#31afff] to-[#1677ff] cursor-pointer">
+                <div className='flex gap-1 items-center'>
+                  <Avatar
+                    src={item?.owner_avatar_url}
+                    className='bg-gradient-to-tr from-[#31afff] to-[#1677ff] cursor-pointer'
+                  >
                     {item.owner_name}
                   </Avatar>
                   <span>{item.owner_name}</span>
                 </div>
               )}
               {activeKey === 'recommend' ? (
-                <div className="flex items-start gap-1">
-                  <IconFont type="icon-hot" className="text-lg" />
-                  <span className="text-[#878c93]">{item.hot_value}</span>
+                <div className='flex items-start gap-1'>
+                  <IconFont type='icon-hot' className='text-lg' />
+                  <span className='text-[#878c93]'>{item.hot_value}</span>
                 </div>
               ) : (
                 <div>{moment(item?.updated_at).fromNow() + ' ' + t('update')}</div>
@@ -276,8 +281,8 @@ const Playground: NextPage = () => {
 
   return (
     <div
-      className="flex flex-col h-full w-full backdrop-filter backdrop-blur dark:bg-gradient-dark bg-gradient-light  p-10 pt-12 "
-      id="home-container"
+      className='flex flex-col h-full w-full backdrop-filter backdrop-blur dark:bg-gradient-dark bg-gradient-light  p-10 pt-12 '
+      id='home-container'
     >
       <ConfigProvider
         theme={{
@@ -294,21 +299,21 @@ const Playground: NextPage = () => {
       >
         {/* Apps list */}
         <div
-          className="flex flex-col h-full mt-4 overflow-hidden relative"
+          className='flex flex-col h-full mt-4 overflow-hidden relative'
           style={{
             paddingBottom: apps.total_count > 12 ? 45 : 20,
           }}
         >
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
+          <div className='flex justify-between items-center'>
+            <div className='flex items-center gap-4'>
               <Segmented
-                className="h-10 backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+                className='h-10 backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
                 options={items}
-                onChange={(key) => setActiveKey(key as any)}
+                onChange={key => setActiveKey(key as any)}
                 value={activeKey}
               />
               <Input
-                variant="filled"
+                variant='filled'
                 prefix={<SearchOutlined />}
                 placeholder={t('please_enter_the_keywords')}
                 onChange={onSearch}
@@ -323,9 +328,9 @@ const Playground: NextPage = () => {
               />
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className='flex items-center gap-4'>
               <Button
-                className="border-none text-white bg-button-gradient"
+                className='border-none text-white bg-button-gradient'
                 icon={<PlusOutlined />}
                 onClick={() => {
                   localStorage.removeItem('new_app_info');
@@ -337,7 +342,7 @@ const Playground: NextPage = () => {
             </div>
           </div>
           {loading && !apps.app_list.length ? (
-            <Spin size="large" className="flex items-center justify-center h-full" spinning={loading} />
+            <Spin size='large' className='flex items-center justify-center h-full' spinning={loading} />
           ) : (
             <>
               <InfiniteLoader
@@ -370,7 +375,9 @@ const Playground: NextPage = () => {
                   </AutoSizer>
                 )}
               </InfiniteLoader>
-              {loading && apps.app_list.length && <Spin className="flex items-end justify-center h-full" spinning={loading} />}
+              {loading && apps.app_list.length && (
+                <Spin className='flex items-end justify-center h-full' spinning={loading} />
+              )}
             </>
           )}
 

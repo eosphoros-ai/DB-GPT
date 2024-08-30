@@ -1,15 +1,17 @@
-import { hasSubset } from '../advisor/utils';
-import { processDateEncode, findNominalField, findOrdinalField, getLineSize, sortData } from './util';
-import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 import { Datum } from '@antv/ava';
+import { hasSubset } from '../advisor/utils';
+import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
+import { findNominalField, findOrdinalField, getLineSize, processDateEncode, sortData } from './util';
 
-const MULTI_MEASURE_LINE_CHART = 'multi_measure_line_chart'
+const MULTI_MEASURE_LINE_CHART = 'multi_measure_line_chart';
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
     // 优先确认 x 轴，如果没有枚举类型字段，取第一个字段为 x 轴
     const field4Nominal = findNominalField(dataProps) ?? findOrdinalField(dataProps) ?? dataProps[0];
-    // @ts-ignore
-    const field4Y = dataProps?.filter((field) => field.name !== field4Nominal?.name && hasSubset(field.levelOfMeasurements, ['Interval']));
+
+    const field4Y = dataProps?.filter(
+      field => field.name !== field4Nominal?.name && hasSubset(field.levelOfMeasurements, ['Interval']),
+    );
     if (!field4Nominal || !field4Y) return null;
 
     const spec: Specification = {
@@ -18,7 +20,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
       children: [],
     };
 
-    field4Y?.forEach((field) => {
+    field4Y?.forEach(field => {
       const singleLine: Specification = {
         type: 'line',
         encode: {

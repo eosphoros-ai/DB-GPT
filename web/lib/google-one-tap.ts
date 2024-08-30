@@ -20,6 +20,8 @@ export default function googleOneTap(
         ...otherOptions,
       });
       window.google.accounts.id.prompt();
-    } catch (error) {}
+    } catch {
+      /* empty */
+    }
   }
 }

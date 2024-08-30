@@ -17,7 +17,14 @@ interface Props {
   placeholder?: string;
 }
 
-function CompletionInput({ children, loading, onSubmit, handleFinish, placeholder, ...props }: PropsWithChildren<Props & TextAreaProps>) {
+function CompletionInput({
+  children,
+  loading,
+  onSubmit,
+  handleFinish,
+  placeholder,
+  ...props
+}: PropsWithChildren<Props & TextAreaProps>) {
   const { dbParam, scene } = useContext(ChatContext);
 
   const [userInput, setUserInput] = useState('');
@@ -39,7 +46,7 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, placeholde
         page_size: uploadCountRef.current,
       }),
     );
-    setDocuments(data?.data!);
+    setDocuments(data?.data || []);
   }
 
   const onUploadFinish = async () => {
@@ -48,21 +55,23 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, placeholde
   };
 
   return (
-    <div className="flex-1 relative">
+    <div className='flex-1 relative'>
       <DocList documents={documents} dbParam={dbParam} />
-      {showUpload && <DocUpload handleFinish={handleFinish} onUploadFinish={onUploadFinish} className="absolute z-10 top-2 left-2" />}
+      {showUpload && (
+        <DocUpload handleFinish={handleFinish} onUploadFinish={onUploadFinish} className='absolute z-10 top-2 left-2' />
+      )}
       <Input.TextArea
         className={`flex-1 ${showUpload ? 'pl-10' : ''} pr-10`}
-        size="large"
+        size='large'
         value={userInput}
         autoSize={{ minRows: 1, maxRows: 4 }}
         {...props}
-        onPressEnter={(e) => {
+        onPressEnter={e => {
           if (!userInput.trim()) return;
           if (e.keyCode === 13) {
             if (e.shiftKey) {
-              e.preventDefault()
-              setUserInput((state) => state + '\n');
+              e.preventDefault();
+              setUserInput(state => state + '\n');
               return;
             }
             onSubmit(userInput);
@@ -71,7 +80,7 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, placeholde
             }, 0);
           }
         }}
-        onChange={(e) => {
+        onChange={e => {
           if (typeof props.maxLength === 'number') {
             setUserInput(e.target.value.substring(0, props.maxLength));
             return;
@@ -81,9 +90,9 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, placeholde
         placeholder={placeholder}
       />
       <Button
-        className="ml-2 flex items-center justify-center absolute right-0 bottom-0"
-        size="large"
-        type="text"
+        className='ml-2 flex items-center justify-center absolute right-0 bottom-0'
+        size='large'
+        type='text'
         loading={loading}
         icon={<SendOutlined />}
         onClick={() => {
@@ -91,7 +100,7 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, placeholde
         }}
       />
       <PromptBot
-        submit={(prompt) => {
+        submit={prompt => {
           setUserInput(userInput + prompt);
         }}
       />

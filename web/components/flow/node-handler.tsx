@@ -1,12 +1,12 @@
+import { IFlowNode, IFlowNodeInput, IFlowNodeOutput, IFlowNodeParameter } from '@/types/flow';
+import { FLOW_NODES_KEY } from '@/utils';
+import { InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { Popconfirm, Tooltip, Typography, message } from 'antd';
+import classNames from 'classnames';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Connection, Handle, Position, useReactFlow } from 'reactflow';
 import RequiredIcon from './required-icon';
-import { InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { IFlowNode, IFlowNodeInput, IFlowNodeOutput, IFlowNodeParameter } from '@/types/flow';
-import { useTranslation } from 'react-i18next';
-import classNames from 'classnames';
-import { FLOW_NODES_KEY } from '@/utils';
 import StaticNodes from './static-nodes';
 
 interface NodeHandlerProps {
@@ -27,8 +27,8 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
     const { sourceHandle, targetHandle, source, target } = connection;
     const sourceNode = reactflow.getNode(source!);
     const targetNode = reactflow.getNode(target!);
-    const { flow_type: sourceFlowType } = sourceNode?.data;
-    const { flow_type: targetFlowType } = targetNode?.data;
+    const { flow_type: sourceFlowType } = sourceNode?.data ?? {};
+    const { flow_type: targetFlowType } = targetNode?.data ?? {};
     const sourceLabel = sourceHandle?.split('|')[1];
     const targetLabel = targetHandle?.split('|')[1];
     const sourceIndex = sourceHandle?.split('|')[2];
@@ -63,17 +63,23 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
       nodes = staticNodes
         .filter((node: IFlowNode) => node.flow_type === 'operator')
         .filter((node: IFlowNode) =>
-          node.outputs?.some((output: IFlowNodeOutput) => output.type_cls === typeCls && output.is_list === data?.is_list),
+          node.outputs?.some(
+            (output: IFlowNodeOutput) => output.type_cls === typeCls && output.is_list === data?.is_list,
+          ),
         );
     } else if (label === 'parameters') {
       // fint other resources and parent_cls including this parameter type_cls
-      nodes = staticNodes.filter((node: IFlowNode) => node.flow_type === 'resource').filter((node: IFlowNode) => node.parent_cls?.includes(typeCls));
+      nodes = staticNodes
+        .filter((node: IFlowNode) => node.flow_type === 'resource')
+        .filter((node: IFlowNode) => node.parent_cls?.includes(typeCls));
     } else if (label === 'outputs') {
       if (node.flow_type === 'operator') {
         // find other operators and inputs matching this output type_cls
         nodes = staticNodes
           .filter((node: IFlowNode) => node.flow_type === 'operator')
-          .filter((node: IFlowNode) => node.inputs?.some((input: IFlowNodeInput) => input.type_cls === typeCls && input.is_list === data?.is_list));
+          .filter((node: IFlowNode) =>
+            node.inputs?.some((input: IFlowNodeInput) => input.type_cls === typeCls && input.is_list === data?.is_list),
+          );
       } else if (node.flow_type === 'resource') {
         // find other resources or operators that this output parent_cls includes their type_cls
         nodes = staticNodes.filter(
@@ -98,7 +104,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
         type={type}
         position={type === 'source' ? Position.Right : Position.Left}
         id={`${node.id}|${label}|${index}`}
-        isValidConnection={(connection) => isValidConnection(connection)}
+        isValidConnection={connection => isValidConnection(connection)}
       />
       <Typography
         className={classNames('bg-white dark:bg-[#232734] w-full px-2 py-1 rounded text-neutral-500', {
@@ -106,39 +112,41 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
         })}
       >
         <Popconfirm
-          placement="left"
+          placement='left'
           icon={null}
           showCancel={false}
           okButtonProps={{ className: 'hidden' }}
           title={t('related_nodes')}
           description={
-            <div className="w-60">
+            <div className='w-60'>
               <StaticNodes nodes={relatedNodes} />
             </div>
           }
         >
-          {['inputs', 'parameters'].includes(label) && <PlusOutlined className="cursor-pointer" onClick={showRelatedNodes} />}
+          {['inputs', 'parameters'].includes(label) && (
+            <PlusOutlined className='cursor-pointer' onClick={showRelatedNodes} />
+          )}
         </Popconfirm>
         {label !== 'outputs' && <RequiredIcon optional={data.optional} />}
         {data.type_name}
         {data.description && (
           <Tooltip title={data.description}>
-            <InfoCircleOutlined className="ml-2 cursor-pointer" />
+            <InfoCircleOutlined className='ml-2 cursor-pointer' />
           </Tooltip>
         )}
         <Popconfirm
-          placement="right"
+          placement='right'
           icon={null}
           showCancel={false}
           okButtonProps={{ className: 'hidden' }}
           title={t('related_nodes')}
           description={
-            <div className="w-60">
+            <div className='w-60'>
               <StaticNodes nodes={relatedNodes} />
             </div>
           }
         >
-          {['outputs'].includes(label) && <PlusOutlined className="ml-2 cursor-pointer" onClick={showRelatedNodes} />}
+          {['outputs'].includes(label) && <PlusOutlined className='ml-2 cursor-pointer' onClick={showRelatedNodes} />}
         </Popconfirm>
       </Typography>
     </div>

@@ -1,56 +1,34 @@
 import { apiInterceptors, getFlowById } from '@/client/api';
 import MuiLoading from '@/components/common/loading';
-import AddNodes from '@/components/flow/add-nodes';
-import AddNodesSider from '@/components/flow/add-nodes-sider';
-import ButtonEdge from '@/components/flow/button-edge';
-import CanvasNode from '@/components/flow/canvas-node';
-import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import {
-  checkFlowDataRequied,
-  getUniqueNodeId,
-  mapUnderlineToHump,
-} from '@/utils/flow';
-import {
-  ExportOutlined,
-  FrownOutlined,
-  ImportOutlined,
-  SaveOutlined,
-} from '@ant-design/icons';
+import { ExportOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
 import { Divider, Space, Tooltip, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
-import React, {
-  DragEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactFlow, {
   Background,
   Connection,
   Controls,
+  Node,
   ReactFlowProvider,
   addEdge,
   useEdgesState,
   useNodesState,
   useReactFlow,
-  Node,
 } from 'reactflow';
+// import AddNodes from '@/components/flow/add-nodes';
+import AddNodesSider from '@/components/flow/add-nodes-sider';
+import ButtonEdge from '@/components/flow/button-edge';
+import { ExportFlowModal, ImportFlowModal, SaveFlowModal } from '@/components/flow/canvas-modal';
+import CanvasNode from '@/components/flow/canvas-node';
+import { IFlowData, IFlowUpdateParam } from '@/types/flow';
+import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
 import 'reactflow/dist/style.css';
-import {
-  SaveFlowModal,
-  ExportFlowModal,
-  ImportFlowModal,
-} from '@/components/flow/canvas-modal';
 
-interface Props {
-  // Define your component props here
-}
 const nodeTypes = { customNode: CanvasNode };
 const edgeTypes = { buttonedge: ButtonEdge };
 
-const Canvas: React.FC<Props> = () => {
+const Canvas: React.FC = () => {
   const { t } = useTranslation();
 
   const searchParams = useSearchParams();
@@ -94,9 +72,9 @@ const Canvas: React.FC<Props> = () => {
     };
   }, []);
 
-  function onNodesClick(event: any, clickedNode: Node) {
-    reactFlow.setNodes((nds) =>
-      nds.map((node) => {
+  function onNodesClick(_: any, clickedNode: Node) {
+    reactFlow.setNodes(nds =>
+      nds.map(node => {
         if (node.id === clickedNode.id) {
           node.data = {
             ...node.data,
@@ -109,7 +87,7 @@ const Canvas: React.FC<Props> = () => {
           };
         }
         return node;
-      })
+      }),
     );
   }
 
@@ -119,18 +97,16 @@ const Canvas: React.FC<Props> = () => {
       type: 'buttonedge',
       id: `${connection.source}|${connection.target}`,
     };
-    setEdges((eds) => addEdge(newEdge, eds));
+    setEdges(eds => addEdge(newEdge, eds));
   }
 
   const onDrop = useCallback(
     (event: DragEvent) => {
       event.preventDefault();
       const reactFlowBounds = reactFlowWrapper.current!.getBoundingClientRect();
-      const sidebarWidth = (
-        document.getElementsByClassName('ant-layout-sider')?.[0] as HTMLElement
-      )?.offsetWidth; // get sidebar width
+      const sidebarWidth = (document.getElementsByClassName('ant-layout-sider')?.[0] as HTMLElement)?.offsetWidth; // get sidebar width
 
-      let nodeStr = event.dataTransfer.getData('application/reactflow');
+      const nodeStr = event.dataTransfer.getData('application/reactflow');
       if (!nodeStr || typeof nodeStr === 'undefined') {
         return;
       }
@@ -148,8 +124,8 @@ const Canvas: React.FC<Props> = () => {
         type: 'customNode',
         data: nodeData,
       };
-      setNodes((nds) =>
-        nds.concat(newNode).map((node) => {
+      setNodes(nds =>
+        nds.concat(newNode).map(node => {
           if (node.id === newNode.id) {
             node.data = {
               ...node.data,
@@ -162,10 +138,10 @@ const Canvas: React.FC<Props> = () => {
             };
           }
           return node;
-        })
+        }),
       );
     },
-    [reactFlow]
+    [reactFlow],
   );
 
   const onDragOver = useCallback((event: DragEvent) => {
@@ -177,8 +153,8 @@ const Canvas: React.FC<Props> = () => {
     const flowData = reactFlow.toObject() as IFlowData;
     const [check, node, message] = checkFlowDataRequied(flowData);
     if (!check && message) {
-      setNodes((nds) =>
-        nds.map((item) => {
+      setNodes(nds =>
+        nds.map(item => {
           if (item.id === node?.id) {
             item.data = {
               ...item.data,
@@ -191,7 +167,7 @@ const Canvas: React.FC<Props> = () => {
             };
           }
           return item;
-        })
+        }),
       );
       return notification.error({
         message: 'Error',
@@ -268,10 +244,7 @@ const Canvas: React.FC<Props> = () => {
               fitView
               deleteKeyCode={['Backspace', 'Delete']}
             >
-              <Controls
-                className='flex flex-row items-center'
-                position='bottom-center'
-              />
+              <Controls className='flex flex-row items-center' position='bottom-center' />
               <Background color='#aaa' gap={16} />
               {/* <AddNodes /> */}
             </ReactFlow>

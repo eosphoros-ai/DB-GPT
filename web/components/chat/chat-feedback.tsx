@@ -1,28 +1,28 @@
-import React, { useState, useRef, useCallback, useEffect, useContext } from 'react';
-import { MoreHoriz, CloseRounded } from '@mui/icons-material';
+import { ChatContext } from '@/app/chat-context';
+import { apiInterceptors, getChatFeedBackItme, postChatFeedBackForm } from '@/client/api';
+import { FeedBack } from '@/types/chat';
+import { ChatFeedBackSchema } from '@/types/db';
+import { CloseRounded, MoreHoriz } from '@mui/icons-material';
 import {
-  MenuButton,
-  Button,
-  Menu,
-  MenuItem,
-  Dropdown,
   Box,
+  Button,
+  Dropdown,
   Grid,
   IconButton,
-  Slider,
-  Select,
+  Menu,
+  MenuButton,
+  MenuItem,
   Option,
+  Select,
+  Sheet,
+  Slider,
   Textarea,
   Typography,
   styled,
-  Sheet,
 } from '@mui/joy';
-import { message, Tooltip } from 'antd';
-import { apiInterceptors, getChatFeedBackItme, postChatFeedBackForm } from '@/client/api';
-import { ChatContext } from '@/app/chat-context';
-import { ChatFeedBackSchema } from '@/types/db';
+import { Tooltip, message } from 'antd';
+import { useCallback, useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FeedBack } from '@/types/chat';
 
 type Props = {
   conv_index: number;
@@ -41,16 +41,16 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
   const [messageApi, contextHolder] = message.useMessage();
 
   const handleOpenChange = useCallback(
-    (event: any, isOpen: boolean) => {
+    (_: any, isOpen: boolean) => {
       if (isOpen) {
         apiInterceptors(getChatFeedBackItme(chatId, conv_index))
-          .then((res) => {
+          .then(res => {
             const finddata = res[1] ?? {};
             setQuesType(finddata.ques_type ?? '');
             setScore(parseInt(finddata.score ?? '4'));
             setText(finddata.messages ?? '');
           })
-          .catch((err) => {
+          .catch(err => {
             console.log(err);
           });
       } else {
@@ -102,16 +102,16 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
       ques_type: ques_type,
       messages: text,
     };
-    console.log(formData);
+
     apiInterceptors(
       postChatFeedBackForm({
         data: formData,
       }),
     )
-      .then((res) => {
+      .then(_ => {
         messageApi.open({ type: 'success', content: 'save success' });
       })
-      .catch((err) => {
+      .catch(_ => {
         messageApi.open({ type: 'error', content: 'save error' });
       });
   };
@@ -119,7 +119,11 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
     <Dropdown onOpenChange={handleOpenChange}>
       {contextHolder}
       <Tooltip title={t('Rating')}>
-        <MenuButton slots={{ root: IconButton }} slotProps={{ root: { variant: 'plain', color: 'primary' } }} sx={{ borderRadius: 40 }}>
+        <MenuButton
+          slots={{ root: IconButton }}
+          slotProps={{ root: { variant: 'plain', color: 'primary' } }}
+          sx={{ borderRadius: 40 }}
+        >
           <MoreHoriz />
         </MenuButton>
       </Tooltip>
@@ -143,17 +147,17 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                 <Select
                   action={action}
                   value={ques_type}
-                  placeholder="Choose one…"
-                  onChange={(event, newValue) => setQuesType(newValue ?? '')}
+                  placeholder='Choose one…'
+                  onChange={(_, newValue) => setQuesType(newValue ?? '')}
                   {...(ques_type && {
                     // display the button and remove select indicator
                     // when user has selected a value
                     endDecorator: (
                       <IconButton
-                        size="sm"
-                        variant="plain"
-                        color="neutral"
-                        onMouseDown={(event) => {
+                        size='sm'
+                        variant='plain'
+                        color='neutral'
+                        onMouseDown={event => {
                           // don't open the popup when clicking on this button
                           event.stopPropagation();
                         }}
@@ -170,7 +174,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   sx={{ width: '100%' }}
                 >
                   {select_param &&
-                    Object.keys(select_param)?.map((paramItem) => (
+                    Object.keys(select_param)?.map(paramItem => (
                       <Option key={paramItem} value={paramItem}>
                         {select_param[paramItem]}
                       </Option>
@@ -185,8 +189,8 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                         <div>{t('feed_back_desc')}</div>
                       </Box>
                     }
-                    variant="solid"
-                    placement="left"
+                    variant='solid'
+                    placement='left'
                   >
                     {t('Q_A_Rating')}
                   </Tooltip>
@@ -194,15 +198,15 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
               </Grid>
               <Grid xs={10} sx={{ pl: 0, ml: 0 }}>
                 <Slider
-                  aria-label="Custom"
+                  aria-label='Custom'
                   step={1}
                   min={0}
                   max={5}
                   valueLabelFormat={valueText}
-                  valueLabelDisplay="on"
+                  valueLabelDisplay='on'
                   marks={marks}
                   sx={{ width: '90%', pt: 3, m: 2, ml: 1 }}
-                  onChange={(event) => setScore(event.target?.value)}
+                  onChange={event => setScore(event.target?.value)}
                   value={score}
                 />
               </Grid>
@@ -210,11 +214,11 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                 <Textarea
                   placeholder={t('Please_input_the_text')}
                   value={text}
-                  onChange={(event) => setText(event.target.value)}
+                  onChange={event => setText(event.target.value)}
                   minRows={2}
                   maxRows={4}
                   endDecorator={
-                    <Typography level="body-xs" sx={{ ml: 'auto' }}>
+                    <Typography level='body-xs' sx={{ ml: 'auto' }}>
                       {t('input_count') + text.length + t('input_unit')}
                     </Typography>
                   }
@@ -222,7 +226,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                 />
               </Grid>
               <Grid xs={13}>
-                <Button type="submit" variant="outlined" sx={{ width: '100%', height: '100%' }}>
+                <Button type='submit' variant='outlined' sx={{ width: '100%', height: '100%' }}>
                   {t('submit')}
                 </Button>
               </Grid>

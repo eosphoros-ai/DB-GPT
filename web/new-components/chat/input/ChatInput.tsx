@@ -44,10 +44,10 @@ function ChatInput() {
     >
       <Input.TextArea
         placeholder={t('input_tips')}
-        className="w-full resize-none border-0 p-0 focus:shadow-none"
+        className='w-full resize-none border-0 p-0 focus:shadow-none'
         value={userInput}
         autoSize={{ minRows: 1 }}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === 'Enter') {
             if (e.shiftKey) {
               return;
@@ -62,7 +62,7 @@ function ChatInput() {
             onSubmit();
           }
         }}
-        onChange={(e) => {
+        onChange={e => {
           setUserInput(e.target.value);
         }}
         onFocus={() => {
@@ -73,7 +73,7 @@ function ChatInput() {
         onCompositionEnd={() => setIsZhInput(false)}
       />
       <Button
-        type="primary"
+        type='primary'
         className={cls('flex items-center justify-center w-14 h-8 rounded-lg text-sm  bg-button-gradient border-0', {
           'opacity-40 cursor-not-allowed': !userInput.trim(),
         })}

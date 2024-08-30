@@ -28,8 +28,10 @@ export interface PromptTemplateProps {
   target: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface PromptTemplateLoadProps extends PromptTemplateProps {}
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface PromptResponseVerifyProps {}
 
 export interface PromptTemplateLoadResponse {

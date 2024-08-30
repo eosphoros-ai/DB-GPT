@@ -1,6 +1,6 @@
 import { BackEndChartType } from '@/components/chart';
-import ChartView from './chart-view';
 import { Datum } from '@antv/ava';
+import ChartView from './chart-view';
 
 interface Props {
   data: {

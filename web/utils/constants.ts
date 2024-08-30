@@ -25,10 +25,10 @@ export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> 
   tongyi_proxyllm: { label: 'tongyi_proxyllm', icon: '/models/qwen2.png' },
   zhipu_proxyllm: { label: 'zhipu_proxyllm', icon: '/models/zhipu.png' },
   yi_proxyllm: { label: 'yi_proxyllm', icon: '/models/yi.svg' },
-  "yi-34b-chat": { label: 'yi-34b-chat', icon: '/models/yi.svg' },
-  "yi-34b-chat-8bits": { label: 'yi-34b-chat-8bits', icon: '/models/yi.svg' },
-  "yi-34b-chat-4bits": { label: 'yi-34b-chat-4bits', icon: '/models/yi.svg' },
-  "yi-6b-chat": { label: 'yi-6b-chat', icon: '/models/yi.svg' },
+  'yi-34b-chat': { label: 'yi-34b-chat', icon: '/models/yi.svg' },
+  'yi-34b-chat-8bits': { label: 'yi-34b-chat-8bits', icon: '/models/yi.svg' },
+  'yi-34b-chat-4bits': { label: 'yi-34b-chat-4bits', icon: '/models/yi.svg' },
+  'yi-6b-chat': { label: 'yi-6b-chat', icon: '/models/yi.svg' },
   bailing_proxyllm: { label: 'bailing_proxyllm', icon: '/models/bailing.svg' },
   antglm_proxyllm: { label: 'antglm_proxyllm', icon: '/models/huggingface.svg' },
   chatglm_proxyllm: { label: 'chatglm_proxyllm', icon: '/models/chatglm.png' },
@@ -72,26 +72,86 @@ export const MODEL_ICON_DICT: Record<string, string> = {
   baichuan: '/models/baichuan.png',
   wizardlm: '/models/wizardlm.png',
   internlm: '/models/internlm.png',
-  solar:'/models/solar_logo.png'
+  solar: '/models/solar_logo.png',
 };
 
 export const dbMapper: Record<DBType, { label: string; icon: string; desc: string }> = {
-  mysql: { label: 'MySQL', icon: '/icons/mysql.png', desc: 'Fast, reliable, scalable open-source relational database management system.' },
-  oceanbase: { label: 'OceanBase', icon: '/icons/oceanbase.png', desc: 'An Ultra-Fast & Cost-Effective Distributed SQL Database.' },
-  mssql: { label: 'MSSQL', icon: '/icons/mssql.png', desc: 'Powerful, scalable, secure relational database system by Microsoft.' },
-  duckdb: { label: 'DuckDB', icon: '/icons/duckdb.png', desc: 'In-memory analytical database with efficient query processing.' },
-  sqlite: { label: 'Sqlite', icon: '/icons/sqlite.png', desc: 'Lightweight embedded relational database with simplicity and portability.' },
-  clickhouse: { label: 'ClickHouse', icon: '/icons/clickhouse.png', desc: 'Columnar database for high-performance analytics and real-time queries.' },
-  oracle: { label: 'Oracle', icon: '/icons/oracle.png', desc: 'Robust, scalable, secure relational database widely used in enterprises.' },
-  access: { label: 'Access', icon: '/icons/access.png', desc: 'Easy-to-use relational database for small-scale applications by Microsoft.' },
-  mongodb: { label: 'MongoDB', icon: '/icons/mongodb.png', desc: 'Flexible, scalable NoSQL document database for web and mobile apps.' },
-  doris: { label: 'ApacheDoris', icon: '/icons/doris.png', desc: 'A new-generation open-source real-time data warehouse.' },
-  starrocks: { label: 'StarRocks', icon: '/icons/starrocks.png', desc: 'An Open-Source, High-Performance Analytical Database.' },
+  mysql: {
+    label: 'MySQL',
+    icon: '/icons/mysql.png',
+    desc: 'Fast, reliable, scalable open-source relational database management system.',
+  },
+  oceanbase: {
+    label: 'OceanBase',
+    icon: '/icons/oceanbase.png',
+    desc: 'An Ultra-Fast & Cost-Effective Distributed SQL Database.',
+  },
+  mssql: {
+    label: 'MSSQL',
+    icon: '/icons/mssql.png',
+    desc: 'Powerful, scalable, secure relational database system by Microsoft.',
+  },
+  duckdb: {
+    label: 'DuckDB',
+    icon: '/icons/duckdb.png',
+    desc: 'In-memory analytical database with efficient query processing.',
+  },
+  sqlite: {
+    label: 'Sqlite',
+    icon: '/icons/sqlite.png',
+    desc: 'Lightweight embedded relational database with simplicity and portability.',
+  },
+  clickhouse: {
+    label: 'ClickHouse',
+    icon: '/icons/clickhouse.png',
+    desc: 'Columnar database for high-performance analytics and real-time queries.',
+  },
+  oracle: {
+    label: 'Oracle',
+    icon: '/icons/oracle.png',
+    desc: 'Robust, scalable, secure relational database widely used in enterprises.',
+  },
+  access: {
+    label: 'Access',
+    icon: '/icons/access.png',
+    desc: 'Easy-to-use relational database for small-scale applications by Microsoft.',
+  },
+  mongodb: {
+    label: 'MongoDB',
+    icon: '/icons/mongodb.png',
+    desc: 'Flexible, scalable NoSQL document database for web and mobile apps.',
+  },
+  doris: {
+    label: 'ApacheDoris',
+    icon: '/icons/doris.png',
+    desc: 'A new-generation open-source real-time data warehouse.',
+  },
+  starrocks: {
+    label: 'StarRocks',
+    icon: '/icons/starrocks.png',
+    desc: 'An Open-Source, High-Performance Analytical Database.',
+  },
   db2: { label: 'DB2', icon: '/icons/db2.png', desc: 'Scalable, secure relational database system developed by IBM.' },
-  hbase: { label: 'HBase', icon: '/icons/hbase.png', desc: 'Distributed, scalable NoSQL database for large structured/semi-structured data.' },
-  redis: { label: 'Redis', icon: '/icons/redis.png', desc: 'Fast, versatile in-memory data structure store as cache, DB, or broker.' },
-  cassandra: { label: 'Cassandra', icon: '/icons/cassandra.png', desc: 'Scalable, fault-tolerant distributed NoSQL database for large data.' },
-  couchbase: { label: 'Couchbase', icon: '/icons/couchbase.png', desc: 'High-performance NoSQL document database with distributed architecture.' },
+  hbase: {
+    label: 'HBase',
+    icon: '/icons/hbase.png',
+    desc: 'Distributed, scalable NoSQL database for large structured/semi-structured data.',
+  },
+  redis: {
+    label: 'Redis',
+    icon: '/icons/redis.png',
+    desc: 'Fast, versatile in-memory data structure store as cache, DB, or broker.',
+  },
+  cassandra: {
+    label: 'Cassandra',
+    icon: '/icons/cassandra.png',
+    desc: 'Scalable, fault-tolerant distributed NoSQL database for large data.',
+  },
+  couchbase: {
+    label: 'Couchbase',
+    icon: '/icons/couchbase.png',
+    desc: 'High-performance NoSQL document database with distributed architecture.',
+  },
   omc: { label: 'Omc', icon: '/icons/odc.png', desc: 'Omc meta data.' },
   postgresql: {
     label: 'PostgreSQL',
@@ -106,5 +166,9 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
   spark: { label: 'Spark', icon: '/icons/spark.png', desc: 'Unified engine for large-scale data analytics.' },
   hive: { label: 'Hive', icon: '/icons/hive.png', desc: 'A distributed fault-tolerant data warehouse system.' },
   space: { label: 'Space', icon: '/icons/knowledge.png', desc: 'knowledge analytics.' },
-  tugraph:{label: 'TuGraph', icon: '/icons/tugraph.png', desc: 'TuGraph is a high-performance graph database jointly developed by Ant Group and Tsinghua University.' }
+  tugraph: {
+    label: 'TuGraph',
+    icon: '/icons/tugraph.png',
+    desc: 'TuGraph is a high-performance graph database jointly developed by Ant Group and Tsinghua University.',
+  },
 };
