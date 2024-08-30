@@ -1,16 +1,14 @@
-import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, getDbList, getDbSupportType, newDialogue, postDbDelete } from '@/client/api';
+import { apiInterceptors, getDbList, getDbSupportType, postDbDelete } from '@/client/api';
 import GPTCard from '@/components/common/gpt-card';
 import MuiLoading from '@/components/common/loading';
 import FormDialog from '@/components/database/form-dialog';
 import ConstructLayout from '@/new-components/layout/Construct';
-import { DBOption, DBType, DbListResponse, DbSupportTypeResponse, IChatDbSchema } from '@/types/db';
+import { DBOption, DBType, DbListResponse, DbSupportTypeResponse } from '@/types/db';
 import { dbMapper } from '@/utils';
 import { DeleteFilled, EditFilled, PlusOutlined } from '@ant-design/icons';
 import { useAsyncEffect } from 'ahooks';
 import { Badge, Button, Card, Drawer, Empty, Modal, message } from 'antd';
-import { useRouter } from 'next/router';
-import { useContext, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type DBItem = DbListResponse[0];
@@ -20,9 +18,9 @@ export function isFileDb(dbTypeList: DBOption[], dbType: DBType) {
 }
 
 function Database() {
-  const { setCurrentDialogInfo } = useContext(ChatContext);
+  // const { setCurrentDialogInfo } = useContext(ChatContext);  // unused
+  // const router = useRouter(); // unused
   const { t } = useTranslation();
-  const router = useRouter();
 
   const [dbList, setDbList] = useState<DbListResponse>([]);
   const [dbSupportList, setDbSupportList] = useState<DbSupportTypeResponse>([]);
@@ -125,28 +123,29 @@ function Database() {
     });
   };
 
-  const handleChat = async (item: IChatDbSchema) => {
-    const [, data] = await apiInterceptors(
-      newDialogue({
-        chat_mode: 'chat_with_db_execute',
-      }),
-    );
-    // 知识库对话都默认私有知识库应用下
-    if (data?.conv_uid) {
-      setCurrentDialogInfo?.({
-        chat_scene: data.chat_mode,
-        app_code: data.chat_mode,
-      });
-      localStorage.setItem(
-        'cur_dialog_info',
-        JSON.stringify({
-          chat_scene: data.chat_mode,
-          app_code: data.chat_mode,
-        }),
-      );
-      router.push(`/chat?scene=chat_with_db_execute&id=${data?.conv_uid}&db_name=${item.db_name}`);
-    }
-  };
+  // TODO: unused function call
+  // const handleChat = async (item: IChatDbSchema) => {
+  //   const [, data] = await apiInterceptors(
+  //     newDialogue({
+  //       chat_mode: 'chat_with_db_execute',
+  //     }),
+  //   );
+  //   // 知识库对话都默认私有知识库应用下
+  //   if (data?.conv_uid) {
+  //     setCurrentDialogInfo?.({
+  //       chat_scene: data.chat_mode,
+  //       app_code: data.chat_mode,
+  //     });
+  //     localStorage.setItem(
+  //       'cur_dialog_info',
+  //       JSON.stringify({
+  //         chat_scene: data.chat_mode,
+  //         app_code: data.chat_mode,
+  //       }),
+  //     );
+  //     router.push(`/chat?scene=chat_with_db_execute&id=${data?.conv_uid}&db_name=${item.db_name}`);
+  //   }
+  // };
 
   return (
     <ConstructLayout>
