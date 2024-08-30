@@ -168,6 +168,7 @@ class AutoPlanChatManager(ManagerAgent):
             )
         speaker: Agent = sender
         final_message = message.content
+        rounds = message.rounds
         for i in range(self.max_round):
             if not self.memory:
                 return ActionOutput(
@@ -196,11 +197,12 @@ class AutoPlanChatManager(ManagerAgent):
 
                 plan_message = await planner.generate_reply(
                     received_message=AgentMessage.from_llm_message(
-                        {"content": message.content}
+                        {"content": message.content, "rounds": rounds}
                     ),
                     sender=self,
                     reviewer=reviewer,
                 )
+                rounds = plan_message.rounds
                 await planner.send(
                     message=plan_message, recipient=self, request_reply=False
                 )
@@ -228,6 +230,7 @@ class AutoPlanChatManager(ManagerAgent):
                                 "plan_task": now_plan.sub_task_content,
                                 "plan_task_num": now_plan.sub_task_num,
                             },
+                            rounds=rounds + 1,
                         )
                         # select the next speaker
                         speaker, model = await self.select_speaker(
@@ -264,6 +267,7 @@ class AutoPlanChatManager(ManagerAgent):
                         await speaker.send(
                             agent_reply_message, self, reviewer, request_reply=False
                         )
+                        rounds = agent_reply_message.rounds
 
                         plan_result = ""
                         final_message = reply_message["content"]

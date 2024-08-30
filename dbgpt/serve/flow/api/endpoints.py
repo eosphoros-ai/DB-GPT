@@ -153,7 +153,10 @@ async def update(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.update_flow(request))
+    try:
+        return Result.succ(service.update_flow(request))
+    except Exception as e:
+        return Result.failed(msg=str(e))
 
 
 @router.delete("/flows/{uid}")

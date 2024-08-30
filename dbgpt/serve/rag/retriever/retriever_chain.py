@@ -46,9 +46,7 @@ class RetrieverChain(BaseRetriever):
             List[Chunk]: list of chunks
         """
         for retriever in self._retrievers:
-            candidates = await retriever.aretrieve(
-                query=query, filters=filters
-            )
+            candidates = await retriever.aretrieve(query=query, filters=filters)
             if candidates:
                 return candidates
         return []
