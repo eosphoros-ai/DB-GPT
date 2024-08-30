@@ -1,4 +1,12 @@
-import { ColorfulChat, ColorfulDB, ColorfulDashboard, ColorfulData, ColorfulDoc, ColorfulExcel, ColorfulPlugin } from '@/components/icons';
+import {
+  ColorfulChat,
+  ColorfulDB,
+  ColorfulDashboard,
+  ColorfulData,
+  ColorfulDoc,
+  ColorfulExcel,
+  ColorfulPlugin,
+} from '@/components/icons';
 import Icon from '@ant-design/icons';
 import React, { useCallback } from 'react';
 

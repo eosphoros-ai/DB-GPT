@@ -1,4 +1,4 @@
-import { apiInterceptors, feedbackAdd, getFeedbackReasons, cancelFeedback } from '@/client/api';
+import { apiInterceptors, cancelFeedback, feedbackAdd, getFeedbackReasons } from '@/client/api';
 import { CopyOutlined, DislikeOutlined, LikeOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Button, Divider, Input, Popover, Tag, message } from 'antd';
@@ -16,7 +16,11 @@ interface Tags {
 const DislikeContent: React.FC<{
   list: Tags[];
   loading: boolean;
-  feedback: (params: { feedback_type: string; reason_types?: string[] | undefined; remark?: string | undefined }) => void;
+  feedback: (params: {
+    feedback_type: string;
+    reason_types?: string[] | undefined;
+    remark?: string | undefined;
+  }) => void;
   setFeedbackOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }> = ({ list, loading, feedback, setFeedbackOpen }) => {
   const { t } = useTranslation();
@@ -24,17 +28,17 @@ const DislikeContent: React.FC<{
   const [remark, setRemark] = useState('');
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-1 flex-wrap w-72">
-        {list?.map((item) => {
-          const isSelect = selectedTags.findIndex((tag) => tag.reason_type === item.reason_type) > -1;
+    <div className='flex flex-col'>
+      <div className='flex flex-1 flex-wrap w-72'>
+        {list?.map(item => {
+          const isSelect = selectedTags.findIndex(tag => tag.reason_type === item.reason_type) > -1;
           return (
             <Tag
               key={item.reason_type}
               className={`text-xs text-[#525964] mb-2 p-1 px-2 rounded-md cursor-pointer ${isSelect ? 'border-[#0c75fc] text-[#0c75fc]' : ''}`}
               onClick={() => {
                 setSelectedTags((preArr: Tags[]) => {
-                  const index = preArr.findIndex((tag) => tag.reason_type === item.reason_type);
+                  const index = preArr.findIndex(tag => tag.reason_type === item.reason_type);
                   if (index > -1) {
                     return [...preArr.slice(0, index), ...preArr.slice(index + 1)];
                   }
@@ -49,13 +53,13 @@ const DislikeContent: React.FC<{
       </div>
       <Input.TextArea
         placeholder={t('feedback_tip')}
-        className="w-64 h-20 resize-none mb-2"
+        className='w-64 h-20 resize-none mb-2'
         value={remark}
-        onChange={(e) => setRemark(e.target.value.trim())}
+        onChange={e => setRemark(e.target.value.trim())}
       />
-      <div className="flex gap-2 justify-end">
+      <div className='flex gap-2 justify-end'>
         <Button
-          className="w-16 h-8"
+          className='w-16 h-8'
           onClick={() => {
             setFeedbackOpen(false);
           }}
@@ -63,10 +67,10 @@ const DislikeContent: React.FC<{
           取消
         </Button>
         <Button
-          type="primary"
-          className="min-w-16 h-8"
+          type='primary'
+          className='min-w-16 h-8'
           onClick={async () => {
-            const reason_types = selectedTags.map((item) => item.reason_type);
+            const reason_types = selectedTags.map(item => item.reason_type);
             await feedback?.({
               feedback_type: 'unlike',
               reason_types,
@@ -122,7 +126,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
       ),
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
         message.success('反馈成功');
@@ -134,7 +138,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
   // 反馈原因类型
   const { run: getReasonList } = useRequest(async () => await apiInterceptors(getFeedbackReasons()), {
     manual: true,
-    onSuccess: (data) => {
+    onSuccess: data => {
       const [, res] = data;
       setList(res || []);
       if (res) {
@@ -144,22 +148,25 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
   });
 
   // 取消反馈
-  const { run: cancel } = useRequest(async () => await apiInterceptors(cancelFeedback({ conv_uid: chatId, message_id: content?.order + '' })), {
-    manual: true,
-    onSuccess: (data) => {
-      const [, res] = data;
-      if (res) {
-        setStatus('none');
-        message.success('操作成功');
-      }
+  const { run: cancel } = useRequest(
+    async () => await apiInterceptors(cancelFeedback({ conv_uid: chatId, message_id: content?.order + '' })),
+    {
+      manual: true,
+      onSuccess: data => {
+        const [, res] = data;
+        if (res) {
+          setStatus('none');
+          message.success('操作成功');
+        }
+      },
     },
-  });
+  );
 
   return (
     <>
       {contextHolder}
-      <div className="flex flex-1 items-center text-sm px-4">
-        <div className="flex gap-3">
+      <div className='flex flex-1 items-center text-sm px-4'>
+        <div className='flex gap-3'>
           <LikeOutlined
             className={classNames('cursor-pointer', { 'text-[#0C75FC]': status === 'like' })}
             onClick={async () => {
@@ -171,11 +178,18 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
             }}
           />
           <Popover
-            placement="bottom"
+            placement='bottom'
             autoAdjustOverflow
             destroyTooltipOnHide={true}
-            content={<DislikeContent setFeedbackOpen={setFeedbackOpen} feedback={feedback} list={list || []} loading={loading} />}
-            trigger="click"
+            content={
+              <DislikeContent
+                setFeedbackOpen={setFeedbackOpen}
+                feedback={feedback}
+                list={list || []}
+                loading={loading}
+              />
+            }
+            trigger='click'
             open={feedbackOpen}
           >
             <DislikeOutlined
@@ -192,8 +206,8 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
             />
           </Popover>
         </div>
-        <Divider type="vertical" />
-        <CopyOutlined className="cursor-pointer" onClick={() => onCopyContext(content.context)} />
+        <Divider type='vertical' />
+        <CopyOutlined className='cursor-pointer' onClick={() => onCopyContext(content.context)} />
       </div>
     </>
   );

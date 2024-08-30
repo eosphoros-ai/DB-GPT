@@ -49,7 +49,10 @@ export const deletePrompt = (data: OperatePromptParams) => {
  * prompt列表
  */
 export const getPromptList = (data: Record<string, any>) => {
-  return POST<Record<string, any>, PromptListResponse>(`/prompt/query_page?page=${data.page}&page_size=${data.page_size}`, data);
+  return POST<Record<string, any>, PromptListResponse>(
+    `/prompt/query_page?page=${data.page}&page_size=${data.page_size}`,
+    data,
+  );
 };
 
 /**
