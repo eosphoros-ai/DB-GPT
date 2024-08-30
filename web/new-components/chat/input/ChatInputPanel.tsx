@@ -10,11 +10,19 @@ import ToolsBar from './ToolsBar';
 
 const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
   const { t } = useTranslation();
-  const { scrollRef, replyLoading, handleChat, appInfo, currentDialogue, temperatureValue, resourceValue, refreshDialogList } =
-    useContext(ChatContentContext);
+  const {
+    scrollRef,
+    replyLoading,
+    handleChat,
+    appInfo,
+    currentDialogue,
+    temperatureValue,
+    resourceValue,
+    refreshDialogList,
+  } = useContext(ChatContentContext);
 
   const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
+  // const scene = searchParams?.get('scene') ?? ''; // unused
   const select_param = searchParams?.get('select_param') ?? '';
 
   const [userInput, setUserInput] = useState<string>('');
@@ -24,7 +32,7 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
   const submitCountRef = useRef(0);
 
   const paramKey: string[] = useMemo(() => {
-    return appInfo.param_need?.map((i) => i.type) || [];
+    return appInfo.param_need?.map(i => i.type) || [];
   }, [appInfo.param_need]);
 
   const onSubmit = async () => {
@@ -41,7 +49,10 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
       ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
       select_param,
       ...(paramKey.includes('resource') && {
-        select_param: typeof resourceValue === 'string' ? resourceValue : JSON.stringify(resourceValue) || currentDialogue.select_param,
+        select_param:
+          typeof resourceValue === 'string'
+            ? resourceValue
+            : JSON.stringify(resourceValue) || currentDialogue.select_param,
       }),
     });
     // 如果应用进来第一次对话，刷新对话列表
@@ -51,19 +62,19 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
   };
 
   return (
-    <div className="flex flex-col w-5/6 mx-auto pt-4 pb-6 bg-transparent">
+    <div className='flex flex-col w-5/6 mx-auto pt-4 pb-6 bg-transparent'>
       <div
         className={`flex flex-1 flex-col bg-white dark:bg-[rgba(255,255,255,0.16)] px-5 py-4 pt-2 rounded-xl relative border-t border-b border-l border-r dark:border-[rgba(255,255,255,0.6)] ${
           isFocus ? 'border-[#0c75fc]' : ''
         }`}
-        id="input-panel"
+        id='input-panel'
       >
         <ToolsBar ctrl={ctrl} />
         <Input.TextArea
           placeholder={t('input_tips')}
-          className="w-full h-20 resize-none border-0 p-0 focus:shadow-none dark:bg-transparent"
+          className='w-full h-20 resize-none border-0 p-0 focus:shadow-none dark:bg-transparent'
           value={userInput}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               if (e.shiftKey) {
                 return;
@@ -78,7 +89,7 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
               onSubmit();
             }
           }}
-          onChange={(e) => {
+          onChange={e => {
             setUserInput(e.target.value);
           }}
           onFocus={() => {
@@ -89,7 +100,7 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
           onCompositionEnd={() => setIsZhInput(false)}
         />
         <Button
-          type="primary"
+          type='primary'
           className={classNames(
             'flex items-center justify-center w-14 h-8 rounded-lg text-sm absolute right-4 bottom-3 bg-button-gradient border-0',
             {
@@ -103,7 +114,11 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
             onSubmit();
           }}
         >
-          {replyLoading ? <Spin spinning={replyLoading} indicator={<LoadingOutlined className="text-white" />} /> : t('sent')}
+          {replyLoading ? (
+            <Spin spinning={replyLoading} indicator={<LoadingOutlined className='text-white' />} />
+          ) : (
+            t('sent')
+          )}
         </Button>
       </div>
     </div>

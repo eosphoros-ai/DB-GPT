@@ -1,16 +1,16 @@
-import { getUserId } from '@/utils';
-import { GET, POST, DELETE } from '../index';
 import type {
-  getDataSetsRequest,
-  getEvaluationsRequest,
+  createEvaluationsRequest,
   delDataSetRequest,
   delEvaluationRequest,
-  uploadDataSetsRequest,
-  createEvaluationsRequest,
+  downloadEvaluationRequest,
+  getDataSetsRequest,
+  getEvaluationsRequest,
   getMetricsRequest,
   updateDataSetRequest,
-  downloadEvaluationRequest,
+  uploadDataSetsRequest,
 } from '@/types/evaluate';
+import { getUserId } from '@/utils';
+import { DELETE, GET, POST } from '../index';
 
 export const getTestAuth = () => {
   return GET(`/api/v1/evaluate/test_auth`);
@@ -100,11 +100,15 @@ export const getMetrics = (data: getMetricsRequest) => {
   });
 };
 export const showEvaluation = (data: Partial<createEvaluationsRequest>) => {
-  return GET<Partial<createEvaluationsRequest>, Record<string, any>[]>(`/api/v1/evaluate/evaluation/detail/show`, data, {
-    headers: {
-      'user-id': userId,
+  return GET<Partial<createEvaluationsRequest>, Record<string, any>[]>(
+    `/api/v1/evaluate/evaluation/detail/show`,
+    data,
+    {
+      headers: {
+        'user-id': userId,
+      },
     },
-  });
+  );
 };
 export const getStorageTypes = () => {
   return GET<undefined, Record<string, any>>(`/api/v1/evaluate/storage/types`, undefined, {

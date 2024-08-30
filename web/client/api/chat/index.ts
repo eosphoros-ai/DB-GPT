@@ -36,5 +36,8 @@ export const cancelFeedback = (data: CancelFeedbackAddParams) => {
  * 终止话题
  */
 export const stopTopic = (data: StopTopicParams) => {
-  return POST<StopTopicParams, null>(`/api/v1/chat/topic/terminate?conv_id=${data.conv_id}&round_index=${data.round_index}`, data);
+  return POST<StopTopicParams, null>(
+    `/api/v1/chat/topic/terminate?conv_id=${data.conv_id}&round_index=${data.round_index}`,
+    data,
+  );
 };
