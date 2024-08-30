@@ -158,7 +158,10 @@ async def update(
         ServerResponse: The response
     """
     try:
-        return Result.succ(service.update_flow(request))
+        res = await blocking_func_to_async(
+            global_system_app, service.update_flow, request
+        )
+        return Result.succ(res)
     except Exception as e:
         return Result.failed(msg=str(e))
 

@@ -609,6 +609,11 @@ class FlowFactory:
                 key_to_resource_nodes[key] = node
                 key_to_resource[key] = node.data
 
+        if not key_to_operator_nodes and not key_to_resource_nodes:
+            raise FlowMetadataException(
+                "No operator or resource nodes found in the flow."
+            )
+
         for edge_index, edge in enumerate(flow_data.edges):
             source_key = edge.source
             target_key = edge.target
