@@ -30,17 +30,17 @@ const zeroWidthTriggerDefaultStyle: React.CSSProperties = {
 /**
  * 会话项
  */
-const MenuItem: React.FC<{ item: any; refresh?: any; order: React.MutableRefObject<number>; historyLoading?: boolean }> = ({
-  item,
-  refresh,
-  historyLoading,
-  order,
-}) => {
+const MenuItem: React.FC<{
+  item: any;
+  refresh?: any;
+  order: React.MutableRefObject<number>;
+  historyLoading?: boolean;
+}> = ({ item, refresh, historyLoading }) => {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
-  const scene = searchParams?.get('scene') ?? '';  
+  const scene = searchParams?.get('scene') ?? '';
 
   const { setCurrentDialogInfo } = useContext(ChatContext);
 
@@ -74,7 +74,7 @@ const MenuItem: React.FC<{ item: any; refresh?: any; order: React.MutableRefObje
 
   return (
     <Flex
-      align="center"
+      align='center'
       className={`group/item w-full h-12 p-3 rounded-lg  hover:bg-white dark:hover:bg-theme-dark cursor-pointer mb-2 relative ${
         active ? 'bg-white dark:bg-theme-dark bg-opacity-100' : ''
       }`}
@@ -98,9 +98,9 @@ const MenuItem: React.FC<{ item: any; refresh?: any; order: React.MutableRefObje
       }}
     >
       <Tooltip title={item.chat_mode}>
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg mr-3 bg-white">{item.icon}</div>
+        <div className='flex items-center justify-center w-8 h-8 rounded-lg mr-3 bg-white'>{item.icon}</div>
       </Tooltip>
-      <div className="flex flex-1 line-clamp-1">
+      <div className='flex flex-1 line-clamp-1'>
         <Typography.Text
           ellipsis={{
             tooltip: true,
@@ -110,10 +110,10 @@ const MenuItem: React.FC<{ item: any; refresh?: any; order: React.MutableRefObje
         </Typography.Text>
       </div>
       {!item.default && (
-        <div className="flex gap-1 ml-1">
+        <div className='flex gap-1 ml-1'>
           <div
-            className="group-hover/item:opacity-100 cursor-pointer opacity-0"
-            onClick={(e) => {
+            className='group-hover/item:opacity-100 cursor-pointer opacity-0'
+            onClick={e => {
               e.stopPropagation();
             }}
           >
@@ -126,8 +126,8 @@ const MenuItem: React.FC<{ item: any; refresh?: any; order: React.MutableRefObje
             />
           </div>
           <div
-            className="group-hover/item:opacity-100 cursor-pointer opacity-0"
-            onClick={(e) => {
+            className='group-hover/item:opacity-100 cursor-pointer opacity-0'
+            onClick={e => {
               e.stopPropagation();
               handleDelChat();
             }}
@@ -191,31 +191,35 @@ const ChatSider: React.FC<{
 
   return (
     <Sider
-      className="bg-[#ffffff80]  border-r  border-[#d5e5f6] dark:bg-[#ffffff29] dark:border-[#ffffff66]"
+      className='bg-[#ffffff80]  border-r  border-[#d5e5f6] dark:bg-[#ffffff29] dark:border-[#ffffff66]'
       theme={mode}
       width={280}
       collapsible={true}
       collapsed={collapsed}
       collapsedWidth={0}
-      trigger={collapsed ? <CaretRightOutlined className="text-base" /> : <CaretLeftOutlined className="text-base" />}
+      trigger={collapsed ? <CaretRightOutlined className='text-base' /> : <CaretLeftOutlined className='text-base' />}
       zeroWidthTriggerStyle={triggerStyle}
-      onCollapse={(collapsed) => setCollapsed(collapsed)}
+      onCollapse={collapsed => setCollapsed(collapsed)}
     >
-      <div className="flex flex-col h-full w-full bg-transparent px-4 pt-6  ">
-        <div className="w-full text-base font-semibold text-[#1c2533] dark:text-[rgba(255,255,255,0.85)] mb-4 line-clamp-1">{t('dialog_list')}</div>
-        <Flex flex={1} vertical={true} className="overflow-y-auto">
+      <div className='flex flex-col h-full w-full bg-transparent px-4 pt-6  '>
+        <div className='w-full text-base font-semibold text-[#1c2533] dark:text-[rgba(255,255,255,0.85)] mb-4 line-clamp-1'>
+          {t('dialog_list')}
+        </div>
+        <Flex flex={1} vertical={true} className='overflow-y-auto'>
           <MenuItem
             item={{
               label: t('assistant'),
               key: 'default',
-              icon: <Image src="/LOGO_SMALL.png" alt="default" width={24} height={24} className='flex-1' />,
+              icon: <Image src='/LOGO_SMALL.png' alt='default' width={24} height={24} className='flex-1' />,
               default: true,
             }}
             order={order}
           />
-          <Spin spinning={listLoading} className="mt-2">
+          <Spin spinning={listLoading} className='mt-2'>
             {!!items?.length &&
-              items.map((item) => <MenuItem key={item?.key} item={item} refresh={refresh} historyLoading={historyLoading} order={order} />)}
+              items.map(item => (
+                <MenuItem key={item?.key} item={item} refresh={refresh} historyLoading={historyLoading} order={order} />
+              ))}
           </Spin>
         </Flex>
       </div>

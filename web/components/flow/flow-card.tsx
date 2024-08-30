@@ -1,22 +1,21 @@
+import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, deleteFlowById, newDialogue } from '@/client/api';
 import { IFlow } from '@/types/flow';
 import {
   CopyFilled,
   DeleteFilled,
   EditFilled,
-  ExclamationCircleFilled,
   ExclamationCircleOutlined,
   MessageFilled,
   WarningOutlined,
 } from '@ant-design/icons';
 import { Modal, Tooltip } from 'antd';
+import { useRouter } from 'next/router';
+import qs from 'querystring';
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import FlowPreview from './preview-flow';
-import { useRouter } from 'next/router';
 import GptCard from '../common/gpt-card';
-import { ChatContext } from '@/app/chat-context';
-import qs from 'querystring';
+import FlowPreview from './preview-flow';
 
 interface FlowCardProps {
   flow: IFlow;
@@ -25,8 +24,6 @@ interface FlowCardProps {
 }
 
 const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => {
-  console.log(flow, 'flow');
-
   const { model } = useContext(ChatContext);
   const { t } = useTranslation();
   const [modal, contextHolder] = Modal.useModal();
@@ -74,7 +71,7 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => 
     <>
       {contextHolder}
       <GptCard
-        className="w-[26rem] max-w-full"
+        className='w-[26rem] max-w-full'
         title={flow.name}
         desc={flow.description}
         tags={[
@@ -84,9 +81,9 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => 
             text: (
               <>
                 {flow.error_message ? (
-                  <Tooltip placement="bottom" title={flow.error_message}>
+                  <Tooltip placement='bottom' title={flow.error_message}>
                     {flow.state}
-                    <ExclamationCircleOutlined className="ml-1" />
+                    <ExclamationCircleOutlined className='ml-1' />
                   </Tooltip>
                 ) : (
                   flow.state
@@ -122,7 +119,7 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => 
           },
         ]}
       >
-        <div className="w-full h-[150px] shadow-[inset_0_0_16px_rgba(50,50,50,.05)]">
+        <div className='w-full h-[150px] shadow-[inset_0_0_16px_rgba(50,50,50,.05)]'>
           <FlowPreview flowData={flow.flow_data} />
         </div>
       </GptCard>

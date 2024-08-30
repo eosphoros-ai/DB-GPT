@@ -1,20 +1,22 @@
-import { hasSubset } from '../advisor/utils';
-import { processDateEncode, findOrdinalField, findNominalField, getLineSize, sortData } from './util';
-import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 import type { Datum } from '@antv/ava';
+import { hasSubset } from '../advisor/utils';
+import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
+import { findNominalField, findOrdinalField, getLineSize, processDateEncode, sortData } from './util';
 
-const MULTI_LINE_CHART = 'multi_line_chart'
+const MULTI_LINE_CHART = 'multi_line_chart';
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   const ordinalField = findOrdinalField(dataProps);
   const nominalField = findNominalField(dataProps);
   // 放宽折线图的 x 轴条件，优先选择 time， ordinal, nominal 类型，没有的话使用第一个字段作兜底
   const field4X = ordinalField ?? nominalField ?? dataProps[0];
-  const remainFields = dataProps.filter((field) => field.name !== field4X?.name);
+  const remainFields = dataProps.filter(field => field.name !== field4X?.name);
 
-  const field4Y = remainFields.filter((field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Interval'])) ?? [remainFields[0]];
-  const field4Nominal = remainFields.filter(field => !field4Y.find(y => y.name === field.name)).find(
-    (field) => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']),
-  );
+  const field4Y = remainFields.filter(
+    field => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Interval']),
+  ) ?? [remainFields[0]];
+  const field4Nominal = remainFields
+    .filter(field => !field4Y.find(y => y.name === field.name))
+    .find(field => field.levelOfMeasurements && hasSubset(field.levelOfMeasurements, ['Nominal']));
   if (!field4X || !field4Y) return null;
 
   const spec: Specification = {
@@ -24,7 +26,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
     children: [],
   };
 
-  field4Y.forEach((field) => {
+  field4Y.forEach(field => {
     const singleLine: Specification = {
       type: 'line',
       encode: {

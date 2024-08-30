@@ -1,5 +1,5 @@
-import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { apiInterceptors, updateApp } from '@/client/api';
+import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { CreateAppParams } from '@/types/app';
 import { EditOutlined, LeftOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
@@ -8,14 +8,12 @@ import classNames from 'classnames';
 import { useRouter } from 'next/router';
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import CreateAppModal from '../components/create-app-modal';
 import AwelLayout from './components/AwelLayout';
 import NativeApp from './components/NativeApp';
 import RecommendQuestions from './components/RecommendQuestions';
 import AutoPlan from './components/auto-plan';
 import styles from './styles.module.css';
-
 
 const ExtraAppInfo: React.FC = () => {
   // 获取当前应用信息
@@ -43,7 +41,7 @@ const ExtraAppInfo: React.FC = () => {
       ),
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         const [, res] = data;
         if (res) {
           message.success(t('update_success'));
@@ -75,32 +73,35 @@ const ExtraAppInfo: React.FC = () => {
     <App>
       <Spin spinning={loading}>
         <div
-          className={classNames('flex flex-col  h-screen w-screen dark:bg-gradient-dark bg-gradient-light bg-cover bg-center', styles['extra-container'])}
+          className={classNames(
+            'flex flex-col  h-screen w-screen dark:bg-gradient-dark bg-gradient-light bg-cover bg-center',
+            styles['extra-container'],
+          )}
         >
-          <header className="flex items-center justify-between px-6 py-2 h-14 border-b border-[#edeeef]">
-            <Space className="flex items-center">
+          <header className='flex items-center justify-between px-6 py-2 h-14 border-b border-[#edeeef]'>
+            <Space className='flex items-center'>
               <LeftOutlined
-                className="text-base cursor-pointer hover:text-[#0c75fc]"
+                className='text-base cursor-pointer hover:text-[#0c75fc]'
                 onClick={() => {
                   router.replace('/construct/app');
                 }}
               />
-              <div className="flex items-center justify-center w-10 h-10 border border-[#d6d8da] rounded-lg">
+              <div className='flex items-center justify-center w-10 h-10 border border-[#d6d8da] rounded-lg'>
                 <AppDefaultIcon scene={curApp?.team_context?.chat_scene || 'chat_agent'} />
               </div>
               <span>{curApp?.app_name}</span>
-              <EditOutlined className="cursor-pointer hover:text-[#0c75fc]" onClick={() => setOpen(true)} />
+              <EditOutlined className='cursor-pointer hover:text-[#0c75fc]' onClick={() => setOpen(true)} />
             </Space>
-            <Button type="primary" onClick={submit} loading={createLoading}>
+            <Button type='primary' onClick={submit} loading={createLoading}>
               {curApp?.isEdit ? t('update') : t('save')}
             </Button>
           </header>
-          <div className="flex flex-1 flex-col py-12 max-h-full overflow-y-auto">
+          <div className='flex flex-1 flex-col py-12 max-h-full overflow-y-auto'>
             {/* auto_plan模式 */}
             {['single_agent', 'auto_plan'].includes(curApp?.team_mode) && (
               <AutoPlan
-                classNames="w-3/4 mx-auto"
-                updateData={(data) => {
+                classNames='w-3/4 mx-auto'
+                updateData={data => {
                   setLoading(data?.[0]);
                   appParams.current.details = data?.[1];
                 }}
@@ -111,11 +112,11 @@ const ExtraAppInfo: React.FC = () => {
             {curApp?.team_mode === 'awel_layout' && (
               <AwelLayout
                 initValue={curApp?.team_context}
-                updateData={(data) => {
+                updateData={data => {
                   setLoading(data?.[0]);
                   appParams.current.team_context = data?.[1];
                 }}
-                classNames="px-6"
+                classNames='px-6'
               />
             )}
             {/* native_app模式 */}
@@ -125,7 +126,7 @@ const ExtraAppInfo: React.FC = () => {
                   team_context: curApp?.team_context,
                   param_need: curApp?.param_need,
                 }}
-                classNames="w-3/5 mx-auto"
+                classNames='w-3/5 mx-auto'
                 updateData={(data: any) => {
                   setLoading(data?.[0]);
                   appParams.current.team_context = data?.[1]?.[0];
@@ -136,7 +137,7 @@ const ExtraAppInfo: React.FC = () => {
             {/* single_agent模式 */}
             {/* {curApp?.team_mode === '' && <></>} */}
             <RecommendQuestions
-              updateData={(data) => {
+              updateData={data => {
                 appParams.current.recommend_questions = data as any;
               }}
               classNames={recommendQuestionsStyle}
@@ -146,7 +147,7 @@ const ExtraAppInfo: React.FC = () => {
           </div>
         </div>
       </Spin>
-      <CreateAppModal type="edit" open={open} onCancel={() => setOpen(false)} />
+      <CreateAppModal type='edit' open={open} onCancel={() => setOpen(false)} />
     </App>
   );
 };

@@ -1,5 +1,5 @@
-import { CodePreview } from './code-preview';
 import { formatSql } from '@/utils';
+import { CodePreview } from './code-preview';
 
 interface Props {
   data: {
@@ -11,11 +11,11 @@ interface Props {
 
 function VisConvertError({ data }: Props) {
   return (
-    <div className="rounded overflow-hidden">
-      <div className="p-3 text-white bg-red-500 whitespace-normal">{data.display_type}</div>
-      <div className="p-3 bg-red-50">
-        <div className="mb-2 whitespace-normal">{data.thought}</div>
-        <CodePreview code={formatSql(data.sql)} language="sql" />
+    <div className='rounded overflow-hidden'>
+      <div className='p-3 text-white bg-red-500 whitespace-normal'>{data.display_type}</div>
+      <div className='p-3 bg-red-50'>
+        <div className='mb-2 whitespace-normal'>{data.thought}</div>
+        <CodePreview code={formatSql(data.sql)} language='sql' />
       </div>
     </div>
   );

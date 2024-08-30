@@ -1,5 +1,4 @@
-import { Role, UserInfoResponse } from '@/types/userinfo';
-import { GET } from '../index';
+import { Role } from '@/types/userinfo';
 
 interface Props {
   role: Role;
@@ -8,6 +7,6 @@ interface Props {
 /**
  * 查询管理员列表
  */
-export const queryAdminList = (data: Props) => {
+export const queryAdminList = (_data: Props) => {
   return [];
 };

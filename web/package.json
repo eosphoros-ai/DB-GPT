@@ -2,12 +2,21 @@
   "name": "db-gpt-web",
   "version": "0.1.0",
   "private": true,
+  "description": "DB-GPT WebUI",
+  "main": "next.config.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "author": "",
+  "license": "ISC",
+  "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
   "scripts": {
     "start": "NODE_OPTIONS=--max_old_space_size=8192 next start",
     "dev": "NODE_OPTIONS=--max_old_space_size=8192 next dev",
     "build": "NODE_OPTIONS=--max_old_space_size=8192 next build",
     "build:prod": "APP_ENV=prod  NODE_OPTIONS=--max_old_space_size=8192 next build",
-    "lint": "next lint",
+    "lint": "eslint '**/*.{ts,tsx}' --fix",
+    "format": "prettier --write '**/*.{ts,tsx}'",
     "export": "next export",
     "compile": " NODE_OPTIONS=--max_old_space_size=8192 next build && next export"
   },
@@ -37,6 +46,7 @@
     "copy-to-clipboard": "^3.3.3",
     "cytoscape": "^3.29.2",
     "cytoscape-euler": "^1.2.2",
+    "eslint-plugin-prettier": "^5.2.1",
     "framer-motion": "^10.16.4",
     "google-auth-library": "^9.2.0",
     "google-one-tap": "^1.0.6",
@@ -83,33 +93,28 @@
     "@types/react-dom": "18.2.6",
     "@types/react-syntax-highlighter": "^15.5.7",
     "@types/uuid": "^9.0.8",
+    "@typescript-eslint/eslint-plugin": "^8.3.0",
+    "@typescript-eslint/parser": "^8.3.0",
     "autoprefixer": "10.4.14",
     "copy-webpack-plugin": "^12.0.2",
-    "eslint": "8.43.0",
+    "eslint": "8.57.0",
     "eslint-config-next": "13.4.7",
-    "monaco-editor-webpack-plugin": "^7.1.0"
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "husky": "^9.1.5",
+    "lint-staged": "^15.2.9",
+    "monaco-editor-webpack-plugin": "^7.1.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-organize-imports": "^4.0.0",
+    "prettier-plugin-packagejson": "^2.5.2"
   },
-  "description": "DB-GPT WebUI",
-  "main": "next.config.js",
-  "directories": {
-    "lib": "lib"
-  },
-  "author": "",
-  "license": "ISC",
-  "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
-  "resolutions": {
-    "d3-color": "2",
-    "d3-array": "2",
-    "d3-shape": "2",
-    "d3-path": "2",
-    "d3-dsv": "2",
-    "d3-hierarchy": "2",
-    "d3-scale-chromatic": "2",
-    "d3-format": "2",
-    "d3-timer": "2",
-    "d3-dispatch": "2",
-    "d3-quadtree": "2",
-    "d3-force": "2",
-    "d3-geo": "2"
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }

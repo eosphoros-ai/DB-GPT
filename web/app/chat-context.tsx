@@ -1,11 +1,11 @@
-import { apiInterceptors, getDialogueList, getUsableModels, queryAdminList } from '@/client/api';
+import { apiInterceptors, getUsableModels, queryAdminList } from '@/client/api';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { UserInfoResponse } from '@/types/userinfo';
 import { getUserId } from '@/utils';
 import { STORAGE_THEME_KEY } from '@/utils/constants/index';
 import { useRequest } from 'ahooks';
 import { useSearchParams } from 'next/navigation';
-import { createContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 
 type ThemeMode = 'dark' | 'light';
 
@@ -109,7 +109,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
       return res ?? [];
     },
     {
-      onSuccess: (data) => {
+      onSuccess: data => {
         setAdminList(data);
       },
       manual: true,
@@ -120,7 +120,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     if (getUserId()) {
       queryAdminListRun();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryAdminListRun, getUserId()]);
 
   useEffect(() => {
@@ -128,7 +128,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     try {
       const dialogInfo = JSON.parse(localStorage.getItem('cur_dialog_info') || '');
       setCurrentDialogInfo(dialogInfo);
-    } catch (error) {
+    } catch {
       setCurrentDialogInfo({
         chat_scene: '',
         app_code: '',

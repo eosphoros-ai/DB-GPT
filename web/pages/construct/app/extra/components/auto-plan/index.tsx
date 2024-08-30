@@ -6,9 +6,9 @@ import { Checkbox, Form, Space, Tooltip } from 'antd';
 import cls from 'classnames';
 import { concat } from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { agentIcon, resourceTypeIcon } from '../../config';
 import DetailsCard from './DetailsCard';
-import { useTranslation } from 'react-i18next';
 
 interface AgentSelectProps {
   agents: IAgent[];
@@ -21,13 +21,13 @@ interface AgentSelectProps {
 const AgentSelect: React.FC<AgentSelectProps> = ({ value, onChange, agents, selectedTab, setSelectedTab }) => {
   return (
     <Checkbox.Group
-      className="grid grid-cols-4 gap-4"
+      className='grid grid-cols-4 gap-4'
       onChange={(value: string[]) => {
         onChange?.(value);
       }}
       value={value}
     >
-      {agents.map((item) => {
+      {agents.map(item => {
         return (
           <div
             className={`flex grow h-8 items-center px-3 border ${
@@ -39,13 +39,15 @@ const AgentSelect: React.FC<AgentSelectProps> = ({ value, onChange, agents, sele
             }}
           >
             <Checkbox value={item.name} />
-            <div className="flex items-center flex-1 justify-between">
+            <div className='flex items-center flex-1 justify-between'>
               <div>
-                <span className="ml-2 mr-1">{agentIcon[item.name || '']}</span>
-                <span className="text-sm text-[rgba(0,10,26,0.68)] dark:text-[rgba(255,255,255,0.85)]">{item.label}</span>
+                <span className='ml-2 mr-1'>{agentIcon[item.name || '']}</span>
+                <span className='text-sm text-[rgba(0,10,26,0.68)] dark:text-[rgba(255,255,255,0.85)]'>
+                  {item.label}
+                </span>
               </div>
               <Tooltip title={item.desc}>
-                <QuestionCircleOutlined className="text-sm" />
+                <QuestionCircleOutlined className='text-sm' />
               </Tooltip>
             </div>
           </div>
@@ -70,10 +72,14 @@ const AutoPlan: React.FC<{
 
   // 获取agents, strategy, sourceType;
   const { data, loading } = useRequest(async () => {
-    const res = await Promise.all([apiInterceptors(getAgents()), apiInterceptors(getAppStrategy()), apiInterceptors(getResourceType())]);
+    const res = await Promise.all([
+      apiInterceptors(getAgents()),
+      apiInterceptors(getAppStrategy()),
+      apiInterceptors(getResourceType()),
+    ]);
     const [, agents] = res?.[0] || [];
     details.current =
-      agents?.map((item) => {
+      agents?.map(item => {
         return {
           agent_name: item.name,
           llm_strategy: '',
@@ -82,7 +88,9 @@ const AutoPlan: React.FC<{
           resources: [],
         };
       }) || [];
-    form.setFieldsValue({ agent_name: initValue?.map((item: any) => item.agent_name) });
+    form.setFieldsValue({
+      agent_name: initValue?.map((item: any) => item.agent_name),
+    });
     setSelectedTab(initValue?.map((item: any) => item.agent_name)?.[0] || agents?.[0]?.name || '');
     return res ?? [];
   });
@@ -102,7 +110,7 @@ const AutoPlan: React.FC<{
   const modelStrategyOptions: any[] = useMemo(() => {
     const [, strategy] = data?.[1] || [];
     if (strategy?.length) {
-      return strategy.map((item) => {
+      return strategy.map(item => {
         return {
           label: language ? item.name : item.name_cn,
           value: item.value,
@@ -116,7 +124,7 @@ const AutoPlan: React.FC<{
   const resourceTypeOptions: Record<string, any>[] = useMemo(() => {
     const [, sourceType] = data?.[2] || [];
     if (sourceType?.length) {
-      const formatterSourceType = sourceType.map((item) => {
+      const formatterSourceType = sourceType.map(item => {
         return {
           label: (
             <Space>
@@ -132,9 +140,9 @@ const AutoPlan: React.FC<{
         [
           {
             label: (
-              <div className="flex items-center text-sm">
+              <div className='flex items-center text-sm'>
                 {resourceTypeIcon['all']}
-                <span className="ml-2 text-[rgba(0,10,26,0.68)] dark:text-[#ffffffD9]">{t('All')}</span>
+                <span className='ml-2 text-[rgba(0,10,26,0.68)] dark:text-[#ffffffD9]'>{t('All')}</span>
               </div>
             ),
             value: 'all',
@@ -148,22 +156,27 @@ const AutoPlan: React.FC<{
 
   // 实时返回数据给消费组件
   useEffect(() => {
-    updateData([loading, details.current.filter((detail) => agentName?.includes(detail.agent_name))]);
+    updateData([loading, details.current.filter(detail => agentName?.includes(detail.agent_name))]);
   }, [loading, agentName, updateData]);
 
   return (
     <div className={cls(classNames)}>
       <Form form={form} style={{ width: '100%' }} labelCol={{ span: 4 }} wrapperCol={{ span: 20 }}>
-        <Form.Item label={`${t('choose')} agent`} name="agent_name" required rules={[{ required: true, message: t('please_choose') + ' agent' }]}>
+        <Form.Item
+          label={`${t('choose')} agent`}
+          name='agent_name'
+          required
+          rules={[{ required: true, message: t('please_choose') + ' agent' }]}
+        >
           <AgentSelect agents={data?.[0]?.[1] || []} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         </Form.Item>
       </Form>
-      {data?.[0]?.[1]?.map((item) => (
+      {data?.[0]?.[1]?.map(item => (
         <DetailsCard
           key={item.name}
           classNames={item.name === selectedTab ? 'block' : 'hidden'}
           updateData={(data: any) => {
-            details.current = details.current.map((detail) => {
+            details.current = details.current.map(detail => {
               if (detail.agent_name === data?.agent_name) {
                 return {
                   ...detail,
@@ -174,7 +187,7 @@ const AutoPlan: React.FC<{
                 ...detail,
               };
             });
-            updateData([loading, details.current.filter((detail) => agentName?.includes(detail.agent_name))]);
+            updateData([loading, details.current.filter(detail => agentName?.includes(detail.agent_name))]);
           }}
           initValue={initValue}
           name={item.name}

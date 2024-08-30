@@ -1,7 +1,7 @@
 import { addSpace, apiInterceptors } from '@/client/api';
-import { StepChangeParams, IStorage } from '@/types/knowledge';
-import { Button, Form, Input, Spin, Select } from 'antd';
-import { useState, useEffect } from 'react';
+import { IStorage, StepChangeParams } from '@/types/knowledge';
+import { Button, Form, Input, Select, Spin } from 'antd';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type FieldType = {
@@ -37,8 +37,8 @@ export default function SpaceForm(props: IProps) {
   const handleFinish = async (fieldsValue: FieldType) => {
     const { spaceName, owner, description, storage, field } = fieldsValue;
     setSpinning(true);
-    let vector_type = storage;
-    let domain_type = field;
+    const vector_type = storage;
+    const domain_type = field;
     const [_, data, res] = await apiInterceptors(
       addSpace({
         name: spaceName,
@@ -51,24 +51,30 @@ export default function SpaceForm(props: IProps) {
     setSpinning(false);
     const is_financial = domain_type === 'FinancialReport';
     localStorage.setItem('cur_space_id', JSON.stringify(data));
-    res?.success && handleStepChange({ label: 'forward', spaceName, pace: is_financial ? 2 : 1, docType: is_financial ? 'DOCUMENT' : '' });
+    res?.success &&
+      handleStepChange({
+        label: 'forward',
+        spaceName,
+        pace: is_financial ? 2 : 1,
+        docType: is_financial ? 'DOCUMENT' : '',
+      });
   };
 
   return (
     <Spin spinning={spinning}>
       <Form
         form={form}
-        size="large"
-        className="mt-4"
-        layout="vertical"
-        name="basic"
+        size='large'
+        className='mt-4'
+        layout='vertical'
+        name='basic'
         initialValues={{ remember: true }}
-        autoComplete="off"
+        autoComplete='off'
         onFinish={handleFinish}
       >
         <Form.Item<FieldType>
           label={t('Knowledge_Space_Name')}
-          name="spaceName"
+          name='spaceName'
           rules={[
             { required: true, message: t('Please_input_the_name') },
             () => ({
@@ -81,29 +87,49 @@ export default function SpaceForm(props: IProps) {
             }),
           ]}
         >
-          <Input className="h-12" placeholder={t('Please_input_the_name')} />
+          <Input className='h-12' placeholder={t('Please_input_the_name')} />
         </Form.Item>
-        <Form.Item<FieldType> label={t('Storage')} name="storage" rules={[{ required: true, message: t('Please_select_the_storage') }]}>
-          <Select className="mb-5 h-12" placeholder={t('Please_select_the_storage')} onChange={handleStorageChange}>
+        <Form.Item<FieldType>
+          label={t('Storage')}
+          name='storage'
+          rules={[{ required: true, message: t('Please_select_the_storage') }]}
+        >
+          <Select className='mb-5 h-12' placeholder={t('Please_select_the_storage')} onChange={handleStorageChange}>
             {spaceConfig?.map((item: any) => {
-              return <Select.Option value={item.name}>{item.desc}</Select.Option>;
+              return (
+                <Select.Option key={item.name} value={item.name}>
+                  {item.desc}
+                </Select.Option>
+              );
             })}
           </Select>
         </Form.Item>
-        <Form.Item<FieldType> label={t('Domain')} name="field" rules={[{ required: true, message: t('Please_select_the_domain_type') }]}>
-          <Select className="mb-5 h-12" placeholder={t('Please_select_the_domain_type')}>
+        <Form.Item<FieldType>
+          label={t('Domain')}
+          name='field'
+          rules={[{ required: true, message: t('Please_select_the_domain_type') }]}
+        >
+          <Select className='mb-5 h-12' placeholder={t('Please_select_the_domain_type')}>
             {spaceConfig
               ?.find((item: any) => item.name === storage)
               ?.domain_types.map((item: any) => {
-                return <Select.Option value={item.name}>{item.desc}</Select.Option>;
+                return (
+                  <Select.Option key={item.name} value={item.name}>
+                    {item.desc}
+                  </Select.Option>
+                );
               })}
           </Select>
         </Form.Item>
-        <Form.Item<FieldType> label={t('Description')} name="description" rules={[{ required: true, message: t('Please_input_the_description') }]}>
-          <Input className="h-12" placeholder={t('Please_input_the_description')} />
+        <Form.Item<FieldType>
+          label={t('Description')}
+          name='description'
+          rules={[{ required: true, message: t('Please_input_the_description') }]}
+        >
+          <Input className='h-12' placeholder={t('Please_input_the_description')} />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button type='primary' htmlType='submit'>
             {t('Next')}
           </Button>
         </Form.Item>

@@ -12,13 +12,13 @@ const VisChatLink: React.FC<VisChatLinkProps> = ({ children, msg }) => {
   const { handleChat: mobileHandleChat } = useContext(MobileChatContext);
   return (
     <Button
-      className="ml-1 inline text-xs"
+      className='ml-1 inline text-xs'
       onClick={() => {
         mobileHandleChat?.(msg);
         webHandleChat?.(msg);
       }}
-      type="dashed"
-      size="small"
+      type='dashed'
+      size='small'
     >
       {children || '点击分析当前异常'}
     </Button>

@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { List, FloatButton, Popover, Tooltip, Form, message, Select, ConfigProvider } from 'antd';
-import { useRequest } from 'ahooks';
 import { sendSpacePostRequest } from '@/utils/request';
+import { useRequest } from 'ahooks';
+import { ConfigProvider, FloatButton, Form, List, Popover, Select, Tooltip, message } from 'antd';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type SelectTableProps = {
@@ -29,13 +29,18 @@ const SelectTable: React.FC<SelectTableProps> = ({ data, loading, submit, close 
         dataSource={data?.data}
         loading={loading}
         rowKey={(record: any) => record.prompt_name}
-        renderItem={(item) => (
+        renderItem={item => (
           <List.Item key={item.prompt_name} onClick={handleClick(item.content)}>
             <Tooltip title={item.content}>
               <List.Item.Meta
                 style={{ cursor: 'copy' }}
                 title={item.prompt_name}
-                description={t('Prompt_Info_Scene') + `：${item.chat_scene}，` + t('Prompt_Info_Sub_Scene') + `：${item.sub_chat_scene}`}
+                description={
+                  t('Prompt_Info_Scene') +
+                  `：${item.chat_scene}，` +
+                  t('Prompt_Info_Sub_Scene') +
+                  `：${item.sub_chat_scene}`
+                }
               />
             </Tooltip>
           </List.Item>
@@ -63,7 +68,7 @@ const PromptBot: React.FC<PromptBotProps> = ({ submit }) => {
     },
     {
       refreshDeps: [current],
-      onError: (err) => {
+      onError: err => {
         message.error(err?.message);
       },
     },
@@ -112,13 +117,13 @@ const PromptBot: React.FC<PromptBotProps> = ({ submit }) => {
           </Form.Item>
         }
         content={<SelectTable {...{ data, loading, submit, close }} />}
-        placement="topRight"
-        trigger="click"
+        placement='topRight'
+        trigger='click'
         open={open}
         onOpenChange={handleOpenChange}
       >
         <Tooltip title={t('Click_Select') + ' Prompt'}>
-          <FloatButton className="bottom-[30%]" />
+          <FloatButton className='bottom-[30%]' />
         </Tooltip>
       </Popover>
     </ConfigProvider>

@@ -58,12 +58,25 @@ const InputContainer: React.FC = () => {
       ...(resource && { select_param: JSON.stringify(resource) }),
     };
     if (history && history.length > 0) {
-      const viewList = history?.filter((item) => item.role === 'view');
+      const viewList = history?.filter(item => item.role === 'view');
       order.current = viewList[viewList.length - 1].order + 1;
     }
     const tempHistory: ChatHistoryResponse = [
-      { role: 'human', context: content || userInput, model_name: model, order: order.current, time_stamp: 0 },
-      { role: 'view', context: '', model_name: model, order: order.current, time_stamp: 0, thinking: true },
+      {
+        role: 'human',
+        context: content || userInput,
+        model_name: model,
+        order: order.current,
+        time_stamp: 0,
+      },
+      {
+        role: 'view',
+        context: '',
+        model_name: model,
+        order: order.current,
+        time_stamp: 0,
+        thinking: true,
+      },
     ];
     const index = tempHistory.length - 1;
     setHistory([...history, ...tempHistory]);
@@ -91,11 +104,11 @@ const InputContainer: React.FC = () => {
         onerror(err) {
           throw new Error(err);
         },
-        onmessage: (event) => {
+        onmessage: event => {
           let message = event.data;
           try {
             message = JSON.parse(message).vis;
-          } catch (e) {
+          } catch {
             message.replaceAll('\\n', '\n');
           }
           if (message === '[DONE]') {
@@ -115,7 +128,7 @@ const InputContainer: React.FC = () => {
           }
         },
       });
-    } catch (err) {
+    } catch {
       ctrl.current?.abort();
       tempHistory[index].context = 'Sorry, we meet some error, please try again later.';
       tempHistory[index].thinking = false;
@@ -146,7 +159,7 @@ const InputContainer: React.FC = () => {
       return [];
     }
     const { param_need = [] } = appInfo;
-    return param_need?.map((item) => item.type);
+    return param_need?.map(item => item.type);
   }, [appInfo]);
 
   // 是否展示推荐问题
@@ -172,7 +185,7 @@ const InputContainer: React.FC = () => {
     if (!canNewChat || history.length === 0) {
       return;
     }
-    const lastHuman = history.filter((i) => i.role === 'human')?.slice(-1)?.[0];
+    const lastHuman = history.filter(i => i.role === 'human')?.slice(-1)?.[0];
     handleChat(lastHuman?.context || '');
   };
 
@@ -200,15 +213,15 @@ const InputContainer: React.FC = () => {
   }, [appInfo, conv_uid, model, ques]);
 
   return (
-    <div className="flex flex-col">
+    <div className='flex flex-col'>
       {/* 推荐问题 */}
       {showRecommendQuestion && (
         <ul>
           {appInfo?.recommend_questions?.map((item, index) => (
-            <li key={item.id} className="mb-3">
+            <li key={item.id} className='mb-3'>
               <Tag
                 color={tagColors[index]}
-                className="p-2 rounded-xl"
+                className='p-2 rounded-xl'
                 onClick={async () => {
                   handleChat(item.question);
                 }}
@@ -220,8 +233,8 @@ const InputContainer: React.FC = () => {
         </ul>
       )}
       {/* 功能区域 */}
-      <div className="flex items-center justify-between gap-1">
-        <div className="flex gap-2 mb-1 w-full overflow-x-auto">
+      <div className='flex items-center justify-between gap-1'>
+        <div className='flex gap-2 mb-1 w-full overflow-x-auto'>
           {/* 模型选择 */}
           {paramType?.includes('model') && <ModelSelector />}
           {/* 额外资源 */}
@@ -229,34 +242,53 @@ const InputContainer: React.FC = () => {
           {/* 温度调控 */}
           {paramType?.includes('temperature') && <Thermometer />}
         </div>
-        <div className="flex items-center justify-between text-lg font-bold">
-          <Popover content="暂停回复" trigger={['hover']}>
-            <PauseCircleOutlined className={cls('p-2 cursor-pointer', { 'text-[#0c75fc]': canAbort, 'text-gray-400': !canAbort })} onClick={abort} />
+        <div className='flex items-center justify-between text-lg font-bold'>
+          <Popover content='暂停回复' trigger={['hover']}>
+            <PauseCircleOutlined
+              className={cls('p-2 cursor-pointer', {
+                'text-[#0c75fc]': canAbort,
+                'text-gray-400': !canAbort,
+              })}
+              onClick={abort}
+            />
           </Popover>
-          <Popover content="再来一次" trigger={['hover']}>
-            <RedoOutlined className={cls('p-2 cursor-pointer', { 'text-gray-400': !history.length || !canNewChat })} onClick={redo} />
+          <Popover content='再来一次' trigger={['hover']}>
+            <RedoOutlined
+              className={cls('p-2 cursor-pointer', {
+                'text-gray-400': !history.length || !canNewChat,
+              })}
+              onClick={redo}
+            />
           </Popover>
           {loading ? (
-            <Spin spinning={loading} indicator={<LoadingOutlined style={{ fontSize: 18 }} spin />} className="p-2" />
+            <Spin spinning={loading} indicator={<LoadingOutlined style={{ fontSize: 18 }} spin />} className='p-2' />
           ) : (
-            <Popover content="清除历史" trigger={['hover']}>
-              <ClearOutlined className={cls('p-2 cursor-pointer', { 'text-gray-400': !history.length || !canNewChat })} onClick={clearHistory} />
+            <Popover content='清除历史' trigger={['hover']}>
+              <ClearOutlined
+                className={cls('p-2 cursor-pointer', {
+                  'text-gray-400': !history.length || !canNewChat,
+                })}
+                onClick={clearHistory}
+              />
             </Popover>
           )}
         </div>
       </div>
       {/* 输入框 */}
       <div
-        className={cls('flex py-2 px-3 items-center justify-between bg-white dark:bg-[#242733] dark:border-[#6f7f95] rounded-xl border', {
-          'border-[#0c75fc] dark:border-[rgba(12,117,252,0.8)]': isFocus,
-        })}
+        className={cls(
+          'flex py-2 px-3 items-center justify-between bg-white dark:bg-[#242733] dark:border-[#6f7f95] rounded-xl border',
+          {
+            'border-[#0c75fc] dark:border-[rgba(12,117,252,0.8)]': isFocus,
+          },
+        )}
       >
         <Input.TextArea
-          placeholder="可以问我任何问题"
-          className="w-full resize-none border-0 p-0 focus:shadow-none"
+          placeholder='可以问我任何问题'
+          className='w-full resize-none border-0 p-0 focus:shadow-none'
           value={userInput}
           autoSize={{ minRows: 1 }}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               if (e.shiftKey) {
                 return;
@@ -272,7 +304,7 @@ const InputContainer: React.FC = () => {
               onSubmit();
             }
           }}
-          onChange={(e) => {
+          onChange={e => {
             setUserInput(e.target.value);
           }}
           onFocus={() => {
@@ -290,13 +322,13 @@ const InputContainer: React.FC = () => {
         />
 
         <Button
-          type="primary"
+          type='primary'
           className={cls('flex items-center justify-center rounded-lg bg-button-gradient border-0 ml-2', {
             'opacity-40 cursor-not-allowed': !userInput.trim() || !canNewChat,
           })}
           onClick={onSubmit}
         >
-          {canNewChat ? <SendOutlined /> : <Spin indicator={<LoadingOutlined className="text-white" />} />}
+          {canNewChat ? <SendOutlined /> : <Spin indicator={<LoadingOutlined className='text-white' />} />}
         </Button>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { apiInterceptors, cancelFeedback, feedbackAdd, getFeedbackReasons, stopT
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import { CopyOutlined, DislikeOutlined, LikeOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { App, Button, Divider, Tag } from 'antd';
+import { App, Button, Divider } from 'antd';
 import classNames from 'classnames';
 import copy from 'copy-to-clipboard';
 import React, { useContext, useState } from 'react';
@@ -14,11 +14,11 @@ interface Tags {
   reason_type: string;
 }
 
-const Feedback: React.FC<{ content: IChatDialogueMessageSchema; index: number; chatDialogRef: React.RefObject<HTMLDivElement> }> = ({
-  content,
-  index,
-  chatDialogRef,
-}) => {
+const Feedback: React.FC<{
+  content: IChatDialogueMessageSchema;
+  index: number;
+  chatDialogRef: React.RefObject<HTMLDivElement>;
+}> = ({ content, index, chatDialogRef }) => {
   const { conv_uid, history, scene } = useContext(MobileChatContext);
   const { message } = App.useApp();
 
@@ -55,7 +55,7 @@ const Feedback: React.FC<{ content: IChatDialogueMessageSchema; index: number; c
       ),
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
         message.success('反馈成功');
@@ -65,21 +65,24 @@ const Feedback: React.FC<{ content: IChatDialogueMessageSchema; index: number; c
   );
 
   // 取消反馈
-  const { run: cancel } = useRequest(async () => await apiInterceptors(cancelFeedback({ conv_uid: conv_uid, message_id: content?.order + '' })), {
-    manual: true,
-    onSuccess: (data) => {
-      const [, res] = data;
-      if (res) {
-        setStatus('none');
-        message.success('操作成功');
-      }
+  const { run: cancel } = useRequest(
+    async () => await apiInterceptors(cancelFeedback({ conv_uid: conv_uid, message_id: content?.order + '' })),
+    {
+      manual: true,
+      onSuccess: data => {
+        const [, res] = data;
+        if (res) {
+          setStatus('none');
+          message.success('操作成功');
+        }
+      },
     },
-  });
+  );
 
   // 反馈原因类型
   const { run: getReasonList } = useRequest(async () => await apiInterceptors(getFeedbackReasons()), {
     manual: true,
-    onSuccess: (data) => {
+    onSuccess: data => {
       const [, res] = data;
       setList(res || []);
       if (res) {
@@ -100,10 +103,12 @@ const Feedback: React.FC<{ content: IChatDialogueMessageSchema; index: number; c
   );
 
   return (
-    <div className="flex items-center text-sm">
-      <div className="flex gap-3">
+    <div className='flex items-center text-sm'>
+      <div className='flex gap-3'>
         <LikeOutlined
-          className={classNames('cursor-pointer', { 'text-[#0C75FC]': status === 'like' })}
+          className={classNames('cursor-pointer', {
+            'text-[#0C75FC]': status === 'like',
+          })}
           onClick={async () => {
             if (status === 'like') {
               await cancel();
@@ -124,19 +129,25 @@ const Feedback: React.FC<{ content: IChatDialogueMessageSchema; index: number; c
             await getReasonList();
           }}
         />
-        <DislikeDrawer open={feedbackOpen} setFeedbackOpen={setFeedbackOpen} list={list} feedback={feedback} loading={loading} />
+        <DislikeDrawer
+          open={feedbackOpen}
+          setFeedbackOpen={setFeedbackOpen}
+          list={list}
+          feedback={feedback}
+          loading={loading}
+        />
       </div>
-      <Divider type="vertical" />
-      <div className="flex items-center gap-3">
-        <CopyOutlined className="cursor-pointer" onClick={() => onCopyContext(content.context)} />
+      <Divider type='vertical' />
+      <div className='flex items-center gap-3'>
+        <CopyOutlined className='cursor-pointer' onClick={() => onCopyContext(content.context)} />
         {history.length - 1 === index && scene === 'chat_agent' && (
           <Button
             loading={stopTopicLoading}
-            size="small"
+            size='small'
             onClick={async () => {
               await stopTopicRun();
             }}
-            className="text-xs"
+            className='text-xs'
           >
             终止话题
           </Button>

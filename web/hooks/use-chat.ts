@@ -1,10 +1,10 @@
+import { ChatContext } from '@/app/chat-context';
 import i18n from '@/app/i18n';
 import { getUserId } from '@/utils';
 import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { ChatContext } from '@/app/chat-context';
+import { useCallback, useContext, useState } from 'react';
 
 type Props = {
   queryAgentURL?: string;
@@ -39,10 +39,10 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
         app_code,
       };
 
-//       if (!params.conv_uid) {
-//         message.error('conv_uid 不存在，请刷新后重试');
-//         return;
-//       }
+      //       if (!params.conv_uid) {
+      //         message.error('conv_uid 不存在，请刷新后重试');
+      //         return;
+      //       }
 
       try {
         await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
@@ -59,7 +59,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
               return;
             }
             if (response.headers.get('content-type') === 'application/json') {
-              response.json().then((data) => {
+              response.json().then(data => {
                 onMessage?.(data);
                 onDone?.();
                 ctrl && ctrl.abort();
@@ -73,7 +73,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
           onerror(err) {
             throw new Error(err);
           },
-          onmessage: (event) => {
+          onmessage: event => {
             let message = event.data;
             try {
               if (scene === 'chat_agent') {
@@ -81,7 +81,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
               } else {
                 message = JSON.parse(message);
               }
-            } catch (e) {
+            } catch {
               message.replaceAll('\\n', '\n');
             }
             if (typeof message === 'string') {
