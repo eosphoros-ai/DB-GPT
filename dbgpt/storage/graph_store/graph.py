@@ -84,6 +84,7 @@ class Vertex(Elem):
 
     @property
     def name(self) -> str:
+        """Return the vertex name."""
         return super().name or self._vid
 
     def format(self, concise: bool = False):
@@ -103,7 +104,10 @@ class Vertex(Elem):
 
 
 class IdVertex(Vertex):
+    """IdVertex class."""
+
     def __init__(self, vid: str):
+        """Initialize Idvertex."""
         super().__init__(vid)
 
 

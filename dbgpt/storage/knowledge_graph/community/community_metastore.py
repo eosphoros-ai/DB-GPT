@@ -16,6 +16,7 @@ class BuiltinCommunityMetastore(CommunityMetastore):
     def __init__(
         self, vector_store: VectorStoreBase, rdb_store: Optional[RDBMSConnector] = None
     ):
+        """Initialize Community metastore."""
         self._vector_store = vector_store
         self._rdb_store = rdb_store
 
@@ -31,11 +32,11 @@ class BuiltinCommunityMetastore(CommunityMetastore):
         raise NotImplementedError("Get community not allowed")
 
     def list(self) -> List[Community]:
-        """get all communities."""
+        """Get all communities."""
         raise NotImplementedError("List communities not allowed")
 
     async def search(self, query: str) -> List[Community]:
-        """search communities relevant to query."""
+        """Search communities relevant to query."""
         chunks = await self._vector_store.asimilar_search_with_scores(
             query, self._topk, self._score_threshold
         )

@@ -1,4 +1,4 @@
-"""Define the CommunityStore class"""
+"""Define the CommunityStore class."""
 
 import logging
 from typing import List
@@ -17,19 +17,21 @@ logger = logging.getLogger(__name__)
 
 
 class CommunityStore:
+    """CommunityStore Class."""
+
     def __init__(
         self,
         community_store_adapter: CommunityStoreAdapter,
         community_summarizer: CommunitySummarizer,
         vector_store: VectorStoreBase,
     ):
-        """Initialize the CommunityStore"""
+        """Initialize the CommunityStore class."""
         self._community_store_adapter = community_store_adapter
         self._community_summarizer = community_summarizer
         self._meta_store = BuiltinCommunityMetastore(vector_store)
 
     async def build_communities(self):
-        """discover communities."""
+        """Discover communities."""
         community_ids = await (self._community_store_adapter.discover_communities())
 
         # summarize communities
@@ -55,26 +57,27 @@ class CommunityStore:
         await self._meta_store.save(communities)
 
     async def search_communities(self, query: str) -> List[Community]:
+        """Search communities."""
         return await self._meta_store.search(query)
 
     def truncate(self):
         """Truncate community store."""
-        logger.info(f"Truncate community metastore")
+        logger.info("Truncate community metastore")
         self._meta_store.truncate()
 
-        logger.info(f"Truncate community summarizer")
+        logger.info("Truncate community summarizer")
         self._community_summarizer.truncate()
 
-        logger.info(f"Truncate graph")
+        logger.info("Truncate graph")
         self._community_store_adapter.graph_store.truncate()
 
     def drop(self):
         """Drop community store."""
-        logger.info(f"Remove community metastore")
+        logger.info("Remove community metastore")
         self._meta_store.drop()
 
-        logger.info(f"Remove community summarizer")
+        logger.info("Remove community summarizer")
         self._community_summarizer.drop()
 
-        logger.info(f"Remove graph")
+        logger.info("Remove graph")
         self._community_store_adapter.graph_store.drop()

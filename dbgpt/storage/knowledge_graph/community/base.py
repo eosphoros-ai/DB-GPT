@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Community:
-    """Community class"""
+    """Community class."""
 
     id: str
     data: Optional[Graph] = None
@@ -28,10 +28,12 @@ class CommunityStoreAdapter(ABC):
     """Community Store Adapter."""
 
     def __init__(self, graph_store: GraphStoreBase):
+        """Initialize Community Store Adapter."""
         self._graph_store = graph_store
 
     @property
     def graph_store(self) -> GraphStoreBase:
+        """Get graph store."""
         return self._graph_store
 
     @abstractmethod
@@ -52,11 +54,11 @@ class CommunityMetastore(ABC):
 
     @abstractmethod
     def list(self) -> List[Community]:
-        """get all communities."""
+        """Get all communities."""
 
     @abstractmethod
     async def search(self, query: str) -> List[Community]:
-        """search communities relevant to query."""
+        """Search communities relevant to query."""
 
     @abstractmethod
     async def save(self, communities: List[Community]):

@@ -110,7 +110,7 @@ class TuGraphStore(GraphStoreBase):
         self.conn.run(gql)
 
     def _upload_plugin(self):
-        gql = f"CALL db.plugin.listPlugin('CPP','v1')"
+        gql = "CALL db.plugin.listPlugin('CPP','v1')"
         result = self.conn.run(gql)
         result_names = [
             json.loads(record["plugin_description"])["name"] for record in result
@@ -135,7 +135,10 @@ class TuGraphStore(GraphStoreBase):
                 with open(plugin_path, "rb") as f:
                     content = f.read()
                 content = base64.b64encode(content).decode()
-                gql = f"CALL db.plugin.loadPlugin('CPP','{name}','{content}','SO','{name} Plugin',false,'v1')"
+                gql = (
+                    f"CALL db.plugin.loadPlugin('CPP', '{name}', '{content}', "
+                    "'SO', '{name} Plugin', false, 'v1')"
+                )
                 self.conn.run(gql)
 
     def _create_schema(self):
@@ -164,12 +167,19 @@ class TuGraphStore(GraphStoreBase):
 
         if not self._check_label("edge"):
             create_edge_gql = f"""CALL db.createLabel(
-                    'edge', '{self._edge_type}', '[["{self._vertex_type}",
-                    "{self._vertex_type}"]]', ["id",STRING,false],["name",STRING,false])"""
+                    'edge', '{self._edge_type}',
+                    '[["{self._vertex_type}",
+                    "{self._vertex_type}"]]',
+                    ["id",STRING,false],
+                    ["name",STRING,false])"""
             if self._summary_enabled:
                 create_edge_gql = f"""CALL db.createLabel(
-                    'edge', '{self._edge_type}', '[["{self._vertex_type}",
-                    "{self._vertex_type}"]]', ["id",STRING,false],["name",STRING,false],["description",STRING,true])"""
+                    'edge', '{self._edge_type}',
+                    '[["{self._vertex_type}",
+                    "{self._vertex_type}"]]',
+                    ["id",STRING,false],
+                    ["name",STRING,false],
+                    ["description",STRING,true])"""
             self.conn.run(create_edge_gql)
 
     def _format_query_data(self, data, white_prop_list: List[str]):
@@ -278,9 +288,18 @@ class TuGraphStore(GraphStoreBase):
         rel_escaped = escape_quotes(rel)
         obj_escaped = escape_quotes(obj)
 
-        node_query = f"CALL db.upsertVertex('{self._vertex_type}', [{{id:'{subj_escaped}',name:'{subj_escaped}'}},{{id:'{obj_escaped}',name:'{obj_escaped}'}}])"
-        edge_query = f"""CALL db.upsertEdge('{self._edge_type}', {{type:"{self._vertex_type}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{{sid:"{subj_escaped}", tid: "{obj_escaped}",id:"{rel_escaped}", name: "{rel_escaped}"}}])"""
-
+        node_query = f"""CALL db.upsertVertex(
+            '{self._vertex_type}',
+            [{{id:'{subj_escaped}',name:'{subj_escaped}'}},
+            {{id:'{obj_escaped}',name:'{obj_escaped}'}}])"""
+        edge_query = f"""CALL db.upsertEdge(
+            '{self._edge_type}',
+            {{type:"{self._vertex_type}",key:"sid"}},
+            {{type:"{self._vertex_type}", key:"tid"}},
+            [{{sid:"{subj_escaped}",
+            tid: "{obj_escaped}",
+            id:"{rel_escaped}",
+            name: "{rel_escaped}"}}])"""
         self.conn.run(query=node_query)
         self.conn.run(query=edge_query)
 
@@ -298,7 +317,16 @@ class TuGraphStore(GraphStoreBase):
         edge_list = []
 
         def parser(node_list):
-            return f"""{', '.join(['{' + ', '.join([f'{k}: "{v}"' if isinstance(v, str) else f'{k}: {v}' for k, v in node.items()]) + '}' for node in node_list])}"""
+            formatted_nodes = [
+                "{"
+                + ", ".join(
+                    f'{k}: "{v}"' if isinstance(v, str) else f"{k}: {v}"
+                    for k, v in node.items()
+                )
+                + "}"
+                for node in node_list
+            ]
+            return f"""{', '.join(formatted_nodes)}"""
 
         for node in nodes:
             node_list.append(
@@ -325,7 +353,11 @@ class TuGraphStore(GraphStoreBase):
                 }
             )
 
-        edge_query = f"""CALL db.upsertEdge("{self._edge_type}", {{type:"{self._vertex_type}", key:"sid"}}, {{type:"entity", key:"tid"}}, [{parser(edge_list)}])"""
+        edge_query = f"""CALL db.upsertEdge(
+            "{self._edge_type}",
+            {{type:"{self._vertex_type}", key:"sid"}},
+            {{type:"{self._vertex_type}", key:"tid"}},
+            [{parser(edge_list)}])"""
         self.conn.run(query=node_query)
         self.conn.run(query=edge_query)
 
@@ -358,9 +390,6 @@ class TuGraphStore(GraphStoreBase):
         """Get full graph."""
         if not limit:
             raise Exception("limit must be set")
-        # all_vertex_graph = self.query(
-        #     f"MATCH (n) RETURN n LIMIT {limit}", white_list=["_community_id"]
-        # )
         graph_result = self.query(
             f"MATCH (n)-[r]-(m) RETURN n,r,m LIMIT {limit}",
             white_list=["_community_id"],
@@ -380,10 +409,10 @@ class TuGraphStore(GraphStoreBase):
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> Graph:
+        """Explore the graph from given subjects up to a depth."""
         if not subs:
             return MemoryGraph()
 
-        """Explore the graph from given subjects up to a depth."""
         if fan is not None:
             raise ValueError("Fan functionality is not supported at this time.")
         else:

@@ -61,6 +61,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     """Community summary knowledge graph class."""
 
     def __init__(self, config: CommunitySummaryKnowledgeGraphConfig):
+        """Initialize community summary knowledge graph class."""
         super().__init__(config)
         self._config = config
 
@@ -156,6 +157,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
+        """Retrieve relevant community summaries."""
         # global search: retrieve relevant community summaries
         communities = await self._community_store.search_communities(text)
         summaries = [
@@ -178,26 +180,23 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     def truncate(self) -> List[str]:
         """Truncate knowledge graph."""
-        logger.info(f"Truncate community store")
+        logger.info("Truncate community store")
         self._community_store.truncate()
-
-        logger.info(f"Truncate keyword extractor")
+        logger.info("Truncate keyword extractor")
         self._keyword_extractor.truncate()
-
-        logger.info(f"Truncate triplet extractor")
+        logger.info("Truncate triplet extractor")
         self._graph_extractor.truncate()
-
         return [self._config.name]
 
     def delete_vector_name(self, index_name: str):
         """Delete knowledge graph."""
-        logger.info(f"Drop community store")
+        logger.info("Drop community store")
         self._community_store.drop()
 
-        logger.info(f"Drop keyword extractor")
+        logger.info("Drop keyword extractor")
         self._keyword_extractor.drop()
 
-        logger.info(f"Drop triplet extractor")
+        logger.info("Drop triplet extractor")
         self._graph_extractor.drop()
 
 

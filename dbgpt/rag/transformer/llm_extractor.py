@@ -19,7 +19,7 @@ class LLMExtractor(ExtractorBase, ABC):
         self._prompt_template = prompt_template
 
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
-        """Default extract by LLM."""
+        """Extract by LLM."""
         return await self._extract(text, None, limit)
 
     async def _extract(

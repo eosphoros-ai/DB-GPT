@@ -197,7 +197,6 @@ class ChromaStore(VectorStoreBase):
 
     def truncate(self) -> List[str]:
         """Truncate data index_name."""
-
         logger.info(f"begin truncate chroma collection:{self._collection.name}")
         results = self._collection.get()
         ids = results.get("ids")

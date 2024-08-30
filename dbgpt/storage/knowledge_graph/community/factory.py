@@ -21,7 +21,6 @@ class CommunityStoreAdapterFactory:
         Args:
             - graph_store_type: graph store type Memory, TuGraph, Neo4j
         """
-
         if isinstance(graph_store, TuGraphStore):
             return TuGraphCommunityStoreAdapter(graph_store)
         else:

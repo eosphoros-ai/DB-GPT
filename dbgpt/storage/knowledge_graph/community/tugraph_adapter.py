@@ -3,7 +3,7 @@ import json
 import logging
 from typing import List
 
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import MemoryGraph
 from dbgpt.storage.knowledge_graph.community.base import (
     Community,
     CommunityStoreAdapter,

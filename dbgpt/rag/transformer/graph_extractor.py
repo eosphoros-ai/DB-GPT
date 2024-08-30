@@ -30,6 +30,7 @@ class GraphExtractor(LLMExtractor):
         self._score_threshold = config.score_threshold
 
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
+        """Load similar chunks."""
         # load similar chunks
         chunks = await self._chunk_history.asimilar_search_with_scores(
             text, self._topk, self._score_threshold
@@ -82,11 +83,11 @@ class GraphExtractor(LLMExtractor):
         return [graph]
 
     def truncate(self):
-        """truncate chunk history."""
+        """Truncate chunk history."""
         self._chunk_history.truncate()
 
     def drop(self):
-        """drop chunk history."""
+        """Drop chunk history."""
         self._chunk_history.delete_vector_name(self._vector_space)
 
 

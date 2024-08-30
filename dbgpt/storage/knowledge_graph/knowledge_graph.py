@@ -154,10 +154,10 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         logger.info(f"Truncate graph {self._config.name}")
         self._graph_store.truncate()
 
-        logger.info(f"Truncate keyword extractor")
+        logger.info("Truncate keyword extractor")
         self._keyword_extractor.truncate()
 
-        logger.info(f"Truncate triplet extractor")
+        logger.info("Truncate triplet extractor")
         self._triplet_extractor.truncate()
 
         return [self._config.name]
@@ -167,8 +167,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         logger.info(f"Drop graph {index_name}")
         self._graph_store.drop()
 
-        logger.info(f"Drop keyword extractor")
+        logger.info("Drop keyword extractor")
         self._keyword_extractor.drop()
 
-        logger.info(f"Drop triplet extractor")
+        logger.info("Drop triplet extractor")
         self._triplet_extractor.drop()
