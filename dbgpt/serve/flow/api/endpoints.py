@@ -517,7 +517,7 @@ async def import_flow(
             raise HTTPException(
                 status_code=400, detail="invalid json file, missing 'flow' key"
             )
-        flow = _parse_flow_template_from_json(json_dict["flow"])
+        flow = _parse_flow_template_from_json(json_dict)
     elif file_extension == "zip":
         from ..service.share_utils import _parse_flow_from_zip_file
 
