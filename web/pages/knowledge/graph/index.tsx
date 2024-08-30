@@ -3,7 +3,7 @@ import { Button, Spin } from "antd";
 import { RollbackOutlined } from "@ant-design/icons";
 import { apiInterceptors, getGraphVis } from "@/client/api";
 import { useRouter } from "next/router";
-import { ExtensionCategory, idOf, register } from "@antv/g6";
+import { idOf } from "@antv/g6";
 import type {
   Graph,
   GraphData,
@@ -14,17 +14,10 @@ import type {
 } from "@antv/g6";
 import type { GraphVisResult } from "../../../types/knowledge";
 import { Graphin } from "@antv/graphin";
-import {
-  getDegree,
-  getSize,
-  isInCommunity,
-  ConnectedComponent,
-} from "../../../utils/graph";
+import { getDegree, getSize, isInCommunity } from "../../../utils/graph";
 import { groupBy } from "lodash";
 
 type GraphVisData = GraphVisResult | null;
-
-register(ExtensionCategory.LAYOUT, "connected-component", ConnectedComponent);
 
 const PALETTE = [
   "#5F95FF",
@@ -123,7 +116,7 @@ function GraphVis() {
           size: getNodeSize(idOf(d)),
           label: true,
           labelLineWidth: 2,
-          labelText: d.id,
+          labelText: d.data?.name as string,
           labelFontSize: 10,
           labelBackground: true,
           labelBackgroundFill: "#e5e7eb",
@@ -163,7 +156,7 @@ function GraphVis() {
         label: true,
         labelFontSize: 8,
         labelBackground: true,
-        labelText: (e) => e.data!.name!.toString(),
+        labelText: (e) => e.data!.name as string,
         labelBackgroundFill: "#e5e7eb",
         labelPadding: [0, 6],
         labelBackgroundRadius: 4,
@@ -194,22 +187,19 @@ function GraphVis() {
       },
     ],
     animation: false,
-    layout: [
-      { type: "connected-component" },
-      {
-        type: "force",
-        preventOverlap: true,
-        nodeSize: (d) => getNodeSize(d?.id as ID),
-        linkDistance: (edge) => {
-          const { source, target } = edge as { source: ID; target: ID };
-          const nodeSize = Math.min(getNodeSize(source), getNodeSize(target));
-          const degree = Math.min(getNodeDegree(source), getNodeDegree(target));
-          return degree === 1
-            ? nodeSize * 2
-            : Math.min(degree * nodeSize * 1.5, 700);
-        },
+    layout: {
+      type: "force",
+      preventOverlap: true,
+      nodeSize: (d) => getNodeSize(d?.id as ID),
+      linkDistance: (edge) => {
+        const { source, target } = edge as { source: ID; target: ID };
+        const nodeSize = Math.min(getNodeSize(source), getNodeSize(target));
+        const degree = Math.min(getNodeDegree(source), getNodeDegree(target));
+        return degree === 1
+          ? nodeSize * 2
+          : Math.min(degree * nodeSize * 1.5, 700);
       },
-    ],
+    },
     transforms: ["process-parallel-edges"],
   };
 
