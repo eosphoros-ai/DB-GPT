@@ -32,7 +32,7 @@ class Elem(ABC):
     @property
     def name(self) -> str:
         """Return the edge label."""
-        return self._name or ''
+        return self._name or ""
 
     @property
     def props(self) -> Dict[str, Any]:
@@ -100,6 +100,7 @@ class Vertex(Elem):
     def __str__(self):
         """Return the vertex ID as its string representation."""
         return f"({self._vid})"
+
 
 class IdVertex(Vertex):
     def __init__(self, vid: str):

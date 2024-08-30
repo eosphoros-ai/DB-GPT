@@ -309,7 +309,7 @@ class KnowledgeService:
         """
         return knowledge_space_dao.get_knowledge_space_by_ids(ids)
 
-    def recall_test(
+    async def recall_test(
         self, space_name, doc_recall_test_request: DocumentRecallTestRequest
     ):
         logger.info(f"recall_test {space_name}, {doc_recall_test_request}")
@@ -338,7 +338,7 @@ class KnowledgeService:
             knowledge_space_retriever = KnowledgeSpaceRetriever(
                 space_id=space.id, top_k=top_k
             )
-            chunks = knowledge_space_retriever.retrieve_with_scores(
+            chunks = await knowledge_space_retriever.aretrieve_with_scores(
                 question, score_threshold
             )
             retrievers_end_time = timeit.default_timer()

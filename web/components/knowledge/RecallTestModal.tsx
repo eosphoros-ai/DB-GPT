@@ -160,7 +160,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
                   title={
                     <div className="flex items-center">
                       <Tag color="blue"># {item.chunk_id}</Tag>
-                      {item.metadata.prop_field.title}
+                      {item.metadata.source}
                     </div>
                   }
                   extra={

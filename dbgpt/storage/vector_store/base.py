@@ -138,7 +138,7 @@ class VectorStoreBase(IndexStoreBase, ABC):
                     metadata=chunk.metadata,
                     content=chunk.content,
                     score=chunk.score,
-                    chunk_id=str(id),
+                    chunk_id=chunk.chunk_id,
                 )
                 for chunk in chunks
                 if chunk.score >= score_threshold

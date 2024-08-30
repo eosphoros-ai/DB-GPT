@@ -106,10 +106,16 @@ class ChromaStore(VectorStoreBase):
             filters=filters,
         )
         return [
-            Chunk(content=chroma_result[0], metadata=chroma_result[1] or {}, score=0.0)
+            Chunk(
+                content=chroma_result[0],
+                metadata=chroma_result[1] or {},
+                score=0.0,
+                chunk_id=chroma_result[2],
+            )
             for chroma_result in zip(
                 chroma_results["documents"][0],
                 chroma_results["metadatas"][0],
+                chroma_results["ids"][0],
             )
         ]
 
@@ -140,12 +146,14 @@ class ChromaStore(VectorStoreBase):
                     content=chroma_result[0],
                     metadata=chroma_result[1] or {},
                     score=(1 - chroma_result[2]),
+                    chunk_id=chroma_result[3],
                 )
             )
             for chroma_result in zip(
                 chroma_results["documents"][0],
                 chroma_results["metadatas"][0],
                 chroma_results["distances"][0],
+                chroma_results["ids"][0],
             )
         ]
         return self.filter_by_score_threshold(chunks, score_threshold)
