@@ -163,7 +163,7 @@ function GraphVis() {
         label: true,
         labelFontSize: 8,
         labelBackground: true,
-        labelText: (d) => d.data!.label!.toString(),
+        labelText: (e) => e.data!.name!.toString(),
         labelBackgroundFill: "#e5e7eb",
         labelPadding: [0, 6],
         labelBackgroundRadius: 4,
