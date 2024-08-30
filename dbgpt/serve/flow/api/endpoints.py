@@ -14,7 +14,7 @@ from dbgpt.serve.core import Result, blocking_func_to_async
 from dbgpt.util import PaginationResult
 
 from ..config import APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
-from ..service.service import Service
+from ..service.service import Service, _parse_flow_template_from_json
 from ..service.variables_service import VariablesService
 from .schemas import (
     FlowDebugRequest,
@@ -517,7 +517,7 @@ async def import_flow(
             raise HTTPException(
                 status_code=400, detail="invalid json file, missing 'flow' key"
             )
-        flow = ServeRequest.parse_obj(json_dict["flow"])
+        flow = _parse_flow_template_from_json(json_dict["flow"])
     elif file_extension == "zip":
         from ..service.share_utils import _parse_flow_from_zip_file
 
@@ -534,6 +534,31 @@ async def import_flow(
         return Result.succ(res)
     else:
         return Result.succ(flow)
+
+
+@router.get(
+    "/flow/templates",
+    response_model=Result[PaginationResult[ServerResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def query_flow_templates(
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    page: int = Query(default=1, description="current page"),
+    page_size: int = Query(default=20, description="page size"),
+    service: Service = Depends(get_service),
+) -> Result[PaginationResult[ServerResponse]]:
+    """Query Flow templates."""
+
+    res = await blocking_func_to_async(
+        global_system_app,
+        service.get_flow_templates,
+        user_name,
+        sys_code,
+        page,
+        page_size,
+    )
+    return Result.succ(res)
 
 
 def init_endpoints(system_app: SystemApp) -> None:
