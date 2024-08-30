@@ -24,7 +24,7 @@ class Direction(Enum):
 class Elem(ABC):
     """Elem class."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: Optional[str] = None):
         """Initialize Elem."""
         self._name = name
         self._props: Dict[str, Any] = {}
@@ -32,7 +32,7 @@ class Elem(ABC):
     @property
     def name(self) -> str:
         """Return the edge label."""
-        return self._name
+        return self._name or ''
 
     @property
     def props(self) -> Dict[str, Any]:
@@ -72,7 +72,7 @@ class Vertex(Elem):
 
     def __init__(self, vid: str, name: Optional[str] = None, **props):
         """Initialize Vertex."""
-        super().__init__(name)  # type: ignore # noqa
+        super().__init__(name)
         self._vid = vid
         for k, v in props.items():
             self.set_prop(k, v)
@@ -100,7 +100,6 @@ class Vertex(Elem):
     def __str__(self):
         """Return the vertex ID as its string representation."""
         return f"({self._vid})"
-
 
 class IdVertex(Vertex):
     def __init__(self, vid: str):
@@ -148,7 +147,7 @@ class Edge(Elem):
 
     def triplet(self) -> Tuple[str, str, str]:
         """Return a triplet."""
-        return self._sid, self._name, self._tid
+        return self.sid, self.name, self.tid
 
     def __str__(self):
         """Return the edge '(sid)->(tid)'."""

@@ -52,7 +52,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         description="Topk of community search in knowledge graph",
     )
     community_score_threshold: float = Field(
-        default=0.3,
+        default=0.0,
         description="Recall score of community search in knowledge graph",
     )
 
