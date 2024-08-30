@@ -1,14 +1,7 @@
 import { File } from 'buffer';
 import { Node } from 'reactflow';
 
-export type FlowState =
-  | 'deployed'
-  | 'developing'
-  | 'initializing'
-  | 'testing'
-  | 'disabled'
-  | 'running'
-  | 'load_failed';
+export type FlowState = 'deployed' | 'developing' | 'initializing' | 'testing' | 'disabled' | 'running' | 'load_failed';
 
 export type IFlowUpdateParam = {
   name: string;

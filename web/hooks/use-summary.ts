@@ -1,8 +1,8 @@
 import { ChatContext } from '@/app/chat-context';
+import { apiInterceptors, getChatHistory } from '@/client/api';
 import { ChatHistoryResponse } from '@/types/chat';
 import { useCallback, useContext } from 'react';
 import useChat from './use-chat';
-import { apiInterceptors, getChatHistory } from '@/client/api';
 
 const useSummary = () => {
   const { history, setHistory, chatId, model, docId } = useContext(ChatContext);
@@ -24,7 +24,7 @@ const useSummary = () => {
           model_name: model,
         },
         chatId,
-        onMessage: (message) => {
+        onMessage: message => {
           tempHistory[index].context = message;
           setHistory([...tempHistory]);
         },

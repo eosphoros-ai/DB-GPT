@@ -15,8 +15,8 @@
     "dev": "NODE_OPTIONS=--max_old_space_size=8192 next dev",
     "build": "NODE_OPTIONS=--max_old_space_size=8192 next build",
     "build:prod": "APP_ENV=prod  NODE_OPTIONS=--max_old_space_size=8192 next build",
-    "lint": "eslint ./pages ./components",
-    "format": "prettier --write ./pages ./components",
+    "lint": "eslint ../web/**/*.{ts,tsx}",
+    "format": "prettier --write ../web/**/*.{ts,tsx}",
     "export": "next export",
     "compile": " NODE_OPTIONS=--max_old_space_size=8192 next build && next export"
   },

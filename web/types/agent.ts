@@ -62,12 +62,12 @@ export type IMyPlugin = {
   use_count: number;
   created_at: string;
   description: string;
-  data?: any; 
+  data?: any;
 };
 
 export type PostAgentMyPluginResponse = {
   items: IMyPlugin[];
-}
+};
 
 export type GetDBGPTsListResponse = {
   app_code: string;
