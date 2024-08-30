@@ -388,7 +388,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
-        page_result = self.dao.get_list_page(request, page, page_size)
+        page_result = self.dao.get_list_page(
+            request, page, page_size, desc_order_column=ServeEntity.gmt_modified.name
+        )
         for item in page_result.items:
             metadata = self.dag_manager.get_dag_metadata(
                 item.dag_id, alias_name=item.uid

@@ -687,6 +687,10 @@ class IOField(Resource):
         " True",
         examples=[0, 1, 2],
     )
+    mappers: Optional[List[str]] = Field(
+        default=None,
+        description="The mappers of the field, transform the field to the target type",
+    )
 
     @classmethod
     def build_from(
@@ -698,10 +702,16 @@ class IOField(Resource):
         is_list: bool = False,
         dynamic: bool = False,
         dynamic_minimum: int = 0,
+        mappers: Optional[Union[Type, List[Type]]] = None,
     ):
         """Build the resource from the type."""
         type_name = type.__qualname__
         type_cls = _get_type_name(type)
+        # TODO: Check the mapper instance can be created without required
+        #  parameters.
+        if mappers and not isinstance(mappers, list):
+            mappers = [mappers]
+        mappers_cls = [_get_type_name(m) for m in mappers] if mappers else None
         return cls(
             label=label,
             name=name,
@@ -711,6 +721,7 @@ class IOField(Resource):
             description=description or label,
             dynamic=dynamic,
             dynamic_minimum=dynamic_minimum,
+            mappers=mappers_cls,
         )
 
     @model_validator(mode="before")

@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from dbgpt._private.config import Config
+from dbgpt.core import Chunk
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
@@ -93,6 +94,15 @@ _OUTPUTS_CONTEXT = IOField.build_from(
 
 
 class HOKnowledgeOperator(MapOperator[str, HOContextBody]):
+    _share_data_key = "_higher_order_knowledge_operator_retriever_chunks"
+
+    class ChunkMapper(MapOperator[HOContextBody, List[Chunk]]):
+        async def map(self, context: HOContextBody) -> List[Chunk]:
+            chunks = await self.current_dag_context.get_from_share_data(
+                HOKnowledgeOperator._share_data_key
+            )
+            return chunks
+
     metadata = ViewMetadata(
         label=_("Knowledge Operator"),
         name="higher_order_knowledge_operator",
@@ -122,6 +132,14 @@ class HOKnowledgeOperator(MapOperator[str, HOContextBody]):
         ],
         outputs=[
             _OUTPUTS_CONTEXT.new(),
+            IOField.build_from(
+                _("Chunks"),
+                "chunks",
+                Chunk,
+                is_list=True,
+                description=_("The retrieved chunks from the knowledge space"),
+                mappers=[ChunkMapper],
+            ),
         ],
         tags={"order": TAGS_ORDER_HIGH},
     )
@@ -185,6 +203,7 @@ class HOKnowledgeOperator(MapOperator[str, HOContextBody]):
         chunks = await self._space_retriever.aretrieve_with_scores(
             query, self._score_threshold
         )
+        await self.current_dag_context.save_to_share_data(self._share_data_key, chunks)
         return HOContextBody(
             context_key=self._context_key,
             context=[chunk.content for chunk in chunks],
