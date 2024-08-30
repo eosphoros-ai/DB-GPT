@@ -14,8 +14,8 @@ export async function connection() {
     });
     await sequelize.authenticate();
     console.log('Connection has been established successfully.');
-  } catch (e) {
-    console.error('Unable to connect to the database:', e);
+  } catch {
+    // console.error('Unable to connect to the database:', e);
   }
 }
 
