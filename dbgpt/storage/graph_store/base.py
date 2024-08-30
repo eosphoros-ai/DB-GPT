@@ -1,7 +1,7 @@
 """Graph store base class."""
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import Generator, List, Optional, Tuple
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
@@ -23,14 +23,34 @@ class GraphStoreConfig(BaseModel):
         default=None,
         description="The embedding function of graph store, optional.",
     )
+    summary_enabled: bool = Field(
+        default=False,
+        description="Enable graph community summary or not.",
+    )
 
 
 class GraphStoreBase(ABC):
     """Graph store base class."""
 
     @abstractmethod
+    def get_config(self) -> GraphStoreConfig:
+        """Get the graph store config."""
+
+    @abstractmethod
+    def get_vertex_type(self) -> str:
+        """Get the vertex type."""
+
+    @abstractmethod
+    def get_edge_type(self) -> str:
+        """Get the edge type."""
+
+    @abstractmethod
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Add triplet."""
+
+    @abstractmethod
+    def insert_graph(self, graph: Graph):
+        """Add graph."""
 
     @abstractmethod
     def get_triplets(self, sub: str) -> List[Tuple[str, str]]:
@@ -39,6 +59,10 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete triplet."""
+
+    @abstractmethod
+    def truncate(self):
+        """Truncate Graph."""
 
     @abstractmethod
     def drop(self):
@@ -66,3 +90,11 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def query(self, query: str, **args) -> Graph:
         """Execute a query."""
+
+    def aquery(self, query: str, **args) -> Graph:
+        """Async execute a query."""
+        return self.query(query, **args)
+
+    @abstractmethod
+    def stream_query(self, query: str) -> Generator[Graph, None, None]:
+        """Execute stream query."""

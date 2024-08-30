@@ -6,6 +6,7 @@ import os
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
+from dbgpt.app.component_configs import CFG
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import (
     FunctionDynamicOptions,
@@ -95,6 +96,7 @@ class VectorStoreConnector:
         self._index_store_config = vector_store_config
         self._register()
 
+        vector_store_type = self.__rewrite_index_store_type(vector_store_type)
         if self._match(vector_store_type):
             self.connector_class, self.config_class = connector[vector_store_type]
         else:
@@ -123,6 +125,13 @@ class VectorStoreConnector:
         except Exception as e:
             logger.error("connect vector store failed: %s", e)
             raise e
+
+    def __rewrite_index_store_type(self, index_store_type):
+        # Rewrite Knowledge Graph Type
+        if CFG.GRAPH_COMMUNITY_SUMMARY_ENABLED:
+            if index_store_type == "KnowledgeGraph":
+                return "CommunitySummaryKnowledgeGraph"
+        return index_store_type
 
     @classmethod
     def from_default(
@@ -269,6 +278,10 @@ class VectorStoreConnector:
             - ids: vector ids
         """
         return self.client.delete_by_ids(ids=ids)
+
+    def truncate(self):
+        """Truncate data."""
+        return self.client.truncate()
 
     @property
     def current_embeddings(self) -> Optional[Embeddings]:
