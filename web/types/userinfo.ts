@@ -9,4 +9,5 @@ export type PostUserAddParams = {
   user_id?: string;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UserInfoResponse extends PostUserAddParams {}
