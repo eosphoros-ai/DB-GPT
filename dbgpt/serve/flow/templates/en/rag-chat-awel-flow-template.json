@@ -1,0 +1,1088 @@
+{
+  "flow": {
+    "uid": "21eb87d5-b63a-4f41-b2aa-28d01033344d",
+    "label": "RAG Chat AWEL flow template",
+    "name": "rag_chat_awel_flow_template",
+    "flow_category": "chat_flow",
+    "description": "An example of a RAG chat AWEL flow.",
+    "state": "running",
+    "error_message": "",
+    "source": "DBGPT-WEB",
+    "source_url": null,
+    "version": "0.1.1",
+    "define_type": "json",
+    "editable": true,
+    "user_name": null,
+    "sys_code": null,
+    "dag_id": "flow_dag_rag_chat_awel_flow_template_21eb87d5-b63a-4f41-b2aa-28d01033344d",
+    "gmt_created": "2024-08-30 10:48:56",
+    "gmt_modified": "2024-08-30 10:48:56",
+    "metadata": {
+      "sse_output": true,
+      "streaming_output": true,
+      "tags": {},
+      "triggers": [
+        {
+          "trigger_type": "http",
+          "path": "/api/v1/awel/trigger/templates/flow_dag_rag_chat_awel_flow_template_21eb87d5-b63a-4f41-b2aa-28d01033344d",
+          "methods": [
+            "POST"
+          ],
+          "trigger_mode": "chat"
+        }
+      ]
+    },
+    "variables": null,
+    "authors": null,
+    "flow_data": {
+      "edges": [
+        {
+          "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+          "source_order": 0,
+          "target": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "target_order": 0,
+          "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|0",
+          "target_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|inputs|0",
+          "type": "buttonedge"
+        },
+        {
+          "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+          "source_order": 1,
+          "target": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "target_order": 0,
+          "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|1",
+          "target_handle": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0|inputs|0",
+          "type": "buttonedge"
+        },
+        {
+          "source": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "source_order": 0,
+          "target": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "target_order": 1,
+          "id": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0|operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_handle": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0|outputs|0",
+          "target_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|inputs|1",
+          "type": "buttonedge"
+        },
+        {
+          "source": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+          "source_order": 0,
+          "target": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "target_order": 0,
+          "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0|operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_handle": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0|outputs|0",
+          "target_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|parameters|0",
+          "type": "buttonedge"
+        },
+        {
+          "source": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_order": 0,
+          "target": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+          "target_order": 0,
+          "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+          "source_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|outputs|0",
+          "target_handle": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0|inputs|0",
+          "type": "buttonedge"
+        }
+      ],
+      "viewport": {
+        "x": 900.5986504747431,
+        "y": 420.90015979869725,
+        "zoom": 0.6903331247004052
+      },
+      "nodes": [
+        {
+          "width": 320,
+          "height": 632,
+          "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+          "position": {
+            "x": -1164.0000230376968,
+            "y": -501.9869760888273,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": -1164.0000230376968,
+            "y": -501.9869760888273,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "Common LLM Http Trigger",
+            "custom_label": null,
+            "name": "common_llm_http_trigger",
+            "description": "Trigger your workflow by http request, and parse the request body as a common LLM http body",
+            "category": "trigger",
+            "category_label": "Trigger",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "input",
+            "inputs": [],
+            "outputs": [
+              {
+                "type_name": "CommonLLMHttpRequestBody",
+                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                "label": "Request Body",
+                "custom_label": null,
+                "name": "request_body",
+                "description": "The request body of the API endpoint, parse as a common LLM http body",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "label": "Request String Messages",
+                "custom_label": null,
+                "name": "request_string_messages",
+                "description": "The request string messages of the API endpoint, parsed from 'messages' field of the request body",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": [
+                  "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger.MessagesOutputMapper"
+                ]
+              }
+            ],
+            "version": "v1",
+            "type_name": "CommonLLMHttpTrigger",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger",
+            "parameters": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "API Endpoint",
+                "name": "endpoint",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "/example/{dag_id}",
+                "placeholder": null,
+                "description": "The API endpoint",
+                "value": "/templates/{dag_id}",
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Http Methods",
+                "name": "methods",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "POST",
+                "placeholder": null,
+                "description": "The methods of the API endpoint",
+                "value": null,
+                "options": [
+                  {
+                    "label": "HTTP Method PUT",
+                    "name": "http_put",
+                    "value": "PUT",
+                    "children": null
+                  },
+                  {
+                    "label": "HTTP Method POST",
+                    "name": "http_post",
+                    "value": "POST",
+                    "children": null
+                  }
+                ]
+              },
+              {
+                "type_name": "bool",
+                "type_cls": "builtins.bool",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Streaming Response",
+                "name": "streaming_response",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": false,
+                "placeholder": null,
+                "description": "Whether the response is streaming",
+                "value": false,
+                "options": null
+              },
+              {
+                "type_name": "BaseHttpBody",
+                "type_cls": "dbgpt.core.awel.trigger.http_trigger.BaseHttpBody",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Http Response Body",
+                "name": "http_response_body",
+                "is_list": false,
+                "category": "resource",
+                "resource_type": "class",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "The response body of the API endpoint",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Response Media Type",
+                "name": "response_media_type",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "The response media type",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Http Status Code",
+                "name": "status_code",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 200,
+                "placeholder": null,
+                "description": "The http status code",
+                "value": null,
+                "options": null
+              }
+            ]
+          }
+        },
+        {
+          "width": 320,
+          "height": 910,
+          "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "position": {
+            "x": 661.094354143159,
+            "y": -368.93541722528227,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": 661.094354143159,
+            "y": -368.93541722528227,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "Streaming LLM Operator",
+            "custom_label": null,
+            "name": "higher_order_streaming_llm_operator",
+            "description": "High-level streaming LLM operator, supports multi-round conversation (conversation window, token length and no multi-round).",
+            "category": "llm",
+            "category_label": "LLM",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "map",
+            "inputs": [
+              {
+                "type_name": "CommonLLMHttpRequestBody",
+                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                "label": "Common LLM Request Body",
+                "custom_label": null,
+                "name": "common_llm_request_body",
+                "description": "The common LLM request body.",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              },
+              {
+                "type_name": "HOContextBody",
+                "type_cls": "dbgpt.app.operators.llm.HOContextBody",
+                "label": "Extra Context",
+                "custom_label": null,
+                "name": "extra_context",
+                "description": "Extra context for building prompt(Knowledge context, database schema, etc), you can add multiple context.",
+                "dynamic": true,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              }
+            ],
+            "outputs": [
+              {
+                "type_name": "ModelOutput",
+                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                "label": "Streaming Model Output",
+                "custom_label": null,
+                "name": "streaming_model_output",
+                "description": "The streaming model output.",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": null
+              }
+            ],
+            "version": "v1",
+            "type_name": "HOStreamingLLMOperator",
+            "type_cls": "dbgpt.app.operators.llm.HOStreamingLLMOperator",
+            "parameters": [
+              {
+                "type_name": "ChatPromptTemplate",
+                "type_cls": "dbgpt.core.interface.prompt.ChatPromptTemplate",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Prompt Template",
+                "name": "prompt_template",
+                "is_list": false,
+                "category": "resource",
+                "resource_type": "instance",
+                "optional": false,
+                "default": null,
+                "placeholder": null,
+                "description": "The prompt template for the conversation.",
+                "value": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Model Name",
+                "name": "model",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "The model name.",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "LLMClient",
+                "type_cls": "dbgpt.core.interface.llm.LLMClient",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "LLM Client",
+                "name": "llm_client",
+                "is_list": false,
+                "category": "resource",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "The LLM Client, how to connect to the LLM model, if not provided, it will use the default client deployed by DB-GPT.",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "History Message Merge Mode",
+                "name": "history_merge_mode",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "none",
+                "placeholder": null,
+                "description": "The history merge mode, supports 'none', 'window' and 'token'. 'none': no history merge, 'window': merge by conversation window, 'token': merge by token length.",
+                "value": "window",
+                "options": [
+                  {
+                    "label": "No History",
+                    "name": "none",
+                    "value": "none",
+                    "children": null
+                  },
+                  {
+                    "label": "Message Window",
+                    "name": "window",
+                    "value": "window",
+                    "children": null
+                  },
+                  {
+                    "label": "Token Length",
+                    "name": "token",
+                    "value": "token",
+                    "children": null
+                  }
+                ],
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "select",
+                  "size": null,
+                  "attr": null
+                }
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "User Message Key",
+                "name": "user_message_key",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "user_input",
+                "placeholder": null,
+                "description": "The key of the user message in your prompt, default is 'user_input'.",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "History Key",
+                "name": "history_key",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "The chat history key, with chat history message pass to prompt template, if not provided, it will parse the prompt template to get the key.",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Keep Start Rounds",
+                "name": "keep_start_rounds",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "The start rounds to keep in the chat history.",
+                "value": 0,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Keep End Rounds",
+                "name": "keep_end_rounds",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "The end rounds to keep in the chat history.",
+                "value": 10,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Max Token Limit",
+                "name": "max_token_limit",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 2048,
+                "placeholder": null,
+                "description": "The max token limit to keep in the chat history.",
+                "value": null,
+                "options": null
+              }
+            ]
+          }
+        },
+        {
+          "width": 320,
+          "height": 774,
+          "id": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "position": {
+            "x": -781.3390803520426,
+            "y": 112.87665693387501,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": -781.3390803520426,
+            "y": 112.87665693387501,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "Knowledge Operator",
+            "custom_label": null,
+            "name": "higher_order_knowledge_operator",
+            "description": "Knowledge Operator, retrieve your knowledge(documents) from knowledge space",
+            "category": "rag",
+            "category_label": "RAG",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "map",
+            "inputs": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "label": "User question",
+                "custom_label": null,
+                "name": "query",
+                "description": "The user question to retrieve the knowledge",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              }
+            ],
+            "outputs": [
+              {
+                "type_name": "HOContextBody",
+                "type_cls": "dbgpt.app.operators.llm.HOContextBody",
+                "label": "Retrieved context",
+                "custom_label": null,
+                "name": "context",
+                "description": "The retrieved context from the knowledge space",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              },
+              {
+                "type_name": "Chunk",
+                "type_cls": "dbgpt.core.interface.knowledge.Chunk",
+                "label": "Chunks",
+                "custom_label": null,
+                "name": "chunks",
+                "description": "The retrieved chunks from the knowledge space",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": [
+                  "dbgpt.app.operators.rag.HOKnowledgeOperator.ChunkMapper"
+                ]
+              }
+            ],
+            "version": "v1",
+            "type_name": "HOKnowledgeOperator",
+            "type_cls": "dbgpt.app.operators.rag.HOKnowledgeOperator",
+            "parameters": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Knowledge Space Name",
+                "name": "knowledge_space",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": false,
+                "default": null,
+                "placeholder": null,
+                "description": "The name of the knowledge space",
+                "value": "k_cmd2",
+                "options": [
+                  {
+                    "label": "k_cmd2",
+                    "name": "k_cmd2",
+                    "value": "k_cmd2",
+                    "children": null
+                  },
+                  {
+                    "label": "f5",
+                    "name": "f5",
+                    "value": "f5",
+                    "children": null
+                  },
+                  {
+                    "label": "f4",
+                    "name": "f4",
+                    "value": "f4",
+                    "children": null
+                  },
+                  {
+                    "label": "t333",
+                    "name": "t333",
+                    "value": "t333",
+                    "children": null
+                  },
+                  {
+                    "label": "f3",
+                    "name": "f3",
+                    "value": "f3",
+                    "children": null
+                  },
+                  {
+                    "label": "f1",
+                    "name": "f1",
+                    "value": "f1",
+                    "children": null
+                  },
+                  {
+                    "label": "sdf",
+                    "name": "sdf",
+                    "value": "sdf",
+                    "children": null
+                  },
+                  {
+                    "label": "sfsd",
+                    "name": "sfsd",
+                    "value": "sfsd",
+                    "children": null
+                  },
+                  {
+                    "label": "hello",
+                    "name": "hello",
+                    "value": "hello",
+                    "children": null
+                  },
+                  {
+                    "label": "k1",
+                    "name": "k1",
+                    "value": "k1",
+                    "children": null
+                  },
+                  {
+                    "label": "f2",
+                    "name": "f2",
+                    "value": "f2",
+                    "children": null
+                  },
+                  {
+                    "label": "test_f1",
+                    "name": "test_f1",
+                    "value": "test_f1",
+                    "children": null
+                  },
+                  {
+                    "label": "SMMF",
+                    "name": "SMMF",
+                    "value": "SMMF",
+                    "children": null
+                  },
+                  {
+                    "label": "docker_xxx",
+                    "name": "docker_xxx",
+                    "value": "docker_xxx",
+                    "children": null
+                  },
+                  {
+                    "label": "t2",
+                    "name": "t2",
+                    "value": "t2",
+                    "children": null
+                  },
+                  {
+                    "label": "t1",
+                    "name": "t1",
+                    "value": "t1",
+                    "children": null
+                  },
+                  {
+                    "label": "test_graph",
+                    "name": "test_graph",
+                    "value": "test_graph",
+                    "children": null
+                  },
+                  {
+                    "label": "small",
+                    "name": "small",
+                    "value": "small",
+                    "children": null
+                  },
+                  {
+                    "label": "ttt",
+                    "name": "ttt",
+                    "value": "ttt",
+                    "children": null
+                  },
+                  {
+                    "label": "bf",
+                    "name": "bf",
+                    "value": "bf",
+                    "children": null
+                  },
+                  {
+                    "label": "new_big_file",
+                    "name": "new_big_file",
+                    "value": "new_big_file",
+                    "children": null
+                  },
+                  {
+                    "label": "test_big_fild",
+                    "name": "test_big_fild",
+                    "value": "test_big_fild",
+                    "children": null
+                  },
+                  {
+                    "label": "Greenplum",
+                    "name": "Greenplum",
+                    "value": "Greenplum",
+                    "children": null
+                  },
+                  {
+                    "label": "Mytest",
+                    "name": "Mytest",
+                    "value": "Mytest",
+                    "children": null
+                  },
+                  {
+                    "label": "dba",
+                    "name": "dba",
+                    "value": "dba",
+                    "children": null
+                  }
+                ]
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Context Key",
+                "name": "context",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "context",
+                "placeholder": null,
+                "description": "The key of the context, it will be used in building the prompt",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Top K",
+                "name": "top_k",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 5,
+                "placeholder": null,
+                "description": "The number of chunks to retrieve",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "float",
+                "type_cls": "builtins.float",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Minimum Match Score",
+                "name": "score_threshold",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 0.3,
+                "placeholder": null,
+                "description": "The minimum match score for the retrieved chunks, it will be dropped if the match score is less than the threshold",
+                "value": null,
+                "options": null,
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "slider",
+                  "size": null,
+                  "attr": {
+                    "disabled": false,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.1
+                  },
+                  "show_input": false
+                }
+              },
+              {
+                "type_name": "bool",
+                "type_cls": "builtins.bool",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Reranker Enabled",
+                "name": "reranker_enabled",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "Whether to enable the reranker",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Reranker Top K",
+                "name": "reranker_top_k",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 3,
+                "placeholder": null,
+                "description": "The top k for the reranker",
+                "value": null,
+                "options": null
+              }
+            ]
+          }
+        },
+        {
+          "width": 320,
+          "height": 884,
+          "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+          "position": {
+            "x": 195.5602050169747,
+            "y": 175.41495969060128,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": 195.5602050169747,
+            "y": 175.41495969060128,
+            "zoom": 0.0
+          },
+          "data": {
+            "type_name": "CommonChatPromptTemplate",
+            "type_cls": "dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+            "label": "Common Chat Prompt Template",
+            "custom_label": null,
+            "name": "common_chat_prompt_template",
+            "description": "The operator to build the prompt with static prompt.",
+            "category": "prompt",
+            "category_label": "Prompt",
+            "flow_type": "resource",
+            "icon": null,
+            "documentation_url": null,
+            "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0",
+              "ui_size": "large"
+            },
+            "resource_type": "instance",
+            "parent_cls": [
+              "dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+              "dbgpt.core.interface.prompt.ChatPromptTemplate",
+              "dbgpt.core.interface.prompt.BasePromptTemplate",
+              "pydantic.main.BaseModel"
+            ],
+            "parameters": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "System Message",
+                "name": "system_message",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "You are a helpful AI Assistant.",
+                "placeholder": null,
+                "description": "The system message.",
+                "value": "You are a helpful AI assistant.\nBased on the known information below, provide users with professional and concise answers to their questions.\nconstraints:\n    1.Ensure to include original markdown formatting elements such as images, links, tables, or code blocks without alteration in the response if they are present in the provided information.\n        For example, image format should be ![image.png](xxx), link format [xxx](xxx), table format should be represented with |xxx|xxx|xxx|, and code format with xxx.\n    2.If the information available in the knowledge base is insufficient to answer the question, state clearly: \"The content provided in the knowledge base is not enough to answer this question,\" and avoid making up answers.\n    3.When responding, it is best to summarize the points in the order of 1, 2, 3, And displayed in markdwon format.\n\nknown information: \n{context}\n\nuser question:\n{user_input}\n\nwhen answering, use the same language as the \"user\".",
+                "options": null,
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "text_area",
+                  "size": "large",
+                  "attr": {
+                    "disabled": false,
+                    "status": null,
+                    "prefix": null,
+                    "suffix": null,
+                    "show_count": null,
+                    "max_length": null,
+                    "auto_size": {
+                      "min_rows": 2,
+                      "max_rows": 20
+                    }
+                  },
+                  "editor": {
+                    "width": 800,
+                    "height": 400
+                  }
+                }
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Message placeholder",
+                "name": "message_placeholder",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "chat_history",
+                "placeholder": null,
+                "description": "The chat history message placeholder.",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "Human Message",
+                "name": "human_message",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "{user_input}",
+                "placeholder": "{user_input}",
+                "description": "The human message.",
+                "value": null,
+                "options": null,
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "text_area",
+                  "size": "large",
+                  "attr": {
+                    "disabled": false,
+                    "status": null,
+                    "prefix": null,
+                    "suffix": null,
+                    "show_count": null,
+                    "max_length": null,
+                    "auto_size": {
+                      "min_rows": 2,
+                      "max_rows": 20
+                    }
+                  },
+                  "editor": {
+                    "width": 800,
+                    "height": 400
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "width": 320,
+          "height": 235,
+          "id": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+          "position": {
+            "x": 1087.8490700167088,
+            "y": 389.9348086323575,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": 1087.8490700167088,
+            "y": 389.9348086323575,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "OpenAI Streaming Output Operator",
+            "custom_label": null,
+            "name": "openai_streaming_output_operator",
+            "description": "The OpenAI streaming LLM operator.",
+            "category": "output_parser",
+            "category_label": "Output Parser",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "transform_stream",
+            "inputs": [
+              {
+                "type_name": "ModelOutput",
+                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                "label": "Upstream Model Output",
+                "custom_label": null,
+                "name": "model_output",
+                "description": "The model output of upstream.",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": null
+              }
+            ],
+            "outputs": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "label": "Model Output",
+                "custom_label": null,
+                "name": "model_output",
+                "description": "The model output after transformed to openai stream format.",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": null
+              }
+            ],
+            "version": "v1",
+            "type_name": "OpenAIStreamingOutputOperator",
+            "type_cls": "dbgpt.model.utils.chatgpt_utils.OpenAIStreamingOutputOperator",
+            "parameters": []
+          }
+        }
+      ]
+    }
+  }
+}
