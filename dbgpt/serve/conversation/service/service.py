@@ -13,6 +13,7 @@ from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import REQ, RES
 from dbgpt.util.pagination_utils import PaginationResult
+from dbgpt.vis.client import vis_name_change
 
 from ...feedback.api.endpoints import get_service
 from ..api.schemas import MessageVo, ServeRequest, ServerResponse
@@ -219,7 +220,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             result.append(
                 MessageVo(
                     role=msg.type,
-                    context=msg.content,
+                    context=vis_name_change(msg.content),
                     order=msg.round_index,
                     model_name=self.config.default_model,
                     feedback=feedback,

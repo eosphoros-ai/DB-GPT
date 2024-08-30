@@ -48,12 +48,7 @@ const codeComponents = {
    */
   code: withDefaultChartCode({
     languageRenderers: {
-      "agent-plans": ({
-        node,
-        className,
-        children,
-        style,
-      }) => {
+      "agent-plans": ({ node, className, children, style }) => {
         const content = String(children);
         /**
          * @description
@@ -70,12 +65,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "agent-messages": ({
-        node,
-        className,
-        children,
-        style,
-      }) => {
+      "agent-messages": ({ node, className, children, style }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -87,12 +77,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-convert-error": ({
-        node,
-        className,
-        children,
-        style,
-      }) => {
+      "vis-convert-error": ({ node, className, children, style }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -104,12 +89,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-dashboard": ({
-        node,
-        className,
-        children,
-        style,
-      }) => {
+      "vis-dashboard": ({ node, className, children, style }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -121,7 +101,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-chart": ({ node, className, children, style }) => {
+      "vis-db-chart": ({ node, className, children, style }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -133,12 +113,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-plugin": ({
-        node,
-        className,
-        children,
-        style,
-      }) => {
+      "vis-plugin": ({ node, className, children, style }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -163,13 +138,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-app-link": ({
-        node,
-        className,
-        children,
-        style,
-        ...props
-      }) => {
+      "vis-app-link": ({ node, className, children, style, ...props }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -181,13 +150,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      "vis-api-response": ({
-        node,
-        className,
-        children,
-        style,
-        ...props
-      }) => {
+      "vis-api-response": ({ node, className, children, style, ...props }) => {
         const content = String(children);
         const lang = className?.replace("language-", "") || "javascript";
         try {
@@ -201,11 +164,9 @@ const codeComponents = {
       },
     },
     defaultRenderer({ node, className, children, style, ...props }) {
-      
       const content = String(children);
       const lang = className?.replace("language-", "") || "";
       const { context, matchValues } = matchCustomeTagValues(content);
-      
 
       console.log(111, { node, className, children, style, ...props }, lang);
       return (
