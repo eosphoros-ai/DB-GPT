@@ -30,6 +30,7 @@ const edgeTypes = { buttonedge: ButtonEdge };
 
 const Canvas: React.FC = () => {
   const { t } = useTranslation();
+  const [messageApi, contextHolder] = message.useMessage();
 
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
@@ -152,22 +153,24 @@ const Canvas: React.FC = () => {
   function onSave() {
     const flowData = reactFlow.toObject() as IFlowData;
     const [check, node, message] = checkFlowDataRequied(flowData);
+
+    if (!node) {
+      messageApi.open({
+        type: 'warning',
+        content: t('Please_Add_Nodes_First'),
+      });
+      return;
+    }
+
     if (!check && message) {
       setNodes(nds =>
-        nds.map(item => {
-          if (item.id === node?.id) {
-            item.data = {
-              ...item.data,
-              invalid: true,
-            };
-          } else {
-            item.data = {
-              ...item.data,
-              invalid: false,
-            };
-          }
-          return item;
-        }),
+        nds.map(item => ({
+          ...item,
+          data: {
+            ...item.data,
+            invalid: item.id === node?.id,
+          },
+        })),
       );
       return notification.error({
         message: 'Error',
@@ -274,6 +277,8 @@ const Canvas: React.FC = () => {
         isImportModalOpen={isImportModalOpen}
         setIsImportFlowModalOpen={setIsImportFlowModalOpen}
       />
+
+      {contextHolder}
     </>
   );
 };

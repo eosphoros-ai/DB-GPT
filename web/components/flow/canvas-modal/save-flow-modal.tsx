@@ -2,8 +2,8 @@ import { addFlow, apiInterceptors, updateFlowById } from '@/client/api';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import { mapHumpToUnderline } from '@/utils/flow';
 import { Button, Checkbox, Form, Input, Modal, Space, message } from 'antd';
-import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactFlowInstance } from 'reactflow';
 
@@ -22,12 +22,17 @@ export const SaveFlowModal: React.FC<Props> = ({
   flowInfo,
   setIsSaveFlowModalOpen,
 }) => {
-  const [deploy, setDeploy] = useState(true);
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
-  const id = searchParams?.get('id') || '';
+  const router = useRouter();
   const [form] = Form.useForm<IFlowUpdateParam>();
   const [messageApi, contextHolder] = message.useMessage();
+
+  const [deploy, setDeploy] = useState(true);
+  const [id, setId] = useState(router.query.id || '');
+
+  useEffect(() => {
+    setId(router.query.id || '');
+  }, [router.query.id]);
 
   function onLabelChange(e: React.ChangeEvent<HTMLInputElement>) {
     const label = e.target.value;
@@ -45,12 +50,12 @@ export const SaveFlowModal: React.FC<Props> = ({
 
     if (id) {
       const [, , res] = await apiInterceptors(
-        updateFlowById(id, {
+        updateFlowById(id.toString(), {
           name,
           label,
           description,
           editable,
-          uid: id,
+          uid: id.toString(),
           flow_data: reactFlowObject,
           state,
         }),
@@ -72,10 +77,10 @@ export const SaveFlowModal: React.FC<Props> = ({
           state,
         }),
       );
+
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
-        const history = window.history;
-        history.pushState(null, '', `/flow/canvas?id=${res.uid}`);
+        router.push(`/construct/flow/canvas?id=${res.uid}`, undefined, { shallow: true });
       }
     }
     setIsSaveFlowModalOpen(false);

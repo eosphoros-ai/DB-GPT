@@ -16,4 +16,5 @@ export const FlowEn = {
   Export_File_Format: 'File_Format',
   Yes: 'Yes',
   No: 'No',
+  Please_Add_Nodes_First: 'Please add nodes first',
 };
