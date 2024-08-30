@@ -16,7 +16,13 @@ from typing import (
 
 from dbgpt._private.pydantic import model_to_json
 from dbgpt.core.awel import TransformStreamAbsOperator
-from dbgpt.core.awel.flow import IOField, OperatorCategory, OperatorType, ViewMetadata
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    IOField,
+    OperatorCategory,
+    OperatorType,
+    ViewMetadata,
+)
 from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.core.operators import BaseLLM
 from dbgpt.util.i18n_utils import _
@@ -184,6 +190,7 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
                 ),
             )
         ],
+        tags={"order": TAGS_ORDER_HIGH},
     )
 
     async def transform_stream(self, model_output: AsyncIterator[ModelOutput]):

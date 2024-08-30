@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict, model_validator
 from dbgpt.core.interface.serialization import Serializable
 
 from .exceptions import FlowUIComponentException
@@ -24,6 +24,16 @@ _UI_TYPE = Literal[
     "password",
     "code_editor",
 ]
+
+_UI_SIZE_TYPE = Literal["large", "middle", "small"]
+_SIZE_ORDER = {"large": 6, "middle": 4, "small": 2}
+
+
+def _size_to_order(size: str) -> int:
+    """Convert size to order."""
+    if size not in _SIZE_ORDER:
+        return -1
+    return _SIZE_ORDER[size]
 
 
 class RefreshableMixin(BaseModel):
@@ -81,6 +91,10 @@ class UIComponent(RefreshableMixin, Serializable, BaseModel):
         )
 
     ui_type: _UI_TYPE = Field(..., description="UI component type")
+    size: Optional[_UI_SIZE_TYPE] = Field(
+        None,
+        description="The size of the component(small, middle, large)",
+    )
 
     attr: Optional[UIAttribute] = Field(
         None,
@@ -266,6 +280,27 @@ class UITextArea(PanelEditorMixin, UIInput):
         description="The attributes of the component",
     )
 
+    @model_validator(mode="after")
+    def check_size(self) -> "UITextArea":
+        """Check the size.
+
+        Automatically set the size to large if the max_rows is greater than 10.
+        """
+        attr = self.attr
+        auto_size = attr.auto_size if attr else None
+        if not attr or not auto_size or isinstance(auto_size, bool):
+            return self
+        max_rows = (
+            auto_size.max_rows
+            if isinstance(auto_size, self.UIAttribute.AutoSize)
+            else None
+        )
+        size = self.size
+        if not size and max_rows and max_rows > 10:
+            # Automatically set the size to large if the max_rows is greater than 10
+            self.size = "large"
+        return self
+
 
 class UIAutoComplete(UIInput):
     """Auto complete component."""
@@ -450,7 +485,7 @@ class DefaultUITextArea(UITextArea):
 
     attr: Optional[UITextArea.UIAttribute] = Field(
         default_factory=lambda: UITextArea.UIAttribute(
-            auto_size=UITextArea.UIAttribute.AutoSize(min_rows=2, max_rows=40)
+            auto_size=UITextArea.UIAttribute.AutoSize(min_rows=2, max_rows=20)
         ),
         description="The attributes of the component",
     )

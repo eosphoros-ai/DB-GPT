@@ -29,6 +29,7 @@ from dbgpt.util.tracer import root_tracer
 
 from ..dag.base import DAG
 from ..flow import (
+    TAGS_ORDER_HIGH,
     IOField,
     OperatorCategory,
     OperatorType,
@@ -965,6 +966,7 @@ class CommonLLMHttpTrigger(HttpTrigger):
             _PARAMETER_MEDIA_TYPE.new(),
             _PARAMETER_STATUS_CODE.new(),
         ],
+        tags={"order": TAGS_ORDER_HIGH},
     )
 
     def __init__(
@@ -1203,6 +1205,7 @@ class RequestedParsedOperator(MapOperator[CommonLLMHttpRequestBody, str]):
             "User input parsed operator, parse the user input from request body and "
             "return as a string"
         ),
+        tags={"order": TAGS_ORDER_HIGH},
     )
 
     def __init__(self, key: str = "user_input", **kwargs):

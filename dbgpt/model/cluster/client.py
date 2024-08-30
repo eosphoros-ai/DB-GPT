@@ -42,13 +42,13 @@ class DefaultLLMClient(LLMClient):
 
     Args:
         worker_manager (WorkerManager): worker manager instance.
-        auto_convert_message (bool, optional): auto convert the message to ModelRequest. Defaults to False.
+        auto_convert_message (bool, optional): auto convert the message to ModelRequest. Defaults to True.
     """
 
     def __init__(
         self,
         worker_manager: Optional[WorkerManager] = None,
-        auto_convert_message: bool = False,
+        auto_convert_message: bool = True,
     ):
         self._worker_manager = worker_manager
         self._auto_covert_message = auto_convert_message

@@ -97,6 +97,12 @@ class FlowNodeData(BaseModel):
                 return ResourceMetadata(**value)
         raise ValueError("Unable to infer the type for `data`")
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict."""
+        dict_value = model_to_dict(self, exclude={"data"})
+        dict_value["data"] = self.data.to_dict()
+        return dict_value
+
 
 class FlowEdgeData(BaseModel):
     """Edge data in a flow."""
@@ -165,6 +171,12 @@ class FlowData(BaseModel):
     nodes: List[FlowNodeData] = Field(..., description="Nodes in the flow")
     edges: List[FlowEdgeData] = Field(..., description="Edges in the flow")
     viewport: FlowPositionData = Field(..., description="Viewport of the flow")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict."""
+        dict_value = model_to_dict(self, exclude={"nodes"})
+        dict_value["nodes"] = [n.to_dict() for n in self.nodes]
+        return dict_value
 
 
 class _VariablesRequestBase(BaseModel):
@@ -518,9 +530,24 @@ class FlowPanel(BaseModel):
             values["name"] = name
         return values
 
+    def model_dump(self, **kwargs):
+        """Override the model dump method."""
+        exclude = kwargs.get("exclude", set())
+        if "flow_dag" not in exclude:
+            exclude.add("flow_dag")
+        if "flow_data" not in exclude:
+            exclude.add("flow_data")
+        kwargs["exclude"] = exclude
+        common_dict = super().model_dump(**kwargs)
+        if self.flow_dag:
+            common_dict["flow_dag"] = None
+        if self.flow_data:
+            common_dict["flow_data"] = self.flow_data.to_dict()
+        return common_dict
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dict."""
-        return model_to_dict(self, exclude={"flow_dag"})
+        return model_to_dict(self, exclude={"flow_dag", "flow_data"})
 
     def get_variables_dict(self) -> List[Dict[str, Any]]:
         """Get the variables dict."""
@@ -567,6 +594,11 @@ class FlowFactory:
                     raise ValueError("Node data is not a resource.")
                 key_to_resource_nodes[key] = node
                 key_to_resource[key] = node.data
+
+        if not key_to_operator_nodes and not key_to_resource_nodes:
+            raise FlowMetadataException(
+                "No operator or resource nodes found in the flow."
+            )
 
         for edge in flow_data.edges:
             source_key = edge.source
@@ -943,11 +975,17 @@ def fill_flow_panel(flow_panel: FlowPanel):
                         new_param = input_parameters[i.name]
                         i.label = new_param.label
                         i.description = new_param.description
+                        i.dynamic = new_param.dynamic
+                        i.is_list = new_param.is_list
+                        i.dynamic_minimum = new_param.dynamic_minimum
                 for i in node.data.outputs:
                     if i.name in output_parameters:
                         new_param = output_parameters[i.name]
                         i.label = new_param.label
                         i.description = new_param.description
+                        i.dynamic = new_param.dynamic
+                        i.is_list = new_param.is_list
+                        i.dynamic_minimum = new_param.dynamic_minimum
             else:
                 data = cast(ResourceMetadata, node.data)
                 key = data.get_origin_id()
@@ -972,6 +1010,8 @@ def fill_flow_panel(flow_panel: FlowPanel):
                     param.options = new_param.get_dict_options()  # type: ignore
                     param.default = new_param.default
                     param.placeholder = new_param.placeholder
+                    param.alias = new_param.alias
+                    param.ui = new_param.ui
 
         except (FlowException, ValueError) as e:
             logger.warning(f"Unable to fill the flow panel: {e}")

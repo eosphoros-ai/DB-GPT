@@ -24,8 +24,13 @@ class MixinLLMOperator(BaseLLM, BaseOperator, ABC):
     This class extends BaseOperator by adding LLM capabilities.
     """
 
-    def __init__(self, default_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(default_client)
+    def __init__(
+        self,
+        default_client: Optional[LLMClient] = None,
+        save_model_output: bool = True,
+        **kwargs,
+    ):
+        super().__init__(default_client, save_model_output=save_model_output)
 
     @property
     def llm_client(self) -> LLMClient:
@@ -95,8 +100,13 @@ class LLMOperator(MixinLLMOperator, BaseLLMOperator):
         ],
     )
 
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(llm_client)
+    def __init__(
+        self,
+        llm_client: Optional[LLMClient] = None,
+        save_model_output: bool = True,
+        **kwargs,
+    ):
+        super().__init__(llm_client, save_model_output=save_model_output)
         BaseLLMOperator.__init__(self, llm_client, **kwargs)
 
 
@@ -144,6 +154,11 @@ class StreamingLLMOperator(MixinLLMOperator, BaseStreamingLLMOperator):
         ],
     )
 
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(llm_client)
+    def __init__(
+        self,
+        llm_client: Optional[LLMClient] = None,
+        save_model_output: bool = True,
+        **kwargs,
+    ):
+        super().__init__(llm_client, save_model_output=save_model_output)
         BaseStreamingLLMOperator.__init__(self, llm_client, **kwargs)

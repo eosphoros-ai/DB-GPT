@@ -40,6 +40,9 @@ _BASIC_TYPES = [str, int, float, bool, dict, list, set]
 T = TypeVar("T", bound="ViewMixin")
 TM = TypeVar("TM", bound="TypeMetadata")
 
+TAGS_ORDER_HIGH = "higher-order"
+TAGS_ORDER_FIRST = "first-order"
+
 
 def _get_type_name(type_: Type[Any]) -> str:
     """Get the type name of the type.
@@ -143,6 +146,8 @@ _OPERATOR_CATEGORY_DETAIL = {
     "agent": _CategoryDetail("Agent", "The agent operator"),
     "rag": _CategoryDetail("RAG", "The RAG operator"),
     "experimental": _CategoryDetail("EXPERIMENTAL", "EXPERIMENTAL operator"),
+    "database": _CategoryDetail("Database", "Interact with the database"),
+    "type_converter": _CategoryDetail("Type Converter", "Convert the type"),
     "example": _CategoryDetail("Example", "Example operator"),
 }
 
@@ -159,6 +164,8 @@ class OperatorCategory(str, Enum):
     AGENT = "agent"
     RAG = "rag"
     EXPERIMENTAL = "experimental"
+    DATABASE = "database"
+    TYPE_CONVERTER = "type_converter"
     EXAMPLE = "example"
 
     def label(self) -> str:
@@ -202,6 +209,7 @@ _RESOURCE_CATEGORY_DETAIL = {
     "embeddings": _CategoryDetail("Embeddings", "The embeddings resource"),
     "rag": _CategoryDetail("RAG", "The  resource"),
     "vector_store": _CategoryDetail("Vector Store", "The vector store resource"),
+    "database": _CategoryDetail("Database", "Interact with the database"),
     "example": _CategoryDetail("Example", "The example resource"),
 }
 
@@ -219,6 +227,7 @@ class ResourceCategory(str, Enum):
     EMBEDDINGS = "embeddings"
     RAG = "rag"
     VECTOR_STORE = "vector_store"
+    DATABASE = "database"
     EXAMPLE = "example"
 
     def label(self) -> str:
@@ -372,32 +381,41 @@ class Parameter(TypeMetadata, Serializable):
             "value": values.get("value"),
             "default": values.get("default"),
         }
+        is_list = values.get("is_list") or False
         if type_cls:
             for k, v in to_handle_values.items():
                 if v:
-                    handled_v = cls._covert_to_real_type(type_cls, v)
+                    handled_v = cls._covert_to_real_type(type_cls, v, is_list)
                     values[k] = handled_v
         return values
 
     @classmethod
-    def _covert_to_real_type(cls, type_cls: str, v: Any) -> Any:
-        if type_cls and v is not None:
-            typed_value: Any = v
+    def _covert_to_real_type(cls, type_cls: str, v: Any, is_list: bool) -> Any:
+        def _parse_single_value(vv: Any) -> Any:
+            typed_value: Any = vv
             try:
                 # Try to convert the value to the type.
                 if type_cls == "builtins.str":
-                    typed_value = str(v)
+                    typed_value = str(vv)
                 elif type_cls == "builtins.int":
-                    typed_value = int(v)
+                    typed_value = int(vv)
                 elif type_cls == "builtins.float":
-                    typed_value = float(v)
+                    typed_value = float(vv)
                 elif type_cls == "builtins.bool":
-                    if str(v).lower() in ["false", "0", "", "no", "off"]:
+                    if str(vv).lower() in ["false", "0", "", "no", "off"]:
                         return False
-                    typed_value = bool(v)
+                    typed_value = bool(vv)
                 return typed_value
             except ValueError:
-                raise ValidationError(f"Value '{v}' is not valid for type {type_cls}")
+                raise ValidationError(f"Value '{vv}' is not valid for type {type_cls}")
+
+        if type_cls and v is not None:
+            if not is_list:
+                _parse_single_value(v)
+            else:
+                if not isinstance(v, list):
+                    raise ValidationError(f"Value '{v}' is not a list.")
+                return [_parse_single_value(vv) for vv in v]
         return v
 
     def get_typed_value(self) -> Any:
@@ -413,11 +431,11 @@ class Parameter(TypeMetadata, Serializable):
         if is_variables and self.value is not None and isinstance(self.value, str):
             return VariablesPlaceHolder(self.name, self.value)
         else:
-            return self._covert_to_real_type(self.type_cls, self.value)
+            return self._covert_to_real_type(self.type_cls, self.value, self.is_list)
 
     def get_typed_default(self) -> Any:
         """Get the typed default."""
-        return self._covert_to_real_type(self.type_cls, self.default)
+        return self._covert_to_real_type(self.type_cls, self.default, self.is_list)
 
     @classmethod
     def build_from(
@@ -499,7 +517,10 @@ class Parameter(TypeMetadata, Serializable):
             values = self.options.option_values()
             dict_value["options"] = [value.to_dict() for value in values]
         else:
-            dict_value["options"] = [value.to_dict() for value in self.options]
+            dict_value["options"] = [
+                value.to_dict() if not isinstance(value, dict) else value
+                for value in self.options
+            ]
 
         if self.ui:
             dict_value["ui"] = self.ui.to_dict()
@@ -594,6 +615,17 @@ class Parameter(TypeMetadata, Serializable):
                 value = view_value
         return {self.name: value}
 
+    def new(self: TM) -> TM:
+        """Copy the metadata."""
+        new_obj = self.__class__(
+            **self.model_dump(exclude_defaults=True, exclude={"ui", "options"})
+        )
+        if self.ui:
+            new_obj.ui = self.ui
+        if self.options:
+            new_obj.options = self.options
+        return new_obj
+
 
 class BaseResource(Serializable, BaseModel):
     """The base resource."""
@@ -644,6 +676,17 @@ class IOField(Resource):
         description="Whether current field is list",
         examples=[True, False],
     )
+    dynamic: bool = Field(
+        default=False,
+        description="Whether current field is dynamic",
+        examples=[True, False],
+    )
+    dynamic_minimum: int = Field(
+        default=0,
+        description="The minimum count of the dynamic field, only valid when dynamic is"
+        " True",
+        examples=[0, 1, 2],
+    )
 
     @classmethod
     def build_from(
@@ -653,6 +696,8 @@ class IOField(Resource):
         type: Type,
         description: Optional[str] = None,
         is_list: bool = False,
+        dynamic: bool = False,
+        dynamic_minimum: int = 0,
     ):
         """Build the resource from the type."""
         type_name = type.__qualname__
@@ -664,7 +709,21 @@ class IOField(Resource):
             type_cls=type_cls,
             is_list=is_list,
             description=description or label,
+            dynamic=dynamic,
+            dynamic_minimum=dynamic_minimum,
         )
+
+    @model_validator(mode="before")
+    @classmethod
+    def base_pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
+        if "dynamic" not in values:
+            values["dynamic"] = False
+        if "dynamic_minimum" not in values:
+            values["dynamic_minimum"] = 0
+        return values
 
 
 class BaseMetadata(BaseResource):
@@ -808,9 +867,40 @@ class BaseMetadata(BaseResource):
         split_ids = self.id.split("_")
         return "_".join(split_ids[:-1])
 
+    def _parse_ui_size(self) -> Optional[str]:
+        """Parse the ui size."""
+        if not self.parameters:
+            return None
+        parameters_size = set()
+        for parameter in self.parameters:
+            if parameter.ui and parameter.ui.size:
+                parameters_size.add(parameter.ui.size)
+        for size in ["large", "middle", "small"]:
+            if size in parameters_size:
+                return size
+        return None
+
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
+        from .ui import _size_to_order
+
         dict_value = model_to_dict(self, exclude={"parameters"})
+        tags = dict_value.get("tags")
+        if not tags:
+            tags = {"ui_version": "flow2.0"}
+        elif isinstance(tags, dict) and "ui_version" not in tags:
+            tags["ui_version"] = "flow2.0"
+
+        parsed_ui_size = self._parse_ui_size()
+        if parsed_ui_size:
+            exist_size = tags.get("ui_size")
+            if not exist_size or _size_to_order(parsed_ui_size) > _size_to_order(
+                exist_size
+            ):
+                # Use the higher order size as current size.
+                tags["ui_size"] = parsed_ui_size
+
+        dict_value["tags"] = tags
         dict_value["parameters"] = [
             parameter.to_dict() for parameter in self.parameters
         ]
