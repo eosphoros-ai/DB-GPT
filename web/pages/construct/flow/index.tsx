@@ -126,7 +126,6 @@ function Flow() {
     copyFlowTemp.current = flow;
     form.setFieldValue('label', `${flow.label} Copy`);
     form.setFieldValue('name', `${flow.name}_copy`);
-    setDeploy(true);
     setEditable(true);
     setShowModal(true);
   };
@@ -256,8 +255,10 @@ function Flow() {
           </div>
         </div>
       </Spin>
+
       <Modal
         open={showModal}
+        destroyOnClose
         title='Copy AWEL Flow'
         onCancel={() => {
           setShowModal(false);
