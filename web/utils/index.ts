@@ -13,10 +13,10 @@ export function formatSql(sql: string, lang?: string) {
   if (!sql) return '';
   try {
     return format(sql, { language: lang });
-  } catch (e) {
+  } catch {
     return sql;
   }
 }
 
-export * from './storage';
 export * from './constants';
+export * from './storage';

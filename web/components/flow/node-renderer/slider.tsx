@@ -1,4 +1,3 @@
-import React from 'react';
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
 import { Slider } from 'antd';
@@ -8,9 +7,7 @@ export const renderSlider = (data: IFlowNodeParameter) => {
 
   return (
     <>
-    {data.is_list? 
-    (<Slider range className="mt-8 nodrag" {...attr}  />)
-    :(<Slider className="mt-8 nodrag" {...attr}  />)}
+      {data.is_list ? <Slider range className='mt-8 nodrag' {...attr} /> : <Slider className='mt-8 nodrag' {...attr} />}
     </>
-  )
+  );
 };

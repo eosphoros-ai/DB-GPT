@@ -398,6 +398,7 @@ class MultiAgents(BaseComponent, ABC):
                 if final_message:
                     current_message.add_view_message(final_message)
             else:
+                default_final_message = default_final_message.replace("data:", "")
                 current_message.add_view_message(default_final_message)
 
             current_message.end_current_round()

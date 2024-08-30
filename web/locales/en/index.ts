@@ -1,6 +1,6 @@
-import { ChatEn } from "./chat";
-import { CommonEn } from "./common";
-import { FlowEn } from "./flow";
+import { ChatEn } from './chat';
+import { CommonEn } from './common';
+import { FlowEn } from './flow';
 
 const en = {
   ...ChatEn,

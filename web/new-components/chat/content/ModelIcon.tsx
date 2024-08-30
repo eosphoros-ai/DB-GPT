@@ -21,11 +21,11 @@ const ModelIcon: React.FC<{ width?: number; height?: number; model?: string }> =
 
   return (
     <Image
-      className="rounded-full border border-gray-200 object-contain bg-white inline-block"
+      className='rounded-full border border-gray-200 object-contain bg-white inline-block'
       width={width || 24}
       height={height || 24}
       src={iconSrc}
-      alt="llm"
+      alt='llm'
       priority
     />
   );

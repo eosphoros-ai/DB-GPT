@@ -1,12 +1,12 @@
 .model-tab::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0.4rem;
   width: 45%;
   height: 80%;
   background-color: #ffc800;
   border-radius: 2rem;
-  transition: all .4s;
+  transition: all 0.4s;
 }
 .editor-tab::before {
   left: calc(50%);

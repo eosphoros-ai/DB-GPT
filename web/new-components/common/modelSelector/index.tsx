@@ -1,12 +1,12 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getUsableModels } from '@/client/api';
 import { MODEL_ICON_MAP } from '@/utils/constants';
+import { CaretDownOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Select } from 'antd';
 import Image from 'next/image';
 import React, { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CaretDownOutlined } from '@ant-design/icons';
 
 import styles from './styles.module.css';
 
@@ -19,11 +19,11 @@ export function renderModelIcon(model?: string, props?: { width: number; height:
 
   return (
     <Image
-      className="rounded-full border border-gray-200 object-contain bg-white inline-block"
+      className='rounded-full border border-gray-200 object-contain bg-white inline-block'
       width={width || 24}
       height={height || 24}
       src={MODEL_ICON_MAP[model]?.icon || DEFAULT_ICON_URL}
-      alt="llm"
+      alt='llm'
     />
   );
 }
@@ -35,7 +35,7 @@ const ModelSelector: React.FC = () => {
   const [modelList, setModelList] = useState<string[]>([]);
 
   useRequest(async () => await apiInterceptors(getUsableModels()), {
-    onSuccess: (data) => {
+    onSuccess: data => {
       const [, res] = data;
       setModelList(res || []);
     },
@@ -50,17 +50,17 @@ const ModelSelector: React.FC = () => {
       <Select
         value={model}
         placeholder={t('choose_model')}
-        className="w-48 h-8 rounded-3xl"
-        suffixIcon={<CaretDownOutlined className="text-sm text-[#000000]" />}
-        onChange={(val) => {
+        className='w-48 h-8 rounded-3xl'
+        suffixIcon={<CaretDownOutlined className='text-sm text-[#000000]' />}
+        onChange={val => {
           setModel(val);
         }}
       >
-        {modelList.map((item) => (
+        {modelList.map(item => (
           <Select.Option key={item}>
-            <div className="flex items-center">
+            <div className='flex items-center'>
               {renderModelIcon(item)}
-              <span className="ml-2">{MODEL_ICON_MAP[item]?.label || item}</span>
+              <span className='ml-2'>{MODEL_ICON_MAP[item]?.label || item}</span>
             </div>
           </Select.Option>
         ))}

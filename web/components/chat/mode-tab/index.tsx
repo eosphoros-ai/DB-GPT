@@ -1,9 +1,9 @@
-import './index.css';
-import { useContext } from 'react';
 import { ChatContext } from '@/app/chat-context';
-import { Radio } from 'antd';
-import Icon, { AppstoreFilled } from '@ant-design/icons';
 import { StarsSvg } from '@/components/icons';
+import Icon, { AppstoreFilled } from '@ant-design/icons';
+import { Radio } from 'antd';
+import { useContext } from 'react';
+import './index.css';
 
 export default function ModeTab() {
   const { isContract, setIsContract, scene } = useContext(ChatContext);
@@ -17,17 +17,17 @@ export default function ModeTab() {
     <Radio.Group
       value={isContract}
       defaultValue={true}
-      buttonStyle="solid"
+      buttonStyle='solid'
       onChange={() => {
         setIsContract(!isContract);
       }}
     >
       <Radio.Button value={false}>
-        <Icon component={StarsSvg} className="mr-1" />
+        <Icon component={StarsSvg} className='mr-1' />
         Preview
       </Radio.Button>
       <Radio.Button value={true}>
-        <AppstoreFilled className="mr-1" />
+        <AppstoreFilled className='mr-1' />
         Editor
       </Radio.Button>
     </Radio.Group>

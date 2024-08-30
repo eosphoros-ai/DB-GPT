@@ -5,8 +5,7 @@ import { findNominalField, findOrdinalField } from './util';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
-    // @ts-ignore
-    const field4Y = dataProps?.filter((field) => hasSubset(field.levelOfMeasurements, ['Interval']));
+    const field4Y = dataProps?.filter(field => hasSubset(field.levelOfMeasurements, ['Interval']));
     const nominalField = findNominalField(dataProps);
     const ordinalField = findOrdinalField(dataProps);
     const field4X = nominalField ?? ordinalField;
@@ -18,7 +17,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
       children: [],
     };
 
-    field4Y?.forEach((field) => {
+    field4Y?.forEach(field => {
       const singleLine: Specification = {
         type: 'interval',
         encode: {

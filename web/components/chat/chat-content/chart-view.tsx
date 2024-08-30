@@ -1,13 +1,12 @@
+import { AutoChart, BackEndChartType, getChartType } from '@/components/chart/autoChart';
+import { formatSql } from '@/utils';
 import { Datum } from '@antv/ava';
 import { Table, Tabs, TabsProps } from 'antd';
-import React from 'react';
-import { AutoChart, BackEndChartType, getChartType } from '@/components/chart/autoChart';
 import { CodePreview } from './code-preview';
-import { formatSql } from '@/utils';
 
 function ChartView({ data, type, sql }: { data: Datum[]; type: BackEndChartType; sql: string }) {
   const columns = data?.[0]
-    ? Object.keys(data?.[0])?.map((item) => {
+    ? Object.keys(data?.[0])?.map(item => {
         return {
           title: item,
           dataIndex: item,
@@ -23,7 +22,7 @@ function ChartView({ data, type, sql }: { data: Datum[]; type: BackEndChartType;
   const SqlItem = {
     key: 'sql',
     label: 'SQL',
-    children: <CodePreview language="sql" code={formatSql(sql ?? '', 'mysql') as string} />,
+    children: <CodePreview language='sql' code={formatSql(sql ?? '', 'mysql') as string} />,
   };
   const DataItem = {
     key: 'data',
@@ -32,7 +31,7 @@ function ChartView({ data, type, sql }: { data: Datum[]; type: BackEndChartType;
   };
   const TabItems: TabsProps['items'] = type === 'response_table' ? [DataItem, SqlItem] : [ChartItem, SqlItem, DataItem];
 
-  return <Tabs defaultActiveKey={type === 'response_table' ? 'data' : 'chart'} items={TabItems} size="small" />;
+  return <Tabs defaultActiveKey={type === 'response_table' ? 'data' : 'chart'} items={TabItems} size='small' />;
 }
 
 export default ChartView;

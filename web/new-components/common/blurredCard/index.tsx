@@ -1,5 +1,5 @@
 import { EllipsisOutlined } from '@ant-design/icons';
-import { Divider, DropDownProps, Dropdown, Space, Tooltip, Typography } from 'antd';
+import { Divider, DropDownProps, Dropdown, Tooltip, Typography } from 'antd';
 import cls from 'classnames';
 import { t } from 'i18next';
 import Image from 'next/image';
@@ -13,7 +13,7 @@ const BlurredCard: React.FC<{
   Tags?: React.ReactNode;
   LeftBottom?: React.ReactNode;
   RightBottom?: React.ReactNode;
-  rightTopHover?: Boolean;
+  rightTopHover?: boolean;
   name: string;
   description: string | React.ReactNode;
   logo?: string;
@@ -21,28 +21,43 @@ const BlurredCard: React.FC<{
   className?: string;
   scene?: string;
   code?: string;
-}> = ({ RightTop, Tags, LeftBottom, RightBottom, onClick, rightTopHover = true, logo, name, description, className, scene, code }) => {
+}> = ({
+  RightTop,
+  Tags,
+  LeftBottom,
+  RightBottom,
+  onClick,
+  rightTopHover = true,
+  logo,
+  name,
+  description,
+  className,
+  scene,
+  code,
+}) => {
   if (typeof description === 'string') {
     description = (
-      <p className="line-clamp-2 relative bottom-4 text-ellipsis min-h-[42px] text-sm text-[#525964] dark:text-[rgba(255,255,255,0.65)]">
+      <p className='line-clamp-2 relative bottom-4 text-ellipsis min-h-[42px] text-sm text-[#525964] dark:text-[rgba(255,255,255,0.65)]'>
         {description}
       </p>
     );
   }
-  
+
   return (
     <div className={cls('hover-underline-gradient flex justify-center mt-6 relative group w-1/3 px-2 mb-6', className)}>
       <div
         onClick={onClick}
-        className="backdrop-filter backdrop-blur-lg cursor-pointer  bg-white bg-opacity-70 border-2 border-white rounded-lg shadow p-4 relative w-full h-full dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+        className='backdrop-filter backdrop-blur-lg cursor-pointer  bg-white bg-opacity-70 border-2 border-white rounded-lg shadow p-4 relative w-full h-full dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
       >
-        <div className="flex items-end relative bottom-8 justify-between w-full">
-          <div className="flex items-end gap-4 w-11/12  flex-1">
-            <div className="bg-white rounded-lg shadow-sm w-14 h-14 flex items-center p-3">
+        <div className='flex items-end relative bottom-8 justify-between w-full'>
+          <div className='flex items-end gap-4 w-11/12  flex-1'>
+            <div className='bg-white rounded-lg shadow-sm w-14 h-14 flex items-center p-3'>
               {scene ? (
                 <AppDefaultIcon scene={scene} width={14} height={14} />
               ) : (
-                logo && <Image src={logo} width={44} height={44} alt={name} className="w-8 min-w-8 rounded-full max-w-none" />
+                logo && (
+                  <Image src={logo} width={44} height={44} alt={name} className='w-8 min-w-8 rounded-full max-w-none' />
+                )
               )}
             </div>
             <div className='flex-1'>
@@ -50,7 +65,7 @@ const BlurredCard: React.FC<{
               {name.length > 6 ? (
                 <Tooltip title={name}>
                   <span
-                    className="line-clamp-1 text-ellipsis font-semibold text-base"
+                    className='line-clamp-1 text-ellipsis font-semibold text-base'
                     style={{
                       maxWidth: '60%',
                     }}
@@ -60,7 +75,7 @@ const BlurredCard: React.FC<{
                 </Tooltip>
               ) : (
                 <span
-                  className="line-clamp-1 text-ellipsis font-semibold text-base"
+                  className='line-clamp-1 text-ellipsis font-semibold text-base'
                   style={{
                     maxWidth: '60%',
                   }}
@@ -75,7 +90,7 @@ const BlurredCard: React.FC<{
               hidden: rightTopHover,
               'group-hover:block': rightTopHover,
             })}
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
             }}
           >
@@ -83,15 +98,15 @@ const BlurredCard: React.FC<{
           </span>
         </div>
         {description}
-        <div className="relative bottom-2">{Tags}</div>
-        <div className="flex justify-between items-center">
+        <div className='relative bottom-2'>{Tags}</div>
+        <div className='flex justify-between items-center'>
           <div>{LeftBottom}</div>
           <div>{RightBottom}</div>
         </div>
         {code && (
           <>
-            <Divider className="my-3" />
-            <Typography.Text copyable={true} className="absolute bottom-1 right-4 text-xs text-gray-500">
+            <Divider className='my-3' />
+            <Typography.Text copyable={true} className='absolute bottom-1 right-4 text-xs text-gray-500'>
               {code}
             </Typography.Text>
           </>
@@ -112,8 +127,8 @@ const ChatButton: React.FC<{
 
   return (
     <div
-      className="flex items-center gap-1 text-default"
-      onClick={(e) => {
+      className='flex items-center gap-1 text-default'
+      onClick={e => {
         e.stopPropagation();
         onClick && onClick();
       }}
@@ -126,8 +141,13 @@ const ChatButton: React.FC<{
 
 const InnerDropdown: React.FC<{ menu: DropDownProps['menu'] }> = ({ menu }) => {
   return (
-    <Dropdown menu={menu} getPopupContainer={(node) => node.parentNode as HTMLElement} placement="bottomRight" autoAdjustOverflow={false}>
-      <EllipsisOutlined className="p-2 hover:bg-white hover:dark:bg-black rounded-md" />
+    <Dropdown
+      menu={menu}
+      getPopupContainer={node => node.parentNode as HTMLElement}
+      placement='bottomRight'
+      autoAdjustOverflow={false}
+    >
+      <EllipsisOutlined className='p-2 hover:bg-white hover:dark:bg-black rounded-md' />
     </Dropdown>
   );
 };

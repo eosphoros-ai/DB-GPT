@@ -1,6 +1,6 @@
-import UserBar from '@/new-components/layout/UserBar';
 import { ChatContext } from '@/app/chat-context';
 import { DarkSvg, SunnySvg } from '@/components/icons';
+import UserBar from '@/new-components/layout/UserBar';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, { GlobalOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { Layout, Popover } from 'antd';
@@ -19,7 +19,7 @@ interface SettingItem {
 }
 
 const Sider: React.FC = () => {
-  const { chatId, scene, mode, setMode } = useContext(ChatContext);
+  const { mode, setMode } = useContext(ChatContext);
   const { t, i18n } = useTranslation();
   const [collapsed, setCollapsed] = useState<boolean>(false);
 
@@ -79,22 +79,25 @@ const Sider: React.FC = () => {
       collapsible={true}
       collapsed={collapsed}
       trigger={null}
-      className="flex flex-1 flex-col h-full justify-between  bg-bar dark:bg-[#232734] px-4 pt-4"
+      className='flex flex-1 flex-col h-full justify-between  bg-bar dark:bg-[#232734] px-4 pt-4'
     >
       {collapsed ? (
         <></>
       ) : (
         <>
-          <Link href="/" className="flex items-center justify-center p-2 pb-4">
-            <Image src="/logo_zh_latest.png" alt="DB-GPT" width={180} height={40} />
+          <Link href='/' className='flex items-center justify-center p-2 pb-4'>
+            <Image src='/logo_zh_latest.png' alt='DB-GPT' width={180} height={40} />
           </Link>
           <div></div>
-          <div className="flex flex-col">
+          <div className='flex flex-col'>
             <UserBar />
-            <div className="flex items-start justify-between border-t border-dashed border-gray-200 dark:border-gray-700">
-              {settings.map((item) => (
+            <div className='flex items-start justify-between border-t border-dashed border-gray-200 dark:border-gray-700'>
+              {settings.map(item => (
                 <Popover key={item.key} content={item.name}>
-                  <div className="flex-1 flex items-center justify-center cursor-pointer text-xl" onClick={item.onClick}>
+                  <div
+                    className='flex-1 flex items-center justify-center cursor-pointer text-xl'
+                    onClick={item.onClick}
+                  >
                     {item.icon}
                   </div>
                 </Popover>

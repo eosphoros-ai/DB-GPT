@@ -14,13 +14,13 @@ import { useSearchParams } from 'next/navigation';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import MyEmpty from '../common/MyEmpty';
 import CompletionInput from '../common/completion-input';
 import AgentContent from './agent-content';
 import ChatContent from './chat-content';
 import ChatFeedback from './chat-feedback';
 import { renderModelIcon } from './header/model-selector';
 import MonacoEditor from './monaco-editor';
-import MyEmpty from '../common/MyEmpty';
 
 type Props = {
   messages: IChatDialogueMessageSchema[];
@@ -81,7 +81,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
   const handleJson2Obj = (jsonStr: string) => {
     try {
       return JSON.parse(jsonStr);
-    } catch (e) {
+    } catch {
       return jsonStr;
     }
   };
@@ -123,22 +123,22 @@ const Completion = ({ messages, onSubmit }: Props) => {
   useEffect(() => {
     let tempMessage: IChatDialogueMessageSchema[] = messages;
     if (isChartChat) {
-      tempMessage = cloneDeep(messages).map((item) => {
+      tempMessage = cloneDeep(messages).map(item => {
         if (item?.role === 'view' && typeof item?.context === 'string') {
           item.context = handleJson2Obj(item?.context);
         }
         return item;
       });
     }
-    setShowMessages(tempMessage.filter((item) => ['view', 'human'].includes(item.role)));
+    setShowMessages(tempMessage.filter(item => ['view', 'human'].includes(item.role)));
   }, [isChartChat, messages]);
 
   useEffect(() => {
     apiInterceptors(getChatFeedBackSelect())
-      .then((res) => {
+      .then(res => {
         setSelectParam(res[1] ?? {});
       })
-      .catch((err) => {
+      .catch(err => {
         console.log(err);
       });
   }, []);
@@ -152,8 +152,8 @@ const Completion = ({ messages, onSubmit }: Props) => {
   return (
     <>
       {contextHolder}
-      <div ref={scrollableRef} className="flex flex-1 overflow-y-auto pb-8 w-full flex-col">
-        <div className="flex items-center flex-1 flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7">
+      <div ref={scrollableRef} className='flex flex-1 overflow-y-auto pb-8 w-full flex-col'>
+        <div className='flex items-center flex-1 flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7'>
           {showMessages.length ? (
             showMessages.map((content, index) => {
               if (scene === 'chat_agent') {
@@ -170,18 +170,24 @@ const Completion = ({ messages, onSubmit }: Props) => {
                   }}
                 >
                   {content.role === 'view' && (
-                    <div className="flex w-full border-t border-gray-200 dark:border-theme-dark">
+                    <div className='flex w-full border-t border-gray-200 dark:border-theme-dark'>
                       {scene === 'chat_knowledge' && content.retry ? (
-                        <Button onClick={handleRetry} slots={{ root: IconButton }} slotProps={{ root: { variant: 'plain', color: 'primary' } }}>
+                        <Button
+                          onClick={handleRetry}
+                          slots={{ root: IconButton }}
+                          slotProps={{ root: { variant: 'plain', color: 'primary' } }}
+                        >
                           <RedoOutlined />
-                          &nbsp;<span className="text-sm">{t('Retry')}</span>
+                          &nbsp;<span className='text-sm'>{t('Retry')}</span>
                         </Button>
                       ) : null}
-                      <div className="flex w-full flex-row-reverse">
+                      <div className='flex w-full flex-row-reverse'>
                         <ChatFeedback
                           select_param={select_param}
                           conv_index={Math.ceil((index + 1) / 2)}
-                          question={showMessages?.filter((e) => e?.role === 'human' && e?.order === content.order)[0]?.context}
+                          question={
+                            showMessages?.filter(e => e?.role === 'human' && e?.order === content.order)[0]?.context
+                          }
                           knowledge_space={spaceNameOriginal || dbParam || ''}
                         />
                         <Tooltip title={t('Copy_Btn')}>
@@ -201,7 +207,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
               );
             })
           ) : (
-            <MyEmpty description="Start a conversation" />
+            <MyEmpty description='Start a conversation' />
           )}
         </div>
       </div>
@@ -213,15 +219,15 @@ const Completion = ({ messages, onSubmit }: Props) => {
           },
         )}
       >
-        <div className="flex flex-wrap w-full py-2 sm:pt-6 sm:pb-10 items-center">
-          {model && <div className="mr-2 flex">{renderModelIcon(model)}</div>}
+        <div className='flex flex-wrap w-full py-2 sm:pt-6 sm:pb-10 items-center'>
+          {model && <div className='mr-2 flex'>{renderModelIcon(model)}</div>}
           <CompletionInput loading={isLoading} onSubmit={handleChat} handleFinish={setIsLoading} />
         </div>
       </div>
       <Modal
-        title="JSON Editor"
+        title='JSON Editor'
         open={jsonModalOpen}
-        width="60%"
+        width='60%'
         cancelButtonProps={{
           hidden: true,
         }}
@@ -232,7 +238,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
           setJsonModalOpen(false);
         }}
       >
-        <MonacoEditor className="w-full h-[500px]" language="json" value={jsonValue} />
+        <MonacoEditor className='w-full h-[500px]' language='json' value={jsonValue} />
       </Modal>
     </>
   );

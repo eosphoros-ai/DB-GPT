@@ -1,7 +1,6 @@
 import { IDocument } from '@/types/knowledge';
 import { Button, Tooltip } from 'antd';
 import { useRouter } from 'next/router';
-import React from 'react';
 import FileStatusIcon from '../common/FileStatusIcon';
 
 interface IProps {
@@ -20,8 +19,8 @@ export default function DocList(props: IProps) {
   if (!documents?.length) return null;
 
   return (
-    <div className="absolute flex overflow-scroll h-12 top-[-35px] w-full z-10">
-      {documents.map((doc) => {
+    <div className='absolute flex overflow-scroll h-12 top-[-35px] w-full z-10'>
+      {documents.map(doc => {
         let color;
         switch (doc.status) {
           case 'RUNNING':
@@ -44,7 +43,7 @@ export default function DocList(props: IProps) {
               onClick={() => {
                 handleClick(doc.id);
               }}
-              className="shrink flex items-center mr-3"
+              className='shrink flex items-center mr-3'
             >
               <FileStatusIcon document={doc} />
               {doc.doc_name}

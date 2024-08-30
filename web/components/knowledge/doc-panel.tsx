@@ -6,12 +6,11 @@ import {
   // getKnowledgeAdmins,
   searchDocumentList,
   syncDocument,
-  updateKnowledgeAdmins,
 } from '@/client/api';
 import { IDocument, ISpace } from '@/types/knowledge';
-import { ChatContext } from '@/app/chat-context';
 import {
   DeleteOutlined,
+  DeploymentUnitOutlined,
   EditOutlined,
   EllipsisOutlined,
   ExperimentOutlined,
@@ -23,18 +22,17 @@ import {
   SyncOutlined,
   ToolFilled,
   WarningOutlined,
-  DeploymentUnitOutlined,
 } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Button, Card, Divider, Dropdown, Empty, Form, Input, Modal, Select, Space, Spin, Tag, Tooltip, message, notification } from 'antd';
+import { Button, Card, Divider, Dropdown, Empty, Form, Input, Modal, Space, Spin, Tag, Tooltip, message } from 'antd';
 import cls from 'classnames';
 import moment from 'moment';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useMemo, useRef, useState, useContext } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import RecallTestModal from './RecallTestModal';
 import ArgumentsModal from './arguments-modal';
 import DocIcon from './doc-icon';
-import RecallTestModal from './RecallTestModal';
 
 interface IProps {
   space: ISpace;
@@ -79,9 +77,7 @@ export default function DocPanel(props: IProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const page_size = 18;
-  const { isMenuExpand } = useContext(ChatContext);
-
-  const [admins, setAdmins] = useState<string[]>([]);
+  // const [_, setAdmins] = useState<string[]>([]);
   const [documents, setDocuments] = useState<any>([]);
   const [searchDocuments, setSearchDocuments] = useState<any>([]);
   const [argumentsShow, setArgumentsShow] = useState<boolean>(false);
@@ -127,7 +123,7 @@ export default function DocPanel(props: IProps) {
       ),
     {
       manual: true,
-      onSuccess: (res) => {
+      onSuccess: res => {
         const [, data] = res;
         setDocuments(data?.data);
         setSearchDocuments(data?.data);
@@ -166,7 +162,7 @@ export default function DocPanel(props: IProps) {
   };
   const openGraphVisualPage = () => {
     router.push(`/knowledge/graph/?spaceName=${space.name}`);
-  }
+  };
 
   const renderResultTag = (status: string, result: string) => {
     let color;
@@ -193,12 +189,6 @@ export default function DocPanel(props: IProps) {
       </Tooltip>
     );
   };
-  // const getAdmins = useCallback(async () => {
-  //   const [err, data] = await apiInterceptors(getKnowledgeAdmins(space.id as string));
-
-  //   if (!data || !data.length) return;
-  //   setAdmins(data as string[]);
-  // }, [space.id]);
 
   useEffect(() => {
     fetchDocuments();
@@ -213,37 +203,37 @@ export default function DocPanel(props: IProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addStatus]);
 
-  const updateAdmins = useCallback(
-    async (options: string[]) => {
-      const { data } = await updateKnowledgeAdmins({
-        space_id: space.id as string,
-        user_nos: options as any,
-      });
-      if (!data.success) {
-        // getAdmins();
-        notification.error({ description: data.err_msg, message: 'Update Error' });
-      } else {
-        message.success(t('Edit_Success'));
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [space.id],
-  );
-  const handleChange = (value: string[]) => {
-    updateAdmins(value);
-    setAdmins(value);
-  };
+  // const updateAdmins = useCallback(
+  //   async (options: string[]) => {
+  //     const { data } = await updateKnowledgeAdmins({
+  //       space_id: space.id as string,
+  //       user_nos: options as any,
+  //     });
+  //     if (!data.success) {
+  //       // getAdmins();
+  //       notification.error({ description: data.err_msg, message: 'Update Error' });
+  //     } else {
+  //       message.success(t('Edit_Success'));
+  //     }
+  //   },
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  //   [space.id],
+  // );
+
+  // const handleChange = (value: string[]) => {
+  //   updateAdmins(value);
+  //   setAdmins(value);
+  // };
 
   const { run: search, loading: searchLoading } = useRequest(
-    async (id, doc_name: string) => {
+    async (_, doc_name: string) => {
       const [, res] = await apiInterceptors(searchDocumentList(space.name, { doc_name }));
       return res;
     },
     {
       manual: true,
       debounceWait: 500,
-      onSuccess: (data) => {
-        console.log(data);
+      onSuccess: data => {
         setSearchDocuments(data?.data);
       },
     },
@@ -259,7 +249,7 @@ export default function DocPanel(props: IProps) {
     },
     {
       manual: true,
-      onSuccess: async (res) => {
+      onSuccess: async res => {
         if (res.data.success) {
           message.success(t('Edit_Success'));
           await fetchDocuments();
@@ -273,10 +263,10 @@ export default function DocPanel(props: IProps) {
 
   const renderDocumentCard = () => {
     return (
-      <div className="w-full h-full">
-        <div className="mb-4">
+      <div className='w-full h-full'>
+        <div className='mb-4'>
           {/* <div className="mb-1">管理员（工号，去前缀0）：</div> */}
-          <div className="flex w-full justify-end">
+          <div className='flex w-full justify-end'>
             {/* <Select
               mode="tags"
               value={admins}
@@ -286,7 +276,7 @@ export default function DocPanel(props: IProps) {
               options={admins.map((item: string) => ({ label: item, value: item }))}
             /> */}
             <Button
-              type="primary"
+              type='primary'
               onClick={async () => {
                 await refresh();
               }}
@@ -296,15 +286,15 @@ export default function DocPanel(props: IProps) {
             </Button>
           </div>
         </div>
-        <div className="flex flex-col h-full p-3 border rounded-md">
+        <div className='flex flex-col h-full p-3 border rounded-md'>
           {documents?.length > 0 ? (
             <>
-              <div className="flex flex-1 justify-between items-center">
+              <div className='flex flex-1 justify-between items-center'>
                 <Input
-                  className="w-1/3"
+                  className='w-1/3'
                   prefix={<SearchOutlined />}
                   placeholder={t('please_enter_the_keywords')}
-                  onChange={async (e) => {
+                  onChange={async e => {
                     await search(space.id, e.target.value);
                   }}
                   allowClear
@@ -313,15 +303,15 @@ export default function DocPanel(props: IProps) {
               <Spin spinning={searchLoading}>
                 <>
                   {searchDocuments.length > 0 ? (
-                    <div className="h-96 mt-3 grid grid-cols-3 gap-x-6 gap-y-5 overflow-y-auto">
+                    <div className='h-96 mt-3 grid grid-cols-3 gap-x-6 gap-y-5 overflow-y-auto'>
                       {searchDocuments.map((document: IDocument) => {
                         return (
                           <Card
                             key={document.id}
-                            className=" dark:bg-[#484848] relative  shrink-0 grow-0 cursor-pointer rounded-[10px] border border-gray-200 border-solid w-full max-h-64"
+                            className=' dark:bg-[#484848] relative  shrink-0 grow-0 cursor-pointer rounded-[10px] border border-gray-200 border-solid w-full max-h-64'
                             title={
                               <Tooltip title={document.doc_name}>
-                                <div className="truncate ">
+                                <div className='truncate '>
                                   <DocIcon type={document.doc_type} />
                                   <span>{document.doc_name}</span>
                                 </div>
@@ -336,7 +326,9 @@ export default function DocPanel(props: IProps) {
                                       label: (
                                         <Space
                                           onClick={() => {
-                                            router.push(`/construct/knowledge/chunk/?spaceName=${space.name}&id=${document.id}`);
+                                            router.push(
+                                              `/construct/knowledge/chunk/?spaceName=${space.name}&id=${document.id}`,
+                                            );
                                           }}
                                         >
                                           <EyeOutlined />
@@ -377,31 +369,34 @@ export default function DocPanel(props: IProps) {
                                     },
                                   ],
                                 }}
-                                getPopupContainer={(node) => node.parentNode as HTMLElement}
-                                placement="bottomRight"
+                                getPopupContainer={node => node.parentNode as HTMLElement}
+                                placement='bottomRight'
                                 autoAdjustOverflow={false}
-                                className="rounded-md"
+                                className='rounded-md'
                               >
-                                <EllipsisOutlined className="p-2" />
+                                <EllipsisOutlined className='p-2' />
                               </Dropdown>
                             }
                           >
-                            <p className="mt-2 font-semibold ">{t('Size')}:</p>
+                            <p className='mt-2 font-semibold '>{t('Size')}:</p>
                             <p>{document.chunk_size} chunks</p>
-                            <p className="mt-2 font-semibold ">{t('Last_Sync')}:</p>
+                            <p className='mt-2 font-semibold '>{t('Last_Sync')}:</p>
                             <p>{moment(document.last_sync).format('YYYY-MM-DD HH:MM:SS')}</p>
-                            <p className="mt-2 mb-2">{renderResultTag(document.status, document.result)}</p>
+                            <p className='mt-2 mb-2'>{renderResultTag(document.status, document.result)}</p>
                           </Card>
                         );
                       })}
                     </div>
                   ) : (
-                    <Empty className="flex flex-1 w-full py-10 flex-col items-center justify-center" image={Empty.PRESENTED_IMAGE_DEFAULT} />
+                    <Empty
+                      className='flex flex-1 w-full py-10 flex-col items-center justify-center'
+                      image={Empty.PRESENTED_IMAGE_DEFAULT}
+                    />
                   )}
                 </>
                 {hasMore && (
                   <Divider>
-                    <span className="cursor-pointer" onClick={loadMoreDocuments}>
+                    <span className='cursor-pointer' onClick={loadMoreDocuments}>
                       {t('Load_more')}
                     </span>
                   </Divider>
@@ -410,7 +405,12 @@ export default function DocPanel(props: IProps) {
             </>
           ) : (
             <Empty image={Empty.PRESENTED_IMAGE_DEFAULT}>
-              <Button type="primary" className="flex items-center mx-auto" icon={<PlusOutlined />} onClick={handleAddDocument}>
+              <Button
+                type='primary'
+                className='flex items-center mx-auto'
+                icon={<PlusOutlined />}
+                onClick={handleAddDocument}
+              >
                 Create Now
               </Button>
             </Empty>
@@ -426,7 +426,7 @@ export default function DocPanel(props: IProps) {
     }
     form.setFieldsValue({
       doc_name: curDoc.doc_name,
-      questions: curDoc.questions?.map((ques) => {
+      questions: curDoc.questions?.map(ques => {
         return {
           question: ques,
         };
@@ -435,17 +435,30 @@ export default function DocPanel(props: IProps) {
   }, [curDoc, form]);
 
   return (
-    <div className="px-4">
+    <div className='px-4'>
       <Space>
-        <Button size="middle" type="primary" className="flex items-center" icon={<PlusOutlined />} onClick={handleAddDocument}>
+        <Button
+          size='middle'
+          type='primary'
+          className='flex items-center'
+          icon={<PlusOutlined />}
+          onClick={handleAddDocument}
+        >
           {t('Add_Datasource')}
         </Button>
-        <Button size="middle" className="flex items-center mx-2" icon={<ToolFilled />} onClick={handleArguments}>
+        <Button size='middle' className='flex items-center mx-2' icon={<ToolFilled />} onClick={handleArguments}>
           Arguments
         </Button>
-        {
-          space.vector_type === 'KnowledgeGraph' && (<Button size="middle" className="flex items-center mx-2" icon={<DeploymentUnitOutlined />} onClick={openGraphVisualPage}>{t('View_Graph')}</Button>)
-        }
+        {space.vector_type === 'KnowledgeGraph' && (
+          <Button
+            size='middle'
+            className='flex items-center mx-2'
+            icon={<DeploymentUnitOutlined />}
+            onClick={openGraphVisualPage}
+          >
+            {t('View_Graph')}
+          </Button>
+        )}
         <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
           {t('Recall_test')}
         </Button>
@@ -460,12 +473,12 @@ export default function DocPanel(props: IProps) {
         onCancel={() => setEditOpen(false)}
         destroyOnClose={true}
         footer={[
-          <Button key="back" onClick={() => setEditOpen(false)}>
+          <Button key='back' onClick={() => setEditOpen(false)}>
             {t('cancel')}
           </Button>,
           <Button
-            key="submit"
-            type="primary"
+            key='submit'
+            type='primary'
             loading={chunkLoading}
             onClick={async () => {
               const values = form.getFieldsValue();
@@ -480,24 +493,24 @@ export default function DocPanel(props: IProps) {
           form={form}
           initialValues={{
             doc_name: curDoc?.doc_name,
-            questions: curDoc?.questions?.map((ques) => {
+            questions: curDoc?.questions?.map(ques => {
               return {
                 question: ques,
               };
             }),
           }}
         >
-          <Form.Item label={t('Document_name')} name="doc_name">
+          <Form.Item label={t('Document_name')} name='doc_name'>
             <Input />
           </Form.Item>
           <Form.Item label={t('Correlation_problem')}>
-            <Form.List name="questions">
+            <Form.List name='questions'>
               {(fields, { add, remove }) => (
                 <>
-                  {fields.map(({ key, name }, index) => (
+                  {fields.map(({ key, name }) => (
                     <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
-                      <Form.Item label="" name={[name, 'question']} className="grow">
-                        <Input placeholder="请输入" />
+                      <Form.Item label='' name={[name, 'question']} className='grow'>
+                        <Input placeholder='请输入' />
                       </Form.Item>
                       <Form.Item>
                         <MinusCircleOutlined
@@ -510,7 +523,7 @@ export default function DocPanel(props: IProps) {
                   ))}
                   <Form.Item>
                     <Button
-                      type="dashed"
+                      type='dashed'
                       onClick={() => {
                         add({ question: '', valid: false });
                       }}

@@ -1,49 +1,49 @@
 .create-app-modal-container :global .ant-modal-content {
-    padding: 0;
-    border-radius: 0.5rem;
+  padding: 0;
+  border-radius: 0.5rem;
 }
 
 .create-app-modal-container :global .ant-modal-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    margin: 0;
-    border-top-left-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 0;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
 }
 
 .create-app-modal-container :global .ant-modal-close {
-    top: 1rem;
-    right: 1.5rem;
+  top: 1rem;
+  right: 1.5rem;
 }
 
 .create-app-modal-container :global .ant-modal-body {
-    padding: 1.5rem;
-    padding-top: 0.5rem;
+  padding: 1.5rem;
+  padding-top: 0.5rem;
 }
 
 .create-app-modal-container :global .ant-modal-footer {
-    padding: 0.625rem 1.5rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-    margin: 0;
+  padding: 0.625rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 0;
 }
 
 .create-app-modal-container :global .ant-btn {
-    width: 4rem;
-    height: 2rem;
-    border-radius: 0.5rem;
+  width: 4rem;
+  height: 2rem;
+  border-radius: 0.5rem;
 }
 
 .create-app-modal-container :global .ant-btn-primary {
-    background-image: linear-gradient(to right, #00DAEF, #105EFF);
-    border: none;
-    color: white;
+  background-image: linear-gradient(to right, #00daef, #105eff);
+  border: none;
+  color: white;
 }
 
 .create-app-modal-container :global .ant-btn-primary:hover {
-    background-color: linear-gradient(to right, #00DAEF, #105EFF);
+  background-color: linear-gradient(to right, #00daef, #105eff);
 }
 
 .create-app-modal-container :global .ant-input::placeholder {
-    text-align: start;
-    line-height: normal;
+  text-align: start;
+  line-height: normal;
 }

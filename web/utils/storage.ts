@@ -5,7 +5,7 @@ export function getInitMessage() {
   try {
     const initData = JSON.parse(value) as { id: string; message: string };
     return initData;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -14,7 +14,7 @@ export function getUserId(): string | undefined {
   try {
     const id = JSON.parse(localStorage.getItem(STORAGE_USERINFO_KEY) ?? '')['user_id'];
     return id;
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }

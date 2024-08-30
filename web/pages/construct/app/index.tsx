@@ -1,22 +1,28 @@
+import { ChatContext } from '@/app/chat-context';
+import {
+  apiInterceptors,
+  delApp,
+  getAppAdmins,
+  getAppList,
+  newDialogue,
+  publishApp,
+  unPublishApp,
+  updateAppAdmins,
+} from '@/client/api';
 import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
-import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, delApp, getAppAdmins, getAppList, newDialogue, publishApp, unPublishApp, updateAppAdmins } from '@/client/api';
 import { IApp } from '@/types/app';
-import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import { BulbOutlined, DingdingOutlined, PlusOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
 import { useDebounceFn, useRequest } from 'ahooks';
-import { App, Button, Input, Modal, Popover, Segmented, SegmentedProps, Select, Space, Spin, Tag, Pagination } from 'antd';
+import { App, Button, Input, Modal, Pagination, Popover, Segmented, SegmentedProps, Select, Spin, Tag } from 'antd';
 import copy from 'copy-to-clipboard';
 import moment from 'moment';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useState, useRef } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import CreateAppModal from './components/create-app-modal';
 
 type TabKey = 'all' | 'published' | 'unpublished';
-
 type ModalType = 'edit' | 'add';
 
 export default function AppContent() {
@@ -26,11 +32,11 @@ export default function AppContent() {
   const [activeKey, setActiveKey] = useState<TabKey>('all');
   const [apps, setApps] = useState<IApp[]>([]);
   const [modalType, setModalType] = useState<ModalType>('add');
-  const { model, setAgent: setAgentToChat, setCurrentDialogInfo, adminList } = useContext(ChatContext);
+  const { model, setAgent: setAgentToChat, setCurrentDialogInfo } = useContext(ChatContext);
   const router = useRouter();
   const { openModal = '' } = router.query;
   const [filterValue, setFilterValue] = useState('');
-  const [curApp, setCurApp] = useState<IApp>();
+  const [curApp] = useState<IApp>();
   const [adminOpen, setAdminOpen] = useState<boolean>(false);
   const [admins, setAdmins] = useState<string[]>([]);
   // 分页信息
@@ -42,7 +48,7 @@ export default function AppContent() {
   // 区分是单击还是双击
   const [clickTimeout, setClickTimeout] = useState(null);
 
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
 
   const handleCreate = () => {
     setModalType('add');
@@ -82,7 +88,7 @@ export default function AppContent() {
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         if (data[2]?.success) {
           message.success('操作成功');
         }
@@ -92,7 +98,7 @@ export default function AppContent() {
   );
 
   const initData = useDebounceFn(
-    async (params) => {
+    async params => {
       setSpinning(true);
       const obj: any = {
         page: 1,
@@ -199,7 +205,7 @@ export default function AppContent() {
   ];
 
   const onSearch = async (e: any) => {
-    let v = e.target.value;
+    const v = e.target.value;
     setFilterValue(v);
   };
 
@@ -212,7 +218,7 @@ export default function AppContent() {
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         setAdmins(data);
       },
     },
@@ -282,38 +288,38 @@ export default function AppContent() {
   return (
     <ConstructLayout>
       <Spin spinning={spinning}>
-        <div className="h-screen w-full p-4 md:p-6 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
+        <div className='h-screen w-full p-4 md:p-6 overflow-y-auto'>
+          <div className='flex justify-between items-center mb-6'>
+            <div className='flex items-center gap-4'>
               <Segmented
-                className="backdrop-filter h-10 backdrop-blur-lg bg-white bg-opacity-30 border border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+                className='backdrop-filter h-10 backdrop-blur-lg bg-white bg-opacity-30 border border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
                 options={items as any}
                 onChange={handleTabChange}
                 value={activeKey}
               />
               <Input
-                variant="filled"
+                variant='filled'
                 value={filterValue}
                 prefix={<SearchOutlined />}
                 placeholder={t('please_enter_the_keywords')}
                 onChange={onSearch}
                 onPressEnter={onSearch}
                 allowClear
-                className="w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+                className='w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
               />
             </div>
-            <div className="flex items-center gap-4 h-10">
+            <div className='flex items-center gap-4 h-10'>
               <Button
-                className="border-none text-white bg-button-gradient h-full flex items-center"
-                icon={<PlusOutlined className="text-base" />}
+                className='border-none text-white bg-button-gradient h-full flex items-center'
+                icon={<PlusOutlined className='text-base' />}
                 onClick={handleCreate}
               >
                 {t('create_app')}
               </Button>
             </div>
           </div>
-          <div className="w-full flex flex-wrap pb-12 mx-[-8px]">
-            {apps.map((item) => {
+          <div className=' w-full flex flex-wrap pb-12 mx-[-8px]'>
+            {apps.map(item => {
               return (
                 <BlurredCard
                   key={item.app_code}
@@ -321,33 +327,33 @@ export default function AppContent() {
                   name={item.app_name}
                   description={item.app_describe}
                   RightTop={
-                    <div className="flex items-center gap-2">
+                    <div className='flex items-center gap-2'>
                       <Popover
                         content={
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
+                          <div className='flex flex-col gap-2'>
+                            <div className='flex items-center gap-2'>
                               <BulbOutlined
                                 style={{
                                   color: 'rgb(252,204,96)',
                                   fontSize: 12,
                                 }}
                               />
-                              <span className="text-sm text-gray-500">{t('copy_url')}</span>
+                              <span className='text-sm text-gray-500'>{t('copy_url')}</span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className='flex items-center gap-2'>
                               <BulbOutlined
                                 style={{
                                   color: 'rgb(252,204,96)',
                                   fontSize: 12,
                                 }}
                               />
-                              <span className="text-sm text-gray-500">{t('double_click_open')}</span>
+                              <span className='text-sm text-gray-500'>{t('double_click_open')}</span>
                             </div>
                           </div>
                         }
                       >
                         <DingdingOutlined
-                          className="cursor-pointer text-[#0069fe] hover:bg-white hover:dark:bg-black p-2 rounded-md"
+                          className='cursor-pointer text-[#0069fe] hover:bg-white hover:dark:bg-black p-2 rounded-md'
                           onClick={() => shareDingding(item)}
                           onDoubleClick={() => openDingding(item)}
                         />
@@ -359,7 +365,7 @@ export default function AppContent() {
                               key: 'publish',
                               label: (
                                 <span
-                                  onClick={(e) => {
+                                  onClick={e => {
                                     e.stopPropagation();
                                     operate(item);
                                   }}
@@ -372,8 +378,8 @@ export default function AppContent() {
                               key: 'del',
                               label: (
                                 <span
-                                  className="text-red-400"
-                                  onClick={(e) => {
+                                  className='text-red-400'
+                                  onClick={e => {
                                     e.stopPropagation();
                                     showDeleteConfirm(item);
                                   }}
@@ -396,7 +402,7 @@ export default function AppContent() {
                   }
                   rightTopHover={false}
                   LeftBottom={
-                    <div className="flex gap-2">
+                    <div className='flex gap-2'>
                       <span>{item.owner_name}</span>
                       <span>•</span>
                       {item?.updated_at && <span>{moment(item?.updated_at).fromNow() + ' ' + t('update')}</span>}
@@ -421,7 +427,7 @@ export default function AppContent() {
                 total={totalRef.current?.total_count || 0}
                 pageSize={12}
                 current={totalRef.current?.current_page}
-                onChange={async (page, page_size) => {
+                onChange={async (page, _page_size) => {
                   await initData({ page });
                 }}
               />
@@ -439,17 +445,20 @@ export default function AppContent() {
           )}
         </div>
       </Spin>
-      <Modal title="权限管理" open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
+      <Modal title='权限管理' open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
         <Spin spinning={loading}>
-          <div className="py-4">
-            <div className="mb-1">管理员（工号，去前缀0）：</div>
+          <div className='py-4'>
+            <div className='mb-1'>管理员（工号，去前缀0）：</div>
             <Select
-              mode="tags"
+              mode='tags'
               value={admins}
               style={{ width: '100%' }}
               onChange={handleChange}
               tokenSeparators={[',']}
-              options={admins?.map((item: string) => ({ label: item, value: item }))}
+              options={admins?.map((item: string) => ({
+                label: item,
+                value: item,
+              }))}
               loading={adminLoading}
             />
           </div>

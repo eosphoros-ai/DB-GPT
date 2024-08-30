@@ -1,26 +1,32 @@
-import ConstructLayout from '@/new-components/layout/Construct';
-import MarketPlugins from '@/components/agent/market-plugins';
-import MyPlugins from '@/components/agent/my-plugins';
-import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
-import { ClearOutlined, DownloadOutlined, PlusOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
-import { useRequest } from 'ahooks';
-import { Button, Input, Segmented, SegmentedProps, Tabs, Form, message, Spin, Tag } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiInterceptors, postAgentHubUpdate, postAgentInstall, postAgentQuery, postAgentUninstall, postAgentMy } from '@/client/api';
-import { useTranslation } from 'react-i18next';
+import {
+  apiInterceptors,
+  postAgentHubUpdate,
+  postAgentInstall,
+  postAgentMy,
+  postAgentQuery,
+  postAgentUninstall,
+} from '@/client/api';
 import BlurredCard, { ChatButton } from '@/new-components/common/blurredCard';
-import moment from 'moment';
+import ConstructLayout from '@/new-components/layout/Construct';
+import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
+import { ClearOutlined, DownloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { useRequest } from 'ahooks';
+import { Button, Segmented, SegmentedProps, Spin, Tag, message } from 'antd';
 import cls from 'classnames';
+import moment from 'moment';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+// import MyPlugins from '@/components/agent/my-plugins';
+// import MarketPlugins from '@/components/agent/market-plugins';
+
 function Agent() {
   const { t } = useTranslation();
 
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue] = useState('');
   const [activeKey, setActiveKey] = useState<string>('market');
   const [uploading, setUploading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [_, setIsError] = useState(false);
   const [actionIndex, setActionIndex] = useState<number | undefined>();
-
-  const [form] = Form.useForm<PostAgentQueryParams['filter']>();
 
   const pagination = useMemo<{ pageNo: number; pageSize: number }>(
     () => ({
@@ -97,14 +103,14 @@ function Agent() {
 
   return (
     <ConstructLayout>
-      <div className="px-6">
+      <div className='px-6'>
         <Spin spinning={loading}>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-4">
+          <div className='flex justify-between items-center mb-6'>
+            <div className='flex items-center gap-4'>
               <Segmented
-                className="backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
+                className='backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
                 options={items}
-                onChange={(key) => {
+                onChange={key => {
                   setActiveKey(key as string);
                 }}
                 value={activeKey}
@@ -120,7 +126,7 @@ function Agent() {
                 className="w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
               /> */}
             </div>
-            <div className="flex items-center gap-4">
+            <div className='flex items-center gap-4'>
               <Button
                 className={cls('border-none text-white bg-button-gradient h-full', {
                   'opacity-40': false,
@@ -135,7 +141,7 @@ function Agent() {
           </div>
           {agents.map((agent, index) => (
             <BlurredCard
-              logo="/pictures/agent.png"
+              logo='/pictures/agent.png'
               onClick={() => {
                 if (agent.storage_url) window.open(agent.storage_url, '_blank');
               }}
@@ -151,7 +157,7 @@ function Agent() {
                 </div>
               }
               LeftBottom={
-                <div className="flex gap-2">
+                <div className='flex gap-2'>
                   {agent.author && <span>{agent.author}</span>}
                   {agent.author && <span>•</span>}
                   {agent?.gmt_created && <span>{moment(agent?.gmt_created).fromNow() + ' ' + t('update')}</span>}
@@ -161,7 +167,7 @@ function Agent() {
                 agent.installed || activeKey == 'my' ? (
                   <ChatButton
                     Icon={<ClearOutlined />}
-                    text="Uninstall"
+                    text='Uninstall'
                     onClick={() => {
                       pluginAction(agent.name, index, false);
                     }}
@@ -169,7 +175,7 @@ function Agent() {
                 ) : (
                   <ChatButton
                     Icon={<DownloadOutlined />}
-                    text="Install"
+                    text='Install'
                     onClick={() => {
                       pluginAction(agent.name, index, true);
                     }}

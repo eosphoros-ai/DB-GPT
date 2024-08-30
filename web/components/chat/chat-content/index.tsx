@@ -1,12 +1,21 @@
-import { PropsWithChildren, ReactNode, memo, useContext, useMemo } from 'react';
-import { CheckOutlined, ClockCircleOutlined, CloseOutlined, CodeOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import { GPTVis } from '@antv/gpt-vis';
-import { IChatDialogueMessageSchema } from '@/types/chat';
-import rehypeRaw from 'rehype-raw';
-import classNames from 'classnames';
-import { Tag } from 'antd';
-import { renderModelIcon } from '../header/model-selector';
 import { ChatContext } from '@/app/chat-context';
+import { IChatDialogueMessageSchema } from '@/types/chat';
+import {
+  CheckOutlined,
+  ClockCircleOutlined,
+  CloseOutlined,
+  CodeOutlined,
+  LoadingOutlined,
+  RobotOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import { GPTVis } from '@antv/gpt-vis';
+import { Tag } from 'antd';
+import classNames from 'classnames';
+import { PropsWithChildren, ReactNode, memo, useContext, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import { renderModelIcon } from '../header/model-selector';
 import markdownComponents from './config';
 
 interface Props {
@@ -22,7 +31,7 @@ interface Props {
   onLinkClick?: () => void;
 }
 
-type MarkdownComponent = Parameters<typeof GPTVis>["0"]["components"];
+type MarkdownComponent = Parameters<typeof GPTVis>['0']['components'];
 
 type DBGPTView = {
   name: string;
@@ -34,19 +43,19 @@ type DBGPTView = {
 const pluginViewStatusMapper: Record<DBGPTView['status'], { bgClass: string; icon: ReactNode }> = {
   todo: {
     bgClass: 'bg-gray-500',
-    icon: <ClockCircleOutlined className="ml-2" />,
+    icon: <ClockCircleOutlined className='ml-2' />,
   },
   runing: {
     bgClass: 'bg-blue-500',
-    icon: <LoadingOutlined className="ml-2" />,
+    icon: <LoadingOutlined className='ml-2' />,
   },
   failed: {
     bgClass: 'bg-red-500',
-    icon: <CloseOutlined className="ml-2" />,
+    icon: <CloseOutlined className='ml-2' />,
   },
   completed: {
     bgClass: 'bg-green-500',
-    icon: <CheckOutlined className="ml-2" />,
+    icon: <CheckOutlined className='ml-2' />,
   },
 };
 
@@ -63,7 +72,11 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
   const { context, model_name, role } = content;
   const isRobot = role === 'view';
 
-  const { relations, value, cachePluginContext } = useMemo<{ relations: string[]; value: string; cachePluginContext: DBGPTView[] }>(() => {
+  const { relations, value, cachePluginContext } = useMemo<{
+    relations: string[];
+    value: string;
+    cachePluginContext: DBGPTView[];
+  }>(() => {
     if (typeof context !== 'string') {
       return {
         relations: [],
@@ -76,7 +89,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
     const cachePluginContext: DBGPTView[] = [];
 
     let cacheIndex = 0;
-    const result = value.replace(/<dbgpt-view[^>]*>[^<]*<\/dbgpt-view>/gi, (matchVal) => {
+    const result = value.replace(/<dbgpt-view[^>]*>[^<]*<\/dbgpt-view>/gi, matchVal => {
       try {
         const pluginVal = matchVal.replaceAll('\n', '\\n').replace(/<[^>]*>|<\/[^>]*>/gm, '');
         const pluginContext = JSON.parse(pluginVal) as DBGPTView;
@@ -111,27 +124,19 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
         const { name, status, err_msg, result } = cachePluginContext[index];
         const { bgClass, icon } = pluginViewStatusMapper[status] ?? {};
         return (
-          <div className="bg-white dark:bg-[#212121] rounded-lg overflow-hidden my-2 flex flex-col lg:max-w-[80%]">
-            <div
-              className={classNames(
-                "flex px-4 md:px-6 py-2 items-center text-white text-sm",
-                bgClass
-              )}
-            >
+          <div className='bg-white dark:bg-[#212121] rounded-lg overflow-hidden my-2 flex flex-col lg:max-w-[80%]'>
+            <div className={classNames('flex px-4 md:px-6 py-2 items-center text-white text-sm', bgClass)}>
               {name}
               {icon}
             </div>
             {result ? (
-              <div className="px-4 md:px-6 py-4 text-sm">
-                <GPTVis
-                  components={markdownComponents}
-                  rehypePlugins={[rehypeRaw]}
-                >
-                  {result ?? ""}
-                </GPTVis>
+              <div className='px-4 md:px-6 py-4 text-sm'>
+                <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
+                  {result ?? ''}
+                </ReactMarkdown>
               </div>
             ) : (
-              <div className="px-4 md:px-6 py-4 text-sm">{err_msg}</div>
+              <div className='px-4 md:px-6 py-4 text-sm'>{err_msg}</div>
             )}
           </div>
         );
@@ -140,57 +145,41 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
     [context, cachePluginContext],
   );
 
-  if (!isRobot && !context) return <div className="h-12"></div>;
+  if (!isRobot && !context) return <div className='h-12'></div>;
 
   return (
     <div
-      className={classNames(
-        "relative flex flex-wrap w-full p-2 md:p-4 rounded-xl break-words",
-        {
-          "bg-white dark:bg-[#232734]": isRobot,
-          "lg:w-full xl:w-full pl-0": [
-            "chat_with_db_execute",
-            "chat_dashboard",
-          ].includes(scene),
-        }
-      )}
+      className={classNames('relative flex flex-wrap w-full p-2 md:p-4 rounded-xl break-words', {
+        'bg-white dark:bg-[#232734]': isRobot,
+        'lg:w-full xl:w-full pl-0': ['chat_with_db_execute', 'chat_dashboard'].includes(scene),
+      })}
     >
-      <div className="mr-2 flex flex-shrink-0 items-center justify-center h-7 w-7 rounded-full text-lg sm:mr-4">
-        {isRobot ? (
-          renderModelIcon(model_name) || <RobotOutlined />
-        ) : (
-          <UserOutlined />
-        )}
+      <div className='mr-2 flex flex-shrink-0 items-center justify-center h-7 w-7 rounded-full text-lg sm:mr-4'>
+        {isRobot ? renderModelIcon(model_name) || <RobotOutlined /> : <UserOutlined />}
       </div>
-      <div className="flex-1 overflow-hidden items-center text-md leading-8 pb-2">
+      <div className='flex-1 overflow-hidden items-center text-md leading-8 pb-2'>
         {/* User Input */}
-        {!isRobot && typeof context === "string" && context}
+        {!isRobot && typeof context === 'string' && context}
         {/* Render Report */}
-        {isRobot && isChartChat && typeof context === "object" && (
+        {isRobot && isChartChat && typeof context === 'object' && (
           <div>
             {`[${context.template_name}]: `}
-            <span
-              className="text-theme-primary cursor-pointer"
-              onClick={onLinkClick}
-            >
-              <CodeOutlined className="mr-1" />
-              {context.template_introduce || "More Details"}
+            <span className='text-theme-primary cursor-pointer' onClick={onLinkClick}>
+              <CodeOutlined className='mr-1' />
+              {context.template_introduce || 'More Details'}
             </span>
           </div>
         )}
         {/* Markdown */}
-        {isRobot && typeof context === "string" && (
-          <GPTVis
-            components={{ ...markdownComponents, ...extraMarkdownComponents }}
-            rehypePlugins={[rehypeRaw]}
-          >
+        {isRobot && typeof context === 'string' && (
+          <GPTVis components={{ ...markdownComponents, ...extraMarkdownComponents }} rehypePlugins={[rehypeRaw]}>
             {formatMarkdownVal(value)}
           </GPTVis>
         )}
         {!!relations?.length && (
-          <div className="flex flex-wrap mt-2">
+          <div className='flex flex-wrap mt-2'>
             {relations?.map((value, index) => (
-              <Tag color="#108ee9" key={value + index}>
+              <Tag color='#108ee9' key={value + index}>
                 {value}
               </Tag>
             ))}

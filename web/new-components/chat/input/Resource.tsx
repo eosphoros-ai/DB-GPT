@@ -18,7 +18,8 @@ const Resource: React.FC<{
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   fileName: string;
 }> = ({ fileList, setFileList, setLoading, fileName }) => {
-  const { setResourceValue, appInfo, refreshHistory, refreshDialogList, modelValue, resourceValue } = useContext(ChatContentContext);
+  const { setResourceValue, appInfo, refreshHistory, refreshDialogList, modelValue, resourceValue } =
+    useContext(ChatContentContext);
 
   const searchParams = useSearchParams();
   const scene = searchParams?.get('scene') ?? '';
@@ -31,23 +32,27 @@ const Resource: React.FC<{
 
   // 左边工具栏动态可用key
   const paramKey: string[] = useMemo(() => {
-    return appInfo.param_need?.map((i) => i.type) || [];
+    return appInfo.param_need?.map(i => i.type) || [];
   }, [appInfo.param_need]);
 
   const isDataBase = useMemo(() => {
-    return paramKey.includes('resource') && appInfo.param_need?.filter((i) => i.type === 'resource')[0]?.value === 'database';
+    return (
+      paramKey.includes('resource') && appInfo.param_need?.filter(i => i.type === 'resource')[0]?.value === 'database'
+    );
   }, [appInfo.param_need, paramKey]);
 
   const isKnowledge = useMemo(() => {
-    return paramKey.includes('resource') && appInfo.param_need?.filter((i) => i.type === 'resource')[0]?.value === 'knowledge';
+    return (
+      paramKey.includes('resource') && appInfo.param_need?.filter(i => i.type === 'resource')[0]?.value === 'knowledge'
+    );
   }, [appInfo.param_need, paramKey]);
 
-  const resource = useMemo(() => appInfo.param_need?.find((i) => i.type === 'resource'), [appInfo.param_need]);
+  const resource = useMemo(() => appInfo.param_need?.find(i => i.type === 'resource'), [appInfo.param_need]);
 
   // 获取db
   const { run, loading } = useRequest(async () => await apiInterceptors(postChatModeParamsList(scene as string)), {
     manual: true,
-    onSuccess: (data) => {
+    onSuccess: data => {
       const [, res] = data;
       setDbs(res ?? []);
     },
@@ -70,7 +75,7 @@ const Resource: React.FC<{
                 height={24}
                 src={dbMapper[db.type].icon}
                 label={dbMapper[db.type].label}
-                className="w-[1.5em] h-[1.5em] mr-1 inline-block mt-[-4px]"
+                className='w-[1.5em] h-[1.5em] mr-1 inline-block mt-[-4px]'
               />
               {db.param}
             </>
@@ -86,7 +91,7 @@ const Resource: React.FC<{
     const formData = new FormData();
     formData.append('doc_file', fileList?.[0] as any);
     setLoading(true);
-    const [err, res] = await apiInterceptors(
+    const [_, res] = await apiInterceptors(
       postChatModeParamsFileLoad({
         convUid: chatId,
         chatMode: scene,
@@ -109,8 +114,8 @@ const Resource: React.FC<{
   if (!paramKey.includes('resource')) {
     return (
       <Tooltip title={t('extend_tip')}>
-        <div className="flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)]">
-          <ExperimentOutlined className="text-lg cursor-not-allowed opacity-30" />
+        <div className='flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)]'>
+          <ExperimentOutlined className='text-lg cursor-not-allowed opacity-30' />
         </div>
       </Tooltip>
     );
@@ -122,19 +127,21 @@ const Resource: React.FC<{
     case 'image_file':
       return (
         <Upload
-          name="file"
-          accept=".csv,.xlsx,.xls"
+          name='file'
+          accept='.csv,.xlsx,.xls'
           fileList={fileList}
           showUploadList={false}
-          beforeUpload={(file, fileList) => {
+          beforeUpload={(_, fileList) => {
             setFileList?.(fileList);
           }}
           customRequest={onUpload}
           disabled={!!fileName || !!fileList[0]?.name}
         >
-          <Tooltip title={t('file_tip')} arrow={false} placement="bottom">
-            <div className="flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)]">
-              <FolderAddOutlined className={classNames('text-xl', { 'cursor-pointer': !(!!fileName || !!fileList[0]?.name) })} />
+          <Tooltip title={t('file_tip')} arrow={false} placement='bottom'>
+            <div className='flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)]'>
+              <FolderAddOutlined
+                className={classNames('text-xl', { 'cursor-pointer': !(!!fileName || !!fileList[0]?.name) })}
+              />
             </div>
           </Tooltip>
         </Upload>
@@ -149,8 +156,8 @@ const Resource: React.FC<{
       return (
         <Select
           value={resourceValue}
-          className="w-52 h-8 rounded-3xl"
-          onChange={(val) => {
+          className='w-52 h-8 rounded-3xl'
+          onChange={val => {
             setResourceValue(val);
           }}
           disabled={!!resource?.bind_value}

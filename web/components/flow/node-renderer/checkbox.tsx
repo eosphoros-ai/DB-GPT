@@ -7,7 +7,7 @@ export const renderCheckbox = (data: IFlowNodeParameter) => {
 
   return (
     data.options?.length > 0 && (
-      <div className="bg-white p-2 rounded">
+      <div className='bg-white p-2 rounded'>
         <Checkbox.Group {...attr} options={data.options} />
       </div>
     )

@@ -3,7 +3,7 @@ import { Node } from 'reactflow';
 
 export const getUniqueNodeId = (nodeData: IFlowNode, nodes: Node[]) => {
   let count = 0;
-  nodes.forEach((node) => {
+  nodes.forEach(node => {
     if (node.data.name === nodeData.name) {
       count++;
     }
@@ -25,14 +25,14 @@ export const mapHumpToUnderline = (flowData: IFlowData) => {
    * positionAbsolute -> position_absolute
    */
   const { nodes, edges, ...rest } = flowData;
-  const newNodes = nodes.map((node) => {
+  const newNodes = nodes.map(node => {
     const { positionAbsolute, ...rest } = node;
     return {
       position_absolute: positionAbsolute,
       ...rest,
     };
   });
-  const newEdges = edges.map((edge) => {
+  const newEdges = edges.map(edge => {
     const { sourceHandle, targetHandle, ...rest } = edge;
     return {
       source_handle: sourceHandle,
@@ -54,14 +54,14 @@ export const mapUnderlineToHump = (flowData: IFlowData) => {
    * position_absolute -> positionAbsolute
    */
   const { nodes, edges, ...rest } = flowData;
-  const newNodes = nodes.map((node) => {
+  const newNodes = nodes.map(node => {
     const { position_absolute, ...rest } = node;
     return {
       positionAbsolute: position_absolute,
       ...rest,
     };
   });
-  const newEdges = edges.map((edge) => {
+  const newEdges = edges.map(edge => {
     const { source_handle, target_handle, ...rest } = edge;
     return {
       sourceHandle: source_handle,
@@ -85,7 +85,7 @@ export const checkFlowDataRequied = (flowData: IFlowData) => {
     const { inputs = [], parameters = [] } = node;
     // check inputs
     for (let j = 0; j < inputs.length; j++) {
-      if (!edges.some((edge) => edge.targetHandle === `${nodes[i].id}|inputs|${j}`)) {
+      if (!edges.some(edge => edge.targetHandle === `${nodes[i].id}|inputs|${j}`)) {
         result = [false, nodes[i], `The input ${inputs[j].type_name} of node ${node.label} is required`];
         break outerLoop;
       }
@@ -93,10 +93,18 @@ export const checkFlowDataRequied = (flowData: IFlowData) => {
     // check parameters
     for (let k = 0; k < parameters.length; k++) {
       const parameter = parameters[k];
-      if (!parameter.optional && parameter.category === 'resource' && !edges.some((edge) => edge.targetHandle === `${nodes[i].id}|parameters|${k}`)) {
+      if (
+        !parameter.optional &&
+        parameter.category === 'resource' &&
+        !edges.some(edge => edge.targetHandle === `${nodes[i].id}|parameters|${k}`)
+      ) {
         result = [false, nodes[i], `The parameter ${parameter.type_name} of node ${node.label} is required`];
         break outerLoop;
-      } else if (!parameter.optional && parameter.category === 'common' && (parameter.value === undefined || parameter.value === null)) {
+      } else if (
+        !parameter.optional &&
+        parameter.category === 'common' &&
+        (parameter.value === undefined || parameter.value === null)
+      ) {
         result = [false, nodes[i], `The parameter ${parameter.type_name} of node ${node.label} is required`];
         break outerLoop;
       }
@@ -116,11 +124,11 @@ export const convertKeysToCamelCase = (obj: Record<string, any>): Record<string,
 
   function convert(obj: any): any {
     if (Array.isArray(obj)) {
-      return obj.map((item) => convert(item));
+      return obj.map(item => convert(item));
     } else if (isObject(obj)) {
       const newObj: Record<string, any> = {};
       for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
           const newKey = toCamelCase(key);
           newObj[newKey] = convert(obj[key]);
         }

@@ -4,7 +4,7 @@ import { IApp } from '@/types/app';
 import { DeleteFilled, MessageFilled, StarFilled, WarningOutlined } from '@ant-design/icons';
 import { Modal, Popconfirm, Tooltip, message } from 'antd';
 import { useRouter } from 'next/router';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import IconFont from '@/new-components/common/Icon';
@@ -92,7 +92,7 @@ export default function AppCard(props: IProps) {
     },
     {
       manual: true,
-      onSuccess: (data) => {
+      onSuccess: data => {
         if (data[2]?.success) {
           if (app.published === 'true') {
             message.success(t('cancel_success'));
@@ -122,10 +122,10 @@ export default function AppCard(props: IProps) {
           operate();
         }}
       >
-        <Tooltip title={t(published == 'true' ? 'unPublish' : 'publish')}>
+        <Tooltip title={t(published == 'true' ? 'unpublish' : 'publish')}>
           {published == 'true' ? (
             <IconFont
-              type="icon-unPublish-cloud"
+              type='icon-unPublish-cloud'
               style={{
                 fontSize: 20,
               }}
@@ -133,7 +133,7 @@ export default function AppCard(props: IProps) {
             />
           ) : (
             <IconFont
-              type="icon-publish-cloud"
+              type='icon-publish-cloud'
               style={{
                 fontSize: 20,
               }}

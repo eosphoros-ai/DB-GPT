@@ -18,11 +18,11 @@ const StaticNodes: React.FC<{ nodes: IFlowNode[] }> = ({ nodes }) => {
         size='small'
         itemLayout='horizontal'
         dataSource={nodes}
-        renderItem={(node) => (
+        renderItem={node => (
           <List.Item
             className='cursor-move hover:bg-[#F1F5F9] dark:hover:bg-theme-dark p-0 py-2'
             draggable
-            onDragStart={(event) => onDragStart(event, node)}
+            onDragStart={event => onDragStart(event, node)}
           >
             <List.Item.Meta
               className='flex items-center justify-center'

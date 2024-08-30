@@ -1,7 +1,7 @@
-import ChatContent from '@/new-components/chat/content/ChatContent';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppInfo } from '@/client/api';
 import MonacoEditor from '@/components/chat/monaco-editor';
+import ChatContent from '@/new-components/chat/content/ChatContent';
 import { ChatContentContext } from '@/pages/chat';
 import { IApp } from '@/types/app';
 import { IChatDialogueMessageSchema } from '@/types/chat';
@@ -10,7 +10,7 @@ import { useAsyncEffect } from 'ahooks';
 import { Modal } from 'antd';
 import { cloneDeep } from 'lodash';
 import { useSearchParams } from 'next/navigation';
-import React, { useContext, useMemo, useState, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
 const ChatCompletion: React.FC = () => {
@@ -19,16 +19,17 @@ const ChatCompletion: React.FC = () => {
   const chatId = searchParams?.get('id') ?? '';
 
   const { currentDialogInfo, model } = useContext(ChatContext);
-  const { history, handleChat, refreshDialogList, setAppInfo, setModelValue, setTemperatureValue, setResourceValue } = useContext(ChatContentContext);
+  const { history, handleChat, refreshDialogList, setAppInfo, setModelValue, setTemperatureValue, setResourceValue } =
+    useContext(ChatContentContext);
 
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
   const [jsonValue, setJsonValue] = useState<string>('');
 
   const showMessages = useMemo(() => {
-    let tempMessage: IChatDialogueMessageSchema[] = cloneDeep(history);
+    const tempMessage: IChatDialogueMessageSchema[] = cloneDeep(history);
     return tempMessage
-      .filter((item) => ['view', 'human'].includes(item.role))
-      .map((item) => {
+      .filter(item => ['view', 'human'].includes(item.role))
+      .map(item => {
         return {
           ...item,
           key: uuid(),
@@ -45,10 +46,10 @@ const ChatCompletion: React.FC = () => {
         }),
       );
       if (res) {
-        const paramKey: string[] = res?.param_need?.map((i) => i.type) || [];
-        const resModel = res?.param_need?.filter((item) => item.type === 'model')[0]?.value || model;
-        const temperature = res?.param_need?.filter((item) => item.type === 'temperature')[0]?.value || 0.5;
-        const resource = res?.param_need?.filter((item) => item.type === 'resource')[0]?.bind_value;
+        const paramKey: string[] = res?.param_need?.map(i => i.type) || [];
+        const resModel = res?.param_need?.filter(item => item.type === 'model')[0]?.value || model;
+        const temperature = res?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.5;
+        const resource = res?.param_need?.filter(item => item.type === 'resource')[0]?.bind_value;
         setAppInfo(res || ({} as IApp));
         setTemperatureValue(temperature || 0.5);
         setModelValue(resModel);
@@ -57,7 +58,9 @@ const ChatCompletion: React.FC = () => {
           app_code: res?.app_code,
           model_name: resModel,
           ...(paramKey?.includes('temperature') && { temperature }),
-          ...(paramKey.includes('resource') && { select_param: typeof resource === 'string' ? resource : JSON.stringify(resource) }),
+          ...(paramKey.includes('resource') && {
+            select_param: typeof resource === 'string' ? resource : JSON.stringify(resource),
+          }),
         });
         await refreshDialogList();
         localStorage.removeItem(STORAGE_INIT_MESSAGE_KET);
@@ -72,9 +75,9 @@ const ChatCompletion: React.FC = () => {
   }, [history]);
 
   return (
-    <div className="flex flex-col w-5/6 mx-auto" ref={scrollableRef}>
+    <div className='flex flex-col w-5/6 mx-auto' ref={scrollableRef}>
       {!!showMessages.length &&
-        showMessages.map((content) => {
+        showMessages.map(content => {
           return (
             <ChatContent
               key={content.key}
@@ -87,9 +90,9 @@ const ChatCompletion: React.FC = () => {
           );
         })}
       <Modal
-        title="JSON Editor"
+        title='JSON Editor'
         open={jsonModalOpen}
-        width="60%"
+        width='60%'
         cancelButtonProps={{
           hidden: true,
         }}
@@ -100,7 +103,7 @@ const ChatCompletion: React.FC = () => {
           setJsonModalOpen(false);
         }}
       >
-        <MonacoEditor className="w-full h-[500px]" language="json" value={jsonValue} />
+        <MonacoEditor className='w-full h-[500px]' language='json' value={jsonValue} />
       </Modal>
     </div>
   );

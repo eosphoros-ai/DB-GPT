@@ -15,14 +15,14 @@ const ModelSwitcher: React.FC = () => {
 
   // 左边工具栏动态可用key
   const paramKey: string[] = useMemo(() => {
-    return appInfo.param_need?.map((i) => i.type) || [];
+    return appInfo.param_need?.map(i => i.type) || [];
   }, [appInfo.param_need]);
 
   if (!paramKey.includes('model')) {
     return (
       <Tooltip title={t('model_tip')}>
-        <div className="flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)]">
-          <SettingOutlined className="text-xl cursor-not-allowed opacity-30" />
+        <div className='flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)]'>
+          <SettingOutlined className='text-xl cursor-not-allowed opacity-30' />
         </div>
       </Tooltip>
     );
@@ -32,17 +32,17 @@ const ModelSwitcher: React.FC = () => {
     <Select
       value={modelValue}
       placeholder={t('choose_model')}
-      className="h-8 rounded-3xl"
-      onChange={(val) => {
+      className='h-8 rounded-3xl'
+      onChange={val => {
         setModelValue(val);
       }}
       popupMatchSelectWidth={300}
     >
-      {modelList.map((item) => (
+      {modelList.map(item => (
         <Select.Option key={item}>
-          <div className="flex items-center">
+          <div className='flex items-center'>
             <ModelIcon model={item} />
-            <span className="ml-2">{item}</span>
+            <span className='ml-2'>{item}</span>
           </div>
         </Select.Option>
       ))}
