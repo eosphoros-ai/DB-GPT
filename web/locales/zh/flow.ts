@@ -16,4 +16,5 @@ export const FlowZn = {
   Export_File_Format: '文件格式',
   Yes: '是',
   No: '否',
+  Please_Add_Nodes_First: '请先添加节点',
 };
