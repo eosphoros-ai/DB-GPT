@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from functools import cache
 from typing import List, Optional
@@ -13,7 +14,13 @@ from dbgpt.util import PaginationResult
 
 from ..config import APP_NAME, SERVE_APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
-from .schemas import ServeRequest, ServerResponse, UploadFileResponse
+from .schemas import (
+    FileMetadataBatchRequest,
+    FileMetadataResponse,
+    ServeRequest,
+    ServerResponse,
+    UploadFileResponse,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -160,6 +167,74 @@ async def delete_file(
         global_system_app, service.delete_file, bucket, file_id
     )
     return Result.succ(None)
+
+
+@router.get(
+    "/files/metadata",
+    response_model=Result[FileMetadataResponse],
+    dependencies=[Depends(check_api_key)],
+)
+async def get_file_metadata(
+    uri: Optional[str] = Query(None, description="File URI"),
+    bucket: Optional[str] = Query(None, description="Bucket name"),
+    file_id: Optional[str] = Query(None, description="File ID"),
+    service: Service = Depends(get_service),
+) -> Result[FileMetadataResponse]:
+    """Get file metadata by URI or by bucket and file_id."""
+    if not uri and not (bucket and file_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Either uri or (bucket and file_id) must be provided",
+        )
+
+    metadata = await blocking_func_to_async(
+        global_system_app, service.get_file_metadata, uri, bucket, file_id
+    )
+    return Result.succ(metadata)
+
+
+@router.post(
+    "/files/metadata/batch",
+    response_model=Result[List[FileMetadataResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def get_files_metadata_batch(
+    request: FileMetadataBatchRequest, service: Service = Depends(get_service)
+) -> Result[List[FileMetadataResponse]]:
+    """Get metadata for multiple files by URIs or bucket and file_id pairs."""
+    if not request.uris and not request.bucket_file_pairs:
+        raise HTTPException(
+            status_code=400,
+            detail="Either uris or bucket_file_pairs must be provided",
+        )
+
+    batch_req = []
+    if request.uris:
+        for uri in request.uris:
+            batch_req.append((uri, None, None))
+    elif request.bucket_file_pairs:
+        for pair in request.bucket_file_pairs:
+            batch_req.append((None, pair.bucket, pair.file_id))
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Either uris or bucket_file_pairs must be provided",
+        )
+
+    batch_req_tasks = [
+        blocking_func_to_async(
+            global_system_app, service.get_file_metadata, uri, bucket, file_id
+        )
+        for uri, bucket, file_id in batch_req
+    ]
+
+    metadata_list = await asyncio.gather(*batch_req_tasks)
+    if not metadata_list:
+        raise HTTPException(
+            status_code=404,
+            detail="File metadata not found",
+        )
+    return Result.succ(metadata_list)
 
 
 def init_endpoints(system_app: SystemApp) -> None:

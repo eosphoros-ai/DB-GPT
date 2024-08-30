@@ -81,7 +81,8 @@ class HttpTriggerManager(TriggerManager):
             raise ValueError(f"Current trigger {trigger} not an object of HttpTrigger")
         trigger_id = trigger.node_id
         if trigger_id not in self._trigger_map:
-            path = join_paths(self._router_prefix, trigger._endpoint)
+            real_endpoint = trigger._resolved_endpoint()
+            path = join_paths(self._router_prefix, real_endpoint)
             methods = trigger._methods
             # Check whether the route is already registered
             self._register_route_tables(path, methods)
@@ -116,9 +117,9 @@ class HttpTriggerManager(TriggerManager):
                 if not app:
                     raise ValueError("System app not initialized")
                 trigger.remove_from_app(app, self._router_prefix)
-                self._unregister_route_tables(
-                    join_paths(self._router_prefix, trigger._endpoint), trigger._methods
-                )
+                real_endpoint = trigger._resolved_endpoint()
+                path = join_paths(self._router_prefix, real_endpoint)
+                self._unregister_route_tables(path, trigger._methods)
             del self._trigger_map[trigger_id]
 
     def _init_app(self, system_app: SystemApp):

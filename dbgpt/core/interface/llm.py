@@ -195,6 +195,9 @@ class ModelRequest:
     temperature: Optional[float] = None
     """The temperature of the model inference."""
 
+    top_p: Optional[float] = None
+    """The top p of the model inference."""
+
     max_new_tokens: Optional[int] = None
     """The maximum number of tokens to generate."""
 
