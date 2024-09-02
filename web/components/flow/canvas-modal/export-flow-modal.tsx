@@ -43,7 +43,6 @@ export const ExportFlowModal: React.FC<Props> = ({
   return (
     <>
       <Modal
-        centered
         title={t('Export_Flow')}
         open={isExportFlowModalOpen}
         onCancel={() => setIsExportFlowModalOpen(false)}

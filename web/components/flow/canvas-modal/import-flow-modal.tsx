@@ -61,7 +61,6 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
   return (
     <>
       <Modal
-        centered
         title={t('Import_Flow')}
         open={isImportModalOpen}
         onCancel={() => setIsImportFlowModalOpen(false)}

@@ -18,4 +18,5 @@ export const FlowEn = {
   No: 'No',
   Please_Add_Nodes_First: 'Please add nodes first',
   Add_Global_Variable_of_Flow: 'Add global variable of flow',
+  Add_Parameter: 'Add Parameter',
 };
