@@ -17,6 +17,7 @@ import ReactFlow, {
   useReactFlow,
 } from 'reactflow';
 // import AddNodes from '@/components/flow/add-nodes';
+import AddFlowVariable from '@/components/flow/add-flow-variable';
 import AddNodesSider from '@/components/flow/add-nodes-sider';
 import ButtonEdge from '@/components/flow/button-edge';
 import { ExportFlowModal, ImportFlowModal, SaveFlowModal } from '@/components/flow/canvas-modal';
@@ -249,7 +250,9 @@ const Canvas: React.FC = () => {
             >
               <Controls className='flex flex-row items-center' position='bottom-center' />
               <Background color='#aaa' gap={16} />
+
               {/* <AddNodes /> */}
+              <AddFlowVariable />
             </ReactFlow>
           </div>
         </div>
