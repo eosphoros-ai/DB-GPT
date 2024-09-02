@@ -72,15 +72,15 @@ const ChatCompletion: React.FC = () => {
     setTimeout(() => {
       scrollableRef.current?.scrollTo(0, scrollableRef.current?.scrollHeight);
     }, 50);
-  }, [history]);
+  }, [history, history[history.length - 1].context]);
 
   return (
     <div className='flex flex-col w-5/6 mx-auto' ref={scrollableRef}>
       {!!showMessages.length &&
-        showMessages.map(content => {
+        showMessages.map((content, index) => {
           return (
             <ChatContent
-              key={content.key}
+              key={index}
               content={content}
               onLinkClick={() => {
                 setJsonModalOpen(true);
