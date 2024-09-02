@@ -4,7 +4,7 @@ import { Button, Form, GetProp, Modal, Radio, Space, Upload, UploadFile, UploadP
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edge, Node } from 'reactflow';
-
+import CanvasWrapper from '@/pages/construct/flow/canvas/index';
 type Props = {
   isImportModalOpen: boolean;
   setNodes: React.Dispatch<React.SetStateAction<Node<any, string | undefined>[]>>;
@@ -37,9 +37,12 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
     const [, , res] = await apiInterceptors(importFlow(formData));
 
     if (res?.success) {
-      messageApi.success(t('Export_Flow_Success'));
+      messageApi.success(t('Import_Flow_Success'));
+      localStorage.setItem('importFlowData', JSON.stringify(res?.data));
+      CanvasWrapper(res?.data)
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
+    
     }
     setIsImportFlowModalOpen(false);
   };

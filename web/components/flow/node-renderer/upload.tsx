@@ -16,6 +16,7 @@ export const renderUpload = (params: Props) => {
   const { t } = useTranslation();
   const urlList = useRef<string[]>([]);
   const { data, formValuesChange } = params;
+console.log(data);
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
