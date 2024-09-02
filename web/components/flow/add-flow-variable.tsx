@@ -206,7 +206,7 @@ const AddFlowVariable: React.FC = () => {
                       <Input placeholder='Parameter Description' />
                     </Form.Item>
 
-                    <MinusCircleOutlined onClick={() => remove(name)} className='relative mt-6' />
+                    <MinusCircleOutlined onClick={() => remove(name)} />
                   </Space>
                 ))}
 
