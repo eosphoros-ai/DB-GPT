@@ -142,7 +142,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       return (
         <div className='bg-zinc-100 dark:bg-zinc-700 rounded p-2'>
           <TypeLabel label='Outputs' />
-          {(outputs || []).map((output, index) => (
+          {outputs?.map((output, index) => (
             <NodeHandler
               key={`${data.id}_input_${index}`}
               node={data}

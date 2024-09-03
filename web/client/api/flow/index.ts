@@ -35,8 +35,8 @@ export const deleteFlowById = (id: string) => {
   return DELETE<null, null>(`/api/v2/serve/awel/flows/${id}`);
 };
 
-export const getFlowNodes = () => {
-  return GET<null, Array<IFlowNode>>(`/api/v2/serve/awel/nodes`);
+export const getFlowNodes = (tags?: string) => {
+  return GET<{ tags?: string }, Array<IFlowNode>>(`/api/v2/serve/awel/nodes`, { tags });
 };
 
 export const refreshFlowNodeById = (data: IFlowRefreshParams) => {
