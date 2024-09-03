@@ -123,3 +123,10 @@ table {
 .rc-md-editor .editor-container>.section {
   border-right: none !important;
 }
+
+.w-530{
+  width: 530px;
+}
+.w-256{
+  width:256px;
+}

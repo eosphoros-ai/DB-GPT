@@ -28,8 +28,9 @@ import 'reactflow/dist/style.css';
 
 const nodeTypes = { customNode: CanvasNode };
 const edgeTypes = { buttonedge: ButtonEdge };
+let importData :any= null
+const Canvas: React.FC = (props:any) => {
 
-const Canvas: React.FC = () => {
   const { t } = useTranslation();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -45,7 +46,17 @@ const Canvas: React.FC = () => {
   const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
   const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
-
+  
+  if (localStorage.getItem('importFlowData') ) {
+    const importFlowData = JSON.parse(localStorage.getItem('importFlowData') );
+    localStorage.removeItem('importFlowData')
+    setLoading(true);
+    const flowData = mapUnderlineToHump(importFlowData.flow_data);
+    setFlowInfo(importFlowData);
+    setNodes(flowData.nodes);
+    setEdges(flowData.edges);
+    setLoading(false);
+  }
   async function getFlowData() {
     setLoading(true);
     const [_, data] = await apiInterceptors(getFlowById(id));
@@ -286,7 +297,11 @@ const Canvas: React.FC = () => {
   );
 };
 
-export default function CanvasWrapper() {
+export default function CanvasWrapper(data:any) {
+  
+  importData = data
+  console.log(importData);
+
   return (
     <ReactFlowProvider>
       <Canvas />

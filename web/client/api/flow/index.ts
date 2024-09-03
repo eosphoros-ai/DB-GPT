@@ -71,3 +71,6 @@ export const getFlowTemplateList = () => {
 export const getFlowTemplateById = (id: string) => {
   return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
 };
+export const metadataBatch = (data: IUploadFileRequestParams) => {
+  return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>('/api/v2/serve/file/files/metadata/batch', data);
+};

@@ -193,8 +193,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     >
       <div
         className={classNames(
-          'w-80 h-auto rounded-xl shadow-md px-2 py-4 border bg-white dark:bg-zinc-800 cursor-grab flex flex-col space-y-2 text-sm',
+          'h-auto rounded-xl shadow-md px-2 py-4 border bg-white dark:bg-zinc-800 cursor-grab flex flex-col space-y-2 text-sm',
           {
+            'w-80':node.tags.ui_size === 'middle'  || !node.tags.ui_size,
+            'w-256':node.tags.ui_size === 'small',
+            'w-530':node.tags.ui_size === 'large',
             'border-blue-500': node.selected || isHovered,
             'border-stone-400 dark:border-white': !node.selected && !isHovered,
             'border-dashed': flowType !== 'operator',
