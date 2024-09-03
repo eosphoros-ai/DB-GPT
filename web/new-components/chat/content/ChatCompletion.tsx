@@ -72,7 +72,7 @@ const ChatCompletion: React.FC = () => {
     setTimeout(() => {
       scrollableRef.current?.scrollTo(0, scrollableRef.current?.scrollHeight);
     }, 50);
-  }, [history, history[history.length - 1].context]);
+  }, [history, history[history.length - 1]?.context]);
 
   return (
     <div className='flex flex-col w-5/6 mx-auto' ref={scrollableRef}>
