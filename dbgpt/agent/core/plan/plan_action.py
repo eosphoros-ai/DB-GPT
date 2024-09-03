@@ -40,7 +40,7 @@ class PlanAction(Action[List[PlanInput]]):
 
     def __init__(self, **kwargs):
         """Create a plan action."""
-        super().__init__()
+        super().__init__(**kwargs)
         self._render_protocol = VisAgentPlans()
 
     @property

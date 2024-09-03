@@ -41,9 +41,9 @@ class IndicatorInput(BaseModel):
 class IndicatorAction(Action[IndicatorInput]):
     """Indicator Action."""
 
-    def __init__(self):
-        """Init Indicator Action."""
-        super().__init__()
+    def __init__(self, **kwargs):
+        """Init indicator action."""
+        super().__init__(**kwargs)
         self._render_protocol = VisApiResponse()
 
     @property

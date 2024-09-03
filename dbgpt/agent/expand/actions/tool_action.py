@@ -34,9 +34,9 @@ class ToolInput(BaseModel):
 class ToolAction(Action[ToolInput]):
     """Tool action class."""
 
-    def __init__(self):
-        """Create a plugin action."""
-        super().__init__()
+    def __init__(self, **kwargs):
+        """Tool action init."""
+        super().__init__(**kwargs)
         self._render_protocol = VisPlugin()
 
     @property
