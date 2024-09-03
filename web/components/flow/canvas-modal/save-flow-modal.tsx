@@ -89,7 +89,6 @@ export const SaveFlowModal: React.FC<Props> = ({
   return (
     <>
       <Modal
-        centered
         title={t('flow_modal_title')}
         open={isSaveFlowModalOpen}
         onCancel={() => {
@@ -142,7 +141,7 @@ export const SaveFlowModal: React.FC<Props> = ({
             <TextArea rows={3} />
           </Form.Item>
 
-          <Form.Item label='Editable' name='editable' initialValue={flowInfo?.editable} valuePropName='checked'>
+          <Form.Item label='Editable' name='editable' initialValue={flowInfo?.editable || true} valuePropName='checked'>
             <Checkbox />
           </Form.Item>
 

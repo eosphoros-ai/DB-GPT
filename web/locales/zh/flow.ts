@@ -18,4 +18,5 @@ export const FlowZn = {
   No: '否',
   Please_Add_Nodes_First: '请先添加节点',
   Add_Global_Variable_of_Flow: '添加 Flow 全局变量',
+  Add_Parameter: '添加参数',
 };
