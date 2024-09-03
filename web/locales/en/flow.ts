@@ -21,4 +21,6 @@ export const FlowEn = {
   Add_Parameter: 'Add Parameter',
   Advanced_Mode: 'Advanced Mode',
   Default_Mode: 'Default Mode',
+  Higher_Order_Nodes: 'Higher Order Nodes',
+  All_Nodes: 'All Nodes',
 };

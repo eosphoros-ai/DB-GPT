@@ -12,6 +12,8 @@ import StaticNodes from './static-nodes';
 const { Search } = Input;
 const { Sider } = Layout;
 
+const TAGS = JSON.stringify({ order: 'higher-order' });
+
 type GroupType = {
   category: string;
   categoryLabel: string;
@@ -41,14 +43,16 @@ const AddNodesSider: React.FC = () => {
   const [resources, setResources] = useState<Array<IFlowNode>>([]);
   const [operatorsGroup, setOperatorsGroup] = useState<GroupType[]>([]);
   const [resourcesGroup, setResourcesGroup] = useState<GroupType[]>([]);
-  const [isAdvancedMode, setIsAdvancedMode] = useState<boolean>(false);
+  const [isAllNodesVisible, setIsAllNodesVisible] = useState<boolean>(false);
 
   useEffect(() => {
-    getNodes();
+    getNodes(TAGS);
   }, []);
 
+  // tags is optional, if tags is not passed, it will get all nodes
   async function getNodes(tags?: string) {
     const [_, data] = await apiInterceptors(getFlowNodes(tags));
+
     if (data && data.length > 0) {
       localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
       const operatorNodes = data.filter(node => node.flow_type === 'operator');
@@ -168,14 +172,13 @@ const AddNodesSider: React.FC = () => {
   }
 
   function onModeChange() {
-    setIsAdvancedMode(!isAdvancedMode);
-
-    if (!isAdvancedMode) {
-      const tags = JSON.stringify({ order: 'higher-order' });
-      getNodes(tags);
+    if (isAllNodesVisible) {
+      getNodes(TAGS);
     } else {
       getNodes();
     }
+
+    setIsAllNodesVisible(!isAllNodesVisible);
   }
 
   return (
@@ -196,19 +199,9 @@ const AddNodesSider: React.FC = () => {
             {t('add_node')}
           </p>
 
-          {isAdvancedMode ? (
-            <Tag color='blue' onClick={onModeChange}>
-              {t('Advanced_Mode')}
-            </Tag>
-          ) : (
-            <Tag color='green' onClick={onModeChange}>
-              {t('Default_Mode')}
-            </Tag>
-          )}
-
-          {/* <Button onClick={onModeChange} shape='round' size='small'>
-            {isAdvancedMode ? t('Advanced_Mode') : t('Default_Mode')}
-          </Button> */}
+          <Tag color={isAllNodesVisible ? 'green' : 'blue'} onClick={onModeChange} className='mr-0'>
+            {isAllNodesVisible ? t('All_Nodes') : t('Higher_Order_Nodes')}
+          </Tag>
         </div>
 
         <Search placeholder='Search node' onSearch={searchNode} allowClear />
