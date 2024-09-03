@@ -12,7 +12,7 @@ const { Option } = Select;
 const DAG_PARAM_KEY = 'dbgpt.core.flow.params';
 const DAG_PARAM_SCOPE = 'flow_priv';
 
-const AddFlowVariable: React.FC = () => {
+export const AddFlowVariableModal: React.FC = () => {
   const { t } = useTranslation();
   // const [operators, setOperators] = useState<Array<IFlowNode>>([]);
   // const [resources, setResources] = useState<Array<IFlowNode>>([]);
@@ -149,7 +149,7 @@ const AddFlowVariable: React.FC = () => {
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }, index) => (
-                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align='baseline'>
+                  <Space key={key}>
                     <Form.Item
                       {...restField}
                       name={[name, 'name']}
@@ -218,6 +218,7 @@ const AddFlowVariable: React.FC = () => {
               </>
             )}
           </Form.List>
+
           <Form.Item wrapperCol={{ offset: 20, span: 4 }}>
             <Space>
               <Button onClick={() => setIsModalOpen(false)}>{t('cancel')}</Button>
@@ -231,5 +232,3 @@ const AddFlowVariable: React.FC = () => {
     </>
   );
 };
-
-export default AddFlowVariable;

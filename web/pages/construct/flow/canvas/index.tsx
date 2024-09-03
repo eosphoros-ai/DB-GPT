@@ -1,5 +1,11 @@
 import { apiInterceptors, getFlowById } from '@/client/api';
 import MuiLoading from '@/components/common/loading';
+import AddNodesSider from '@/components/flow/add-nodes-sider';
+import ButtonEdge from '@/components/flow/button-edge';
+import { AddFlowVariableModal, ExportFlowModal, ImportFlowModal, SaveFlowModal } from '@/components/flow/canvas-modal';
+import CanvasNode from '@/components/flow/canvas-node';
+import { IFlowData, IFlowUpdateParam } from '@/types/flow';
+import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
 import { ExportOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
 import { Divider, Space, Tooltip, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
@@ -16,14 +22,6 @@ import ReactFlow, {
   useNodesState,
   useReactFlow,
 } from 'reactflow';
-// import AddNodes from '@/components/flow/add-nodes';
-import AddFlowVariable from '@/components/flow/add-flow-variable';
-import AddNodesSider from '@/components/flow/add-nodes-sider';
-import ButtonEdge from '@/components/flow/button-edge';
-import { ExportFlowModal, ImportFlowModal, SaveFlowModal } from '@/components/flow/canvas-modal';
-import CanvasNode from '@/components/flow/canvas-node';
-import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
 import 'reactflow/dist/style.css';
 
 const nodeTypes = { customNode: CanvasNode };
@@ -249,10 +247,10 @@ const Canvas: React.FC = () => {
               deleteKeyCode={['Backspace', 'Delete']}
             >
               <Controls className='flex flex-row items-center' position='bottom-center' />
+
               <Background color='#aaa' gap={16} />
 
-              {/* <AddNodes /> */}
-              <AddFlowVariable />
+              <AddFlowVariableModal />
             </ReactFlow>
           </div>
         </div>
