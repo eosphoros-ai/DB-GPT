@@ -143,9 +143,16 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
       case 'str':
         return <Input placeholder='Parameter Value' />;
       case 'int':
-        return <InputNumber placeholder='Parameter Value' className='w-full' />;
+        return (
+          <InputNumber
+            step={1}
+            placeholder='Parameter Value'
+            parser={value => value?.replace(/[^\-?\d]/g, '') || 0}
+            style={{ width: '100%' }}
+          />
+        );
       case 'float':
-        return <InputNumber placeholder='Parameter Value' className='w-full' />;
+        return <InputNumber placeholder='Parameter Value' style={{ width: '100%' }} />;
       case 'bool':
         return (
           <Select placeholder='Select Value'>
