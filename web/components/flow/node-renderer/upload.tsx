@@ -39,8 +39,8 @@ export const renderUpload = (params: Props) => {
           })
         }
         setFileList(urlList)
-      }).catch((res)=>{
-        debugger
+      }).catch((error)=>{
+        console.log(error)
       })
     }
 
@@ -104,19 +104,11 @@ export const renderUpload = (params: Props) => {
 
   return (
     <div className='p-2 text-sm text-center'>
-      {data.is_list ? (
-        <Upload fileList={fileList} onRemove={handleFileRemove} {...props} {...attr} multiple={true} accept={uploadType}>
+        <Upload fileList={fileList} onRemove={handleFileRemove} {...props} {...attr} multiple={data.is_list?true:false} accept={uploadType}>
           <Button loading={uploading} icon={<UploadOutlined />}>
             {t('Upload_Data')}
           </Button>
         </Upload>
-      ) : (
-        <Upload fileList={fileList} onRemove={handleFileRemove} {...props} {...attr} multiple={false} accept={uploadType}>
-          <Button loading={uploading} icon={<UploadOutlined />}>
-            {t('Upload_Data')}
-          </Button>
-        </Upload>
-      )}
     </div>
   );
 };

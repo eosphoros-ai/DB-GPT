@@ -28,8 +28,7 @@ import 'reactflow/dist/style.css';
 
 const nodeTypes = { customNode: CanvasNode };
 const edgeTypes = { buttonedge: ButtonEdge };
-let importData :any= null
-const Canvas: React.FC = (props:any) => {
+const Canvas: React.FC = () => {
 
   const { t } = useTranslation();
   const [messageApi, contextHolder] = message.useMessage();
@@ -297,11 +296,7 @@ const Canvas: React.FC = (props:any) => {
   );
 };
 
-export default function CanvasWrapper(data:any) {
-  
-  importData = data
-  console.log(importData);
-
+export default function CanvasWrapper() {
   return (
     <ReactFlowProvider>
       <Canvas />
