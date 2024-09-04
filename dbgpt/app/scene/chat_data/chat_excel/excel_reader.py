@@ -230,7 +230,7 @@ def is_chinese(text):
 
 
 class ExcelReader:
-    def __init__(self, conv_uid, file_param):
+    def __init__(self, conv_uid: str, file_param: str):
         self.conv_uid = conv_uid
         self.file_param = file_param
         if isinstance(file_param, str) and os.path.isabs(file_param):

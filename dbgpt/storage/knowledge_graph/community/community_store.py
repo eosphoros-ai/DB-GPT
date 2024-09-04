@@ -32,21 +32,17 @@ class CommunityStore:
 
     async def build_communities(self):
         """Discover communities."""
-        community_ids = await (self._community_store_adapter.discover_communities())
+        community_ids = await self._community_store_adapter.discover_communities()
 
         # summarize communities
         communities = []
         for community_id in community_ids:
-            community = await (
-                self._community_store_adapter.get_community(community_id)
-            )
+            community = await self._community_store_adapter.get_community(community_id)
             graph = community.data.format()
             if not graph:
                 break
 
-            community.summary = await (
-                self._community_summarizer.summarize(graph=graph)
-            )
+            community.summary = await self._community_summarizer.summarize(graph=graph)
             communities.append(community)
             logger.info(
                 f"Summarize community {community_id}: " f"{community.summary[:50]}..."

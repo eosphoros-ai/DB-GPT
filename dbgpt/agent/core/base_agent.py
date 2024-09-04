@@ -673,7 +673,7 @@ class ConversableAgent(Role, Agent):
         self.actions = []
         for idx, action in enumerate(actions):
             if issubclass(action, Action):
-                self.actions.append(action())
+                self.actions.append(action(language=self.language))
 
     async def _a_append_message(
         self, message: AgentMessage, role, sender: Agent
