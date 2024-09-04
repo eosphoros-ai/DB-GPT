@@ -7,6 +7,8 @@ export const FlowEn = {
   Export_Flow_Success: 'Export flow success',
   Import_Flow_Success: 'Import flow success',
   BringTemplate: 'Bring In Template',
+  BringName: 'Bring Name',
+  BringAction: 'Bring Action',
   Import: 'Import',
   Export: 'Export',
   Import_Flow: 'Import Flow',

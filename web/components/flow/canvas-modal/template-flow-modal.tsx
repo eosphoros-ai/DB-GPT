@@ -37,12 +37,12 @@ export const TemplateFlowModa: React.FC<Props> = ({
   }
   const columns: TableProps<DataType>['columns'] = [
     {
-      title: 'Name',
+      title: t('BringName'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: 'Action',
+      title:t('BringAction'),
       key: 'action',
       render: (_, record) => (
         <Space  size="middle">
