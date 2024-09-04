@@ -172,20 +172,27 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
 
       <Modal
         title={t('Add_Global_Variable_of_Flow')}
-        open={isModalOpen}
-        footer={null}
         width={1000}
-        onCancel={() => setIsModalOpen(false)}
+        open={isModalOpen}
         styles={{
           body: {
-            minHeight: '50vh',
-            maxHeight: '70vh',
+            minHeight: '40vh',
+            maxHeight: '65vh',
             overflow: 'scroll',
             backgroundColor: 'rgba(0,0,0,0.02)',
             padding: '0 8px',
             borderRadius: 4,
           },
         }}
+        onCancel={() => setIsModalOpen(false)}
+        footer={[
+          <Button key='cancel' onClick={() => setIsModalOpen(false)}>
+            {t('cancel')}
+          </Button>,
+          <Button key='submit' type='primary' onClick={() => form.submit()}>
+            {t('verify')}
+          </Button>,
+        ]}
       >
         <Form
           name='dynamic_form_nest_item'
@@ -273,15 +280,6 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
               </>
             )}
           </Form.List>
-
-          <Form.Item wrapperCol={{ offset: 20, span: 4 }}>
-            <Space>
-              <Button onClick={() => setIsModalOpen(false)}>{t('cancel')}</Button>
-              <Button type='primary' htmlType='submit'>
-                {t('verify')}
-              </Button>
-            </Space>
-          </Form.Item>
         </Form>
       </Modal>
     </>
