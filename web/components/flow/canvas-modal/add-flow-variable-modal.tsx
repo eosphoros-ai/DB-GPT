@@ -2,7 +2,7 @@ import { apiInterceptors, getKeys, getVariablesByKey } from '@/client/api';
 import { IFlowUpdateParam, IGetKeysResponseData, IVariableItem } from '@/types/flow';
 import { buildVariableString } from '@/utils/flow';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Cascader, Form, Input, Modal, Select, Space } from 'antd';
+import { Button, Cascader, Form, Input, InputNumber, Modal, Select, Space } from 'antd';
 import { uniqBy } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,9 +19,10 @@ interface Option {
 
 type Props = {
   flowInfo?: IFlowUpdateParam;
+  setFlowInfo: React.Dispatch<React.SetStateAction<IFlowUpdateParam | undefined>>;
 };
 
-export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo }) => {
+export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo }) => {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -48,8 +49,8 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo }) => {
   };
 
   const onFinish = (values: any) => {
-    const variables = JSON.stringify(values.parameters);
-    localStorage.setItem('variables', variables);
+    const newFlowInfo = { ...flowInfo, variables: values?.parameters || [] } as IFlowUpdateParam;
+    setFlowInfo(newFlowInfo);
     setIsModalOpen(false);
   };
 
@@ -142,14 +143,14 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo }) => {
       case 'str':
         return <Input placeholder='Parameter Value' />;
       case 'int':
-        return <Input type='number' placeholder='Parameter Value' />;
+        return <InputNumber placeholder='Parameter Value' className='w-full' />;
       case 'float':
-        return <Input type='number' step='0.01' placeholder='Parameter Value' />;
+        return <InputNumber placeholder='Parameter Value' className='w-full' />;
       case 'bool':
         return (
           <Select placeholder='Select Value'>
-            <Option value='true'>True</Option>
-            <Option value='false'>False</Option>
+            <Option value={true}>True</Option>
+            <Option value={false}>False</Option>
           </Select>
         );
       default:
