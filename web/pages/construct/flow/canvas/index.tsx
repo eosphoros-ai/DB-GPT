@@ -26,14 +26,13 @@ import 'reactflow/dist/style.css';
 
 const nodeTypes = { customNode: CanvasNode };
 const edgeTypes = { buttonedge: ButtonEdge };
+
 const Canvas: React.FC = () => {
-
   const { t } = useTranslation();
-  const [messageApi, contextHolder] = message.useMessage();
-
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
+  const [messageApi, contextHolder] = message.useMessage();
 
   const [loading, setLoading] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -43,10 +42,10 @@ const Canvas: React.FC = () => {
   const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
   const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
-  
-  if (localStorage.getItem('importFlowData') ) {
-    const importFlowData = JSON.parse(localStorage.getItem('importFlowData') );
-    localStorage.removeItem('importFlowData')
+
+  if (localStorage.getItem('importFlowData')) {
+    const importFlowData = JSON.parse(localStorage.getItem('importFlowData') || '');
+    localStorage.removeItem('importFlowData');
     setLoading(true);
     const flowData = mapUnderlineToHump(importFlowData.flow_data);
     setFlowInfo(importFlowData);
@@ -260,7 +259,7 @@ const Canvas: React.FC = () => {
 
               <Background color='#aaa' gap={16} />
 
-              <AddFlowVariableModal />
+              <AddFlowVariableModal flowInfo={flowInfo} />
             </ReactFlow>
           </div>
         </div>
