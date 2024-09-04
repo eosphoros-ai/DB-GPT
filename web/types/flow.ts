@@ -12,6 +12,7 @@ export type IFlowUpdateParam = {
   uid?: string;
   flow_data?: IFlowData;
   state?: FlowState;
+  variables?: IVariableInfo[];
 };
 
 export type IFlowRefreshParams = {
@@ -199,4 +200,24 @@ export type IUploadFileResponse = {
   file_id: string;
   bucket: string;
   uri?: string;
+};
+
+export type IFlowVariablesParams = {
+  key: string;
+  scope: string;
+  scope_key?: string;
+  user_name?: string;
+  sys_code?: string;
+  page?: number;
+  page_size?: number;
+};
+
+export type IVariableInfo = {
+  key: string;
+  label: string;
+  description: string;
+  value_type: string;
+  category: string;
+  scope: string;
+  scope_key: string | null;
 };

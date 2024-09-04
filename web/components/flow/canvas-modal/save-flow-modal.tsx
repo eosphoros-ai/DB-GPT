@@ -47,6 +47,8 @@ export const SaveFlowModal: React.FC<Props> = ({
   async function onSaveFlow() {
     const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
+    const variableValues = localStorage.getItem('variables');
+    const variables = JSON.parse(variableValues || '[]');
 
     if (id) {
       const [, , res] = await apiInterceptors(
@@ -58,6 +60,7 @@ export const SaveFlowModal: React.FC<Props> = ({
           uid: id.toString(),
           flow_data: reactFlowObject,
           state,
+          variables,
         }),
       );
 
@@ -75,6 +78,7 @@ export const SaveFlowModal: React.FC<Props> = ({
           editable,
           flow_data: reactFlowObject,
           state,
+          variables,
         }),
       );
 
