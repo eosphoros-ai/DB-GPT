@@ -2,10 +2,11 @@
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
 import { UploadOutlined } from '@ant-design/icons';
-import type { UploadProps,UploadFile } from 'antd';
+import type { UploadFile, UploadProps } from 'antd';
 import { Button, Upload, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { metadataBatch } from '@/client/api';
 
 type Props = {
@@ -22,26 +23,28 @@ export const renderUpload = (params: Props) => {
   // 获取上传文件元数据
   useEffect(() => { 
     if (data.value) {
-      let uris:string[] = []
-      typeof(data.value) === 'string'? uris.push(data.value):uris = data.value
-      let parameter:any = {
-        uris
+      let uris: string[] = [];
+      typeof data.value === 'string' ? uris.push(data.value) : (uris = data.value);
+      const parameter:any = {
+        uris,
       }
-      metadataBatch(parameter).then((res)=>{
-        let urlList:UploadFile[] = []
-        for (let index = 0; index < res.data.data.length; index++) {
-          const element = res.data.data[index];
-          urlList.push({
+      metadataBatch(parameter)
+        .then(res => {
+          const urlList: UploadFile[] = [];
+          for (let index = 0; index < res.data.data.length; index++) {
+            const element = res.data.data[index];
+            urlList.push({
               uid: element.file_id,
-              name:element.file_name,
+              name: element.file_name,
               status: 'done',
               url: element.uri,
-          })
-        }
-        setFileList(urlList)
-      }).catch((error)=>{
-        console.log(error)
-      })
+            });
+          }
+          setFileList(urlList);
+        })
+        .catch(error => {
+          console.log(error);
+        });
     }
   }, []);
 
@@ -102,11 +105,17 @@ export const renderUpload = (params: Props) => {
 
   return (
     <div className='p-2 text-sm text-center'>
-        <Upload  onRemove={handleFileRemove} {...props} {...attr} multiple={data.is_list?true:false} accept={uploadType}>
-          <Button loading={uploading} icon={<UploadOutlined />}>
-            {t('Upload_Data')}
-          </Button>
-        </Upload>
+      <Upload
+        onRemove={handleFileRemove}
+        {...props}
+        {...attr}
+        multiple={data.is_list ? true : false}
+        accept={uploadType}
+      >
+        <Button loading={uploading} icon={<UploadOutlined />}>
+          {t('Upload_Data')}
+        </Button>
+      </Upload>
     </div>
   );
 };

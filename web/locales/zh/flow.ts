@@ -10,6 +10,7 @@ export const FlowZn = {
   Export: '导出',
   Import_Flow: '导入工作流',
   Export_Flow: '导出工作流',
+  LeadTemplate: '引入模版',
   Select_File: '选择文件',
   Save_After_Import: '导入后保存',
   Export_File_Type: '文件类型',
