@@ -2,10 +2,11 @@
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
 import { UploadOutlined } from '@ant-design/icons';
-import type { UploadProps } from 'antd';
+import type { UploadProps,UploadFile } from 'antd';
 import { Button, Upload, message } from 'antd';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { metadataBatch } from '@/client/api';
 
 type Props = {
   formValuesChange: any;
@@ -16,6 +17,33 @@ export const renderUpload = (params: Props) => {
   const { t } = useTranslation();
   const urlList = useRef<string[]>([]);
   const { data, formValuesChange } = params;
+  const [fileList, setFileList] = useState<UploadFile[]>([])
+
+  // 获取上传文件元数据
+  useEffect(() => { 
+    if (data.value) {
+      let uris:string[] = []
+      typeof(data.value) === 'string'? uris.push(data.value):uris = data.value
+      let parameter:any = {
+        uris
+      }
+      metadataBatch(parameter).then((res)=>{
+        let urlList:UploadFile[] = []
+        for (let index = 0; index < res.data.data.length; index++) {
+          const element = res.data.data[index];
+          urlList.push({
+              uid: element.file_id,
+              name:element.file_name,
+              status: 'done',
+              url: element.uri,
+          })
+        }
+        setFileList(urlList)
+      }).catch((error)=>{
+        console.log(error)
+      })
+    }
+  }, []);
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
   const [uploading, setUploading] = useState(false);
@@ -51,6 +79,7 @@ export const renderUpload = (params: Props) => {
     headers: {
       authorization: 'authorization-text',
     },
+    defaultFileList: fileList,
     onChange(info) {
       setUploading(true);
       if (info.file.status !== 'uploading') {
@@ -73,19 +102,11 @@ export const renderUpload = (params: Props) => {
 
   return (
     <div className='p-2 text-sm text-center'>
-      {data.is_list ? (
-        <Upload onRemove={handleFileRemove} {...props} {...attr} multiple={true} accept={uploadType}>
+        <Upload  onRemove={handleFileRemove} {...props} {...attr} multiple={data.is_list?true:false} accept={uploadType}>
           <Button loading={uploading} icon={<UploadOutlined />}>
             {t('Upload_Data')}
           </Button>
         </Upload>
-      ) : (
-        <Upload onRemove={handleFileRemove} {...props} {...attr} multiple={false} accept={uploadType}>
-          <Button loading={uploading} icon={<UploadOutlined />}>
-            {t('Upload_Data')}
-          </Button>
-        </Upload>
-      )}
     </div>
   );
 };

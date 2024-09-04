@@ -79,3 +79,7 @@ export const getKeys = () => {
 export const getVariablesByKey = ({ key, scope }: { key: string; scope: string }) => {
   return GET<IFlowVariablesParams, any>('/api/v2/serve/awel/variables', { key, scope });
 };
+
+export const metadataBatch = (data: IUploadFileRequestParams) => {
+  return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>('/api/v2/serve/file/files/metadata/batch', data);
+};
