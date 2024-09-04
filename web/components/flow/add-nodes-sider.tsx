@@ -4,7 +4,8 @@ import { IFlowNode } from '@/types/flow';
 import { FLOW_NODES_KEY } from '@/utils';
 import { CaretLeftOutlined, CaretRightOutlined } from '@ant-design/icons';
 import type { CollapseProps } from 'antd';
-import { Badge, Collapse, Input, Layout, Space, Tag } from 'antd';
+import { Badge, Collapse, Input, Layout, Space, Switch } from 'antd';
+import classnames from 'classnames';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StaticNodes from './static-nodes';
@@ -199,9 +200,13 @@ const AddNodesSider: React.FC = () => {
             {t('add_node')}
           </p>
 
-          <Tag color={isAllNodesVisible ? 'green' : 'blue'} onClick={onModeChange} className='mr-0'>
-            {isAllNodesVisible ? t('All_Nodes') : t('Higher_Order_Nodes')}
-          </Tag>
+          <Switch
+            checkedChildren='高阶'
+            unCheckedChildren='全部'
+            onClick={onModeChange}
+            className={classnames('w-20', { 'bg-zinc-400': isAllNodesVisible })}
+            defaultChecked
+          />
         </div>
 
         <Search placeholder='Search node' onSearch={searchNode} allowClear />
