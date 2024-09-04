@@ -308,15 +308,14 @@ export default function AppContent() {
                 className='w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
               />
             </div>
-            <div className='flex items-center gap-4 h-10'>
-              <Button
-                className='border-none text-white bg-button-gradient h-full flex items-center'
-                icon={<PlusOutlined className='text-base' />}
-                onClick={handleCreate}
-              >
-                {t('create_app')}
-              </Button>
-            </div>
+
+            <Button
+              className='border-none text-white bg-button-gradient flex items-center'
+              icon={<PlusOutlined className='text-base' />}
+              onClick={handleCreate}
+            >
+              {t('create_app')}
+            </Button>
           </div>
           <div className=' w-full flex flex-wrap pb-12 mx-[-8px]'>
             {apps.map(item => {

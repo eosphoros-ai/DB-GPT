@@ -1,5 +1,5 @@
 import { apiInterceptors, getKeys, getVariablesByKey } from '@/client/api';
-import { IGetKeysResponseData, IVariableItem } from '@/types/flow';
+import { IFlowUpdateParam, IGetKeysResponseData, IVariableItem } from '@/types/flow';
 import { buildVariableString } from '@/utils/flow';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Cascader, Form, Input, Modal, Select, Space } from 'antd';
@@ -17,7 +17,11 @@ interface Option {
   isLeaf?: boolean;
 }
 
-export const AddFlowVariableModal: React.FC = () => {
+type Props = {
+  flowInfo?: IFlowUpdateParam;
+};
+
+export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo }) => {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -155,7 +159,7 @@ export const AddFlowVariableModal: React.FC = () => {
           autoComplete='off'
           layout='vertical'
           className='mt-8'
-          initialValues={{ parameters: [{}] }}
+          initialValues={{ parameters: flowInfo?.variables || [{}] }}
         >
           <Form.List name='parameters'>
             {(fields, { add, remove }) => (
