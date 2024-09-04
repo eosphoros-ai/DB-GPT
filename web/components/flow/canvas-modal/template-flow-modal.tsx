@@ -1,18 +1,13 @@
-import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { Button, Form, Input, Modal, Space, message,Table  } from 'antd';
-import { useTranslation } from 'react-i18next';
-import { ReactFlowInstance } from 'reactflow';
-import type { TableProps } from 'antd';
-
 import { getFlowTemplates } from '@/client/api';
-
-import { useEffect, useState } from 'react';
-
 import CanvasWrapper from '@/pages/construct/flow/canvas/index';
+import type { TableProps } from 'antd';
+import { Button, Modal, Space, Table } from 'antd';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
-  isTemplateFlowModalOpen: boolean;
-  setIsTemplateFlowModalOpen: (value: boolean) => void;
+  isFlowTemplateModalOpen: boolean;
+  setIsFlowTemplateModalOpen: (value: boolean) => void;
 };
 
 interface DataType {
@@ -22,49 +17,57 @@ interface DataType {
   address: string;
   tags: string[];
 }
-export const TemplateFlowModa: React.FC<Props> = ({
-  isTemplateFlowModalOpen,
-  setIsTemplateFlowModalOpen,
-}) => {
+
+export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, setIsFlowTemplateModalOpen }) => {
   const { t } = useTranslation();
   const [dataSource, setDataSource] = useState([]);
-  const ReferenceTemplate = (record: any,) => {
+
+  const onTemplateImport = (record: DataType) => {
     if (record?.name) {
       localStorage.setItem('importFlowData', JSON.stringify(record));
-      CanvasWrapper()
-      setIsTemplateFlowModalOpen(false);
+      CanvasWrapper();
+      setIsFlowTemplateModalOpen(false);
     }
-  }
+  };
+
   const columns: TableProps<DataType>['columns'] = [
     {
-      title: t('BringName'),
+      title: t('Template_Name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title:t('BringAction'),
+      title: t('Template_Action'),
       key: 'action',
       render: (_, record) => (
-        <Space  size="middle">
-          <Button type="link" onClick={()=>{ReferenceTemplate(record)}} block>
-          {t('BringTemplate')}  
+        <Space size='middle'>
+          <Button
+            type='link'
+            onClick={() => {
+              onTemplateImport(record);
+            }}
+            block
+          >
+            {t('Import_From_Template')}
           </Button>
         </Space>
       ),
     },
   ];
+
   useEffect(() => {
     getFlowTemplates().then(res => {
       console.log(res);
-      setDataSource(res?.data?.data?.items)
+      setDataSource(res?.data?.data?.items);
     });
-  },[])
+  }, []);
+
   return (
     <>
       <Modal
-        title={t('LeadTemplate')}
-        open={isTemplateFlowModalOpen}
-        onCancel={() => setIsTemplateFlowModalOpen(false)}
+        title={t('Import_From_Template')}
+        open={isFlowTemplateModalOpen}
+        onCancel={() => setIsFlowTemplateModalOpen(false)}
         cancelButtonProps={{ className: 'hidden' }}
         okButtonProps={{ className: 'hidden' }}
       >

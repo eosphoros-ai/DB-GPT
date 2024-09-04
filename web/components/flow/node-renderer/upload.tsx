@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
+import { metadataBatch } from '@/client/api';
 import { IFlowNodeParameter } from '@/types/flow';
 import { convertKeysToCamelCase } from '@/utils/flow';
 import { UploadOutlined } from '@ant-design/icons';
@@ -6,8 +7,6 @@ import type { UploadFile, UploadProps } from 'antd';
 import { Button, Upload, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { metadataBatch } from '@/client/api';
 
 type Props = {
   formValuesChange: any;
@@ -18,16 +17,16 @@ export const renderUpload = (params: Props) => {
   const { t } = useTranslation();
   const urlList = useRef<string[]>([]);
   const { data, formValuesChange } = params;
-  const [fileList, setFileList] = useState<UploadFile[]>([])
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
 
   // 获取上传文件元数据
-  useEffect(() => { 
+  useEffect(() => {
     if (data.value) {
       let uris: string[] = [];
       typeof data.value === 'string' ? uris.push(data.value) : (uris = data.value);
-      const parameter:any = {
+      const parameter: any = {
         uris,
-      }
+      };
       metadataBatch(parameter)
         .then(res => {
           const urlList: UploadFile[] = [];

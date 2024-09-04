@@ -5,9 +5,9 @@ import ButtonEdge from '@/components/flow/button-edge';
 import {
   AddFlowVariableModal,
   ExportFlowModal,
+  FlowTemplateModal,
   ImportFlowModal,
   SaveFlowModal,
-  TemplateFlowModa,
 } from '@/components/flow/canvas-modal';
 import CanvasNode from '@/components/flow/canvas-node';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
@@ -49,7 +49,7 @@ const Canvas: React.FC = () => {
   const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
   const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
-  const [isTemplateFlowModalOpen, setIsTemplateFlowModalOpen] = useState(false);
+  const [isFlowTemplateModalOpen, setIsFlowTemplateModalOpen] = useState(false);
 
   if (localStorage.getItem('importFlowData')) {
     const importFlowData = JSON.parse(localStorage.getItem('importFlowData') || '');
@@ -198,27 +198,15 @@ const Canvas: React.FC = () => {
     setIsSaveFlowModalOpen(true);
   }
 
-  function onExport() {
-    setIsExportFlowModalOpen(true);
-  }
-
-  function onImport() {
-    setIsImportFlowModalOpen(true);
-  }
-
-  function onTemplate() {
-    setIsTemplateFlowModalOpen(true);
-  }
-
   const getButtonList = () => {
     const buttonList = [
       {
         title: t('template'),
-        icon: <FileAddOutlined className='block text-xl' onClick={onTemplate} />,
+        icon: <FileAddOutlined className='block text-xl' onClick={() => setIsFlowTemplateModalOpen(true)} />,
       },
       {
         title: t('Import'),
-        icon: <ImportOutlined className='block text-xl' onClick={onImport} />,
+        icon: <ImportOutlined className='block text-xl' onClick={() => setIsImportFlowModalOpen(true)} />,
       },
       {
         title: t('save'),
@@ -229,7 +217,7 @@ const Canvas: React.FC = () => {
     if (id !== '') {
       buttonList.unshift({
         title: t('Export'),
-        icon: <ExportOutlined className='block text-xl' onClick={onExport} />,
+        icon: <ExportOutlined className='block text-xl' onClick={() => setIsExportFlowModalOpen(true)} />,
       });
     }
 
@@ -304,9 +292,10 @@ const Canvas: React.FC = () => {
         isImportModalOpen={isImportModalOpen}
         setIsImportFlowModalOpen={setIsImportFlowModalOpen}
       />
-      <TemplateFlowModa
-        isTemplateFlowModalOpen={isTemplateFlowModalOpen}
-        setIsTemplateFlowModalOpen={setIsTemplateFlowModalOpen}
+
+      <FlowTemplateModal
+        isFlowTemplateModalOpen={isFlowTemplateModalOpen}
+        setIsFlowTemplateModalOpen={setIsFlowTemplateModalOpen}
       />
 
       {contextHolder}
