@@ -1,5 +1,6 @@
 import { apiInterceptors, getKeys, getVariablesByKey } from '@/client/api';
 import { IGetKeysResponseData, IVariableItem } from '@/types/flow';
+import { buildVariableString } from '@/utils/flow';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Cascader, Form, Input, Modal, Select, Space } from 'antd';
 import { uniqBy } from 'lodash';
@@ -14,60 +15,6 @@ interface Option {
   label: React.ReactNode;
   children?: Option[];
   isLeaf?: boolean;
-}
-
-function escapeVariable(value: string, enableEscape: boolean): string {
-  if (!enableEscape) {
-    return value;
-  }
-  return value.replace(/@/g, '\\@').replace(/#/g, '\\#').replace(/%/g, '\\%').replace(/:/g, '\\:');
-}
-
-function buildVariableString(variableDict: IVariableItem): string {
-  const scopeSig = '@';
-  const sysCodeSig = '#';
-  const userSig = '%';
-  const kvSig = ':';
-  const enableEscape = true;
-
-  const specialChars = new Set([scopeSig, sysCodeSig, userSig, kvSig]);
-
-  const newVariableDict: Partial<IVariableItem> = {
-    key: variableDict.key || '',
-    name: variableDict.name || '',
-    scope: variableDict.scope || '',
-    scope_key: variableDict.scope_key || '',
-    sys_code: variableDict.sys_code || '',
-    user_name: variableDict.user_name || '',
-  };
-
-  // Check for special characters in values
-  for (const [key, value] of Object.entries(newVariableDict)) {
-    if (value && [...specialChars].some(char => (value as string).includes(char))) {
-      if (enableEscape) {
-        newVariableDict[key] = escapeVariable(value as string, enableEscape);
-      } else {
-        throw new Error(
-          `${key} contains special characters, error value: ${value}, special characters: ${[...specialChars].join(', ')}`,
-        );
-      }
-    }
-  }
-
-  const { key, name, scope, scope_key, sys_code, user_name } = newVariableDict;
-
-  let variableStr = `${key}`;
-
-  if (name) variableStr += `${kvSig}${name}`;
-  if (scope || scope_key) {
-    variableStr += `${scopeSig}${scope}`;
-    if (scope_key) {
-      variableStr += `${kvSig}${scope_key}`;
-    }
-  }
-  if (sys_code) variableStr += `${sysCodeSig}${sys_code}`;
-  if (user_name) variableStr += `${userSig}${user_name}`;
-  return `\${${variableStr}}`;
 }
 
 export const AddFlowVariableModal: React.FC = () => {

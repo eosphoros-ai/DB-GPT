@@ -1,4 +1,4 @@
-import { IFlowData, IFlowDataNode, IFlowNode } from '@/types/flow';
+import { IFlowData, IFlowDataNode, IFlowNode, IVariableItem } from '@/types/flow';
 import { Node } from 'reactflow';
 
 export const getUniqueNodeId = (nodeData: IFlowNode, nodes: Node[]) => {
@@ -140,3 +140,57 @@ export const convertKeysToCamelCase = (obj: Record<string, any>): Record<string,
 
   return convert(obj);
 };
+
+function escapeVariable(value: string, enableEscape: boolean): string {
+  if (!enableEscape) {
+    return value;
+  }
+  return value.replace(/@/g, '\\@').replace(/#/g, '\\#').replace(/%/g, '\\%').replace(/:/g, '\\:');
+}
+
+export function buildVariableString(variableDict: IVariableItem): string {
+  const scopeSig = '@';
+  const sysCodeSig = '#';
+  const userSig = '%';
+  const kvSig = ':';
+  const enableEscape = true;
+
+  const specialChars = new Set([scopeSig, sysCodeSig, userSig, kvSig]);
+
+  const newVariableDict: Partial<IVariableItem> = {
+    key: variableDict.key || '',
+    name: variableDict.name || '',
+    scope: variableDict.scope || '',
+    scope_key: variableDict.scope_key || '',
+    sys_code: variableDict.sys_code || '',
+    user_name: variableDict.user_name || '',
+  };
+
+  // Check for special characters in values
+  for (const [key, value] of Object.entries(newVariableDict)) {
+    if (value && [...specialChars].some(char => (value as string).includes(char))) {
+      if (enableEscape) {
+        newVariableDict[key] = escapeVariable(value as string, enableEscape);
+      } else {
+        throw new Error(
+          `${key} contains special characters, error value: ${value}, special characters: ${[...specialChars].join(', ')}`,
+        );
+      }
+    }
+  }
+
+  const { key, name, scope, scope_key, sys_code, user_name } = newVariableDict;
+
+  let variableStr = `${key}`;
+
+  if (name) variableStr += `${kvSig}${name}`;
+  if (scope || scope_key) {
+    variableStr += `${scopeSig}${scope}`;
+    if (scope_key) {
+      variableStr += `${kvSig}${scope_key}`;
+    }
+  }
+  if (sys_code) variableStr += `${sysCodeSig}${sys_code}`;
+  if (user_name) variableStr += `${userSig}${user_name}`;
+  return `\${${variableStr}}`;
+}
