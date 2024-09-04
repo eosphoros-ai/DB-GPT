@@ -120,9 +120,6 @@ export const AddFlowVariableModal: React.FC = () => {
   };
 
   const onFinish = (values: any) => {
-    console.log('Received values of form:', values);
-
-    // save variables to localStorage
     const variables = JSON.stringify(values.parameters);
     localStorage.setItem('variables', variables);
     setIsModalOpen(false);
@@ -202,6 +199,8 @@ export const AddFlowVariableModal: React.FC = () => {
       if (param) {
         param.value = variableStr;
         param.category = selectedVariableData?.data?.category;
+        param.value_type = selectedVariableData?.data?.value_type;
+
         form.setFieldsValue({
           parameters: [...parameters],
         });
