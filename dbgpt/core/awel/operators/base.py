@@ -193,11 +193,28 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             self.incremental_output = bool(kwargs["incremental_output"])
         if "output_format" in kwargs:
             self.output_format = kwargs["output_format"]
-
         self._runner: WorkflowRunner = runner
         self._dag_ctx: Optional[DAGContext] = None
         self._can_skip_in_branch = can_skip_in_branch
         self._variables_provider = variables_provider
+
+    def __getstate__(self):
+        """Customize the pickling process."""
+        state = self.__dict__.copy()
+        if "_runner" in state:
+            del state["_runner"]
+        if "_executor" in state:
+            del state["_executor"]
+        if "_system_app" in state:
+            del state["_system_app"]
+        return state
+
+    def __setstate__(self, state):
+        """Customize the unpickling process."""
+        self.__dict__.update(state)
+        self._runner = default_runner
+        self._system_app = DAGVar.get_current_system_app()
+        self._executor = DAGVar.get_executor()
 
     @property
     def current_dag_context(self) -> DAGContext:

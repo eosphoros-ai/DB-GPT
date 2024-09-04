@@ -1,3 +1,6 @@
+.env
+.git/
+./.mypy_cache/
 models/
 plugins/
 pilot/data
@@ -5,6 +8,8 @@ pilot/message
 logs/
 venv/
 web/node_modules/
+web/.next/
+web/.env
 docs/node_modules/
 build/
 docs/build/
