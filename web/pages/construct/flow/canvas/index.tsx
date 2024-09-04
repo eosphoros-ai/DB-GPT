@@ -304,10 +304,8 @@ const Canvas: React.FC = () => {
         setIsImportFlowModalOpen={setIsImportFlowModalOpen}
       />
       <TemplateFlowModa
-        setNodes={setNodes}
-        setEdges={setEdges}
         isTemplateFlowModalOpen={isTemplateFlowModalOpen}
-        setIsImportFlowModalOpen={setIsTemplateFlowModalOpen}
+        setIsTemplateFlowModalOpen={setIsTemplateFlowModalOpen}
       />
 
       {contextHolder}

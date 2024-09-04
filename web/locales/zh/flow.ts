@@ -6,6 +6,7 @@ export const FlowZn = {
   Open_Code_Editor: '打开代码编辑器',
   Export_Flow_Success: '导出工作流成功',
   Import_Flow_Success: '导入工作流成功',
+  BringTemplate: '引入模版',
   Import: '导入',
   Export: '导出',
   Import_Flow: '导入工作流',

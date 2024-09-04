@@ -40,7 +40,7 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
     if (res?.success) {
       messageApi.success(t('Import_Flow_Success'));
       localStorage.setItem('importFlowData', JSON.stringify(res?.data));
-      CanvasWrapper(res?.data)
+      CanvasWrapper()
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
     

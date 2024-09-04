@@ -6,6 +6,7 @@ export const FlowEn = {
   Open_Code_Editor: 'Open Code Editor',
   Export_Flow_Success: 'Export flow success',
   Import_Flow_Success: 'Import flow success',
+  BringTemplate: 'Bring In Template',
   Import: 'Import',
   Export: 'Export',
   Import_Flow: 'Import Flow',

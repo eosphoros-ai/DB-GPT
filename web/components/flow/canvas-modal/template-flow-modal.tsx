@@ -1,85 +1,75 @@
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { Button, Form, Input, Modal, Space, message } from 'antd';
+import { Button, Form, Input, Modal, Space, message,Table  } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { ReactFlowInstance } from 'reactflow';
+import type { TableProps } from 'antd';
 
 import { getFlowTemplates } from '@/client/api';
 
 import { useEffect, useState } from 'react';
 
+import CanvasWrapper from '@/pages/construct/flow/canvas/index';
+
 type Props = {
-  reactFlow: ReactFlowInstance<any, any>;
-  flowInfo?: IFlowUpdateParam;
   isTemplateFlowModalOpen: boolean;
-  setisTemplateFlowModalOpen: (value: boolean) => void;
+  setIsTemplateFlowModalOpen: (value: boolean) => void;
 };
 
+interface DataType {
+  key: string;
+  name: string;
+  age: number;
+  address: string;
+  tags: string[];
+}
 export const TemplateFlowModa: React.FC<Props> = ({
-  reactFlow,
-  flowInfo,
   isTemplateFlowModalOpen,
-  setisTemplateFlowModalOpen,
+  setIsTemplateFlowModalOpen,
 }) => {
   const { t } = useTranslation();
-  const [form] = Form.useForm();
-  const [messageApi, contextHolder] = message.useMessage();
-  const [loading, setLoading] = useState(false);
-  const [templateList, setTemplateList] = useState([]);
-
+  const [dataSource, setDataSource] = useState([]);
+  const ReferenceTemplate = (record: any,) => {
+    if (record?.name) {
+      localStorage.setItem('importFlowData', JSON.stringify(record));
+      CanvasWrapper()
+      setIsTemplateFlowModalOpen(false);
+    }
+  }
+  const columns: TableProps<DataType>['columns'] = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => (
+        <Space  size="middle">
+          <Button type="link" onClick={()=>{ReferenceTemplate(record)}} block>
+          {t('BringTemplate')}  
+          </Button>
+        </Space>
+      ),
+    },
+  ];
   useEffect(() => {
     getFlowTemplates().then(res => {
       console.log(res);
-      
-      debugger
+      setDataSource(res?.data?.data?.items)
     });
-  })
-
-
-  const onFlowExport = async (values: any) => {
-
-
-    setisTemplateFlowModalOpen(false);
-  };
-
+  },[])
   return (
     <>
       <Modal
         title={t('LeadTemplate')}
         open={isTemplateFlowModalOpen}
-        onCancel={() => setisTemplateFlowModalOpen(false)}
+        onCancel={() => setIsTemplateFlowModalOpen(false)}
         cancelButtonProps={{ className: 'hidden' }}
         okButtonProps={{ className: 'hidden' }}
       >
-        <Form
-          form={form}
-          className='mt-6'
-          labelCol={{ span: 6 }}
-          wrapperCol={{ span: 16 }}
-          onFinish={onFlowExport}
-          initialValues={{
-            export_type: 'json',
-            format: 'file',
-            uid: flowInfo?.uid,
-          }}
-        >
-          <Form.Item hidden name='uid'>
-            <Input />
-          </Form.Item>
-
-          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
-            <Space>
-              <Button htmlType='button' onClick={() => setisTemplateFlowModalOpen(false)}>
-                {t('cancel')}
-              </Button>
-              <Button type='primary' htmlType='submit'>
-                {t('verify')}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
+        <Table dataSource={dataSource} columns={columns} />;
       </Modal>
-
-      {contextHolder}
     </>
   );
 };
