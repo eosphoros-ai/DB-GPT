@@ -341,7 +341,7 @@ class BuiltinAgentsVariablesProvider(BuiltinVariablesProvider):
                 StorageVariables(
                     key=key,
                     name=agent["name"],
-                    label=agent["desc"],
+                    label=agent["name"],
                     value=agent["name"],
                     scope=scope,
                     scope_key=scope_key,

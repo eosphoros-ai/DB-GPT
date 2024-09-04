@@ -285,6 +285,9 @@ class BaseDao(Generic[T, REQ, RES]):
             else model_to_dict(query_request)
         )
         for key, value in query_dict.items():
+            if value and isinstance(value, (list, tuple, dict, set)):
+                # Skip the list, tuple, dict, set
+                continue
             if value is not None and hasattr(model_cls, key):
                 if isinstance(value, list):
                     if len(value) > 0:
