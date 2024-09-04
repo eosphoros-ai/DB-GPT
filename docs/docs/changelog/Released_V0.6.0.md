@@ -1,0 +1,1 @@
+# DB-GPT V0.6.0, Defining new standards for AI-native data applications.
