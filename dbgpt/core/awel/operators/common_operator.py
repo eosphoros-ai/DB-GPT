@@ -41,6 +41,12 @@ class JoinOperator(BaseOperator, Generic[OUT]):
         super().__init__(can_skip_in_branch=can_skip_in_branch, **kwargs)
         if not callable(combine_function):
             raise ValueError("combine_function must be callable")
+
+        if self.check_serializable:
+            super()._do_check_serializable(
+                combine_function,
+                f"JoinOperator: {self}, combine_function: {combine_function}",
+            )
         self.combine_function = combine_function
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
@@ -83,6 +89,11 @@ class ReduceStreamOperator(BaseOperator, Generic[IN, OUT]):
         super().__init__(**kwargs)
         if reduce_function and not callable(reduce_function):
             raise ValueError("reduce_function must be callable")
+        if reduce_function and self.check_serializable:
+            super()._do_check_serializable(
+                reduce_function, f"Operator: {self}, reduce_function: {reduce_function}"
+            )
+
         self.reduce_function = reduce_function
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
@@ -133,6 +144,12 @@ class MapOperator(BaseOperator, Generic[IN, OUT]):
         super().__init__(**kwargs)
         if map_function and not callable(map_function):
             raise ValueError("map_function must be callable")
+
+        if map_function and self.check_serializable:
+            super()._do_check_serializable(
+                map_function, f"Operator: {self}, map_function: {map_function}"
+            )
+
         self.map_function = map_function
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:

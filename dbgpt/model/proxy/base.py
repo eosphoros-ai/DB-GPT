@@ -94,6 +94,17 @@ class ProxyLLMClient(LLMClient):
         self.executor = executor or ThreadPoolExecutor()
         self.proxy_tokenizer = proxy_tokenizer or TiktokenProxyTokenizer()
 
+    def __getstate__(self):
+        """Customize the serialization of the object"""
+        state = self.__dict__.copy()
+        state.pop("executor")
+        return state
+
+    def __setstate__(self, state):
+        """Customize the deserialization of the object"""
+        self.__dict__.update(state)
+        self.executor = ThreadPoolExecutor()
+
     @classmethod
     @abstractmethod
     def new_client(
