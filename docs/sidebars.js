@@ -290,11 +290,6 @@ const sidebars = {
             }, 
             {
               type: 'doc',
-              id: 'application/apps/chat_knowledge',
-              label: "Chat Knowledge Base"
-            },
-            {
-              type: 'doc',
               id: 'application/apps/chat_data',
               label: "Chat Data"
             },
@@ -307,6 +302,11 @@ const sidebars = {
               type: 'doc',
               id: 'application/apps/chat_db',
               label: "chat DB"
+            },
+            {
+              type: 'doc',
+              id: 'application/apps/chat_knowledge',
+              label: "Chat Knowledge Base"
             },
             {
               type: 'doc',
