@@ -33,12 +33,13 @@ const Canvas: React.FC = () => {
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
   const [messageApi, contextHolder] = message.useMessage();
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
-  const [loading, setLoading] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
   const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
+  const [loading, setLoading] = useState(false);
   const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
   const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
@@ -53,6 +54,7 @@ const Canvas: React.FC = () => {
     setEdges(flowData.edges);
     setLoading(false);
   }
+
   async function getFlowData() {
     setLoading(true);
     const [_, data] = await apiInterceptors(getFlowById(id));
@@ -259,7 +261,7 @@ const Canvas: React.FC = () => {
 
               <Background color='#aaa' gap={16} />
 
-              <AddFlowVariableModal flowInfo={flowInfo} />
+              <AddFlowVariableModal flowInfo={flowInfo} setFlowInfo={setFlowInfo} />
             </ReactFlow>
           </div>
         </div>

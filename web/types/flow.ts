@@ -12,7 +12,7 @@ export type IFlowUpdateParam = {
   uid?: string;
   flow_data?: IFlowData;
   state?: FlowState;
-  variables?: IGetKeysResponseData[];
+  variables?: IVariableItem[];
 };
 
 export type IFlowRefreshParams = {
@@ -170,8 +170,9 @@ export type IFlowDataViewport = {
 };
 
 export type IFlowData = {
-  nodes: Array<IFlowDataNode>;
-  edges: Array<IFlowDataEdge>;
+  nodes: IFlowDataNode[];
+  edges: IFlowDataEdge[];
+  variables?: IVariableItem[];
   viewport: IFlowDataViewport;
 };
 
