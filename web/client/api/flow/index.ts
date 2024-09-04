@@ -67,12 +67,12 @@ export const downloadFile = (fileId: string) => {
   return GET<null, any>(`/api/v2/serve/file/files/dbgpt/${fileId}`);
 };
 
-export const getFlowTemplateList = () => {
-  return GET<null, Array<any>>('/api/v2/serve/awel/flow/templates');
-};
-
 export const getFlowTemplateById = (id: string) => {
   return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
+};
+
+export const getFlowTemplates = () => {
+  return GET<null, any>(`/api/v2/serve/awel/flow/templates`);
 };
 
 export const getKeys = (data?: IGetKeysRequestParams) => {

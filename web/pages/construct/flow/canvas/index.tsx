@@ -2,11 +2,17 @@ import { apiInterceptors, getFlowById } from '@/client/api';
 import MuiLoading from '@/components/common/loading';
 import AddNodesSider from '@/components/flow/add-nodes-sider';
 import ButtonEdge from '@/components/flow/button-edge';
-import { AddFlowVariableModal, ExportFlowModal, ImportFlowModal, SaveFlowModal } from '@/components/flow/canvas-modal';
+import {
+  AddFlowVariableModal,
+  ExportFlowModal,
+  FlowTemplateModal,
+  ImportFlowModal,
+  SaveFlowModal,
+} from '@/components/flow/canvas-modal';
 import CanvasNode from '@/components/flow/canvas-node';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
-import { ExportOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
+import { ExportOutlined, FileAddOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
 import { Divider, Space, Tooltip, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -43,6 +49,7 @@ const Canvas: React.FC = () => {
   const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
   const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
+  const [isFlowTemplateModalOpen, setIsFlowTemplateModalOpen] = useState(false);
 
   if (localStorage.getItem('importFlowData')) {
     const importFlowData = JSON.parse(localStorage.getItem('importFlowData') || '');
@@ -191,19 +198,15 @@ const Canvas: React.FC = () => {
     setIsSaveFlowModalOpen(true);
   }
 
-  function onExport() {
-    setIsExportFlowModalOpen(true);
-  }
-
-  function onImport() {
-    setIsImportFlowModalOpen(true);
-  }
-
   const getButtonList = () => {
     const buttonList = [
       {
+        title: t('template'),
+        icon: <FileAddOutlined className='block text-xl' onClick={() => setIsFlowTemplateModalOpen(true)} />,
+      },
+      {
         title: t('Import'),
-        icon: <ImportOutlined className='block text-xl' onClick={onImport} />,
+        icon: <ImportOutlined className='block text-xl' onClick={() => setIsImportFlowModalOpen(true)} />,
       },
       {
         title: t('save'),
@@ -214,7 +217,7 @@ const Canvas: React.FC = () => {
     if (id !== '') {
       buttonList.unshift({
         title: t('Export'),
-        icon: <ExportOutlined className='block text-xl' onClick={onExport} />,
+        icon: <ExportOutlined className='block text-xl' onClick={() => setIsExportFlowModalOpen(true)} />,
       });
     }
 
@@ -288,6 +291,11 @@ const Canvas: React.FC = () => {
         setEdges={setEdges}
         isImportModalOpen={isImportModalOpen}
         setIsImportFlowModalOpen={setIsImportFlowModalOpen}
+      />
+
+      <FlowTemplateModal
+        isFlowTemplateModalOpen={isFlowTemplateModalOpen}
+        setIsFlowTemplateModalOpen={setIsFlowTemplateModalOpen}
       />
 
       {contextHolder}

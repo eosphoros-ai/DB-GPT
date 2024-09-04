@@ -5,6 +5,7 @@ import { Button, Form, GetProp, Modal, Radio, Upload, UploadFile, UploadProps, m
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edge, Node } from 'reactflow';
+
 type Props = {
   isImportModalOpen: boolean;
   setNodes: React.Dispatch<React.SetStateAction<Node<any, string | undefined>[]>>;
@@ -39,7 +40,7 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
     if (res?.success) {
       messageApi.success(t('Import_Flow_Success'));
       localStorage.setItem('importFlowData', JSON.stringify(res?.data));
-      CanvasWrapper(res?.data);
+      CanvasWrapper();
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
     }
