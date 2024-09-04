@@ -122,7 +122,7 @@ export const AddFlowVariableModal: React.FC = () => {
   const onFinish = (values: any) => {
     console.log('Received values of form:', values);
 
-    // 将表单的值转换为 JSON 字符串
+    // save variables to localStorage
     const variables = JSON.stringify(values.parameters);
     localStorage.setItem('variables', variables);
     setIsModalOpen(false);
@@ -201,6 +201,7 @@ export const AddFlowVariableModal: React.FC = () => {
       const param = parameters?.[index];
       if (param) {
         param.value = variableStr;
+        param.category = selectedVariableData?.data?.category;
         form.setFieldsValue({
           parameters: [...parameters],
         });
@@ -316,13 +317,9 @@ export const AddFlowVariableModal: React.FC = () => {
                       <Input placeholder='Parameter Description' />
                     </Form.Item>
 
-                    <Form.Item name={[name, 'key']} hidden initialValue='dbgpt.core.flow.params'>
-                      <Input />
-                    </Form.Item>
-
-                    <Form.Item name={[name, 'scope']} hidden initialValue='flow_priv'>
-                      <Input />
-                    </Form.Item>
+                    <Form.Item name={[name, 'key']} hidden initialValue='dbgpt.core.flow.params' />
+                    <Form.Item name={[name, 'scope']} hidden initialValue='flow_priv' />
+                    <Form.Item name={[name, 'category']} hidden initialValue='common' />
 
                     <MinusCircleOutlined onClick={() => remove(name)} />
                   </Space>
