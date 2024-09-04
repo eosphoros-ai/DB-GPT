@@ -1,7 +1,7 @@
 import { addFlow, apiInterceptors, updateFlowById } from '@/client/api';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import { mapHumpToUnderline } from '@/utils/flow';
-import { Button, Checkbox, Form, Input, Modal, Space, message } from 'antd';
+import { Button, Checkbox, Form, Input, Modal, message } from 'antd';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +58,7 @@ export const SaveFlowModal: React.FC<Props> = ({
           uid: id.toString(),
           flow_data: reactFlowObject,
           state,
+          variables: flowInfo?.variables,
         }),
       );
 
@@ -75,6 +76,7 @@ export const SaveFlowModal: React.FC<Props> = ({
           editable,
           flow_data: reactFlowObject,
           state,
+          variables: flowInfo?.variables,
         }),
       );
 
@@ -91,11 +93,15 @@ export const SaveFlowModal: React.FC<Props> = ({
       <Modal
         title={t('flow_modal_title')}
         open={isSaveFlowModalOpen}
-        onCancel={() => {
-          setIsSaveFlowModalOpen(false);
-        }}
-        cancelButtonProps={{ className: 'hidden' }}
-        okButtonProps={{ className: 'hidden' }}
+        onCancel={() => setIsSaveFlowModalOpen(false)}
+        footer={[
+          <Button key='cancel' onClick={() => setIsSaveFlowModalOpen(false)}>
+            {t('cancel')}
+          </Button>,
+          <Button key='submit' type='primary' onClick={() => form.submit()}>
+            {t('verify')}
+          </Button>,
+        ]}
       >
         <Form
           name='flow_form'
@@ -159,22 +165,6 @@ export const SaveFlowModal: React.FC<Props> = ({
                 setDeploy(val);
               }}
             />
-          </Form.Item>
-
-          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
-            <Space>
-              <Button
-                htmlType='button'
-                onClick={() => {
-                  setIsSaveFlowModalOpen(false);
-                }}
-              >
-                {t('cancel')}
-              </Button>
-              <Button type='primary' htmlType='submit'>
-                {t('verify')}
-              </Button>
-            </Space>
           </Form.Item>
         </Form>
       </Modal>

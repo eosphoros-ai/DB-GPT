@@ -6,7 +6,7 @@ import { ClearOutlined, LoadingOutlined, PauseCircleOutlined, RedoOutlined, Send
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { useRequest } from 'ahooks';
 import { Button, Input, Popover, Spin, Tag } from 'antd';
-import cls from 'classnames';
+import classnames from 'classnames';
 import { useSearchParams } from 'next/navigation';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { MobileChatContext } from '../';
@@ -245,7 +245,7 @@ const InputContainer: React.FC = () => {
         <div className='flex items-center justify-between text-lg font-bold'>
           <Popover content='暂停回复' trigger={['hover']}>
             <PauseCircleOutlined
-              className={cls('p-2 cursor-pointer', {
+              className={classnames('p-2 cursor-pointer', {
                 'text-[#0c75fc]': canAbort,
                 'text-gray-400': !canAbort,
               })}
@@ -254,7 +254,7 @@ const InputContainer: React.FC = () => {
           </Popover>
           <Popover content='再来一次' trigger={['hover']}>
             <RedoOutlined
-              className={cls('p-2 cursor-pointer', {
+              className={classnames('p-2 cursor-pointer', {
                 'text-gray-400': !history.length || !canNewChat,
               })}
               onClick={redo}
@@ -265,7 +265,7 @@ const InputContainer: React.FC = () => {
           ) : (
             <Popover content='清除历史' trigger={['hover']}>
               <ClearOutlined
-                className={cls('p-2 cursor-pointer', {
+                className={classnames('p-2 cursor-pointer', {
                   'text-gray-400': !history.length || !canNewChat,
                 })}
                 onClick={clearHistory}
@@ -276,7 +276,7 @@ const InputContainer: React.FC = () => {
       </div>
       {/* 输入框 */}
       <div
-        className={cls(
+        className={classnames(
           'flex py-2 px-3 items-center justify-between bg-white dark:bg-[#242733] dark:border-[#6f7f95] rounded-xl border',
           {
             'border-[#0c75fc] dark:border-[rgba(12,117,252,0.8)]': isFocus,
@@ -323,7 +323,7 @@ const InputContainer: React.FC = () => {
 
         <Button
           type='primary'
-          className={cls('flex items-center justify-center rounded-lg bg-button-gradient border-0 ml-2', {
+          className={classnames('flex items-center justify-center rounded-lg bg-button-gradient border-0 ml-2', {
             'opacity-40 cursor-not-allowed': !userInput.trim() || !canNewChat,
           })}
           onClick={onSubmit}

@@ -6,6 +6,10 @@ import {
   IFlowRefreshParams,
   IFlowResponse,
   IFlowUpdateParam,
+  IGetKeysRequestParams,
+  IGetKeysResponseData,
+  IGetVariablesByKeyRequestParams,
+  IGetVariablesByKeyResponseData,
   IUploadFileRequestParams,
   IUploadFileResponse,
 } from '@/types/flow';
@@ -63,17 +67,22 @@ export const downloadFile = (fileId: string) => {
   return GET<null, any>(`/api/v2/serve/file/files/dbgpt/${fileId}`);
 };
 
-// TODO：wait for interface update
-export const getFlowTemplateList = () => {
-  return GET<null, Array<any>>('/api/v2/serve/awel/flow/templates');
-};
-
 export const getFlowTemplateById = (id: string) => {
   return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
 };
+
 export const getFlowTemplates = () => {
   return GET<null, any>(`/api/v2/serve/awel/flow/templates`);
 };
+
+export const getKeys = (data?: IGetKeysRequestParams) => {
+  return GET<IGetKeysRequestParams, Array<IGetKeysResponseData>>('/api/v2/serve/awel/variables/keys', data);
+};
+
+export const getVariablesByKey = (data: IGetVariablesByKeyRequestParams) => {
+  return GET<IGetVariablesByKeyRequestParams, IGetVariablesByKeyResponseData>('/api/v2/serve/awel/variables', data);
+};
+
 export const metadataBatch = (data: IUploadFileRequestParams) => {
   return POST<IUploadFileRequestParams, Array<IUploadFileResponse>>('/api/v2/serve/file/files/metadata/batch', data);
 };

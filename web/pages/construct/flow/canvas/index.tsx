@@ -12,7 +12,7 @@ import {
 import CanvasNode from '@/components/flow/canvas-node';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
-import { ExportOutlined, FrownOutlined, ImportOutlined, FileAddOutlined,SaveOutlined } from '@ant-design/icons';
+import { ExportOutlined, FileAddOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
 import { Divider, Space, Tooltip, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -32,27 +32,27 @@ import 'reactflow/dist/style.css';
 
 const nodeTypes = { customNode: CanvasNode };
 const edgeTypes = { buttonedge: ButtonEdge };
+
 const Canvas: React.FC = () => {
-
   const { t } = useTranslation();
-  const [messageApi, contextHolder] = message.useMessage();
-
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
+  const [messageApi, contextHolder] = message.useMessage();
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
-  const [loading, setLoading] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
   const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
+  const [loading, setLoading] = useState(false);
   const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
   const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
   const [isTemplateFlowModalOpen, setIsTemplateFlowModalOpen] = useState(false);
 
   if (localStorage.getItem('importFlowData')) {
-    const importFlowData = JSON.parse(localStorage.getItem('importFlowData'));
+    const importFlowData = JSON.parse(localStorage.getItem('importFlowData') || '');
     localStorage.removeItem('importFlowData');
     setLoading(true);
     const flowData = mapUnderlineToHump(importFlowData.flow_data);
@@ -61,6 +61,7 @@ const Canvas: React.FC = () => {
     setEdges(flowData.edges);
     setLoading(false);
   }
+
   async function getFlowData() {
     setLoading(true);
     const [_, data] = await apiInterceptors(getFlowById(id));
@@ -275,7 +276,7 @@ const Canvas: React.FC = () => {
 
               <Background color='#aaa' gap={16} />
 
-              <AddFlowVariableModal />
+              <AddFlowVariableModal flowInfo={flowInfo} setFlowInfo={setFlowInfo} />
             </ReactFlow>
           </div>
         </div>

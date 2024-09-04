@@ -1,70 +1,58 @@
-// import { IFlowNode } from '@/types/flow';
+import { apiInterceptors, getKeys, getVariablesByKey } from '@/client/api';
+import { IFlowUpdateParam, IGetKeysResponseData, IVariableItem } from '@/types/flow';
+import { buildVariableString } from '@/utils/flow';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Select, Space } from 'antd';
-import React, { useState } from 'react';
+import { Button, Cascader, Form, Input, InputNumber, Modal, Select, Space } from 'antd';
+import { DefaultOptionType } from 'antd/es/cascader';
+import { uniqBy } from 'lodash';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// ype GroupType = { category: string; categoryLabel: string; nodes: IFlowNode[] };
-type ValueType = 'str' | 'int' | 'float' | 'bool' | 'ref';
-
 const { Option } = Select;
+const VALUE_TYPES = ['str', 'int', 'float', 'bool', 'ref'] as const;
 
-const DAG_PARAM_KEY = 'dbgpt.core.flow.params';
-const DAG_PARAM_SCOPE = 'flow_priv';
+type ValueType = (typeof VALUE_TYPES)[number];
+type Props = {
+  flowInfo?: IFlowUpdateParam;
+  setFlowInfo: React.Dispatch<React.SetStateAction<IFlowUpdateParam | undefined>>;
+};
 
-export const AddFlowVariableModal: React.FC = () => {
+export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo }) => {
   const { t } = useTranslation();
-  // const [operators, setOperators] = useState<Array<IFlowNode>>([]);
-  // const [resources, setResources] = useState<Array<IFlowNode>>([]);
-  // const [operatorsGroup, setOperatorsGroup] = useState<GroupType[]>([]);
-  // const [resourcesGroup, setResourcesGroup] = useState<GroupType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form] = Form.useForm(); // const [form] = Form.useForm<IFlowUpdateParam>();
+  const [form] = Form.useForm();
+  const [controlTypes, setControlTypes] = useState<ValueType[]>(['str']);
+  const [refVariableOptions, setRefVariableOptions] = useState<DefaultOptionType[]>([]);
 
-  const showModal = () => {
-    setIsModalOpen(true);
+  useEffect(() => {
+    getKeysData();
+  }, []);
+
+  const getKeysData = async () => {
+    const [err, res] = await apiInterceptors(getKeys());
+
+    if (err) return;
+
+    const keyOptions = res?.map(({ key, label, scope }: IGetKeysResponseData) => ({
+      value: key,
+      label,
+      scope,
+      isLeaf: false,
+    }));
+
+    setRefVariableOptions(keyOptions);
   };
-
-  // TODO: get keys
-  // useEffect(() => {
-  //   getNodes();
-  // }, []);
-
-  // async function getNodes() {
-  //   const [_, data] = await apiInterceptors(getFlowNodes());
-  //   if (data && data.length > 0) {
-  //     localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
-  //     const operatorNodes = data.filter(node => node.flow_type === 'operator');
-  //     const resourceNodes = data.filter(node => node.flow_type === 'resource');
-  //     setOperators(operatorNodes);
-  //     setResources(resourceNodes);
-  //     setOperatorsGroup(groupNodes(operatorNodes));
-  //     setResourcesGroup(groupNodes(resourceNodes));
-  //   }
-  // }
-
-  // function groupNodes(data: IFlowNode[]) {
-  //   const groups: GroupType[] = [];
-  //   const categoryMap: Record<string, { category: string; categoryLabel: string; nodes: IFlowNode[] }> = {};
-  //   data.forEach(item => {
-  //     const { category, category_label } = item;
-  //     if (!categoryMap[category]) {
-  //       categoryMap[category] = { category, categoryLabel: category_label, nodes: [] };
-  //       groups.push(categoryMap[category]);
-  //     }
-  //     categoryMap[category].nodes.push(item);
-  //   });
-  //   return groups;
-  // }
 
   const onFinish = (values: any) => {
-    console.log('Received values of form:', values);
+    const newFlowInfo = { ...flowInfo, variables: values?.parameters || [] } as IFlowUpdateParam;
+    setFlowInfo(newFlowInfo);
+    setIsModalOpen(false);
   };
 
-  function onNameChange(e: React.ChangeEvent<HTMLInputElement>, index: number) {
+  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const name = e.target.value;
 
-    const result = name
+    const newValue = name
       ?.split('_')
       ?.map(word => word.charAt(0).toUpperCase() + word.slice(1))
       ?.join(' ');
@@ -72,43 +60,105 @@ export const AddFlowVariableModal: React.FC = () => {
     form.setFields([
       {
         name: ['parameters', index, 'label'],
-        value: result,
+        value: newValue,
       },
     ]);
+  };
 
-    // change value to ref
-    const type = form.getFieldValue(['parameters', index, 'value_type']);
+  const onValueTypeChange = (type: ValueType, index: number) => {
+    const newControlTypes = [...controlTypes];
+    newControlTypes[index] = type;
+    setControlTypes(newControlTypes);
+  };
 
-    if (type === 'ref') {
-      const parameters = form.getFieldValue('parameters');
-      const param = parameters?.[index];
+  const loadData = (selectedOptions: DefaultOptionType[]) => {
+    const targetOption = selectedOptions[selectedOptions.length - 1];
+    const { value, scope } = targetOption as DefaultOptionType & { scope: string };
 
-      if (param) {
-        const { name = '' } = param;
-        param.value = `${DAG_PARAM_KEY}:${name}@scope:${DAG_PARAM_SCOPE}`;
+    setTimeout(async () => {
+      const [err, res] = await apiInterceptors(getVariablesByKey({ key: value as string, scope }));
 
-        form.setFieldsValue({
-          parameters: [...parameters],
-        });
+      if (err) return;
+      if (res?.total_count === 0) {
+        targetOption.isLeaf = true;
+        return;
       }
+
+      const uniqueItems = uniqBy(res?.items, 'name');
+      targetOption.children = uniqueItems?.map(item => ({
+        value: item?.name,
+        label: item.label,
+        item: item,
+      }));
+      setRefVariableOptions([...refVariableOptions]);
+    }, 1000);
+  };
+
+  const onRefTypeValueChange = (
+    value: (string | number | null)[],
+    selectedOptions: DefaultOptionType[],
+    index: number,
+  ) => {
+    // when select ref variable, must be select two options(key and variable)
+    if (value?.length !== 2) return;
+
+    const [selectRefKey, selectedRefVariable] = selectedOptions as DefaultOptionType[];
+    const selectedVariable = selectRefKey?.children?.find(
+      ({ value }) => value === selectedRefVariable?.value,
+    ) as DefaultOptionType & { item: IVariableItem };
+
+    // build variable string by rule
+    const variableStr = buildVariableString(selectedVariable?.item);
+    const parameters = form.getFieldValue('parameters');
+    const param = parameters?.[index];
+    if (param) {
+      param.value = variableStr;
+      param.category = selectedVariable?.item?.category;
+      param.value_type = selectedVariable?.item?.value_type;
+
+      form.setFieldsValue({
+        parameters: [...parameters],
+      });
     }
-  }
+  };
 
-  function onValueTypeChange(type: ValueType, index: number) {
-    if (type === 'ref') {
-      const parameters = form.getFieldValue('parameters');
-      const param = parameters?.[index];
-
-      if (param) {
-        const { name = '' } = param;
-        param.value = `${DAG_PARAM_KEY}:${name}@scope:${DAG_PARAM_SCOPE}`;
-
-        form.setFieldsValue({
-          parameters: [...parameters],
-        });
-      }
+  // Helper function to render the appropriate control component
+  const renderVariableValue = (type: string, index: number) => {
+    switch (type) {
+      case 'ref':
+        return (
+          <Cascader
+            placeholder='Select Value'
+            options={refVariableOptions}
+            loadData={loadData}
+            onChange={(value, selectedOptions) => onRefTypeValueChange(value, selectedOptions, index)}
+            changeOnSelect
+          />
+        );
+      case 'str':
+        return <Input placeholder='Parameter Value' />;
+      case 'int':
+        return (
+          <InputNumber
+            step={1}
+            placeholder='Parameter Value'
+            parser={value => value?.replace(/[^\-?\d]/g, '') || 0}
+            style={{ width: '100%' }}
+          />
+        );
+      case 'float':
+        return <InputNumber placeholder='Parameter Value' style={{ width: '100%' }} />;
+      case 'bool':
+        return (
+          <Select placeholder='Select Value'>
+            <Option value={true}>True</Option>
+            <Option value={false}>False</Option>
+          </Select>
+        );
+      default:
+        return <Input placeholder='Parameter Value' />;
     }
-  }
+  };
 
   return (
     <>
@@ -117,24 +167,32 @@ export const AddFlowVariableModal: React.FC = () => {
         className='flex items-center justify-center rounded-full left-4 top-4'
         style={{ zIndex: 1050 }}
         icon={<PlusOutlined />}
-        onClick={showModal}
+        onClick={() => setIsModalOpen(true)}
       />
 
       <Modal
         title={t('Add_Global_Variable_of_Flow')}
-        open={isModalOpen}
-        footer={null}
         width={1000}
+        open={isModalOpen}
         styles={{
           body: {
-            maxHeight: '70vh',
+            minHeight: '40vh',
+            maxHeight: '65vh',
             overflow: 'scroll',
             backgroundColor: 'rgba(0,0,0,0.02)',
             padding: '0 8px',
             borderRadius: 4,
           },
         }}
-        onClose={() => setIsModalOpen(false)}
+        onCancel={() => setIsModalOpen(false)}
+        footer={[
+          <Button key='cancel' onClick={() => setIsModalOpen(false)}>
+            {t('cancel')}
+          </Button>,
+          <Button key='submit' type='primary' onClick={() => form.submit()}>
+            {t('verify')}
+          </Button>,
+        ]}
       >
         <Form
           name='dynamic_form_nest_item'
@@ -143,13 +201,13 @@ export const AddFlowVariableModal: React.FC = () => {
           autoComplete='off'
           layout='vertical'
           className='mt-8'
-          initialValues={{ parameters: [{}] }}
+          initialValues={{ parameters: flowInfo?.variables || [{}] }}
         >
           <Form.List name='parameters'>
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }, index) => (
-                  <Space key={key}>
+                  <Space key={key} className='hover:bg-gray-100 pt-2 pl-2'>
                     <Form.Item
                       {...restField}
                       name={[name, 'name']}
@@ -184,7 +242,7 @@ export const AddFlowVariableModal: React.FC = () => {
                       rules={[{ required: true, message: 'Missing parameter type' }]}
                     >
                       <Select placeholder='Select' onChange={value => onValueTypeChange(value, index)}>
-                        {['str', 'int', 'float', 'bool', 'ref'].map(type => (
+                        {VALUE_TYPES.map(type => (
                           <Option key={type} value={type}>
                             {type}
                           </Option>
@@ -199,7 +257,7 @@ export const AddFlowVariableModal: React.FC = () => {
                       style={{ width: 320 }}
                       rules={[{ required: true, message: 'Missing parameter value' }]}
                     >
-                      <Input placeholder='Parameter Value' />
+                      {renderVariableValue(controlTypes[index], index)}
                     </Form.Item>
 
                     <Form.Item {...restField} name={[name, 'description']} label='描述' style={{ width: 170 }}>
@@ -207,6 +265,10 @@ export const AddFlowVariableModal: React.FC = () => {
                     </Form.Item>
 
                     <MinusCircleOutlined onClick={() => remove(name)} />
+
+                    <Form.Item name={[name, 'key']} hidden initialValue='dbgpt.core.flow.params' />
+                    <Form.Item name={[name, 'scope']} hidden initialValue='flow_priv' />
+                    <Form.Item name={[name, 'category']} hidden initialValue='common' />
                   </Space>
                 ))}
 
@@ -218,15 +280,6 @@ export const AddFlowVariableModal: React.FC = () => {
               </>
             )}
           </Form.List>
-
-          <Form.Item wrapperCol={{ offset: 20, span: 4 }}>
-            <Space>
-              <Button onClick={() => setIsModalOpen(false)}>{t('cancel')}</Button>
-              <Button type='primary' htmlType='submit'>
-                {t('verify')}
-              </Button>
-            </Space>
-          </Form.Item>
         </Form>
       </Modal>
     </>

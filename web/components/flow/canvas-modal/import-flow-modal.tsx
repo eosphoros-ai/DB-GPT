@@ -1,11 +1,11 @@
 import { apiInterceptors, importFlow } from '@/client/api';
+import CanvasWrapper from '@/pages/construct/flow/canvas/index';
 import { UploadOutlined } from '@ant-design/icons';
-import { Button, Form, GetProp, Modal, Radio, Space, Upload, UploadFile, UploadProps, message } from 'antd';
+import { Button, Form, GetProp, Modal, Radio, Upload, UploadFile, UploadProps, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edge, Node } from 'reactflow';
 
-import CanvasWrapper from '@/pages/construct/flow/canvas/index';
 type Props = {
   isImportModalOpen: boolean;
   setNodes: React.Dispatch<React.SetStateAction<Node<any, string | undefined>[]>>;
@@ -40,10 +40,9 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
     if (res?.success) {
       messageApi.success(t('Import_Flow_Success'));
       localStorage.setItem('importFlowData', JSON.stringify(res?.data));
-      CanvasWrapper()
+      CanvasWrapper();
     } else if (res?.err_msg) {
       messageApi.error(res?.err_msg);
-    
     }
     setIsImportFlowModalOpen(false);
   };
@@ -68,8 +67,14 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
         title={t('Import_Flow')}
         open={isImportModalOpen}
         onCancel={() => setIsImportFlowModalOpen(false)}
-        cancelButtonProps={{ className: 'hidden' }}
-        okButtonProps={{ className: 'hidden' }}
+        footer={[
+          <Button key='cancel' onClick={() => setIsImportFlowModalOpen(false)}>
+            {t('cancel')}
+          </Button>,
+          <Button key='submit' type='primary' onClick={() => form.submit()}>
+            {t('verify')}
+          </Button>,
+        ]}
       >
         <Form
           form={form}
@@ -93,20 +98,11 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
             </Upload>
           </Form.Item>
 
-          <Form.Item name='save_flow' label={t('Save_After_Import')}>
+          <Form.Item name='save_flow' label={t('Save_After_Import')} hidden>
             <Radio.Group>
               <Radio value={true}>{t('Yes')}</Radio>
               <Radio value={false}>{t('No')}</Radio>
             </Radio.Group>
-          </Form.Item>
-
-          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
-            <Space>
-              <Button onClick={() => setIsImportFlowModalOpen(false)}>{t('cancel')}</Button>
-              <Button type='primary' htmlType='submit'>
-                {t('verify')}
-              </Button>
-            </Space>
           </Form.Item>
         </Form>
       </Modal>
