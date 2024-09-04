@@ -1,5 +1,5 @@
 import { apiInterceptors, getKeys, getVariablesByKey } from '@/client/api';
-import { IVariableInfo } from '@/types/flow';
+import { IGetKeysResponseData, IVariableItem } from '@/types/flow';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Cascader, Form, Input, Modal, Select, Space } from 'antd';
 import { uniqBy } from 'lodash';
@@ -16,18 +16,6 @@ interface Option {
   isLeaf?: boolean;
 }
 
-interface VariableDict {
-  key: string;
-  name?: string;
-  scope?: string;
-  scope_key?: string;
-  sys_code?: string;
-  user_name?: string;
-}
-
-const DAG_PARAM_KEY = 'dbgpt.core.flow.params';
-const DAG_PARAM_SCOPE = 'flow_priv';
-
 function escapeVariable(value: string, enableEscape: boolean): string {
   if (!enableEscape) {
     return value;
@@ -35,7 +23,7 @@ function escapeVariable(value: string, enableEscape: boolean): string {
   return value.replace(/@/g, '\\@').replace(/#/g, '\\#').replace(/%/g, '\\%').replace(/:/g, '\\:');
 }
 
-function buildVariableString(variableDict) {
+function buildVariableString(variableDict: IVariableItem): string {
   const scopeSig = '@';
   const sysCodeSig = '#';
   const userSig = '%';
@@ -44,8 +32,7 @@ function buildVariableString(variableDict) {
 
   const specialChars = new Set([scopeSig, sysCodeSig, userSig, kvSig]);
 
-  // Replace undefined or null with ""
-  const newVariableDict: VariableDict = {
+  const newVariableDict: Partial<IVariableItem> = {
     key: variableDict.key || '',
     name: variableDict.name || '',
     scope: variableDict.scope || '',
@@ -56,9 +43,9 @@ function buildVariableString(variableDict) {
 
   // Check for special characters in values
   for (const [key, value] of Object.entries(newVariableDict)) {
-    if (value && [...specialChars].some(char => value.includes(char))) {
+    if (value && [...specialChars].some(char => (value as string).includes(char))) {
       if (enableEscape) {
-        newVariableDict[key as keyof VariableDict] = escapeVariable(value, enableEscape);
+        newVariableDict[key] = escapeVariable(value as string, enableEscape);
       } else {
         throw new Error(
           `${key} contains special characters, error value: ${value}, special characters: ${[...specialChars].join(', ')}`,
@@ -71,25 +58,15 @@ function buildVariableString(variableDict) {
 
   let variableStr = `${key}`;
 
-  if (name) {
-    variableStr += `${kvSig}${name}`;
-  }
-
-  if (scope) {
+  if (name) variableStr += `${kvSig}${name}`;
+  if (scope || scope_key) {
     variableStr += `${scopeSig}${scope}`;
     if (scope_key) {
       variableStr += `${kvSig}${scope_key}`;
     }
   }
-
-  if (sys_code) {
-    variableStr += `${sysCodeSig}${sys_code}`;
-  }
-
-  if (user_name) {
-    variableStr += `${userSig}${user_name}`;
-  }
-
+  if (sys_code) variableStr += `${sysCodeSig}${sys_code}`;
+  if (user_name) variableStr += `${userSig}${user_name}`;
   return `\${${variableStr}}`;
 }
 
@@ -109,7 +86,7 @@ export const AddFlowVariableModal: React.FC = () => {
 
     if (err) return;
 
-    const keyOptions = res?.map(({ key, label, scope }: IVariableInfo) => ({
+    const keyOptions = res?.map(({ key, label, scope }: IGetKeysResponseData) => ({
       value: key,
       label,
       scope,
@@ -125,7 +102,7 @@ export const AddFlowVariableModal: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  function onNameChange(e: React.ChangeEvent<HTMLInputElement>, index: number) {
+  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const name = e.target.value;
 
     const result = name
@@ -139,32 +116,15 @@ export const AddFlowVariableModal: React.FC = () => {
         value: result,
       },
     ]);
+  };
 
-    // change value to ref
-    const type = form.getFieldValue(['parameters', index, 'value_type']);
-
-    if (type === 'ref') {
-      const parameters = form.getFieldValue('parameters');
-      const param = parameters?.[index];
-
-      if (param) {
-        const { name = '' } = param;
-        param.value = `${DAG_PARAM_KEY}:${name}@scope:${DAG_PARAM_SCOPE}`;
-
-        form.setFieldsValue({
-          parameters: [...parameters],
-        });
-      }
-    }
-  }
-
-  function onValueTypeChange(type: ValueType, index: number) {
+  const onValueTypeChange = (type: ValueType, index: number) => {
     const newControlTypes = [...controlTypes];
     newControlTypes[index] = type;
     setControlTypes(newControlTypes);
-  }
+  };
 
-  function loadData(selectedOptions: Option[]) {
+  const loadData = (selectedOptions: Option[]) => {
     const targetOption = selectedOptions[selectedOptions.length - 1];
     const { value, scope } = targetOption as Option & { scope: string };
 
@@ -181,32 +141,39 @@ export const AddFlowVariableModal: React.FC = () => {
       targetOption.children = uniqueItems?.map(item => ({
         value: item?.name,
         label: item.label,
-        data: item,
+        item: item,
       }));
       setRefVariableOptions([...refVariableOptions]);
     }, 1000);
-  }
+  };
 
-  function onRefTypeValueChange(value: string[], selectedOptions: Option[], index: number) {
-    // 选择两个select后，获取到的value，才能设置引用变量的值
-    if (value?.length === 2) {
-      const [selectRefKey, selectedRefVariable] = selectedOptions;
-      const selectedVariableData = selectRefKey?.children?.find(({ value }) => value === selectedRefVariable?.value);
-      const variableStr = buildVariableString(selectedVariableData?.data);
-
-      const parameters = form.getFieldValue('parameters');
-      const param = parameters?.[index];
-      if (param) {
-        param.value = variableStr;
-        param.category = selectedVariableData?.data?.category;
-        param.value_type = selectedVariableData?.data?.value_type;
-
-        form.setFieldsValue({
-          parameters: [...parameters],
-        });
-      }
+  const onRefTypeValueChange = (value: (string | number | null)[], selectedOptions: Option[], index: number) => {
+    // when select ref variable, must be select two options(key and variable)
+    if (value?.length !== 2) {
+      return;
     }
-  }
+
+    const [selectRefKey, selectedRefVariable] = selectedOptions as Option[];
+
+    const selectedVariable = selectRefKey?.children?.find(
+      ({ value }) => value === selectedRefVariable?.value,
+    ) as Option & { item: IVariableItem };
+
+    // build variable string by rule
+    const variableStr = buildVariableString(selectedVariable?.item);
+
+    const parameters = form.getFieldValue('parameters');
+    const param = parameters?.[index];
+    if (param) {
+      param.value = variableStr;
+      param.category = selectedVariable?.item?.category;
+      param.value_type = selectedVariable?.item?.value_type;
+
+      form.setFieldsValue({
+        parameters: [...parameters],
+      });
+    }
+  };
 
   return (
     <>

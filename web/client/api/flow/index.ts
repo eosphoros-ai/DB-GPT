@@ -6,7 +6,10 @@ import {
   IFlowRefreshParams,
   IFlowResponse,
   IFlowUpdateParam,
-  IFlowVariablesParams,
+  IGetKeysRequestParams,
+  IGetKeysResponseData,
+  IGetVariablesByKeyRequestParams,
+  IGetVariablesByKeyResponseData,
   IUploadFileRequestParams,
   IUploadFileResponse,
 } from '@/types/flow';
@@ -72,12 +75,12 @@ export const getFlowTemplateById = (id: string) => {
   return GET<null, any>(`/api/v2/serve/awel/flow/templates/${id}`);
 };
 
-export const getKeys = () => {
-  return GET<null, Array<any>>('/api/v2/serve/awel/variables/keys');
+export const getKeys = (data?: IGetKeysRequestParams) => {
+  return GET<IGetKeysRequestParams, Array<IGetKeysResponseData>>('/api/v2/serve/awel/variables/keys', data);
 };
 
-export const getVariablesByKey = ({ key, scope }: { key: string; scope: string }) => {
-  return GET<IFlowVariablesParams, any>('/api/v2/serve/awel/variables', { key, scope });
+export const getVariablesByKey = (data: IGetVariablesByKeyRequestParams) => {
+  return GET<IGetVariablesByKeyRequestParams, IGetVariablesByKeyResponseData>('/api/v2/serve/awel/variables', data);
 };
 
 export const metadataBatch = (data: IUploadFileRequestParams) => {
