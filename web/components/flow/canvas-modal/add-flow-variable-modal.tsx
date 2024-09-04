@@ -178,6 +178,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
         onCancel={() => setIsModalOpen(false)}
         styles={{
           body: {
+            minHeight: '50vh',
             maxHeight: '70vh',
             overflow: 'scroll',
             backgroundColor: 'rgba(0,0,0,0.02)',
