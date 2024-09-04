@@ -43,9 +43,6 @@ export const renderUpload = (params: Props) => {
         console.log(error)
       })
     }
-
-
-  
   }, []);
 
   const attr = convertKeysToCamelCase(data.ui?.attr || {});
@@ -82,6 +79,7 @@ export const renderUpload = (params: Props) => {
     headers: {
       authorization: 'authorization-text',
     },
+    defaultFileList: fileList,
     onChange(info) {
       setUploading(true);
       if (info.file.status !== 'uploading') {
@@ -104,7 +102,7 @@ export const renderUpload = (params: Props) => {
 
   return (
     <div className='p-2 text-sm text-center'>
-        <Upload fileList={fileList} onRemove={handleFileRemove} {...props} {...attr} multiple={data.is_list?true:false} accept={uploadType}>
+        <Upload  onRemove={handleFileRemove} {...props} {...attr} multiple={data.is_list?true:false} accept={uploadType}>
           <Button loading={uploading} icon={<UploadOutlined />}>
             {t('Upload_Data')}
           </Button>
