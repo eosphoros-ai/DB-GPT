@@ -1,5 +1,5 @@
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { Button, Form, Input, Modal, Radio, Space, message } from 'antd';
+import { Button, Form, Input, Modal, Radio, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { ReactFlowInstance } from 'reactflow';
 
@@ -46,8 +46,14 @@ export const ExportFlowModal: React.FC<Props> = ({
         title={t('Export_Flow')}
         open={isExportFlowModalOpen}
         onCancel={() => setIsExportFlowModalOpen(false)}
-        cancelButtonProps={{ className: 'hidden' }}
-        okButtonProps={{ className: 'hidden' }}
+        footer={[
+          <Button key='cancel' onClick={() => setIsExportFlowModalOpen(false)}>
+            {t('cancel')}
+          </Button>,
+          <Button key='submit' type='primary' onClick={() => form.submit()}>
+            {t('verify')}
+          </Button>,
+        ]}
       >
         <Form
           form={form}
@@ -77,17 +83,6 @@ export const ExportFlowModal: React.FC<Props> = ({
 
           <Form.Item hidden name='uid'>
             <Input />
-          </Form.Item>
-
-          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
-            <Space>
-              <Button htmlType='button' onClick={() => setIsExportFlowModalOpen(false)}>
-                {t('cancel')}
-              </Button>
-              <Button type='primary' htmlType='submit'>
-                {t('verify')}
-              </Button>
-            </Space>
           </Form.Item>
         </Form>
       </Modal>
