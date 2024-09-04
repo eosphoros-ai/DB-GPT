@@ -89,7 +89,7 @@ export const ImportFlowModal: React.FC<Props> = ({ isImportModalOpen, setIsImpor
             </Upload>
           </Form.Item>
 
-          <Form.Item name='save_flow' label={t('Save_After_Import')}>
+          <Form.Item name='save_flow' label={t('Save_After_Import')} hidden>
             <Radio.Group>
               <Radio value={true}>{t('Yes')}</Radio>
               <Radio value={false}>{t('No')}</Radio>

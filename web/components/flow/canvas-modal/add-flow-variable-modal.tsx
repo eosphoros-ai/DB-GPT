@@ -1,64 +1,131 @@
-// import { IFlowNode } from '@/types/flow';
+import { apiInterceptors, getKeys, getVariablesByKey } from '@/client/api';
+import { IVariableInfo } from '@/types/flow';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Select, Space } from 'antd';
-import React, { useState } from 'react';
+import { Button, Cascader, Form, Input, Modal, Select, Space } from 'antd';
+import { uniqBy } from 'lodash';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// ype GroupType = { category: string; categoryLabel: string; nodes: IFlowNode[] };
-type ValueType = 'str' | 'int' | 'float' | 'bool' | 'ref';
-
 const { Option } = Select;
+
+type ValueType = 'str' | 'int' | 'float' | 'bool' | 'ref';
+interface Option {
+  value?: string | number | null;
+  label: React.ReactNode;
+  children?: Option[];
+  isLeaf?: boolean;
+}
+
+interface VariableDict {
+  key: string;
+  name?: string;
+  scope?: string;
+  scope_key?: string;
+  sys_code?: string;
+  user_name?: string;
+}
 
 const DAG_PARAM_KEY = 'dbgpt.core.flow.params';
 const DAG_PARAM_SCOPE = 'flow_priv';
 
-export const AddFlowVariableModal: React.FC = () => {
-  const { t } = useTranslation();
-  // const [operators, setOperators] = useState<Array<IFlowNode>>([]);
-  // const [resources, setResources] = useState<Array<IFlowNode>>([]);
-  // const [operatorsGroup, setOperatorsGroup] = useState<GroupType[]>([]);
-  // const [resourcesGroup, setResourcesGroup] = useState<GroupType[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form] = Form.useForm(); // const [form] = Form.useForm<IFlowUpdateParam>();
+function escapeVariable(value: string, enableEscape: boolean): string {
+  if (!enableEscape) {
+    return value;
+  }
+  return value.replace(/@/g, '\\@').replace(/#/g, '\\#').replace(/%/g, '\\%').replace(/:/g, '\\:');
+}
 
-  const showModal = () => {
-    setIsModalOpen(true);
+function buildVariableString(variableDict) {
+  const scopeSig = '@';
+  const sysCodeSig = '#';
+  const userSig = '%';
+  const kvSig = ':';
+  const enableEscape = true;
+
+  const specialChars = new Set([scopeSig, sysCodeSig, userSig, kvSig]);
+
+  // Replace undefined or null with ""
+  const newVariableDict: VariableDict = {
+    key: variableDict.key || '',
+    name: variableDict.name || '',
+    scope: variableDict.scope || '',
+    scope_key: variableDict.scope_key || '',
+    sys_code: variableDict.sys_code || '',
+    user_name: variableDict.user_name || '',
   };
 
-  // TODO: get keys
-  // useEffect(() => {
-  //   getNodes();
-  // }, []);
+  // Check for special characters in values
+  for (const [key, value] of Object.entries(newVariableDict)) {
+    if (value && [...specialChars].some(char => value.includes(char))) {
+      if (enableEscape) {
+        newVariableDict[key as keyof VariableDict] = escapeVariable(value, enableEscape);
+      } else {
+        throw new Error(
+          `${key} contains special characters, error value: ${value}, special characters: ${[...specialChars].join(', ')}`,
+        );
+      }
+    }
+  }
 
-  // async function getNodes() {
-  //   const [_, data] = await apiInterceptors(getFlowNodes());
-  //   if (data && data.length > 0) {
-  //     localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
-  //     const operatorNodes = data.filter(node => node.flow_type === 'operator');
-  //     const resourceNodes = data.filter(node => node.flow_type === 'resource');
-  //     setOperators(operatorNodes);
-  //     setResources(resourceNodes);
-  //     setOperatorsGroup(groupNodes(operatorNodes));
-  //     setResourcesGroup(groupNodes(resourceNodes));
-  //   }
-  // }
+  const { key, name, scope, scope_key, sys_code, user_name } = newVariableDict;
 
-  // function groupNodes(data: IFlowNode[]) {
-  //   const groups: GroupType[] = [];
-  //   const categoryMap: Record<string, { category: string; categoryLabel: string; nodes: IFlowNode[] }> = {};
-  //   data.forEach(item => {
-  //     const { category, category_label } = item;
-  //     if (!categoryMap[category]) {
-  //       categoryMap[category] = { category, categoryLabel: category_label, nodes: [] };
-  //       groups.push(categoryMap[category]);
-  //     }
-  //     categoryMap[category].nodes.push(item);
-  //   });
-  //   return groups;
-  // }
+  let variableStr = `${key}`;
+
+  if (name) {
+    variableStr += `${kvSig}${name}`;
+  }
+
+  if (scope) {
+    variableStr += `${scopeSig}${scope}`;
+    if (scope_key) {
+      variableStr += `${kvSig}${scope_key}`;
+    }
+  }
+
+  if (sys_code) {
+    variableStr += `${sysCodeSig}${sys_code}`;
+  }
+
+  if (user_name) {
+    variableStr += `${userSig}${user_name}`;
+  }
+
+  return `\${${variableStr}}`;
+}
+
+export const AddFlowVariableModal: React.FC = () => {
+  const { t } = useTranslation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
+  const [controlTypes, setControlTypes] = useState<ValueType[]>(['str']);
+  const [refVariableOptions, setRefVariableOptions] = useState<Option[]>([]);
+
+  useEffect(() => {
+    getKeysData();
+  }, []);
+
+  const getKeysData = async () => {
+    const [err, res] = await apiInterceptors(getKeys());
+
+    if (err) return;
+
+    const keyOptions = res?.map(({ key, label, scope }: IVariableInfo) => ({
+      value: key,
+      label,
+      scope,
+      isLeaf: false,
+    }));
+
+    setRefVariableOptions(keyOptions);
+  };
 
   const onFinish = (values: any) => {
     console.log('Received values of form:', values);
+
+    // 将表单的值转换为 JSON 字符串
+    const variables = JSON.stringify(values.parameters);
+    localStorage.setItem('variables', variables);
+    setIsModalOpen(false);
   };
 
   function onNameChange(e: React.ChangeEvent<HTMLInputElement>, index: number) {
@@ -95,14 +162,45 @@ export const AddFlowVariableModal: React.FC = () => {
   }
 
   function onValueTypeChange(type: ValueType, index: number) {
-    if (type === 'ref') {
+    const newControlTypes = [...controlTypes];
+    newControlTypes[index] = type;
+    setControlTypes(newControlTypes);
+  }
+
+  function loadData(selectedOptions: Option[]) {
+    const targetOption = selectedOptions[selectedOptions.length - 1];
+    const { value, scope } = targetOption as Option & { scope: string };
+
+    setTimeout(async () => {
+      const [err, res] = await apiInterceptors(getVariablesByKey({ key: value as string, scope }));
+
+      if (err) return;
+      if (res?.total_count === 0) {
+        targetOption.isLeaf = true;
+        return;
+      }
+
+      const uniqueItems = uniqBy(res?.items, 'name');
+      targetOption.children = uniqueItems?.map(item => ({
+        value: item?.name,
+        label: item.label,
+        data: item,
+      }));
+      setRefVariableOptions([...refVariableOptions]);
+    }, 1000);
+  }
+
+  function onRefTypeValueChange(value: string[], selectedOptions: Option[], index: number) {
+    // 选择两个select后，获取到的value，才能设置引用变量的值
+    if (value?.length === 2) {
+      const [selectRefKey, selectedRefVariable] = selectedOptions;
+      const selectedVariableData = selectRefKey?.children?.find(({ value }) => value === selectedRefVariable?.value);
+      const variableStr = buildVariableString(selectedVariableData?.data);
+
       const parameters = form.getFieldValue('parameters');
       const param = parameters?.[index];
-
       if (param) {
-        const { name = '' } = param;
-        param.value = `${DAG_PARAM_KEY}:${name}@scope:${DAG_PARAM_SCOPE}`;
-
+        param.value = variableStr;
         form.setFieldsValue({
           parameters: [...parameters],
         });
@@ -117,7 +215,7 @@ export const AddFlowVariableModal: React.FC = () => {
         className='flex items-center justify-center rounded-full left-4 top-4'
         style={{ zIndex: 1050 }}
         icon={<PlusOutlined />}
-        onClick={showModal}
+        onClick={() => setIsModalOpen(true)}
       />
 
       <Modal
@@ -125,6 +223,7 @@ export const AddFlowVariableModal: React.FC = () => {
         open={isModalOpen}
         footer={null}
         width={1000}
+        onCancel={() => setIsModalOpen(false)}
         styles={{
           body: {
             maxHeight: '70vh',
@@ -134,7 +233,6 @@ export const AddFlowVariableModal: React.FC = () => {
             borderRadius: 4,
           },
         }}
-        onClose={() => setIsModalOpen(false)}
       >
         <Form
           name='dynamic_form_nest_item'
@@ -199,11 +297,31 @@ export const AddFlowVariableModal: React.FC = () => {
                       style={{ width: 320 }}
                       rules={[{ required: true, message: 'Missing parameter value' }]}
                     >
-                      <Input placeholder='Parameter Value' />
+                      {controlTypes[index] === 'ref' ? (
+                        <Cascader
+                          placeholder='Select Value'
+                          options={refVariableOptions}
+                          loadData={loadData}
+                          onChange={(value, selectedOptions) => onRefTypeValueChange(value, selectedOptions, index)}
+                          // displayRender={displayRender}
+                          // dropdownRender={dropdownRender}
+                          changeOnSelect
+                        />
+                      ) : (
+                        <Input placeholder='Parameter Value' />
+                      )}
                     </Form.Item>
 
                     <Form.Item {...restField} name={[name, 'description']} label='描述' style={{ width: 170 }}>
                       <Input placeholder='Parameter Description' />
+                    </Form.Item>
+
+                    <Form.Item name={[name, 'key']} hidden initialValue='dbgpt.core.flow.params'>
+                      <Input />
+                    </Form.Item>
+
+                    <Form.Item name={[name, 'scope']} hidden initialValue='flow_priv'>
+                      <Input />
                     </Form.Item>
 
                     <MinusCircleOutlined onClick={() => remove(name)} />
