@@ -200,7 +200,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }, index) => (
-                  <Space key={key}>
+                  <Space key={key} className='hover:bg-gray-100 pt-2 pl-2'>
                     <Form.Item
                       {...restField}
                       name={[name, 'name']}
@@ -257,11 +257,11 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                       <Input placeholder='Parameter Description' />
                     </Form.Item>
 
+                    <MinusCircleOutlined onClick={() => remove(name)} />
+
                     <Form.Item name={[name, 'key']} hidden initialValue='dbgpt.core.flow.params' />
                     <Form.Item name={[name, 'scope']} hidden initialValue='flow_priv' />
                     <Form.Item name={[name, 'category']} hidden initialValue='common' />
-
-                    <MinusCircleOutlined onClick={() => remove(name)} />
                   </Space>
                 ))}
 
