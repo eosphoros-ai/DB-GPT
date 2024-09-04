@@ -3,20 +3,15 @@ import { IFlowUpdateParam, IGetKeysResponseData, IVariableItem } from '@/types/f
 import { buildVariableString } from '@/utils/flow';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Cascader, Form, Input, InputNumber, Modal, Select, Space } from 'antd';
+import { DefaultOptionType } from 'antd/es/cascader';
 import { uniqBy } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
+const VALUE_TYPES = ['str', 'int', 'float', 'bool', 'ref'] as const;
 
-type ValueType = 'str' | 'int' | 'float' | 'bool' | 'ref';
-interface Option {
-  value?: string | number | null;
-  label: React.ReactNode;
-  children?: Option[];
-  isLeaf?: boolean;
-}
-
+type ValueType = (typeof VALUE_TYPES)[number];
 type Props = {
   flowInfo?: IFlowUpdateParam;
   setFlowInfo: React.Dispatch<React.SetStateAction<IFlowUpdateParam | undefined>>;
@@ -27,7 +22,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [controlTypes, setControlTypes] = useState<ValueType[]>(['str']);
-  const [refVariableOptions, setRefVariableOptions] = useState<Option[]>([]);
+  const [refVariableOptions, setRefVariableOptions] = useState<DefaultOptionType[]>([]);
 
   useEffect(() => {
     getKeysData();
@@ -57,7 +52,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const name = e.target.value;
 
-    const result = name
+    const newValue = name
       ?.split('_')
       ?.map(word => word.charAt(0).toUpperCase() + word.slice(1))
       ?.join(' ');
@@ -65,7 +60,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
     form.setFields([
       {
         name: ['parameters', index, 'label'],
-        value: result,
+        value: newValue,
       },
     ]);
   };
@@ -76,9 +71,9 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
     setControlTypes(newControlTypes);
   };
 
-  const loadData = (selectedOptions: Option[]) => {
+  const loadData = (selectedOptions: DefaultOptionType[]) => {
     const targetOption = selectedOptions[selectedOptions.length - 1];
-    const { value, scope } = targetOption as Option & { scope: string };
+    const { value, scope } = targetOption as DefaultOptionType & { scope: string };
 
     setTimeout(async () => {
       const [err, res] = await apiInterceptors(getVariablesByKey({ key: value as string, scope }));
@@ -99,21 +94,21 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
     }, 1000);
   };
 
-  const onRefTypeValueChange = (value: (string | number | null)[], selectedOptions: Option[], index: number) => {
+  const onRefTypeValueChange = (
+    value: (string | number | null)[],
+    selectedOptions: DefaultOptionType[],
+    index: number,
+  ) => {
     // when select ref variable, must be select two options(key and variable)
-    if (value?.length !== 2) {
-      return;
-    }
+    if (value?.length !== 2) return;
 
-    const [selectRefKey, selectedRefVariable] = selectedOptions as Option[];
-
+    const [selectRefKey, selectedRefVariable] = selectedOptions as DefaultOptionType[];
     const selectedVariable = selectRefKey?.children?.find(
       ({ value }) => value === selectedRefVariable?.value,
-    ) as Option & { item: IVariableItem };
+    ) as DefaultOptionType & { item: IVariableItem };
 
     // build variable string by rule
     const variableStr = buildVariableString(selectedVariable?.item);
-
     const parameters = form.getFieldValue('parameters');
     const param = parameters?.[index];
     if (param) {
@@ -183,6 +178,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
         onCancel={() => setIsModalOpen(false)}
         styles={{
           body: {
+            minHeight: '50vh',
             maxHeight: '70vh',
             overflow: 'scroll',
             backgroundColor: 'rgba(0,0,0,0.02)',
@@ -239,7 +235,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                       rules={[{ required: true, message: 'Missing parameter type' }]}
                     >
                       <Select placeholder='Select' onChange={value => onValueTypeChange(value, index)}>
-                        {['str', 'int', 'float', 'bool', 'ref'].map(type => (
+                        {VALUE_TYPES.map(type => (
                           <Option key={type} value={type}>
                             {type}
                           </Option>
