@@ -126,6 +126,37 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo }) => {
     }
   };
 
+  // Helper function to render the appropriate control component
+  const renderVariableValue = (type: string, index: number) => {
+    switch (type) {
+      case 'ref':
+        return (
+          <Cascader
+            placeholder='Select Value'
+            options={refVariableOptions}
+            loadData={loadData}
+            onChange={(value, selectedOptions) => onRefTypeValueChange(value, selectedOptions, index)}
+            changeOnSelect
+          />
+        );
+      case 'str':
+        return <Input placeholder='Parameter Value' />;
+      case 'int':
+        return <Input type='number' placeholder='Parameter Value' />;
+      case 'float':
+        return <Input type='number' step='0.01' placeholder='Parameter Value' />;
+      case 'bool':
+        return (
+          <Select placeholder='Select Value'>
+            <Option value='true'>True</Option>
+            <Option value='false'>False</Option>
+          </Select>
+        );
+      default:
+        return <Input placeholder='Parameter Value' />;
+    }
+  };
+
   return (
     <>
       <Button
@@ -215,19 +246,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo }) => {
                       style={{ width: 320 }}
                       rules={[{ required: true, message: 'Missing parameter value' }]}
                     >
-                      {controlTypes[index] === 'ref' ? (
-                        <Cascader
-                          placeholder='Select Value'
-                          options={refVariableOptions}
-                          loadData={loadData}
-                          onChange={(value, selectedOptions) => onRefTypeValueChange(value, selectedOptions, index)}
-                          // displayRender={displayRender}
-                          // dropdownRender={dropdownRender}
-                          changeOnSelect
-                        />
-                      ) : (
-                        <Input placeholder='Parameter Value' />
-                      )}
+                      {renderVariableValue(controlTypes[index], index)}
                     </Form.Item>
 
                     <Form.Item {...restField} name={[name, 'description']} label='描述' style={{ width: 170 }}>
