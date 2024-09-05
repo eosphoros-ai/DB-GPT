@@ -48,15 +48,25 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ### AI-Native Data App 
 ---
-- 🔥🔥🔥 [Released V0.5.0 | Develop native data applications through workflows and agents](https://docs.dbgpt.site/docs/changelog/Released_V0.5.0)
+- 🔥🔥🔥 [Released V0.6.0 | A set of significant upgrades](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
+  - [The AWEL upgrade to 2.0]()
+  - [GraphRAG]()
+  - [AI Native Data App construction and management]()
+  - [The GPT-Vis upgrade, supporting a variety of visualization charts]()
+  - [Support Text2NLU and Text2GQL fine-tuning]()
+  - [Support Intent recognition, slot filling, and Prompt management]()
+
+
+- [Released V0.5.0 | Develop native data applications through workflows and agents](http://docs.dbgpt.cn/docs/changelog/Released_V0.5.0)
 ---
 
-![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
+![](../DB-GPT/docs/static/img/app/app_chat_v0.6.jpg)
 
-![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
+![](../DB-GPT/docs/static/img/app/app_manage_chat_data_v0.6.jpg)
 
-![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
+![](../DB-GPT/docs/static/img/app/chat_dashboard_display_v0.6.jpg)
 
+![](../DB-GPT/docs/static/img/app/agent_prompt_awel_v0.6.jpg)
 
 ## Contents
 - [Introduction](#introduction)
@@ -197,8 +207,6 @@ At present, we have introduced several key features to showcase our current capa
 - Support Datasources
   - [Datasources](http://docs.dbgpt.site/docs/modules/connections)
 
-
-
 ## Image
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
 
@@ -214,7 +222,6 @@ At present, we have introduced several key features to showcase our current capa
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" />
 </a>
-
 
 
 ## Licence
