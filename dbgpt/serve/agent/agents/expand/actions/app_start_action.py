@@ -50,6 +50,7 @@ class StartAppAction(Action[LinkAppInput]):
         **kwargs,
     ) -> ActionOutput:
         conv_id = kwargs.get("conv_id")
+        user_input = kwargs.get("user_input")
         paren_agent = kwargs.get("paren_agent")
         init_message_rounds = kwargs.get("init_message_rounds")
 
@@ -83,7 +84,7 @@ class StartAppAction(Action[LinkAppInput]):
                 from dbgpt.serve.agent.agents.controller import multi_agents
 
                 await multi_agents.agent_team_chat_new(
-                    new_user_input,
+                    new_user_input if new_user_input else user_input,
                     conv_id,
                     gpts_app,
                     paren_agent.memory,

@@ -34,6 +34,8 @@ class ChatExcel(BaseChat):
         """
 
         self.select_param = chat_param["select_param"]
+        if not self.select_param:
+            raise ValueError("Please upload the Excel document you want to talk to！")
         self.model_name = chat_param["model_name"]
         chat_param["chat_mode"] = ChatScene.ChatExcel
         self.chat_param = chat_param

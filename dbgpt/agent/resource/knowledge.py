@@ -73,8 +73,8 @@ class RetrieverResource(Resource[ResourceParameters]):
         prompt_template = f"\nResources-{self.name}:\n {content}"
         prompt_template_zh = f"\n资源-{self.name}:\n {content}"
         if lang == "en":
-            return prompt_template.format(content=content), self._get_references(chunks)
-        return prompt_template_zh.format(content=content), self._get_references(chunks)
+            return prompt_template, self._get_references(chunks)
+        return prompt_template_zh, self._get_references(chunks)
 
     async def get_resources(
         self,

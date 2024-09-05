@@ -6,15 +6,15 @@ from dbgpt.storage.graph_store.graph import MemoryGraph, Edge, Vertex, Direction
 @pytest.fixture
 def g():
     g = MemoryGraph()
-    g.append_edge(Edge("A", "A", label="0"))
-    g.append_edge(Edge("A", "A", label="1"))
-    g.append_edge(Edge("A", "B", label="2"))
-    g.append_edge(Edge("B", "C", label="3"))
-    g.append_edge(Edge("B", "D", label="4"))
-    g.append_edge(Edge("C", "D", label="5"))
-    g.append_edge(Edge("B", "E", label="6"))
-    g.append_edge(Edge("F", "E", label="7"))
-    g.append_edge(Edge("E", "F", label="8"))
+    g.append_edge(Edge("A", "A", "0"))
+    g.append_edge(Edge("A", "A", "1"))
+    g.append_edge(Edge("A", "B", "2"))
+    g.append_edge(Edge("B", "C", "3"))
+    g.append_edge(Edge("B", "D", "4"))
+    g.append_edge(Edge("C", "D", "5"))
+    g.append_edge(Edge("B", "E", "6"))
+    g.append_edge(Edge("F", "E", "7"))
+    g.append_edge(Edge("E", "F", "8"))
     g.upsert_vertex(Vertex("G"))
     yield g
 
@@ -25,14 +25,20 @@ def g():
         (lambda g: g.del_vertices("G", "G"), 6, 9),
         (lambda g: g.del_vertices("C"), 6, 7),
         (lambda g: g.del_vertices("A", "G"), 5, 6),
-        (lambda g: g.del_edges("E", "F", label="8"), 7, 8),
+        (lambda g: g.del_edges("A", "A"), 7, 7),
         (lambda g: g.del_edges("A", "B"), 7, 8),
+        (lambda g: g.del_edges("A", "A", "0"), 7, 8),
+        (lambda g: g.del_edges("E", "F", "8"), 7, 8),
+        (lambda g: g.del_edges("E", "F", "9"), 7, 9),
+        (lambda g: g.del_edges("E", "F", val=1), 7, 9),
+        (lambda g: g.del_edges("E", "F", "8", val=1), 7, 9),
+        (lambda g: g.del_edges("E", "F", "9", val=1), 7, 9),
         (lambda g: g.del_neighbor_edges("A", Direction.IN), 7, 7),
     ],
 )
 def test_delete(g, action, vc, ec):
     action(g)
-    result = g.graphviz()
+    result = g.format()
     print(f"\n{result}")
     assert g.vertex_count == vc
     assert g.edge_count == ec
@@ -50,7 +56,7 @@ def test_delete(g, action, vc, ec):
 )
 def test_search(g, vids, dir, vc, ec):
     subgraph = g.search(vids, dir)
-    print(f"\n{subgraph.graphviz()}")
+    print(f"\n{subgraph.format()}")
     assert subgraph.vertex_count == vc
     assert subgraph.edge_count == ec
 
@@ -65,7 +71,7 @@ def test_search(g, vids, dir, vc, ec):
 )
 def test_search_result_limit(g, vids, dir, ec):
     subgraph = g.search(vids, dir, limit=ec)
-    print(f"\n{subgraph.graphviz()}")
+    print(f"\n{subgraph.format()}")
     assert subgraph.edge_count == ec
 
 
@@ -79,7 +85,7 @@ def test_search_result_limit(g, vids, dir, ec):
 )
 def test_search_fan_limit(g, vids, dir, fan, ec):
     subgraph = g.search(vids, dir, fan=fan)
-    print(f"\n{subgraph.graphviz()}")
+    print(f"\n{subgraph.format()}")
     assert subgraph.edge_count == ec
 
 
@@ -97,5 +103,5 @@ def test_search_fan_limit(g, vids, dir, fan, ec):
 )
 def test_search_depth_limit(g, vids, dir, dep, ec):
     subgraph = g.search(vids, dir, depth=dep)
-    print(f"\n{subgraph.graphviz()}")
+    print(f"\n{subgraph.format()}")
     assert subgraph.edge_count == ec
