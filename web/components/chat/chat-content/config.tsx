@@ -89,7 +89,7 @@ const codeComponents = {
           return <CodePreview language={lang} code={content} />;
         }
       },
-      'vis-chart': ({ className, children }) => {
+      'vis-db-chart': ({ className, children }) => {
         const content = String(children);
         const lang = className?.replace('language-', '') || 'javascript';
         try {

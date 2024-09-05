@@ -99,6 +99,14 @@ class VectorStoreConfig(IndexStoreConfig):
             "The password of vector store, if not set, will use the default password."
         ),
     )
+    topk: int = Field(
+        default=5,
+        description="Topk of vector search",
+    )
+    score_threshold: float = Field(
+        default=0.3,
+        description="Recall score of vector search",
+    )
 
 
 class VectorStoreBase(IndexStoreBase, ABC):
@@ -107,6 +115,10 @@ class VectorStoreBase(IndexStoreBase, ABC):
     def __init__(self, executor: Optional[ThreadPoolExecutor] = None):
         """Initialize vector store."""
         super().__init__(executor)
+
+    @abstractmethod
+    def get_config(self) -> VectorStoreConfig:
+        """Get the vector store config."""
 
     def filter_by_score_threshold(
         self, chunks: List[Chunk], score_threshold: float
@@ -126,7 +138,7 @@ class VectorStoreBase(IndexStoreBase, ABC):
                     metadata=chunk.metadata,
                     content=chunk.content,
                     score=chunk.score,
-                    chunk_id=str(id),
+                    chunk_id=chunk.chunk_id,
                 )
                 for chunk in chunks
                 if chunk.score >= score_threshold

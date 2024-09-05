@@ -31,9 +31,9 @@ class SqlInput(BaseModel):
 class ChartAction(Action[SqlInput]):
     """Chart action class."""
 
-    def __init__(self):
-        """Create a chart action."""
-        super().__init__()
+    def __init__(self, **kwargs):
+        """Chart action init."""
+        super().__init__(**kwargs)
         self._render_protocol = VisChart()
 
     @property

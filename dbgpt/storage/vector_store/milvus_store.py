@@ -150,6 +150,8 @@ class MilvusStore(VectorStoreBase):
             refer to https://milvus.io/docs/v2.0.x/manage_connection.md
         """
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         try:
             from pymilvus import connections
         except ImportError:
@@ -362,6 +364,10 @@ class MilvusStore(VectorStoreBase):
         )
 
         return res.primary_keys
+
+    def get_config(self) -> MilvusVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in vector database."""

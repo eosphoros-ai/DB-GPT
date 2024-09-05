@@ -63,6 +63,8 @@ class ChromaStore(VectorStoreBase):
             vector_store_config(ChromaVectorConfig): vector store config.
         """
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
@@ -89,6 +91,10 @@ class ChromaStore(VectorStoreBase):
             metadata=collection_metadata,
         )
 
+    def get_config(self) -> ChromaVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
+
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
@@ -100,10 +106,16 @@ class ChromaStore(VectorStoreBase):
             filters=filters,
         )
         return [
-            Chunk(content=chroma_result[0], metadata=chroma_result[1] or {}, score=0.0)
+            Chunk(
+                content=chroma_result[0],
+                metadata=chroma_result[1] or {},
+                score=0.0,
+                chunk_id=chroma_result[2],
+            )
             for chroma_result in zip(
                 chroma_results["documents"][0],
                 chroma_results["metadatas"][0],
+                chroma_results["ids"][0],
             )
         ]
 
@@ -134,12 +146,14 @@ class ChromaStore(VectorStoreBase):
                     content=chroma_result[0],
                     metadata=chroma_result[1] or {},
                     score=(1 - chroma_result[2]),
+                    chunk_id=chroma_result[3],
                 )
             )
             for chroma_result in zip(
                 chroma_results["documents"][0],
                 chroma_results["metadatas"][0],
                 chroma_results["distances"][0],
+                chroma_results["ids"][0],
             )
         ]
         return self.filter_by_score_threshold(chunks, score_threshold)
@@ -180,6 +194,20 @@ class ChromaStore(VectorStoreBase):
         ids = ids.split(",")
         if len(ids) > 0:
             self._collection.delete(ids=ids)
+
+    def truncate(self) -> List[str]:
+        """Truncate data index_name."""
+        logger.info(f"begin truncate chroma collection:{self._collection.name}")
+        results = self._collection.get()
+        ids = results.get("ids")
+        if ids:
+            self._collection.delete(ids=ids)
+            logger.info(
+                f"truncate chroma collection {self._collection.name} "
+                f"{len(ids)} chunks success"
+            )
+            return ids
+        return []
 
     def convert_metadata_filters(
         self,

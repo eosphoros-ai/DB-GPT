@@ -56,6 +56,15 @@ def _import_builtin_knowledge_graph() -> Tuple[Type, Type]:
     return BuiltinKnowledgeGraph, BuiltinKnowledgeGraphConfig
 
 
+def _import_community_summary_knowledge_graph() -> Tuple[Type, Type]:
+    from dbgpt.storage.knowledge_graph.community_summary import (
+        CommunitySummaryKnowledgeGraph,
+        CommunitySummaryKnowledgeGraphConfig,
+    )
+
+    return CommunitySummaryKnowledgeGraph, CommunitySummaryKnowledgeGraphConfig
+
+
 def _import_openspg() -> Tuple[Type, Type]:
     from dbgpt.storage.knowledge_graph.open_spg import OpenSPG, OpenSPGConfig
 
@@ -86,6 +95,8 @@ def __getattr__(name: str) -> Tuple[Type, Type]:
         return _import_elastic()
     elif name == "KnowledgeGraph":
         return _import_builtin_knowledge_graph()
+    elif name == "CommunitySummaryKnowledgeGraph":
+        return _import_community_summary_knowledge_graph()
     elif name == "OpenSPG":
         return _import_openspg()
     elif name == "FullText":
@@ -103,7 +114,7 @@ __vector_store__ = [
     "ElasticSearch",
 ]
 
-__knowledge_graph__ = ["KnowledgeGraph", "OpenSPG"]
+__knowledge_graph__ = ["KnowledgeGraph", "CommunitySummaryKnowledgeGraph", "OpenSPG"]
 
 __document_store__ = ["FullText"]
 

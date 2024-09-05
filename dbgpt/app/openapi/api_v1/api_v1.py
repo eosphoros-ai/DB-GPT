@@ -548,6 +548,17 @@ async def chat_completions(
                     headers=headers,
                     media_type="text/plain",
                 )
+    except Exception as e:
+        logger.exception(f"Chat Exception!{dialogue}", e)
+
+        async def error_text(err_msg):
+            yield f"data:{err_msg}\n\n"
+
+        return StreamingResponse(
+            error_text(str(e)),
+            headers=headers,
+            media_type="text/plain",
+        )
     finally:
         # write to recent usage app.
         if dialogue.user_name is not None and dialogue.app_code is not None:

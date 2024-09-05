@@ -127,9 +127,6 @@ class AgentManager(BaseComponent):
     def list_agents(self):
         """Return a list of all registered agents and their descriptions."""
         result = []
-        from datetime import datetime
-
-        logger.info(f"List Agent Begin:{datetime.now()}")
         for name, value in self._agents.items():
             result.append(
                 {
@@ -137,7 +134,6 @@ class AgentManager(BaseComponent):
                     "desc": value[1].goal,
                 }
             )
-        logger.info(f"List Agent End:{datetime.now()}")
         return result
 
 
