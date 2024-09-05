@@ -60,13 +60,13 @@ The purpose is to build infrastructure in the field of large models, through the
 - [Released V0.5.0 | Develop native data applications through workflows and agents](http://docs.dbgpt.cn/docs/changelog/Released_V0.5.0)
 ---
 
-![](../DB-GPT/docs/static/img/app/app_chat_v0.6.jpg)
+![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
 
-![](../DB-GPT/docs/static/img/app/app_manage_chat_data_v0.6.jpg)
+![app_manage_chat_data_v0 6](https://github.com/user-attachments/assets/c8cc85bb-e3c2-4fab-8fb9-7b4b469d0611)
 
-![](../DB-GPT/docs/static/img/app/chat_dashboard_display_v0.6.jpg)
+![chat_dashboard_display_v0 6](https://github.com/user-attachments/assets/b15d6ebe-54c4-4527-a16d-02fbbaf20dc9)
 
-![](../DB-GPT/docs/static/img/app/agent_prompt_awel_v0.6.jpg)
+![agent_prompt_awel_v0 6](https://github.com/user-attachments/assets/40761507-a1e1-49d4-b49a-3dd9a5ea41cc)
 
 ## Contents
 - [Introduction](#introduction)
