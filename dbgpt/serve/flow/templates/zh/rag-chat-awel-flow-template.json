@@ -1,0 +1,1088 @@
+{
+  "flow": {
+    "uid": "f947dc6d-a6e6-4f02-b794-14989944173d",
+    "label": "RAG Chat AWEL flow template",
+    "name": "rag_chat_awel_flow_template_zh",
+    "flow_category": "chat_flow",
+    "description": "知识库对话的 AWEL flow 模板",
+    "state": "running",
+    "error_message": "",
+    "source": "DBGPT-WEB",
+    "source_url": null,
+    "version": "0.1.1",
+    "define_type": "json",
+    "editable": true,
+    "user_name": null,
+    "sys_code": null,
+    "dag_id": "flow_dag_rag_chat_awel_flow_template_zh_f947dc6d-a6e6-4f02-b794-14989944173d",
+    "gmt_created": "2024-09-06 17:12:50",
+    "gmt_modified": "2024-09-06 17:12:50",
+    "metadata": {
+      "sse_output": true,
+      "streaming_output": true,
+      "tags": {},
+      "triggers": [
+        {
+          "trigger_type": "http",
+          "path": "/api/v1/awel/trigger/example/flow_dag_rag_chat_awel_flow_template_zh_f947dc6d-a6e6-4f02-b794-14989944173d",
+          "methods": [
+            "POST"
+          ],
+          "trigger_mode": "chat"
+        }
+      ]
+    },
+    "variables": null,
+    "authors": null,
+    "flow_data": {
+      "edges": [
+        {
+          "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+          "source_order": 0,
+          "target": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "target_order": 0,
+          "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|0",
+          "target_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|inputs|0",
+          "type": "buttonedge"
+        },
+        {
+          "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+          "source_order": 1,
+          "target": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "target_order": 0,
+          "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|1",
+          "target_handle": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0|inputs|0",
+          "type": "buttonedge"
+        },
+        {
+          "source": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "source_order": 0,
+          "target": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "target_order": 1,
+          "id": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0|operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_handle": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0|outputs|0",
+          "target_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|inputs|1",
+          "type": "buttonedge"
+        },
+        {
+          "source": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+          "source_order": 0,
+          "target": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "target_order": 0,
+          "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0|operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_handle": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0|outputs|0",
+          "target_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|parameters|0",
+          "type": "buttonedge"
+        },
+        {
+          "source": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "source_order": 0,
+          "target": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+          "target_order": 0,
+          "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+          "source_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|outputs|0",
+          "target_handle": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0|inputs|0",
+          "type": "buttonedge"
+        }
+      ],
+      "viewport": {
+        "x": 669.8345476335454,
+        "y": 80.57987544808663,
+        "zoom": 0.7037219281316303
+      },
+      "nodes": [
+        {
+          "width": 320,
+          "height": 632,
+          "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+          "position": {
+            "x": -859.6394981135705,
+            "y": 19.187128710000025,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": -859.6394981135705,
+            "y": 19.187128710000025,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "常见 LLM Http 触发器",
+            "custom_label": null,
+            "name": "common_llm_http_trigger",
+            "description": "通过 HTTP 请求触发您的工作流，并将请求主体解析为常见的 LLM HTTP 主体",
+            "category": "trigger",
+            "category_label": "Trigger",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "input",
+            "inputs": [],
+            "outputs": [
+              {
+                "type_name": "CommonLLMHttpRequestBody",
+                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                "label": "请求体",
+                "custom_label": null,
+                "name": "request_body",
+                "description": "API 端点的请求主体，解析为常见的 LLM HTTP 主体",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "label": "Request String Messages",
+                "custom_label": null,
+                "name": "request_string_messages",
+                "description": "The request string messages of the API endpoint, parsed from 'messages' field of the request body",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": [
+                  "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger.MessagesOutputMapper"
+                ]
+              }
+            ],
+            "version": "v1",
+            "type_name": "CommonLLMHttpTrigger",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger",
+            "parameters": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "API 端点",
+                "name": "endpoint",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "/example/{dag_id}",
+                "placeholder": null,
+                "description": "API 端点",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "HTTP 方法",
+                "name": "methods",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "POST",
+                "placeholder": null,
+                "description": "API 端点的方法",
+                "value": null,
+                "options": [
+                  {
+                    "label": "HTTP PUT 方法",
+                    "name": "http_put",
+                    "value": "PUT",
+                    "children": null
+                  },
+                  {
+                    "label": "HTTP POST 方法",
+                    "name": "http_post",
+                    "value": "POST",
+                    "children": null
+                  }
+                ]
+              },
+              {
+                "type_name": "bool",
+                "type_cls": "builtins.bool",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "流式响应",
+                "name": "streaming_response",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": false,
+                "placeholder": null,
+                "description": "响应是否为流式传输",
+                "value": false,
+                "options": null
+              },
+              {
+                "type_name": "BaseHttpBody",
+                "type_cls": "dbgpt.core.awel.trigger.http_trigger.BaseHttpBody",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "HTTP 响应主体",
+                "name": "http_response_body",
+                "is_list": false,
+                "category": "resource",
+                "resource_type": "class",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "API 端点的响应主体",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "响应媒体类型",
+                "name": "response_media_type",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "响应的媒体类型",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "HTTP 状态码",
+                "name": "status_code",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 200,
+                "placeholder": null,
+                "description": "HTTP 状态码",
+                "value": null,
+                "options": null
+              }
+            ]
+          }
+        },
+        {
+          "width": 320,
+          "height": 910,
+          "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+          "position": {
+            "x": 894.6387897331704,
+            "y": 11.20538256124324,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": 894.6387897331704,
+            "y": 11.20538256124324,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "流式 LLM 算子",
+            "custom_label": null,
+            "name": "higher_order_streaming_llm_operator",
+            "description": "高级流式 LLM 算子，支持多轮对话（对话窗口、Token 长度和无多轮）。",
+            "category": "llm",
+            "category_label": "LLM",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "map",
+            "inputs": [
+              {
+                "type_name": "CommonLLMHttpRequestBody",
+                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                "label": "通用 LLM 请求体",
+                "custom_label": null,
+                "name": "common_llm_request_body",
+                "description": "通用 LLM 请求体。",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              },
+              {
+                "type_name": "HOContextBody",
+                "type_cls": "dbgpt.app.operators.llm.HOContextBody",
+                "label": "额外上下文",
+                "custom_label": null,
+                "name": "extra_context",
+                "description": "用于构建提示的额外上下文（知识上下文、数据库架构等），您可以添加多个上下文。",
+                "dynamic": true,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              }
+            ],
+            "outputs": [
+              {
+                "type_name": "ModelOutput",
+                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                "label": "流式模型输出",
+                "custom_label": null,
+                "name": "streaming_model_output",
+                "description": "流式模型输出。",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": null
+              }
+            ],
+            "version": "v1",
+            "type_name": "HOStreamingLLMOperator",
+            "type_cls": "dbgpt.app.operators.llm.HOStreamingLLMOperator",
+            "parameters": [
+              {
+                "type_name": "ChatPromptTemplate",
+                "type_cls": "dbgpt.core.interface.prompt.ChatPromptTemplate",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "提示模板",
+                "name": "prompt_template",
+                "is_list": false,
+                "category": "resource",
+                "resource_type": "instance",
+                "optional": false,
+                "default": null,
+                "placeholder": null,
+                "description": "对话的提示模板。",
+                "value": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "模型名称",
+                "name": "model",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "模型名称。",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "LLMClient",
+                "type_cls": "dbgpt.core.interface.llm.LLMClient",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "LLM 客户端",
+                "name": "llm_client",
+                "is_list": false,
+                "category": "resource",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "LLM 客户端，如何连接到 LLM 模型，如果未提供，将使用 DB-GPT 部署的默认客户端。",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "历史消息合并模式",
+                "name": "history_merge_mode",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "none",
+                "placeholder": null,
+                "description": "历史合并模式，支持 'none'，'window' 和 'token'。'none'：不合并历史，'window'：按对话窗口合并，'token'：按 Token 长度合并。",
+                "value": null,
+                "options": [
+                  {
+                    "label": "No History",
+                    "name": "none",
+                    "value": "none",
+                    "children": null
+                  },
+                  {
+                    "label": "Message Window",
+                    "name": "window",
+                    "value": "window",
+                    "children": null
+                  },
+                  {
+                    "label": "Token Length",
+                    "name": "token",
+                    "value": "token",
+                    "children": null
+                  }
+                ],
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "select",
+                  "size": null,
+                  "attr": null
+                }
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "用户消息键",
+                "name": "user_message_key",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "user_input",
+                "placeholder": null,
+                "description": "提示中用户消息的键，默认为 'user_input'。",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "历史键",
+                "name": "history_key",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "聊天历史键，将聊天历史消息传递给提示模板，如果未提供，它将解析提示模板以获取键。",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "保留起始轮数",
+                "name": "keep_start_rounds",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "在聊天历史中保留的起始轮数。",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "保留结束轮数",
+                "name": "keep_end_rounds",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "在聊天历史中保留的结束轮数。",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "最大 Token 限制",
+                "name": "max_token_limit",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 2048,
+                "placeholder": null,
+                "description": "在聊天历史中保留的最大 Token 限制。",
+                "value": null,
+                "options": null
+              }
+            ]
+          }
+        },
+        {
+          "width": 320,
+          "height": 774,
+          "id": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+          "position": {
+            "x": -490.28264249580883,
+            "y": 867.094350868951,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": -490.28264249580883,
+            "y": 867.094350868951,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "知识算子",
+            "custom_label": null,
+            "name": "higher_order_knowledge_operator",
+            "description": "知识算子，从知识空间检索您的知识（文档）",
+            "category": "rag",
+            "category_label": "RAG",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_higher_order_knowledge_operator___$$___rag___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "map",
+            "inputs": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "label": "用户问题",
+                "custom_label": null,
+                "name": "query",
+                "description": "用于检索知识的用户问题",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              }
+            ],
+            "outputs": [
+              {
+                "type_name": "HOContextBody",
+                "type_cls": "dbgpt.app.operators.llm.HOContextBody",
+                "label": "检索到的上下文",
+                "custom_label": null,
+                "name": "context",
+                "description": "从知识空间检索到的上下文",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": false,
+                "mappers": null
+              },
+              {
+                "type_name": "Chunk",
+                "type_cls": "dbgpt.core.interface.knowledge.Chunk",
+                "label": "块",
+                "custom_label": null,
+                "name": "chunks",
+                "description": "从知识空间检索到的块",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": [
+                  "dbgpt.app.operators.rag.HOKnowledgeOperator.ChunkMapper"
+                ]
+              }
+            ],
+            "version": "v1",
+            "type_name": "HOKnowledgeOperator",
+            "type_cls": "dbgpt.app.operators.rag.HOKnowledgeOperator",
+            "parameters": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "知识空间名称",
+                "name": "knowledge_space",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": false,
+                "default": null,
+                "placeholder": null,
+                "description": "知识空间的名称",
+                "value": "k_cmd2",
+                "options": [
+                  {
+                    "label": "k_cmd2",
+                    "name": "k_cmd2",
+                    "value": "k_cmd2",
+                    "children": null
+                  },
+                  {
+                    "label": "f5",
+                    "name": "f5",
+                    "value": "f5",
+                    "children": null
+                  },
+                  {
+                    "label": "f4",
+                    "name": "f4",
+                    "value": "f4",
+                    "children": null
+                  },
+                  {
+                    "label": "t333",
+                    "name": "t333",
+                    "value": "t333",
+                    "children": null
+                  },
+                  {
+                    "label": "f3",
+                    "name": "f3",
+                    "value": "f3",
+                    "children": null
+                  },
+                  {
+                    "label": "f1",
+                    "name": "f1",
+                    "value": "f1",
+                    "children": null
+                  },
+                  {
+                    "label": "sdf",
+                    "name": "sdf",
+                    "value": "sdf",
+                    "children": null
+                  },
+                  {
+                    "label": "sfsd",
+                    "name": "sfsd",
+                    "value": "sfsd",
+                    "children": null
+                  },
+                  {
+                    "label": "hello",
+                    "name": "hello",
+                    "value": "hello",
+                    "children": null
+                  },
+                  {
+                    "label": "k1",
+                    "name": "k1",
+                    "value": "k1",
+                    "children": null
+                  },
+                  {
+                    "label": "f2",
+                    "name": "f2",
+                    "value": "f2",
+                    "children": null
+                  },
+                  {
+                    "label": "test_f1",
+                    "name": "test_f1",
+                    "value": "test_f1",
+                    "children": null
+                  },
+                  {
+                    "label": "SMMF",
+                    "name": "SMMF",
+                    "value": "SMMF",
+                    "children": null
+                  },
+                  {
+                    "label": "docker_xxx",
+                    "name": "docker_xxx",
+                    "value": "docker_xxx",
+                    "children": null
+                  },
+                  {
+                    "label": "t2",
+                    "name": "t2",
+                    "value": "t2",
+                    "children": null
+                  },
+                  {
+                    "label": "t1",
+                    "name": "t1",
+                    "value": "t1",
+                    "children": null
+                  },
+                  {
+                    "label": "test_graph",
+                    "name": "test_graph",
+                    "value": "test_graph",
+                    "children": null
+                  },
+                  {
+                    "label": "small",
+                    "name": "small",
+                    "value": "small",
+                    "children": null
+                  },
+                  {
+                    "label": "ttt",
+                    "name": "ttt",
+                    "value": "ttt",
+                    "children": null
+                  },
+                  {
+                    "label": "bf",
+                    "name": "bf",
+                    "value": "bf",
+                    "children": null
+                  },
+                  {
+                    "label": "new_big_file",
+                    "name": "new_big_file",
+                    "value": "new_big_file",
+                    "children": null
+                  },
+                  {
+                    "label": "test_big_fild",
+                    "name": "test_big_fild",
+                    "value": "test_big_fild",
+                    "children": null
+                  },
+                  {
+                    "label": "Greenplum",
+                    "name": "Greenplum",
+                    "value": "Greenplum",
+                    "children": null
+                  },
+                  {
+                    "label": "Mytest",
+                    "name": "Mytest",
+                    "value": "Mytest",
+                    "children": null
+                  },
+                  {
+                    "label": "dba",
+                    "name": "dba",
+                    "value": "dba",
+                    "children": null
+                  }
+                ]
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "上下文键",
+                "name": "context",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "context",
+                "placeholder": null,
+                "description": "上下文的键，将用于构建提示",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "前 K",
+                "name": "top_k",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 5,
+                "placeholder": null,
+                "description": "要检索的块数",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "float",
+                "type_cls": "builtins.float",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "最低匹配分数",
+                "name": "score_threshold",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 0.3,
+                "placeholder": null,
+                "description": "检索到的块的最低匹配分数，如果匹配分数低于阈值，将被丢弃",
+                "value": null,
+                "options": null,
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "slider",
+                  "size": null,
+                  "attr": {
+                    "disabled": false,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.1
+                  },
+                  "show_input": false
+                }
+              },
+              {
+                "type_name": "bool",
+                "type_cls": "builtins.bool",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "启用重新排序器",
+                "name": "reranker_enabled",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": null,
+                "placeholder": null,
+                "description": "是否启用重新排序器",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "int",
+                "type_cls": "builtins.int",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "重新排序器前 K",
+                "name": "reranker_top_k",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": 3,
+                "placeholder": null,
+                "description": "重新排序器的前 K",
+                "value": null,
+                "options": null
+              }
+            ]
+          }
+        },
+        {
+          "width": 530,
+          "height": 774,
+          "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+          "position": {
+            "x": 215.72827911579407,
+            "y": 823.7825153084143,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": 215.72827911579407,
+            "y": 823.7825153084143,
+            "zoom": 0.0
+          },
+          "data": {
+            "type_name": "CommonChatPromptTemplate",
+            "type_cls": "dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+            "label": "常见聊天提示模板",
+            "custom_label": null,
+            "name": "common_chat_prompt_template",
+            "description": "用静态提示构建提示的原子。",
+            "category": "prompt",
+            "category_label": "Prompt",
+            "flow_type": "resource",
+            "icon": null,
+            "documentation_url": null,
+            "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0",
+              "ui_size": "large"
+            },
+            "resource_type": "instance",
+            "parent_cls": [
+              "dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+              "dbgpt.core.interface.prompt.ChatPromptTemplate",
+              "dbgpt.core.interface.prompt.BasePromptTemplate",
+              "pydantic.main.BaseModel"
+            ],
+            "parameters": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "系统消息",
+                "name": "system_message",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "You are a helpful AI Assistant.",
+                "placeholder": null,
+                "description": "系统消息。",
+                "value": "基于以下给出的已知信息, 准守规范约束，专业、简要回答用户的问题.\n规范约束:\n     1.如果已知信息包含的图片、链接、表格、代码块等特殊markdown标签格式的信息，确保在答案中包含原文这些图片、链接、表格和代码标签，不要丢弃不要修改，如:图片格式：![image.png](xxx), 链接格式:[xxx](xxx), 表格格式:|xxx|xxx|xxx|, 代码格式:```xxx```.\n     2.如果无法从提供的内容中获取答案, 请说: \"知识库中提供的内容不足以回答此问题\" 禁止胡乱编造.\n     3.回答的时候最好按照1.2.3.点进行总结, 并以markdwon格式显示.\n\n已知内容: \n{context}\n问题:\n{user_input}, 请使用和用户相同的语言进行回答.\n",
+                "options": null,
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "text_area",
+                  "size": "large",
+                  "attr": {
+                    "disabled": false,
+                    "status": null,
+                    "prefix": null,
+                    "suffix": null,
+                    "show_count": null,
+                    "max_length": null,
+                    "auto_size": {
+                      "min_rows": 2,
+                      "max_rows": 20
+                    }
+                  },
+                  "editor": {
+                    "width": 800,
+                    "height": 400
+                  }
+                }
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "消息占位符",
+                "name": "message_placeholder",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "chat_history",
+                "placeholder": null,
+                "description": "聊天历史消息占位符。",
+                "value": null,
+                "options": null
+              },
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "label": "用户消息",
+                "name": "human_message",
+                "is_list": false,
+                "category": "common",
+                "resource_type": "instance",
+                "optional": true,
+                "default": "{user_input}",
+                "placeholder": "{user_input}",
+                "description": "用户消息。",
+                "value": null,
+                "options": null,
+                "ui": {
+                  "refresh": false,
+                  "refresh_depends": null,
+                  "ui_type": "text_area",
+                  "size": "large",
+                  "attr": {
+                    "disabled": false,
+                    "status": null,
+                    "prefix": null,
+                    "suffix": null,
+                    "show_count": null,
+                    "max_length": null,
+                    "auto_size": {
+                      "min_rows": 2,
+                      "max_rows": 20
+                    }
+                  },
+                  "editor": {
+                    "width": 800,
+                    "height": 400
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "width": 320,
+          "height": 235,
+          "id": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+          "position": {
+            "x": 1364.8014471050712,
+            "y": 723.8593282560083,
+            "zoom": 0.0
+          },
+          "type": "customNode",
+          "position_absolute": {
+            "x": 1364.8014471050712,
+            "y": 723.8593282560083,
+            "zoom": 0.0
+          },
+          "data": {
+            "label": "OpenAI 流式输出算子",
+            "custom_label": null,
+            "name": "openai_streaming_output_operator",
+            "description": "OpenAI 流式 LLM 算子。",
+            "category": "output_parser",
+            "category_label": "Output Parser",
+            "flow_type": "operator",
+            "icon": null,
+            "documentation_url": null,
+            "id": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+            "tags": {
+              "order": "higher-order",
+              "ui_version": "flow2.0"
+            },
+            "operator_type": "transform_stream",
+            "inputs": [
+              {
+                "type_name": "ModelOutput",
+                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                "label": "上游模型输出",
+                "custom_label": null,
+                "name": "model_output",
+                "description": "上游模型的输出。",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": null
+              }
+            ],
+            "outputs": [
+              {
+                "type_name": "str",
+                "type_cls": "builtins.str",
+                "label": "模型输出",
+                "custom_label": null,
+                "name": "model_output",
+                "description": "转换为 OpenAI 流格式后的模型输出。",
+                "dynamic": false,
+                "dynamic_minimum": 0,
+                "is_list": true,
+                "mappers": null
+              }
+            ],
+            "version": "v1",
+            "type_name": "OpenAIStreamingOutputOperator",
+            "type_cls": "dbgpt.model.utils.chatgpt_utils.OpenAIStreamingOutputOperator",
+            "parameters": []
+          }
+        }
+      ]
+    }
+  }
+}
