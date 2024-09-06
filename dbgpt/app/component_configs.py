@@ -36,7 +36,7 @@ def initialize_components(
     system_app.register(
         DefaultExecutorFactory, max_workers=param.default_thread_pool_size
     )
-    system_app.register(DefaultScheduler)
+    system_app.register(DefaultScheduler, scheduler_enable=CFG.SCHEDULER_ENABLED)
     system_app.register_instance(controller)
     system_app.register(ConnectorManager)
 
