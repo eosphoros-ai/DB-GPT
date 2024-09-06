@@ -54,18 +54,28 @@ class IntentRecognitionAction(Action[IntentRecognitionInput]):
 
     @property
     def ai_out_schema(self) -> Optional[str]:
-        out_put_schema = {
-            "intent": "[The recognized intent is placed here]",
-            "app_code": "[App code in selected intent]",
-            "slots": {"意图定义中槽位属性1": "具体值", "意图定义中槽位属性2": "具体值"},
-            "ask_user": "If you want the user to supplement slot data, ask the user a question",
-            "user_input": "[Complete instructions generated based on intent and slot]",
-        }
         if self.language == "en":
+            out_put_schema = {
+                "intent": "[The recognized intent is placed here]",
+                "app_code": "[App code in selected intent]",
+                "slots": {
+                    "Slot attribute 1 in intent definition": "value",
+                    "Slot attribute 2 in intent definition": "value",
+                },
+                "ask_user": "[If you want the user to supplement slot data, ask the user a question]",
+                "user_input": "[Complete instructions generated based on intent and slot]",
+            }
             return f"""Please reply in the following json format:
                 {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
             Make sure the output is only json and can be parsed by Python json.loads."""  # noqa: E501
         else:
+            out_put_schema = {
+                "intent": "选择的意图放在这里",
+                "app_code": "选择意图对应的Appcode值",
+                "slots": {"意图定义中槽位属性1": "具体值", "意图定义中槽位属性2": "具体值"},
+                "ask_user": "如果需要用户补充槽位属性的具体值,请向用户进行提问",
+                "user_input": "根据意图和槽位生成完整指令问题",
+            }
             return f"""请按如下JSON格式输出:
             {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
             确保输出只有json，且可以被python json.loads加载."""

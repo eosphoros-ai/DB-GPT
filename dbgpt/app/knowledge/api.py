@@ -112,13 +112,15 @@ def arguments(space_id: str):
 
 
 @router.post("/knowledge/{space_name}/recall_test")
-def recall_test(
+async def recall_test(
     space_name: str,
     request: DocumentRecallTestRequest,
 ):
     print(f"/knowledge/{space_name}/recall_test params:")
     try:
-        return Result.succ(knowledge_space_service.recall_test(space_name, request))
+        return Result.succ(
+            await knowledge_space_service.recall_test(space_name, request)
+        )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"{space_name} recall_test error {e}")
 

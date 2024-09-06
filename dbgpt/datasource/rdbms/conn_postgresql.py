@@ -192,7 +192,10 @@ class PostgreSQLConnector(RDBMSConnector):
             """
         cursor = self.session.execute(text(_sql))
         results = cursor.fetchall()
-        return results
+        results_str = []
+        for result in results:
+            results_str.append((str(result[0]), str(result[1])))
+        return results_str
 
     def get_fields_wit_schema(self, table_name, schema_name="public"):
         """Get column fields about specified table."""

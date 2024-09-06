@@ -13,8 +13,8 @@ import { GPTVis } from '@antv/gpt-vis';
 import { Tag } from 'antd';
 import classNames from 'classnames';
 import { PropsWithChildren, ReactNode, memo, useContext, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 import { renderModelIcon } from '../header/model-selector';
 import markdownComponents from './config';
 
@@ -131,9 +131,9 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
             </div>
             {result ? (
               <div className='px-4 md:px-6 py-4 text-sm'>
-                <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
+                <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
                   {result ?? ''}
-                </ReactMarkdown>
+                </GPTVis>
               </div>
             ) : (
               <div className='px-4 md:px-6 py-4 text-sm'>{err_msg}</div>
@@ -172,7 +172,11 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
         )}
         {/* Markdown */}
         {isRobot && typeof context === 'string' && (
-          <GPTVis components={{ ...markdownComponents, ...extraMarkdownComponents }} rehypePlugins={[rehypeRaw]}>
+          <GPTVis
+            components={{ ...markdownComponents, ...extraMarkdownComponents }}
+            rehypePlugins={[rehypeRaw]}
+            remarkPlugins={[remarkGfm]}
+          >
             {formatMarkdownVal(value)}
           </GPTVis>
         )}

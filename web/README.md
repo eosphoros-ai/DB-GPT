@@ -77,7 +77,7 @@ For full documentation, visit [document](https://docs.dbgpt.site/).
 
 
 ## Usage
-  [react-markdown](https://github.com/remarkjs/react-markdown#readme) for markdown support.
+  [gpt-vis](https://github.com/eosphoros-ai/DB-GPT/gpt-vis) for markdown support.
   [ant-design](https://github.com/ant-design/ant-design) for ui components.
   [next.js](https://github.com/vercel/next.js) for server side rendering.
   [@antv/g2](https://github.com/antvis/g2#readme) for charts.

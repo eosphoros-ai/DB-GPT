@@ -82,10 +82,10 @@ class ActionOutput(BaseModel):
 class Action(ABC, Generic[T]):
     """Base Action class for defining agent actions."""
 
-    def __init__(self):
+    def __init__(self, language: str = "en"):
         """Create an action."""
         self.resource: Optional[Resource] = None
-        self.language: str = "en"
+        self.language: str = language
 
     def init_resource(self, resource: Optional[Resource]):
         """Initialize the resource."""

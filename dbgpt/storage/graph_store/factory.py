@@ -1,4 +1,4 @@
-"""Connector for vector store."""
+"""Graph store factory."""
 import logging
 from typing import Tuple, Type
 

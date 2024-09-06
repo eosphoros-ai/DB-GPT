@@ -39,9 +39,9 @@ class ChartItem(BaseModel):
 class DashboardAction(Action[List[ChartItem]]):
     """Dashboard action class."""
 
-    def __init__(self):
-        """Create a dashboard action."""
-        super().__init__()
+    def __init__(self, **kwargs):
+        """Dashboard action init."""
+        super().__init__(**kwargs)
         self._render_protocol = VisDashboard()
 
     @property

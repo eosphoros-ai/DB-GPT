@@ -543,6 +543,11 @@ def knowledge_requires():
         "sentence-transformers",
     ]
 
+    setup_spec.extras["graph_rag"] = setup_spec.extras["rag"] + [
+        "neo4j",
+        "dbgpt-tugraph-plugins>=0.1.0rc1",
+    ]
+
 
 def llama_cpp_requires():
     """
@@ -641,7 +646,6 @@ def all_datasource_requires():
         "pyhive",
         "thrift",
         "thrift_sasl",
-        "neo4j",
         "vertica_python",
     ]
 
@@ -715,6 +719,7 @@ def default_requires():
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]
+    setup_spec.extras["default"] += setup_spec.extras["graph_rag"]
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]

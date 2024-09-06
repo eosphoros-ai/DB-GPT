@@ -214,10 +214,15 @@ class ConnectConfigDao(BaseDao):
     def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
         """Get db list."""
         session = self.get_raw_session()
-        if db_name:
+        if db_name and user_id:
             sql = f"SELECT * FROM connect_config where (user_id='{user_id}' or user_id='' or user_id IS NULL) and db_name='{db_name}'"  # noqa
-        else:
+        elif user_id:
             sql = f"SELECT * FROM connect_config where user_id='{user_id}' or user_id='' or user_id IS NULL"  # noqa
+        elif db_name:
+            sql = f"SELECT * FROM connect_config where  db_name='{db_name}'"  # noqa
+        else:
+            sql = f"SELECT * FROM connect_config"  # noqa
+
         result = session.execute(text(sql))
         fields = [field[0] for field in result.cursor.description]  # type: ignore
         data = []
