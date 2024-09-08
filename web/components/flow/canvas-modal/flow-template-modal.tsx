@@ -35,6 +35,17 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
       title: t('Template_Name'),
       dataIndex: 'name',
       key: 'name',
+      width:''
+    },
+    {
+      title: t('Template_Label'),
+      dataIndex: 'label',
+      key: 'label',
+    },
+    {
+      title: t('Template_Description'),
+      dataIndex: 'description',
+      key: 'description',
     },
     {
       title: t('Template_Action'),
@@ -65,13 +76,14 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
   return (
     <>
       <Modal
+      className='w-[700px]'
         title={t('Import_From_Template')}
         open={isFlowTemplateModalOpen}
         onCancel={() => setIsFlowTemplateModalOpen(false)}
         cancelButtonProps={{ className: 'hidden' }}
         okButtonProps={{ className: 'hidden' }}
       >
-        <Table dataSource={dataSource} columns={columns} />;
+        <Table className='w-full ' dataSource={dataSource} columns={columns} />;
       </Modal>
     </>
   );
