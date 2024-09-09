@@ -705,7 +705,7 @@ def message2Vo(message: dict, order, model_name) -> MessageVo:
 def _parse_domain_type(dialogue: ConversationVo) -> Optional[str]:
     if dialogue.chat_mode == ChatScene.ChatKnowledge.value():
         # Supported in the knowledge chat
-        if dialogue.app_code == "chat_knowledge":
+        if dialogue.app_code == "" or dialogue.app_code == "chat_knowledge":
             spaces = knowledge_service.get_knowledge_space(
                 KnowledgeSpaceRequest(name=dialogue.select_param)
             )
