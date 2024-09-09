@@ -22,6 +22,8 @@ export const FlowEn = {
   Higher_Order_Nodes: 'Higher Order',
   All_Nodes: 'All',
   Import_From_Template: 'Import from template',
+  Template_Description: 'Description',
   Template_Name: 'Template Name',
+  Template_Label: 'Label',
   Template_Action: 'Action',
 };
