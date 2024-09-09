@@ -35,7 +35,6 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
       title: t('Template_Name'),
       dataIndex: 'name',
       key: 'name',
-      width:''
     },
     {
       title: t('Template_Label'),
