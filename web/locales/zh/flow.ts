@@ -21,7 +21,7 @@ export const FlowZn = {
   Add_Parameter: '添加参数',
   Higher_Order_Nodes: '高阶',
   All_Nodes: '所有',
-  Import_From_Template: '导入模版 ',
+  Import_From_Template: '导入模版',
   Template_Description: '描述',
   Template_Name: '模版名称',
   Template_Label: '标签',
