@@ -82,7 +82,7 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
         cancelButtonProps={{ className: 'hidden' }}
         okButtonProps={{ className: 'hidden' }}
       >
-        <Table className='w-full ' dataSource={dataSource} columns={columns} />;
+        <Table className='w-full' dataSource={dataSource} columns={columns} />;
       </Modal>
     </>
   );
