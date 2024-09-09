@@ -48,16 +48,27 @@
 
 ### AI原生数据智能应用
 ---
-- 🔥🔥🔥 [V0.5.0发布——通过工作流与智能体开发原生数据应用](https://www.yuque.com/eosphoros/dbgpt-docs/owcrh9423f9rqkg2)
+- [V0.6.0发布——一系列重大功能更新](https://www.yuque.com/eosphoros/dbgpt-docs/fho86kk4e9y4rkpd)
+  - AWEL协议升级2.0，支持更复杂的编排，同时优化了前端可视化与交互能力。
+  - 支持数据应用的创建与生命周期管理，提供多种应用构建模式。1. 多智能体自动规划模式、2. 任务流编排模式、3. 单一智能体模式、4. 原生应用模式
+  - GraphRAG支持图社区摘要与混合检索，性能与检索效果有显著优势，同时支持丰富的前端可视化。
+  - 支持意图识别、槽位填充与Prompt管理。
+  - GPT-Vis前端可视化升级，支持更丰富的可视化图表。 
+  - 支持Text2NLU与Text2GQL微调, 即新增意图分类与从自然语言到图语言的微调。 
+
+- [V0.5.0发布——通过工作流与智能体开发原生数据应用](https://www.yuque.com/eosphoros/dbgpt-docs/owcrh9423f9rqkg2)
 ---
 
 ### Data Agents 
 
-![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
+![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
 
-![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
+![app_manage_chat_data_v0 6](https://github.com/user-attachments/assets/c8cc85bb-e3c2-4fab-8fb9-7b4b469d0611)
 
-![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
+![chat_dashboard_display_v0 6](https://github.com/user-attachments/assets/b15d6ebe-54c4-4527-a16d-02fbbaf20dc9)
+
+![agent_prompt_awel_v0 6](https://github.com/user-attachments/assets/40761507-a1e1-49d4-b49a-3dd9a5ea41cc)
+
 
 ## 目录
 - [架构方案](#架构方案)

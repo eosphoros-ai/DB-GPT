@@ -270,64 +270,78 @@ const sidebars = {
       collapsible: false,
       items: [
         {
-          type: 'doc',
-          id: 'application/app_usage'
-        },
-        {
-          type: 'doc',
-          id: 'application/awel_flow_usage'
-        },
-        {
           type: 'category',
           label: 'Getting Started Tutorial',
           items: [
             {
               type: 'doc',
-              id: 'application/started_tutorial/chat_knowledge',
+              id: 'application/apps/app_explore',
+              label: "App Explore"
             },
             {
               type: 'doc',
-              id: 'application/started_tutorial/chat_data',
+              id: 'application/apps/app_chat',
+              label: "App Chat"
+            }, 
+            {
+              type: 'doc',
+              id: 'application/apps/app_manage',
+              label: "App Manage"
+            }, 
+            {
+              type: 'doc',
+              id: 'application/apps/chat_data',
+              label: "Chat Data"
             },
             {
               type: 'doc',
-              id: 'application/started_tutorial/chat_excel',
+              id: 'application/apps/chat_excel',
+              label: "Chat Excel"
             },
             {
               type: 'doc',
-              id: 'application/started_tutorial/chat_db',
+              id: 'application/apps/chat_db',
+              label: "chat DB"
             },
             {
               type: 'doc',
-              id: 'application/started_tutorial/chat_dashboard',
+              id: 'application/apps/chat_knowledge',
+              label: "Chat Knowledge Base"
+            },
+            {
+              type: 'doc',
+              id: 'application/apps/chat_dashboard',
+              label: "Chat Dashboard"
             },{
               type: 'doc',
-              id: 'application/started_tutorial/chat_financial_report',
+              id: 'application/apps/chat_financial_report',
             },
-            {
-              type: "category",
-              label: "Agents",
-              items: [
-                {
-                  type: 'doc',
-                  id: 'application/started_tutorial/agents/plugin',
-                },
-                {
-                  type: "doc",
-                  id: "application/started_tutorial/agents/db_data_analysis_agents",
-                },
-                {
-                  type: "doc",
-                  id: "application/started_tutorial/agents/crawl_data_analysis_agents",
-                }
-              ],
-              link: {
-                type: 'generated-index',
-                slug: "agents",
-              },
-            }
           ],
         },
+        {
+          type: 'doc',
+          id: 'application/prompts',
+          label: "Prompt"
+        },
+        {
+          type: 'doc',
+          id: 'application/llms',
+          label: "LLMs"
+        }, 
+        {
+          type: 'doc',
+          id: 'application/datasources',
+          label: "Datasources"
+        }, 
+        {
+          type: 'doc',
+          id: 'application/graph_rag',
+          label: "GraphRAG"
+        }, 
+        {
+          type: 'doc',
+          id: 'application/awel',
+        }, 
         {
           type: 'category',
           label: 'Advanced Tutorial',
@@ -489,16 +503,6 @@ const sidebars = {
               type: 'doc',
               id: "agents/introduction/custom_agents"
             },
-            // {
-            //   type: "category",
-            //   label: "Cookbook",
-            //   items: [
-            //     {
-            //       type: "doc",
-            //       id: "agents/cookbook/calculator_with_agents"
-            //     },
-            //   ],
-            // },
             {
               type: "category",
               label: "Modules",
@@ -669,6 +673,10 @@ const sidebars = {
         },
         {
           type: 'doc',
+          id: 'changelog/Released_V0.6.0',
+        },
+        {
+          type: 'doc',
           id: 'changelog/Released_V0.5.0',
         }
       ],
@@ -682,10 +690,15 @@ const sidebars = {
         {
           type: 'doc',
           id: 'upgrade/v0.5.0',
-        }, {
+        }, 
+        {
           type: 'doc',
           id: 'upgrade/v0.5.1',
         },
+        {
+          type: 'doc',
+          id: 'upgrade/v0.6.0',
+        }
       ],
     },
 

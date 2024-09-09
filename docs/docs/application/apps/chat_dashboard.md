@@ -6,7 +6,7 @@ Report analysis corresponds to the `Chat Dashboard` scenario in DB-GPT, and inte
 The following are the steps for using report analysis:
 - 1.Data preparation
 - 2.Add data source
-- 3.Select Chat Dashboard
+- 3.Select Chat Dashboard App
 - 4.Start chat
 
 
@@ -27,38 +27,25 @@ python docker/examples/dashboard/test_case_mysql_data.py
 
 The steps to add a data source are the same as [Chat Data](./chat_data.md). Select the corresponding database type in the data source management tab, then create it. Fill in the necessary information to complete the creation.
 
-<p align="left">
-  <img src={'/img/chat_dashboard/add_data.png'} width="720px" />
-</p>
-
-
 
 ### Select Chat Dashboard
 
 After the data source is added, select `Chat Dashboard` on the home scene page to perform report analysis.
 
-<p align="left">
-  <img src={'/img/chat_dashboard/choose_chat_dashboard.png'} width="720px" />
+<p align="center">
+  <img src={'/img/app/chat_dashboard_v0.6.jpg'} width="800px" />
 </p>
-
 
 
 ### Start chat
 Enter specific questions in the dialog box on the right to start a data conversation.
 
-<p align="left">
-  <img src={'/img/chat_dashboard/preview.png'} width="720px" />
-</p>
-
-
 
 :::info note
 
-⚠️ Data dialogue has relatively high requirements on model capabilities, and `ChatGPT/GPT-4` has a high success rate. Other open source models you can try `Vicuna-13B`
+⚠️ Data dialogue has relatively high requirements on model capabilities, and `ChatGPT/GPT-4` has a high success rate. Other open source models you can try `qwen2`
 :::
 
-Of course, in addition to `preview mode`, `editor mode` is also provided. In editor mode, SQL can be edited and modified. You can see the changes in the chart synchronously.
-
-<p align="left">
-  <img src={'/img/chat_dashboard/edit.png'} width="720px" />
+<p align="center">
+  <img src={'/img/app/chat_dashboard_display_v0.6.jpg'} width="800px" />
 </p>

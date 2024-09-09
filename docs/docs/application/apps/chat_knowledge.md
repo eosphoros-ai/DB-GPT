@@ -1,10 +1,9 @@
-# Chat Knowledge
+# Chat Knowledge Base
 
-`Chat knowledge` provides the ability to question and answer questions based on private domain knowledge, and can build intelligent question and answer systems, reading assistants and other products based on the `knowledge base`. `RAG` technology is also used in DB-GPT to enhance knowledge retrieval.
+`Chat knowledge Base` provides the ability to question and answer questions based on private domain knowledge, and can build intelligent question and answer systems, reading assistants and other products based on the `knowledge base`. `RAG` technology is also used in DB-GPT to enhance knowledge retrieval.
 
 
 ## Noun explanation
-
 
 :::info note
 
@@ -17,17 +16,23 @@ The knowledge base operation process is relatively simple and is mainly divided 
 - 1.Create knowledge space
 - 2.Upload documents
 - 3.Wait for document vectorization
-- 4.Knowledge base chat
+- 4.Select Knowledge Base App
+- 5.Chat With App
 
 
 ### Create knowledge space
 
+At first open the `Construct App` and select the `Knowledge` on the top.
+
+<p align="center">
+  <img src={'/img/app/knowledge_build_v0.6.jpg'} width="800px" />
+</p>
+
 Select the knowledge base, click the `Create` button, and fill in the necessary information to complete the creation of the knowledge space.
 
 
-
-<p align="left">
-  <img src={'/img/chat_knowledge/create_knowledge_base.png'} width="720px"/>
+<p align="center">
+  <img src={'/img/app/knowledge_space_v0.6.jpg'} width="800px" />
 </p>
 
 ### Upload documents
