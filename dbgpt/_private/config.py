@@ -335,6 +335,10 @@ class Config(metaclass=Singleton):
             os.getenv("MULTI_INSTANCE", "False").lower() == "true"
         )
 
+        self.SCHEDULER_ENABLED = (
+            os.getenv("SCHEDULER_ENABLED", "True").lower() == "true"
+        )
+
     @property
     def local_db_manager(self) -> "ConnectorManager":
         from dbgpt.datasource.manages import ConnectorManager

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from typing import AsyncIterator, List, Optional, cast
 
 import schedule
@@ -27,7 +28,7 @@ from dbgpt.core.schema.api import (
     ChatCompletionStreamResponse,
     DeltaMessage,
 )
-from dbgpt.serve.core import BaseService
+from dbgpt.serve.core import BaseService, blocking_func_to_async
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.util.dbgpts.loader import DBGPTsLoader
@@ -230,7 +231,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     continue
                 # Set state to DEPLOYED
                 flow.state = State.DEPLOYED
-                exist_inst = self.get({"name": flow.name})
+                exist_inst = self.dao.get_one({"name": flow.name})
                 if not exist_inst:
                     self.create_and_save_dag(flow, save_failed_flow=True)
                 elif is_first_load or exist_inst.state != State.RUNNING:
@@ -388,7 +389,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
-        page_result = self.dao.get_list_page(request, page, page_size)
+        page_result = self.dao.get_list_page(
+            request, page, page_size, desc_order_column=ServeEntity.gmt_modified.name
+        )
         for item in page_result.items:
             metadata = self.dag_manager.get_dag_metadata(
                 item.dag_id, alias_name=item.uid
@@ -396,6 +399,47 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             if metadata:
                 item.metadata = metadata.to_dict()
         return page_result
+
+    def get_flow_templates(
+        self,
+        user_name: Optional[str] = None,
+        sys_code: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> PaginationResult[ServerResponse]:
+        """Get a list of Flow templates
+
+        Args:
+            user_name (Optional[str]): The user name
+            sys_code (Optional[str]): The system code
+            page (int): The page number
+            page_size (int): The page size
+        Returns:
+            List[ServerResponse]: The response
+        """
+        local_file_templates = self._get_flow_templates_from_files()
+        return PaginationResult.build_from_all(local_file_templates, page, page_size)
+
+    def _get_flow_templates_from_files(self) -> List[ServerResponse]:
+        """Get a list of Flow templates from files"""
+        user_lang = self._system_app.config.get_current_lang(default="en")
+        # List files in current directory
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        template_dir = os.path.join(parent_dir, "templates", user_lang)
+        default_template_dir = os.path.join(parent_dir, "templates", "en")
+        if not os.path.exists(template_dir):
+            template_dir = default_template_dir
+        templates = []
+        for root, _, files in os.walk(template_dir):
+            for file in files:
+                if file.endswith(".json"):
+                    try:
+                        with open(os.path.join(root, file), "r") as f:
+                            data = json.load(f)
+                            templates.append(_parse_flow_template_from_json(data))
+                    except Exception as e:
+                        logger.warning(f"Load template {file} error: {str(e)}")
+        return templates
 
     async def chat_stream_flow_str(
         self, flow_uid: str, request: CommonLLMHttpRequestBody
@@ -590,7 +634,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         from dbgpt.core.awel.dag.dag_manager import DAGMetadata, _parse_metadata
 
-        dag = self._flow_factory.build(request.flow)
+        dag = await blocking_func_to_async(
+            self._system_app,
+            self._flow_factory.build,
+            request.flow,
+        )
         leaf_nodes = dag.leaf_nodes
         if len(leaf_nodes) != 1:
             raise ValueError("Chat Flow just support one leaf node in dag")
@@ -632,3 +680,20 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 break
             else:
                 yield f"data:{text}\n\n"
+
+
+def _parse_flow_template_from_json(json_dict: dict) -> ServerResponse:
+    """Parse the flow from json
+
+    Args:
+        json_dict (dict): The json dict
+
+    Returns:
+        ServerResponse: The flow
+    """
+    flow_json = json_dict["flow"]
+    flow_json["editable"] = False
+    del flow_json["uid"]
+    flow_json["state"] = State.INITIALIZING
+    flow_json["dag_id"] = None
+    return ServerResponse(**flow_json)

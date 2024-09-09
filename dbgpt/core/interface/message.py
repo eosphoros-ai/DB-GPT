@@ -317,6 +317,25 @@ class ModelMessage(BaseModel):
         """
         return _messages_to_str(messages, human_prefix, ai_prefix, system_prefix)
 
+    @staticmethod
+    def parse_user_message(messages: List[ModelMessage]) -> str:
+        """Parse user message from messages.
+
+        Args:
+            messages (List[ModelMessage]): The all messages in the conversation.
+
+        Returns:
+            str: The user message
+        """
+        lass_user_message = None
+        for message in messages[::-1]:
+            if message.role == ModelMessageRoleType.HUMAN:
+                lass_user_message = message.content
+                break
+        if not lass_user_message:
+            raise ValueError("No user message")
+        return lass_user_message
+
 
 _SingleRoundMessage = List[BaseMessage]
 _MultiRoundMessageMapper = Callable[[List[_SingleRoundMessage]], List[BaseMessage]]
@@ -1244,9 +1263,11 @@ def _append_view_messages(messages: List[BaseMessage]) -> List[BaseMessage]:
                 content=ai_message.content,
                 index=ai_message.index,
                 round_index=ai_message.round_index,
-                additional_kwargs=ai_message.additional_kwargs.copy()
-                if ai_message.additional_kwargs
-                else {},
+                additional_kwargs=(
+                    ai_message.additional_kwargs.copy()
+                    if ai_message.additional_kwargs
+                    else {}
+                ),
             )
             current_round.append(view_message)
     return sum(messages_by_round, [])

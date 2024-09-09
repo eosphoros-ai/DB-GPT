@@ -190,10 +190,15 @@ def get_cpu_avx_support() -> Tuple[OSType, AVXType]:
         print("Current platform is windows, use avx2 as default cpu architecture")
     elif system == "Linux":
         os_type = OSType.LINUX
-        result = subprocess.run(
-            ["lscpu"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        output = result.stdout.decode()
+        if os.path.exists("/etc/alpine-release"):
+            # For Alpine, we'll check /proc/cpuinfo directly
+            with open("/proc/cpuinfo", "r") as f:
+                output = f.read()
+        else:
+            result = subprocess.run(
+                ["lscpu"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            output = result.stdout.decode()
     elif system == "Darwin":
         os_type = OSType.DARWIN
         result = subprocess.run(
@@ -443,6 +448,7 @@ def core_requires():
         "termcolor",
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         # TODO: remove pandas dependency
+        # alpine can't install pandas by default
         "pandas==2.0.3",
         # numpy should less than 2.0.0
         "numpy>=1.21.0,<2.0.0",
@@ -459,6 +465,8 @@ def core_requires():
         "SQLAlchemy>=2.0.25,<2.0.29",
         # for cache
         "msgpack",
+        # for AWEL operator serialization
+        "cloudpickle",
         # for cache
         # TODO: pympler has not been updated for a long time and needs to
         #  find a new toolkit.
@@ -500,6 +508,22 @@ def core_requires():
         "graphviz",
         # For security
         "cryptography",
+        # For high performance RPC communication in code execution
+        "pyzmq",
+    ]
+
+
+def code_execution_requires():
+    """
+    pip install "dbgpt[code]"
+
+    Code execution dependencies. For building a docker image.
+    """
+    setup_spec.extras["code"] = setup_spec.extras["core"] + [
+        "pyzmq",
+        "msgpack",
+        # for AWEL operator serialization
+        "cloudpickle",
     ]
 
 
@@ -720,6 +744,7 @@ def init_install_requires():
 
 
 core_requires()
+code_execution_requires()
 torch_requires()
 llama_cpp_requires()
 quantization_requires()

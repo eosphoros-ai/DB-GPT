@@ -14,13 +14,14 @@ from dbgpt.serve.core import Result, blocking_func_to_async
 from dbgpt.util import PaginationResult
 
 from ..config import APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
-from ..service.service import Service
+from ..service.service import Service, _parse_flow_template_from_json
 from ..service.variables_service import VariablesService
 from .schemas import (
     FlowDebugRequest,
     RefreshNodeRequest,
     ServeRequest,
     ServerResponse,
+    VariablesKeyResponse,
     VariablesRequest,
     VariablesResponse,
 )
@@ -133,7 +134,10 @@ async def create(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.create_and_save_dag(request))
+    res = await blocking_func_to_async(
+        global_system_app, service.create_and_save_dag, request
+    )
+    return Result.succ(res)
 
 
 @router.put(
@@ -154,7 +158,10 @@ async def update(
         ServerResponse: The response
     """
     try:
-        return Result.succ(service.update_flow(request))
+        res = await blocking_func_to_async(
+            global_system_app, service.update_flow, request
+        )
+        return Result.succ(res)
     except Exception as e:
         return Result.failed(msg=str(e))
 
@@ -176,9 +183,7 @@ async def delete(
 
 
 @router.get("/flows/{uid}")
-async def get_flows(
-    uid: str, service: Service = Depends(get_service)
-) -> Result[ServerResponse]:
+async def get_flows(uid: str, service: Service = Depends(get_service)):
     """Get a Flow entity by uid
 
     Args:
@@ -191,7 +196,7 @@ async def get_flows(
     flow = service.get({"uid": uid})
     if not flow:
         raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
-    return Result.succ(flow)
+    return Result.succ(flow.model_dump())
 
 
 @router.get(
@@ -360,6 +365,62 @@ async def update_variables(
     return Result.succ(res)
 
 
+@router.get(
+    "/variables",
+    response_model=Result[PaginationResult[VariablesResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def get_variables_by_keys(
+    key: str = Query(..., description="variable key"),
+    scope: Optional[str] = Query(default=None, description="scope"),
+    scope_key: Optional[str] = Query(default=None, description="scope key"),
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    page: int = Query(default=1, description="current page"),
+    page_size: int = Query(default=20, description="page size"),
+) -> Result[PaginationResult[VariablesResponse]]:
+    """Get the variables by keys
+
+    Returns:
+        VariablesResponse: The response
+    """
+    res = await get_variable_service().get_list_by_page(
+        key,
+        scope,
+        scope_key,
+        user_name,
+        sys_code,
+        page,
+        page_size,
+    )
+    return Result.succ(res)
+
+
+@router.get(
+    "/variables/keys",
+    response_model=Result[List[VariablesKeyResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def get_variables_keys(
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    category: Optional[str] = Query(default=None, description="category"),
+) -> Result[List[VariablesKeyResponse]]:
+    """Get the variable keys
+
+    Returns:
+        VariablesKeyResponse: The response
+    """
+    res = await blocking_func_to_async(
+        global_system_app,
+        get_variable_service().list_keys,
+        user_name,
+        sys_code,
+        category,
+    )
+    return Result.succ(res)
+
+
 @router.post("/flow/debug", dependencies=[Depends(check_api_key)])
 async def debug_flow(
     flow_debug_request: FlowDebugRequest, service: Service = Depends(get_service)
@@ -456,7 +517,7 @@ async def import_flow(
             raise HTTPException(
                 status_code=400, detail="invalid json file, missing 'flow' key"
             )
-        flow = ServeRequest.parse_obj(json_dict["flow"])
+        flow = _parse_flow_template_from_json(json_dict)
     elif file_extension == "zip":
         from ..service.share_utils import _parse_flow_from_zip_file
 
@@ -467,18 +528,49 @@ async def import_flow(
             status_code=400, detail=f"invalid file extension {file_extension}"
         )
     if save_flow:
-        return Result.succ(service.create_and_save_dag(flow))
+        res = await blocking_func_to_async(
+            global_system_app, service.create_and_save_dag, flow
+        )
+        return Result.succ(res)
     else:
         return Result.succ(flow)
+
+
+@router.get(
+    "/flow/templates",
+    response_model=Result[PaginationResult[ServerResponse]],
+    dependencies=[Depends(check_api_key)],
+)
+async def query_flow_templates(
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    page: int = Query(default=1, description="current page"),
+    page_size: int = Query(default=20, description="page size"),
+    service: Service = Depends(get_service),
+) -> Result[PaginationResult[ServerResponse]]:
+    """Query Flow templates."""
+
+    res = await blocking_func_to_async(
+        global_system_app,
+        service.get_flow_templates,
+        user_name,
+        sys_code,
+        page,
+        page_size,
+    )
+    return Result.succ(res)
 
 
 def init_endpoints(system_app: SystemApp) -> None:
     """Initialize the endpoints"""
     from .variables_provider import (
+        BuiltinAgentsVariablesProvider,
         BuiltinAllSecretVariablesProvider,
         BuiltinAllVariablesProvider,
+        BuiltinDatasourceVariablesProvider,
         BuiltinEmbeddingsVariablesProvider,
         BuiltinFlowVariablesProvider,
+        BuiltinKnowledgeSpacesVariablesProvider,
         BuiltinLLMVariablesProvider,
         BuiltinNodeVariablesProvider,
     )
@@ -492,4 +584,7 @@ def init_endpoints(system_app: SystemApp) -> None:
     system_app.register(BuiltinAllSecretVariablesProvider)
     system_app.register(BuiltinLLMVariablesProvider)
     system_app.register(BuiltinEmbeddingsVariablesProvider)
+    system_app.register(BuiltinDatasourceVariablesProvider)
+    system_app.register(BuiltinAgentsVariablesProvider)
+    system_app.register(BuiltinKnowledgeSpacesVariablesProvider)
     global_system_app = system_app

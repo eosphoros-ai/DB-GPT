@@ -1,9 +1,12 @@
 from typing import List, Literal, Optional
 
 from dbgpt.core.interface.variables import (
+    BUILTIN_VARIABLES_CORE_AGENTS,
+    BUILTIN_VARIABLES_CORE_DATASOURCES,
     BUILTIN_VARIABLES_CORE_EMBEDDINGS,
     BUILTIN_VARIABLES_CORE_FLOW_NODES,
     BUILTIN_VARIABLES_CORE_FLOWS,
+    BUILTIN_VARIABLES_CORE_KNOWLEDGE_SPACES,
     BUILTIN_VARIABLES_CORE_LLMS,
     BUILTIN_VARIABLES_CORE_SECRETS,
     BUILTIN_VARIABLES_CORE_VARIABLES,
@@ -54,6 +57,7 @@ class BuiltinFlowVariablesProvider(BuiltinVariablesProvider):
                     scope_key=scope_key,
                     sys_code=sys_code,
                     user_name=user_name,
+                    description=flow.description,
                 )
             )
         return variables
@@ -91,6 +95,7 @@ class BuiltinNodeVariablesProvider(BuiltinVariablesProvider):
                     scope_key=scope_key,
                     sys_code=sys_code,
                     user_name=user_name,
+                    description=metadata.get("description"),
                 )
             )
         return variables
@@ -122,10 +127,14 @@ class BuiltinAllVariablesProvider(BuiltinVariablesProvider):
                     name=var.name,
                     label=var.label,
                     value=var.value,
+                    category=var.category,
+                    value_type=var.value_type,
                     scope=scope,
                     scope_key=scope_key,
                     sys_code=sys_code,
                     user_name=user_name,
+                    enabled=1 if var.enabled else 0,
+                    description=var.description,
                 )
             )
         return variables
@@ -258,3 +267,128 @@ class BuiltinEmbeddingsVariablesProvider(BuiltinLLMVariablesProvider):
         return await self._get_models(
             key, scope, scope_key, sys_code, user_name, "text2vec"
         )
+
+
+class BuiltinDatasourceVariablesProvider(BuiltinVariablesProvider):
+    """Builtin datasource variables provider.
+
+    Provide all datasource variables by variables "${dbgpt.core.datasource}"
+    """
+
+    name = BUILTIN_VARIABLES_CORE_DATASOURCES
+
+    def get_variables(
+        self,
+        key: str,
+        scope: str = "global",
+        scope_key: Optional[str] = None,
+        sys_code: Optional[str] = None,
+        user_name: Optional[str] = None,
+    ) -> List[StorageVariables]:
+        """Get the builtin variables."""
+        from dbgpt.serve.datasource.service.service import (
+            DatasourceServeResponse,
+            Service,
+        )
+
+        all_datasource: List[DatasourceServeResponse] = Service.get_instance(
+            self.system_app
+        ).list()
+
+        variables = []
+        for datasource in all_datasource:
+            label = f"[{datasource.db_type}]{datasource.db_name}"
+            variables.append(
+                StorageVariables(
+                    key=key,
+                    name=datasource.db_name,
+                    label=label,
+                    value=datasource.db_name,
+                    scope=scope,
+                    scope_key=scope_key,
+                    sys_code=sys_code,
+                    user_name=user_name,
+                    description=datasource.comment,
+                )
+            )
+        return variables
+
+
+class BuiltinAgentsVariablesProvider(BuiltinVariablesProvider):
+    """Builtin agents variables provider.
+
+    Provide all agents variables by variables "${dbgpt.core.agent.agents}"
+    """
+
+    name = BUILTIN_VARIABLES_CORE_AGENTS
+
+    def get_variables(
+        self,
+        key: str,
+        scope: str = "global",
+        scope_key: Optional[str] = None,
+        sys_code: Optional[str] = None,
+        user_name: Optional[str] = None,
+    ) -> List[StorageVariables]:
+        """Get the builtin variables."""
+        from dbgpt.agent.core.agent_manage import get_agent_manager
+
+        agent_manager = get_agent_manager(self.system_app)
+        agents = agent_manager.list_agents()
+        variables = []
+        for agent in agents:
+            variables.append(
+                StorageVariables(
+                    key=key,
+                    name=agent["name"],
+                    label=agent["name"],
+                    value=agent["name"],
+                    scope=scope,
+                    scope_key=scope_key,
+                    sys_code=sys_code,
+                    user_name=user_name,
+                    description=agent["desc"],
+                )
+            )
+        return variables
+
+
+class BuiltinKnowledgeSpacesVariablesProvider(BuiltinVariablesProvider):
+    """Builtin knowledge variables provider.
+
+    Provide all knowledge variables by variables "${dbgpt.core.knowledge_spaces}"
+    """
+
+    name = BUILTIN_VARIABLES_CORE_KNOWLEDGE_SPACES
+
+    def get_variables(
+        self,
+        key: str,
+        scope: str = "global",
+        scope_key: Optional[str] = None,
+        sys_code: Optional[str] = None,
+        user_name: Optional[str] = None,
+    ) -> List[StorageVariables]:
+        """Get the builtin variables."""
+        from dbgpt.serve.rag.service.service import Service, SpaceServeRequest
+
+        # TODO: Query with user_name and sys_code
+        knowledge_list = Service.get_instance(self.system_app).get_list(
+            SpaceServeRequest()
+        )
+        variables = []
+        for k in knowledge_list:
+            variables.append(
+                StorageVariables(
+                    key=key,
+                    name=k.name,
+                    label=k.name,
+                    value=k.name,
+                    scope=scope,
+                    scope_key=scope_key,
+                    sys_code=sys_code,
+                    user_name=user_name,
+                    description=k.desc,
+                )
+            )
+        return variables

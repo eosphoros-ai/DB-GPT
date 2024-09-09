@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-06-17 00:05+0800\n"
+"POT-Creation-Date: 2024-09-06 16:14+0800\n"
 "PO-Revision-Date: 2024-03-23 11:22+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,6 +17,447 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../dbgpt/app/dbgpt_server.py:53 ../dbgpt/app/dbgpt_server.py:54
+#: ../dbgpt/app/operators/converter.py:14
+#: ../dbgpt/app/operators/converter.py:39
+msgid "String"
+msgstr "字符串"
+
+#: ../dbgpt/app/operators/converter.py:17
+msgid "The string to be converted to other types."
+msgstr "要转换为其他类型的字符串。"
+
+#: ../dbgpt/app/operators/converter.py:20
+#: ../dbgpt/app/operators/converter.py:45
+msgid "Integer"
+msgstr "整数"
+
+#: ../dbgpt/app/operators/converter.py:23
+msgid "The integer to be converted to other types."
+msgstr "要转换为其他类型的整数。"
+
+#: ../dbgpt/app/operators/converter.py:26
+#: ../dbgpt/app/operators/converter.py:51
+msgid "Float"
+msgstr "浮点数"
+
+#: ../dbgpt/app/operators/converter.py:29
+msgid "The float to be converted to other types."
+msgstr "要转换为其他类型的浮点数。"
+
+#: ../dbgpt/app/operators/converter.py:32
+#: ../dbgpt/app/operators/converter.py:57
+msgid "Boolean"
+msgstr "布尔值"
+
+#: ../dbgpt/app/operators/converter.py:35
+msgid "The boolean to be converted to other types."
+msgstr "要转换为其他类型的布尔值。"
+
+#: ../dbgpt/app/operators/converter.py:42
+msgid "The string converted from other types."
+msgstr "从其他类型转换来的字符串。"
+
+#: ../dbgpt/app/operators/converter.py:48
+msgid "The integer converted from other types."
+msgstr "从其他类型转换来的整数。"
+
+#: ../dbgpt/app/operators/converter.py:54
+msgid "The float converted from other types."
+msgstr "从其他类型转换来的浮点数。"
+
+#: ../dbgpt/app/operators/converter.py:60
+msgid "The boolean converted from other types."
+msgstr "从其他类型转换来的布尔值。"
+
+#: ../dbgpt/app/operators/converter.py:68
+msgid "String to Integer"
+msgstr "字符串转整数"
+
+#: ../dbgpt/app/operators/converter.py:70
+msgid "Converts a string to an integer."
+msgstr "将字符串转换为整数。"
+
+#: ../dbgpt/app/operators/converter.py:87
+msgid "String to Float"
+msgstr "字符串转浮点数"
+
+#: ../dbgpt/app/operators/converter.py:89
+msgid "Converts a string to a float."
+msgstr "将字符串转换为浮点数。"
+
+#: ../dbgpt/app/operators/converter.py:106
+msgid "String to Boolean"
+msgstr "字符串转布尔值"
+
+#: ../dbgpt/app/operators/converter.py:108
+msgid "Converts a string to a boolean, true: 'true', '1', 'y'"
+msgstr "将字符串转换为布尔值，true：'true'，'1'，'y'"
+
+#: ../dbgpt/app/operators/converter.py:112
+msgid "True Values"
+msgstr "真值"
+
+#: ../dbgpt/app/operators/converter.py:117
+msgid "Comma-separated values that should be treated as True."
+msgstr "应视为真值的逗号分隔值。"
+
+#: ../dbgpt/app/operators/converter.py:136
+msgid "Integer to String"
+msgstr "整数转字符串"
+
+#: ../dbgpt/app/operators/converter.py:138
+msgid "Converts an integer to a string."
+msgstr "将整数转换为字符串。"
+
+#: ../dbgpt/app/operators/converter.py:155
+msgid "Float to String"
+msgstr "浮点数转字符串"
+
+#: ../dbgpt/app/operators/converter.py:157
+msgid "Converts a float to a string."
+msgstr "将浮点数转换为字符串。"
+
+#: ../dbgpt/app/operators/converter.py:174
+msgid "Boolean to String"
+msgstr "布尔值转字符串"
+
+#: ../dbgpt/app/operators/converter.py:176
+msgid "Converts a boolean to a string."
+msgstr "将布尔值转换为字符串。"
+
+#: ../dbgpt/app/operators/llm.py:50
+msgid "The context key can be used as the key for formatting prompt."
+msgstr "上下文键可以用作格式化提示的键。"
+
+#: ../dbgpt/app/operators/llm.py:54
+msgid "The context."
+msgstr "上下文。"
+
+#: ../dbgpt/app/operators/llm.py:268 ../dbgpt/app/operators/datasource.py:108
+msgid "Prompt Template"
+msgstr "提示模板"
+
+#: ../dbgpt/app/operators/llm.py:271
+msgid "The prompt template for the conversation."
+msgstr "对话的提示模板。"
+
+#: ../dbgpt/app/operators/llm.py:274
+msgid "Model Name"
+msgstr "模型名称"
+
+#: ../dbgpt/app/operators/llm.py:279
+msgid "The model name."
+msgstr "模型名称。"
+
+#: ../dbgpt/app/operators/llm.py:283
+msgid "LLM Client"
+msgstr "LLM 客户端"
+
+#: ../dbgpt/app/operators/llm.py:289
+msgid ""
+"The LLM Client, how to connect to the LLM model, if not provided, it will "
+"use the default client deployed by DB-GPT."
+msgstr "LLM 客户端，如何连接到 LLM 模型，如果未提供，将使用 DB-GPT 部署的默认客户端。"
+
+#: ../dbgpt/app/operators/llm.py:294
+msgid "History Message Merge Mode"
+msgstr "历史消息合并模式"
+
+#: ../dbgpt/app/operators/llm.py:305
+msgid ""
+"The history merge mode, supports 'none', 'window' and 'token'. 'none': no "
+"history merge, 'window': merge by conversation window, 'token': merge by "
+"token length."
+msgstr "历史合并模式，支持 'none'，'window' 和 'token'。'none'：不合并历史，'window'：按对话窗口合并，'token'：按 Token 长度合并。"
+
+#: ../dbgpt/app/operators/llm.py:312
+msgid "User Message Key"
+msgstr "用户消息键"
+
+#: ../dbgpt/app/operators/llm.py:318
+msgid "The key of the user message in your prompt, default is 'user_input'."
+msgstr "提示中用户消息的键，默认为 'user_input'。"
+
+#: ../dbgpt/app/operators/llm.py:322
+msgid "History Key"
+msgstr "历史键"
+
+#: ../dbgpt/app/operators/llm.py:328
+msgid ""
+"The chat history key, with chat history message pass to prompt template, if "
+"not provided, it will parse the prompt template to get the key."
+msgstr "聊天历史键，将聊天历史消息传递给提示模板，如果未提供，它将解析提示模板以获取键。"
+
+#: ../dbgpt/app/operators/llm.py:333
+msgid "Keep Start Rounds"
+msgstr "保留起始轮数"
+
+#: ../dbgpt/app/operators/llm.py:338
+msgid "The start rounds to keep in the chat history."
+msgstr "在聊天历史中保留的起始轮数。"
+
+#: ../dbgpt/app/operators/llm.py:341
+msgid "Keep End Rounds"
+msgstr "保留结束轮数"
+
+#: ../dbgpt/app/operators/llm.py:346
+msgid "The end rounds to keep in the chat history."
+msgstr "在聊天历史中保留的结束轮数。"
+
+#: ../dbgpt/app/operators/llm.py:349
+msgid "Max Token Limit"
+msgstr "最大 Token 限制"
+
+#: ../dbgpt/app/operators/llm.py:354
+msgid "The max token limit to keep in the chat history."
+msgstr "在聊天历史中保留的最大 Token 限制。"
+
+#: ../dbgpt/app/operators/llm.py:358
+msgid "Common LLM Request Body"
+msgstr "通用 LLM 请求体"
+
+#: ../dbgpt/app/operators/llm.py:361
+msgid "The common LLM request body."
+msgstr "通用 LLM 请求体。"
+
+#: ../dbgpt/app/operators/llm.py:364
+msgid "Extra Context"
+msgstr "额外上下文"
+
+#: ../dbgpt/app/operators/llm.py:368
+msgid ""
+"Extra context for building prompt(Knowledge context, database schema, etc), "
+"you can add multiple context."
+msgstr "用于构建提示的额外上下文（知识上下文、数据库架构等），您可以添加多个上下文。"
+
+#: ../dbgpt/app/operators/llm.py:374
+msgid "Model Output"
+msgstr "模型输出"
+
+#: ../dbgpt/app/operators/llm.py:377
+msgid "The model output."
+msgstr "模型输出。"
+
+#: ../dbgpt/app/operators/llm.py:380
+msgid "Streaming Model Output"
+msgstr "流式模型输出"
+
+#: ../dbgpt/app/operators/llm.py:384
+msgid "The streaming model output."
+msgstr "流式模型输出。"
+
+#: ../dbgpt/app/operators/llm.py:390
+msgid "LLM Operator"
+msgstr "LLM 算子"
+
+#: ../dbgpt/app/operators/llm.py:394
+msgid ""
+"High-level LLM operator, supports multi-round conversation (conversation "
+"window, token length and no multi-round)."
+msgstr "高级 LLM 算子，支持多轮对话（对话窗口、Token 长度和无多轮）。"
+
+#: ../dbgpt/app/operators/llm.py:424
+msgid "Streaming LLM Operator"
+msgstr "流式 LLM 算子"
+
+#: ../dbgpt/app/operators/llm.py:428
+msgid ""
+"High-level streaming LLM operator, supports multi-round conversation "
+"(conversation window, token length and no multi-round)."
+msgstr "高级流式 LLM 算子，支持多轮对话（对话窗口、Token 长度和无多轮）。"
+
+#: ../dbgpt/app/operators/datasource.py:102
+msgid "Datasource"
+msgstr "数据源"
+
+#: ../dbgpt/app/operators/datasource.py:105
+msgid "The datasource to retrieve the context"
+msgstr "用于检索上下文的数据源"
+
+#: ../dbgpt/app/operators/datasource.py:113
+msgid "The prompt template to build a database prompt"
+msgstr "用于构建数据库提示的提示模板"
+
+#: ../dbgpt/app/operators/datasource.py:117
+msgid "Display Type"
+msgstr "显示类型"
+
+#: ../dbgpt/app/operators/datasource.py:122
+msgid "The display type for the data"
+msgstr "数据的显示类型"
+
+#: ../dbgpt/app/operators/datasource.py:126
+msgid "Max Number of Results"
+msgstr "最大结果数"
+
+#: ../dbgpt/app/operators/datasource.py:131
+msgid "The maximum number of results to return"
+msgstr "返回的最大结果数"
+
+#: ../dbgpt/app/operators/datasource.py:134
+msgid "Response Format"
+msgstr "响应格式"
+
+#: ../dbgpt/app/operators/datasource.py:139
+msgid "The response format, default is a JSON format"
+msgstr "响应格式，默认为 JSON 格式"
+
+#: ../dbgpt/app/operators/datasource.py:144 ../dbgpt/app/operators/rag.py:35
+msgid "Context Key"
+msgstr "上下文键"
+
+#: ../dbgpt/app/operators/datasource.py:149 ../dbgpt/app/operators/rag.py:40
+msgid "The key of the context, it will be used in building the prompt"
+msgstr "上下文的键，将用于构建提示"
+
+#: ../dbgpt/app/operators/datasource.py:152 ../dbgpt/app/operators/rag.py:83
+msgid "User question"
+msgstr "用户问题"
+
+#: ../dbgpt/app/operators/datasource.py:155
+msgid "The user question to retrieve table schemas from the datasource"
+msgstr "用于从数据源检索表架构的用户问题"
+
+#: ../dbgpt/app/operators/datasource.py:158 ../dbgpt/app/operators/rag.py:89
+msgid "Retrieved context"
+msgstr "检索到的上下文"
+
+#: ../dbgpt/app/operators/datasource.py:161
+msgid "The retrieved context from the datasource"
+msgstr "从数据源检索到的上下文"
+
+#: ../dbgpt/app/operators/datasource.py:165
+msgid "SQL dict"
+msgstr "SQL 字典"
+
+#: ../dbgpt/app/operators/datasource.py:168
+msgid "The SQL to be executed wrapped in a dictionary, generated by LLM"
+msgstr "由 LLM 生成的包装在字典中的要执行的 SQL"
+
+#: ../dbgpt/app/operators/datasource.py:171
+msgid "SQL result"
+msgstr "SQL 结果"
+
+#: ../dbgpt/app/operators/datasource.py:174
+msgid "The result of the SQL execution"
+msgstr "SQL 执行结果"
+
+#: ../dbgpt/app/operators/datasource.py:178
+msgid "SQL dict list"
+msgstr "SQL 字典列表"
+
+#: ../dbgpt/app/operators/datasource.py:182
+msgid "The SQL list to be executed wrapped in a dictionary, generated by LLM"
+msgstr "由 LLM 生成的包装在字典中的要执行的 SQL 列表"
+
+#: ../dbgpt/app/operators/datasource.py:211
+msgid "Datasource Retriever Operator"
+msgstr "数据源检索算子"
+
+#: ../dbgpt/app/operators/datasource.py:213
+msgid "Retrieve the table schemas from the datasource."
+msgstr "从数据源检索表架构。"
+
+#: ../dbgpt/app/operators/datasource.py:227
+msgid "Retrieved schema chunks"
+msgstr "检索到的架构块"
+
+#: ../dbgpt/app/operators/datasource.py:231
+msgid "The retrieved schema chunks from the datasource"
+msgstr "从数据源检索到的架构块"
+
+#: ../dbgpt/app/operators/datasource.py:289
+msgid "Datasource Executor Operator"
+msgstr "数据源执行算子"
+
+#: ../dbgpt/app/operators/datasource.py:291
+#: ../dbgpt/app/operators/datasource.py:328
+msgid "Execute the context from the datasource."
+msgstr "执行来自数据源的上下文。"
+
+#: ../dbgpt/app/operators/datasource.py:326
+msgid "Datasource Dashboard Operator"
+msgstr "数据源仪表板算子"
+
+#: ../dbgpt/app/operators/rag.py:43
+msgid "Top K"
+msgstr "前 K"
+
+#: ../dbgpt/app/operators/rag.py:48
+msgid "The number of chunks to retrieve"
+msgstr "要检索的块数"
+
+#: ../dbgpt/app/operators/rag.py:51
+msgid "Minimum Match Score"
+msgstr "最低匹配分数"
+
+#: ../dbgpt/app/operators/rag.py:58
+msgid ""
+"The minimum match score for the retrieved chunks, it will be dropped if the "
+"match score is less than the threshold"
+msgstr "检索到的块的最低匹配分数，如果匹配分数低于阈值，将被丢弃"
+
+#: ../dbgpt/app/operators/rag.py:66
+msgid "Reranker Enabled"
+msgstr "启用重新排序器"
+
+#: ../dbgpt/app/operators/rag.py:71
+msgid "Whether to enable the reranker"
+msgstr "是否启用重新排序器"
+
+#: ../dbgpt/app/operators/rag.py:74
+msgid "Reranker Top K"
+msgstr "重新排序器前 K"
+
+#: ../dbgpt/app/operators/rag.py:79
+msgid "The top k for the reranker"
+msgstr "重新排序器的前 K"
+
+#: ../dbgpt/app/operators/rag.py:86
+msgid "The user question to retrieve the knowledge"
+msgstr "用于检索知识的用户问题"
+
+#: ../dbgpt/app/operators/rag.py:92
+msgid "The retrieved context from the knowledge space"
+msgstr "从知识空间检索到的上下文"
+
+#: ../dbgpt/app/operators/rag.py:107
+msgid "Knowledge Operator"
+msgstr "知识算子"
+
+#: ../dbgpt/app/operators/rag.py:112
+msgid ""
+"Knowledge Operator, retrieve your knowledge(documents) from knowledge space"
+msgstr "知识算子，从知识空间检索您的知识（文档）"
+
+#: ../dbgpt/app/operators/rag.py:118
+msgid "Knowledge Space Name"
+msgstr "知识空间名称"
+
+#: ../dbgpt/app/operators/rag.py:122
+msgid "The name of the knowledge space"
+msgstr "知识空间的名称"
+
+#: ../dbgpt/app/operators/rag.py:136
+msgid "Chunks"
+msgstr "块"
+
+#: ../dbgpt/app/operators/rag.py:140
+msgid "The retrieved chunks from the knowledge space"
+msgstr "从知识空间检索到的块"
+
+#: ../dbgpt/app/dbgpt_server.py:56 ../dbgpt/app/dbgpt_server.py:57
 msgid "DB-GPT Open API"
 msgstr "DB-GPT 开放 API"
+
+#: ../dbgpt/app/knowledge/api.py:266
+msgid "Vector Store"
+msgstr "向量存储"
+
+#: ../dbgpt/app/knowledge/api.py:274
+msgid "Knowledge Graph"
+msgstr "知识图谱"
+
+#: ../dbgpt/app/knowledge/api.py:282
+msgid "Full Text"
+msgstr "全文"

@@ -193,11 +193,28 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             self.incremental_output = bool(kwargs["incremental_output"])
         if "output_format" in kwargs:
             self.output_format = kwargs["output_format"]
-
         self._runner: WorkflowRunner = runner
         self._dag_ctx: Optional[DAGContext] = None
         self._can_skip_in_branch = can_skip_in_branch
         self._variables_provider = variables_provider
+
+    def __getstate__(self):
+        """Customize the pickling process."""
+        state = self.__dict__.copy()
+        if "_runner" in state:
+            del state["_runner"]
+        if "_executor" in state:
+            del state["_executor"]
+        if "_system_app" in state:
+            del state["_system_app"]
+        return state
+
+    def __setstate__(self, state):
+        """Customize the unpickling process."""
+        self.__dict__.update(state)
+        self._runner = default_runner
+        self._system_app = DAGVar.get_current_system_app()
+        self._executor = DAGVar.get_executor()
 
     @property
     def current_dag_context(self) -> DAGContext:
@@ -404,7 +421,11 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Args:
             dag_ctx (DAGContext): The context of the DAG when this node is run.
         """
-        from ...interface.variables import VariablesIdentifier, VariablesPlaceHolder
+        from ...interface.variables import (
+            VariablesIdentifier,
+            VariablesPlaceHolder,
+            is_variable_string,
+        )
 
         if not self._variables_provider:
             return
@@ -415,11 +436,13 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             resolve_items = []
             for item in dag_ctx._dag_variables.items:
                 # TODO: Resolve variables just once?
+                if not item.value:
+                    continue
+                if isinstance(item.value, str) and is_variable_string(item.value):
+                    item.value = VariablesPlaceHolder(item.name, item.value)
                 if isinstance(item.value, VariablesPlaceHolder):
                     resolve_tasks.append(
-                        self.blocking_func_to_async(
-                            item.value.parse, self._variables_provider
-                        )
+                        item.value.async_parse(self._variables_provider)
                     )
                     resolve_items.append(item)
             resolved_values = await asyncio.gather(*resolve_tasks)
@@ -445,15 +468,13 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
                 if dag_provider:
                     # First try to resolve the variable with the DAG variables
-                    resolved_value = await self.blocking_func_to_async(
-                        value.parse,
+                    resolved_value = await value.async_parse(
                         dag_provider,
                         ignore_not_found_error=True,
                         default_identifier_map=default_identifier_map,
                     )
                 if resolved_value is None:
-                    resolved_value = await self.blocking_func_to_async(
-                        value.parse,
+                    resolved_value = await value.async_parse(
                         self._variables_provider,
                         default_identifier_map=default_identifier_map,
                     )

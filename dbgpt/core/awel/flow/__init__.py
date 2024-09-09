@@ -10,6 +10,7 @@ from ..util.parameter_util import (  # noqa: F401
     VariablesDynamicOptions,
 )
 from .base import (  # noqa: F401
+    TAGS_ORDER_HIGH,
     IOField,
     OperatorCategory,
     OperatorType,
@@ -33,6 +34,7 @@ __ALL__ = [
     "ResourceCategory",
     "ResourceType",
     "OperatorType",
+    "TAGS_ORDER_HIGH",
     "IOField",
     "BaseDynamicOptions",
     "FunctionDynamicOptions",

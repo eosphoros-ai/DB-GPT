@@ -4,14 +4,10 @@ from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import model_validator
-from dbgpt.core import (
-    ModelMessage,
-    ModelMessageRoleType,
-    ModelOutput,
-    StorageConversation,
-)
+from dbgpt.core import ModelMessage, ModelOutput, StorageConversation
 from dbgpt.core.awel import JoinOperator, MapOperator
 from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
     IOField,
     OperatorCategory,
     OperatorType,
@@ -42,6 +38,7 @@ from dbgpt.util.i18n_utils import _
     name="common_chat_prompt_template",
     category=ResourceCategory.PROMPT,
     description=_("The operator to build the prompt with static prompt."),
+    tags={"order": TAGS_ORDER_HIGH},
     parameters=[
         Parameter.build_from(
             label=_("System Message"),
@@ -101,9 +98,10 @@ class CommonChatPromptTemplate(ChatPromptTemplate):
 class BasePromptBuilderOperator(BaseConversationOperator, ABC):
     """The base prompt builder operator."""
 
-    def __init__(self, check_storage: bool, **kwargs):
+    def __init__(self, check_storage: bool, save_to_storage: bool = True, **kwargs):
         """Create a new prompt builder operator."""
         super().__init__(check_storage=check_storage, **kwargs)
+        self._save_to_storage = save_to_storage
 
     async def format_prompt(
         self, prompt: ChatPromptTemplate, prompt_dict: Dict[str, Any]
@@ -122,8 +120,9 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
         pass_kwargs = {k: v for k, v in kwargs.items() if k in prompt.input_variables}
         messages = prompt.format_messages(**pass_kwargs)
         model_messages = ModelMessage.from_base_messages(messages)
-        # Start new round conversation, and save user message to storage
-        await self.start_new_round_conv(model_messages)
+        if self._save_to_storage:
+            # Start new round conversation, and save user message to storage
+            await self.start_new_round_conv(model_messages)
         return model_messages
 
     async def start_new_round_conv(self, messages: List[ModelMessage]) -> None:
@@ -132,13 +131,7 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
         Args:
             messages (List[ModelMessage]): The messages.
         """
-        lass_user_message = None
-        for message in messages[::-1]:
-            if message.role == ModelMessageRoleType.HUMAN:
-                lass_user_message = message.content
-                break
-        if not lass_user_message:
-            raise ValueError("No user message")
+        lass_user_message = ModelMessage.parse_user_message(messages)
         storage_conv: Optional[
             StorageConversation
         ] = await self.get_storage_conversation()
@@ -150,6 +143,8 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
 
     async def after_dag_end(self, event_loop_task_id: int):
         """Execute after the DAG finished."""
+        if not self._save_to_storage:
+            return
         # Save the storage conversation to storage after the whole DAG finished
         storage_conv: Optional[
             StorageConversation
@@ -422,7 +417,7 @@ class HistoryPromptBuilderOperator(
         self._prompt = prompt
         self._history_key = history_key
         self._str_history = str_history
-        BasePromptBuilderOperator.__init__(self, check_storage=check_storage)
+        BasePromptBuilderOperator.__init__(self, check_storage=check_storage, **kwargs)
         JoinOperator.__init__(self, combine_function=self.merge_history, **kwargs)
 
     @rearrange_args_by_type
@@ -455,7 +450,7 @@ class HistoryDynamicPromptBuilderOperator(
         """Create a new history dynamic prompt builder operator."""
         self._history_key = history_key
         self._str_history = str_history
-        BasePromptBuilderOperator.__init__(self, check_storage=check_storage)
+        BasePromptBuilderOperator.__init__(self, check_storage=check_storage, **kwargs)
         JoinOperator.__init__(self, combine_function=self.merge_history, **kwargs)
 
     @rearrange_args_by_type

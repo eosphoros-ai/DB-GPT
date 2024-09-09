@@ -145,6 +145,9 @@ class DAGVar:
     _executor: Optional[Executor] = None
 
     _variables_provider: Optional["VariablesProvider"] = None
+    # Whether check serializable for AWEL, it will be set to True when running AWEL
+    # operator in remote environment
+    _check_serializable: Optional[bool] = None
 
     @classmethod
     def enter_dag(cls, dag) -> None:
@@ -257,6 +260,24 @@ class DAGVar:
         """
         cls._variables_provider = variables_provider
 
+    @classmethod
+    def get_check_serializable(cls) -> Optional[bool]:
+        """Get the check serializable flag.
+
+        Returns:
+            Optional[bool]: The check serializable flag
+        """
+        return cls._check_serializable
+
+    @classmethod
+    def set_check_serializable(cls, check_serializable: bool) -> None:
+        """Set the check serializable flag.
+
+        Args:
+            check_serializable (bool): The check serializable flag to set
+        """
+        cls._check_serializable = check_serializable
+
 
 class DAGLifecycle:
     """The lifecycle of DAG."""
@@ -286,6 +307,7 @@ class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
         node_name: Optional[str] = None,
         system_app: Optional[SystemApp] = None,
         executor: Optional[Executor] = None,
+        check_serializable: Optional[bool] = None,
         **kwargs,
     ) -> None:
         """Initialize a DAGNode.
@@ -311,6 +333,7 @@ class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
             node_id = self._dag._new_node_id()
         self._node_id: Optional[str] = node_id
         self._node_name: Optional[str] = node_name
+        self._check_serializable = check_serializable
         if self._dag:
             self._dag._append_node(self)
 
@@ -486,6 +509,20 @@ class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
         """Return the string of current DAGNode."""
         return self.__repr__()
 
+    @classmethod
+    def _do_check_serializable(cls, obj: Any, obj_name: str = "Object"):
+        """Check whether the current DAGNode is serializable."""
+        from dbgpt.util.serialization.check import check_serializable
+
+        check_serializable(obj, obj_name)
+
+    @property
+    def check_serializable(self) -> bool:
+        """Whether check serializable for current DAGNode."""
+        if self._check_serializable is not None:
+            return self._check_serializable or False
+        return DAGVar.get_check_serializable() or False
+
 
 def _build_task_key(task_name: str, key: str) -> str:
     return f"{task_name}___$$$$$$___{key}"
@@ -619,6 +656,7 @@ class DAGContext:
         self._node_name_to_ids: Dict[str, str] = node_name_to_ids
         self._event_loop_task_id = event_loop_task_id
         self._dag_variables = dag_variables
+        self._share_data_lock = asyncio.Lock()
 
     @property
     def _task_outputs(self) -> Dict[str, TaskContext]:
@@ -680,8 +718,9 @@ class DAGContext:
         Returns:
             Any: The share data, you can cast it to the real type
         """
-        logger.debug(f"Get share data by key {key} from {id(self._share_data)}")
-        return self._share_data.get(key)
+        async with self._share_data_lock:
+            logger.debug(f"Get share data by key {key} from {id(self._share_data)}")
+            return self._share_data.get(key)
 
     async def save_to_share_data(
         self, key: str, data: Any, overwrite: bool = False
@@ -694,10 +733,11 @@ class DAGContext:
             overwrite (bool): Whether overwrite the share data if the key
                 already exists. Defaults to None.
         """
-        if key in self._share_data and not overwrite:
-            raise ValueError(f"Share data key {key} already exists")
-        logger.debug(f"Save share data by key {key} to {id(self._share_data)}")
-        self._share_data[key] = data
+        async with self._share_data_lock:
+            if key in self._share_data and not overwrite:
+                raise ValueError(f"Share data key {key} already exists")
+            logger.debug(f"Save share data by key {key} to {id(self._share_data)}")
+            self._share_data[key] = data
 
     async def get_task_share_data(self, task_name: str, key: str) -> Any:
         """Get share data by task name and key.

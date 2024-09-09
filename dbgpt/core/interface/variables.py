@@ -31,6 +31,7 @@ BUILTIN_VARIABLES_CORE_VARIABLES = "dbgpt.core.variables"
 BUILTIN_VARIABLES_CORE_SECRETS = "dbgpt.core.secrets"
 BUILTIN_VARIABLES_CORE_LLMS = "dbgpt.core.model.llms"
 BUILTIN_VARIABLES_CORE_EMBEDDINGS = "dbgpt.core.model.embeddings"
+# Not implemented yet
 BUILTIN_VARIABLES_CORE_RERANKERS = "dbgpt.core.model.rerankers"
 BUILTIN_VARIABLES_CORE_DATASOURCES = "dbgpt.core.datasources"
 BUILTIN_VARIABLES_CORE_AGENTS = "dbgpt.core.agent.agents"
@@ -373,6 +374,15 @@ class VariablesProvider(BaseComponent, ABC):
     ) -> Any:
         """Query variables from storage."""
 
+    async def async_get(
+        self,
+        full_key: str,
+        default_value: Optional[str] = _EMPTY_DEFAULT_VALUE,
+        default_identifier_map: Optional[Dict[str, str]] = None,
+    ) -> Any:
+        """Query variables from storage async."""
+        raise NotImplementedError("Current variables provider does not support async.")
+
     @abstractmethod
     def save(self, variables_item: StorageVariables) -> None:
         """Save variables to storage."""
@@ -456,6 +466,24 @@ class VariablesPlaceHolder:
                 return None
             raise e
 
+    async def async_parse(
+        self,
+        variables_provider: VariablesProvider,
+        ignore_not_found_error: bool = False,
+        default_identifier_map: Optional[Dict[str, str]] = None,
+    ):
+        """Parse the variables async."""
+        try:
+            return await variables_provider.async_get(
+                self.full_key,
+                self.default_value,
+                default_identifier_map=default_identifier_map,
+            )
+        except ValueError as e:
+            if ignore_not_found_error:
+                return None
+            raise e
+
     def __repr__(self):
         """Return the representation of the variables place holder."""
         return f"<VariablesPlaceHolder " f"{self.param_name} {self.full_key}>"
@@ -505,6 +533,42 @@ class StorageVariablesProvider(VariablesProvider):
             and variable.salt
         ):
             variable.value = self.encryption.decrypt(variable.value, variable.salt)
+        return self._convert_to_value_type(variable)
+
+    async def async_get(
+        self,
+        full_key: str,
+        default_value: Optional[str] = _EMPTY_DEFAULT_VALUE,
+        default_identifier_map: Optional[Dict[str, str]] = None,
+    ) -> Any:
+        """Query variables from storage async."""
+        # Try to get variables from storage
+        value = await blocking_func_to_async_no_executor(
+            self.get,
+            full_key,
+            default_value=None,
+            default_identifier_map=default_identifier_map,
+        )
+        if value is not None:
+            return value
+        key = VariablesIdentifier.from_str_identifier(full_key, default_identifier_map)
+        # Get all builtin variables
+        variables = await self.async_get_variables(
+            key=key.key,
+            scope=key.scope,
+            scope_key=key.scope_key,
+            sys_code=key.sys_code,
+            user_name=key.user_name,
+        )
+        values = [v for v in variables if v.name == key.name]
+        if not values:
+            if default_value == _EMPTY_DEFAULT_VALUE:
+                raise ValueError(f"Variable {full_key} not found")
+            return default_value
+        if len(values) > 1:
+            raise ValueError(f"Multiple variables found for {full_key}")
+
+        variable = values[0]
         return self._convert_to_value_type(variable)
 
     def save(self, variables_item: StorageVariables) -> None:
@@ -576,9 +640,11 @@ class StorageVariablesProvider(VariablesProvider):
         )
         if is_builtin:
             return builtin_variables
-        executor_factory: Optional[
-            DefaultExecutorFactory
-        ] = DefaultExecutorFactory.get_instance(self.system_app, default_component=None)
+        executor_factory: Optional[DefaultExecutorFactory] = None
+        if self.system_app:
+            executor_factory = DefaultExecutorFactory.get_instance(
+                self.system_app, default_component=None
+            )
         if executor_factory:
             return await blocking_func_to_async(
                 executor_factory.create(),
