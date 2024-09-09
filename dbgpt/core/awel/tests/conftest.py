@@ -4,12 +4,14 @@ from typing import AsyncIterator, List
 import pytest
 import pytest_asyncio
 
+from dbgpt.component import SystemApp
+
 from ...interface.variables import (
     StorageVariables,
     StorageVariablesProvider,
     VariablesIdentifier,
 )
-from .. import DefaultWorkflowRunner, InputOperator, SimpleInputSource
+from .. import DAGVar, DefaultWorkflowRunner, InputOperator, SimpleInputSource
 from ..task.task_impl import _is_async_iterator
 
 
@@ -104,7 +106,9 @@ async def stream_input_nodes(request):
 
 @asynccontextmanager
 async def _create_variables(**kwargs):
-    vp = StorageVariablesProvider()
+    sys_app = SystemApp()
+    DAGVar.set_current_system_app(sys_app)
+    vp = StorageVariablesProvider(system_app=sys_app)
     vars = kwargs.get("vars")
     if vars and isinstance(vars, dict):
         for param_key, param_var in vars.items():

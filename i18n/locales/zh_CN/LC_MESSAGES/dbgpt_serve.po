@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-06-17 00:05+0800\n"
+"POT-Creation-Date: 2024-09-06 16:14+0800\n"
 "PO-Revision-Date: 2024-03-24 11:24+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,6 +16,42 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:88
+msgid "Datasource Resource"
+msgstr "数据源资源"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:92
+msgid ""
+"Connect to a datasource(retrieve table schemas and execute SQL to fetch "
+"data)."
+msgstr "连接到数据源（检索表模式并执行 SQL 以获取数据）。"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:97
+#, fuzzy
+msgid "Datasource Name"
+msgstr "数据源名称"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:102
+msgid "The name of the datasource, default is 'datasource'."
+msgstr "数据源的名称，默认是 'datasource'。"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:105
+msgid "DB Name"
+msgstr "数据库名称"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:108
+msgid "The name of the database."
+msgstr "数据库的名称。"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:112
+#, fuzzy
+msgid "Prompt Template"
+msgstr "提示模板"
+
+#: ../dbgpt/serve/agent/resource/datasource.py:121
+msgid "The prompt template to build a database prompt."
+msgstr "用于构建数据库提示的提示模板。"
 
 #: ../dbgpt/serve/rag/operators/knowledge_space.py:47
 msgid "Knowledge Space Operator"
@@ -107,23 +143,23 @@ msgstr "格式化消息"
 msgid "The formatted messages."
 msgstr "格式化的消息。"
 
-#: ../dbgpt/serve/rag/connector.py:39
+#: ../dbgpt/serve/rag/connector.py:40
 msgid "Vector Store Connector"
 msgstr "向量存储连接器"
 
-#: ../dbgpt/serve/rag/connector.py:44
+#: ../dbgpt/serve/rag/connector.py:45
 msgid "Vector Store Type"
 msgstr "向量存储类型"
 
-#: ../dbgpt/serve/rag/connector.py:47
+#: ../dbgpt/serve/rag/connector.py:48
 msgid "The type of vector store."
 msgstr "向量存储的类型。"
 
-#: ../dbgpt/serve/rag/connector.py:51
+#: ../dbgpt/serve/rag/connector.py:52
 msgid "Vector Store Implementation"
 msgstr "向量存储实现"
 
-#: ../dbgpt/serve/rag/connector.py:54
+#: ../dbgpt/serve/rag/connector.py:55
 msgid "The vector store implementation."
 msgstr "向量存储的实现。"
 
@@ -135,7 +171,7 @@ msgstr "默认聊天历史加载算子"
 msgid ""
 "Load chat history from the storage of the serve component.It is the default "
 "storage of DB-GPT"
-msgstr "从 serve 组件的存储中加载聊天记录，这是 DB-GPT 的默认存储"
+msgstr "从 serve 组件的存储中加载聊天记录，这是 DB-GPT 的默认存储。"
 
 #: ../dbgpt/serve/conversation/operators.py:97
 msgid "Model Request"
@@ -143,7 +179,7 @@ msgstr "模型请求"
 
 #: ../dbgpt/serve/conversation/operators.py:100
 msgid "The model request."
-msgstr "这是模型请求。"
+msgstr "模型请求。"
 
 #: ../dbgpt/serve/conversation/operators.py:105
 msgid "Stored Messages"
@@ -152,3 +188,84 @@ msgstr "存储的消息"
 #: ../dbgpt/serve/conversation/operators.py:108
 msgid "The messages stored in the storage."
 msgstr "存储在存储中的消息。"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:33
+msgid "All AWEL Flows"
+msgstr "所有 AWEL 工作流"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:34
+msgid "Fetch all AWEL flows in the system"
+msgstr "获取系统中所有 AWEL 工作流"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:41
+msgid "All AWEL Flow Nodes"
+msgstr "所有 AWEL 工作流节点"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:42
+msgid "Fetch all AWEL flow nodes in the system"
+msgstr "获取系统中所有 AWEL 工作流节点"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:49
+msgid "All Variables"
+msgstr "所有变量"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:50
+msgid "Fetch all variables in the system"
+msgstr "获取系统中所有变量"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:57
+msgid "All Secrets"
+msgstr "所有密钥"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:58
+msgid "Fetch all secrets in the system"
+msgstr "获取系统中所有密钥"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:65
+msgid "All LLMs"
+msgstr "所有大语言模型"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:66
+msgid "Fetch all LLMs in the system"
+msgstr "获取系统中所有大语言模型"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:73
+msgid "All Embeddings"
+msgstr "所有嵌入模型"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:74
+msgid "Fetch all embeddings models in the system"
+msgstr "获取系统中所有嵌入模型"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:81
+msgid "All Rerankers"
+msgstr "所有重排序器"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:82
+msgid "Fetch all rerankers in the system"
+msgstr "获取系统中所有重排序器"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:89
+msgid "All Data Sources"
+msgstr "所有数据源"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:90
+msgid "Fetch all data sources in the system"
+msgstr "获取系统中所有数据源"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:97
+msgid "All Agents"
+msgstr "所有智能体"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:98
+msgid "Fetch all agents in the system"
+msgstr "获取系统中所有智能体"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:105
+#, fuzzy
+msgid "All Knowledge Spaces"
+msgstr "所有知识空间"
+
+#: ../dbgpt/serve/flow/service/variables_service.py:106
+msgid "Fetch all knowledge spaces in the system"
+msgstr "获取系统中所有知识空间"

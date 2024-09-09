@@ -4,7 +4,11 @@ from typing import List, Optional, Union
 from sqlalchemy import URL
 
 from dbgpt.component import SystemApp
-from dbgpt.core.interface.variables import VariablesProvider
+from dbgpt.core.interface.variables import (
+    FernetEncryption,
+    StorageVariablesProvider,
+    VariablesProvider,
+)
 from dbgpt.serve.core import BaseServe
 from dbgpt.storage.metadata import DatabaseManager
 
@@ -33,6 +37,7 @@ class Serve(BaseServe):
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
         try_create_tables: Optional[bool] = False,
     ):
+
         if api_prefix is None:
             api_prefix = [f"/api/v1/serve/awel", "/api/v2/serve/awel"]
         if api_tags is None:
@@ -41,8 +46,15 @@ class Serve(BaseServe):
             system_app, api_prefix, api_tags, db_url_or_db, try_create_tables
         )
         self._db_manager: Optional[DatabaseManager] = None
-        self._variables_provider: Optional[VariablesProvider] = None
-        self._serve_config: Optional[ServeConfig] = None
+        self._serve_config = ServeConfig.from_app_config(
+            system_app.config, SERVE_CONFIG_KEY_PREFIX
+        )
+        self._variables_provider: StorageVariablesProvider = StorageVariablesProvider(
+            storage=None,
+            encryption=FernetEncryption(self._serve_config.encrypt_key),
+            system_app=system_app,
+        )
+        system_app.register_instance(self._variables_provider)
 
     def init_app(self, system_app: SystemApp):
         if self._app_has_initiated:
@@ -65,10 +77,6 @@ class Serve(BaseServe):
 
     def before_start(self):
         """Called before the start of the application."""
-        from dbgpt.core.interface.variables import (
-            FernetEncryption,
-            StorageVariablesProvider,
-        )
         from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
         from dbgpt.util.serialization.json_serialization import JsonSerializer
 
@@ -76,9 +84,6 @@ class Serve(BaseServe):
         from .models.variables_adapter import VariablesAdapter
 
         self._db_manager = self.create_or_get_db_manager()
-        self._serve_config = ServeConfig.from_app_config(
-            self._system_app.config, SERVE_CONFIG_KEY_PREFIX
-        )
 
         self._db_manager = self.create_or_get_db_manager()
         storage_adapter = VariablesAdapter()
@@ -89,11 +94,7 @@ class Serve(BaseServe):
             storage_adapter,
             serializer,
         )
-        self._variables_provider = StorageVariablesProvider(
-            storage=storage,
-            encryption=FernetEncryption(self._serve_config.encrypt_key),
-            system_app=self._system_app,
-        )
+        self._variables_provider.storage = storage
 
     @property
     def variables_provider(self):

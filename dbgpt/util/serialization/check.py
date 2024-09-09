@@ -2,12 +2,12 @@ import inspect
 from io import StringIO
 from typing import Any, Dict, Optional, TextIO
 
-import cloudpickle
-
 
 def check_serializable(
     obj: Any, obj_name: str = "Object", error_msg: str = "Object is not serializable"
 ):
+    import cloudpickle
+
     try:
         cloudpickle.dumps(obj)
     except Exception as e:
@@ -27,6 +27,8 @@ class SerializabilityInspector:
         self.stream.write(f"{indent}{message}\n")
 
     def inspect(self, obj: Any, name: str, depth: int = 3) -> bool:
+        import cloudpickle
+
         self.log(f"Inspecting '{name}'")
         self.indent_level += 1
 

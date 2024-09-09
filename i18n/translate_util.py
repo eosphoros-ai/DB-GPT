@@ -1,4 +1,5 @@
 """Translate the po file content to Chinese using LLM."""
+
 from typing import List, Dict, Any
 import asyncio
 import os
@@ -147,6 +148,8 @@ vocabulary_map = {
         "RAG": "RAG",
         "DB-GPT": "DB-GPT",
         "AWEL flow": "AWEL 工作流",
+        "Agent": "智能体",
+        "Agents": "智能体",
     },
     "default": {
         "Transformer": "Transformer",
@@ -159,6 +162,8 @@ vocabulary_map = {
         "RAG": "RAG",
         "DB-GPT": "DB-GPT",
         "AWEL flow": "AWEL flow",
+        "Agent": "Agent",
+        "Agents": "Agents",
     },
 }
 

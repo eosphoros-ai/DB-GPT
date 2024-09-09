@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union, cast
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import (
@@ -91,7 +91,7 @@ class BaseHOLLMOperator(
         self._keep_start_rounds = keep_start_rounds if self._has_history else 0
         self._keep_end_rounds = keep_end_rounds if self._has_history else 0
         self._max_token_limit = max_token_limit
-        self._sub_compose_dag = self._build_conversation_composer_dag()
+        self._sub_compose_dag: Optional[DAG] = None
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[ModelOutput]:
         conv_serve = ConversationServe.get_instance(self.system_app)
@@ -166,7 +166,7 @@ class BaseHOLLMOperator(
             "messages": history_messages,
             "prompt_dict": prompt_dict,
         }
-        end_node: BaseOperator = self._sub_compose_dag.leaf_nodes[0]
+        end_node: BaseOperator = cast(BaseOperator, self.sub_compose_dag.leaf_nodes[0])
         # Sub dag, use the same dag context in the parent dag
         messages = await end_node.call(call_data, dag_ctx=self.current_dag_context)
         model_request = ModelRequest.build_request(
@@ -183,6 +183,12 @@ class BaseHOLLMOperator(
             storage_conv.start_new_round()
             storage_conv.add_user_message(user_input)
         return model_request
+
+    @property
+    def sub_compose_dag(self) -> DAG:
+        if not self._sub_compose_dag:
+            self._sub_compose_dag = self._build_conversation_composer_dag()
+        return self._sub_compose_dag
 
     def _build_storage(
         self, req: CommonLLMHttpRequestBody
@@ -207,7 +213,11 @@ class BaseHOLLMOperator(
         return storage_conv, history_messages
 
     def _build_conversation_composer_dag(self) -> DAG:
-        with DAG("dbgpt_awel_app_chat_history_prompt_composer") as composer_dag:
+        default_dag_variables = self.dag._default_dag_variables if self.dag else None
+        with DAG(
+            "dbgpt_awel_app_chat_history_prompt_composer",
+            default_dag_variables=default_dag_variables,
+        ) as composer_dag:
             input_task = InputOperator(input_source=SimpleCallDataInputSource())
             # History transform task
             if self._history_merge_mode == "token":
