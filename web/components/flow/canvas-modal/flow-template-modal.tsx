@@ -75,7 +75,7 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
   return (
     <>
       <Modal
-      className='w-[700px]'
+        className='w-[700px]'
         title={t('Import_From_Template')}
         open={isFlowTemplateModalOpen}
         onCancel={() => setIsFlowTemplateModalOpen(false)}
