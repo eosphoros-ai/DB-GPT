@@ -77,7 +77,7 @@ export const renderUpload = (params: Props) => {
 
   const props: UploadProps = {
     name: 'files',
-    action: process.env.API_BASE_URL + data.ui.action,
+    action: process.env.API_BASE_URL ?? '' + data.ui.action,
     headers: {
       authorization: 'authorization-text',
     },
