@@ -11,9 +11,9 @@ DB-GPT is an open source AI native data application development framework with A
 
 - Supports the creation and lifecycle management of data applications, and supports multiple application construction modes, such as: multi-agent automatic planning mode, task flow orchestration mode, single agent mode, and native application mode
 
-- GraphRAG supports graph community aggregation and hybrid retrieval, and the graph index cost is reduced by 50% compared to Microsoft GraphRAG.
+- GraphRAG supports graph community summary and hybrid retrieval, and the graph index cost is reduced by 50% compared to Microsoft GraphRAG.
 
-- Supports multiple Agent Memories, such as perceptual memory, short-term memory, long-term memory, mixed memory, etc.
+- Supports multiple Agent Memories, such as perceptual memory, short-term memory, long-term memory, hybrid memory, etc.
 
 - Supports intent recognition and prompt management, and newly added support for Text2NLU and Text2GQL fine-tuning
 
