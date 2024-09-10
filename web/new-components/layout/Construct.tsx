@@ -12,6 +12,7 @@ import { t } from 'i18next';
 import { useRouter } from 'next/router';
 import React from 'react';
 import './style.css';
+
 function ConstructLayout({ children }: { children: React.ReactNode }) {
   const items = [
     {
@@ -19,6 +20,15 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
       name: t('App'),
       path: '/app',
       icon: <AppstoreOutlined />,
+      // operations: (
+      //   <Button
+      //     className='border-none text-white bg-button-gradient h-full flex items-center'
+      //     icon={<PlusOutlined className='text-base' />}
+      //     // onClick={handleCreate}
+      //   >
+      //     {t('create_app')}
+      //   </Button>
+      // ),
     },
     {
       key: 'flow',
@@ -102,6 +112,15 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
           onTabClick={key => {
             router.push(`/construct/${key}`);
           }}
+          // tabBarExtraContent={
+          //   <Button
+          //     className='border-none text-white bg-button-gradient h-full flex items-center'
+          //     icon={<PlusOutlined className='text-base' />}
+          //     // onClick={handleCreate}
+          //   >
+          //     {t('create_app')}
+          //   </Button>
+          // }
         />
       </ConfigProvider>
     </div>

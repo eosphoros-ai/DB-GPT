@@ -19,7 +19,6 @@ type CanvasNodeProps = {
 function TypeLabel({ label }: { label: string }) {
   return <div className='w-full h-8 align-middle font-semibold'>{label}</div>;
 }
-const forceTypeList = ['file', 'multiple_files', 'time'];
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const node = data;
@@ -125,12 +124,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     });
   }
 
-  function onParameterValuesChange(changedValues: any, allValues: any) {
+  function onParameterValuesChange(changedValues: any) {
     const [changedKey, changedVal] = Object.entries(changedValues)[0];
 
-    if (!allValues?.force && forceTypeList.includes(changedKey)) {
-      return;
-    }
     updateCurrentNodeValue(changedKey, changedVal);
     if (changedVal) {
       updateDependsNodeValue(changedKey, changedVal);
@@ -142,7 +138,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       return (
         <div className='bg-zinc-100 dark:bg-zinc-700 rounded p-2'>
           <TypeLabel label='Outputs' />
-          {(outputs || []).map((output, index) => (
+          {outputs?.map((output, index) => (
             <NodeHandler
               key={`${data.id}_input_${index}`}
               node={data}
@@ -197,8 +193,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     >
       <div
         className={classNames(
-          'w-80 h-auto rounded-xl shadow-md px-2 py-4 border bg-white dark:bg-zinc-800 cursor-grab flex flex-col space-y-2 text-sm',
+          'h-auto rounded-xl shadow-md px-2 py-4 border bg-white dark:bg-zinc-800 cursor-grab flex flex-col space-y-2 text-sm',
           {
+            'w-80': node?.tags?.ui_size === 'middle' || !node?.tags?.ui_size,
+            'w-[256px]': node?.tags?.ui_size === 'small',
+            'w-[530px]': node?.tags?.ui_size === 'large',
             'border-blue-500': node.selected || isHovered,
             'border-stone-400 dark:border-white': !node.selected && !isHovered,
             'border-dashed': flowType !== 'operator',

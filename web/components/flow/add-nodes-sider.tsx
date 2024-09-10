@@ -4,13 +4,16 @@ import { IFlowNode } from '@/types/flow';
 import { FLOW_NODES_KEY } from '@/utils';
 import { CaretLeftOutlined, CaretRightOutlined } from '@ant-design/icons';
 import type { CollapseProps } from 'antd';
-import { Badge, Collapse, Input, Layout, Space } from 'antd';
+import { Badge, Collapse, Input, Layout, Space, Switch } from 'antd';
+import classnames from 'classnames';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StaticNodes from './static-nodes';
 
 const { Search } = Input;
 const { Sider } = Layout;
+
+const TAGS = JSON.stringify({ order: 'higher-order' });
 
 type GroupType = {
   category: string;
@@ -41,13 +44,16 @@ const AddNodesSider: React.FC = () => {
   const [resources, setResources] = useState<Array<IFlowNode>>([]);
   const [operatorsGroup, setOperatorsGroup] = useState<GroupType[]>([]);
   const [resourcesGroup, setResourcesGroup] = useState<GroupType[]>([]);
+  const [isAllNodesVisible, setIsAllNodesVisible] = useState<boolean>(false);
 
   useEffect(() => {
-    getNodes();
+    getNodes(TAGS);
   }, []);
 
-  async function getNodes() {
-    const [_, data] = await apiInterceptors(getFlowNodes());
+  // tags is optional, if tags is not passed, it will get all nodes
+  async function getNodes(tags?: string) {
+    const [_, data] = await apiInterceptors(getFlowNodes(tags));
+
     if (data && data.length > 0) {
       localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
       const operatorNodes = data.filter(node => node.flow_type === 'operator');
@@ -166,6 +172,16 @@ const AddNodesSider: React.FC = () => {
     setSearchValue(val);
   }
 
+  function onModeChange() {
+    if (isAllNodesVisible) {
+      getNodes(TAGS);
+    } else {
+      getNodes();
+    }
+
+    setIsAllNodesVisible(!isAllNodesVisible);
+  }
+
   return (
     <Sider
       className='flex justify-center items-start nodrag bg-[#ffffff80] border-r border-[#d5e5f6] dark:bg-[#ffffff29] dark:border-[#ffffff66]'
@@ -179,9 +195,19 @@ const AddNodesSider: React.FC = () => {
       onCollapse={collapsed => setCollapsed(collapsed)}
     >
       <Space direction='vertical' className='w-[280px] pt-4 px-4 overflow-hidden overflow-y-auto scrollbar-default'>
-        <p className='w-full text-base font-semibold text-[#1c2533] dark:text-[rgba(255,255,255,0.85)] line-clamp-1'>
-          {t('add_node')}
-        </p>
+        <div className='flex justify-between align-middle'>
+          <p className='w-full text-base font-semibold text-[#1c2533] dark:text-[rgba(255,255,255,0.85)] line-clamp-1'>
+            {t('add_node')}
+          </p>
+
+          <Switch
+            checkedChildren='高阶'
+            unCheckedChildren='全部'
+            onClick={onModeChange}
+            className={classnames('w-20', { 'bg-zinc-400': isAllNodesVisible })}
+            defaultChecked
+          />
+        </div>
 
         <Search placeholder='Search node' onSearch={searchNode} allowClear />
 

@@ -1,9 +1,9 @@
 import { addFlow, apiInterceptors, updateFlowById } from '@/client/api';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import { mapHumpToUnderline } from '@/utils/flow';
-import { Button, Checkbox, Form, Input, Modal, Space, message } from 'antd';
-import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Button, Checkbox, Form, Input, Modal, message } from 'antd';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ReactFlowInstance } from 'reactflow';
 
@@ -22,12 +22,17 @@ export const SaveFlowModal: React.FC<Props> = ({
   flowInfo,
   setIsSaveFlowModalOpen,
 }) => {
-  const [deploy, setDeploy] = useState(true);
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
-  const id = searchParams?.get('id') || '';
+  const router = useRouter();
   const [form] = Form.useForm<IFlowUpdateParam>();
   const [messageApi, contextHolder] = message.useMessage();
+
+  const [deploy, setDeploy] = useState(false);
+  const [id, setId] = useState(router.query.id || '');
+
+  useEffect(() => {
+    setId(router.query.id || '');
+  }, [router.query.id]);
 
   function onLabelChange(e: React.ChangeEvent<HTMLInputElement>) {
     const label = e.target.value;
@@ -45,14 +50,15 @@ export const SaveFlowModal: React.FC<Props> = ({
 
     if (id) {
       const [, , res] = await apiInterceptors(
-        updateFlowById(id, {
+        updateFlowById(id.toString(), {
           name,
           label,
           description,
           editable,
-          uid: id,
+          uid: id.toString(),
           flow_data: reactFlowObject,
           state,
+          variables: flowInfo?.variables,
         }),
       );
 
@@ -70,12 +76,13 @@ export const SaveFlowModal: React.FC<Props> = ({
           editable,
           flow_data: reactFlowObject,
           state,
+          variables: flowInfo?.variables,
         }),
       );
+
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
-        const history = window.history;
-        history.pushState(null, '', `/flow/canvas?id=${res.uid}`);
+        router.push(`/construct/flow/canvas?id=${res.uid}`, undefined, { shallow: true });
       }
     }
     setIsSaveFlowModalOpen(false);
@@ -84,14 +91,17 @@ export const SaveFlowModal: React.FC<Props> = ({
   return (
     <>
       <Modal
-        centered
         title={t('flow_modal_title')}
         open={isSaveFlowModalOpen}
-        onCancel={() => {
-          setIsSaveFlowModalOpen(false);
-        }}
-        cancelButtonProps={{ className: 'hidden' }}
-        okButtonProps={{ className: 'hidden' }}
+        onCancel={() => setIsSaveFlowModalOpen(false)}
+        footer={[
+          <Button key='cancel' onClick={() => setIsSaveFlowModalOpen(false)}>
+            {t('cancel')}
+          </Button>,
+          <Button key='submit' type='primary' onClick={() => form.submit()}>
+            {t('verify')}
+          </Button>,
+        ]}
       >
         <Form
           name='flow_form'
@@ -137,7 +147,7 @@ export const SaveFlowModal: React.FC<Props> = ({
             <TextArea rows={3} />
           </Form.Item>
 
-          <Form.Item label='Editable' name='editable' initialValue={flowInfo?.editable} valuePropName='checked'>
+          <Form.Item label='Editable' name='editable' initialValue={flowInfo?.editable || true} valuePropName='checked'>
             <Checkbox />
           </Form.Item>
 
@@ -155,22 +165,6 @@ export const SaveFlowModal: React.FC<Props> = ({
                 setDeploy(val);
               }}
             />
-          </Form.Item>
-
-          <Form.Item wrapperCol={{ offset: 14, span: 8 }}>
-            <Space>
-              <Button
-                htmlType='button'
-                onClick={() => {
-                  setIsSaveFlowModalOpen(false);
-                }}
-              >
-                {t('cancel')}
-              </Button>
-              <Button type='primary' htmlType='submit'>
-                {t('verify')}
-              </Button>
-            </Space>
           </Form.Item>
         </Form>
       </Modal>

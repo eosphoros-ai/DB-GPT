@@ -131,6 +131,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ formValuesChange, n
     if (ui_type === 'slider' && data.is_list) {
       defaultValue = [0, 1];
     }
+
     return (
       <Form.Item
         className='mb-2'

@@ -1,6 +1,18 @@
 import { apiInterceptors, getFlowById } from '@/client/api';
 import MuiLoading from '@/components/common/loading';
-import { ExportOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
+import AddNodesSider from '@/components/flow/add-nodes-sider';
+import ButtonEdge from '@/components/flow/button-edge';
+import {
+  AddFlowVariableModal,
+  ExportFlowModal,
+  FlowTemplateModal,
+  ImportFlowModal,
+  SaveFlowModal,
+} from '@/components/flow/canvas-modal';
+import CanvasNode from '@/components/flow/canvas-node';
+import { IFlowData, IFlowUpdateParam } from '@/types/flow';
+import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
+import { ExportOutlined, FileAddOutlined, FrownOutlined, ImportOutlined, SaveOutlined } from '@ant-design/icons';
 import { Divider, Space, Tooltip, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -16,13 +28,6 @@ import ReactFlow, {
   useNodesState,
   useReactFlow,
 } from 'reactflow';
-// import AddNodes from '@/components/flow/add-nodes';
-import AddNodesSider from '@/components/flow/add-nodes-sider';
-import ButtonEdge from '@/components/flow/button-edge';
-import { ExportFlowModal, ImportFlowModal, SaveFlowModal } from '@/components/flow/canvas-modal';
-import CanvasNode from '@/components/flow/canvas-node';
-import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { checkFlowDataRequied, getUniqueNodeId, mapUnderlineToHump } from '@/utils/flow';
 import 'reactflow/dist/style.css';
 
 const nodeTypes = { customNode: CanvasNode };
@@ -30,19 +35,32 @@ const edgeTypes = { buttonedge: ButtonEdge };
 
 const Canvas: React.FC = () => {
   const { t } = useTranslation();
-
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
+  const [messageApi, contextHolder] = message.useMessage();
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
-  const [loading, setLoading] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
   const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
+  const [loading, setLoading] = useState(false);
   const [isSaveFlowModalOpen, setIsSaveFlowModalOpen] = useState(false);
   const [isExportFlowModalOpen, setIsExportFlowModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportFlowModalOpen] = useState(false);
+  const [isFlowTemplateModalOpen, setIsFlowTemplateModalOpen] = useState(false);
+
+  if (localStorage.getItem('importFlowData')) {
+    const importFlowData = JSON.parse(localStorage.getItem('importFlowData') || '');
+    localStorage.removeItem('importFlowData');
+    setLoading(true);
+    const flowData = mapUnderlineToHump(importFlowData.flow_data);
+    setFlowInfo(importFlowData);
+    setNodes(flowData.nodes);
+    setEdges(flowData.edges);
+    setLoading(false);
+  }
 
   async function getFlowData() {
     setLoading(true);
@@ -152,22 +170,24 @@ const Canvas: React.FC = () => {
   function onSave() {
     const flowData = reactFlow.toObject() as IFlowData;
     const [check, node, message] = checkFlowDataRequied(flowData);
+
+    if (!node) {
+      messageApi.open({
+        type: 'warning',
+        content: t('Please_Add_Nodes_First'),
+      });
+      return;
+    }
+
     if (!check && message) {
       setNodes(nds =>
-        nds.map(item => {
-          if (item.id === node?.id) {
-            item.data = {
-              ...item.data,
-              invalid: true,
-            };
-          } else {
-            item.data = {
-              ...item.data,
-              invalid: false,
-            };
-          }
-          return item;
-        }),
+        nds.map(item => ({
+          ...item,
+          data: {
+            ...item.data,
+            invalid: item.id === node?.id,
+          },
+        })),
       );
       return notification.error({
         message: 'Error',
@@ -178,19 +198,15 @@ const Canvas: React.FC = () => {
     setIsSaveFlowModalOpen(true);
   }
 
-  function onExport() {
-    setIsExportFlowModalOpen(true);
-  }
-
-  function onImport() {
-    setIsImportFlowModalOpen(true);
-  }
-
   const getButtonList = () => {
     const buttonList = [
       {
+        title: t('template'),
+        icon: <FileAddOutlined className='block text-xl' onClick={() => setIsFlowTemplateModalOpen(true)} />,
+      },
+      {
         title: t('Import'),
-        icon: <ImportOutlined className='block text-xl' onClick={onImport} />,
+        icon: <ImportOutlined className='block text-xl' onClick={() => setIsImportFlowModalOpen(true)} />,
       },
       {
         title: t('save'),
@@ -201,7 +217,7 @@ const Canvas: React.FC = () => {
     if (id !== '') {
       buttonList.unshift({
         title: t('Export'),
-        icon: <ExportOutlined className='block text-xl' onClick={onExport} />,
+        icon: <ExportOutlined className='block text-xl' onClick={() => setIsExportFlowModalOpen(true)} />,
       });
     }
 
@@ -245,8 +261,10 @@ const Canvas: React.FC = () => {
               deleteKeyCode={['Backspace', 'Delete']}
             >
               <Controls className='flex flex-row items-center' position='bottom-center' />
+
               <Background color='#aaa' gap={16} />
-              {/* <AddNodes /> */}
+
+              <AddFlowVariableModal flowInfo={flowInfo} setFlowInfo={setFlowInfo} />
             </ReactFlow>
           </div>
         </div>
@@ -274,6 +292,13 @@ const Canvas: React.FC = () => {
         isImportModalOpen={isImportModalOpen}
         setIsImportFlowModalOpen={setIsImportFlowModalOpen}
       />
+
+      <FlowTemplateModal
+        isFlowTemplateModalOpen={isFlowTemplateModalOpen}
+        setIsFlowTemplateModalOpen={setIsFlowTemplateModalOpen}
+      />
+
+      {contextHolder}
     </>
   );
 };
