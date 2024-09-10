@@ -7,6 +7,10 @@ SCRIPT_LOCATION=$0
 cd "$(dirname "$SCRIPT_LOCATION")"
 WORK_DIR=$(pwd)
 WORK_DIR="$WORK_DIR/.."
+TARGET_DIR="$WORK_DIR/dbgpt/app/static/web"
+
+echo "Building web static files"
+echo "Target directory: $TARGET_DIR"
 
 cd $WORK_DIR/web
 
@@ -20,12 +24,14 @@ else
   echo "Do not find .env"
 fi
 
-npm install
-npm run build
 
-rm -rf ../dbgpt/app/static/*
+yarn install
+rm -rf ../web/out/
+yarn compile
 
-cp -R ../web/out/* ../dbgpt/app/static
+rm -rf $TARGET_DIR \
+  && mkdir -p $TARGET_DIR \
+  && cp -R ../web/out/* $TARGET_DIR
 
 if [ -e "$tmp_env" ]; then
   cp "$tmp_env" "$source_env" 
