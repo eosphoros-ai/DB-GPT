@@ -187,3 +187,7 @@ class VectorStoreBase(IndexStoreBase, ABC):
             List[str]: chunk ids.
         """
         return await blocking_func_to_async(self._executor, self.load_document, chunks)
+
+    def truncate(self) -> List[str]:
+        """Truncate the collection."""
+        raise NotImplementedError
