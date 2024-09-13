@@ -888,7 +888,8 @@ class TongYiEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         self._api_key = kwargs.get("api_key")
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+
+    def embed_documents(self, texts: List[str], max_batch_chunks_size=25) -> List[List[float]]:
         """Get the embeddings for a list of texts.
 
         Args:
@@ -900,17 +901,23 @@ class TongYiEmbeddings(BaseModel, Embeddings):
         """
         from dashscope import TextEmbedding
 
-        # 最多支持10条，每条最长支持2048tokens
-        resp = TextEmbedding.call(
-            model=self.model_name, input=texts, api_key=self._api_key
-        )
-        if "output" not in resp:
-            raise RuntimeError(resp["message"])
+        embeddings = []
 
-        embeddings = resp["output"]["embeddings"]
-        sorted_embeddings = sorted(embeddings, key=lambda e: e["text_index"])
+        # batch size too longer may cause embedding error,eg: qwen online embedding models must not be larger than 25
+        for i in range(0, len(texts), max_batch_chunks_size):
+            batch_texts = texts[i:i + max_batch_chunks_size]
+            resp = TextEmbedding.call(
+                model=self.model_name, input=batch_texts, api_key=self._api_key
+            )
+            if "output" not in resp:
+                raise RuntimeError(resp["message"])
 
-        return [result["embedding"] for result in sorted_embeddings]
+            # 提取并排序嵌入
+            batch_embeddings = resp["output"]["embeddings"]
+            sorted_embeddings = sorted(batch_embeddings, key=lambda e: e["text_index"])
+            embeddings.extend([result["embedding"] for result in sorted_embeddings])
+
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a OpenAPI embedding model.
