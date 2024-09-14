@@ -36,11 +36,23 @@ class TuGraphStoreConfig(GraphStoreConfig):
     )
     vertex_type: str = Field(
         default="entity",
-        description="The type of vertex, `entity` by default.",
+        description="The type of entity vertex, `entity` by default.",
+    )
+    document_type: str = Field(
+        default="document",
+        description="The type of document vertex, `entity` by default.",
+    )
+    chunk_type: str = Field(
+        default="chunk",
+        description="The type of chunk vertex, `relation` by default.",
     )
     edge_type: str = Field(
         default="relation",
-        description="The type of edge, `relation` by default.",
+        description="The type of relation edge, `relation` by default.",
+    )
+    include_type: str = Field(
+        default="include",
+        description="The type of include edge, `include` by default.",
     )
     plugin_names: List[str] = Field(
         default=["leiden"],
@@ -73,6 +85,9 @@ class TuGraphStore(GraphStoreBase):
         self._graph_name = config.name
         self._vertex_type = os.getenv("TUGRAPH_VERTEX_TYPE", config.vertex_type)
         self._edge_type = os.getenv("TUGRAPH_EDGE_TYPE", config.edge_type)
+        self._document_type = os.getenv("TUGRAPH_DOCUMENT_TYPE", config.document_type)
+        self._chunk_type = os.getenv("TUGRAPH_DOCUMENT_TYPE", config.chunk_type)
+        self._include_type = os.getenv("TUGRAPH_INCLUDE_TYPE", config.include_type)
 
         self.conn = TuGraphConnector.from_uri_db(
             host=self._host,
@@ -91,6 +106,23 @@ class TuGraphStore(GraphStoreBase):
     def get_edge_type(self) -> str:
         """Get the edge type."""
         return self._edge_type
+    
+    def get_document_vertex(slef,doc_name:str) -> Vertex:
+        gql = f'''MATCH (n) WHERE n.id = {doc_name} RETURN n'''
+        graph = slef.query(gql)
+        vertex = graph.get_vertex(doc_name)
+        return vertex
+    
+    def delete_document(slef, doc_name:str):
+        # del_relation_gql = f'''MATCH (n:document)-[r:include]-(m:chunk) WHERE r._doc_name = {doc_name} DELETE r'''
+        # del_chunk_gql = f'''MATCH (n:document)-[r:include]-(m:chunk) WHERE n.id = {doc_name} DELETE m'''
+        # del_doc_gql = f'''MATCH (n:document) WHERE n.id = {doc_name} DELETE n'''
+        # del_alone_nodes_gql = f'''MATCH (n:document) WHERE n.id = {doc_name} DELETE n'''
+        # slef.conn.run(del_relation_gql)
+        # slef.conn.run(del_chunk_gql)
+        # slef.conn.run(del_doc_gql)
+        # slef.conn.run(del_alone_nodes_gql)
+        pass
 
     def _create_graph(self, graph_name: str):
         self.conn.create_graph(graph_name=graph_name)
@@ -102,8 +134,15 @@ class TuGraphStore(GraphStoreBase):
         result = self.conn.get_table_names()
         if elem_type == "vertex":
             return self._vertex_type in result["vertex_tables"]
+        if elem_type == "chunk":
+            return self._chunk_type in result["vertex_tables"]
+        if elem_type == "document":
+            return self._document_type in result["vertex_tables"]
+        
         if elem_type == "edge":
             return self._edge_type in result["edge_tables"]
+        if elem_type == "include":
+            return self._include_type in result["edge_tables"]
 
     def _add_vertex_index(self, field_name):
         gql = f"CALL db.addIndex('{self._vertex_type}', '{field_name}', false)"
@@ -161,7 +200,8 @@ class TuGraphStore(GraphStoreBase):
                     f"CALL db.createLabel("
                     f"'vertex', '{self._vertex_type}', "
                     f"'id', ['id',string,false],"
-                    f"['name',string,false])"
+                    f"['name',string,false])",
+                    
                 )
                 self.conn.run(create_vertex_gql)
 
@@ -182,6 +222,39 @@ class TuGraphStore(GraphStoreBase):
                     ["description",STRING,true])"""
             self.conn.run(create_edge_gql)
 
+        if not self._check_label("document"):
+            if self._summary_enabled:
+                create_document_gql = (
+                        f"CALL db.createLabel("
+                        f"'vertex', '{self._document_type}', "
+                        f"'id', ['id',string,false],"
+                        f"['_community_id',string,true],"
+                        f"['name',string,false])"
+                    )
+                self.conn.run(create_document_gql)
+
+        if not self._check_label("chunk"):
+            if self._summary_enabled:
+                create_document_gql = (
+                        f"CALL db.createLabel("
+                        f"'vertex', '{self._chunk_type}', "
+                        f"'id', ['id',string,false],"
+                        f"['_community_id',string,true],"
+                        f"['name',string,false])"
+                    )
+                self.conn.run(create_document_gql)
+
+        if not self._check_label("include"):
+            if self._summary_enabled:
+                create_include_gql = f"""CALL db.createLabel(
+                    'edge', '{self._include_type}',
+                    '[["{self._document_type}","{self._chunk_type}"],["{self._chunk_type}","{self._chunk_type}"],["{self._chunk_type}","{self._vertex_type}"]]',
+                    ["id",STRING,false],
+                    ["name",STRING,false],
+                    ["description",STRING,true])"""
+                self.conn.run(create_include_gql)
+
+                
     def _format_query_data(self, data, white_prop_list: List[str]):
         nodes_list = []
         rels_list: List[Any] = []
@@ -313,10 +386,14 @@ class TuGraphStore(GraphStoreBase):
 
         nodes: Iterator[Vertex] = graph.vertices()
         edges: Iterator[Edge] = graph.edges()
-        node_list = []
-        edge_list = []
-
-        def parser(node_list):
+        entity_list = []
+        chunk_list = []
+        document_list = []
+        relation_list = []
+        document_include_chunk_list = []
+        chunk_include_chunk_list = []
+        chunk_include_entity_list = []
+        def parser(entity_list):
             formatted_nodes = [
                 "{"
                 + ", ".join(
@@ -324,42 +401,120 @@ class TuGraphStore(GraphStoreBase):
                     for k, v in node.items()
                 )
                 + "}"
-                for node in node_list
+                for node in entity_list
             ]
             return f"""{', '.join(formatted_nodes)}"""
 
         for node in nodes:
-            node_list.append(
-                {
-                    "id": escape_quotes(node.vid),
-                    "name": escape_quotes(node.name),
-                    "description": escape_quotes(node.get_prop("description")) or "",
-                    "_document_id": "0",
-                    "_chunk_id": "0",
-                    "_community_id": "0",
-                }
-            )
-        node_query = (
-            f"""CALL db.upsertVertex("{self._vertex_type}", [{parser(node_list)}])"""
+            if node.get_prop('vertex_type') == 'chunk':
+                chunk_list.append(
+                   {
+                        "id": escape_quotes(node.vid),
+                        "name": escape_quotes(node.name)
+                   }
+                )
+            elif node.get_prop('vertex_type') == 'document':
+                document_list.append(
+                    {
+                            "id": escape_quotes(node.vid),
+                            "name": escape_quotes(node.name)
+                    }
+                )
+            else:
+                entity_list.append(
+                    {
+                        "id": escape_quotes(node.vid),
+                        "name": escape_quotes(node.name),
+                        "description": escape_quotes(node.get_prop("description")) or "",
+                        "_document_id": "0",
+                        "_chunk_id": "0",
+                        "_community_id": "0",
+                    }
+                )
+        
+        vertex_query = (
+            f"""CALL db.upsertVertex("{self._vertex_type}", [{parser(entity_list)}])"""
+        )
+        chunk_query = (
+            f"""CALL db.upsertVertex("{self._chunk_type}", [{parser(chunk_list)}])"""
+        )
+        document_query = (
+            f"""CALL db.upsertVertex("{self._document_type}", [{parser(document_list)}])"""
         )
         for edge in edges:
-            edge_list.append(
-                {
-                    "sid": escape_quotes(edge.sid),
-                    "tid": escape_quotes(edge.tid),
-                    "id": escape_quotes(edge.name),
-                    "name": escape_quotes(edge.name),
-                    "description": escape_quotes(edge.get_prop("description")),
-                }
+            if edge.get_prop('edge_type') == 'document_include_chunk':
+                document_include_chunk_list.append(
+                   {
+                        "sid": escape_quotes(edge.sid),
+                        "tid": escape_quotes(edge.tid),
+                        "id": escape_quotes(edge.name),
+                        "name": escape_quotes(edge.name),
+                        "description": escape_quotes(edge.get_prop("description")) or "",
+                   }
+                )
+            elif edge.get_prop('edge_type') == 'chunk_include_chunk':
+                chunk_include_chunk_list.append(
+                    {
+                        "sid": escape_quotes(edge.sid),
+                        "tid": escape_quotes(edge.tid),
+                        "id": escape_quotes(edge.name),
+                        "name": escape_quotes(edge.name),
+                        "description": escape_quotes(edge.get_prop("description")) or "",   
+                    }
+                )
+            elif edge.get_prop('edge_type') == 'chunk_include_entity':
+                chunk_include_entity_list.append(
+                    {
+                        "sid": escape_quotes(edge.sid),
+                        "tid": escape_quotes(edge.tid),
+                        "id": escape_quotes(edge.name),
+                        "name": escape_quotes(edge.name),
+                        "description": escape_quotes(edge.get_prop("description")) or "",    
+                    }
+                )
+            else:
+                relation_list.append(
+                    {
+                        "sid": escape_quotes(edge.sid),
+                        "tid": escape_quotes(edge.tid),
+                        "id": escape_quotes(edge.name),
+                        "name": escape_quotes(edge.name),
+                        "description": escape_quotes(edge.get_prop("description")) or "",
+                    }
             )
 
-        edge_query = f"""CALL db.upsertEdge(
-            "{self._edge_type}",
+        relation_query = (
+            f"""CALL db.upsertEdge("{self._edge_type}",
             {{type:"{self._vertex_type}", key:"sid"}},
             {{type:"{self._vertex_type}", key:"tid"}},
-            [{parser(edge_list)}])"""
-        self.conn.run(query=node_query)
-        self.conn.run(query=edge_query)
+            [{parser(relation_list)}])"""
+        )
+        document_include_chunk_query = (
+            f"""CALL db.upsertEdge("{self._include_type}",
+            {{type:"{self._document_type}", key:"sid"}},
+            {{type:"{self._chunk_type}", key:"tid"}},
+            [{parser(document_include_chunk_list)}])"""
+        )
+        chunk_include_chunk_query = (
+            f"""CALL db.upsertEdge("{self._include_type}",
+            {{type:"{self._chunk_type}", key:"sid"}},
+            {{type:"{self._chunk_type}", key:"tid"}},
+            [{parser(chunk_include_chunk_list)}])"""
+        )
+        chunk_include_entity_query = (
+            f"""CALL db.upsertEdge("{self._include_type}",
+            {{type:"{self._chunk_type}", key:"sid"}},
+            {{type:"{self._vertex_type}", key:"tid"}},
+            [{parser(chunk_include_entity_list)}])"""
+        )
+        self.conn.run(query=vertex_query)
+        self.conn.run(query=chunk_query)
+        self.conn.run(query=document_query)
+        
+        self.conn.run(query=relation_query)
+        self.conn.run(query=document_include_chunk_query)
+        self.conn.run(query=chunk_include_chunk_query)
+        self.conn.run(query=chunk_include_entity_query)
 
     def truncate(self):
         """Truncate Graph."""

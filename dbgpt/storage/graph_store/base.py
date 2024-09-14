@@ -5,7 +5,7 @@ from typing import Generator, List, Optional, Tuple
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
-from dbgpt.storage.graph_store.graph import Direction, Graph
+from dbgpt.storage.graph_store.graph import Direction, Graph, Vertex
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,10 @@ class GraphStoreBase(ABC):
         """Get the edge type."""
 
     @abstractmethod
+    def get_document_vertex(self, doc_name:str) -> Vertex:
+        """Add graph."""
+
+    @abstractmethod
     def insert_triplet(self, sub: str, rel: str, obj: str):
         """Add triplet."""
 
@@ -59,6 +63,10 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def delete_triplet(self, sub: str, rel: str, obj: str):
         """Delete triplet."""
+
+    @abstractmethod
+    def delete_document(self, doc_name: str):
+        """Delete document."""
 
     @abstractmethod
     def truncate(self):

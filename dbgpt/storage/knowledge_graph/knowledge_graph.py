@@ -172,3 +172,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         logger.info("Drop triplet extractor")
         self._triplet_extractor.drop()
+
+    # def delete_by_ids(self, ids: str) -> List[str]:
+    #     self._graph_store.delete_document(doc_name = ids)
+    #     return 

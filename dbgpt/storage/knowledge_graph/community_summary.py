@@ -2,14 +2,16 @@
 
 import logging
 import os
+import uuid
 from typing import List, Optional
-
+import asyncio
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.community.factory import CommunityStoreAdapterFactory
+from dbgpt.storage.graph_store.graph import Edge, Graph, MemoryGraph, Vertex
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -132,20 +134,107 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
         """Get the knowledge graph config."""
         return self._config
+    
+    def _parse_chunks(slef, chunks: List[Chunk]):
+        data = []
+        for chunk_index, chunk in enumerate(chunks):
+            parent = None
+            directory_keys = list(chunk.metadata.keys())[:-1]
+            parent_level = directory_keys[-2] if len(directory_keys) > 1 else None
+            self_level = directory_keys[-1] if directory_keys else 'Header0'
+            
+            obj = {
+                'id': chunk.chunk_id,
+                'title': chunk.metadata.get(self_level, 'none_header_chunk'),
+                'directory_keys': directory_keys,
+                'level': self_level,
+                'content': chunk.content,
+                'parent_id': None,
+                'parent_title':None,
+                'type':'chunk'
+            }
+            
+            if parent_level:
+                for parent_direct in directory_keys[:-1][::-1]:
+                    parent_name = chunk.metadata.get(parent_direct, None)
+                    for n in range(chunk_index-1, -1, -1):
+                        metadata = chunks[n].metadata
+                        keys = list(metadata.keys())[:-1]
+                        if metadata and parent_direct == keys[-1] and parent_name == metadata.get(parent_direct):
+                            parent = chunks[n]
+                            obj['parent_id'] = parent.chunk_id
+                            obj['parent_title'] = parent_name
+                            break
+                        if chunk_index - n > len(directory_keys):
+                            break
+                    if obj['parent_id']:
+                        break
+            
+            if not obj['parent_id']:
+                obj['parent_id'] = 'document'
+            
+            data.append(obj)
+        
+        return data
 
+        
+
+        
+    
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph."""
-        # todo add doc node
-        for chunk in chunks:
-            # todo add chunk node
-            # todo add relation doc-chunk
+        
+        # check document
+        doc_name = chunks[0].metadata['source'] or 'Text_Node'
+        hash_id = str(uuid.uuid4())
+        # if chunks[0].metadata['source']:
+        #     source_name =os.path.splitext(chunks[0].metadata['source'])[0]
+        #     hash_id = chunks[0].metadata['hash_id']
+        # vertex = self._graph_store.get_document_vertex(doc_name)
+        # if vertex and hash_id and hash_id != vertex.get_prop('hash_id'):
+        #     self.delete_by_ids(doc_name)
 
-            # extract graphs and save
-            graphs = await self._graph_extractor.extract(chunk.content)
+        data_list = self._parse_chunks(chunks)
+        total_graph = MemoryGraph()
+        
+        for data in data_list:
+            chunk_src = Vertex(f"""{data['parent_id']}""",name=data["parent_title"],vertex_type=data["type"])
+            chunk_dst = Vertex(f"""{data["id"]}""",name=data["title"],vertex_type=data["type"])
+            chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="chunk_include_chunk")
+            if data['parent_id'] == 'document':
+                chunk_src = Vertex(f"""{hash_id}""",name=doc_name,vertex_type='document')
+                chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="document_include_chunk")
+            total_graph.upsert_vertex(chunk_src)
+            total_graph.upsert_vertex(chunk_dst)
+            total_graph.append_edge(chunk_include_chunk)
+            graphs = await self._graph_extractor.extract(data["content"])
             for graph in graphs:
-                self._graph_store.insert_graph(graph)
+                for vertex in graph.vertices():
+                    print(vertex.get_prop('vertex_type'))
+                    total_graph.upsert_vertex(vertex)
+                    chunk_include_entity = Edge(chunk_dst.vid,vertex.vid,name=f"include",edge_type="chunk_include_entity")
+                    total_graph.append_edge(chunk_include_entity)
+                for edge in graph.edges():
+                    total_graph.append_edge(edge)               
+                              
+        self._graph_store.insert_graph(total_graph)
 
+        # for chunk in chunks:
+        #     # extract graphs and save
+        #     graphs = await self._graph_extractor.extract(chunk.content)
+        #     for graph in graphs:
+        #         self._graph_store.insert_graph(graph)
+
+        # todo self._graph_store.insert_text_link()
+        # 1. self._graph_store.insert_chunk(chunk nodes, chunk2chunk edeges)
+        # 2. self._graph_store.insert_doc(doc nodes,doc2chunk edges)       
+
+        # tasks = [self._graph_extractor.extract(chunk.content) for chunk in chunks]
+        # results = await asyncio.gather(*tasks)
+        # for result in results:
+        #     self._graph_store.insert_graph(result[0])
         # build communities and save
+
         await self._community_store.build_communities()
 
         return [chunk.chunk_id for chunk in chunks]
@@ -198,6 +287,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         logger.info("Drop triplet extractor")
         self._graph_extractor.drop()
+
 
 
 HYBRID_SEARCH_PT_CN = (
