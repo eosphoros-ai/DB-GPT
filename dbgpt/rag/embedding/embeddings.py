@@ -912,7 +912,6 @@ class TongYiEmbeddings(BaseModel, Embeddings):
             resp = TextEmbedding.call(
                 model=self.model_name, input=batch_texts, api_key=self._api_key
             )
-            print(resp)
             if "output" not in resp:
                 raise RuntimeError(resp["message"])
 
