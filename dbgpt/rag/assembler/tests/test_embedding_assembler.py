@@ -6,8 +6,8 @@ from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.text_splitter.text_splitter import CharacterTextSplitter
-from dbgpt.storage.vector_store.chroma_store import ChromaStore
+from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
+from dbgpt.serve.rag.connector import VectorStoreConnector
 
 
 @pytest.fixture
@@ -46,23 +46,37 @@ def mock_embedding_factory():
 
 
 @pytest.fixture
-def mock_vector_store_connector():
-    return MagicMock(spec=ChromaStore)
+def mock_table_vector_store_connector():
+    mock_connector = MagicMock(spec=VectorStoreConnector)
+    mock_connector.current_embeddings.client.max_seq_length = 512
+    # print(mock_connector.vector_store_config.embedding_fn.client.max_seq_length())
+    return mock_connector
+
+
+@pytest.fixture
+def mock_field_vector_store_connector():
+    mock_connector = MagicMock(spec=VectorStoreConnector)
+    mock_connector.current_embeddings.client.max_seq_length = 512
+    return mock_connector
 
 
 def test_load_knowledge(
     mock_db_connection,
     mock_chunk_parameters,
     mock_embedding_factory,
-    mock_vector_store_connector,
+    mock_table_vector_store_connector,
+    mock_field_vector_store_connector,
 ):
     mock_chunk_parameters.chunk_strategy = "CHUNK_BY_SIZE"
-    mock_chunk_parameters.text_splitter = CharacterTextSplitter()
+    mock_chunk_parameters.text_splitter = RDBTextSplitter(
+        separator="--table-field-separator--"
+    )
     mock_chunk_parameters.splitter_type = SplitterType.USER_DEFINE
     assembler = DBSchemaAssembler(
         connector=mock_db_connection,
         chunk_parameters=mock_chunk_parameters,
         embeddings=mock_embedding_factory.create(),
-        index_store=mock_vector_store_connector,
+        table_vector_store_connector=mock_table_vector_store_connector,
+        field_vector_store_connector=mock_field_vector_store_connector,
     )
     assert len(assembler._chunks) == 1

@@ -2,13 +2,14 @@
 
 from typing import List, Optional
 
+from dbgpt.serve.rag.connector import VectorStoreConnector
+
 from dbgpt.core import Chunk
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
 from dbgpt.datasource.base import BaseConnector
 
 from ..assembler.db_schema import DBSchemaAssembler
 from ..chunk_manager import ChunkParameters
-from ..index.base import IndexStoreBase
 from ..retriever.db_schema import DBSchemaRetriever
 from .assembler import AssemblerOperator
 
@@ -19,13 +20,14 @@ class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
     Args:
         connector (BaseConnector): The connection.
         top_k (int, optional): The top k. Defaults to 4.
-        index_store (IndexStoreBase, optional): The vector store
+        vector_store_connector (VectorStoreConnector, optional): The vector store
         connector. Defaults to None.
     """
 
     def __init__(
         self,
-        index_store: IndexStoreBase,
+        table_vector_store_connector: VectorStoreConnector,
+        field_vector_store_connector: VectorStoreConnector,
         top_k: int = 4,
         connector: Optional[BaseConnector] = None,
         **kwargs
@@ -35,7 +37,8 @@ class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
         self._retriever = DBSchemaRetriever(
             top_k=top_k,
             connector=connector,
-            index_store=index_store,
+            table_vector_store_connector=table_vector_store_connector,
+            field_vector_store_connector=field_vector_store_connector,
         )
 
     def retrieve(self, query: str) -> List[Chunk]:
@@ -53,7 +56,8 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
     def __init__(
         self,
         connector: BaseConnector,
-        index_store: IndexStoreBase,
+        table_vector_store_connector: VectorStoreConnector,
+        field_vector_store_connector: VectorStoreConnector,
         chunk_parameters: Optional[ChunkParameters] = None,
         **kwargs
     ):
@@ -61,14 +65,15 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
 
         Args:
             connector (BaseConnector): The connection.
-            index_store (IndexStoreBase): The Storage IndexStoreBase.
+            vector_store_connector (VectorStoreConnector): The vector store connector.
             chunk_parameters (Optional[ChunkParameters], optional): The chunk
                 parameters.
         """
         if not chunk_parameters:
             chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
         self._chunk_parameters = chunk_parameters
-        self._index_store = index_store
+        self._table_vector_store_connector = table_vector_store_connector
+        self._field_vector_store_connector = field_vector_store_connector
         self._connector = connector
         super().__init__(**kwargs)
 
@@ -84,7 +89,8 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
         assembler = DBSchemaAssembler.load_from_connection(
             connector=self._connector,
             chunk_parameters=self._chunk_parameters,
-            index_store=self._index_store,
+            table_vector_store_connector=self._table_vector_store_connector,
+            field_vector_store_connector=self._field_vector_store_connector,
         )
         assembler.persist()
         return assembler.get_chunks()
