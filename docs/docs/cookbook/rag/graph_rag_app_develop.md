@@ -21,7 +21,7 @@ Visit github repository of TuGraph to view [Quick Start](https://tugraph-db.read
 
 ```
 docker pull tugraph/tugraph-runtime-centos7:latest
-docker run -d -p 7070:7070  -p 7687:7687 -p 9090:9090 --name tugraph_demo reg.docker.alibaba-inc.com/fma/tugraph-runtime-centos7:latest lgraph_server -d run --enable_plugin true
+docker run -d -p 7070:7070  -p 7687:7687 -p 9090:9090 --name tugraph_demo tugraph/tugraph-runtime-centos7:latest lgraph_server -d run --enable_plugin true
 ```
 
 The default port for the bolt protocol is `7687`.
@@ -120,7 +120,7 @@ GRAPH_COMMUNITY_SUMMARY_ENABLED=True
 
 When using a graph database as the underlying knowledge storage platform, it is necessary to build a knowledge graph to facilitate the archiving and retrieval of documents. DB-GPT leverages the capabilities of large language models to implement an integrated knowledge graph, while still maintaining the flexibility to freely connect to other knowledge graph systems and graph database systems. 
 
-To maintain compatibility with existing conventional RAG frameworks, we continue to access the knowledge graph through the `VectorStoreConnector` interface. Simply set the `vector_store_type` to `KnowledgeGraph` to enable this connection.
+We created a knowledge graph with graph community summaries based on `CommunitySummaryKnowledgeGraph`.
 
 ```python
 from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
@@ -154,14 +154,10 @@ Then you can retrieve the knowledge from the knowledge graph, which is the same 
 ```python
 import os
 
-import pytest
-
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.core import Chunk, HumanPromptTemplate, ModelMessage, ModelRequest
-from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 from dbgpt.rag import ChunkParameters
 from dbgpt.rag.assembler import EmbeddingAssembler
-from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
 
