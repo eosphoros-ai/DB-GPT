@@ -370,10 +370,15 @@ class Qwen2Adapter(QwenAdapter):
     support_8bit: bool = True
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return (
-            lower_model_name_or_path
-            and "qwen2" in lower_model_name_or_path
-            and "instruct" in lower_model_name_or_path
+        return lower_model_name_or_path and (
+            (
+                "qwen2" in lower_model_name_or_path
+                and "instruct" in lower_model_name_or_path
+            )
+            or (
+                "qwen2.5" in lower_model_name_or_path
+                and "instruct" in lower_model_name_or_path
+            )
         )
 
 
