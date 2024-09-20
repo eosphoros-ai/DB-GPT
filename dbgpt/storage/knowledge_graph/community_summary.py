@@ -187,22 +187,23 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         # check document
         doc_name = chunks[0].metadata['source'] or 'Text_Node'
         hash_id = str(uuid.uuid4())
+        # need hash_id of doc
         # if chunks[0].metadata['source']:
         #     source_name =os.path.splitext(chunks[0].metadata['source'])[0]
         #     hash_id = chunks[0].metadata['hash_id']
         # vertex = self._graph_store.get_document_vertex(doc_name)
-        # if vertex and hash_id and hash_id != vertex.get_prop('hash_id'):
+        # if hash_id and vertex and  hash_id != vertex.get_prop('hash_id'):
         #     self.delete_by_ids(doc_name)
 
         data_list = self._parse_chunks(chunks)
         total_graph = MemoryGraph()
         
         for data in data_list:
-            chunk_src = Vertex(f"""{data['parent_id']}""",name=data["parent_title"],vertex_type=data["type"])
-            chunk_dst = Vertex(f"""{data["id"]}""",name=data["title"],vertex_type=data["type"])
+            chunk_src = Vertex(f"""{data['parent_id']}""",name=data["parent_title"],vertex_type=data["type"],content=data["content"])
+            chunk_dst = Vertex(f"""{data["id"]}""",name=data["title"],vertex_type=data["type"],content=data["content"])
             chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="chunk_include_chunk")
             if data['parent_id'] == 'document':
-                chunk_src = Vertex(f"""{hash_id}""",name=doc_name,vertex_type='document')
+                chunk_src = Vertex(f"""{hash_id}""",name=doc_name,vertex_type='document',content=data["content"])
                 chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="document_include_chunk")
             total_graph.upsert_vertex(chunk_src)
             total_graph.upsert_vertex(chunk_dst)
@@ -219,20 +220,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                               
         self._graph_store.insert_graph(total_graph)
 
-        # for chunk in chunks:
-        #     # extract graphs and save
-        #     graphs = await self._graph_extractor.extract(chunk.content)
-        #     for graph in graphs:
-        #         self._graph_store.insert_graph(graph)
-
-        # todo self._graph_store.insert_text_link()
-        # 1. self._graph_store.insert_chunk(chunk nodes, chunk2chunk edeges)
-        # 2. self._graph_store.insert_doc(doc nodes,doc2chunk edges)       
-
+        # use asyncio.gather
         # tasks = [self._graph_extractor.extract(chunk.content) for chunk in chunks]
         # results = await asyncio.gather(*tasks)
         # for result in results:
         #     self._graph_store.insert_graph(result[0])
+
         # build communities and save
 
         await self._community_store.build_communities()
