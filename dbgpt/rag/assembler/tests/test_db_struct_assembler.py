@@ -1,5 +1,5 @@
 from typing import List
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -17,14 +17,55 @@ def mock_db_connection():
 @pytest.fixture
 def mock_table_vector_store_connector():
     mock_connector = MagicMock()
-    mock_connector.similar_search.return_value = [Chunk(content="Table summary")] * 4
+    chunk = Chunk(
+        content="table_name: user\ncomment: user about dbgpt",
+        metadata={
+            "field_num": 6,
+            "part": "table",
+            "separated": 1,
+            "table_name": "user",
+        },
+    )
+    mock_connector.asimilar_search_with_scores = AsyncMock(return_value=[chunk])
     return mock_connector
 
 
 @pytest.fixture
 def mock_field_vector_store_connector():
     mock_connector = MagicMock()
-    mock_connector.similar_search.return_value = [Chunk(content="Field summary")] * 4
+    chunk1 = Chunk(
+        content="name,age",
+        metadata={
+            "field_num": 6,
+            "part": "field",
+            "part_index": 0,
+            "separated": 1,
+            "table_name": "user",
+        },
+    )
+    chunk2 = Chunk(
+        content="address,gender",
+        metadata={
+            "field_num": 6,
+            "part": "field",
+            "part_index": 1,
+            "separated": 1,
+            "table_name": "user",
+        },
+    )
+    chunk3 = Chunk(
+        content="mail,phone",
+        metadata={
+            "field_num": 6,
+            "part": "field",
+            "part_index": 2,
+            "separated": 1,
+            "table_name": "user",
+        },
+    )
+    mock_connector.asimilar_search_with_scores = AsyncMock(
+        return_value=[chunk1, chunk2, chunk3]
+    )
     return mock_connector
 
 
@@ -38,25 +79,39 @@ def dbstruct_retriever(
         connector=mock_db_connection,
         table_vector_store_connector=mock_table_vector_store_connector,
         field_vector_store_connector=mock_field_vector_store_connector,
+        separator="--table-field-separator--",
     )
 
 
 def mock_parse_db_summary() -> str:
     """Patch _parse_db_summary method."""
-    return "Table summary"
+    return (
+        "table_name: user\ncomment: user about dbgpt\n"
+        "--table-field-separator--\n"
+        "name,age\naddress,gender\nmail,phone"
+    )
 
 
 # Mocking the _parse_db_summary method in your test function
 @patch.object(
     dbgpt.rag.summary.rdbms_db_summary, "_parse_db_summary", mock_parse_db_summary
 )
-def test_retrieve_with_mocked_summary(dbstruct_retriever):
+@pytest.mark.asyncio
+async def test_retrieve_with_mocked_summary(dbstruct_retriever):
     query = "Table summary"
-    chunks: List[Chunk] = dbstruct_retriever._retrieve(query)
+    chunks: List[Chunk] = await dbstruct_retriever._aretrieve(query)
     assert isinstance(chunks[0], Chunk)
-    assert chunks[0].content == "Table summary"
+    assert chunks[0].content == (
+        "table_name: user\ncomment: user about dbgpt\n"
+        "--table-field-separator--\n"
+        "name,age\naddress,gender\nmail,phone"
+    )
 
 
 async def async_mock_parse_db_summary() -> str:
     """Asynchronous patch for _parse_db_summary method."""
-    return "Table summary"
+    return (
+        "table_name: user\ncomment: user about dbgpt\n"
+        "--table-field-separator--\n"
+        "name,age\naddress,gender\nmail,phone"
+    )

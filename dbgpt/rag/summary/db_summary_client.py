@@ -2,9 +2,6 @@
 
 import logging
 import traceback
-from typing import List
-
-from dbgpt.serve.rag.connector import VectorStoreConnector
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
@@ -13,6 +10,7 @@ from dbgpt.rag import ChunkParameters
 from dbgpt.rag.summary.gdbms_db_summary import GdbmsSummary
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
+from dbgpt.serve.rag.connector import VectorStoreConnector
 
 logger = logging.getLogger(__name__)
 

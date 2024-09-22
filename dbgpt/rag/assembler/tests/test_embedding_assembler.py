@@ -21,14 +21,22 @@ def mock_db_connection():
                     "id": "INTEGER PRIMARY KEY",
                     "name": "TEXT",
                     "age": "INTEGER",
-                },
-                "data": [
-                    (1, "Tom", 10),
-                    (2, "Jerry", 16),
-                    (3, "Jack", 18),
-                    (4, "Alice", 20),
-                    (5, "Bob", 22),
-                ],
+                    "address": "TEXT",
+                    "phone": "TEXT",
+                    "email": "TEXT",
+                    "gender": "TEXT",
+                    "birthdate": "TEXT",
+                    "occupation": "TEXT",
+                    "education": "TEXT",
+                    "marital_status": "TEXT",
+                    "nationality": "TEXT",
+                    "height": "REAL",
+                    "weight": "REAL",
+                    "blood_type": "TEXT",
+                    "emergency_contact": "TEXT",
+                    "created_at": "TEXT",
+                    "updated_at": "TEXT",
+                }
             }
         }
     )
@@ -48,15 +56,14 @@ def mock_embedding_factory():
 @pytest.fixture
 def mock_table_vector_store_connector():
     mock_connector = MagicMock(spec=VectorStoreConnector)
-    mock_connector.current_embeddings.client.max_seq_length = 512
-    # print(mock_connector.vector_store_config.embedding_fn.client.max_seq_length())
+    mock_connector.current_embeddings.client.max_seq_length = 10
     return mock_connector
 
 
 @pytest.fixture
 def mock_field_vector_store_connector():
     mock_connector = MagicMock(spec=VectorStoreConnector)
-    mock_connector.current_embeddings.client.max_seq_length = 512
+    mock_connector.current_embeddings.client.max_seq_length = 10
     return mock_connector
 
 
@@ -79,4 +86,4 @@ def test_load_knowledge(
         table_vector_store_connector=mock_table_vector_store_connector,
         field_vector_store_connector=mock_field_vector_store_connector,
     )
-    assert len(assembler._chunks) == 1
+    assert len(assembler._chunks) > 1

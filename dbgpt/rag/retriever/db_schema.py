@@ -194,11 +194,13 @@ class DBSchemaRetriever(BaseRetriever):
         metadata = table_chunk.metadata
         metadata["part"] = "field"
         filters = [MetadataFilter(key=k, value=v) for k, v in metadata.items()]
-        field_chunks = self._field_vector_store_connector.similar_search(
-            query, self._top_k, MetadataFilters(filters=filters)
+        field_chunks = (
+            await self._field_vector_store_connector.asimilar_search_with_scores(
+                query, self._top_k, 0, MetadataFilters(filters=filters)
+            )
         )
         field_contents = [chunk.content for chunk in field_chunks]
-        table_chunk.content += self._separator + "\n".join(field_contents)
+        table_chunk.content += "\n" + self._separator + "\n" + "\n".join(field_contents)
         return table_chunk
 
     async def _similarity_search(

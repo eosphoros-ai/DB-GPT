@@ -2,11 +2,10 @@
 
 from typing import List, Optional
 
-from dbgpt.serve.rag.connector import VectorStoreConnector
-
 from dbgpt.core import Chunk
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
 from dbgpt.datasource.base import BaseConnector
+from dbgpt.serve.rag.connector import VectorStoreConnector
 
 from ..assembler.db_schema import DBSchemaAssembler
 from ..chunk_manager import ChunkParameters
