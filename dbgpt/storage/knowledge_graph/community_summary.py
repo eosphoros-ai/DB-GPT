@@ -185,16 +185,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         """Extract and persist graph."""
         
         # check document
-        doc_name = chunks[0].metadata['source'] or 'Text_Node'
+        file_path = chunks[0].metadata['source'] or 'Text_Node'
+        doc_name = os.path.basename(file_path)
         hash_id = str(uuid.uuid4())
-        # need hash_id of doc
-        # if chunks[0].metadata['source']:
-        #     source_name =os.path.splitext(chunks[0].metadata['source'])[0]
-        #     hash_id = chunks[0].metadata['hash_id']
-        # vertex = self._graph_store.get_document_vertex(doc_name)
-        # if hash_id and vertex and  hash_id != vertex.get_prop('hash_id'):
-        #     self.delete_by_ids(doc_name)
-
+       
         data_list = self._parse_chunks(chunks)
         total_graph = MemoryGraph()
         
@@ -208,16 +202,17 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             total_graph.upsert_vertex(chunk_src)
             total_graph.upsert_vertex(chunk_dst)
             total_graph.append_edge(chunk_include_chunk)
-            graphs = await self._graph_extractor.extract(data["content"])
-            for graph in graphs:
-                for vertex in graph.vertices():
-                    print(vertex.get_prop('vertex_type'))
-                    total_graph.upsert_vertex(vertex)
-                    chunk_include_entity = Edge(chunk_dst.vid,vertex.vid,name=f"include",edge_type="chunk_include_entity")
-                    total_graph.append_edge(chunk_include_entity)
-                for edge in graph.edges():
-                    total_graph.append_edge(edge)               
-                              
+            if os.getenv('ONLY_EXTRACT_DOCUMENT_STRUCTURE').lower() != 'true':
+                graphs = await self._graph_extractor.extract(data["content"])
+                for graph in graphs:
+                    for vertex in graph.vertices():
+                        print(vertex.get_prop('vertex_type'))
+                        total_graph.upsert_vertex(vertex)
+                        chunk_include_entity = Edge(chunk_dst.vid,vertex.vid,name=f"include",edge_type="chunk_include_entity")
+                        total_graph.append_edge(chunk_include_entity)
+                    for edge in graph.edges():
+                        total_graph.append_edge(edge)               
+                                
         self._graph_store.insert_graph(total_graph)
 
         # use asyncio.gather
