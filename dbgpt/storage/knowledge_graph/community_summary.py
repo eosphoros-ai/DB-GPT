@@ -151,7 +151,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 'content': chunk.content,
                 'parent_id': None,
                 'parent_title':None,
-                'type':'chunk'
+                'type':'chunk',
+                'chunk_index':chunk_index
             }
             
             if parent_level:
@@ -172,15 +173,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             
             if not obj['parent_id']:
                 obj['parent_id'] = 'document'
-            
             data.append(obj)
-        
         return data
 
-        
-
-        
-    
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph."""
         
@@ -192,16 +187,21 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         data_list = self._parse_chunks(chunks)
         total_graph = MemoryGraph()
         
-        for data in data_list:
+        for index,data in enumerate(data_list):
             chunk_src = Vertex(f"""{data['parent_id']}""",name=data["parent_title"],vertex_type=data["type"],content=data["content"])
             chunk_dst = Vertex(f"""{data["id"]}""",name=data["title"],vertex_type=data["type"],content=data["content"])
             chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="chunk_include_chunk")
+            chunk_next_chunk = None
+            if index >= 1:
+                chunk_next_chunk = Edge(data_list[index - 1]["id"],data_list[index]["id"],name="next",edge_type="chunk_next_chunk")
             if data['parent_id'] == 'document':
                 chunk_src = Vertex(f"""{hash_id}""",name=doc_name,vertex_type='document',content=data["content"])
                 chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="document_include_chunk")
             total_graph.upsert_vertex(chunk_src)
             total_graph.upsert_vertex(chunk_dst)
             total_graph.append_edge(chunk_include_chunk)
+            if chunk_next_chunk:
+                total_graph.append_edge(chunk_next_chunk)
             if os.getenv('ONLY_EXTRACT_DOCUMENT_STRUCTURE').lower() != 'true':
                 graphs = await self._graph_extractor.extract(data["content"])
                 for graph in graphs:

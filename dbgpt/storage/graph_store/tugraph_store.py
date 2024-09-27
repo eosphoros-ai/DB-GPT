@@ -54,6 +54,10 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default="include",
         description="The type of include edge, `include` by default.",
     )
+    next_type:str = Field(
+        default="next",
+        description="The type of next edge, `next` by default.",
+    )
     plugin_names: List[str] = Field(
         default=["leiden"],
         description=(
@@ -88,6 +92,7 @@ class TuGraphStore(GraphStoreBase):
         self._document_type = os.getenv("TUGRAPH_DOCUMENT_TYPE", config.document_type)
         self._chunk_type = os.getenv("TUGRAPH_CHUNK_TYPE", config.chunk_type)
         self._include_type = os.getenv("TUGRAPH_INCLUDE_TYPE", config.include_type)
+        self._next_type = os.getenv("TUGRAPH_NEXT_TYPE", config.next_type)
 
         self.conn = TuGraphConnector.from_uri_db(
             host=self._host,
@@ -215,11 +220,25 @@ class TuGraphStore(GraphStoreBase):
             }, {
                 "name": "description",
                 "type": "STRING",
-                "optional": True,
-                "index": True
+                "optional": True
             }
         ]
-        self._create_schema(label_name=self._include_type,label_type='EDGE',data=json.dumps({"label":self._include_type,"type":"EDGE", "constraints":[[self._document_type,self._chunk_type],[self._chunk_type,self._vertex_type]],"properties":include_proerties}))        
+        self._create_schema(label_name=self._include_type,label_type='EDGE',data=json.dumps({"label":self._include_type,"type":"EDGE", "constraints":[[self._document_type,self._chunk_type],[self._chunk_type,self._chunk_type],[self._chunk_type,self._vertex_type]],"properties":include_proerties}))  
+        next_proerties = [{
+                "name": "id",
+                "type": "STRING",
+                "optional": False
+            }, {
+                "name": "name",
+                "type": "STRING",
+                "optional": False,
+            }, {
+                "name": "description",
+                "type": "STRING",
+                "optional": True
+            }
+        ]
+        self._create_schema(label_name=self._next_type,label_type='EDGE',data=json.dumps({"label":self._next_type,"type":"EDGE", "constraints":[[self._chunk_type,self._chunk_type]],"properties":next_proerties}))        
         if self._summary_enabled:
             self._upload_plugin()
 
@@ -235,6 +254,8 @@ class TuGraphStore(GraphStoreBase):
             return self._edge_type in result["edge_tables"]
         if elem_type == "include":
             return self._include_type in result["edge_tables"]
+        if elem_type == "next":
+            return self._next_type in result["edge_tables"]
 
     def _add_vertex_index(self, field_name):
         gql = f"CALL db.addIndex('{self._vertex_type}', '{field_name}', false)"
@@ -485,8 +506,9 @@ class TuGraphStore(GraphStoreBase):
         doc_include_chunk: Iterator[Edge] = graph.edges('document_include_chunk')
         chunks: Iterator[Vertex] = graph.vertices('chunk')
         chunk_include_chunk: Iterator[Edge] = graph.edges('chunk_include_chunk')
-        chunk_include_entity: Iterator[Edge] = graph.edges('chunk_include_entity')
+        chunk_next_chunk: Iterator[Edge] = graph.edges('chunk_next_chunk')
         entities: Iterator[Vertex] = graph.vertices('entity')
+        chunk_include_entity: Iterator[Edge] = graph.edges('chunk_include_entity')
         relation: Iterator[Edge] = graph.edges('relation')
         self._upsert_entities(entities)
         self._upsert_chunks(chunks)
@@ -494,7 +516,9 @@ class TuGraphStore(GraphStoreBase):
         self._upsert_edge(doc_include_chunk, self._include_type, self._document_type, self._chunk_type)
         self._upsert_edge(chunk_include_chunk, self._include_type, self._chunk_type, self._chunk_type)
         self._upsert_edge(chunk_include_entity, self._include_type, self._chunk_type, self._vertex_type)
+        self._upsert_edge(chunk_next_chunk, self._next_type, self._chunk_type, self._chunk_type)
         self._upsert_edge(relation, self._edge_type, self._vertex_type, self._vertex_type)
+
 
 
     def truncate(self):
