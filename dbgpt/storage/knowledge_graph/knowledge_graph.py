@@ -117,6 +117,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
         subgraph = self._graph_store.explore(keywords, limit=topk).format()
+        
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
         if not subgraph:

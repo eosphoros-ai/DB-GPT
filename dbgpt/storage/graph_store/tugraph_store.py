@@ -125,20 +125,113 @@ class TuGraphStore(GraphStoreBase):
 
     def _create_graph(self, graph_name: str):
         self.conn.create_graph(graph_name=graph_name)
-        self._create_schema()
+        document_proerties = [{
+                "name": "id",
+                "type": "STRING",
+                "optional": False
+            }, {
+                "name": "name",
+                "type": "STRING",
+                "optional": False,
+            }, {
+                "name": "_community_id",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }
+        ]
+        self._create_schema(label_name=self._document_type,label_type='VERTEX',data=json.dumps({"label":self._document_type,"type":"VERTEX", "primary":"id","properties":document_proerties}))
+        chunk_proerties = [{
+                "name": "id",
+                "type": "STRING",
+                "optional": False
+            }, {
+                "name": "name",
+                "type": "STRING",
+                "optional": False,
+            }, {
+                "name": "_community_id",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }, {
+                "name": "content",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }
+        ]
+        self._create_schema(label_name=self._chunk_type,label_type='VERTEX',data=json.dumps({"label":self._chunk_type,"type":"VERTEX", "primary":"id","properties":chunk_proerties}))
+        vertex_proerties = [{
+                "name": "id",
+                "type": "STRING",
+                "optional": False
+            }, {
+                "name": "name",
+                "type": "STRING",
+                "optional": False,
+            }, {
+                "name": "_community_id",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }, {
+                "name": "description",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }
+        ]
+        self._create_schema(label_name=self._vertex_type,label_type='VERTEX',data=json.dumps({"label":self._vertex_type,"type":"VERTEX", "primary":"id","properties":vertex_proerties}))
+        edge_proerties = [{
+                "name": "id",
+                "type": "STRING",
+                "optional": False
+            }, {
+                "name": "name",
+                "type": "STRING",
+                "optional": False,
+            }, {
+                "name": "_chunk_id",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }, {
+                "name": "description",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }
+        ]
+        self._create_schema(label_name=self._edge_type,label_type='EDGE',data=json.dumps({"label":self._edge_type,"type":"EDGE", "constraints":[[self._vertex_type,self._vertex_type]],"properties":edge_proerties}))
+        include_proerties = [{
+                "name": "id",
+                "type": "STRING",
+                "optional": False
+            }, {
+                "name": "name",
+                "type": "STRING",
+                "optional": False,
+            }, {
+                "name": "description",
+                "type": "STRING",
+                "optional": True,
+                "index": True
+            }
+        ]
+        self._create_schema(label_name=self._include_type,label_type='EDGE',data=json.dumps({"label":self._include_type,"type":"EDGE", "constraints":[[self._document_type,self._chunk_type],[self._chunk_type,self._vertex_type]],"properties":include_proerties}))        
         if self._summary_enabled:
             self._upload_plugin()
 
     def _check_label(self, elem_type: str):
         result = self.conn.get_table_names()
-        if elem_type == "vertex":
+        if elem_type == "entity":
             return self._vertex_type in result["vertex_tables"]
         if elem_type == "chunk":
             return self._chunk_type in result["vertex_tables"]
         if elem_type == "document":
             return self._document_type in result["vertex_tables"]
-        
-        if elem_type == "edge":
+        if elem_type == "relation":
             return self._edge_type in result["edge_tables"]
         if elem_type == "include":
             return self._include_type in result["edge_tables"]
@@ -179,82 +272,13 @@ class TuGraphStore(GraphStoreBase):
                 )
                 self.conn.run(gql)
 
-    def _create_schema(self):
-        # This part of the code needs optimization.
-        if not self._check_label("vertex"):
-            if self._summary_enabled:
-                create_vertex_gql = (
-                    f"CALL db.createLabel("
-                    f"'vertex', '{self._vertex_type}', "
-                    f"'id', ['id',string,false],"
-                    f"['name',string,false],"
-                    f"['_document_id',string,true],"
-                    f"['_chunk_id',string,true],"
-                    f"['_community_id',string,true],"
-                    f"['description',string,true])"
-                )
-                self.conn.run(create_vertex_gql)
-                self._add_vertex_index("_community_id")
+    def _create_schema(self,label_name:str, label_type:str, data:Any):
+        if not self._check_label(label_name):
+            if label_type == 'VERTEX':
+                gql = f'''CALL db.createVertexLabelByJson('{data}')'''
             else:
-                create_vertex_gql = (
-                    f"CALL db.createLabel("
-                    f"'vertex', '{self._vertex_type}', "
-                    f"'id', ['id',string,false],"
-                    f"['name',string,false])",
-                )
-                self.conn.run(create_vertex_gql)
-
-        if not self._check_label("edge"):
-            create_edge_gql = f"""CALL db.createLabel(
-                    'edge', '{self._edge_type}',
-                    '[["{self._vertex_type}",
-                    "{self._vertex_type}"]]',
-                    ["id",STRING,false],
-                    ["name",STRING,false])"""
-            if self._summary_enabled:
-                create_edge_gql = f"""CALL db.createLabel(
-                    'edge', '{self._edge_type}',
-                    '[["{self._vertex_type}",
-                    "{self._vertex_type}"]]',
-                    ["id",STRING,false],
-                    ["name",STRING,false],
-                    ["_chunk_id",STRING,true],
-                    ["description",STRING,true])"""
-            self.conn.run(create_edge_gql)
-
-        if not self._check_label("document"):
-            if self._summary_enabled:
-                create_document_gql = (
-                        f"CALL db.createLabel("
-                        f"'vertex', '{self._document_type}', "
-                        f"'id', ['id',string,false],"
-                        f"['_community_id',string,true],"
-                        f"['name',string,false])"
-                    )
-                self.conn.run(create_document_gql)
-
-        if not self._check_label("chunk"):
-            if self._summary_enabled:
-                create_document_gql = (
-                        f"CALL db.createLabel("
-                        f"'vertex', '{self._chunk_type}', "
-                        f"'id', ['id',string,false],"
-                        f"['content',string,true],"
-                        f"['_community_id',string,true],"
-                        f"['name',string,false])"
-                    )
-                self.conn.run(create_document_gql)
-
-        if not self._check_label("include"):
-            if self._summary_enabled:
-                create_include_gql = f"""CALL db.createLabel(
-                    'edge', '{self._include_type}',
-                    '[["{self._document_type}","{self._chunk_type}"],["{self._chunk_type}","{self._chunk_type}"],["{self._chunk_type}","{self._vertex_type}"]]',
-                    ["id",STRING,false],
-                    ["name",STRING,false],
-                    ["description",STRING,true])"""
-                self.conn.run(create_include_gql)
-
+                gql = f'''CALL db.createEdgeLabelByJson('{data}')'''
+            self.conn.run(gql)
                 
     def _format_query_data(self, data, white_prop_list: List[str]):
         nodes_list = []
@@ -273,14 +297,16 @@ class TuGraphStore(GraphStoreBase):
         def process_node(node: graph.Node):
             node_id = node._properties.get("id")
             node_name = node._properties.get("name")
+            node_type = next(iter(node._labels))
             node_properties = get_filtered_properties(node._properties, _white_list)
             nodes_list.append(
-                {"id": node_id, "name": node_name, "properties": node_properties}
+                {"id": node_id,"type":node_type, "name": node_name, "properties": node_properties}
             )
 
         def process_relationship(rel: graph.Relationship):
             name = rel._properties.get("name", "")
             rel_nodes = rel.nodes
+            rel_type = rel.type
             src_id = rel_nodes[0]._properties.get("id")
             dst_id = rel_nodes[1]._properties.get("id")
             for node in rel_nodes:
@@ -297,6 +323,7 @@ class TuGraphStore(GraphStoreBase):
                         "src_id": src_id,
                         "dst_id": dst_id,
                         "name": name,
+                        "type":rel_type,
                         "properties": edge_properties,
                     }
                 )
@@ -313,6 +340,7 @@ class TuGraphStore(GraphStoreBase):
                     {
                         "id": "json_node",
                         "name": "json_node",
+                        "type": "json_node",
                         "properties": {"description": value},
                     }
                 )
@@ -329,11 +357,11 @@ class TuGraphStore(GraphStoreBase):
                 else:
                     process_other(value)
         nodes = [
-            Vertex(node["id"], node["name"], **node["properties"])
+            Vertex(node["id"], node["name"], **{"type": node["type"], **node["properties"]})
             for node in nodes_list
         ]
         rels = [
-            Edge(edge["src_id"], edge["dst_id"], edge["name"], **edge["properties"])
+            Edge(edge["src_id"], edge["dst_id"],edge["name"], **{"type": edge["type"], **edge["properties"]})
             for edge in rels_list
         ]
         return {"nodes": nodes, "edges": rels}
@@ -543,6 +571,32 @@ class TuGraphStore(GraphStoreBase):
                 f"WHERE n.id IN {subs} RETURN p {limit_string}"
             )
             return self.query(query)
+        
+    def explore_text_link(
+        self,
+        subs:List[str],
+        depth: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> Graph:
+        """Explore the graph text link."""
+        if not subs:
+            return MemoryGraph()
+        depth_string = f"1..{depth}"
+        if depth is None:
+            depth_string = ".."
+        limit_string = f"LIMIT {limit}"
+        if limit is None:
+            limit_string = ""
+        graph = MemoryGraph()
+        for sub in subs:
+            query = f"MATCH p=(n:{self._document_type})-[r:{self._include_type}*{depth_string}]-(m:{self._chunk_type})WHERE m.content CONTAINS '{sub}' RETURN p {limit_string}"     
+            result = self.query(query)
+            for vertex in result.vertices():
+                graph.upsert_vertex(vertex)
+            for edge in result.edges():
+                graph.append_edge(edge)
+        
+        return graph
 
     def query(self, query: str, **args) -> MemoryGraph:
         """Execute a query on graph."""

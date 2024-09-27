@@ -246,13 +246,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         # local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
         subgraph = self._graph_store.explore(keywords, limit=topk).format()
+        document_subgraph  = self._graph_store.explore_text_link(keywords, limit=topk).format()
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
         if not summaries and not subgraph:
             return []
 
         # merge search results into context
-        content = HYBRID_SEARCH_PT_CN.format(context=context, graph=subgraph)
+        content = HYBRID_SEARCH_PT_CN.format(context=context, graph=subgraph, document_subgraph = document_subgraph)
         return [Chunk(content=content)]
 
     def truncate(self) -> List[str]:

@@ -95,6 +95,14 @@ class GraphStoreBase(ABC):
     ) -> Graph:
         """Explore on graph."""
 
+    def explore_text_link(
+        self,
+        subs: List[str],
+        depth: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> Graph:
+        """Explore  text link on graph."""
+
     @abstractmethod
     def query(self, query: str, **args) -> Graph:
         """Execute a query."""
