@@ -113,8 +113,15 @@ class TuGraphStore(GraphStoreBase):
         vertex = graph.get_vertex(doc_name)
         return vertex
     
-    def delete_document(slef, doc_name:str):
-        pass
+    def delete_document(self, chunk_ids:str):
+        chunkids_list = [uuid.strip() for uuid in chunk_ids.split(',')]
+        del_chunk_gql = f"MATCH(m:{self._document_type})-[r]->(n:{self._chunk_type}) WHERE n.id IN {chunkids_list} DELETE n"
+        del_relation_gql = f"MATCH(m:{self._vertex_type})-[r:{self._edge_type}]-(n:{self._vertex_type}) WHERE r._chunk_id IN {chunkids_list} DELETE r"
+        delete_only_vertex = "MATCH (n) WHERE NOT EXISTS((n)-[]-()) DELETE n"
+        self.conn.run(del_chunk_gql)
+        self.conn.run(del_relation_gql)
+        self.conn.run(delete_only_vertex)
+        
 
     def _create_graph(self, graph_name: str):
         self.conn.create_graph(graph_name=graph_name)
@@ -211,6 +218,7 @@ class TuGraphStore(GraphStoreBase):
                     "{self._vertex_type}"]]',
                     ["id",STRING,false],
                     ["name",STRING,false],
+                    ["_chunk_id",STRING,true],
                     ["description",STRING,true])"""
             self.conn.run(create_edge_gql)
 
@@ -421,6 +429,7 @@ class TuGraphStore(GraphStoreBase):
                         "id": self._escape_quotes(edge.name),
                         "name": self._escape_quotes(edge.name),
                         "description": self._escape_quotes(edge.get_prop("description")) or "",
+                        "_chunk_id": self._escape_quotes(edge.get_prop("_chunk_id")) or "",
                    } for edge in edges]
         relation_query = (
             f"""CALL db.upsertEdge("{edge_type}",
@@ -450,14 +459,14 @@ class TuGraphStore(GraphStoreBase):
         chunk_include_chunk: Iterator[Edge] = graph.edges('chunk_include_chunk')
         chunk_include_entity: Iterator[Edge] = graph.edges('chunk_include_entity')
         entities: Iterator[Vertex] = graph.vertices('entity')
-        relaiton: Iterator[Edge] = graph.edges('relaiton')
+        relation: Iterator[Edge] = graph.edges('relation')
         self._upsert_entities(entities)
         self._upsert_chunks(chunks)
         self._upsert_documents(documents)
         self._upsert_edge(doc_include_chunk, self._include_type, self._document_type, self._chunk_type)
         self._upsert_edge(chunk_include_chunk, self._include_type, self._chunk_type, self._chunk_type)
         self._upsert_edge(chunk_include_entity, self._include_type, self._chunk_type, self._vertex_type)
-        self._upsert_edge(relaiton, self._edge_type, self._vertex_type, self._vertex_type)
+        self._upsert_edge(relation, self._edge_type, self._vertex_type, self._vertex_type)
 
 
     def truncate(self):

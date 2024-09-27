@@ -206,11 +206,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 graphs = await self._graph_extractor.extract(data["content"])
                 for graph in graphs:
                     for vertex in graph.vertices():
-                        print(vertex.get_prop('vertex_type'))
                         total_graph.upsert_vertex(vertex)
                         chunk_include_entity = Edge(chunk_dst.vid,vertex.vid,name=f"include",edge_type="chunk_include_entity")
                         total_graph.append_edge(chunk_include_entity)
                     for edge in graph.edges():
+                        edge.set_prop('_chunk_id',chunk_dst.vid)
                         total_graph.append_edge(edge)               
                                 
         self._graph_store.insert_graph(total_graph)
@@ -275,6 +275,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         logger.info("Drop triplet extractor")
         self._graph_extractor.drop()
+
+    
 
 
 
