@@ -13,12 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class GraphExtractor(LLMExtractor):
-    """GraphExtractor class."""
+    """
+    GraphExtractor class for extracting graph information from text.
+    Inherits from LLMExtractor.
+    """
 
     def __init__(
         self, llm_client: LLMClient, model_name: str, chunk_history: VectorStoreBase
     ):
-        """Initialize the GraphExtractor."""
+        """
+        Initialize the GraphExtractor.
+
+        Args:
+            llm_client (LLMClient): The language model client.
+            model_name (str): The name of the model to use.
+            chunk_history (VectorStoreBase): The vector store for chunk history.
+        """
         super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT_CN)
         self._chunk_history = chunk_history
 
@@ -30,8 +40,17 @@ class GraphExtractor(LLMExtractor):
         self._score_threshold = config.score_threshold
 
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
-        """Load similar chunks."""
-        # load similar chunks
+        """
+        Extract graph information from the given text.
+
+        Args:
+            text (str): The input text to extract from.
+            limit (Optional[int]): The maximum number of relationships to extract.
+
+        Returns:
+            List: A list of extracted graph information.
+        """
+        # Load similar chunks
         chunks = await self._chunk_history.asimilar_search_with_scores(
             text, self._topk, self._score_threshold
         )
@@ -41,11 +60,10 @@ class GraphExtractor(LLMExtractor):
         context = "\n".join(history) if history else ""
 
         try:
-            # extract with chunk history
+            # Extract with chunk history
             return await super()._extract(text, context, limit)
-
         finally:
-            # save chunk to history
+            # Save chunk to history
             await self._chunk_history.aload_document_with_limit(
                 [Chunk(content=text, metadata={"relevant_cnt": len(history)})],
                 self._max_chunks_once_load,
@@ -53,9 +71,21 @@ class GraphExtractor(LLMExtractor):
             )
 
     def _parse_response(self, text: str, limit: Optional[int] = None) -> List[Graph]:
+        """
+        Parse the response text into a graph structure.
+
+        Args:
+            text (str): The response text to parse.
+            limit (Optional[int]): The maximum number of edges to include.
+
+        Returns:
+            List[Graph]: A list containing the parsed MemoryGraph.
+        """
         graph = MemoryGraph()
         edge_count = 0
         current_section = None
+
+        # Parse text and build a graph structure ('MemoryGraph()' type)
         for line in text.split("\n"):
             line = line.strip()
             if line in ["Entities:", "Relationships:"]:
@@ -83,11 +113,11 @@ class GraphExtractor(LLMExtractor):
         return [graph]
 
     def truncate(self):
-        """Truncate chunk history."""
+        """Truncate the chunk history."""
         self._chunk_history.truncate()
 
     def drop(self):
-        """Drop chunk history."""
+        """Drop the chunk history by deleting the vector space."""
         self._chunk_history.delete_vector_name(self._vector_space)
 
 
