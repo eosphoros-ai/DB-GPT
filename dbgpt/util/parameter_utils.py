@@ -638,10 +638,12 @@ def _build_parameter_class(desc: List[ParameterDescription]) -> Type:
             d.param_type  # type: ignore
         )  # Set type annotation
         # fields_dict[d.param_name] = field(default=d.default_value, metadata=metadata)
-        if d.param_name == 'ignore_patterns':
+        if d.param_name == "ignore_patterns":
             fields_dict[d.param_name] = field(default=None, metadata=metadata)
         else:
-            fields_dict[d.param_name] = field(default=d.default_value, metadata=metadata)
+            fields_dict[d.param_name] = field(
+                default=d.default_value, metadata=metadata
+            )
 
     # Create the new class. Note the setting of __annotations__ for type hints
     new_class = type(

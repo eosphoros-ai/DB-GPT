@@ -532,7 +532,7 @@ def knowledge_requires():
     pip install "dbgpt[rag]"
     """
     setup_spec.extras["rag"] = setup_spec.extras["vstore"] + [
-        "spacy>=3.7",
+        "spacy==3.7",
         "markdown",
         "bs4",
         "python-pptx",
