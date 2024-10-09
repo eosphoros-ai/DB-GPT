@@ -28,7 +28,7 @@ class EntityExtractor(LLMExtractor):
         entity_extract_pt = ENTITY_EXTRACT_PT_EN.format(domain_knowledge_pt=domain_knowledge_pt)
         super().__init__(llm_client, model_name, entity_extract_pt)
         self.entities = set()
-        self.relationships = []
+        self.triple_relationships = []
 
     def _parse_response(
         self, text: str, limit: Optional[int] = None
@@ -86,11 +86,11 @@ class EntityExtractor(LLMExtractor):
         for entity1, rel, entity2, description in relationship_list:
             e1 = entity_dict.get(entity1.lower(), (entity1, "Unknown"))
             e2 = entity_dict.get(entity2.lower(), (entity2, "Unknown"))
-            self.relationships.append((e1[0], rel, e2[0]))
+            self.triple_relationships.append((e1[0], rel, e2[0]))
 
         if limit:
-            return self.relationships[:limit]
-        return self.relationships
+            return self.triple_relationships[:limit]
+        return self.triple_relationships
 
     async def extract(
         self, text: str, limit: Optional[int] = None
@@ -107,7 +107,7 @@ class EntityExtractor(LLMExtractor):
         """
         # Clear previous results
         self.entities.clear()
-        self.relationships.clear()
+        self.triple_relationships.clear()
 
         return await super().extract(text, limit)
     
@@ -133,14 +133,14 @@ class EntityExtractor(LLMExtractor):
         """
         return list(self.entities)
 
-    def get_relationships(self) -> List[Tuple[str, str, str]]:
+    def get_triple_relationships(self) -> List[Tuple[str, str, str]]:
         """
-        Get the list of relationships extracted.
+        Get the list of triple relationships extracted.
 
         Returns:
             List[Tuple[str, str, str]]: A list of (entity1, relationship, entity2) tuples.
         """
-        return self.relationships
+        return self.triple_relationships
 
 
 ENTITY_EXTRACT_PT_EN = """
