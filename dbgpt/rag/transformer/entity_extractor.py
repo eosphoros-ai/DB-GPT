@@ -1,4 +1,4 @@
-"""EntityExtractor class."""
+"""TextEntityExtractor class."""
 
 import logging
 import re
@@ -10,15 +10,15 @@ from dbgpt.rag.transformer.llm_extractor import LLMExtractor
 logger = logging.getLogger(__name__)
 
 
-class EntityExtractor(LLMExtractor):
+class TextEntityExtractor(LLMExtractor):
     """
-    EntityExtractor class for extracting entities and relationships (with the provieded domain knowledge) from text.
+    TextEntityExtractor class for extracting entities and relationships (with the provieded domain knowledge) from text.
     Inherits from LLMExtractor.
     """
 
     def __init__(self, llm_client: LLMClient, model_name: str, domain_knowledge_pt: str):
         """
-        Initialize the EntityExtractor.
+        Initialize the TextEntityExtractor.
 
         Args:
             llm_client (LLMClient): The language model client.
