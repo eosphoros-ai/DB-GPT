@@ -143,6 +143,27 @@ class EntityExtractor(LLMExtractor):
         return self.triple_relationships
 
 
+ENTITY_EXTRACT_PT_CN = """
+任务：
+从以下文本中提取实体及其关系，这些实体和关系与特定领域知识相关。
+
+领域知识：
+{domain_knowledge_pt}
+
+请按照以下格式提供您的回答（您的回答必须包含括号）：
+
+实体：
+(实体名称#实体类型)
+(实体名称#实体类型)
+
+关系：
+(实体1#关系#实体2#描述)
+(实体1#关系#实体2#描述)
+
+文本：
+{{text}}
+"""
+
 ENTITY_EXTRACT_PT_EN = """
 Task:
 Extract entities and their relationships cohering the specific domain knowledge from the following text.
