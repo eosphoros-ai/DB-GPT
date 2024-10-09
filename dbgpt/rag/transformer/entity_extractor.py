@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class EntityExtractor(LLMExtractor):
     """
-    EntityExtractor class for extracting medical entities and relationships from text.
+    EntityExtractor class for extracting entities and relationships (with the provieded domain knowledge) from text.
     Inherits from LLMExtractor.
     """
 
