@@ -16,27 +16,17 @@ class EntityExtractor(LLMExtractor):
     Inherits from LLMExtractor.
     """
 
-    def __init__(self, llm_client: LLMClient, model_name: str):
+    def __init__(self, llm_client: LLMClient, model_name: str, domain_knowledge_pt: str):
         """
         Initialize the EntityExtractor.
 
         Args:
             llm_client (LLMClient): The language model client.
             model_name (str): The name of the model to use.
+            domain_knowledge_pt (str): The domain knowledge that provides context for entity extraction.
         """
-        extract_entities_prompt_template = """
-        Extract medical entities and their relationships from the following text. 
-        Format your response as follows:
-
-        Entities:
-        (entity_name#entity_type)
-
-        Relationships:
-        (entity1#relationship#entity2#description)
-
-        Text: {text}
-        """
-        super().__init__(llm_client, model_name, extract_entities_prompt_template)
+        entity_extract_pt = ENTITY_EXTRACT_PT_EN.format(domain_knowledge_pt=domain_knowledge_pt)
+        super().__init__(llm_client, model_name, entity_extract_pt)
         self.entities = set()
         self.relationships = []
 
@@ -120,6 +110,19 @@ class EntityExtractor(LLMExtractor):
         self.relationships.clear()
 
         return await super().extract(text, limit)
+    
+    def evaluate_recall(self, text: str, entities: List[Tuple[str, str]]) -> float:
+        """
+        Evaluate the recall rate of the entity extraction.
+
+        Args:
+            text (str): The input text to evaluate.
+            entities (List[Tuple[str, str]]): The list of entities to evaluate.
+
+        Returns:
+            float: The recall rate of the entity extraction(0.0-1.0).
+        """
+        pass
 
     def get_entities(self) -> List[Tuple[str, str]]:
         """
@@ -140,8 +143,23 @@ class EntityExtractor(LLMExtractor):
         return self.relationships
 
 
-# Example Code (draft version):
-# extractor = EntityExtractor(llm_client, "gpt-3.5-turbo")
-# results = await extractor.extract("Your medical text here", limit=10)
-# entities = extractor.get_entities()
-# relationships = extractor.get_relationships()
+ENTITY_EXTRACT_PT_EN = """
+Task:
+Extract entities and their relationships cohering the specific domain knowledge from the following text.
+
+Domain knowledge:
+{domain_knowledge_pt}
+
+Format your response as follows (your response must include the brackets):
+
+Entities:
+(entity_name#entity_type)
+(entity_name#entity_type)
+
+Relationships:
+(entity1#relationship#entity2#description)
+(entity1#relationship#entity2#description)
+
+Text:
+{{text}}
+"""
