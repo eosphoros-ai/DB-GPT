@@ -117,6 +117,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
         subgraph = self._graph_store.explore(keywords, limit=topk).format()
+        
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
         if not subgraph:
@@ -172,3 +173,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         logger.info("Drop triplet extractor")
         self._triplet_extractor.drop()
+
+    def delete_by_ids(self, ids: str) -> List[str]:
+        self._graph_store.delete_document(chunk_ids = ids)
+        return []

@@ -188,11 +188,11 @@ class Graph(ABC):
         """Get neighbor edges."""
 
     @abstractmethod
-    def vertices(self) -> Iterator[Vertex]:
+    def vertices(self, vertex_prop:Optional[str] = None) -> Iterator[Vertex]:
         """Get vertex iterator."""
 
     @abstractmethod
-    def edges(self) -> Iterator[Edge]:
+    def edges(self, edge_prop:Optional[str] = None) -> Iterator[Edge]:
         """Get edge iterator."""
 
     @abstractmethod
@@ -335,13 +335,21 @@ class MemoryGraph(Graph):
 
         return itertools.islice(es, limit) if limit else es
 
-    def vertices(self) -> Iterator[Vertex]:
+    def vertices(self, vertex_type: Optional[str] = None) -> Iterator[Vertex]:
         """Return vertices."""
-        return iter(self._vs.values())
+        return (
+            item for item in self._vs.values()
+            if vertex_type is None or item.get_prop('vertex_type') == vertex_type
+        )
 
-    def edges(self) -> Iterator[Edge]:
+    def edges(self, edge_type: Optional[str] = None) -> Iterator[Edge]:
         """Return edges."""
-        return iter(e for nbs in self._oes.values() for es in nbs.values() for e in es)
+        return (
+            e for nbs in self._oes.values()
+            for es in nbs.values()
+            for e in es
+            if edge_type is None or e.get_prop('edge_type') == edge_type
+        )
 
     def del_vertices(self, *vids: str):
         """Delete specified vertices."""
