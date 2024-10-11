@@ -3,7 +3,6 @@ import base64
 from enum import Enum
 import json
 import logging
-import os
 from typing import Any, Dict, Generator, Iterator, List, Tuple
 
 
@@ -16,10 +15,11 @@ logger = logging.getLogger(__name__)
 
 class GraphElemType(Enum):
     """Type of element in graph."""
+    # TODO : Should it be compatible with the general case if existing only vertex and edge?
     DOCUMENT = "document"
     CHUNK = "chunk"
-    ENTITY = "entity"
-    RELATION = "relation"
+    ENTITY = "entity"  # view as general vertex in the general case
+    RELATION = "relation"  # view as general edge in the general case
     INCLUDE = "include"
     NEXT = "next"
 
@@ -92,26 +92,17 @@ class TuGraphStore(GraphStoreBase):
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
         self._config = config
-        # TODO: Refactor the atributtes to use the config object.
-        self._host = os.getenv("TUGRAPH_HOST", config.host)
-        self._port = int(os.getenv("TUGRAPH_PORT", config.port))
-        self._username = os.getenv("TUGRAPH_USERNAME", config.username)
-        self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
-        self._summary_enabled = (
-            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            or config.summary_enabled
-        )
-        self._plugin_names = (
-            os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")
-            or config.plugin_names
-        )
+        # TODO: Refactor the atributtes to use the config object
+        # TODO: Rememmber to config the config object while initializing the class.
+        # TODO: Do we need to use kwargs in the constructor?
+        self._host = config.host
+        self._port = config.port
+        self._username = config.username
+        self._password = config.password
+        self._summary_enabled = config.summary_enabled  # summary the community in the graph
+        self._plugin_names = config.plugin_names
+
         self._graph_name = config.name
-        self._vertex_type = os.getenv("TUGRAPH_VERTEX_TYPE", config.vertex_type)
-        self._edge_type = os.getenv("TUGRAPH_EDGE_TYPE", config.edge_type)
-        self._document_type = os.getenv("TUGRAPH_DOCUMENT_TYPE", config.document_type)
-        self._chunk_type = os.getenv("TUGRAPH_CHUNK_TYPE", config.chunk_type)
-        self._include_type = os.getenv("TUGRAPH_INCLUDE_TYPE", config.include_type)
-        self._next_type = os.getenv("TUGRAPH_NEXT_TYPE", config.next_type)
 
         self.conn = TuGraphConnector.from_uri_db(
             host=self._host,
@@ -125,11 +116,11 @@ class TuGraphStore(GraphStoreBase):
 
     def get_vertex_type(self) -> str:
         """Get the vertex type."""
-        return self._vertex_type
+        return GraphElemType.ENTITY.value
 
     def get_edge_type(self) -> str:
         """Get the edge type."""
-        return self._edge_type
+        return GraphElemType.RELATION.value
     
     def get_document_vertex(slef,doc_name:str) -> Vertex:
         """Get the document vertex in the graph."""
@@ -141,8 +132,8 @@ class TuGraphStore(GraphStoreBase):
     def delete_document(self, chunk_ids:str) -> None:
         """Delete document in the graph."""
         chunkids_list = [uuid.strip() for uuid in chunk_ids.split(',')]
-        del_chunk_gql = f"MATCH(m:{self._document_type})-[r]->(n:{self._chunk_type}) WHERE n.id IN {chunkids_list} DELETE n"
-        del_relation_gql = f"MATCH(m:{self._vertex_type})-[r:{self._edge_type}]-(n:{self._vertex_type}) WHERE r._chunk_id IN {chunkids_list} DELETE r"
+        del_chunk_gql = f"MATCH(m:{GraphElemType.DOCUMENT.value})-[r]->(n:{GraphElemType.CHUNK.value}) WHERE n.id IN {chunkids_list} DELETE n"
+        del_relation_gql = f"MATCH(m:{GraphElemType.ENTITY.value})-[r:{GraphElemType.RELATION.value}]-(n:{GraphElemType.ENTITY.value}) WHERE r._chunk_id IN {chunkids_list} DELETE r"
         delete_only_vertex = "MATCH (n) WHERE NOT EXISTS((n)-[]-()) DELETE n"
         self.conn.run(del_chunk_gql)
         self.conn.run(del_relation_gql)
@@ -241,23 +232,25 @@ class TuGraphStore(GraphStoreBase):
             True if the label exists in the specified graph element type, otherwise False.
         """
         result = self.conn.get_table_names()
+
+        # TODO: Simplify the logic
         if elem_type == GraphElemType.ENTITY.value:
-            return self._vertex_type in result["vertex_tables"]
+            return GraphElemType.ENTITY.value in result["vertex_tables"]
         elif elem_type == GraphElemType.CHUNK.value:
-            return self._chunk_type in result["vertex_tables"]
+            return GraphElemType.CHUNK.value in result["vertex_tables"]
         elif elem_type == GraphElemType.DOCUMENT.value:
-            return self._document_type in result["vertex_tables"]
+            return GraphElemType.DOCUMENT.value in result["vertex_tables"]
         elif elem_type == GraphElemType.RELATION.value:
-            return self._edge_type in result["edge_tables"]
+            return GraphElemType.RELATION.value in result["edge_tables"]
         elif elem_type == GraphElemType.INCLUDE.value:
-            return self._include_type in result["edge_tables"]
+            return GraphElemType.INCLUDE.value in result["edge_tables"]
         elif elem_type == GraphElemType.NEXT.value:
-            return self._next_type in result["edge_tables"]
+            return GraphElemType.NEXT.value in result["edge_tables"]
         else:
             raise ValueError(f"Unknown element type: {elem_type}")
 
     def _add_vertex_index(self, field_name):
-        gql = f"CALL db.addIndex('{self._vertex_type}', '{field_name}', false)"
+        gql = f"CALL db.addIndex('{GraphElemType.ENTITY.value}', '{field_name}', false)"
         self.conn.run(gql)
 
     def _upload_plugin(self):
@@ -316,7 +309,7 @@ class TuGraphStore(GraphStoreBase):
                 data = json.dumps({
                     "label": graph_elem_type.value,
                     "type": "EDGE",
-                    "constraints": [[self._vertex_type, self._vertex_type]],
+                    "constraints": [[GraphElemType.ENTITY.value, GraphElemType.ENTITY.value]],
                     "properties": graph_properties,
                 })
                 gql = f'''CALL db.createEdgeLabelByJson('{data}')'''
@@ -438,7 +431,7 @@ class TuGraphStore(GraphStoreBase):
     def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""
         query = (
-            f"MATCH (n1:{self._vertex_type})-[r]->(n2:{self._vertex_type}) "
+            f"MATCH (n1:{GraphElemType.ENTITY.value})-[r]->(n2:{GraphElemType.ENTITY.value}) "
             f'WHERE n1.id = "{subj}" RETURN r.id as rel, n2.id as obj;'
         )
         data = self.conn.run(query)
@@ -456,13 +449,13 @@ class TuGraphStore(GraphStoreBase):
         obj_escaped = escape_quotes(obj)
 
         node_query = f"""CALL db.upsertVertex(
-            '{self._vertex_type}',
+            '{GraphElemType.ENTITY.value}',
             [{{id:'{subj_escaped}',name:'{subj_escaped}'}},
             {{id:'{obj_escaped}',name:'{obj_escaped}'}}])"""
         edge_query = f"""CALL db.upsertEdge(
-            '{self._edge_type}',
-            {{type:"{self._vertex_type}",key:"sid"}},
-            {{type:"{self._vertex_type}", key:"tid"}},
+            '{GraphElemType.RELATION.value}',
+            {{type:"{GraphElemType.ENTITY.value}",key:"sid"}},
+            {{type:"{GraphElemType.ENTITY.value}", key:"tid"}},
             [{{sid:"{subj_escaped}",
             tid: "{obj_escaped}",
             id:"{rel_escaped}",
@@ -480,21 +473,21 @@ class TuGraphStore(GraphStoreBase):
                         "_community_id": "0",
                     } for entity in entities]
         entity_query = (
-            f"""CALL db.upsertVertex("{self._vertex_type}", [{self._parser(entity_list)}])"""
+            f"""CALL db.upsertVertex("{GraphElemType.ENTITY.value}", [{self._parser(entity_list)}])"""
         )
         self.conn.run(query=entity_query)
 
     def _upsert_chunks(self, chunks):
         chunk_list = [{ "id": self._escape_quotes(chunk.vid),"name": self._escape_quotes(chunk.name),"content": self._escape_quotes(chunk.get_prop('content'))} for chunk in chunks]
         chunk_query = (
-            f"""CALL db.upsertVertex("{self._chunk_type}", [{self._parser(chunk_list)}])"""
+            f"""CALL db.upsertVertex("{GraphElemType.CHUNK.value}", [{self._parser(chunk_list)}])"""
         )
         self.conn.run(query=chunk_query)
 
     def _upsert_documents(self, documents):
         document_list = [{ "id": self._escape_quotes(document.vid),"name": self._escape_quotes(document.name), "content": self._escape_quotes(document.get_prop('content')) or ''} for document in documents]
         document_query = (
-            f"""CALL db.upsertVertex("{self._document_type}", [{self._parser(document_list)}])"""
+            f"""CALL db.upsertVertex("{GraphElemType.DOCUMENT.value}", [{self._parser(document_list)}])"""
         )
         self.conn.run(query=document_query)
 
@@ -543,11 +536,11 @@ class TuGraphStore(GraphStoreBase):
         self._upsert_entities(entities)
         self._upsert_chunks(chunks)
         self._upsert_documents(documents)
-        self._upsert_edge(doc_include_chunk, self._include_type, self._document_type, self._chunk_type)
-        self._upsert_edge(chunk_include_chunk, self._include_type, self._chunk_type, self._chunk_type)
-        self._upsert_edge(chunk_include_entity, self._include_type, self._chunk_type, self._vertex_type)
-        self._upsert_edge(chunk_next_chunk, self._next_type, self._chunk_type, self._chunk_type)
-        self._upsert_edge(relation, self._edge_type, self._vertex_type, self._vertex_type)
+        self._upsert_edge(doc_include_chunk, GraphElemType.INCLUDE.value, GraphElemType.DOCUMENT.value, GraphElemType.CHUNK.value)
+        self._upsert_edge(chunk_include_chunk, GraphElemType.INCLUDE.value, GraphElemType.CHUNK.value, GraphElemType.CHUNK.value)
+        self._upsert_edge(chunk_include_entity, GraphElemType.INCLUDE.value, GraphElemType.CHUNK.value, GraphElemType.ENTITY.value)
+        self._upsert_edge(chunk_next_chunk, GraphElemType.NEXT.value, GraphElemType.CHUNK.value, GraphElemType.CHUNK.value)
+        self._upsert_edge(relation, GraphElemType.RELATION.value, GraphElemType.ENTITY.value, GraphElemType.ENTITY.value)
 
 
 
@@ -563,9 +556,9 @@ class TuGraphStore(GraphStoreBase):
     def delete_triplet(self, sub: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         del_query = (
-            f"MATCH (n1:{self._vertex_type} {{id:'{sub}'}})"
-            f"-[r:{self._edge_type} {{id:'{rel}'}}]->"
-            f"(n2:{self._vertex_type} {{id:'{obj}'}}) DELETE n1,n2,r"
+            f"MATCH (n1:{GraphElemType.ENTITY.value} {{id:'{sub}'}})"
+            f"-[r:{GraphElemType.RELATION.value} {{id:'{rel}'}}]->"
+            f"(n2:{GraphElemType.ENTITY.value} {{id:'{obj}'}}) DELETE n1,n2,r"
         )
         self.conn.run(query=del_query)
 
@@ -614,14 +607,14 @@ class TuGraphStore(GraphStoreBase):
             if limit is None:
                 limit_string = ""
             if direct.name == "OUT":
-                rel = f"-[r:{self._edge_type}*{depth_string}]->"
+                rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]->"
             elif direct.name == "IN":
-                rel = f"<-[r:{self._edge_type}*{depth_string}]-"
+                rel = f"<-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
             else:
-                rel = f"-[r:{self._edge_type}*{depth_string}]-"
+                rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
             query = (
-                f"MATCH p=(n:{self._vertex_type})"
-                f"{rel}(m:{self._vertex_type}) "
+                f"MATCH p=(n:{GraphElemType.ENTITY.value})"
+                f"{rel}(m:{GraphElemType.ENTITY.value}) "
                 f"WHERE n.id IN {subs} RETURN p {limit_string}"
             )
             return self.query(query)
@@ -643,7 +636,7 @@ class TuGraphStore(GraphStoreBase):
             limit_string = ""
         graph = MemoryGraph()
         for sub in subs:
-            query = f"MATCH p=(n:{self._document_type})-[r:{self._include_type}*{depth_string}]-(m:{self._chunk_type})WHERE m.content CONTAINS '{sub}' RETURN p {limit_string}"     
+            query = f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-[r:{GraphElemType.INCLUDE.value}*{depth_string}]-(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' RETURN p {limit_string}"     
             result = self.query(query)
             for vertex in result.vertices():
                 graph.upsert_vertex(vertex)
