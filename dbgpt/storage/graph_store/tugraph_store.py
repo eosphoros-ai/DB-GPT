@@ -92,6 +92,7 @@ class TuGraphStore(GraphStoreBase):
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
         self._config = config
+        # TODO: Refactor the atributtes to use the config object.
         self._host = os.getenv("TUGRAPH_HOST", config.host)
         self._port = int(os.getenv("TUGRAPH_PORT", config.port))
         self._username = os.getenv("TUGRAPH_USERNAME", config.username)
@@ -150,6 +151,8 @@ class TuGraphStore(GraphStoreBase):
 
     def _create_graph(self, graph_name: str):
         self.conn.create_graph(graph_name=graph_name)
+
+        # Create the graph schema
         # TODO: Move the schema creation to the base class. (adapter)
         def _format_graph_propertity_schema(name: str, type: str = "STRING", optional: bool = False, index: bool = None, **kwargs) -> Dict[str, str|bool]:
             """Format the property for TuGraph.
@@ -174,50 +177,57 @@ class TuGraphStore(GraphStoreBase):
             property.update(kwargs)
             return property
 
+        # Create the graph label for document vertex
         document_proerties = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
         ]
-        self._create_graph_label(label_name=self._document_type,label_type='VERTEX',data=json.dumps({"label":self._document_type,"type":"VERTEX", "primary":"id","properties":document_proerties}))
+        self._create_graph_label(elem_type=GraphElemType.DOCUMENT, graph_properties=document_proerties)
 
+        # Create the graph label for chunk vertex
         chunk_proerties = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
             _format_graph_propertity_schema("content", "STRING", True, True),
         ]
-        self._create_graph_label(label_name=self._chunk_type,label_type='VERTEX',data=json.dumps({"label":self._chunk_type,"type":"VERTEX", "primary":"id","properties":chunk_proerties}))
+        self._create_graph_label(elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties)
 
+        # Create the graph label for entity vertex
         vertex_proerties = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
             _format_graph_propertity_schema("description", "STRING", True, True),
         ]
-        self._create_graph_label(label_name=self._vertex_type,label_type='VERTEX',data=json.dumps({"label":self._vertex_type,"type":"VERTEX", "primary":"id","properties":vertex_proerties}))
+        self._create_graph_label(elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties)
 
+        # Create the graph label for relation edge
         edge_proerties = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_chunk_id", "STRING", True, True),
             _format_graph_propertity_schema("description", "STRING", True, True),
         ]
-        self._create_graph_label(label_name=self._edge_type,label_type='EDGE',data=json.dumps({"label":self._edge_type,"type":"EDGE", "constraints":[[self._vertex_type,self._vertex_type]],"properties":edge_proerties}))
+        self._create_graph_label(elem_type=GraphElemType.RELATION, graph_properties=edge_proerties)
 
+        # Create the graph label for include edge
         include_proerties = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("description", "STRING", True),
         ]
-        self._create_graph_label(label_name=self._include_type,label_type='EDGE',data=json.dumps({"label":self._include_type,"type":"EDGE", "constraints":[[self._document_type,self._chunk_type],[self._chunk_type,self._chunk_type],[self._chunk_type,self._vertex_type]],"properties":include_proerties}))  
+        self._create_graph_label(elem_type=GraphElemType.INCLUDE, graph_properties=include_proerties)
 
+        # Create the graph label for next edge
         next_proerties = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("description", "STRING", True),
         ]
-        self._create_graph_label(label_name=self._next_type,label_type='EDGE',data=json.dumps({"label":self._next_type,"type":"EDGE", "constraints":[[self._chunk_type,self._chunk_type]],"properties":next_proerties}))        
+        self._create_graph_label(elem_type=GraphElemType.NEXT, graph_properties=next_proerties)
+
         if self._summary_enabled:
             self._upload_plugin()
 
@@ -282,17 +292,33 @@ class TuGraphStore(GraphStoreBase):
                 )
                 self.conn.run(gql)
 
-    def _create_graph_label(self, graph_elem_type: GraphElemType, data: Any):
+    def _create_graph_label(
+            self,
+            graph_elem_type: GraphElemType,
+            graph_properties: Dict[str, str|bool]
+    ):
         """Create a graph label.
         
         Args:
             graph_elem_type (GraphElemType): The type of the graph element.
-            data (Any): The data of the label.
+            graph_properties (Dict[str, str|bool]): The properties of the graph element.
         """
         if not self._check_label(graph_elem_type.value):
             if graph_elem_type.is_vertex():
+                data = json.dumps({
+                    "label": graph_elem_type.value,
+                    "type": "VERTEX",
+                    "primary": "id",
+                    "properties": graph_properties,
+                })
                 gql = f'''CALL db.createVertexLabelByJson('{data}')'''
             else:
+                data = json.dumps({
+                    "label": graph_elem_type.value,
+                    "type": "EDGE",
+                    "constraints": [[self._vertex_type, self._vertex_type]],
+                    "properties": graph_properties,
+                })
                 gql = f'''CALL db.createEdgeLabelByJson('{data}')'''
             self.conn.run(gql)
 
