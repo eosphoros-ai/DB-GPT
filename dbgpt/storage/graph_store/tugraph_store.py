@@ -287,7 +287,11 @@ class TuGraphStore(GraphStoreBase):
                 gql = f"CALL db.plugin.loadPlugin('CPP', '{name}', '{content}', 'SO', '{name} Plugin', false, 'v1')"
                 self.conn.run(gql)
 
-    def _create_graph_label(self, graph_elem_type: GraphElemType, graph_properties: Dict[str, str | bool]):
+    def _create_graph_label(
+        self,
+        graph_elem_type: GraphElemType,
+        graph_properties: Dict[str, str | bool],
+    ):
         """Create a graph label.
 
         Args:
@@ -305,7 +309,7 @@ class TuGraphStore(GraphStoreBase):
                 gql = f"""CALL db.createVertexLabelByJson('{data}')"""
             else:  # edge
                 data = json.dumps({
-                    "label": graph_elem_type.value,
+                    "label": graph_elem_type.va2lue,
                     "type": "EDGE",
                     "constraints": [[GraphElemType.ENTITY.value, GraphElemType.ENTITY.value]],
                     "properties": graph_properties,
@@ -401,7 +405,12 @@ class TuGraphStore(GraphStoreBase):
                 else:
                     process_other(value)
         nodes = [
-            Vertex(node["id"], node["name"], **{"type": node["type"], **node["properties"]}) for node in nodes_list
+            Vertex(
+                node["id"],
+                node["name"],
+                **{"type": node["type"], **node["properties"]},
+            )
+            for node in nodes_list
         ]
         rels = [
             Edge(
@@ -672,7 +681,11 @@ class TuGraphStore(GraphStoreBase):
             limit_string = ""
         graph = MemoryGraph()
         for sub in subs:
-            query = f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-[r:{GraphElemType.INCLUDE.value}*{depth_string}]-(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' RETURN p {limit_string}"
+            query = (
+                f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+                f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]-"
+                f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' RETURN p {limit_string}"
+            )
             result = self.query(query)
             for vertex in result.vertices():
                 graph.upsert_vertex(vertex)
