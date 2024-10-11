@@ -61,7 +61,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
     )
     document_type: str = Field(
         default=GraphElemType.DOCUMENT.value,
-        description="The type of document vertex, `entity` by default.",
+        description="The type of document vertex, `document` by default.",
     )
     chunk_type: str = Field(
         default=GraphElemType.CHUNK.value,
