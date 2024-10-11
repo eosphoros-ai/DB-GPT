@@ -21,8 +21,7 @@ class TuGraphConnector(BaseConnector):
         self._session = None
 
     def create_graph(self, graph_name: str) -> None:
-        """Create a new graph."""
-        # run the query to get vertex labels
+        """Create a new graph in the Neo4j database if it doesn't already exist."""
         try:
             with self._driver.session(database="default") as session:
                 graph_list = session.run("CALL dbms.graph.listGraphs()").data()
@@ -35,7 +34,7 @@ class TuGraphConnector(BaseConnector):
             raise Exception(f"Failed to create graph '{graph_name}': {str(e)}")
 
     def delete_graph(self, graph_name: str) -> None:
-        """Delete a graph."""
+        """Delete a graph in the Neo4j database if it exists."""
         with self._driver.session(database="default") as session:
             graph_list = session.run("CALL dbms.graph.listGraphs()").data()
             exists = any(item["graph_name"] == graph_name for item in graph_list)
@@ -109,11 +108,15 @@ class TuGraphConnector(BaseConnector):
             yield from result
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
-        """Get fields about specified graph.
+        """Retrieve the column information for a specified vertex or edge table in the graph database.
+
+        This function queries the schema of a given table (vertex or edge) and returns detailed
+        information about its columns (properties).
 
         Args:
             table_name (str): table name (graph name)
             table_type (str): table type (vertex or edge)
+
         Returns:
             columns: List[Dict], which contains name: str, type: str,
                 default_expression: str, is_in_primary_key: bool, comment: str
@@ -146,8 +149,8 @@ class TuGraphConnector(BaseConnector):
         """Get table indexes about specified table.
 
         Args:
-            table_name:(str) table name
-            table_type:(str）'vertex' | 'edge'
+            table_name (str): table name
+            table_type (str): 'vertex' | 'edge'
         Returns:
             List[Dict]:eg:[{'name': 'idx_key', 'column_names': ['id']}]
         """
