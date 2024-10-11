@@ -1,9 +1,11 @@
 """TuGraph store."""
 import base64
+from enum import Enum
 import json
 import logging
 import os
-from typing import Any, Generator, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Generator, Iterator, List, Tuple
+
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
@@ -12,6 +14,22 @@ from dbgpt.storage.graph_store.graph import Direction, Edge, Graph, MemoryGraph,
 
 logger = logging.getLogger(__name__)
 
+class GraphElemType(Enum):
+    """Type of element in graph."""
+    DOCUMENT = "document"
+    CHUNK = "chunk"
+    ENTITY = "entity"
+    RELATION = "relation"
+    INCLUDE = "include"
+    NEXT = "next"
+
+    def is_vertex(self) -> bool:
+        """Check if the element is a vertex."""
+        return self in [GraphElemType.DOCUMENT, GraphElemType.CHUNK, GraphElemType.ENTITY]
+    
+    def is_edge(self) -> bool:
+        """Check if the element is an edge."""
+        return not self.is_vertex()
 
 class TuGraphStoreConfig(GraphStoreConfig):
     """TuGraph store config."""
@@ -35,27 +53,27 @@ class TuGraphStoreConfig(GraphStoreConfig):
         description="login password",
     )
     vertex_type: str = Field(
-        default="entity",
+        default=GraphElemType.ENTITY.value,
         description="The type of entity vertex, `entity` by default.",
     )
     document_type: str = Field(
-        default="document",
+        default=GraphElemType.DOCUMENT.value,
         description="The type of document vertex, `entity` by default.",
     )
     chunk_type: str = Field(
-        default="chunk",
+        default=GraphElemType.CHUNK.value,
         description="The type of chunk vertex, `relation` by default.",
     )
     edge_type: str = Field(
-        default="relation",
+        default=GraphElemType.RELATION.value,
         description="The type of relation edge, `relation` by default.",
     )
     include_type: str = Field(
-        default="include",
+        default=GraphElemType.INCLUDE.value,
         description="The type of include edge, `include` by default.",
     )
     next_type:str = Field(
-        default="next",
+        default=GraphElemType.NEXT.value,
         description="The type of next edge, `next` by default.",
     )
     plugin_names: List[str] = Field(
@@ -113,12 +131,14 @@ class TuGraphStore(GraphStoreBase):
         return self._edge_type
     
     def get_document_vertex(slef,doc_name:str) -> Vertex:
+        """Get the document vertex in the graph."""
         gql = f'''MATCH (n) WHERE n.id = {doc_name} RETURN n'''
         graph = slef.query(gql)
         vertex = graph.get_vertex(doc_name)
         return vertex
     
-    def delete_document(self, chunk_ids:str):
+    def delete_document(self, chunk_ids:str) -> None:
+        """Delete document in the graph."""
         chunkids_list = [uuid.strip() for uuid in chunk_ids.split(',')]
         del_chunk_gql = f"MATCH(m:{self._document_type})-[r]->(n:{self._chunk_type}) WHERE n.id IN {chunkids_list} DELETE n"
         del_relation_gql = f"MATCH(m:{self._vertex_type})-[r:{self._edge_type}]-(n:{self._vertex_type}) WHERE r._chunk_id IN {chunkids_list} DELETE r"
@@ -130,132 +150,101 @@ class TuGraphStore(GraphStoreBase):
 
     def _create_graph(self, graph_name: str):
         self.conn.create_graph(graph_name=graph_name)
-        document_proerties = [{
-                "name": "id",
-                "type": "STRING",
-                "optional": False
-            }, {
-                "name": "name",
-                "type": "STRING",
-                "optional": False,
-            }, {
-                "name": "_community_id",
-                "type": "STRING",
-                "optional": True,
-                "index": True
+        # TODO: Move the schema creation to the base class. (adapter)
+        def _format_graph_propertity_schema(name: str, type: str = "STRING", optional: bool = False, index: bool = None, **kwargs) -> Dict[str, str|bool]:
+            """Format the property for TuGraph.
+
+            Args:
+                name: The name of the property.
+                type: The type of the property.
+                optional: The optional of the property.
+                index: The index of the property.
+                kwargs: Additional keyword arguments.
+            """
+            property: Dict[str, str|bool] = {
+                "name": name,
+                "type": type,
+                "optional": optional
             }
+
+            if index is not None:
+                property["index"] = index
+
+            # Add any additional keyword arguments to the property dictionary
+            property.update(kwargs)
+            return property
+
+        document_proerties = [
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("_community_id", "STRING", True, True),
         ]
-        self._create_schema(label_name=self._document_type,label_type='VERTEX',data=json.dumps({"label":self._document_type,"type":"VERTEX", "primary":"id","properties":document_proerties}))
-        chunk_proerties = [{
-                "name": "id",
-                "type": "STRING",
-                "optional": False
-            }, {
-                "name": "name",
-                "type": "STRING",
-                "optional": False,
-            }, {
-                "name": "_community_id",
-                "type": "STRING",
-                "optional": True,
-                "index": True
-            }, {
-                "name": "content",
-                "type": "STRING",
-                "optional": True,
-                "index": True
-            }
+        self._create_graph_label(label_name=self._document_type,label_type='VERTEX',data=json.dumps({"label":self._document_type,"type":"VERTEX", "primary":"id","properties":document_proerties}))
+
+        chunk_proerties = [
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("_community_id", "STRING", True, True),
+            _format_graph_propertity_schema("content", "STRING", True, True),
         ]
-        self._create_schema(label_name=self._chunk_type,label_type='VERTEX',data=json.dumps({"label":self._chunk_type,"type":"VERTEX", "primary":"id","properties":chunk_proerties}))
-        vertex_proerties = [{
-                "name": "id",
-                "type": "STRING",
-                "optional": False
-            }, {
-                "name": "name",
-                "type": "STRING",
-                "optional": False,
-            }, {
-                "name": "_community_id",
-                "type": "STRING",
-                "optional": True,
-                "index": True
-            }, {
-                "name": "description",
-                "type": "STRING",
-                "optional": True,
-                "index": True
-            }
+        self._create_graph_label(label_name=self._chunk_type,label_type='VERTEX',data=json.dumps({"label":self._chunk_type,"type":"VERTEX", "primary":"id","properties":chunk_proerties}))
+
+        vertex_proerties = [
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("_community_id", "STRING", True, True),
+            _format_graph_propertity_schema("description", "STRING", True, True),
         ]
-        self._create_schema(label_name=self._vertex_type,label_type='VERTEX',data=json.dumps({"label":self._vertex_type,"type":"VERTEX", "primary":"id","properties":vertex_proerties}))
-        edge_proerties = [{
-                "name": "id",
-                "type": "STRING",
-                "optional": False
-            }, {
-                "name": "name",
-                "type": "STRING",
-                "optional": False,
-            }, {
-                "name": "_chunk_id",
-                "type": "STRING",
-                "optional": True,
-                "index": True
-            }, {
-                "name": "description",
-                "type": "STRING",
-                "optional": True,
-                "index": True
-            }
+        self._create_graph_label(label_name=self._vertex_type,label_type='VERTEX',data=json.dumps({"label":self._vertex_type,"type":"VERTEX", "primary":"id","properties":vertex_proerties}))
+
+        edge_proerties = [
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("_chunk_id", "STRING", True, True),
+            _format_graph_propertity_schema("description", "STRING", True, True),
         ]
-        self._create_schema(label_name=self._edge_type,label_type='EDGE',data=json.dumps({"label":self._edge_type,"type":"EDGE", "constraints":[[self._vertex_type,self._vertex_type]],"properties":edge_proerties}))
-        include_proerties = [{
-                "name": "id",
-                "type": "STRING",
-                "optional": False
-            }, {
-                "name": "name",
-                "type": "STRING",
-                "optional": False,
-            }, {
-                "name": "description",
-                "type": "STRING",
-                "optional": True
-            }
+        self._create_graph_label(label_name=self._edge_type,label_type='EDGE',data=json.dumps({"label":self._edge_type,"type":"EDGE", "constraints":[[self._vertex_type,self._vertex_type]],"properties":edge_proerties}))
+
+        include_proerties = [
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("description", "STRING", True),
         ]
-        self._create_schema(label_name=self._include_type,label_type='EDGE',data=json.dumps({"label":self._include_type,"type":"EDGE", "constraints":[[self._document_type,self._chunk_type],[self._chunk_type,self._chunk_type],[self._chunk_type,self._vertex_type]],"properties":include_proerties}))  
-        next_proerties = [{
-                "name": "id",
-                "type": "STRING",
-                "optional": False
-            }, {
-                "name": "name",
-                "type": "STRING",
-                "optional": False,
-            }, {
-                "name": "description",
-                "type": "STRING",
-                "optional": True
-            }
+        self._create_graph_label(label_name=self._include_type,label_type='EDGE',data=json.dumps({"label":self._include_type,"type":"EDGE", "constraints":[[self._document_type,self._chunk_type],[self._chunk_type,self._chunk_type],[self._chunk_type,self._vertex_type]],"properties":include_proerties}))  
+
+        next_proerties = [
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("description", "STRING", True),
         ]
-        self._create_schema(label_name=self._next_type,label_type='EDGE',data=json.dumps({"label":self._next_type,"type":"EDGE", "constraints":[[self._chunk_type,self._chunk_type]],"properties":next_proerties}))        
+        self._create_graph_label(label_name=self._next_type,label_type='EDGE',data=json.dumps({"label":self._next_type,"type":"EDGE", "constraints":[[self._chunk_type,self._chunk_type]],"properties":next_proerties}))        
         if self._summary_enabled:
             self._upload_plugin()
 
     def _check_label(self, elem_type: str):
+        """Check if the label exists in the graph.
+
+        Args:
+            elem_type (str): The type of the graph element.
+
+        Returns:
+            True if the label exists in the specified graph element type, otherwise False.
+        """
         result = self.conn.get_table_names()
-        if elem_type == "entity":
+        if elem_type == GraphElemType.ENTITY.value:
             return self._vertex_type in result["vertex_tables"]
-        if elem_type == "chunk":
+        elif elem_type == GraphElemType.CHUNK.value:
             return self._chunk_type in result["vertex_tables"]
-        if elem_type == "document":
+        elif elem_type == GraphElemType.DOCUMENT.value:
             return self._document_type in result["vertex_tables"]
-        if elem_type == "relation":
+        elif elem_type == GraphElemType.RELATION.value:
             return self._edge_type in result["edge_tables"]
-        if elem_type == "include":
+        elif elem_type == GraphElemType.INCLUDE.value:
             return self._include_type in result["edge_tables"]
-        if elem_type == "next":
+        elif elem_type == GraphElemType.NEXT.value:
             return self._next_type in result["edge_tables"]
+        else:
+            raise ValueError(f"Unknown element type: {elem_type}")
 
     def _add_vertex_index(self, field_name):
         gql = f"CALL db.addIndex('{self._vertex_type}', '{field_name}', false)"
@@ -293,21 +282,33 @@ class TuGraphStore(GraphStoreBase):
                 )
                 self.conn.run(gql)
 
-    def _create_schema(self,label_name:str, label_type:str, data:Any):
-        if not self._check_label(label_name):
-            if label_type == 'VERTEX':
+    def _create_graph_label(self, graph_elem_type: GraphElemType, data: Any):
+        """Create a graph label.
+        
+        Args:
+            graph_elem_type (GraphElemType): The type of the graph element.
+            data (Any): The data of the label.
+        """
+        if not self._check_label(graph_elem_type.value):
+            if graph_elem_type.is_vertex():
                 gql = f'''CALL db.createVertexLabelByJson('{data}')'''
             else:
                 gql = f'''CALL db.createEdgeLabelByJson('{data}')'''
             self.conn.run(gql)
-                
+
     def _format_query_data(self, data, white_prop_list: List[str]):
         nodes_list = []
         rels_list: List[Any] = []
         _white_list = white_prop_list
         from neo4j import graph
 
-        def get_filtered_properties(properties, white_list):
+        def get_filtered_properties(properties, white_list) -> Dict[str, Any]:
+            """Get filtered properties.
+
+            The expected propertities are:
+                entity_properties = ["id", "name", "description", "_document_id", "_chunk_id", "_community_id"]
+                edge_properties = ["id", "name", "description", "_chunk_id"]
+            """
             return {
                 key: value
                 for key, value in properties.items()
@@ -499,9 +500,12 @@ class TuGraphStore(GraphStoreBase):
         pass
 
     def insert_graph(self, graph: Graph) -> None:
-        # This part of the code needs optimization.
-        """Add graph."""
+        """Add graph to the graph store.
 
+        Args:
+            graph (Graph): The graph to be added.
+        """
+        # TODO: This part of the code needs optimization.
         documents: Iterator[Vertex] = graph.vertices('document')
         doc_include_chunk: Iterator[Edge] = graph.edges('document_include_chunk')
         chunks: Iterator[Vertex] = graph.vertices('chunk')
@@ -546,7 +550,7 @@ class TuGraphStore(GraphStoreBase):
         schema = data[0]["schema"]
         return schema
 
-    def get_full_graph(self, limit: Optional[int] = None) -> Graph:
+    def get_full_graph(self, limit: int|None = None) -> Graph:
         """Get full graph."""
         if not limit:
             raise Exception("limit must be set")
@@ -565,9 +569,9 @@ class TuGraphStore(GraphStoreBase):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: Optional[int] = None,
-        fan: Optional[int] = None,
-        limit: Optional[int] = None,
+        depth: int|None = None,
+        fan: int|None = None,
+        limit: int|None = None,
     ) -> Graph:
         """Explore the graph from given subjects up to a depth."""
         if not subs:
@@ -599,8 +603,8 @@ class TuGraphStore(GraphStoreBase):
     def explore_text_link(
         self,
         subs:List[str],
-        depth: Optional[int] = None,
-        limit: Optional[int] = None,
+        depth: int|None= None,
+        limit: int|None = None,
     ) -> Graph:
         """Explore the graph text link."""
         if not subs:
