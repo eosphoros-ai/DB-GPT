@@ -4,14 +4,14 @@ import logging
 import os
 import uuid
 from typing import List, Optional
-import asyncio
+
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
-from dbgpt.storage.knowledge_graph.community.factory import CommunityStoreAdapterFactory
-from dbgpt.storage.graph_store.graph import Edge, Graph, MemoryGraph, Vertex
+from dbgpt.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -29,7 +29,8 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     vector_store_type: str = Field(
-        default="Chroma", description="The type of vector store."
+        default="Chroma",
+        description="The type of vector store.",
     )
     user: Optional[str] = Field(
         default=None,
@@ -37,9 +38,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     )
     password: Optional[str] = Field(
         default=None,
-        description=(
-            "The password of vector store, if not set, will use the default password."
-        ),
+        description="The password of vector store, if not set, will use the default password.",
     )
     extract_topk: int = Field(
         default=5,
@@ -67,28 +66,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         super().__init__(config)
         self._config = config
 
-        self._vector_store_type = os.getenv(
-            "VECTOR_STORE_TYPE", config.vector_store_type
-        )
-        self._extract_topk = int(
-            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk)
-        )
+        # TODO: refactor to use the knowledge graph config
+        self._vector_store_type = os.getenv("VECTOR_STORE_TYPE", config.vector_store_type)
+        self._extract_topk = int(os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk))
         self._extract_score_threshold = float(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
-                config.extract_score_threshold,
-            )
+            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE", config.extract_score_threshold)
         )
-        self._community_topk = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk
-            )
-        )
+        self._community_topk = int(os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk))
         self._community_score_threshold = float(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
-                config.community_score_threshold,
-            )
+            os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE", config.community_score_threshold)
         )
 
         def extractor_configure(name: str, cfg: VectorStoreConfig):
@@ -122,7 +108,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             cfg.score_threshold = self._community_score_threshold
 
         self._community_store = CommunityStore(
-            CommunityStoreAdapterFactory.create(self._graph_store),
+            GraphStoreAdapterFactory.create(self._graph_store),
             CommunitySummarizer(self._llm_client, self._model_name),
             VectorStoreFactory.create(
                 self._vector_store_type,
@@ -134,92 +120,101 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
         """Get the knowledge graph config."""
         return self._config
-    
+
     def _parse_chunks(slef, chunks: List[Chunk]):
         data = []
         for chunk_index, chunk in enumerate(chunks):
             parent = None
             directory_keys = list(chunk.metadata.keys())[:-1]
             parent_level = directory_keys[-2] if len(directory_keys) > 1 else None
-            self_level = directory_keys[-1] if directory_keys else 'Header0'
-            
+            self_level = directory_keys[-1] if directory_keys else "Header0"
+
             obj = {
-                'id': chunk.chunk_id,
-                'title': chunk.metadata.get(self_level, 'none_header_chunk'),
-                'directory_keys': directory_keys,
-                'level': self_level,
-                'content': chunk.content,
-                'parent_id': None,
-                'parent_title':None,
-                'type':'chunk',
-                'chunk_index':chunk_index
+                "id": chunk.chunk_id,
+                "title": chunk.metadata.get(self_level, "none_header_chunk"),
+                "directory_keys": directory_keys,
+                "level": self_level,
+                "content": chunk.content,
+                "parent_id": None,
+                "parent_title": None,
+                "type": "chunk",
+                "chunk_index": chunk_index,
             }
-            
+
             if parent_level:
                 for parent_direct in directory_keys[:-1][::-1]:
                     parent_name = chunk.metadata.get(parent_direct, None)
-                    for n in range(chunk_index-1, -1, -1):
+                    for n in range(chunk_index - 1, -1, -1):
                         metadata = chunks[n].metadata
                         keys = list(metadata.keys())[:-1]
                         if metadata and parent_direct == keys[-1] and parent_name == metadata.get(parent_direct):
                             parent = chunks[n]
-                            obj['parent_id'] = parent.chunk_id
-                            obj['parent_title'] = parent_name
+                            obj["parent_id"] = parent.chunk_id
+                            obj["parent_title"] = parent_name
                             break
                         if chunk_index - n > len(directory_keys):
                             break
-                    if obj['parent_id']:
+                    if obj["parent_id"]:
                         break
-            
-            if not obj['parent_id']:
-                obj['parent_id'] = 'document'
+
+            if not obj["parent_id"]:
+                obj["parent_id"] = "document"
             data.append(obj)
         return data
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph."""
-        
-        # check document
-        file_path = chunks[0].metadata['source'] or 'Text_Node'
+        # Check document
+        file_path = chunks[0].metadata["source"] or "Text_Node"
         doc_name = os.path.basename(file_path)
         hash_id = str(uuid.uuid4())
-       
-        data_list = self._parse_chunks(chunks)
+
+        data_list = self._parse_chunks(chunks)  # parse the chunks by def lod_doc_graph
         total_graph = MemoryGraph()
-        
-        for index,data in enumerate(data_list):
-            chunk_src = Vertex(f"""{data['parent_id']}""",name=data["parent_title"],vertex_type=data["type"],content=data["content"])
-            chunk_dst = Vertex(f"""{data["id"]}""",name=data["title"],vertex_type=data["type"],content=data["content"])
-            chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="chunk_include_chunk")
+
+        for index, data in enumerate(data_list):
+            chunk_src = Vertex(
+                f"""{data["parent_id"]}""", name=data["parent_title"], vertex_type=data["type"], content=data["content"]
+            )
+            chunk_dst = Vertex(
+                f"""{data["id"]}""", name=data["title"], vertex_type=data["type"], content=data["content"]
+            )
+            chunk_include_chunk = Edge(chunk_src.vid, chunk_dst.vid, name="include", edge_type="chunk_include_chunk")
             chunk_next_chunk = None
             if index >= 1:
-                chunk_next_chunk = Edge(data_list[index - 1]["id"],data_list[index]["id"],name="next",edge_type="chunk_next_chunk")
-            if data['parent_id'] == 'document':
-                chunk_src = Vertex(f"""{hash_id}""",name=doc_name,vertex_type='document',content=data["content"])
-                chunk_include_chunk = Edge(chunk_src.vid,chunk_dst.vid,name=f"include",edge_type="document_include_chunk")
+                chunk_next_chunk = Edge(
+                    data_list[index - 1]["id"], data_list[index]["id"], name="next", edge_type="chunk_next_chunk"
+                )
+            if data["parent_id"] == "document":
+                chunk_src = Vertex(f"""{hash_id}""", name=doc_name, vertex_type="document", content=data["content"])
+                chunk_include_chunk = Edge(
+                    chunk_src.vid, chunk_dst.vid, name="include", edge_type="document_include_chunk"
+                )
             total_graph.upsert_vertex(chunk_src)
             total_graph.upsert_vertex(chunk_dst)
             total_graph.append_edge(chunk_include_chunk)
             if chunk_next_chunk:
                 total_graph.append_edge(chunk_next_chunk)
-            if os.getenv('ONLY_EXTRACT_DOCUMENT_STRUCTURE').lower() != 'true':
+            if os.getenv("ONLY_EXTRACT_DOCUMENT_STRUCTURE").lower() != "true":
                 graphs = await self._graph_extractor.extract(data["content"])
                 for graph in graphs:
                     for vertex in graph.vertices():
                         total_graph.upsert_vertex(vertex)
-                        chunk_include_entity = Edge(chunk_dst.vid,vertex.vid,name=f"include",edge_type="chunk_include_entity")
+                        chunk_include_entity = Edge(
+                            chunk_dst.vid, vertex.vid, name="include", edge_type="chunk_include_entity"
+                        )
                         total_graph.append_edge(chunk_include_entity)
                     for edge in graph.edges():
-                        edge.set_prop('_chunk_id',chunk_dst.vid)
-                        total_graph.append_edge(edge)               
-                                
-        self._graph_store.insert_graph(total_graph)
+                        edge.set_prop("_chunk_id", chunk_dst.vid)
+                        total_graph.append_edge(edge)
+
+        self._graph_store_apdater.insert_graph(total_graph)
 
         # use asyncio.gather
         # tasks = [self._graph_extractor.extract(chunk.content) for chunk in chunks]
         # results = await asyncio.gather(*tasks)
         # for result in results:
-        #     self._graph_store.insert_graph(result[0])
+        #     self._graph_store_apdater.insert_graph(result[0])
 
         # build communities and save
 
@@ -237,23 +232,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         """Retrieve relevant community summaries."""
         # global search: retrieve relevant community summaries
         communities = await self._community_store.search_communities(text)
-        summaries = [
-            f"Section {i + 1}:\n{community.summary}"
-            for i, community in enumerate(communities)
-        ]
+        summaries = [f"Section {i + 1}:\n{community.summary}" for i, community in enumerate(communities)]
         context = "\n".join(summaries) if summaries else ""
 
         # local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store.explore(keywords, limit=topk).format()
-        document_subgraph  = self._graph_store.explore_text_link(keywords, limit=topk).format()
+        subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()
+        document_subgraph = self._graph_store_apdater.explore_text_link(keywords, limit=topk).format()
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
         if not summaries and not subgraph:
             return []
 
         # merge search results into context
-        content = HYBRID_SEARCH_PT_CN.format(context=context, graph=subgraph, document_subgraph = document_subgraph)
+        content = HYBRID_SEARCH_PT_CN.format(context=context, graph=subgraph, document_subgraph=document_subgraph)
         return [Chunk(content=content)]
 
     def truncate(self) -> List[str]:
@@ -276,9 +268,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         logger.info("Drop triplet extractor")
         self._graph_extractor.drop()
-
-    
-
 
 
 HYBRID_SEARCH_PT_CN = (

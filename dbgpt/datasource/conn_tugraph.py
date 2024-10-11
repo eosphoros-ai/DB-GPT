@@ -1,7 +1,7 @@
 """TuGraph Connector."""
 
 import json
-from typing import Dict, Generator, List, cast
+from typing import Dict, Generator, List, Tuple, cast
 
 from .base import BaseConnector
 
@@ -27,11 +27,9 @@ class TuGraphConnector(BaseConnector):
                 graph_list = session.run("CALL dbms.graph.listGraphs()").data()
                 exists = any(item["graph_name"] == graph_name for item in graph_list)
                 if not exists:
-                    session.run(
-                        f"CALL dbms.graph.createGraph('{graph_name}', '', 2048)"
-                    )
+                    session.run(f"CALL dbms.graph.createGraph('{graph_name}', '', 2048)")
         except Exception as e:
-            raise Exception(f"Failed to create graph '{graph_name}': {str(e)}")
+            raise Exception(f"Failed to create graph '{graph_name}': {str(e)}") from e
 
     def delete_graph(self, graph_name: str) -> None:
         """Delete a graph in the Neo4j database if it exists."""
@@ -42,9 +40,7 @@ class TuGraphConnector(BaseConnector):
                 session.run(f"Call dbms.graph.deleteGraph('{graph_name}')")
 
     @classmethod
-    def from_uri_db(
-        cls, host: str, port: int, user: str, pwd: str, db_name: str
-    ) -> "TuGraphConnector":
+    def from_uri_db(cls, host: str, port: int, user: str, pwd: str, db_name: str) -> "TuGraphConnector":
         """Create a new TuGraphConnector from host, port, user, pwd, db_name."""
         try:
             from neo4j import GraphDatabase
@@ -55,22 +51,20 @@ class TuGraphConnector(BaseConnector):
             return cast(TuGraphConnector, cls(driver=driver, graph=db_name))
 
         except ImportError as err:
-            raise ImportError(
-                "neo4j package is not installed, please install it with "
-                "`pip install neo4j`"
-            ) from err
+            raise ImportError("neo4j package is not installed, please install it with " "`pip install neo4j`") from err
 
-    def get_table_names(self) -> Dict[str, List[str]]:
+    def get_table_names(self) -> Tuple[List[str], List[str]]:
         """Get all table names from the TuGraph by Neo4j driver."""
-        # run the query to get vertex labels
         with self._driver.session(database=self._graph) as session:
-            v_result = session.run("CALL db.vertexLabels()").data()
-            v_data = [table_name["label"] for table_name in v_result]
+            # Run the query to get vertex labels
+            raw_vertex_labels: Dict[str, str] = session.run("CALL db.vertexLabels()").data()
+            vertex_labels = [table_name["label"] for table_name in raw_vertex_labels]
 
-            # run the query to get edge labels
-            e_result = session.run("CALL db.edgeLabels()").data()
-            e_data = [table_name["label"] for table_name in e_result]
-            return {"vertex_tables": v_data, "edge_tables": e_data}
+            # Run the query to get edge labels
+            raw_edge_labels: Dict[str, str] = session.run("CALL db.edgeLabels()").data()
+            edge_labels = [table_name["label"] for table_name in raw_edge_labels]
+
+            return vertex_labels, edge_labels
 
     def get_grants(self):
         """Get grants."""
@@ -99,7 +93,7 @@ class TuGraphConnector(BaseConnector):
                 result = session.run(query)
                 return list(result)
             except Exception as e:
-                raise Exception(f"Query execution failed: {e}")
+                raise Exception(f"Query execution failed: {e}") from e
 
     def run_stream(self, query: str) -> Generator:
         """Run GQL."""
@@ -136,10 +130,7 @@ class TuGraphConnector(BaseConnector):
                     "name": prop["name"],
                     "type": prop["type"],
                     "default_expression": "",
-                    "is_in_primary_key": bool(
-                        "primary" in schema_info
-                        and prop["name"] == schema_info["primary"]
-                    ),
+                    "is_in_primary_key": bool("primary" in schema_info and prop["name"] == schema_info["primary"]),
                     "comment": prop["name"],
                 }
                 data.append(prop_dict)
@@ -156,9 +147,7 @@ class TuGraphConnector(BaseConnector):
         """
         # [{'name':'id','column_names':['id']}]
         with self._driver.session(database=self._graph) as session:
-            result = session.run(
-                f"CALL db.listLabelIndexes('{table_name}','{table_type}')"
-            ).data()
+            result = session.run(f"CALL db.listLabelIndexes('{table_name}','{table_type}')").data()
             transformed_data = []
             for item in result:
                 new_dict = {"name": item["field"], "column_names": [item["field"]]}

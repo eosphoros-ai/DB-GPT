@@ -6,7 +6,7 @@ from typing import List
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.storage.knowledge_graph.community.base import (
     Community,
-    CommunityStoreAdapter,
+    GraphStoreAdapter,
 )
 from dbgpt.storage.knowledge_graph.community.community_metastore import (
     BuiltinCommunityMetastore,
@@ -21,12 +21,12 @@ class CommunityStore:
 
     def __init__(
         self,
-        community_store_adapter: CommunityStoreAdapter,
+        graph_store_adapter: GraphStoreAdapter,
         community_summarizer: CommunitySummarizer,
         vector_store: VectorStoreBase,
     ):
         """Initialize the CommunityStore class."""
-        self._community_store_adapter = community_store_adapter
+        self._graph_store_adapter = graph_store_adapter
         self._community_summarizer = community_summarizer
         self._meta_store = BuiltinCommunityMetastore(vector_store)
 
@@ -44,9 +44,7 @@ class CommunityStore:
 
             community.summary = await self._community_summarizer.summarize(graph=graph)
             communities.append(community)
-            logger.info(
-                f"Summarize community {community_id}: " f"{community.summary[:50]}..."
-            )
+            logger.info(f"Summarize community {community_id}: " f"{community.summary[:50]}...")
 
         # truncate then save new summaries
         await self._meta_store.truncate()
