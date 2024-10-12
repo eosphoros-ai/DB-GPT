@@ -160,7 +160,7 @@ class TuGraphStore(GraphStoreBase):
         from neo4j import graph
 
         def filter_properties(properties: dict[str, Any], white_list: List[str]) -> Dict[str, Any]:
-            """Filter the properties.
+            """Filter the properties. It will remove the properties that are not in the white list.
 
             The expected propertities are:
                 entity_properties = ["id", "name", "description", "_document_id", "_chunk_id", "_community_id"]
@@ -265,9 +265,23 @@ class TuGraphStore(GraphStoreBase):
         # TODO: To be removed to the adapter class.
 
     def query(self, query: str, **kwargs) -> MemoryGraph:
-        """Execute a query on graph."""
+        """Execute a query on graph.
+
+        white_list: List[str] = kwargs.get("white_list", []), which contains the white list of properties
+        and filters the properties that are not in the white list.
+        """
         query_result = self.conn.run(query=query)
-        white_list: List[str] = kwargs.get("white_list", [])
+        white_list: List[str] = kwargs.get(
+            "white_list",
+            [
+                "id",
+                "name",
+                "description",
+                "_document_id",
+                "_chunk_id",
+                "_community_id",
+            ],
+        )
         nodes, edges = self.get_nodes_edges_from_queried_data(query_result, white_list)
         mg = MemoryGraph()
         for vertex in nodes:
