@@ -436,7 +436,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         depth: int | None = None,
         fan: int | None = None,
         limit: int | None = None,
-    ) -> Graph:
+    ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         if not subs:
             return MemoryGraph()

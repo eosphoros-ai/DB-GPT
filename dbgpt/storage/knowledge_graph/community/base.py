@@ -32,13 +32,13 @@ class GraphStoreAdapter(ABC):
         """Initialize Community Store Adapter."""
         self._graph_store = graph_store
 
-    ####################
-    #
-    #
-    # Community Store
-    #
-    #
-    ####################
+    ###################
+    #                 #
+    #                 #
+    # Community Store #
+    #                 #
+    #                 #
+    ###################
     @property
     def graph_store(self) -> GraphStoreBase:
         """Get graph store."""
@@ -52,13 +52,13 @@ class GraphStoreAdapter(ABC):
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
 
-    ####################
-    #
-    #
-    # Graph Store
-    #
-    #
-    ####################
+    ###############
+    #             #
+    #             #
+    # Graph Store #
+    #             #
+    #             #
+    ###############
     @abstractmethod
     def get_graph_config(self):
         """Get config."""
@@ -155,15 +155,6 @@ class GraphStoreAdapter(ABC):
         **kwargs,
     ) -> Graph:
         """Explore the graph from given subjects up to a depth."""
-
-    @abstractmethod
-    def explore_text_link(
-        self,
-        subs: List[str],
-        depth: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> Graph:
-        """Explore text link on graph."""
 
 
 class CommunityMetastore(ABC):
