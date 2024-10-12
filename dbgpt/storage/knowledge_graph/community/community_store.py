@@ -32,12 +32,12 @@ class CommunityStore:
 
     async def build_communities(self):
         """Discover communities."""
-        community_ids = await self._community_store_adapter.discover_communities()
+        community_ids = await self._graph_store_adapter.discover_communities()
 
         # summarize communities
         communities = []
         for community_id in community_ids:
-            community = await self._community_store_adapter.get_community(community_id)
+            community = await self._graph_store_adapter.get_community(community_id)
             graph = community.data.format()
             if not graph:
                 break
@@ -63,7 +63,7 @@ class CommunityStore:
         self._community_summarizer.truncate()
 
         logger.info("Truncate graph")
-        self._community_store_adapter.graph_store.truncate()
+        self._graph_store_adapter.truncate()
 
     def drop(self):
         """Drop community store."""
@@ -74,4 +74,4 @@ class CommunityStore:
         self._community_summarizer.drop()
 
         logger.info("Remove graph")
-        self._community_store_adapter.graph_store.drop()
+        self._graph_store_adapter.drop()
