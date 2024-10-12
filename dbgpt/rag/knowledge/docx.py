@@ -1,5 +1,7 @@
 """Docx Knowledge."""
 from typing import Any, Dict, List, Optional, Union
+from docx.opc.pkgreader import _SerializedRelationships, _SerializedRelationship
+from docx.opc.oxml import parse_xml
 
 import docx
 
@@ -12,17 +14,33 @@ from dbgpt.rag.knowledge.base import (
 )
 
 
+def load_from_xml_v2(baseURI, rels_item_xml):
+    """
+    Return |_SerializedRelationships| instance loaded with the
+    relationships contained in *rels_item_xml*. Returns an empty
+    collection if *rels_item_xml* is |None|.
+    """
+    srels = _SerializedRelationships()
+    if rels_item_xml is not None:
+        rels_elm = parse_xml(rels_item_xml)
+        for rel_elm in rels_elm.Relationship_lst:
+            if rel_elm.target_ref in ('../NULL', 'NULL'):
+                continue
+            srels._srels.append(_SerializedRelationship(baseURI, rel_elm))
+    return srels
+
+
 class DocxKnowledge(Knowledge):
     """Docx Knowledge."""
 
     def __init__(
-        self,
-        file_path: Optional[str] = None,
-        knowledge_type: Any = KnowledgeType.DOCUMENT,
-        encoding: Optional[str] = "utf-8",
-        loader: Optional[Any] = None,
-        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
-        **kwargs: Any,
+            self,
+            file_path: Optional[str] = None,
+            knowledge_type: Any = KnowledgeType.DOCUMENT,
+            encoding: Optional[str] = "utf-8",
+            loader: Optional[Any] = None,
+            metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
+            **kwargs: Any,
     ) -> None:
         """Create Docx Knowledge with Knowledge arguments.
 
@@ -47,8 +65,10 @@ class DocxKnowledge(Knowledge):
             documents = self._loader.load()
         else:
             docs = []
+            _SerializedRelationships.load_from_xml = load_from_xml_v2
             doc = docx.Document(self._path)
             content = []
+
             for i in range(len(doc.paragraphs)):
                 para = doc.paragraphs[i]
                 text = para.text
