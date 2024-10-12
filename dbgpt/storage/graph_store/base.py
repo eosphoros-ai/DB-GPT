@@ -6,7 +6,7 @@ from typing import AsyncGenerator, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
-from dbgpt.storage.graph_store.graph import MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import Graph, MemoryGraph, Vertex
 
 logger = logging.getLogger(__name__)
 
