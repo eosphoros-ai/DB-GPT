@@ -3,7 +3,7 @@
 import base64
 import json
 import logging
-from typing import Any, AsyncGenerator, Dict, List
+from typing import Any, AsyncGenerator, Dict, List, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
@@ -137,7 +137,11 @@ class TuGraphStore(GraphStoreBase):
                 gql = f"CALL db.plugin.loadPlugin('CPP', '{name}', '{content}', 'SO', '{name} Plugin', false, 'v1')"
                 self.conn.run(gql)
 
-    def _format_query_data(self, data, white_prop_list: List[str]) -> Dict[str, Any]:
+    def get_nodes_edges_from_queried_data(
+        self,
+        data: List[Dict[str, Any]],
+        white_prop_list: List[str],
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Format the query data.
 
         Args:
@@ -147,13 +151,16 @@ class TuGraphStore(GraphStoreBase):
         Returns:
             The formatted data.
         """
-        nodes_list = []
-        rels_list: List[Any] = []
+        nodes_list: List[Dict[str, Any]] = []
+        nodes_dict: Dict[str, Dict[str, Any]] = {}
+        edges_list: List[Dict[str, Any]] = []
+        edges_dict: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+
         _white_list = white_prop_list
         from neo4j import graph
 
-        def _get_filtered_properties(properties, white_list) -> Dict[str, Any]:
-            """Get filtered properties.
+        def filter_properties(properties: dict[str, Any], white_list: List[str]) -> Dict[str, Any]:
+            """Filter the properties.
 
             The expected propertities are:
                 entity_properties = ["id", "name", "description", "_document_id", "_chunk_id", "_community_id"]
@@ -165,83 +172,77 @@ class TuGraphStore(GraphStoreBase):
                 if (not key.startswith("_") and key not in ["id", "name"]) or key in white_list
             }
 
-        def process_node(node: graph.Node):
-            node_id = node._properties.get("id")
-            node_name = node._properties.get("name")
-            node_type = next(iter(node._labels))
-            node_properties = _get_filtered_properties(node._properties, _white_list)
-            nodes_list.append({
-                "id": node_id,
-                "type": node_type,
-                "name": node_name,
-                "properties": node_properties,
-            })
+        def add_node(node_data: Dict[str, Any]):
+            """Add a node to the nodes dictionary if it doesn't exist."""
+            node_id = node_data.get("id")
+            if node_id not in nodes_dict:
+                nodes_dict[node_id] = node_data
+                nodes_list.append(node_data)
 
-        def process_relationship(rel: graph.Relationship):
-            name = rel._properties.get("name", "")
-            rel_nodes = rel.nodes
-            rel_type = rel.type
-            src_id = rel_nodes[0]._properties.get("id")
-            dst_id = rel_nodes[1]._properties.get("id")
-            for node in rel_nodes:
-                process_node(node)
-            edge_properties = _get_filtered_properties(rel._properties, _white_list)
-            if not any(
-                existing_edge.get("name") == name
-                and existing_edge.get("src_id") == src_id
-                and existing_edge.get("dst_id") == dst_id
-                for existing_edge in rels_list
-            ):
-                rels_list.append({
-                    "src_id": src_id,
-                    "dst_id": dst_id,
-                    "name": name,
-                    "type": rel_type,
-                    "properties": edge_properties,
-                })
-
-        def process_path(path: graph.Path):
-            for rel in path.relationships:
-                process_relationship(rel)
-
-        def process_other(value):
-            if not any(existing_node.get("id") == "json_node" for existing_node in nodes_list):
-                nodes_list.append({
-                    "id": "json_node",
-                    "name": "json_node",
-                    "type": "json_node",
-                    "properties": {"description": value},
-                })
+        def add_edge(edge_data: Dict[str, Any]):
+            """Add an edge to the edges dictionary if it doesn't exist."""
+            edge_key = (edge_data.get("src_id"), edge_data.get("dst_id"), edge_data.get("name"))
+            if edge_key not in edges_dict:
+                edges_dict[edge_key] = edge_data
+                edges_list.append(edge_data)
 
         for record in data:
-            for key in record.keys():
-                value = record[key]
+            for value in record.values():
                 if isinstance(value, graph.Node):
-                    process_node(value)
+                    node_data = {
+                        "id": value._properties.get("id"),
+                        "name": value._properties.get("name"),
+                        "type": next(iter(value._labels)),
+                        "properties": filter_properties(value._properties, _white_list),
+                    }
+                    add_node(node_data)
                 elif isinstance(value, graph.Relationship):
-                    process_relationship(value)
+                    for node in value.nodes:  # num of nodes is 2
+                        node_data = {
+                            "id": node._properties.get("id"),
+                            "name": node._properties.get("name"),
+                            "type": next(iter(node._labels)),
+                            "properties": filter_properties(node._properties, _white_list),
+                        }
+                        add_node(node_data)
+
+                        edge_data = {
+                            "src_id": value.nodes[0]._properties.get("id"),
+                            "dst_id": value.nodes[1]._properties.get("id"),
+                            "name": value._properties.get("name"),
+                            "type": value.type,
+                            "properties": filter_properties(value._properties, _white_list),
+                        }
+                        add_edge(edge_data)
                 elif isinstance(value, graph.Path):
-                    process_path(value)
-                else:
-                    process_other(value)
-        nodes = [
-            Vertex(
-                node["id"],
-                node["name"],
-                **{"type": node["type"], **node["properties"]},
-            )
-            for node in nodes_list
-        ]
-        rels = [
-            Edge(
-                edge["src_id"],
-                edge["dst_id"],
-                edge["name"],
-                **{"type": edge["type"], **edge["properties"]},
-            )
-            for edge in rels_list
-        ]
-        return {"nodes": nodes, "edges": rels}
+                    for edge in value.relationships:
+                        for node in edge.nodes:
+                            node_data = {
+                                "id": node._properties.get("id"),
+                                "name": node._properties.get("name"),
+                                "type": next(iter(node._labels)),
+                                "properties": filter_properties(node._properties, _white_list),
+                            }
+                            add_node(node_data)
+
+                            edge_data = {
+                                "src_id": edge.nodes[0]._properties.get("id"),
+                                "dst_id": edge.nodes[1]._properties.get("id"),
+                                "name": edge._properties.get("name"),
+                                "type": edge.type,
+                                "properties": filter_properties(edge._properties, _white_list),
+                            }
+                            add_edge(edge_data)
+                else:  # json_node
+                    node_data = {
+                        "id": "json_node",
+                        "name": "json_node",
+                        "type": "json_node",
+                        "properties": {"description": value},
+                    }
+                    add_node(node_data)
+
+        return nodes_list, edges_list
 
     def _escape_quotes(self, value: str) -> str:
         """Escape single and double quotes in a string for queries."""
@@ -265,13 +266,13 @@ class TuGraphStore(GraphStoreBase):
 
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph."""
-        result = self.conn.run(query=query)
-        white_list = kwargs.get("white_list", [])
-        graph = self._format_query_data(result, white_list)
+        query_result = self.conn.run(query=query)
+        white_list: List[str] = kwargs.get("white_list", [])
+        nodes, edges = self.get_nodes_edges_from_queried_data(query_result, white_list)
         mg = MemoryGraph()
-        for vertex in graph["nodes"]:
+        for vertex in nodes:
             mg.upsert_vertex(vertex)
-        for edge in graph["edges"]:
+        for edge in edges:
             mg.append_edge(edge)
         return mg
 
@@ -289,10 +290,10 @@ class TuGraphStore(GraphStoreBase):
                     vertex = Vertex(node_id, name=node_id, description=description)
                     mg.upsert_vertex(vertex)
                 elif isinstance(value, graph.Relationship):
-                    rel_nodes = value.nodes
+                    edge_nodes = value.nodes
                     prop_id = value._properties["id"]
-                    src_id = rel_nodes[0]._properties["id"]
-                    dst_id = rel_nodes[1]._properties["id"]
+                    src_id = edge_nodes[0]._properties["id"]
+                    dst_id = edge_nodes[1]._properties["id"]
                     description = value._properties["description"]
                     edge = Edge(src_id, dst_id, name=prop_id, description=description)
                     mg.append_edge(edge)

@@ -1,4 +1,5 @@
 """Graph store factory."""
+
 import logging
 from typing import Tuple, Type
 
@@ -35,8 +36,6 @@ class GraphStoreFactory:
         for t in graph_store.__all__:
             if t.lower() == graph_store_type.lower():
                 store_cls, cfg_cls = getattr(graph_store, t)
-                if issubclass(store_cls, GraphStoreBase) and issubclass(
-                    cfg_cls, GraphStoreConfig
-                ):
+                if issubclass(store_cls, GraphStoreBase) and issubclass(cfg_cls, GraphStoreConfig):
                     return store_cls, cfg_cls
         raise Exception(f"Graph store {graph_store_type} not supported")
