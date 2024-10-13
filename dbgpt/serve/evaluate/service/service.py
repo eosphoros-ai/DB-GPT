@@ -188,7 +188,7 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
             metrics = []
             metric_name_list = evaluate_metrics
             for name in metric_name_list:
-                if name == AnswerRelevancyMetric.name:
+                if name == AnswerRelevancyMetric.name():
                     worker_manager = CFG.SYSTEM_APP.get_component(
                         ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
                     ).create()

@@ -79,7 +79,6 @@ class EvaluationMetric(ABC, Generic[P, C]):
         pass
 
     @classmethod
-    @property
     def name(cls) -> str:
         """Name of the metric."""
         return cls.__name__
@@ -288,7 +287,7 @@ class MetricManage:
 
     def register_metric(self, cls: Type[EvaluationMetric]):
         """Register metric."""
-        self.metrics[cls.name] = cls
+        self.metrics[cls.name()] = cls
 
     def get_by_name(self, name: str) -> Type[EvaluationMetric]:
         """Get by name."""

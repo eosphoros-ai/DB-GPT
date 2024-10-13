@@ -287,7 +287,7 @@ class AnswerEvaluatorOperator(JoinOperator[List[EvaluationResult]]):
                     contexts=contexts,
                     passing=result.passing,
                     raw_dataset=raw_dataset,
-                    metric_name=metric.name,
+                    metric_name=metric.name(),
                     feedback=result.feedback,
                 )
             )
