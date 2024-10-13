@@ -21,6 +21,7 @@ from dbgpt.agent import (
     DefaultAWELLayoutManager,
     GptsMemory,
     LLMConfig,
+    ResourceType,
     ShortTermMemory,
     UserProxyAgent,
     get_agent_manager,
@@ -43,6 +44,7 @@ from dbgpt.serve.prompt.service import service as PromptService
 from dbgpt.util.json_utils import serialize
 from dbgpt.util.tracer import TracerManager
 
+from ...rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 from ..db import GptsMessagesDao
 from ..db.gpts_app import GptsApp, GptsAppDao, GptsAppQuery
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
@@ -601,6 +603,27 @@ class MultiAgents(BaseComponent, ABC):
                 self.gpts_conversations.update(
                     last_gpts_conversation.conv_id, Status.COMPLETE.value
                 )
+
+    async def get_knowledge_resources(self, app_code: str, question: str):
+        """Get the knowledge resources."""
+        context = []
+        app: GptsApp = self.get_app(app_code)
+        if app and app.details and len(app.details) > 0:
+            for detail in app.details:
+                if detail and detail.resources and len(detail.resources) > 0:
+                    for resource in detail.resources:
+                        if resource.type == ResourceType.Knowledge:
+                            retriever = KnowledgeSpaceRetriever(
+                                space_id=str(resource.value),
+                                top_k=CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
+                            )
+                            chunks = await retriever.aretrieve_with_scores(
+                                question, score_threshold=0.3
+                            )
+                            context.extend([chunk.content for chunk in chunks])
+                        else:
+                            continue
+        return context
 
 
 multi_agents = MultiAgents(system_app)

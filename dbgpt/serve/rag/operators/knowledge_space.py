@@ -23,10 +23,8 @@ from dbgpt.core.awel.flow import (
 )
 from dbgpt.core.awel.task.base import IN, OUT
 from dbgpt.core.interface.operators.prompt_operator import BasePromptBuilderOperator
-from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-from dbgpt.serve.rag.connector import VectorStoreConnector
-from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.core.interface.operators.retriever import RetrieverOperator
+from dbgpt.serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 from dbgpt.util.function_utils import rearrange_args_by_type
 from dbgpt.util.i18n_utils import _
 
@@ -40,7 +38,7 @@ def _load_space_name() -> List[OptionValue]:
     ]
 
 
-class SpaceRetrieverOperator(MapOperator[IN, OUT]):
+class SpaceRetrieverOperator(RetrieverOperator[IN, OUT]):
     """knowledge space retriever operator."""
 
     metadata = ViewMetadata(
@@ -71,64 +69,48 @@ class SpaceRetrieverOperator(MapOperator[IN, OUT]):
         documentation_url="https://github.com/openai/openai-python",
     )
 
-    def __init__(self, space_name: str, recall_score: Optional[float] = 0.3, **kwargs):
+    def __init__(
+        self,
+        space_id: str,
+        top_k: Optional[int] = 5,
+        recall_score: Optional[float] = 0.3,
+        **kwargs,
+    ):
         """
         Args:
-            space_name (str): The space name.
+            space_id (str): The space name.
+            top_k (Optional[int]): top k.
             recall_score (Optional[float], optional): The recall score. Defaults to 0.3.
         """
-        self._space_name = space_name
+        self._space_id = space_id
+        self._top_k = top_k
         self._recall_score = recall_score
         self._service = KnowledgeService()
-        embedding_factory = CFG.SYSTEM_APP.get_component(
-            "embedding_factory", EmbeddingFactory
-        )
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        )
-        config = VectorStoreConfig(name=self._space_name, embedding_fn=embedding_fn)
-        self._vector_store_connector = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE,
-            vector_store_config=config,
-        )
 
         super().__init__(**kwargs)
 
-    async def map(self, query: IN) -> OUT:
+    def retrieve(self, query: IN) -> OUT:
         """Map input value to output value.
 
         Args:
-            input_value (IN): The input value.
+            query (IN): The input value.
 
         Returns:
             OUT: The output value.
         """
-        space_context = self._service.get_space_context(self._space_name)
-        top_k = (
-            CFG.KNOWLEDGE_SEARCH_TOP_SIZE
-            if space_context is None
-            else int(space_context["embedding"]["topk"])
-        )
-        recall_score = (
-            CFG.KNOWLEDGE_SEARCH_RECALL_SCORE
-            if space_context is None
-            else float(space_context["embedding"]["recall_score"])
-        )
-        embedding_retriever = EmbeddingRetriever(
-            top_k=top_k,
-            vector_store_connector=self._vector_store_connector,
+        space_retriever = KnowledgeSpaceRetriever(
+            space_id=self._space_id,
+            top_k=self._top_k,
         )
         if isinstance(query, str):
-            candidates = await embedding_retriever.aretrieve_with_scores(
-                query, recall_score
-            )
+            candidates = space_retriever.retrieve_with_scores(query, self._recall_score)
         elif isinstance(query, list):
             candidates = [
-                await embedding_retriever.aretrieve_with_scores(q, recall_score)
+                space_retriever.retrieve_with_scores(q, self._recall_score)
                 for q in query
             ]
             candidates = reduce(lambda x, y: x + y, candidates)
-        return [candidate.content for candidate in candidates]
+        return candidates
 
 
 class KnowledgeSpacePromptBuilderOperator(

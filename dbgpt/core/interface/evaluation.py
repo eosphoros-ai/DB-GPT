@@ -79,6 +79,7 @@ class EvaluationMetric(ABC, Generic[P, C]):
         pass
 
     @classmethod
+    @property
     def name(cls) -> str:
         """Name of the metric."""
         return cls.__name__
@@ -308,4 +309,4 @@ class MetricManage:
         return result
 
 
-metric_mange = MetricManage()
+metric_manage = MetricManage()

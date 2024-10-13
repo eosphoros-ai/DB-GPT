@@ -339,6 +339,13 @@ class Config(metaclass=Singleton):
             os.getenv("SCHEDULER_ENABLED", "True").lower() == "true"
         )
 
+        # OSS conifg
+        self.OSS_SUPPORTED = os.getenv("OSS_SUPPORTED", "false").lower() == "true"
+        self.OSS_BUCKET = os.getenv("OSS_BUCKET", "")
+        self.OSS_ACCESS_KEY_ID = os.getenv("OSS_ACCESS_KEY_ID", "")
+        self.OSS_ACCESS_KEY_SECRET = os.getenv("OSS_ACCESS_KEY_SECRET", "")
+        self.OSS_ENDPOINT = os.getenv("OSS_ENDPOINT", "")
+
     @property
     def local_db_manager(self) -> "ConnectorManager":
         from dbgpt.datasource.manages import ConnectorManager

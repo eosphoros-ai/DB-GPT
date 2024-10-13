@@ -6,7 +6,13 @@ from typing import Any, List, Optional
 from dbgpt.core.interface.evaluation import (
     BaseEvaluationResult,
     EvaluationMetric,
-    metric_mange,
+    metric_manage,
+)
+from dbgpt.rag.evaluation.answer import AnswerRelevancyMetric
+from dbgpt.rag.evaluation.retriever import (
+    RetrieverHitRateMetric,
+    RetrieverMRRMetric,
+    RetrieverSimilarityMetric,
 )
 
 logger = logging.getLogger(__name__)
@@ -116,5 +122,7 @@ class IntentMetric(EvaluationMetric[str, str], ABC):
         )
 
 
-metric_mange.register_metric(IntentMetric)
-metric_mange.register_metric(AppLinkMetric)
+metric_manage.register_metric(RetrieverHitRateMetric)
+metric_manage.register_metric(RetrieverMRRMetric)
+metric_manage.register_metric(RetrieverSimilarityMetric)
+metric_manage.register_metric(AnswerRelevancyMetric)

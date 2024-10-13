@@ -118,6 +118,7 @@ class AgentEvaluatorOperator(JoinOperator[List[EvaluationResult]]):
                     raw_dataset=raw_dataset,
                     metric_name=metric.name,
                     prediction_cost=prediction_cost,
+                    feedback=result.feedback,
                 )
             )
         return results

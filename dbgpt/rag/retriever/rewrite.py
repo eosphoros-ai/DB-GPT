@@ -96,8 +96,9 @@ class QueryRewrite:
         )
         messages = [ModelMessage(role=ModelMessageRoleType.SYSTEM, content=prompt)]
         request = ModelRequest(model=self._model_name, messages=messages)
-        tasks = [self._llm_client.generate(request)]
-        queries = await run_async_tasks(tasks=tasks, concurrency_limit=1)
+        # tasks = [self._llm_client.generate(request)]
+        # queries = await run_async_tasks(tasks=tasks, concurrency_limit=1)
+        queries = await self._llm_client.generate(request)
         queries = [model_out.text for model_out in queries]
         queries = list(
             filter(
