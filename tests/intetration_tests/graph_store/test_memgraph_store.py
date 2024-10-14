@@ -4,7 +4,9 @@ from dbgpt.storage.graph_store.memgraph_store import (
     MemoryGraphStore,
     MemoryGraphStoreConfig,
 )
-from dbgpt.storage.knowledge_graph.community.memgraph_store_adapter import MemGraphStoreAdapter
+from dbgpt.storage.knowledge_graph.community.memgraph_store_adapter import (
+    MemGraphStoreAdapter,
+)
 
 
 @pytest.fixture

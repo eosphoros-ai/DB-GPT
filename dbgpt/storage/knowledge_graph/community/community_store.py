@@ -4,10 +4,7 @@ import logging
 from typing import List
 
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
-from dbgpt.storage.knowledge_graph.community.base import (
-    Community,
-    GraphStoreAdapter,
-)
+from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 from dbgpt.storage.knowledge_graph.community.community_metastore import (
     BuiltinCommunityMetastore,
 )

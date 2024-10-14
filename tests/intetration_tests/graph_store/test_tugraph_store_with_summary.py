@@ -2,7 +2,9 @@ import pytest
 
 from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
-from dbgpt.storage.knowledge_graph.community.tugraph_store_adapter import TuGraphStoreAdapter
+from dbgpt.storage.knowledge_graph.community.tugraph_store_adapter import (
+    TuGraphStoreAdapter,
+)
 
 
 @pytest.fixture(scope="module")

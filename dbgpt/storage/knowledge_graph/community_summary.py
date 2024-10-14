@@ -67,14 +67,28 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._config = config
 
         # TODO: refactor to use the knowledge graph config
-        self._vector_store_type = os.getenv("VECTOR_STORE_TYPE", config.vector_store_type)
-        self._extract_topk = int(os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk))
-        self._extract_score_threshold = float(
-            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE", config.extract_score_threshold)
+        self._vector_store_type = os.getenv(
+            "VECTOR_STORE_TYPE", config.vector_store_type
         )
-        self._community_topk = int(os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk))
+        self._extract_topk = int(
+            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk)
+        )
+        self._extract_score_threshold = float(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
+                config.extract_score_threshold,
+            )
+        )
+        self._community_topk = int(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk
+            )
+        )
         self._community_score_threshold = float(
-            os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE", config.community_score_threshold)
+            os.getenv(
+                "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
+                config.community_score_threshold,
+            )
         )
 
         def extractor_configure(name: str, cfg: VectorStoreConfig):
@@ -147,7 +161,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     for n in range(chunk_index - 1, -1, -1):
                         metadata = chunks[n].metadata
                         keys = list(metadata.keys())[:-1]
-                        if metadata and parent_direct == keys[-1] and parent_name == metadata.get(parent_direct):
+                        if (
+                            metadata
+                            and parent_direct == keys[-1]
+                            and parent_name == metadata.get(parent_direct)
+                        ):
                             parent = chunks[n]
                             obj["parent_id"] = parent.chunk_id
                             obj["parent_title"] = parent_name
@@ -174,21 +192,43 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         for index, data in enumerate(data_list):
             chunk_src = Vertex(
-                f"""{data["parent_id"]}""", name=data["parent_title"], vertex_type=data["type"], content=data["content"]
+                f"""{data["parent_id"]}""",
+                name=data["parent_title"],
+                vertex_type=data["type"],
+                content=data["content"],
             )
             chunk_dst = Vertex(
-                f"""{data["id"]}""", name=data["title"], vertex_type=data["type"], content=data["content"]
+                f"""{data["id"]}""",
+                name=data["title"],
+                vertex_type=data["type"],
+                content=data["content"],
             )
-            chunk_include_chunk = Edge(chunk_src.vid, chunk_dst.vid, name="include", edge_type="chunk_include_chunk")
+            chunk_include_chunk = Edge(
+                chunk_src.vid,
+                chunk_dst.vid,
+                name="include",
+                edge_type="chunk_include_chunk",
+            )
             chunk_next_chunk = None
             if index >= 1:
                 chunk_next_chunk = Edge(
-                    data_list[index - 1]["id"], data_list[index]["id"], name="next", edge_type="chunk_next_chunk"
+                    data_list[index - 1]["id"],
+                    data_list[index]["id"],
+                    name="next",
+                    edge_type="chunk_next_chunk",
                 )
             if data["parent_id"] == "document":
-                chunk_src = Vertex(f"""{hash_id}""", name=doc_name, vertex_type="document", content=data["content"])
+                chunk_src = Vertex(
+                    f"""{hash_id}""",
+                    name=doc_name,
+                    vertex_type="document",
+                    content=data["content"],
+                )
                 chunk_include_chunk = Edge(
-                    chunk_src.vid, chunk_dst.vid, name="include", edge_type="document_include_chunk"
+                    chunk_src.vid,
+                    chunk_dst.vid,
+                    name="include",
+                    edge_type="document_include_chunk",
                 )
             total_graph.upsert_vertex(chunk_src)
             total_graph.upsert_vertex(chunk_dst)
@@ -201,7 +241,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     for vertex in graph.vertices():
                         total_graph.upsert_vertex(vertex)
                         chunk_include_entity = Edge(
-                            chunk_dst.vid, vertex.vid, name="include", edge_type="chunk_include_entity"
+                            chunk_dst.vid,
+                            vertex.vid,
+                            name="include",
+                            edge_type="chunk_include_entity",
                         )
                         total_graph.append_edge(chunk_include_entity)
                     for edge in graph.edges():
@@ -232,20 +275,27 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         """Retrieve relevant community summaries."""
         # global search: retrieve relevant community summaries
         communities = await self._community_store.search_communities(text)
-        summaries = [f"Section {i + 1}:\n{community.summary}" for i, community in enumerate(communities)]
+        summaries = [
+            f"Section {i + 1}:\n{community.summary}"
+            for i, community in enumerate(communities)
+        ]
         context = "\n".join(summaries) if summaries else ""
 
         # local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
         subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()
-        document_subgraph = self._graph_store_apdater.explore_text_link(keywords, limit=topk).format()
+        document_subgraph = self._graph_store_apdater.explore_text_link(
+            keywords, limit=topk
+        ).format()
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
         if not summaries and not subgraph:
             return []
 
         # merge search results into context
-        content = HYBRID_SEARCH_PT_CN.format(context=context, graph=subgraph, document_subgraph=document_subgraph)
+        content = HYBRID_SEARCH_PT_CN.format(
+            context=context, graph=subgraph, document_subgraph=document_subgraph
+        )
         return [Chunk(content=content)]
 
     def truncate(self) -> List[str]:

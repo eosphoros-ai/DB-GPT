@@ -26,7 +26,11 @@ class GraphElemType(Enum):
 
     def is_vertex(self) -> bool:
         """Check if the element is a vertex."""
-        return self in [GraphElemType.DOCUMENT, GraphElemType.CHUNK, GraphElemType.ENTITY]
+        return self in [
+            GraphElemType.DOCUMENT,
+            GraphElemType.CHUNK,
+            GraphElemType.ENTITY,
+        ]
 
     def is_edge(self) -> bool:
         """Check if the element is an edge."""
@@ -81,7 +85,9 @@ class Elem(ABC):
         if len(self._props) == 1:
             return str(next(iter(self._props.values())))
 
-        formatted_props = [f"{k}:{json.dumps(v, ensure_ascii=False)}" for k, v in self._props.items()]
+        formatted_props = [
+            f"{k}:{json.dumps(v, ensure_ascii=False)}" for k, v in self._props.items()
+        ]
         return f"{{{';'.join(formatted_props)}}}"
 
 
@@ -206,12 +212,16 @@ class Graph(ABC):
         """Get neighbor edges."""
 
     @abstractmethod
-    def vertices(self, filter_fn: Optional[Callable[[Vertex], bool]] = None) -> Iterator[Vertex]:
+    def vertices(
+        self, filter_fn: Optional[Callable[[Vertex], bool]] = None
+    ) -> Iterator[Vertex]:
         """Get vertex iterator."""
         # TODO: Move to the graph store adapter, or define to get all vertices (useful?)
 
     @abstractmethod
-    def edges(self, filter_fn: Optional[Callable[[Edge], bool]] = None) -> Iterator[Edge]:
+    def edges(
+        self, filter_fn: Optional[Callable[[Edge], bool]] = None
+    ) -> Iterator[Edge]:
         """Get edge iterator."""
         # TODO: Move to the graph store adapter
 
@@ -355,7 +365,9 @@ class MemoryGraph(Graph):
 
         return itertools.islice(es, limit) if limit else es
 
-    def vertices(self, filter_fn: Optional[Callable[[Vertex], bool]] = None) -> Iterator[Vertex]:
+    def vertices(
+        self, filter_fn: Optional[Callable[[Vertex], bool]] = None
+    ) -> Iterator[Vertex]:
         """Return vertices."""
         # Get all vertices in the graph
         all_vertices = self._vs.values()
@@ -365,7 +377,9 @@ class MemoryGraph(Graph):
         else:
             return filter(filter_fn, all_vertices)
 
-    def edges(self, filter_fn: Optional[Callable[[Edge], bool]] = None) -> Iterator[Edge]:
+    def edges(
+        self, filter_fn: Optional[Callable[[Edge], bool]] = None
+    ) -> Iterator[Edge]:
         """Return edges."""
         # Get all edges in the graph
         all_edges = (e for nbs in self._oes.values() for es in nbs.values() for e in es)
@@ -388,7 +402,9 @@ class MemoryGraph(Graph):
         def remove_matches(es):
             return set(
                 filter(
-                    lambda e: not ((name == e.name if name else True) and e.has_props(**props)),
+                    lambda e: not (
+                        (name == e.name if name else True) and e.has_props(**props)
+                    ),
                     es,
                 )
             )
@@ -463,7 +479,9 @@ class MemoryGraph(Graph):
 
         # next hop
         for nid in nids:
-            self.__search(nid, direct, depth, fan, limit, _depth + 1, _visited, _subgraph)
+            self.__search(
+                nid, direct, depth, fan, limit, _depth + 1, _visited, _subgraph
+            )
 
     def schema(self) -> Dict[str, Any]:
         """Return schema."""
@@ -489,7 +507,11 @@ class MemoryGraph(Graph):
             f"{self.get_vertex(e.tid).format(concise=True)}"
             for e in self.edges()
         )
-        return f"Entities:\n{vs_str}\n\n" f"Relationships:\n{es_str}" if (vs_str or es_str) else ""
+        return (
+            f"Entities:\n{vs_str}\n\n" f"Relationships:\n{es_str}"
+            if (vs_str or es_str)
+            else ""
+        )
 
     def truncate(self):
         """Truncate graph."""

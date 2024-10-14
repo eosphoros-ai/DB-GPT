@@ -8,7 +8,13 @@ from typing import Any, AsyncGenerator, Dict, List, Tuple
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import Edge, Graph, GraphElemType, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import (
+    Edge,
+    Graph,
+    GraphElemType,
+    MemoryGraph,
+    Vertex,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +86,9 @@ class TuGraphStore(GraphStoreBase):
         self._port = config.port
         self._username = config.username
         self._password = config.password
-        self._summary_enabled = config.summary_enabled  # summary the community in the graph
+        self._summary_enabled = (
+            config.summary_enabled
+        )  # summary the community in the graph
         self._plugin_names = config.plugin_names
 
         self._graph_name = config.name
@@ -117,8 +125,12 @@ class TuGraphStore(GraphStoreBase):
         """
         gql = "CALL db.plugin.listPlugin('CPP','v1')"
         result = self.conn.run(gql)
-        result_names = [json.loads(record["plugin_description"])["name"] for record in result]
-        missing_plugins = [name for name in self._plugin_names if name not in result_names]
+        result_names = [
+            json.loads(record["plugin_description"])["name"] for record in result
+        ]
+        missing_plugins = [
+            name for name in self._plugin_names if name not in result_names
+        ]
 
         if len(missing_plugins):
             for name in missing_plugins:
@@ -159,7 +171,9 @@ class TuGraphStore(GraphStoreBase):
         _white_list = white_prop_list
         from neo4j import graph
 
-        def filter_properties(properties: dict[str, Any], white_list: List[str]) -> Dict[str, Any]:
+        def filter_properties(
+            properties: dict[str, Any], white_list: List[str]
+        ) -> Dict[str, Any]:
             """Filter the properties. It will remove the properties that are not in the white list.
 
             The expected propertities are:
@@ -169,7 +183,8 @@ class TuGraphStore(GraphStoreBase):
             return {
                 key: value
                 for key, value in properties.items()
-                if (not key.startswith("_") and key not in ["id", "name"]) or key in white_list
+                if (not key.startswith("_") and key not in ["id", "name"])
+                or key in white_list
             }
 
         def add_node(node_data: Dict[str, Any]):
@@ -181,7 +196,11 @@ class TuGraphStore(GraphStoreBase):
 
         def add_edge(edge_data: Dict[str, Any]):
             """Add an edge to the edges dictionary if it doesn't exist."""
-            edge_key = (edge_data.get("src_id"), edge_data.get("dst_id"), edge_data.get("name"))
+            edge_key = (
+                edge_data.get("src_id"),
+                edge_data.get("dst_id"),
+                edge_data.get("name"),
+            )
             if edge_key not in edges_dict:
                 edges_dict[edge_key] = edge_data
                 edges_list.append(edge_data)
@@ -202,7 +221,9 @@ class TuGraphStore(GraphStoreBase):
                             "id": node._properties.get("id"),
                             "name": node._properties.get("name"),
                             "type": next(iter(node._labels)),
-                            "properties": filter_properties(node._properties, _white_list),
+                            "properties": filter_properties(
+                                node._properties, _white_list
+                            ),
                         }
                         add_node(node_data)
 
@@ -211,7 +232,9 @@ class TuGraphStore(GraphStoreBase):
                             "dst_id": value.nodes[1]._properties.get("id"),
                             "name": value._properties.get("name"),
                             "type": value.type,
-                            "properties": filter_properties(value._properties, _white_list),
+                            "properties": filter_properties(
+                                value._properties, _white_list
+                            ),
                         }
                         add_edge(edge_data)
                 elif isinstance(value, graph.Path):
@@ -221,7 +244,9 @@ class TuGraphStore(GraphStoreBase):
                                 "id": node._properties.get("id"),
                                 "name": node._properties.get("name"),
                                 "type": next(iter(node._labels)),
-                                "properties": filter_properties(node._properties, _white_list),
+                                "properties": filter_properties(
+                                    node._properties, _white_list
+                                ),
                             }
                             add_node(node_data)
 
@@ -230,7 +255,9 @@ class TuGraphStore(GraphStoreBase):
                                 "dst_id": edge.nodes[1]._properties.get("id"),
                                 "name": edge._properties.get("name"),
                                 "type": edge.type,
-                                "properties": filter_properties(edge._properties, _white_list),
+                                "properties": filter_properties(
+                                    edge._properties, _white_list
+                                ),
                             }
                             add_edge(edge_data)
                 else:  # json_node
@@ -251,7 +278,12 @@ class TuGraphStore(GraphStoreBase):
 
     def _parser(self, entity_list):
         formatted_nodes = [
-            "{" + ", ".join(f'{k}: "{v}"' if isinstance(v, str) else f"{k}: {v}" for k, v in node.items()) + "}"
+            "{"
+            + ", ".join(
+                f'{k}: "{v}"' if isinstance(v, str) else f"{k}: {v}"
+                for k, v in node.items()
+            )
+            + "}"
             for node in entity_list
         ]
         return f"""{", ".join(formatted_nodes)}"""

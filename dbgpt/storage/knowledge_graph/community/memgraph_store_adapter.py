@@ -4,8 +4,18 @@ import json
 import logging
 from typing import Dict, Iterator, List, Optional, Tuple
 
-from dbgpt.storage.graph_store.graph import Direction, Edge, Graph, GraphElemType, MemoryGraph, Vertex
-from dbgpt.storage.graph_store.memgraph_store import MemoryGraphStore, MemoryGraphStoreConfig
+from dbgpt.storage.graph_store.graph import (
+    Direction,
+    Edge,
+    Graph,
+    GraphElemType,
+    MemoryGraph,
+    Vertex,
+)
+from dbgpt.storage.graph_store.memgraph_store import (
+    MemoryGraphStore,
+    MemoryGraphStoreConfig,
+)
 from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
 logger = logging.getLogger(__name__)
@@ -91,7 +101,9 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
     def upsert_entities(self, entities: Iterator[Vertex]) -> None:
         pass
 
-    def upsert_edge(self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str) -> None:
+    def upsert_edge(
+        self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str
+    ) -> None:
         """Upsert edges."""
         pass
 

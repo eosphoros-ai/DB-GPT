@@ -28,7 +28,9 @@ class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
 
     model_name: str = Field(default=None, description="The name of llm model.")
 
-    graph_store_type: str = Field(default="TuGraph", description="The type of graph store.")
+    graph_store_type: str = Field(
+        default="TuGraph", description="The type of graph store."
+    )
 
 
 class BuiltinKnowledgeGraph(KnowledgeGraphBase):
@@ -46,7 +48,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._model_name = config.model_name
         self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
-        self._graph_store = self.__init_graph_store(config)  # TODO: Convert to _graph_store_adapter
+        self._graph_store = self.__init_graph_store(config)
         self._graph_store_apdater = self.__init_graph_store_adapter()
 
     def __init_graph_store(self, config) -> GraphStoreBase:

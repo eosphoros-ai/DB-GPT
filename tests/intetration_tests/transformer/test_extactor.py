@@ -26,7 +26,9 @@ def keyword_extractor(llm):
 
 @pytest.mark.asyncio
 async def test_extract_triplet(triplet_extractor):
-    triplets = await triplet_extractor.extract("Alice is Bob and Cherry's mother and lives in New York.", 10)
+    triplets = await triplet_extractor.extract(
+        "Alice is Bob and Cherry's mother and lives in New York.", 10
+    )
     print(json.dumps(triplets))
     assert len(triplets) == 3
 

@@ -4,7 +4,14 @@ import json
 import logging
 from typing import Dict, Iterator, List, Optional, Tuple
 
-from dbgpt.storage.graph_store.graph import Direction, Edge, Graph, GraphElemType, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import (
+    Direction,
+    Edge,
+    Graph,
+    GraphElemType,
+    MemoryGraph,
+    Vertex,
+)
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
 from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
@@ -125,19 +132,22 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             {
                 "id": self._graph_store._escape_quotes(entity.vid),
                 "name": self._graph_store._escape_quotes(entity.name),
-                "description": self._graph_store._escape_quotes(entity.get_prop("description")) or "",
+                "description": self._graph_store._escape_quotes(
+                    entity.get_prop("description")
+                )
+                or "",
                 "_document_id": "0",
                 "_chunk_id": "0",
                 "_community_id": "0",
             }
             for entity in entities
         ]
-        entity_query = (
-            f"""CALL db.upsertVertex("{GraphElemType.ENTITY.value}", [{self._graph_store._parser(entity_list)}])"""
-        )
+        entity_query = f"""CALL db.upsertVertex("{GraphElemType.ENTITY.value}", [{self._graph_store._parser(entity_list)}])"""
         self._graph_store.conn.run(query=entity_query)
 
-    def upsert_edge(self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str) -> None:
+    def upsert_edge(
+        self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str
+    ) -> None:
         """Upsert edges."""
         edge_list = [
             {
@@ -145,8 +155,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "tid": self._graph_store._escape_quotes(edge.tid),
                 "id": self._graph_store._escape_quotes(edge.name),
                 "name": self._graph_store._escape_quotes(edge.name),
-                "description": self._graph_store._escape_quotes(edge.get_prop("description")) or "",
-                "_chunk_id": self._graph_store._escape_quotes(edge.get_prop("_chunk_id")) or "",
+                "description": self._graph_store._escape_quotes(
+                    edge.get_prop("description")
+                )
+                or "",
+                "_chunk_id": self._graph_store._escape_quotes(
+                    edge.get_prop("_chunk_id")
+                )
+                or "",
             }
             for edge in edges
         ]
@@ -166,9 +182,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             }
             for chunk in chunks
         ]
-        chunk_query = (
-            f"""CALL db.upsertVertex("{GraphElemType.CHUNK.value}", [{self._graph_store._parser(chunk_list)}])"""
-        )
+        chunk_query = f"""CALL db.upsertVertex("{GraphElemType.CHUNK.value}", [{self._graph_store._parser(chunk_list)}])"""
         self._graph_store.conn.run(query=chunk_query)
 
     def upsert_documents(self, documents: Iterator[Vertex]) -> None:
@@ -177,13 +191,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             {
                 "id": self._graph_store._escape_quotes(document.vid),
                 "name": self._graph_store._escape_quotes(document.name),
-                "content": self._graph_store._escape_quotes(document.get_prop("content")) or "",
+                "content": self._graph_store._escape_quotes(
+                    document.get_prop("content")
+                )
+                or "",
             }
             for document in documents
         ]
-        document_query = (
-            f"""CALL db.upsertVertex("{GraphElemType.DOCUMENT.value}", [{self._graph_store._parser(document_list)}])"""
-        )
+        document_query = f"""CALL db.upsertVertex("{GraphElemType.DOCUMENT.value}", [{self._graph_store._parser(document_list)}])"""
         self._graph_store.conn.run(query=document_query)
 
     def upsert_relations(self, relations: Iterator[Edge]) -> None:
@@ -219,14 +234,30 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             graph (Graph): The graph to be added.
         """
         # Get the iterators of all the vertices and the edges from the graph
-        documents: Iterator[Vertex] = graph.vertices(filter_fn=lambda x: x.type == GraphElemType.DOCUMENT.value)
-        doc_include_chunk: Iterator[Edge] = graph.edges(filter_fn=lambda x: x.type == "doc_include_chunk")
-        chunks: Iterator[Vertex] = graph.vertices(filter_fn=lambda x: x.type == GraphElemType.CHUNK.value)
-        chunk_include_chunk: Iterator[Edge] = graph.edges(filter_fn=lambda x: x.type == "chunk_include_chunk")
-        chunk_next_chunk: Iterator[Edge] = graph.edges(filter_fn=lambda x: x.type == "chunk_next_chunk")
-        entities: Iterator[Vertex] = graph.vertices(filter_fn=lambda x: x.type == GraphElemType.ENTITY.value)
-        chunk_include_entity: Iterator[Edge] = graph.edges(filter_fn=lambda x: x.type == "chunk_include_entity")
-        relation: Iterator[Edge] = graph.edges(filter_fn=lambda x: x.type == GraphElemType.RELATION.value)
+        documents: Iterator[Vertex] = graph.vertices(
+            filter_fn=lambda x: x.type == GraphElemType.DOCUMENT.value
+        )
+        doc_include_chunk: Iterator[Edge] = graph.edges(
+            filter_fn=lambda x: x.type == "doc_include_chunk"
+        )
+        chunks: Iterator[Vertex] = graph.vertices(
+            filter_fn=lambda x: x.type == GraphElemType.CHUNK.value
+        )
+        chunk_include_chunk: Iterator[Edge] = graph.edges(
+            filter_fn=lambda x: x.type == "chunk_include_chunk"
+        )
+        chunk_next_chunk: Iterator[Edge] = graph.edges(
+            filter_fn=lambda x: x.type == "chunk_next_chunk"
+        )
+        entities: Iterator[Vertex] = graph.vertices(
+            filter_fn=lambda x: x.type == GraphElemType.ENTITY.value
+        )
+        chunk_include_entity: Iterator[Edge] = graph.edges(
+            filter_fn=lambda x: x.type == "chunk_include_entity"
+        )
+        relation: Iterator[Edge] = graph.edges(
+            filter_fn=lambda x: x.type == GraphElemType.RELATION.value
+        )
 
         # Upsert the vertices and the edges to the graph store
         self.upsert_entities(entities)
@@ -329,7 +360,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
         ]
-        self.create_graph_label(elem_type=GraphElemType.DOCUMENT, graph_properties=document_proerties)
+        self.create_graph_label(
+            elem_type=GraphElemType.DOCUMENT, graph_properties=document_proerties
+        )
 
         # Create the graph label for chunk vertex
         chunk_proerties = [
@@ -338,7 +371,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
             _format_graph_propertity_schema("content", "STRING", True, True),
         ]
-        self.create_graph_label(elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties)
+        self.create_graph_label(
+            elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
+        )
 
         # Create the graph label for entity vertex
         vertex_proerties = [
@@ -347,7 +382,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
             _format_graph_propertity_schema("description", "STRING", True, True),
         ]
-        self.create_graph_label(elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties)
+        self.create_graph_label(
+            elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
+        )
 
         # Create the graph label for relation edge
         edge_proerties = [
@@ -356,7 +393,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("_chunk_id", "STRING", True, True),
             _format_graph_propertity_schema("description", "STRING", True, True),
         ]
-        self.create_graph_label(elem_type=GraphElemType.RELATION, graph_properties=edge_proerties)
+        self.create_graph_label(
+            elem_type=GraphElemType.RELATION, graph_properties=edge_proerties
+        )
 
         # Create the graph label for include edge
         include_proerties = [
@@ -364,7 +403,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("description", "STRING", True),
         ]
-        self.create_graph_label(elem_type=GraphElemType.INCLUDE, graph_properties=include_proerties)
+        self.create_graph_label(
+            elem_type=GraphElemType.INCLUDE, graph_properties=include_proerties
+        )
 
         # Create the graph label for next edge
         next_proerties = [
@@ -372,7 +413,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("description", "STRING", True),
         ]
-        self.create_graph_label(elem_type=GraphElemType.NEXT, graph_properties=next_proerties)
+        self.create_graph_label(
+            elem_type=GraphElemType.NEXT, graph_properties=next_proerties
+        )
 
         if self._summary_enabled:
             self._graph_store._upload_plugin()
@@ -391,20 +434,26 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """
         if not self._check_label(graph_elem_type):
             if graph_elem_type.is_vertex():  # vertex
-                data = json.dumps({
-                    "label": graph_elem_type.value,
-                    "type": "VERTEX",
-                    "primary": "id",
-                    "properties": graph_properties,
-                })
+                data = json.dumps(
+                    {
+                        "label": graph_elem_type.value,
+                        "type": "VERTEX",
+                        "primary": "id",
+                        "properties": graph_properties,
+                    }
+                )
                 gql = f"""CALL db.createVertexLabelByJson('{data}')"""
             else:  # edge
-                data = json.dumps({
-                    "label": graph_elem_type.va2lue,
-                    "type": "EDGE",
-                    "constraints": [[GraphElemType.ENTITY.value, GraphElemType.ENTITY.value]],
-                    "properties": graph_properties,
-                })
+                data = json.dumps(
+                    {
+                        "label": graph_elem_type.va2lue,
+                        "type": "EDGE",
+                        "constraints": [
+                            [GraphElemType.ENTITY.value, GraphElemType.ENTITY.value]
+                        ],
+                        "properties": graph_properties,
+                    }
+                )
                 gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
             self._graph_store.conn.run(gql)
 

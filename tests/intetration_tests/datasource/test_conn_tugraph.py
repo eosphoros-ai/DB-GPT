@@ -1,4 +1,5 @@
 import pytest
+
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 
 # Set database connection parameters.

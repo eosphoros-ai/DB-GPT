@@ -6,7 +6,13 @@ from dataclasses import dataclass
 from typing import Iterator, List, Optional
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
-from dbgpt.storage.graph_store.graph import Direction, Edge, Graph, GraphElemType, Vertex
+from dbgpt.storage.graph_store.graph import (
+    Direction,
+    Edge,
+    Graph,
+    GraphElemType,
+    Vertex,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +98,9 @@ class GraphStoreAdapter(ABC):
         """Upsert entity."""
 
     @abstractmethod
-    def upsert_edge(self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str):
+    def upsert_edge(
+        self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str
+    ):
         """Upsert edge."""
 
     @abstractmethod
