@@ -115,13 +115,15 @@ class TuGraphStore(GraphStoreBase):
     def _upload_plugin(self):
         """Upload missing plugins to the TuGraph database.
 
-        This method checks for the presence of required plugins in the database and uploads any missing plugins.
-        It performs the following steps:
+        This method checks for the presence of required plugins in the database and
+        uploads any missing plugins. It performs the following steps:
         1. Lists existing plugins in the database.
         2. Identifies missing plugins by comparing with the required plugin list.
-        3. For each missing plugin, reads its binary content, encodes it, and uploads to the database.
+        3. For each missing plugin, reads its binary content, encodes it, and uploads to
+            the database.
 
-        The method uses the 'leiden' plugin as an example, but can be extended for other plugins.
+        The method uses the 'leiden' plugin as an example, but can be extended for other
+        plugins.
         """
         gql = "CALL db.plugin.listPlugin('CPP','v1')"
         result = self.conn.run(gql)
@@ -146,7 +148,10 @@ class TuGraphStore(GraphStoreBase):
                 with open(plugin_path, "rb") as f:
                     content = f.read()
                 content = base64.b64encode(content).decode()
-                gql = f"CALL db.plugin.loadPlugin('CPP', '{name}', '{content}', 'SO', '{name} Plugin', false, 'v1')"
+                gql = (
+                    f"CALL db.plugin.loadPlugin('CPP', '{name}', '{content}', 'SO', "
+                    f"'{name} Plugin', false, 'v1')"
+                )
                 self.conn.run(gql)
 
     def get_nodes_edges_from_queried_data(
@@ -174,10 +179,12 @@ class TuGraphStore(GraphStoreBase):
         def filter_properties(
             properties: dict[str, Any], white_list: List[str]
         ) -> Dict[str, Any]:
-            """Filter the properties. It will remove the properties that are not in the white list.
+            """Filter the properties.
 
+            It will remove the properties that are not in the white list.
             The expected propertities are:
-                entity_properties = ["id", "name", "description", "_document_id", "_chunk_id", "_community_id"]
+                entity_properties = ["id", "name", "description", "_document_id",
+                                        "_chunk_id", "_community_id"]
                 edge_properties = ["id", "name", "description", "_chunk_id"]
             """
             return {
@@ -299,8 +306,8 @@ class TuGraphStore(GraphStoreBase):
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph.
 
-        white_list: List[str] = kwargs.get("white_list", []), which contains the white list of properties
-        and filters the properties that are not in the white list.
+        white_list: List[str] = kwargs.get("white_list", []), which contains the white
+        list of properties and filters the properties that are not in the white list.
         """
         query_result = self.conn.run(query=query)
         white_list: List[str] = kwargs.get(

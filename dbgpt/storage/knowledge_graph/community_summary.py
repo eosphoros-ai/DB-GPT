@@ -38,7 +38,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     )
     password: Optional[str] = Field(
         default=None,
-        description="The password of vector store, if not set, will use the default password.",
+        description=(
+            "The password of vector store, "
+            "if not set, will use the default password."
+        ),
     )
     extract_topk: int = Field(
         default=5,

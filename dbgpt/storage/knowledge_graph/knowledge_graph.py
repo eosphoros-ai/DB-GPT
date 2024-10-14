@@ -181,5 +181,6 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._triplet_extractor.drop()
 
     def delete_by_ids(self, ids: str) -> List[str]:
+        """Delete by ids."""
         self._graph_store_apdater.delete_document(chunk_ids=ids)
         return []

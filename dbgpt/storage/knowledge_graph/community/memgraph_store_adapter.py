@@ -99,6 +99,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         return subgraph
 
     def upsert_entities(self, entities: Iterator[Vertex]) -> None:
+        """Upsert entities."""
         pass
 
     def upsert_edge(
@@ -148,15 +149,18 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         self._graph_store._graph = None
 
     def create_graph(self, graph_name: str):
+        """Create a graph."""
         pass
 
     def create_graph_label(
         self,
         graph_elem_type: GraphElemType,
         graph_properties: Dict[str, str | bool],
-    ):
-        """Create a graph label. The graph label is used to identify and distinguish different types of nodes (vertices)
-        and edges in the graph.
+    ) -> None:
+        """Create a graph label.
+
+        The graph label is used to identify and distinguish different types of nodes
+        (vertices) and edges in the graph.
 
         Args:
             graph_elem_type (GraphElemType): The type of the graph element.
@@ -175,7 +179,8 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
             graph_elem_type (GraphElemType): The type of the graph element.
 
         Returns:
-            True if the label exists in the specified graph element type, otherwise False.
+            True if the label exists in the specified graph element type, otherwise
+            False.
         """
         pass
 

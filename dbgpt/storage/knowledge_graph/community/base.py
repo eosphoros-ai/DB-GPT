@@ -142,8 +142,10 @@ class GraphStoreAdapter(ABC):
 
     @abstractmethod
     def create_graph_label(self) -> None:
-        """Create a graph label. The graph label is used to identify and distinguish different types of nodes (vertices)
-        and edges in the graph.
+        """Create a graph label.
+
+        The graph label is used to identify and distinguish different types of nodes
+        (vertices) and edges in the graph.
         """
 
     @abstractmethod

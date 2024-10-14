@@ -111,8 +111,7 @@ class TuGraphConnector(BaseConnector):
             yield from result
 
     def get_columns(self, table_name: str, table_type: str = "vertex") -> List[Dict]:
-        """Retrieve the column information for a specified vertex or edge table in the
-        graph database.
+        """Retrieve the column for a specified vertex or edge table in the graph db.
 
         This function queries the schema of a given table (vertex or edge) and returns
         detailed information about its columns (properties).
