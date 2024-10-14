@@ -348,15 +348,19 @@ class TuGraphStore(GraphStoreBase):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append({
-                            "id": nodes[i]._properties["id"],
-                            "description": nodes[i]._properties["description"],
-                        })
+                        formatted_path.append(
+                            {
+                                "id": nodes[i]._properties["id"],
+                                "description": nodes[i]._properties["description"],
+                            }
+                        )
                         if i < len(rels):
-                            formatted_path.append({
-                                "id": rels[i]._properties["id"],
-                                "description": rels[i]._properties["description"],
-                            })
+                            formatted_path.append(
+                                {
+                                    "id": rels[i]._properties["id"],
+                                    "description": rels[i]._properties["description"],
+                                }
+                            )
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(

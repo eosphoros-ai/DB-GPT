@@ -41,7 +41,9 @@ class CommunityStore:
 
             community.summary = await self._community_summarizer.summarize(graph=graph)
             communities.append(community)
-            logger.info(f"Summarize community {community_id}: " f"{community.summary[:50]}...")
+            logger.info(
+                f"Summarize community {community_id}: " f"{community.summary[:50]}..."
+            )
 
         # truncate then save new summaries
         await self._meta_store.truncate()

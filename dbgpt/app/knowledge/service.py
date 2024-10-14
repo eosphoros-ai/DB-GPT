@@ -198,9 +198,9 @@ class KnowledgeService:
             raise Exception(f"there is no space id called {space}")
         res = DocumentQueryResponse()
         if request.doc_ids and len(request.doc_ids) > 0:
-            documents: List[KnowledgeDocumentEntity] = (
-                knowledge_document_dao.documents_by_ids(request.doc_ids)
-            )
+            documents: List[
+                KnowledgeDocumentEntity
+            ] = knowledge_document_dao.documents_by_ids(request.doc_ids)
             res.data = [item.to_dict() for item in documents]
         else:
             space_name = ks.name
@@ -645,17 +645,21 @@ class KnowledgeService:
         graph = vector_store_connector.client.query_graph(limit=limit)
         res = {"nodes": [], "edges": []}
         for node in graph.vertices():
-            res["nodes"].append({
-                "id": node.vid,
-                "communityId": node.get_prop("_community_id"),
-                "name": node.name,
-                "type": node.get_prop("type") or "",
-            })
+            res["nodes"].append(
+                {
+                    "id": node.vid,
+                    "communityId": node.get_prop("_community_id"),
+                    "name": node.name,
+                    "type": node.get_prop("type") or "",
+                }
+            )
         for edge in graph.edges():
-            res["edges"].append({
-                "source": edge.sid,
-                "target": edge.tid,
-                "name": edge.name,
-                "type": edge.get_prop("type") or "",
-            })
+            res["edges"].append(
+                {
+                    "source": edge.sid,
+                    "target": edge.tid,
+                    "name": edge.name,
+                    "type": edge.get_prop("type") or "",
+                }
+            )
         return res
