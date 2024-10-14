@@ -230,7 +230,7 @@ class Graph(ABC):
         """Delete vertices and their neighbor edges."""
 
     @abstractmethod
-    def del_edges(self, sid: str, tid: str, name: str, **props):
+    def del_edges(self, sid: str, tid: str, name: Optional[str] = None, **props):
         """Delete edges(sid -[name]-> tid) matches props."""
 
     @abstractmethod
@@ -395,7 +395,7 @@ class MemoryGraph(Graph):
             self.del_neighbor_edges(vid, Direction.BOTH)
             self._vs.pop(vid, None)
 
-    def del_edges(self, sid: str, tid: str, name: str, **props):
+    def del_edges(self, sid: str, tid: str, name: Optional[str] = None, **props):
         """Delete edges."""
         old_edge_cnt = len(self._oes[sid][tid])
 
