@@ -24,7 +24,7 @@ import TabItem from '@theme/TabItem';
 
 ```shell
 DBGPT_API_KEY=dbgpt
-DATASOURCE_ID={YOUR_DATASOURCE_ID}
+SPACE_ID={YOUR_SPACE_ID}
 
 curl -X POST "http://localhost:5670/api/v2/serve/evaluate/evaluation" 
 -H "Authorization: Bearer $DBGPT_API_KEY" \
@@ -32,7 +32,7 @@ curl -X POST "http://localhost:5670/api/v2/serve/evaluate/evaluation"
 -H "Content-Type: application/json" \
 -d '{
   "scene_key": "recall",
-  "scene_value":"147",
+  "scene_value":147,
   "context":{"top_k":5},
   "sys_code":"xx",
   "evaluate_metrics":["RetrieverHitRateMetric","RetrieverMRRMetric","RetrieverSimilarityMetric"],
