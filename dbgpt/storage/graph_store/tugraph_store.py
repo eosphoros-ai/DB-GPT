@@ -158,7 +158,7 @@ class TuGraphStore(GraphStoreBase):
         self,
         data: List[Dict[str, Any]],
         white_prop_list: List[str],
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    ) -> Tuple[List[Vertex], List[Edge]]:
         """Format the query data.
 
         Args:
@@ -166,12 +166,12 @@ class TuGraphStore(GraphStoreBase):
             white_prop_list: The white list of properties.
 
         Returns:
-            The formatted data.
+            Tuple[List[Vertex], List[Edge]]: The formatted vertexes and edges.
         """
         nodes_list: List[Dict[str, Any]] = []
         nodes_dict: Dict[str, Dict[str, Any]] = {}
-        edges_list: List[Dict[str, Any]] = []
-        edges_dict: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+        rels_list: List[Dict[str, Any]] = []
+        rels_dict: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
 
         _white_list = white_prop_list
         from neo4j import graph
@@ -208,9 +208,9 @@ class TuGraphStore(GraphStoreBase):
                 edge_data.get("dst_id"),
                 edge_data.get("name"),
             )
-            if edge_key not in edges_dict:
-                edges_dict[edge_key] = edge_data
-                edges_list.append(edge_data)
+            if edge_key not in rels_dict:
+                rels_dict[edge_key] = edge_data
+                rels_list.append(edge_data)
 
         for record in data:
             for value in record.values():
@@ -276,7 +276,36 @@ class TuGraphStore(GraphStoreBase):
                     }
                     add_node(node_data)
 
-        return nodes_list, edges_list
+        # Format the vertexes
+        vertex_list: List[Vertex] = []
+        for _node in nodes_list:
+            vertex = Vertex(
+                vid=_node["id"],
+                name=_node["name"],
+                **{
+                    k: v
+                    for k, v in _node.get("properties", {}).items()
+                    if k not in ["id", "name"] and v is not None
+                },  # remove `id` and `name` from properties to avoid duplication
+            )
+            vertex_list.append(vertex)
+
+        # Format the edges
+        edges_list: List[Edge] = []
+        for _rel in rels_list:
+            edge = Edge(
+                sid=_rel["src_id"],
+                tid=_rel["dst_id"],
+                name=_rel["name"],
+                **{
+                    k: v
+                    for k, v in _rel.get("properties", {}).items()
+                    if k not in ["src_id", "dst_id", "name"] and v is not None
+                },  # remove `src_id`, `dst_id`, and `name` from properties
+            )
+            edges_list.append(edge)
+
+        return vertex_list, edges_list
 
     def _escape_quotes(self, value: str) -> str:
         """Escape single and double quotes in a string for queries."""
@@ -321,9 +350,12 @@ class TuGraphStore(GraphStoreBase):
                 "_community_id",
             ],
         )
-        nodes, edges = self.get_nodes_edges_from_queried_data(query_result, white_list)
+        vertexes, edges = self.get_nodes_edges_from_queried_data(
+            query_result, white_list
+        )
+        logger.info(f"Query result:\n{vertexes}\n{edges}")
         mg = MemoryGraph()
-        for vertex in nodes:
+        for vertex in vertexes:
             mg.upsert_vertex(vertex)
         for edge in edges:
             mg.append_edge(edge)
@@ -355,19 +387,15 @@ class TuGraphStore(GraphStoreBase):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append(
-                            {
-                                "id": nodes[i]._properties["id"],
-                                "description": nodes[i]._properties["description"],
-                            }
-                        )
+                        formatted_path.append({
+                            "id": nodes[i]._properties["id"],
+                            "description": nodes[i]._properties["description"],
+                        })
                         if i < len(rels):
-                            formatted_path.append(
-                                {
-                                    "id": rels[i]._properties["id"],
-                                    "description": rels[i]._properties["description"],
-                                }
-                            )
+                            formatted_path.append({
+                                "id": rels[i]._properties["id"],
+                                "description": rels[i]._properties["description"],
+                            })
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(

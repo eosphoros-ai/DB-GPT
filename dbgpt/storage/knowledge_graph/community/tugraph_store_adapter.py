@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from typing import Dict, Iterator, List, Optional, Tuple
 
 from dbgpt.storage.graph_store.graph import (
@@ -23,10 +24,15 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
     MAX_HIERARCHY_LEVEL = 3
 
-    def __init__(self, summary_enabled: bool = False):
+    def __init__(self, graph_store: TuGraphStore = None):
         """Initialize TuGraph Community Store Adapter."""
-        self._graph_store = TuGraphStore(TuGraphStoreConfig())
-        self._summary_enabled = summary_enabled
+        self._graph_store = (
+            graph_store if graph_store else TuGraphStore(TuGraphStoreConfig())
+        )
+        self._summary_enabled = (
+            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
+            or graph_store.get_config().summary_enabled
+        )
 
         super().__init__(self._graph_store)
 
@@ -387,7 +393,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
         ]
         self.create_graph_label(
-            elem_type=GraphElemType.DOCUMENT, graph_properties=document_proerties
+            graph_elem_type=GraphElemType.DOCUMENT, graph_properties=document_proerties
         )
 
         # Create the graph label for chunk vertex
@@ -398,7 +404,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("content", "STRING", True, True),
         ]
         self.create_graph_label(
-            elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
+            graph_elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
         )
 
         # Create the graph label for entity vertex
@@ -409,7 +415,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("description", "STRING", True, True),
         ]
         self.create_graph_label(
-            elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
+            graph_elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
         )
 
         # Create the graph label for relation edge
@@ -420,7 +426,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("description", "STRING", True, True),
         ]
         self.create_graph_label(
-            elem_type=GraphElemType.RELATION, graph_properties=edge_proerties
+            graph_elem_type=GraphElemType.RELATION, graph_properties=edge_proerties
         )
 
         # Create the graph label for include edge
@@ -430,7 +436,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("description", "STRING", True),
         ]
         self.create_graph_label(
-            elem_type=GraphElemType.INCLUDE, graph_properties=include_proerties
+            graph_elem_type=GraphElemType.INCLUDE, graph_properties=include_proerties
         )
 
         # Create the graph label for next edge
@@ -440,7 +446,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_propertity_schema("description", "STRING", True),
         ]
         self.create_graph_label(
-            elem_type=GraphElemType.NEXT, graph_properties=next_proerties
+            graph_elem_type=GraphElemType.NEXT, graph_properties=next_proerties
         )
 
         if self._summary_enabled:
@@ -450,7 +456,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self,
         graph_elem_type: GraphElemType,
         graph_properties: Dict[str, str | bool],
-    ):
+    ) -> None:
         """Create a graph label.
 
         The graph label is used to identify and distinguish different types of nodes
@@ -460,30 +466,43 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             graph_elem_type (GraphElemType): The type of the graph element.
             graph_properties (Dict[str, str|bool]): The properties of the graph element.
         """
-        if not self._check_label(graph_elem_type):
-            if graph_elem_type.is_vertex():  # vertex
-                data = json.dumps(
-                    {
-                        "label": graph_elem_type.value,
-                        "type": "VERTEX",
-                        "primary": "id",
-                        "properties": graph_properties,
-                    }
-                )
-                gql = f"""CALL db.createVertexLabelByJson('{data}')"""
-            else:  # edge
-                data = json.dumps(
-                    {
-                        "label": graph_elem_type.va2lue,
-                        "type": "EDGE",
-                        "constraints": [
-                            [GraphElemType.ENTITY.value, GraphElemType.ENTITY.value]
-                        ],
-                        "properties": graph_properties,
-                    }
-                )
-                gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
-            self._graph_store.conn.run(gql)
+        if graph_elem_type.is_vertex():  # vertex
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "VERTEX",
+                "primary": "id",
+                "properties": graph_properties,
+            })
+            gql = f"""CALL db.createVertexLabelByJson('{data}')"""
+
+            gql_check_exist = (
+                f"""CALL db.getLabelSchema('VERTEX', '{graph_elem_type.value}')"""
+            )
+        else:  # edge
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "EDGE",
+                "constraints": [
+                    [GraphElemType.ENTITY.value, GraphElemType.ENTITY.value]
+                ],
+                "properties": graph_properties,
+            })
+            gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
+
+            gql_check_exist = (
+                f"""CALL db.getLabelSchema('EDGE', '{graph_elem_type.value}')"""
+            )
+
+        # Make sure the graph label is identical
+        try:
+            self._graph_store.conn.run(
+                gql_check_exist
+            )  # if not exist, qurying raises an exception
+        except Exception:
+            self._graph_store.conn.run(gql)  # create the graph label
+            return
+
+        logger.info(f"Graph label {graph_elem_type.value} already exists.")
 
     def truncate(self):
         """Truncate Graph."""

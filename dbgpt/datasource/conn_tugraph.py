@@ -102,7 +102,7 @@ class TuGraphConnector(BaseConnector):
                 result = session.run(query)
                 return list(result)
             except Exception as e:
-                raise Exception(f"Query execution failed: {e}") from e
+                raise Exception(f"Query execution failed: {e}\nQuery: {query}") from e
 
     def run_stream(self, query: str) -> Generator:
         """Run GQL."""

@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -154,17 +154,11 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def create_graph_label(
         self,
-        graph_elem_type: GraphElemType,
-        graph_properties: Dict[str, str | bool],
     ) -> None:
         """Create a graph label.
 
         The graph label is used to identify and distinguish different types of nodes
         (vertices) and edges in the graph.
-
-        Args:
-            graph_elem_type (GraphElemType): The type of the graph element.
-            graph_properties (Dict[str, str|bool]): The properties of the graph element.
         """
         pass
 

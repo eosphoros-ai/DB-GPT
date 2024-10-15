@@ -65,7 +65,7 @@ class Elem(ABC):
 
     def set_prop(self, key: str, value: Any):
         """Set a property of ELem."""
-        self._props[key] = value
+        self._props[key] = value  # note: always update the value
 
     def get_prop(self, key: str):
         """Get one of the properties of Elem."""
@@ -271,7 +271,7 @@ class MemoryGraph(Graph):
         self._edge_prop_keys = set()
         self._edge_count = 0
 
-        # init vertices, out edges, in edges index
+        # vertices index, out edges index, in edges index
         self._vs: Any = defaultdict()
         self._oes: Any = defaultdict(lambda: defaultdict(set))
         self._ies: Any = defaultdict(lambda: defaultdict(set))
@@ -288,6 +288,7 @@ class MemoryGraph(Graph):
 
     def upsert_vertex(self, vertex: Vertex):
         """Insert or update a vertex based on its ID."""
+        logger.info(f"Upsert vertex {vertex}")
         if vertex.vid in self._vs:
             if isinstance(self._vs[vertex.vid], IdVertex):
                 self._vs[vertex.vid] = vertex
@@ -301,8 +302,8 @@ class MemoryGraph(Graph):
 
     def append_edge(self, edge: Edge):
         """Append an edge if it doesn't exist; requires edge label."""
-        sid = edge.sid
-        tid = edge.tid
+        sid = edge._sid
+        tid = edge._tid
 
         if edge in self._oes[sid][tid]:
             return False

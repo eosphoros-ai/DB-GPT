@@ -2,11 +2,11 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, List, Optional
+from typing import AsyncGenerator, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
-from dbgpt.storage.graph_store.graph import Graph, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +46,9 @@ class GraphStoreBase(ABC):
     def _escape_quotes(self, text: str) -> str:
         """Escape single and double quotes in a string for queries."""
 
-    @abstractmethod
-    def _paser(self, entities: List[Vertex]) -> str:
-        """Parse entities to string."""
+    # @abstractmethod
+    # def _paser(self, entities: List[Vertex]) -> str:
+    #     """Parse entities to string."""
 
     @abstractmethod
     def query(self, query: str, **kwargs) -> MemoryGraph:
