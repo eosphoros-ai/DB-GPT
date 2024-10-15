@@ -1,9 +1,9 @@
 """Docx Knowledge."""
 from typing import Any, Dict, List, Optional, Union
-from docx.opc.pkgreader import _SerializedRelationships, _SerializedRelationship
-from docx.opc.oxml import parse_xml
 
 import docx
+from docx.opc.oxml import parse_xml
+from docx.opc.pkgreader import _SerializedRelationship, _SerializedRelationships
 
 from dbgpt.core import Document
 from dbgpt.rag.knowledge.base import (
@@ -14,20 +14,20 @@ from dbgpt.rag.knowledge.base import (
 )
 
 
-def load_from_xml_v2(baseURI, rels_item_xml):
+def load_from_xml_v2(base_uri, rels_item_xml):
     """
     Return |_SerializedRelationships| instance loaded with the
     relationships contained in *rels_item_xml*. Returns an empty
     collection if *rels_item_xml* is |None|.
     """
-    srels = _SerializedRelationships()
+    serial_rels = _SerializedRelationships()
     if rels_item_xml is not None:
         rels_elm = parse_xml(rels_item_xml)
         for rel_elm in rels_elm.Relationship_lst:
             if rel_elm.target_ref in ('../NULL', 'NULL'):
                 continue
-            srels._srels.append(_SerializedRelationship(baseURI, rel_elm))
-    return srels
+            serial_rels.srels.append(_SerializedRelationship(base_uri, rel_elm))
+    return serial_rels
 
 
 class DocxKnowledge(Knowledge):
