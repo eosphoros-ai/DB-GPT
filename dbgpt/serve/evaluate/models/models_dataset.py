@@ -5,10 +5,7 @@ from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueCon
 
 from dbgpt.storage.metadata import BaseDao, Model, db
 
-from ..api.schemas import (
-    DatasetServeRequest,
-    DatasetServeResponse,
-)
+from ..api.schemas import DatasetServeRequest, DatasetServeResponse
 from ..config import SERVER_APP_TABLE_NAME, ServeConfig
 
 

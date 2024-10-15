@@ -2,15 +2,7 @@ import logging
 from functools import cache
 from typing import List, Optional
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    Form,
-    HTTPException,
-    Query,
-    UploadFile,
-)
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 

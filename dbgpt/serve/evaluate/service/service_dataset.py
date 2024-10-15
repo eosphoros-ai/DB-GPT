@@ -82,8 +82,10 @@ class DatasetService(
             datasets_df = pd.DataFrame(datasets_dicts)
 
             if EVALUATE_FILE_COL_QUESTION not in datasets_df.columns:
-                raise ValueError(f"cannot be recognized and columns are missing "
-                                 f"{EVALUATE_FILE_COL_QUESTION}")
+                raise ValueError(
+                    f"cannot be recognized and columns are missing "
+                    f"{EVALUATE_FILE_COL_QUESTION}"
+                )
 
             have_answer = False
             if EVALUATE_FILE_COL_ANSWER in datasets_df.columns:
@@ -211,8 +213,10 @@ class DatasetService(
                         encoding=encoding,
                     )
                 else:
-                    raise ValueError(f"Evaluate does not support the current file "
-                                     f"type {dataset_info.file_type}.")
+                    raise ValueError(
+                        f"Evaluate does not support the current file "
+                        f"type {dataset_info.file_type}."
+                    )
 
                 return dataset_info, df_tmp.to_dict(orient="records")
             elif dataset_info.storage_type == DatasetStorageType.DB.value:
