@@ -23,7 +23,7 @@ If you want to change vector db, Update your .env, set your vector store type, V
 
 If you want to use OceanBase, please first start a docker container via the following command:
 ```shell
-docker run -p 2881:2881 --name obvec -d oceanbase/oceanbase-ce:vector
+docker run --name=ob433 -e MODE=slim -p 2881:2881 -d oceanbase/oceanbase-ce:4.3.3.0-100000142024101215
 ```
 Then set the following variables in the .env file:
 ```shell
