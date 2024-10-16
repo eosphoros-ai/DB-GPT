@@ -232,11 +232,9 @@ class Config(metaclass=Singleton):
         self.OB_USER = os.getenv("OB_USER", "root")
         self.OB_PASSWORD = os.getenv("OB_PASSWORD", "")
         self.OB_DATABASE = os.getenv("OB_DATABASE", "test")
-        self.OB_SQL_DBG_LOG_PATH = os.getenv("OB_SQL_DBG_LOG_PATH", "")
         self.OB_ENABLE_NORMALIZE_VECTOR = bool(
             os.getenv("OB_ENABLE_NORMALIZE_VECTOR", "")
         )
-        self.OB_ENABLE_INDEX = bool(os.getenv("OB_ENABLE_INDEX", ""))
 
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
