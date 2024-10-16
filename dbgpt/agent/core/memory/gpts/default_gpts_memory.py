@@ -23,7 +23,7 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
 
     def get_by_conv_id(self, conv_id: str) -> List[GptsPlan]:
         """Get plans by conv_id."""
-        result = self.df.query(f"conv_id==@conv_id")  # noqa: F541
+        result = self.df.query("conv_id==@conv_id")  # noqa: F541
         plans = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
@@ -36,7 +36,7 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
         """Get plans by conv_id and task number."""
         task_nums_int = [int(num) for num in task_nums]  # noqa:F841
         result = self.df.query(  # noqa
-            f"conv_id==@conv_id and sub_task_num in @task_nums_int"  # noqa
+            "conv_id==@conv_id and sub_task_num in @task_nums_int"  # noqa
         )
         plans = []
         for row in result.itertuples(index=False, name=None):
@@ -47,7 +47,7 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
     def get_todo_plans(self, conv_id: str) -> List[GptsPlan]:
         """Get unfinished planning steps."""
         todo_states = [Status.TODO.value, Status.RETRYING.value]  # noqa: F841
-        result = self.df.query(f"conv_id==@conv_id and state in @todo_states")  # noqa
+        result = self.df.query("conv_id==@conv_id and state in @todo_states")  # noqa
         plans = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
@@ -105,7 +105,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
     def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
         """Get all messages sent or received by the agent in the conversation."""
         result = self.df.query(
-            f"conv_id==@conv_id and (sender==@agent or receiver==@agent)"  # noqa: F541
+            "conv_id==@conv_id and (sender==@agent or receiver==@agent)"  # noqa: F541
         )
         messages = []
         for row in result.itertuples(index=False, name=None):
@@ -123,11 +123,11 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         """Get all messages between two agents in the conversation."""
         if current_goal:
             result = self.df.query(
-                f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1)) and current_goal==@current_goal"  # noqa
+                "conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1)) and current_goal==@current_goal"  # noqa
             )
         else:
             result = self.df.query(
-                f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1))"  # noqa
+                "conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1))"  # noqa
             )
         messages = []
         for row in result.itertuples(index=False, name=None):
@@ -137,7 +137,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
 
     def get_by_conv_id(self, conv_id: str) -> List[GptsMessage]:
         """Get all messages in the conversation."""
-        result = self.df.query(f"conv_id==@conv_id")  # noqa: F541
+        result = self.df.query("conv_id==@conv_id")  # noqa: F541
         messages = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
