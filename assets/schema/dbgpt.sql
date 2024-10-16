@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `chat_history_message`
     `conv_uid`       varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation record unique id',
     `index`          int                                     NOT NULL COMMENT 'Message index',
     `round_index`    int                                     NOT NULL COMMENT 'Round of conversation',
-    `message_detail` text COLLATE utf8mb4_unicode_ci COMMENT 'Message details, json format',
+    `message_detail` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Message details, json format',
     `gmt_created`  timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
     `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     UNIQUE KEY `message_uid_index` (`conv_uid`, `index`),
