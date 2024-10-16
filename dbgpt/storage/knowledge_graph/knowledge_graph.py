@@ -13,6 +13,7 @@ from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.community.base import GraphStoreAdapter
 from dbgpt.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
@@ -48,10 +49,10 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._model_name = config.model_name
         self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
-        self._graph_store = self.__init_graph_store(config)
-        self._graph_store_apdater = self.__init_graph_store_adapter()
+        self._graph_store: GraphStoreBase = self.__init_graph_store(config)
+        self._graph_store_apdater: GraphStoreAdapter = self.__init_graph_store_adapter()
 
-    def __init_graph_store(self, config) -> GraphStoreBase:
+    def __init_graph_store(self, config: BuiltinKnowledgeGraphConfig) -> GraphStoreBase:
         def configure(cfg: GraphStoreConfig):
             cfg.name = config.name
             cfg.embedding_fn = config.embedding_fn

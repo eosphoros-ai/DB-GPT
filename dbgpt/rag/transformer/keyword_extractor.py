@@ -1,4 +1,5 @@
 """KeywordExtractor class."""
+
 import logging
 from typing import List, Optional
 
@@ -39,12 +40,15 @@ class KeywordExtractor(LLMExtractor):
     def _parse_response(self, text: str, limit: Optional[int] = None) -> List[str]:
         keywords = set()
 
-        for part in text.split(";"):
-            for s in part.strip().split(","):
-                keyword = s.strip()
-                if keyword:
-                    keywords.add(keyword)
-                    if limit and len(keywords) >= limit:
-                        return list(keywords)
+        lines = text.replace(":", "\n").split("\n")
+
+        for line in lines:
+            for part in line.split(";"):
+                for s in part.strip().split(","):
+                    keyword = s.strip()
+                    if keyword:
+                        keywords.add(keyword)
+                        if limit and len(keywords) >= limit:
+                            return list(keywords)
 
         return list(keywords)

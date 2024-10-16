@@ -2,11 +2,10 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Optional
+from typing import Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
-from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,7 @@ class GraphStoreBase(ABC):
     def __init__(self, config: GraphStoreConfig):
         """Initialize graph store."""
         self._config = config
-        self.conn = None
+        self._conn = None
 
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:
@@ -49,11 +48,3 @@ class GraphStoreBase(ABC):
     # @abstractmethod
     # def _paser(self, entities: List[Vertex]) -> str:
     #     """Parse entities to string."""
-
-    @abstractmethod
-    def query(self, query: str, **kwargs) -> MemoryGraph:
-        """Execute a query on graph."""
-
-    @abstractmethod
-    async def stream_query(self, query: str, **kwargs) -> AsyncGenerator[Graph, None]:
-        """Execute a stream query."""

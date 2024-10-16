@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Iterator, List, Optional, Tuple
+from typing import AsyncGenerator, Iterator, List, Optional, Tuple
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -188,3 +188,20 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         return self._graph_store._graph.search(subs, direct, depth, fan, limit)
+
+    def explore_text_link(
+        self,
+        subs: List[str],
+        depth: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> Graph:
+        """Explore the graph from given subjects up to a depth."""
+        pass
+
+    def query(self, query: str, **kwargs) -> MemoryGraph:
+        """Execute a query on graph."""
+        pass
+
+    async def stream_query(self, query: str, **kwargs) -> AsyncGenerator[Graph, None]:
+        """Execute a stream query."""
+        pass

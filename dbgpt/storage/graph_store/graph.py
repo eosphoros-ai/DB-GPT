@@ -230,7 +230,7 @@ class Graph(ABC):
         """Delete vertices and their neighbor edges."""
 
     @abstractmethod
-    def del_edges(self, sid: str, tid: str, name: Optional[str] = None, **props):
+    def del_edges(self, sid: str, tid: str, name: str, **props):
         """Delete edges(sid -[name]-> tid) matches props."""
 
     @abstractmethod
@@ -288,7 +288,6 @@ class MemoryGraph(Graph):
 
     def upsert_vertex(self, vertex: Vertex):
         """Insert or update a vertex based on its ID."""
-        logger.info(f"Upsert vertex {vertex}")
         if vertex.vid in self._vs:
             if isinstance(self._vs[vertex.vid], IdVertex):
                 self._vs[vertex.vid] = vertex
@@ -300,10 +299,10 @@ class MemoryGraph(Graph):
         # update metadata
         self._vertex_prop_keys.update(vertex.props.keys())
 
-    def append_edge(self, edge: Edge):
+    def append_edge(self, edge: Edge) -> bool:
         """Append an edge if it doesn't exist; requires edge label."""
-        sid = edge._sid
-        tid = edge._tid
+        sid = edge.sid
+        tid = edge.tid
 
         if edge in self._oes[sid][tid]:
             return False
@@ -396,11 +395,11 @@ class MemoryGraph(Graph):
             self.del_neighbor_edges(vid, Direction.BOTH)
             self._vs.pop(vid, None)
 
-    def del_edges(self, sid: str, tid: str, name: Optional[str] = None, **props):
+    def del_edges(self, sid: str, tid: str, name: str, **props):
         """Delete edges."""
         old_edge_cnt = len(self._oes[sid][tid])
 
-        def remove_matches(es):
+        def remove_matches(es: Set[Edge]):
             return set(
                 filter(
                     lambda e: not (

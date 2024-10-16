@@ -9,7 +9,13 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import (
+    Edge,
+    Graph,
+    GraphElemType,
+    MemoryGraph,
+    Vertex,
+)
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -188,73 +194,82 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         # Check document
         file_path = chunks[0].metadata["source"] or "Text_Node"
         doc_name = os.path.basename(file_path)
-        hash_id = str(uuid.uuid4())
+        doc_id = str(uuid.uuid4())
 
         data_list = self._parse_chunks(chunks)  # parse the chunks by def lod_doc_graph
-        total_graph = MemoryGraph()
+        graph_of_all = MemoryGraph()
 
-        for index, data in enumerate(data_list):
+        for chunk_index, data in enumerate(data_list):
+            # The type of the chunk can not be "document"
+
             chunk_src = Vertex(
-                f"""{data["parent_id"]}""",
+                vid=data["parent_id"],
                 name=data["parent_title"],
                 vertex_type=data["type"],
                 content=data["content"],
             )
+            chunk_src_success = graph_of_all.upsert_vertex(chunk_src)
             chunk_dst = Vertex(
-                f"""{data["id"]}""",
+                vid=data["id"],
                 name=data["title"],
                 vertex_type=data["type"],
                 content=data["content"],
             )
+            chunk_dst_success = graph_of_all.upsert_vertex(chunk_dst)
             chunk_include_chunk = Edge(
                 chunk_src.vid,
                 chunk_dst.vid,
-                name="include",
+                name=GraphElemType.INCLUDE.value,
                 edge_type="chunk_include_chunk",
             )
-            chunk_next_chunk = None
-            if index >= 1:
+            graph_of_all.append_edge(chunk_include_chunk)
+
+            # chunk -> next -> chunk
+            if chunk_index >= 1:
                 chunk_next_chunk = Edge(
-                    data_list[index - 1]["id"],
-                    data_list[index]["id"],
-                    name="next",
+                    data_list[chunk_index - 1]["id"],
+                    data_list[chunk_index]["id"],
+                    name=GraphElemType.NEXT.value,
                     edge_type="chunk_next_chunk",
                 )
+                graph_of_all.append_edge(chunk_next_chunk)
+
+            # document -> include -> chunk
             if data["parent_id"] == "document":
+                # document -> include -> chunk
                 chunk_src = Vertex(
-                    f"""{hash_id}""",
+                    vid=doc_id,
                     name=doc_name,
-                    vertex_type="document",
-                    content=data["content"],
+                    vertex_type=GraphElemType.DOCUMENT.value,
+                    content="",  # TODO: add content for the document vertex
                 )
-                chunk_include_chunk = Edge(
-                    chunk_src.vid,
+                graph_of_all.upsert_vertex(chunk_src)
+                doc_include_chunk = Edge(
+                    doc_id,
                     chunk_dst.vid,
-                    name="include",
+                    name=GraphElemType.INCLUDE.value,
                     edge_type="document_include_chunk",
                 )
-            total_graph.upsert_vertex(chunk_src)
-            total_graph.upsert_vertex(chunk_dst)
-            total_graph.append_edge(chunk_include_chunk)
-            if chunk_next_chunk:
-                total_graph.append_edge(chunk_next_chunk)
+                graph_of_all.append_edge(doc_include_chunk)
+            # Upsert the edge with vertices
+
             if os.getenv("ONLY_EXTRACT_DOCUMENT_STRUCTURE").lower() != "true":
-                graphs = await self._graph_extractor.extract(data["content"])
+                graphs: Graph = await self._graph_extractor.extract(data["content"])
                 for graph in graphs:
                     for vertex in graph.vertices():
-                        total_graph.upsert_vertex(vertex)
+                        graph_of_all.upsert_vertex(vertex)
                         chunk_include_entity = Edge(
                             chunk_dst.vid,
                             vertex.vid,
                             name="include",
                             edge_type="chunk_include_entity",
                         )
-                        total_graph.append_edge(chunk_include_entity)
+                        graph_of_all.append_edge(chunk_include_entity)
                     for edge in graph.edges():
                         edge.set_prop("_chunk_id", chunk_dst.vid)
-                        total_graph.append_edge(edge)
+                        graph_of_all.append_edge(edge)
 
-        self._graph_store_apdater.insert_graph(total_graph)
+        self._graph_store_apdater.insert_graph(graph_of_all)
 
         # use asyncio.gather
         # tasks = [self._graph_extractor.extract(chunk.content) for chunk in chunks]
@@ -286,7 +301,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         # local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()
+        # TODO: explore: too much duplicate information
+        subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()[
+            :2048
+        ]
+        # TODO: explore_text_link: not enough information
         document_subgraph = self._graph_store_apdater.explore_text_link(
             keywords, limit=topk
         ).format()
@@ -396,6 +415,7 @@ HYBRID_SEARCH_PT_CN = (
     "\n"
     "[知识图谱]:\n"
     "{graph}\n"
+    "{document_subgraph}\n"
     "\n"
 )
 
@@ -492,5 +512,6 @@ HYBRID_SEARCH_PT_EN = (
     "\n"
     "[KnowledgeGraph]:\n"
     "{graph}\n"
+    "{document_subgraph}\n"
     "\n"
 )

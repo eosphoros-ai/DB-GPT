@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Iterator, List, Optional
+from typing import AsyncGenerator, Iterator, List, Optional
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (
@@ -11,6 +11,7 @@ from dbgpt.storage.graph_store.graph import (
     Edge,
     Graph,
     GraphElemType,
+    MemoryGraph,
     Vertex,
 )
 
@@ -165,6 +166,23 @@ class GraphStoreAdapter(ABC):
         **kwargs,
     ) -> Graph:
         """Explore the graph from given subjects up to a depth."""
+
+    @abstractmethod
+    def explore_text_link(
+        self,
+        subs: List[str],
+        depth: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> Graph:
+        """Explore the graph from given subjects up to a depth."""
+
+    @abstractmethod
+    def query(self, query: str, **kwargs) -> MemoryGraph:
+        """Execute a query on graph."""
+
+    @abstractmethod
+    async def stream_query(self, query: str, **kwargs) -> AsyncGenerator[Graph, None]:
+        """Execute a stream query."""
 
 
 class CommunityMetastore(ABC):
