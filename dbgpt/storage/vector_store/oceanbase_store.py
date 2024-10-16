@@ -39,7 +39,7 @@ DEFAULT_OCEANBASE_METADATA_FIELD = "metadata"
 DEFAULT_OCEANBASE_VEC_INDEX_NAME = "vidx"
 
 
-def _parse_filter_value(filter_value: any, is_text_match: bool = False):
+def _parse_filter_value(filter_value: Any, is_text_match: bool = False):
     if filter_value is None:
         return filter_value
 
@@ -50,6 +50,8 @@ def _parse_filter_value(filter_value: any, is_text_match: bool = False):
         return f"'{filter_value!s}'"
 
     if isinstance(filter_value, list):
+        if all(isinstance(item, str) for item in filter_value):
+            return "(" + ",".join([f"'{str(v)}'" for v in filter_value]) + ")"
         return "(" + ",".join([str(v) for v in filter_value]) + ")"
 
     return str(filter_value)
@@ -156,7 +158,7 @@ class OceanBaseStore(VectorStoreBase):
     def __init__(self, vector_store_config: OceanBaseConfig) -> None:
         """Create a OceanBaseStore instance."""
         try:
-            from pyobvector import ObVecClient
+            from pyobvector import ObVecClient  # type: ignore
         except ImportError:
             raise ImportError(
                 "Could not import pyobvector package. "
@@ -171,22 +173,23 @@ class OceanBaseStore(VectorStoreBase):
         self._vector_store_config = vector_store_config
         self.embedding_function = vector_store_config.embedding_fn
         self.table_name = vector_store_config.name
-        
-        vector_store_config = vector_store_config.to_dict()
+
+        vector_store_config_map = vector_store_config.to_dict()
         OB_HOST = str(
-            vector_store_config.get("ob_host") or os.getenv("OB_HOST", "127.0.0.1")
+            vector_store_config_map.get("ob_host") or os.getenv("OB_HOST", "127.0.0.1")
         )
         OB_PORT = int(
-            vector_store_config.get("ob_port") or int(os.getenv("OB_PORT", "2881"))
+            vector_store_config_map.get("ob_port") or int(os.getenv("OB_PORT", "2881"))
         )
         OB_USER = str(
-            vector_store_config.get("ob_user") or os.getenv("OB_USER", "root@test")
+            vector_store_config_map.get("ob_user") or os.getenv("OB_USER", "root@test")
         )
         OB_PASSWORD = str(
-            vector_store_config.get("ob_password") or os.getenv("OB_PASSWORD", "")
+            vector_store_config_map.get("ob_password") or os.getenv("OB_PASSWORD", "")
         )
         OB_DATABASE = str(
-            vector_store_config.get("ob_database") or os.getenv("OB_DATABASE", "test")
+            vector_store_config_map.get("ob_database")
+            or os.getenv("OB_DATABASE", "test")
         )
 
         self.normalize = bool(os.getenv("OB_ENABLE_NORMALIZE_VECTOR", ""))
@@ -441,8 +444,8 @@ class OceanBaseStore(VectorStoreBase):
 
     def delete_by_ids(self, ids: str):
         """Delete vector by ids."""
-        ids = ids.split(",")
-        self.vector_store_client.delete(table_name=self.table_name, ids=ids)
+        split_ids = ids.split(",")
+        self.vector_store_client.delete(table_name=self.table_name, ids=split_ids)
 
     def _enhance_filter_key(self, filter_key: str) -> str:
         return f"{self.metadata_field}->'$.{filter_key}'"
