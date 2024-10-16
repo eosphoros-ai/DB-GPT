@@ -302,22 +302,29 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         # local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
         # TODO: explore: too much duplicate information
-        subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()[
-            :2048
-        ]
-        # TODO: explore_text_link: not enough information
-        document_subgraph = self._graph_store_apdater.explore_text_link(
+        explored_subgraph_str = self._graph_store_apdater.explore(
             keywords, limit=topk
         ).format()
-        logger.info(f"Search subgraph from {len(keywords)} keywords")
+        if len(explored_subgraph_str) > 2048:
+            knowledge_graph_str = explored_subgraph_str[:2048] + "..."
+        else:
+            knowledge_graph_str = explored_subgraph_str
+        # TODO: explore_text_link: not enough information
+        knowledge_graph_for_doc_str = self._graph_store_apdater.explore_text_link(
+            keywords, limit=topk
+        ).format()
+        logger.info(f"Search subgraph from the following keywords:\n{len(keywords)}")
 
-        if not summaries and not subgraph:
+        if not (summaries or explored_subgraph_str or knowledge_graph_for_doc_str):
             return []
 
         # merge search results into context
         content = HYBRID_SEARCH_PT_CN.format(
-            context=context, graph=subgraph, document_subgraph=document_subgraph
+            context=context,
+            knowledge_graph=knowledge_graph_str,
+            knowledge_graph_for_doc=knowledge_graph_for_doc_str,
         )
+        logger.info(f"Final GraphRAG queried prompt:\n{content}")
         return [Chunk(content=content)]
 
     def truncate(self) -> List[str]:
@@ -414,8 +421,8 @@ HYBRID_SEARCH_PT_CN = (
     "{context}\n"
     "\n"
     "[知识图谱]:\n"
-    "{graph}\n"
-    "{document_subgraph}\n"
+    "{knowledge_graph}\n"
+    "{knowledge_graph_for_doc}\n"
     "\n"
 )
 
@@ -511,7 +518,7 @@ HYBRID_SEARCH_PT_EN = (
     "{context}\n"
     "\n"
     "[KnowledgeGraph]:\n"
-    "{graph}\n"
-    "{document_subgraph}\n"
+    "{knowledge_graph}\n"
+    "{knowledge_graph_for_doc}\n"
     "\n"
 )

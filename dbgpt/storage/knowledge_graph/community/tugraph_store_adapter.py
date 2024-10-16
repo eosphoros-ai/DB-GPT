@@ -552,9 +552,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: int | None = None,
-        fan: int | None = None,
-        limit: int | None = None,
+        depth: Optional[int] = None,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         if not subs:
@@ -563,13 +563,18 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if fan is not None:
             raise ValueError("Fan functionality is not supported at this time.")
         else:
-            depth_string = f"1..{depth}"
-            if depth is None:
-                depth_string = ".."
+            if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
+                # TODO: to be discussed, be none or MAX_HIERARCHY_LEVEL
+                # depth_string = ".."
+                depth_string = self.MAX_HIERARCHY_LEVEL
+            else:
+                depth_string = f"1..{depth}"
 
-            limit_string = f"LIMIT {limit}"
             if limit is None:
                 limit_string = ""
+            else:
+                limit_string = f"LIMIT {limit}"
+
             if direct.name == "OUT":
                 rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]->"
             elif direct.name == "IN":
