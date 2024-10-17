@@ -36,13 +36,6 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         # Create the graph
         self.create_graph(self._graph_store.get_config().name)
 
-    ############################
-    #                          #
-    #                          #
-    # MemGraph Community Store #
-    #                          #
-    #                          #
-    ############################
     async def discover_communities(self, **kwargs) -> List[str]:
         """Run community discovery with leiden."""
         pass
@@ -51,13 +44,6 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         """Get community."""
         pass
 
-    ##################
-    #                #
-    #                #
-    # MemGraph Store #
-    #                #
-    #                #
-    ##################
     def get_graph_config(self):
         """Get the graph store config."""
         return self._graph_store.get_config()
@@ -77,7 +63,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def get_document_vertex(self, doc_name: str) -> Vertex:
         """Get the document vertex in the graph."""
-        pass
+        raise NotImplementedError("Memory graph store does not have document vertex")
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
@@ -124,7 +110,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         """Add triplet."""
         self._graph.append_edge(Edge(subj, obj, rel))
 
-    def insert_graph(self, graph: Graph) -> None:
+    def upsert_graph(self, graph: Graph) -> None:
         """Add graph to the graph store.
 
         Args:

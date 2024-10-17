@@ -39,13 +39,6 @@ class GraphStoreAdapter(ABC):
         """Initialize Community Store Adapter."""
         self._graph_store = graph_store
 
-    ###################
-    #                 #
-    #                 #
-    # Community Store #
-    #                 #
-    #                 #
-    ###################
     @property
     def graph_store(self) -> GraphStoreBase:
         """Get graph store."""
@@ -59,13 +52,6 @@ class GraphStoreAdapter(ABC):
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
 
-    ###############
-    #             #
-    #             #
-    # Graph Store #
-    #             #
-    #             #
-    ###############
     @abstractmethod
     def get_graph_config(self):
         """Get config."""
@@ -121,9 +107,9 @@ class GraphStoreAdapter(ABC):
         """Insert triplet."""
 
     @abstractmethod
-    def insert_graph(self, graph: Graph) -> None:
+    def upsert_graph(self, graph: Graph) -> None:
         """Insert graph."""
-        # TODO: Need to identify the difference between insert_graph and upsert_graph
+        # TODO: Need to identify the difference between upsert_graph and upsert_graph
 
     @abstractmethod
     def delete_document(self, chunk_id: str) -> None:

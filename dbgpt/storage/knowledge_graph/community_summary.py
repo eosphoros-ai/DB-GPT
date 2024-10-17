@@ -9,12 +9,7 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.graph import (
-    Edge,
-    GraphElemType,
-    MemoryGraph,
-    Vertex,
-)
+from dbgpt.storage.graph_store.graph import Edge, GraphElemType, MemoryGraph, Vertex
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -251,13 +246,13 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                         edge.set_prop("_chunk_id", chunk_dst.vid)
                         graph_of_all.append_edge(edge)
 
-        self._graph_store_apdater.insert_graph(graph_of_all)
+        self._graph_store_apdater.upsert_graph(graph_of_all)
 
         # use asyncio.gather
         # tasks = [self._graph_extractor.extract(chunk.content) for chunk in chunks]
         # results = await asyncio.gather(*tasks)
         # for result in results:
-        #     self._graph_store_apdater.insert_graph(result[0])
+        #     self._graph_store_apdater.upsert_graph(result[0])
 
         # build communities and save
 

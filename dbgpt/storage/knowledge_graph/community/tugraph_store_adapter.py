@@ -23,11 +23,8 @@ from dbgpt.storage.graph_store.graph import (
     MemoryGraph,
     Vertex,
 )
-from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
-from dbgpt.storage.knowledge_graph.community.base import (
-    Community,
-    GraphStoreAdapter,
-)
+from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
+from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -38,28 +35,18 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     MAX_QUERY_LIMIT = 1000
     MAX_HIERARCHY_LEVEL = 3
 
-    def __init__(self, graph_store: Optional[TuGraphStore] = None):
+    def __init__(self, graph_store: TuGraphStore):
         """Initialize TuGraph Community Store Adapter."""
-        _graph_store: TuGraphStore = (
-            graph_store if graph_store else TuGraphStore(TuGraphStoreConfig())
-        )
-        super().__init__(_graph_store)
+        super().__init__(graph_store)
 
         self._summary_enabled = (
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            or _graph_store.get_config().summary_enabled
+            or graph_store.get_config().summary_enabled
         )
 
         # Create the graph
         self.create_graph(self.graph_store.get_config().name)
 
-    ###########################
-    #                         #
-    #                         #
-    # TuGraph Community Store #
-    #                         #
-    #                         #
-    ###########################
     async def discover_communities(self, **kwargs) -> List[str]:
         """Run community discovery with leiden."""
         mg = self.query(
@@ -94,13 +81,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         return Community(id=community_id, data=all_graph)
 
-    #################
-    #               #
-    #               #
-    # TuGraph Store #
-    #               #
-    #               #
-    #################
     @property
     def graph_store(self) -> TuGraphStore:
         """Get the graph store."""
@@ -268,7 +248,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self.graph_store.conn.run(query=vertex_query)
         self.graph_store.conn.run(query=edge_query)
 
-    def insert_graph(self, graph: MemoryGraph) -> None:
+    def upsert_graph(self, graph: MemoryGraph) -> None:
         """Add graph to the graph store.
 
         Args:

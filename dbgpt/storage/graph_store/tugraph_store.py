@@ -9,9 +9,7 @@ from typing import List
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.graph import (
-    GraphElemType,
-)
+from dbgpt.storage.graph_store.graph import GraphElemType
 
 logger = logging.getLogger(__name__)
 

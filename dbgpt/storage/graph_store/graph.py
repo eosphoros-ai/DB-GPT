@@ -387,10 +387,7 @@ class MemoryGraph(Graph):
         # Get all vertices in the graph
         all_vertices = self._vs.values()
 
-        if filter_fn is None:
-            return all_vertices
-        else:
-            return filter(filter_fn, all_vertices)
+        return all_vertices if filter_fn is None else filter(filter_fn, all_vertices)
 
     def edges(
         self, filter_fn: Optional[Callable[[Edge], bool]] = None

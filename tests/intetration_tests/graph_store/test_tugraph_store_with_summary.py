@@ -21,7 +21,7 @@ def graph_store_adapter(store: TuGraphStore):
     yield tugraph_store_adapter
 
 
-def test_insert_graph(tugraph_store_adapter: TuGraphStoreAdapter):
+def test_upsert_graph(tugraph_store_adapter: TuGraphStoreAdapter):
     graph = MemoryGraph()
     vertex_list = [
         Vertex("A", "A", description="Vertex A", _document_id="Test doc"),
@@ -44,7 +44,7 @@ def test_insert_graph(tugraph_store_adapter: TuGraphStoreAdapter):
         graph.upsert_vertex(vertex)
     for edge in edge_list:
         graph.append_edge(edge)
-    tugraph_store_adapter.insert_graph(graph)
+    tugraph_store_adapter.upsert_graph(graph)
 
 
 def test_leiden_query(store: TuGraphStore):
