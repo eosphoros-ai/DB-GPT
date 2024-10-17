@@ -81,14 +81,14 @@ export default function Segmentation(props: IProps) {
     }
     const { fileStrategies } = data;
     fileStrategies.map(item => {
-      const name = item?.chunk_parameters?.chunk_strategy;
+      const name = item?.chunk_parameters?.chunk_strategy || 'Automatic';
       if (!name) {
         message.error(`Please select chunk strategy for ${item.name}.`);
         checked = false;
       }
       const strategy = strategies.filter(item => item.strategy === name)[0];
       const newParam: any = {
-        chunk_strategy: item?.chunk_parameters?.chunk_strategy,
+        chunk_strategy: item?.chunk_parameters?.chunk_strategy || 'Automatic',
       };
       if (strategy && strategy.parameters) {
         // remove unused parameter, otherwise api will failed.
