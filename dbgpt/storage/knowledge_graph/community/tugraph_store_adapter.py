@@ -270,16 +270,20 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             filter_fn=lambda x: x.get_prop("vertex_type") == GraphElemType.ENTITY.value
         )
         doc_include_chunk: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type") == "doc_include_chunk"
+            filter_fn=lambda x: x.get_prop("edge_type")
+            == GraphElemType.DOCUMENT_INCLUDE_CHUNK.value
         )
         chunk_include_chunk: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type") == "chunk_include_chunk"
+            filter_fn=lambda x: x.get_prop("edge_type")
+            == GraphElemType.CHUNK_INCLUDE_CHUNK.value
         )
         chunk_include_entity: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type") == "chunk_include_entity"
+            filter_fn=lambda x: x.get_prop("edge_type")
+            == GraphElemType.CHUNK_INCLUDE_ENTITY.value
         )
         chunk_next_chunk: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type") == "chunk_next_chunk"
+            filter_fn=lambda x: x.get_prop("edge_type")
+            == GraphElemType.CHUNK_NEXT_CHUNK.value
         )
         relation: Iterator[Edge] = graph.edges(
             filter_fn=lambda x: x.get_prop("edge_type") == GraphElemType.RELATION.value
@@ -566,9 +570,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
                 # TODO: to be discussed, be none or MAX_HIERARCHY_LEVEL
                 # depth_string = ".."
-                depth_string = self.MAX_HIERARCHY_LEVEL
-            else:
-                depth_string = f"1..{depth}"
+                depth = self.MAX_HIERARCHY_LEVEL
+            depth_string = f"1..{depth}"
 
             if limit is None:
                 limit_string = ""
@@ -595,8 +598,16 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         limit: Optional[int] = None,
     ) -> MemoryGraph:
         """Explore the graph text link."""
-        depth_string = f"1..{depth}" if depth is not None else ".."
-        limit_string = f"LIMIT {limit}" if limit is not None else ""
+        # depth_string = f"1..{depth}" if depth is not None else ".."
+        # limit_string = f"LIMIT {limit}" if limit is not None else ""
+        if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
+            depth = self.MAX_HIERARCHY_LEVEL
+        depth_string = f"1..{depth}"
+
+        if limit is None:
+            limit_string = ""
+        else:
+            limit_string = f"LIMIT {limit}"
 
         graph = MemoryGraph()
 

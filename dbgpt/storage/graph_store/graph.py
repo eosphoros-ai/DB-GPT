@@ -24,6 +24,12 @@ class GraphElemType(Enum):
     INCLUDE = "include"
     NEXT = "next"
 
+    DOCUMENT_INCLUDE_CHUNK = "document_include_chunk"
+    CHUNK_INCLUDE_CHUNK = "chunk_include_chunk"
+    CHUNK_INCLUDE_ENTITY = "chunk_include_entity"
+    CHUNK_NEXT_CHUNK = "chunk_next_chunk"
+    ENTITY_NEXT_ENTITY = "entity_next_entity"  # nver used
+
     def is_vertex(self) -> bool:
         """Check if the element is a vertex."""
         return self in [
@@ -216,14 +222,12 @@ class Graph(ABC):
         self, filter_fn: Optional[Callable[[Vertex], bool]] = None
     ) -> Iterator[Vertex]:
         """Get vertex iterator."""
-        # TODO: Move to the graph store adapter, or define to get all vertices (useful?)
 
     @abstractmethod
     def edges(
         self, filter_fn: Optional[Callable[[Edge], bool]] = None
     ) -> Iterator[Edge]:
         """Get edge iterator."""
-        # TODO: Move to the graph store adapter
 
     @abstractmethod
     def del_vertices(self, *vids: str):
