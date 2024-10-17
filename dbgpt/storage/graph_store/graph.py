@@ -154,6 +154,18 @@ class Edge(Elem):
         for k, v in props.items():
             self.set_prop(k, v)
 
+    def __eq__(self, other):
+        """Check if two edges are equal.
+
+        Let's say two edges are equal if they have the same source vertex ID,
+        target vertex ID, and edge label. The properties are not considered.
+        """
+        return (self.sid, self.tid, self.name) == (other.sid, other.tid, other.name)
+
+    def __hash__(self):
+        """Return the hash value of the edge."""
+        return hash((self.sid, self.tid, self.name))
+
     @property
     def sid(self) -> str:
         """Return the source vertex ID of the edge."""
@@ -502,7 +514,7 @@ class MemoryGraph(Graph):
             ]
         }
 
-    def format(self) -> str:
+    def format(self, entities_only: Optional[bool] = False) -> str:
         """Format graph to string."""
         vs_str = "\n".join(v.format() for v in self.vertices())
         es_str = "\n".join(
@@ -511,11 +523,14 @@ class MemoryGraph(Graph):
             f"{self.get_vertex(e.tid).format(concise=True)}"
             for e in self.edges()
         )
-        return (
-            f"Entities:\n{vs_str}\n\n" f"Relationships:\n{es_str}"
-            if (vs_str or es_str)
-            else ""
-        )
+        if entities_only:
+            return f"Entities:\n{vs_str}" if vs_str else ""
+        else:
+            return (
+                f"Entities:\n{vs_str}\n\nRelationships:\n{es_str}"
+                if (vs_str or es_str)
+                else ""
+            )
 
     def truncate(self):
         """Truncate graph."""
