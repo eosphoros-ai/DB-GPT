@@ -3,7 +3,7 @@
 import json
 import logging
 import os
-from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Dict, Iterator, List, Literal, Optional, Tuple
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -555,29 +555,27 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def explore(
         self,
         subs: List[str],
-        direct: Direction = Direction.BOTH,
+        direct: Optional[Direction] = Direction.BOTH,
         depth: Optional[int] = None,
-        fan: Optional[int] = None,
         limit: Optional[int] = None,
+        search_method: Optional[Literal["entity_search", "chunk_search"]] = None,
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         if not subs:
             return MemoryGraph()
 
-        if fan is not None:
-            raise ValueError("Fan functionality is not supported at this time.")
+        if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
+            # TODO: to be discussed, be none or MAX_HIERARCHY_LEVEL
+            # depth_string = ".."
+            depth = self.MAX_HIERARCHY_LEVEL
+        depth_string = f"1..{depth}"
+
+        if limit is None:
+            limit_string = ""
         else:
-            if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
-                # TODO: to be discussed, be none or MAX_HIERARCHY_LEVEL
-                # depth_string = ".."
-                depth = self.MAX_HIERARCHY_LEVEL
-            depth_string = f"1..{depth}"
+            limit_string = f"LIMIT {limit}"
 
-            if limit is None:
-                limit_string = ""
-            else:
-                limit_string = f"LIMIT {limit}"
-
+        if search_method == "entity_search":
             if direct.name == "OUT":
                 rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]->"
             elif direct.name == "IN":
@@ -590,42 +588,23 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 f"WHERE n.id IN {subs} RETURN p {limit_string}"
             )
             return self.query(query)
-
-    def explore_text_link(
-        self,
-        subs: List[str],
-        depth: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> MemoryGraph:
-        """Explore the graph text link."""
-        # depth_string = f"1..{depth}" if depth is not None else ".."
-        # limit_string = f"LIMIT {limit}" if limit is not None else ""
-        if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
-            depth = self.MAX_HIERARCHY_LEVEL
-        depth_string = f"1..{depth}"
-
-        if limit is None:
-            limit_string = ""
         else:
-            limit_string = f"LIMIT {limit}"
+            graph = MemoryGraph()
 
-        graph = MemoryGraph()
+            for sub in subs:
+                query = (
+                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]-"
+                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' "
+                    f"RETURN p {limit_string}"
+                )  # if it contains the subjects
+                result = self.query(query)
+                for vertex in result.vertices():
+                    graph.upsert_vertex(vertex)
+                for edge in result.edges():
+                    graph.append_edge(edge)
 
-        for sub in subs:
-            query = (
-                f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
-                f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]-"
-                f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' "
-                f"RETURN p {limit_string}"
-            )  # if it contains the subjects
-            # TODO: Implement the query for the text link
-            result = self.query(query)
-            for vertex in result.vertices():
-                graph.upsert_vertex(vertex)
-            for edge in result.edges():
-                graph.append_edge(edge)
-
-        return graph
+            return graph
 
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph.

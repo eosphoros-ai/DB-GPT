@@ -326,30 +326,47 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        # Local search: extract keywords and explore subgraph
         keywords = await self._keyword_extractor.extract(text)
-        # TODO: explore: too much duplicate information
-        explored_subgraph_str = self._graph_store_apdater.explore(
-            keywords, limit=topk
-        ).format()
-        if len(explored_subgraph_str) > 2048:
-            knowledge_graph_str = explored_subgraph_str[:2048] + "..."
-        else:
-            knowledge_graph_str = explored_subgraph_str
 
-        # Local search: explore the link between the text and the knowledge graph
-        # TODO: explore: too much duplicate information
-        explored_subgraph_for_doc_str = self._graph_store_apdater.explore_text_link(
-            keywords, limit=topk
-        ).format()
-        if len(explored_subgraph_for_doc_str) > 2048:
-            knowledge_graph_for_doc_str = explored_subgraph_for_doc_str[:2048] + "..."
+        # Local search: extract keywords and explore subgraph
+        subgraph = MemoryGraph()
+        subgraph_for_doc = MemoryGraph()
+
+        if os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH").lower() == "true":
+            subgraph = self._graph_store_apdater.explore(
+                subs=keywords, limit=topk, search_method="entity_search"
+            )
+
+            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH").lower() == "true":
+                keywords_for_chunk_search: List[str] = []
+                for vertex in subgraph.vertices():
+                    keywords_for_chunk_search.append(vertex.name)
+
+                subgraph_for_doc = self._graph_store_apdater.explore(
+                    subs=keywords_for_chunk_search,
+                    limit=topk,
+                    search_method="chunk_search",
+                )
         else:
-            knowledge_graph_for_doc_str = explored_subgraph_for_doc_str
+            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH").lower() == "true":
+                subgraph_for_doc = self._graph_store_apdater.explore(
+                    subs=keywords,
+                    limit=topk,
+                    search_method="chunk_search",
+                )
+
+        if len(subgraph.format()) > 2048:
+            knowledge_graph_str = subgraph.format()[:2048] + "..."
+        else:
+            knowledge_graph_str = subgraph.format()
+        if len(subgraph_for_doc.format()) > 2048:
+            knowledge_graph_for_doc_str = subgraph_for_doc.format()[:2048] + "..."
+        else:
+            knowledge_graph_for_doc_str = subgraph_for_doc.format()
 
         logger.info(f"Search subgraph from the following keywords:\n{len(keywords)}")
 
-        if not (summaries or explored_subgraph_str or knowledge_graph_for_doc_str):
+        if not (summaries or knowledge_graph_str or knowledge_graph_for_doc_str):
             return []
 
         # merge search results into context

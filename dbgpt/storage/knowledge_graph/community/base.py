@@ -164,16 +164,7 @@ class GraphStoreAdapter(ABC):
         direct: Direction = Direction.BOTH,
         depth: Optional[int] = None,
         **kwargs,
-    ) -> Graph:
-        """Explore the graph from given subjects up to a depth."""
-
-    @abstractmethod
-    def explore_text_link(
-        self,
-        subs: List[str],
-        depth: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> Graph:
+    ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
 
     @abstractmethod

@@ -189,15 +189,6 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         """Explore the graph from given subjects up to a depth."""
         return self._graph_store._graph.search(subs, direct, depth, fan, limit)
 
-    def explore_text_link(
-        self,
-        subs: List[str],
-        depth: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> Graph:
-        """Explore the graph from given subjects up to a depth."""
-        pass
-
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph."""
         pass
