@@ -154,8 +154,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         graph_of_all = MemoryGraph()
 
         if (
-            os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH").lower() == "false"
-            and os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH").lower() == "false"
+            os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "false"
+            and os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH", "").lower() == "false"
         ):
             raise Exception(
                 "ENABLE_DOCUMENT_GRAPH_SEARCH and ENABLE_KNOWLEDGE_GRAPH_SEARCH "
@@ -163,7 +163,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             )
 
         # Support graph search by the document and the chunks
-        if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH").lower() == "true":
+        if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "true":
             for chunk_index, chunk in enumerate(data_list):
                 # The type of the chunk can not be "document"
 
@@ -219,7 +219,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     graph_of_all.append_edge(doc_include_chunk)
 
         # Support knowledge graph search by the entities and the relationships
-        if os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH").lower() == "true":
+        if os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH", "").lower() == "true":
             # TODO: Use asyncio to extract graph to accelerate the process
             # (attention to the CAP of the graph db)
             for chunk_index, chunk in enumerate(data_list):
@@ -233,7 +233,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                         graph_of_all.upsert_vertex(vertex)
 
                         # Connect the chunks to the entities
-                        if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH").lower() == "true":
+                        if (
+                            os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower()
+                            == "true"
+                        ):
                             # chunk -> include -> entity
                             chunk_include_entity = Edge(
                                 chunk["id"],
@@ -332,12 +335,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         subgraph = MemoryGraph()
         subgraph_for_doc = MemoryGraph()
 
-        if os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH").lower() == "true":
+        if os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH", "").lower() == "true":
             subgraph = self._graph_store_apdater.explore(
                 subs=keywords, limit=topk, search_method="entity_search"
             )
 
-            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH").lower() == "true":
+            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "true":
                 keywords_for_chunk_search: List[str] = []
                 for vertex in subgraph.vertices():
                     keywords_for_chunk_search.append(vertex.name)
@@ -348,7 +351,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     search_method="chunk_search",
                 )
         else:
-            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH").lower() == "true":
+            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "true":
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords,
                     limit=topk,

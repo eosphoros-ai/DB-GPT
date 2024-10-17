@@ -138,7 +138,7 @@ class GraphStoreAdapter(ABC):
         """Drop graph."""
 
     @abstractmethod
-    def create_graph(self) -> None:
+    def create_graph(self, graph_name: str) -> None:
         """Create graph."""
 
     @abstractmethod
@@ -163,7 +163,6 @@ class GraphStoreAdapter(ABC):
         subs: List[str],
         direct: Direction = Direction.BOTH,
         depth: Optional[int] = None,
-        **kwargs,
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
 

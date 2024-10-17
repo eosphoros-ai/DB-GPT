@@ -3,7 +3,17 @@
 import json
 import logging
 import os
-from typing import Any, AsyncGenerator, Dict, Iterator, List, Literal, Optional, Tuple
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -14,7 +24,10 @@ from dbgpt.storage.graph_store.graph import (
     Vertex,
 )
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
-from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
+from dbgpt.storage.knowledge_graph.community.base import (
+    Community,
+    GraphStoreAdapter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +35,10 @@ logger = logging.getLogger(__name__)
 class TuGraphStoreAdapter(GraphStoreAdapter):
     """TuGraph Community Store Adapter."""
 
+    MAX_QUERY_LIMIT = 1000
     MAX_HIERARCHY_LEVEL = 3
 
-    def __init__(self, graph_store: TuGraphStore = None):
+    def __init__(self, graph_store: Optional[TuGraphStore] = None):
         """Initialize TuGraph Community Store Adapter."""
         _graph_store: TuGraphStore = (
             graph_store if graph_store else TuGraphStore(TuGraphStoreConfig())
@@ -33,7 +47,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         self._summary_enabled = (
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            or graph_store.get_config().summary_enabled
+            or _graph_store.get_config().summary_enabled
         )
 
         # Create the graph
@@ -128,8 +142,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         schema = data[0]["schema"]
         return schema
 
-    def get_full_graph(self, limit: int) -> Graph:
+    def get_full_graph(self, limit: Optional[int] = None) -> Graph:
         """Get full graph."""
+        if not limit:
+            limit = self.MAX_QUERY_LIMIT
         if limit <= 0:
             raise ValueError("Limit must be greater than 0.")
         graph_result = self.query(
@@ -363,7 +379,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             name: str,
             type: str = "STRING",
             optional: bool = False,
-            index: bool = None,
+            index: Optional[bool] = None,
             **kwargs,
         ) -> Dict[str, str | bool]:
             """Format the property for TuGraph.
@@ -392,7 +408,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             return property
 
         # Create the graph label for document vertex
-        document_proerties = [
+        document_proerties: List[Dict[str, Union[str, bool]]] = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
@@ -402,7 +418,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         # Create the graph label for chunk vertex
-        chunk_proerties = [
+        chunk_proerties: List[Dict[str, Union[str, bool]]] = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
@@ -413,7 +429,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         # Create the graph label for entity vertex
-        vertex_proerties = [
+        vertex_proerties: List[Dict[str, Union[str, bool]]] = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_community_id", "STRING", True, True),
@@ -424,7 +440,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         # Create the graph label for relation edge
-        edge_proerties = [
+        edge_proerties: List[Dict[str, Union[str, bool]]] = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("_chunk_id", "STRING", True, True),
@@ -435,7 +451,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         # Create the graph label for include edge
-        include_proerties = [
+        include_proerties: List[Dict[str, Union[str, bool]]] = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("description", "STRING", True),
@@ -445,7 +461,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         # Create the graph label for next edge
-        next_proerties = [
+        next_proerties: List[Dict[str, Union[str, bool]]] = [
             _format_graph_propertity_schema("id", "STRING", False),
             _format_graph_propertity_schema("name", "STRING", False),
             _format_graph_propertity_schema("description", "STRING", True),
@@ -460,16 +476,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def create_graph_label(
         self,
         graph_elem_type: GraphElemType,
-        graph_properties: Dict[str, str | bool],
+        graph_properties: List[Dict[str, Union[str, bool]]],
     ) -> None:
         """Create a graph label.
 
         The graph label is used to identify and distinguish different types of nodes
         (vertices) and edges in the graph.
-
-        Args:
-            graph_elem_type (GraphElemType): The type of the graph element.
-            graph_properties (Dict[str, str|bool]): The properties of the graph element.
         """
         if graph_elem_type.is_vertex():  # vertex
             data = json.dumps({
@@ -555,10 +567,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def explore(
         self,
         subs: List[str],
-        direct: Optional[Direction] = Direction.BOTH,
+        direct: Direction = Direction.BOTH,
         depth: Optional[int] = None,
         limit: Optional[int] = None,
-        search_method: Optional[Literal["entity_search", "chunk_search"]] = None,
+        search_method: Optional[
+            Literal["entity_search", "chunk_search"]
+        ] = "entity_search",
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         if not subs:
@@ -650,6 +664,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 elif isinstance(value, graph.Relationship):
                     edge_nodes = value.nodes
                     prop_id = value._properties["id"]
+                    assert edge_nodes and edge_nodes[0] and edge_nodes[1]
                     src_id = edge_nodes[0]._properties["id"]
                     dst_id = edge_nodes[1]._properties["id"]
                     description = value._properties["description"]
@@ -744,8 +759,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         for record in data:
             for value in record.values():
                 if isinstance(value, graph.Node):
+                    assert value._properties.get("id")
                     vertex = Vertex(
-                        vid=value._properties.get("id"),
+                        vid=value._properties.get("id", ""),
                         name=value._properties.get("name"),
                         **filter_properties(value._properties, _white_list),
                     )
@@ -754,18 +770,20 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         vertex_list.append(vertex)
                 elif isinstance(value, graph.Relationship):
                     for node in value.nodes:  # num of nodes is 2
+                        assert node and node._properties
                         vertex = Vertex(
-                            vid=node._properties.get("id"),
+                            vid=node._properties.get("id", ""),
                             name=node._properties.get("name"),
                             **filter_properties(node._properties, _white_list),
                         )
                         if vertex not in vertex_list:
                             vertex_list.append(vertex)
 
+                        assert value.nodes and value.nodes[0] and value.nodes[1]
                         edge = Edge(
-                            sid=value.nodes[0]._properties.get("id"),
-                            tid=value.nodes[1]._properties.get("id"),
-                            name=value._properties.get("name"),
+                            sid=value.nodes[0]._properties.get("id", ""),
+                            tid=value.nodes[1]._properties.get("id", ""),
+                            name=value._properties.get("name", ""),
                             **filter_properties(value._properties, _white_list),
                         )
                         if edge not in edge_list:
@@ -773,18 +791,20 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 elif isinstance(value, graph.Path):
                     for rel in value.relationships:
                         for node in rel.nodes:  # num of nodes is 2
+                            assert node and node._properties
                             vertex = Vertex(
-                                vid=node._properties.get("id"),
+                                vid=node._properties.get("id", ""),
                                 name=node._properties.get("name"),
                                 **filter_properties(node._properties, _white_list),
                             )
                             if vertex not in vertex_list:
                                 vertex_list.append(vertex)
 
+                            assert rel.nodes and rel.nodes[0] and rel.nodes[1]
                             edge = Edge(
-                                sid=rel.nodes[0]._properties.get("id"),
-                                tid=rel.nodes[1]._properties.get("id"),
-                                name=rel._properties.get("name"),
+                                sid=rel.nodes[0]._properties.get("id", ""),
+                                tid=rel.nodes[1]._properties.get("id", ""),
+                                name=rel._properties.get("name", ""),
                                 **filter_properties(rel._properties, _white_list),
                             )
                             if edge not in edge_list:

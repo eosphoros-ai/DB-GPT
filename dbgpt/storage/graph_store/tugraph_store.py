@@ -135,7 +135,9 @@ class TuGraphStore(GraphStoreBase):
         if len(missing_plugins):
             for name in missing_plugins:
                 try:
-                    from dbgpt_tugraph_plugins import get_plugin_binary_path
+                    from dbgpt_tugraph_plugins import (
+                        get_plugin_binary_path,  # type:ignore[import-untyped]
+                    )
                 except ImportError:
                     logger.error(
                         "dbgpt-tugraph-plugins is not installed, "
@@ -156,11 +158,3 @@ class TuGraphStore(GraphStoreBase):
         """Escape single and double quotes in a string for queries."""
         if value is not None:
             return value.replace("'", "").replace('"', "")
-
-    def _upsert_chunk_include_chunk(self, edges):
-        pass
-        # TODO: To be removed to the adapter class.
-
-    def _upsert_chunk_include_entity(self, edges):
-        pass
-        # TODO: To be removed to the adapter class.

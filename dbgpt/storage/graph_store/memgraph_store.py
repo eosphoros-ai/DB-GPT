@@ -29,4 +29,6 @@ class MemoryGraphStore(GraphStoreBase):
 
     def _escape_quotes(self, text: str) -> str:
         """Escape single and double quotes in a string for queries."""
-        pass
+        raise NotImplementedError(
+            "_escape_quotes is not implemented by MemoryGraphStore"
+        )

@@ -28,7 +28,6 @@ class GraphElemType(Enum):
     CHUNK_INCLUDE_CHUNK = "chunk_include_chunk"
     CHUNK_INCLUDE_ENTITY = "chunk_include_entity"
     CHUNK_NEXT_CHUNK = "chunk_next_chunk"
-    ENTITY_NEXT_ENTITY = "entity_next_entity"  # nver used
 
     def is_vertex(self) -> bool:
         """Check if the element is a vertex."""
