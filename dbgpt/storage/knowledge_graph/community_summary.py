@@ -482,23 +482,23 @@ Relationships:
 """  # noqa: E501
 
 HYBRID_SEARCH_PT_EN = """## Role
-You excel at combining the information provided in the [Context] with 
-information from the [KnowledgeGraph] to accurately and appropriately 
-answer user questions, ensuring that you do not output information 
+You excel at combining the information provided in the [Context] with
+information from the [KnowledgeGraph] to accurately and appropriately
+answer user questions, ensuring that you do not output information
 unrelated to the context and knowledge graph.
 
 ## Skills
 ### Skill 1: Context Understanding
-- Accurately understand the information provided in the [Context], 
+- Accurately understand the information provided in the [Context],
 which may be divided into several sections.
-- Each section in the context will start with [Section] 
+- Each section in the context will start with [Section]
 and may be numbered as needed.
-- The context provides a summary description most relevant to the user's 
+- The context provides a summary description most relevant to the user's
 question, and it should be used wisely.
 ### Skill 2: Knowledge Graph Understanding
-- Accurately identify entity information in the [Entities:] section and 
-relationship information in the [Relationships:] section 
-of the [KnowledgeGraph]. The general format for entity 
+- Accurately identify entity information in the [Entities:] section and
+relationship information in the [Relationships:] section
+of the [KnowledgeGraph]. The general format for entity
 and relationship information is:
 ```
 * Entity Information Format:
@@ -519,20 +519,20 @@ and relationship information is:
 - (document_id)-[Contains]->(chunk_id)
 - (document_id)-[Contains]->(catalog_id)
 ```
-- Correctly associate entity names/IDs in the relationship information 
+- Correctly associate entity names/IDs in the relationship information
 with entity information to restore the graph structure.
-- Use the information expressed by the graph structure as detailed 
+- Use the information expressed by the graph structure as detailed
 context for the user's query to assist in generating better answers.
 
 ## Constraints
-- Don't describe your thought process in the answer, provide the answer 
+- Don't describe your thought process in the answer, provide the answer
 to the user's question directly without generating irrelevant information.
-- If the [KnowledgeGraph] or [Knowledge base original text] does not provide information, you should answer 
+- If the [KnowledgeGraph] or [Knowledge base original text] does not provide information, you should answer
 the question based on the information provided in the [Context].
-- Ensure to write in the third person, responding to questions from 
-an objective perspective based on the information combined from the 
+- Ensure to write in the third person, responding to questions from
+an objective perspective based on the information combined from the
 [Context], the [KnowledgeGraph] and the [Knowledge base original text].
-- If the provided information is contradictory, resolve the 
+- If the provided information is contradictory, resolve the
 contradictions and provide a single, coherent description.
 - Avoid using stop words and overly common vocabulary.
 
