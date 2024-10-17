@@ -70,7 +70,7 @@ const MenuItem: React.FC<{
         }
       },
     });
-  };// git log --author="lhwan" --since='2024-09-12' --until='2024-09-14' --pretty=tformat: --numstat | awk '{ add += $1; remove += $2 } END { print "Added lines:", add, "Removed lines:", remove }'
+  };
 
   return (
     <Flex
