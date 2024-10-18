@@ -181,7 +181,9 @@ class Action(ABC, Generic[T]):
         if get_origin(cls) == list:
             inner_type = get_args(cls)[0]
             typed_cls = cast(Type[BaseModel], inner_type)
-            return [typed_cls.model_validate(item) for item in json_result]  # type: ignore
+            return [
+                typed_cls.model_validate(item) for item in json_result
+            ]  # type: ignore
         else:
             typed_cls = cast(Type[BaseModel], cls)
             return typed_cls.model_validate(json_result)
