@@ -8,13 +8,7 @@ from dbgpt.serve.core import BaseServe
 from dbgpt.storage.metadata import DatabaseManager
 
 from .api.endpoints import init_endpoints, router
-from .config import (
-    APP_NAME,
-    SERVE_APP_NAME,
-    SERVE_APP_NAME_HUMP,
-    SERVE_CONFIG_KEY_PREFIX,
-    ServeConfig,
-)
+from .config import APP_NAME, SERVE_APP_NAME, SERVE_APP_NAME_HUMP
 
 logger = logging.getLogger(__name__)
 

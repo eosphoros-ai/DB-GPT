@@ -8,7 +8,6 @@ SERVE_APP_NAME = "dbgpt_serve_evaluate"
 SERVE_APP_NAME_HUMP = "dbgpt_serve_evaluate"
 SERVE_CONFIG_KEY_PREFIX = "dbgpt.serve.evaluate."
 SERVE_SERVICE_COMPONENT_NAME = f"{SERVE_APP_NAME}_service"
-SERVE_DATASET_SERVICE_COMPONENT_NAME = f"{SERVE_APP_NAME}_dataset_service"
 # Database table name
 SERVER_APP_TABLE_NAME = "dbgpt_serve_evaluate"
 
