@@ -1,5 +1,4 @@
 """Vector store factory."""
-
 import logging
 from typing import Tuple, Type
 

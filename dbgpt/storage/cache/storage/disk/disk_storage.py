@@ -2,7 +2,6 @@
 
 Implement the cache storage using rocksdb.
 """
-
 import logging
 from typing import Optional
 

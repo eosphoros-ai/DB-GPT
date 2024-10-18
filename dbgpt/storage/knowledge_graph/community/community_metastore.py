@@ -1,5 +1,4 @@
 """Builtin Community metastore."""
-
 import logging
 from typing import List, Optional
 

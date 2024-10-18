@@ -1,5 +1,4 @@
 """Vector Store Module."""
-
 from typing import Tuple, Type
 
 

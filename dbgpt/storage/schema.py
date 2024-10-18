@@ -1,5 +1,4 @@
 """Database information class and database type enumeration."""
-
 import os
 from enum import Enum
 from typing import Optional

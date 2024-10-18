@@ -1,5 +1,4 @@
 """Elasticsearch document store."""
-
 import json
 import os
 from concurrent.futures import Executor, ThreadPoolExecutor

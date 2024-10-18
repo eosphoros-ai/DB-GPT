@@ -1,5 +1,4 @@
 """OpenSPG class."""
-
 import logging
 
 from dbgpt._private.pydantic import ConfigDict

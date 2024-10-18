@@ -1,5 +1,4 @@
 """Vector store base class."""
-
 import logging
 import math
 from abc import ABC, abstractmethod
