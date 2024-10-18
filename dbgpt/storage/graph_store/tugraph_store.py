@@ -147,22 +147,24 @@ class TuGraphStore(GraphStoreBase):
                 create_vertex_gql = (
                     f"CALL db.createLabel("
                     f"'vertex', '{self._vertex_type}', "
-                    f"'id', ['id',string,false],"
-                    f"['name',string,false],"
-                    f"['_document_id',string,true],"
-                    f"['_chunk_id',string,true],"
-                    f"['_community_id',string,true],"
-                    f"['description',string,true])"
+                    f"'id', ['id','string',false],"
+                    f"['name','string',false],"
+                    f"['_document_id','string',true],"
+                    f"['_chunk_id','string',true],"
+                    f"['_community_id','string',true],"
+                    f"['description','string',true])"
                 )
+                logger.info(create_vertex_gql)
                 self.conn.run(create_vertex_gql)
                 self._add_vertex_index("_community_id")
             else:
                 create_vertex_gql = (
                     f"CALL db.createLabel("
                     f"'vertex', '{self._vertex_type}', "
-                    f"'id', ['id',string,false],"
-                    f"['name',string,false])"
+                    f"'id', ['id','string',false],"
+                    f"['name','string',false])"
                 )
+                logger.info(create_vertex_gql)
                 self.conn.run(create_vertex_gql)
 
         if not self._check_label("edge"):
@@ -170,16 +172,17 @@ class TuGraphStore(GraphStoreBase):
                     'edge', '{self._edge_type}',
                     '[["{self._vertex_type}",
                     "{self._vertex_type}"]]',
-                    ["id",STRING,false],
-                    ["name",STRING,false])"""
+                    ["id",'STRING',false],
+                    ["name",'STRING',false])"""
             if self._summary_enabled:
                 create_edge_gql = f"""CALL db.createLabel(
                     'edge', '{self._edge_type}',
                     '[["{self._vertex_type}",
                     "{self._vertex_type}"]]',
-                    ["id",STRING,false],
-                    ["name",STRING,false],
-                    ["description",STRING,true])"""
+                    ["id",'STRING',false],
+                    ["name",'STRING',false],
+                    ["description",'STRING',true])"""
+            logger.info(create_edge_gql)
             self.conn.run(create_edge_gql)
 
     def _format_query_data(self, data, white_prop_list: List[str]):
