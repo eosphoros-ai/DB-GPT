@@ -1,4 +1,5 @@
 """Knowledge graph base class."""
+
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
@@ -27,6 +28,6 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
     def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Get graph data."""
 
+    @abstractmethod
     def delete_by_ids(self, ids: str) -> List[str]:
         """Delete document by ids."""
-        raise Exception("Delete document not supported by knowledge graph")

@@ -4,6 +4,9 @@ from dbgpt.storage.graph_store.memgraph_store import (
     MemoryGraphStore,
     MemoryGraphStoreConfig,
 )
+from dbgpt.storage.knowledge_graph.community.memgraph_store_adapter import (
+    MemGraphStoreAdapter,
+)
 
 
 @pytest.fixture
@@ -11,31 +14,37 @@ def graph_store():
     yield MemoryGraphStore(MemoryGraphStoreConfig())
 
 
-def test_graph_store(graph_store):
-    graph_store.insert_triplet("A", "0", "A")
-    graph_store.insert_triplet("A", "1", "A")
-    graph_store.insert_triplet("A", "2", "B")
-    graph_store.insert_triplet("B", "3", "C")
-    graph_store.insert_triplet("B", "4", "D")
-    graph_store.insert_triplet("C", "5", "D")
-    graph_store.insert_triplet("B", "6", "E")
-    graph_store.insert_triplet("F", "7", "E")
-    graph_store.insert_triplet("E", "8", "F")
+@pytest.fixture
+def graph_store_adapter(graph_store: MemoryGraphStore):
+    memgraph_store_adapter = MemGraphStoreAdapter(graph_store)
+    yield memgraph_store_adapter
 
-    subgraph = graph_store.explore(["A"])
+
+def test_graph_store(graph_store_adapter: MemGraphStoreAdapter):
+    graph_store_adapter.insert_triplet("A", "0", "A")
+    graph_store_adapter.insert_triplet("A", "1", "A")
+    graph_store_adapter.insert_triplet("A", "2", "B")
+    graph_store_adapter.insert_triplet("B", "3", "C")
+    graph_store_adapter.insert_triplet("B", "4", "D")
+    graph_store_adapter.insert_triplet("C", "5", "D")
+    graph_store_adapter.insert_triplet("B", "6", "E")
+    graph_store_adapter.insert_triplet("F", "7", "E")
+    graph_store_adapter.insert_triplet("E", "8", "F")
+
+    subgraph = graph_store_adapter.explore(["A"])
     print(f"\n{subgraph.format()}")
     assert subgraph.edge_count == 9
 
-    graph_store.delete_triplet("A", "0", "A")
-    graph_store.delete_triplet("B", "4", "D")
-    subgraph = graph_store.explore(["A"])
+    graph_store_adapter.delete_triplet("A", "0", "A")
+    graph_store_adapter.delete_triplet("B", "4", "D")
+    subgraph = graph_store_adapter.explore(["A"])
     print(f"\n{subgraph.format()}")
     assert subgraph.edge_count == 7
 
-    triplets = graph_store.get_triplets("B")
+    triplets = graph_store_adapter.get_triplets("B")
     print(f"\nTriplets of B: {triplets}")
     assert len(triplets) == 2
 
-    schema = graph_store.get_schema()
+    schema = graph_store_adapter.get_schema()
     print(f"\nSchema: {schema}")
     assert len(schema) == 86

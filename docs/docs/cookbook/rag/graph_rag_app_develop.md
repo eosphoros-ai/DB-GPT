@@ -10,7 +10,7 @@ You can refer to the python example file `DB-GPT/examples/rag/graph_rag_example.
 First, you need to install the `dbgpt` library.
 
 ```bash
-pip install "dbgpt[rag]>=0.6.0"
+pip install "dbgpt[graph_rag]>=0.6.1"
 ````
 
 ### Prepare Graph Database
@@ -112,7 +112,9 @@ TUGRAPH_HOST=127.0.0.1
 TUGRAPH_PORT=7687
 TUGRAPH_USERNAME=admin
 TUGRAPH_PASSWORD=73@TuGraph
-GRAPH_COMMUNITY_SUMMARY_ENABLED=True
+ENABLE_GRAPH_COMMUNITY_SUMMARY=True # enable the graph community summary
+ENABLE_TRIPLET_GRAPH=True  # enable the graph search for the triplets
+ENABLE_DOCUMENT_GRAPH=True  # enable the graph search for documents and chunks
 ```
 
 
@@ -250,23 +252,23 @@ Performance testing is based on the `gpt-4o-mini` model.
 
 #### Indexing Performance
 
-|          | DB-GPT  |  GraphRAG(microsoft) |
-|----------|----------|------------------------|
-| Document Tokens | 42631 | 42631 |
-| Graph Size | 808 nodes, 1170 edges | 779 nodes, 967 edges |
-| Prompt Tokens | 452614 | 744990 |
-| Completion Tokens | 48325 | 227230 |
-| Total Tokens | 500939 | 972220 |
+|                   | DB-GPT                | GraphRAG(microsoft)  |
+| ----------------- | --------------------- | -------------------- |
+| Document Tokens   | 42631                 | 42631                |
+| Graph Size        | 808 nodes, 1170 edges | 779 nodes, 967 edges |
+| Prompt Tokens     | 452614                | 744990               |
+| Completion Tokens | 48325                 | 227230               |
+| Total Tokens      | 500939                | 972220               |
 
 
 #### Querying Performance
 
 **Global Search**
 
-|          | DB-GPT   | GraphRAG(microsoft) |
-|----------|----------|------------------------|
-| Time | 8s | 40s |
-| Tokens| 7432 | 63317 |
+|        | DB-GPT | GraphRAG(microsoft) |
+| ------ | ------ | ------------------- |
+| Time   | 8s     | 40s                 |
+| Tokens | 7432   | 63317               |
 
 **Question**
 ```
@@ -304,10 +306,10 @@ Performance testing is based on the `gpt-4o-mini` model.
 
 **Local Search**
 
-|          | DB-GPT   | GraphRAG(microsoft) |
-|----------|----------|------------------------|
-| Time | 15s | 15s |
-| Tokens| 9230 | 11619 |
+|        | DB-GPT | GraphRAG(microsoft) |
+| ------ | ------ | ------------------- |
+| Time   | 15s    | 15s                 |
+| Tokens | 9230   | 11619               |
 
 **Question**
 
@@ -352,3 +354,28 @@ DB-GPT社区与TuGraph社区的比较
 总结
   总体而言，DB-GPT社区和TuGraph社区在社区贡献、生态系统和开发者参与等方面各具特色。DB-GPT社区更侧重于AI应用的多样性和组织间的合作，而TuGraph社区则专注于图数据的高效管理和分析。两者的共同点在于都强调了开源和社区合作的重要性，推动了各自领域的技术进步和应用发展。
 ```
+
+### Latest Updates
+
+In version 0.6.1 of DB-GPT, we have added a new feature:
+- Retrieval of triplets with the **retrieval of document structure**
+
+We have expanded the definition scope of 'Graph' in GraphRAG:
+```
+Knowledge Graph = Triplets Graph + Document Structure Graph
+```
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/image_graphrag_0_6_1.png'} width="1000px"/>
+</p>
+
+How?
+
+We decompose standard format files (currently best support for Markdown files) into a directed graph based on their hierarchy and layout information, and store it in a graph database. In this graph:
+- Each node represents a chunk of the file
+- Each edge represents the structural relationship between different chunks in the original document
+- Merge the document structure graph to the triplets graph
+
+What is the next?
+
+We aim to construct a more complex Graph that covers more comprehensive information to support more sophisticated retrieval algorithms in our GraphRAG.

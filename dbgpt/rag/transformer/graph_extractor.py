@@ -65,7 +65,9 @@ class GraphExtractor(LLMExtractor):
                     match = re.match(r"\((.*?)#(.*?)\)", line)
                     if match:
                         name, summary = [part.strip() for part in match.groups()]
-                        graph.upsert_vertex(Vertex(name, description=summary))
+                        graph.upsert_vertex(
+                            Vertex(name, description=summary, vertex_type="entity")
+                        )
                 elif current_section == "Relationships":
                     match = re.match(r"\((.*?)#(.*?)#(.*?)#(.*?)\)", line)
                     if match:
@@ -74,7 +76,13 @@ class GraphExtractor(LLMExtractor):
                         ]
                         edge_count += 1
                         graph.append_edge(
-                            Edge(source, target, name, description=summary)
+                            Edge(
+                                source,
+                                target,
+                                name,
+                                description=summary,
+                                edge_type="relation",
+                            )
                         )
 
             if limit and edge_count >= limit:
