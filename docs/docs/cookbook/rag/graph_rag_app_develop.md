@@ -369,7 +369,9 @@ We have expanded the definition scope of 'Graph' in GraphRAG:
 Knowledge Graph = Triplets Graph + Document Structure Graph
 ```
 
- ![alt text](image_graphrag_0_6_1.png)
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/image_graphrag_0_6_1.png'} width="1000px"/>
+</p>
 
 How?
 
