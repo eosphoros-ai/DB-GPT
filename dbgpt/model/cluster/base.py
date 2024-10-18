@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.core.interface.message import ModelMessage
@@ -15,7 +15,7 @@ class PromptRequest(BaseModel):
     prompt: str = None
     temperature: float = None
     max_new_tokens: int = None
-    stop: str = None
+    stop: Optional[Union[str, List[str]]] = None
     stop_token_ids: List[int] = []
     context_len: int = None
     echo: bool = True

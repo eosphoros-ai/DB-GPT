@@ -201,7 +201,7 @@ class ModelRequest:
     max_new_tokens: Optional[int] = None
     """The maximum number of tokens to generate."""
 
-    stop: Optional[str] = None
+    stop: Optional[Union[str, List[str]]] = None
     """The stop condition of the model inference."""
     stop_token_ids: Optional[List[int]] = None
     """The stop token ids of the model inference."""
