@@ -72,7 +72,7 @@ class ActionOutput(BaseModel):
         """Convert dict to ActionOutput object."""
         if not param:
             return None
-        return cls.parse_obj(param)
+        return cls.model_validate(param)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the object to a dictionary."""
@@ -181,10 +181,12 @@ class Action(ABC, Generic[T]):
         if get_origin(cls) == list:
             inner_type = get_args(cls)[0]
             typed_cls = cast(Type[BaseModel], inner_type)
-            return [typed_cls.parse_obj(item) for item in json_result]  # type: ignore
+            return [
+                typed_cls.model_validate(item) for item in json_result
+            ]  # type: ignore
         else:
             typed_cls = cast(Type[BaseModel], cls)
-            return typed_cls.parse_obj(json_result)
+            return typed_cls.model_validate(json_result)
 
     @abstractmethod
     async def run(
