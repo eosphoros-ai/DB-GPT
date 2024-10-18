@@ -79,9 +79,17 @@ class TuGraphStore(GraphStoreBase):
         self._port = int(os.getenv("TUGRAPH_PORT", config.port))
         self._username = os.getenv("TUGRAPH_USERNAME", config.username)
         self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
-        self._summary_enabled = (
-            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            or config.summary_enabled
+        self._enable_summary = (
+            os.getenv("ENABLE_GRAPH_COMMUNITY_SUMMARY", "").lower() == "true"
+            or config.enable_summary
+        )
+        self._enable_document_graph_search = (
+            os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "true"
+            or config.enable_document_graph_search
+        )
+        self._enable_knowledge_graph_search = (
+            os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH", "").lower() == "true"
+            or config.enable_knowledge_graph_search
         )
         self._plugin_names = (
             os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")

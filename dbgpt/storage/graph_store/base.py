@@ -23,9 +23,17 @@ class GraphStoreConfig(BaseModel):
         default=None,
         description="The embedding function of graph store, optional.",
     )
-    summary_enabled: bool = Field(
+    enable_summary: bool = Field(
         default=False,
         description="Enable graph community summary or not.",
+    )
+    enable_document_graph_search: bool = Field(
+        default=True,
+        description="Enable document graph search or not.",
+    )
+    enable_knowledge_graph_search: bool = Field(
+        default=True,
+        description="Enable knowledge graph search or not.",
     )
 
 

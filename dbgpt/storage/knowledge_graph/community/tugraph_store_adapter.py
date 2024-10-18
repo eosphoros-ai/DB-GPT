@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 from typing import (
     Any,
     AsyncGenerator,
@@ -38,11 +37,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def __init__(self, graph_store: TuGraphStore):
         """Initialize TuGraph Community Store Adapter."""
         super().__init__(graph_store)
-
-        self._summary_enabled = (
-            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            or graph_store.get_config().summary_enabled
-        )
 
         # Create the graph
         self.create_graph(self.graph_store.get_config().name)
@@ -216,7 +210,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             for document in documents
         ]
         document_query = (
-            f"CALL db.upsertVertex("
+            "CALL db.upsertVertex("
             f'"{GraphElemType.DOCUMENT.value}", '
             f"[{self._parser(document_list)}])"
         )
@@ -450,7 +444,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             graph_elem_type=GraphElemType.NEXT, graph_properties=next_proerties
         )
 
-        if self._summary_enabled:
+        if self.graph_store._enable_summary:
             self.graph_store._upload_plugin()
 
     def create_graph_label(
@@ -550,9 +544,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         direct: Direction = Direction.BOTH,
         depth: Optional[int] = None,
         limit: Optional[int] = None,
-        search_method: Optional[
-            Literal["entity_search", "chunk_search"]
-        ] = "entity_search",
+        search_scope: Optional[
+            Literal["knowledge_graph", "document_graph"]
+        ] = "knowledge_graph",
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         if not subs:
@@ -569,7 +563,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         else:
             limit_string = f"LIMIT {limit}"
 
-        if search_method == "entity_search":
+        if search_scope == "knowledge_graph":
             if direct.name == "OUT":
                 rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]->"
             elif direct.name == "IN":
@@ -592,7 +586,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' "
                     f"RETURN p {limit_string}"
                 )  # if it contains the subjects
-                result = self.query(query)
+                result = self.ççç(query)
                 for vertex in result.vertices():
                     graph.upsert_vertex(vertex)
                 for edge in result.edges():

@@ -9,7 +9,7 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.graph import Edge, GraphElemType, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import GraphElemType, MemoryGraph
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -69,7 +69,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         super().__init__(config)
         self._config = config
 
-        # TODO: refactor to use the knowledge graph config
         self._vector_store_type = os.getenv(
             "VECTOR_STORE_TYPE", config.vector_store_type
         )
@@ -140,111 +139,102 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph."""
-        # Check document
-        file_path = chunks[0].metadata["source"] or "Text_Node"
-        doc_name = os.path.basename(file_path)
-        doc_id = str(uuid.uuid4())
-
-        data_list = self._parse_chunks(chunks)  # parse the chunks by def lod_doc_graph
+        data_list = self._parse_chunks(chunks)  # parse the chunks by def _lod_doc_graph
         graph_of_all = MemoryGraph()
 
-        if (
-            os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "false"
-            and os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH", "").lower() == "false"
-        ):
-            raise Exception(
-                "ENABLE_DOCUMENT_GRAPH_SEARCH and ENABLE_KNOWLEDGE_GRAPH_SEARCH "
-                "can not be both false."
-            )
-
         # Support graph search by the document and the chunks
-        if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "true":
+        if self._graph_store.get_config().enable_document_graph_search:
+            doc_vid = str(uuid.uuid4())
+            doc_name = os.path.basename(chunks[0].metadata["source"] or "Text_Node")
             for chunk_index, chunk in enumerate(data_list):
-                # The type of the chunk can not be "document"
-
-                chunk_src = Vertex(
-                    vid=chunk["parent_id"],
-                    name=chunk["parent_title"],
-                    vertex_type=chunk["type"],
-                    content=chunk["content"],
-                )
-                graph_of_all.upsert_vertex(chunk_src)
-                chunk_dst = Vertex(
-                    vid=chunk["id"],
-                    name=chunk["title"],
-                    vertex_type=chunk["type"],
-                    content=chunk["content"],
-                )
-                graph_of_all.upsert_vertex(chunk_dst)
-
-                # chunk -> include -> chunk
-                chunk_include_chunk = Edge(
-                    chunk_src.vid,
-                    chunk_dst.vid,
-                    name=GraphElemType.INCLUDE.value,
-                    edge_type=GraphElemType.CHUNK_INCLUDE_CHUNK.value,
-                )
-                graph_of_all.append_edge(chunk_include_chunk)
+                if chunk["parent_id"] != "document":
+                    # chunk -> include -> chunk
+                    graph_of_all.upsert_vertex_and_edge(
+                        src_vid=chunk["parent_id"],
+                        src_name=chunk["parent_title"],
+                        src_props={
+                            "vertex_type": GraphElemType.CHUNK.value,
+                            "content": chunk["content"],
+                        },
+                        dst_vid=chunk["id"],
+                        dst_name=chunk["title"],
+                        dst_props={
+                            "vertex_type": GraphElemType.CHUNK.value,
+                            "content": chunk["content"],
+                        },
+                        edge_name=GraphElemType.INCLUDE.value,
+                        edge_type=GraphElemType.CHUNK_INCLUDE_CHUNK.value,
+                    )
+                else:
+                    # document -> include -> chunk
+                    graph_of_all.upsert_vertex_and_edge(
+                        src_vid=doc_vid,
+                        src_name=doc_name,
+                        src_props={
+                            "vertex_type": GraphElemType.DOCUMENT.value,
+                            "content": "",
+                        },
+                        dst_vid=chunk["id"],
+                        dst_name=chunk["title"],
+                        dst_props={
+                            "vertex_type": GraphElemType.CHUNK.value,
+                            "content": chunk["content"],
+                        },
+                        edge_name=GraphElemType.INCLUDE.value,
+                        edge_type=GraphElemType.DOCUMENT_INCLUDE_CHUNK.value,
+                    )
 
                 # chunk -> next -> chunk
                 if chunk_index >= 1:
-                    chunk_next_chunk = Edge(
-                        data_list[chunk_index - 1]["id"],
-                        data_list[chunk_index]["id"],
-                        name=GraphElemType.NEXT.value,
+                    graph_of_all.upsert_vertex_and_edge(
+                        src_vid=data_list[chunk_index - 1]["id"],
+                        src_name=data_list[chunk_index - 1]["title"],
+                        src_props={
+                            "vertex_type": GraphElemType.CHUNK.value,
+                            "content": data_list[chunk_index - 1]["content"],
+                        },
+                        dst_vid=chunk["id"],
+                        dst_name=chunk["title"],
+                        dst_props={
+                            "vertex_type": GraphElemType.CHUNK.value,
+                            "content": chunk["content"],
+                        },
+                        edge_name=GraphElemType.NEXT.value,
                         edge_type=GraphElemType.CHUNK_NEXT_CHUNK.value,
                     )
-                    graph_of_all.append_edge(chunk_next_chunk)
-
-                # document -> include -> chunk
-                if chunk["parent_id"] == "document":
-                    chunk_src = Vertex(
-                        vid=doc_id,
-                        name=doc_name,
-                        vertex_type=GraphElemType.DOCUMENT.value,
-                        content="",  # the content of the document is empty
-                    )
-                    graph_of_all.upsert_vertex(chunk_src)
-                    doc_include_chunk = Edge(
-                        doc_id,
-                        chunk_dst.vid,
-                        name=GraphElemType.INCLUDE.value,
-                        edge_type=GraphElemType.DOCUMENT_INCLUDE_CHUNK.value,
-                    )
-                    graph_of_all.append_edge(doc_include_chunk)
 
         # Support knowledge graph search by the entities and the relationships
-        if os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH", "").lower() == "true":
-            # TODO: Use asyncio to extract graph to accelerate the process
-            # (attention to the CAP of the graph db)
+        if self._graph_store.get_config().enable_knowledge_graph_search:
             for chunk_index, chunk in enumerate(data_list):
+                # TODO: Use asyncio to extract graph to accelerate the process
+                # (attention to the CAP of the graph db)
+
                 graphs: List[MemoryGraph] = await self._graph_extractor.extract(
                     chunk["content"]
                 )
 
                 for graph in graphs:
-                    # Upsert the vertices (entities)
-                    for vertex in graph.vertices():
-                        graph_of_all.upsert_vertex(vertex)
+                    graph_of_all.upsert_graph(graph)
 
-                        # Connect the chunks to the entities
-                        if (
-                            os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower()
-                            == "true"
-                        ):
-                            # chunk -> include -> entity
-                            chunk_include_entity = Edge(
-                                chunk["id"],
-                                vertex.vid,
-                                name="include",
+                    # chunk -> include -> entity
+                    if self._graph_store.get_config().enable_document_graph_search:
+                        for vertex in graph.vertices():
+                            graph_of_all.upsert_vertex_and_edge(
+                                src_vid=chunk["id"],
+                                src_name=chunk["title"],
+                                src_props={
+                                    "vertex_type": GraphElemType.CHUNK.value,
+                                    "content": chunk["content"],
+                                },
+                                dst_vid=vertex.vid,
+                                dst_name=vertex.name,
+                                dst_props={
+                                    "vertex_type": GraphElemType.ENTITY.value,
+                                    "description": vertex.props.get("description", ""),
+                                },  # note: description is only used for the entity
+                                edge_name=GraphElemType.INCLUDE.value,
                                 edge_type=GraphElemType.CHUNK_INCLUDE_ENTITY.value,
                             )
-                            graph_of_all.append_edge(chunk_include_entity)
-
-                    # Upsert the edges (relationships)
-                    for edge in graph.edges():
-                        edge.set_prop("_chunk_id", chunk_dst.vid)
-                        graph_of_all.append_edge(edge)
 
         self._graph_store_apdater.upsert_graph(graph_of_all)
 
@@ -324,45 +314,44 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        keywords = await self._keyword_extractor.extract(text)
+        keywords: List[str] = await self._keyword_extractor.extract(text)
 
         # Local search: extract keywords and explore subgraph
         subgraph = MemoryGraph()
         subgraph_for_doc = MemoryGraph()
 
-        if os.getenv("ENABLE_KNOWLEDGE_GRAPH_SEARCH", "").lower() == "true":
-            subgraph = self._graph_store_apdater.explore(
-                subs=keywords, limit=topk, search_method="entity_search"
+        enable_knowledge_graph_search = (
+            self._graph_store.get_config().enable_knowledge_graph_search
+        )
+        enable_document_graph_search = (
+            self._graph_store.get_config().enable_document_graph_search
+        )
+
+        if enable_knowledge_graph_search:
+            subgraph: MemoryGraph = self._graph_store_apdater.explore(
+                subs=keywords, limit=10, search_scope="knowledge_graph"
             )
 
-            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "true":
-                keywords_for_chunk_search: List[str] = []
+            if enable_document_graph_search:
+                keywords_for_document_graph = keywords
                 for vertex in subgraph.vertices():
-                    keywords_for_chunk_search.append(vertex.name)
+                    keywords_for_document_graph.append(vertex.name)
 
                 subgraph_for_doc = self._graph_store_apdater.explore(
-                    subs=keywords_for_chunk_search,
-                    limit=topk,
-                    search_method="chunk_search",
+                    subs=keywords_for_document_graph,
+                    limit=5,
+                    search_scope="document_graph",
                 )
         else:
-            if os.getenv("ENABLE_DOCUMENT_GRAPH_SEARCH", "").lower() == "true":
+            if enable_document_graph_search:
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords,
-                    limit=topk,
-                    search_method="chunk_search",
+                    limit=10,
+                    search_scope="document_graph",
                 )
 
-        if len(subgraph.format()) > 2048:
-            knowledge_graph_str = subgraph.format()[:2048] + "..."
-        else:
-            knowledge_graph_str = subgraph.format()
-        if len(subgraph_for_doc.format(entities_only=True)) > 4096:
-            knowledge_graph_for_doc_str = (
-                subgraph_for_doc.format(entities_only=True)[:4096] + "..."
-            )
-        else:
-            knowledge_graph_for_doc_str = subgraph_for_doc.format()
+        knowledge_graph_str = subgraph.format()
+        knowledge_graph_for_doc_str = subgraph_for_doc.format()
 
         logger.info(f"Search subgraph from the following keywords:\n{len(keywords)}")
 

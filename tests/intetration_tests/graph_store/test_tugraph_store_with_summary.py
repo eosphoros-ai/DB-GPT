@@ -9,7 +9,7 @@ from dbgpt.storage.knowledge_graph.community.tugraph_store_adapter import (
 
 @pytest.fixture(scope="module")
 def store():
-    config = TuGraphStoreConfig(name="TestSummaryGraph", summary_enabled=True)
+    config = TuGraphStoreConfig(name="TestSummaryGraph", enable_summary=True)
     store_instance = TuGraphStore(config=config)
     yield store_instance
     store_instance.conn.close()

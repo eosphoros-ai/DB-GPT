@@ -335,6 +335,34 @@ class MemoryGraph(Graph):
         self._edge_count += 1
         return True
 
+    def upsert_vertex_and_edge(
+        self,
+        src_vid: str,
+        src_name: str,
+        src_props: Dict[str, Any],
+        dst_vid: str,
+        dst_name: str,
+        dst_props: Dict[str, Any],
+        edge_name: str,
+        edge_type: str,
+    ):
+        """Uperst src and dst vertex, and edge."""
+        src_vertex = Vertex(src_vid, src_name, **src_props)
+        dst_vertex = Vertex(dst_vid, dst_name, **dst_props)
+        edge = Edge(src_vid, dst_vid, edge_name, **{"edge_type": edge_type})
+
+        self.upsert_vertex(src_vertex)
+        self.upsert_vertex(dst_vertex)
+        self.append_edge(edge)
+
+    def upsert_graph(self, graph: "MemoryGraph"):
+        """Upsert a graph."""
+        for vertex in graph.vertices():
+            self.upsert_vertex(vertex)
+
+        for edge in graph.edges():
+            self.append_edge(edge)
+
     def has_vertex(self, vid: str) -> bool:
         """Retrieve a vertex by ID."""
         return vid in self._vs

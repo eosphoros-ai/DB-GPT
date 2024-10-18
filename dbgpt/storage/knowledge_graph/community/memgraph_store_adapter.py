@@ -26,10 +26,10 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     MAX_HIERARCHY_LEVEL = 3
 
-    def __init__(self, summary_enabled: bool = False):
+    def __init__(self, enable_summary: bool = False):
         """Initialize MemGraph Community Store Adapter."""
         self._graph_store = MemoryGraphStore(MemoryGraphStoreConfig())
-        self._summary_enabled = summary_enabled
+        self._enable_summary = enable_summary
 
         super().__init__(self._graph_store)
 
@@ -108,7 +108,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
-        self._graph.append_edge(Edge(subj, obj, rel))
+        self._graph_store._graph.append_edge(Edge(subj, obj, rel))
 
     def upsert_graph(self, graph: Graph) -> None:
         """Add graph to the graph store.

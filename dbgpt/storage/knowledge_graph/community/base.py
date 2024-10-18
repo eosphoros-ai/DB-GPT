@@ -109,7 +109,6 @@ class GraphStoreAdapter(ABC):
     @abstractmethod
     def upsert_graph(self, graph: Graph) -> None:
         """Insert graph."""
-        # TODO: Need to identify the difference between upsert_graph and upsert_graph
 
     @abstractmethod
     def delete_document(self, chunk_id: str) -> None:
