@@ -23,8 +23,24 @@ If you want to change vector db, Update your .env, set your vector store type, V
 
 If you want to use OceanBase, please first start a docker container via the following command:
 ```shell
-docker run -p 2881:2881 --name obvec -d oceanbase/oceanbase-ce:vector
+docker run --name=ob433 -e MODE=slim -p 2881:2881 -d quay.io/oceanbase/oceanbase-ce:4.3.3.0-100000142024101215
 ```
+
+Donwload the partner package:
+```shell
+pip install --upgrade --quiet pyobvector
+```
+
+Check the connection to OceanBase and set the memory usage ratio for vector data:
+```python
+from pyobvector import ObVecClient
+
+tmp_client = ObVecClient()
+tmp_client.perform_raw_text_sql(
+    "ALTER SYSTEM ob_vector_memory_limit_percentage = 30"
+)
+```
+
 Then set the following variables in the .env file:
 ```shell
 VECTOR_STORE_TYPE=OceanBase
@@ -34,12 +50,8 @@ OB_USER=root@test
 OB_DATABASE=test
 ## Optional
 # OB_PASSWORD=
-## Optional: SQL statements executed by OceanBase is recorded in the log file specified by {OB_SQL_DBG_LOG_PATH}.
-# OB_SQL_DBG_LOG_PATH={your-sql-dbg-log-dir}/sql.log
 ## Optional: If {OB_ENABLE_NORMALIZE_VECTOR} is set, the vector stored in OceanBase is normalized.
 # OB_ENABLE_NORMALIZE_VECTOR=True
-## Optional: If {OB_ENABLE_INDEX} is set, OceanBase will automatically create a vector index table.
-# OB_ENABLE_INDEX=True
 ```
 If you want to support more vector db, you can integrate yourself.[how to integrate](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)
 ```commandline
