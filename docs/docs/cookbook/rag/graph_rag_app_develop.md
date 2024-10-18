@@ -378,6 +378,6 @@ We decompose standard format files (currently best support for Markdown files) i
 - Each edge represents the structural relationship between different chunks in the original document
 - Merge the document structure graph to the triplets graph
 
-In the future?
+What is the next?
 
 We aim to construct a more complex Graph that covers more comprehensive information to support more sophisticated retrieval algorithms in our GraphRAG.
