@@ -320,6 +320,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         entity = self._document_dao.from_response(document)
         if request.doc_name:
             entity.doc_name = request.doc_name
+            update_chunk = self._chunk_dao.get_one({"document_id": entity.id})
+            if update_chunk:
+                update_chunk.doc_name = request.doc_name
+                self._chunk_dao.update_chunk(update_chunk)
         if len(request.questions) == 0:
             request.questions = ""
         questions = [
@@ -411,12 +415,19 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         """
         return self._document_dao.get_list_page(request, page, page_size)
 
-    def get_chunk_list(self, request: QUERY_SPEC, page: int, page_size: int):
-        """get document chunks
+    def get_chunk_list_page(self, request: QUERY_SPEC, page: int, page_size: int):
+        """get document chunks with page
         Args:
             - request: QUERY_SPEC
         """
         return self._chunk_dao.get_list_page(request, page, page_size)
+
+    def get_chunk_list(self, request: QUERY_SPEC):
+        """get document chunks
+        Args:
+            - request: QUERY_SPEC
+        """
+        return self._chunk_dao.get_list(request)
 
     def update_chunk(self, request: ChunkServeRequest):
         """update knowledge document chunk"""
