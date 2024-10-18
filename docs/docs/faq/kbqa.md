@@ -23,8 +23,24 @@ If you want to change vector db, Update your .env, set your vector store type, V
 
 If you want to use OceanBase, please first start a docker container via the following command:
 ```shell
-docker run --name=ob433 -e MODE=slim -p 2881:2881 -d oceanbase/oceanbase-ce:4.3.3.0-100000142024101215
+docker run --name=ob433 -e MODE=slim -p 2881:2881 -d quay.io/oceanbase/oceanbase-ce:4.3.3.0-100000142024101215
 ```
+
+Donwload the partner package:
+```shell
+pip install --upgrade --quiet pyobvector
+```
+
+Check the connection to OceanBase and set the memory usage ratio for vector data:
+```python
+from pyobvector import ObVecClient
+
+tmp_client = ObVecClient()
+tmp_client.perform_raw_text_sql(
+    "ALTER SYSTEM ob_vector_memory_limit_percentage = 30"
+)
+```
+
 Then set the following variables in the .env file:
 ```shell
 VECTOR_STORE_TYPE=OceanBase
