@@ -421,6 +421,9 @@ const sidebars = {
         },{
           type: 'doc',
           id: 'api/datasource'
+        },{
+          type: 'doc',
+          id: 'api/evaluation'
         },
       ],
       link: {

@@ -447,7 +447,7 @@ def chunk_list(
             "doc_type": query_request.doc_type,
             "content": query_request.content,
         }
-        chunk_res = service.get_chunk_list(
+        chunk_res = service.get_chunk_list_page(
             query, query_request.page, query_request.page_size
         )
         res = ChunkQueryResponse(
