@@ -50,11 +50,13 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def get_vertex_type(self) -> str:
         """Get the vertex type."""
-        raise NotImplementedError("Memory graph store does not have vertex type")
+        # raise NotImplementedError("Memory graph store does not have vertex type")
+        return ""
 
     def get_edge_type(self) -> str:
         """Get the edge type."""
-        raise NotImplementedError("Memory graph store does not have edge type")
+        # raise NotImplementedError("Memory graph store does not have edge type")
+        return ""
 
     def get_triplets(self, subj: str) -> List[Tuple[str, str]]:
         """Get triplets."""
