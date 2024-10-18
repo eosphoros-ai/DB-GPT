@@ -1,4 +1,5 @@
 """OpenSearch index store."""
+
 from typing import List, Optional
 
 from dbgpt.core import Chunk

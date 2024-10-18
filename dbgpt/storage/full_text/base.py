@@ -1,4 +1,5 @@
 """Full text store base class."""
+
 import logging
 from abc import abstractmethod
 from concurrent.futures import Executor

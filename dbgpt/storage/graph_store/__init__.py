@@ -1,4 +1,5 @@
 """Graph Store Module."""
+
 from typing import Tuple, Type
 
 

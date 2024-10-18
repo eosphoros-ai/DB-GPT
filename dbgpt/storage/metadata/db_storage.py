@@ -1,4 +1,5 @@
 """Database storage implementation using SQLAlchemy."""
+
 from contextlib import contextmanager
 from typing import Dict, Iterator, List, Optional, Type, Union
 

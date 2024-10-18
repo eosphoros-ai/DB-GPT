@@ -1,4 +1,5 @@
 """OceanBase vector store."""
+
 import json
 import logging
 import os
@@ -410,9 +411,11 @@ class OceanBase:
                 chunks_table_data.append(
                     {
                         "id": chunk_id,
-                        "embedding": embedding
-                        if not self.enable_normalize_vector
-                        else self._normalization_vectors(embedding),
+                        "embedding": (
+                            embedding
+                            if not self.enable_normalize_vector
+                            else self._normalization_vectors(embedding)
+                        ),
                         "document": document,
                         "metadata": metadata,
                     }

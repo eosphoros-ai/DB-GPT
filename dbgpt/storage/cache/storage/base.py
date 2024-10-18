@@ -1,4 +1,5 @@
 """Base cache storage class."""
+
 import logging
 from abc import ABC, abstractmethod
 from collections import OrderedDict
