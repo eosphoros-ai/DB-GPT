@@ -46,6 +46,7 @@ def gemini_generate_stream(
         temperature=params.get("temperature"),
         context=context,
         max_new_tokens=params.get("max_new_tokens"),
+        stop=params.get("stop"),
     )
     for r in client.sync_generate_stream(request):
         yield r

@@ -60,6 +60,7 @@ class APIServerException(Exception):
 class APISettings(BaseModel):
     api_keys: Optional[List[str]] = None
     embedding_bach_size: int = 4
+    ignore_stop_exceeds_error: bool = False
 
 
 api_settings = APISettings()
@@ -146,6 +147,15 @@ def check_requests(request) -> Optional[JSONResponse]:
             ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.stop} is not valid under any of the given schemas - 'stop'",
         )
+    if request.stop and isinstance(request.stop, list) and len(request.stop) > 4:
+        # https://platform.openai.com/docs/api-reference/chat/create#chat-create-stop
+        if not api_settings.ignore_stop_exceeds_error:
+            return create_error_response(
+                ErrorCode.PARAM_OUT_OF_RANGE,
+                f"Invalid 'stop': array too long. Expected an array with maximum length 4, but got an array with length {len(request.stop)} instead.",
+            )
+        else:
+            request.stop = request.stop[:4]
 
     return None
 
@@ -581,6 +591,7 @@ def initialize_apiserver(
     port: int = None,
     api_keys: List[str] = None,
     embedding_batch_size: Optional[int] = None,
+    ignore_stop_exceeds_error: bool = False,
 ):
     import os
 
@@ -614,6 +625,7 @@ def initialize_apiserver(
 
     if embedding_batch_size:
         api_settings.embedding_bach_size = embedding_batch_size
+    api_settings.ignore_stop_exceeds_error = ignore_stop_exceeds_error
 
     app.include_router(router, prefix="/api", tags=["APIServer"])
 
@@ -664,6 +676,7 @@ def run_apiserver():
         port=apiserver_params.port,
         api_keys=api_keys,
         embedding_batch_size=apiserver_params.embedding_batch_size,
+        ignore_stop_exceeds_error=apiserver_params.ignore_stop_exceeds_error,
     )
 
 

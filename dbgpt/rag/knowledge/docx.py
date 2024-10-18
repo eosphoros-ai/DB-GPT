@@ -64,7 +64,7 @@ class DocxKnowledge(Knowledge):
             documents = self._loader.load()
         else:
             docs = []
-            _SerializedRelationships.load_from_xml = load_from_xml_v2   # type: ignore
+            _SerializedRelationships.load_from_xml = load_from_xml_v2  # type: ignore
             doc = docx.Document(self._path)
             content = []
 
