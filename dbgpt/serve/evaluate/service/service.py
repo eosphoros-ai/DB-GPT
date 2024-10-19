@@ -19,7 +19,6 @@ from dbgpt.rag.evaluation.retriever import RetrieverSimilarityMetric
 from dbgpt.serve.rag.operators.knowledge_space import SpaceRetrieverOperator
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-from ..models.models import ServeEntity, ServeDao
 
 from ...agent.agents.controller import multi_agents
 from ...agent.evaluation.evaluation import AgentEvaluator, AgentOutputOperator
@@ -30,6 +29,7 @@ from ...rag.connector import VectorStoreConnector
 from ...rag.service.service import Service as RagService
 from ..api.schemas import EvaluateServeRequest, EvaluateServeResponse, EvaluationScene
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..models.models import ServeDao, ServeEntity
 
 logger = logging.getLogger(__name__)
 
