@@ -1,6 +1,6 @@
 """Summary for rdbms database."""
 import re
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from dbgpt._private.config import Config
 from dbgpt.datasource import BaseConnector
@@ -78,6 +78,133 @@ def _parse_db_summary(
         for table_name in tables
     ]
     return table_info_summaries
+
+
+def _parse_db_summary_with_metadata(
+    conn: BaseConnector,
+    summary_template: str = "table_name: {table_name}",
+    separator: str = "--table-field-separator--",
+    model_dimension: int = 512,
+) -> List[Tuple[str, Dict[str, Any]]]:
+    """Get db summary for database.
+
+    Args:
+        conn (BaseConnector): database connection
+        summary_template (str): summary template
+        separator(str, optional): separator used to separate table's
+            basic info and fields. defaults to `-- table-field-separator--`
+        model_dimension(int, optional): The threshold for splitting field string
+    """
+    tables = conn.get_table_names()
+    table_info_summaries = [
+        _parse_table_summary_with_metadata(
+            conn, summary_template, separator, table_name, model_dimension
+        )
+        for table_name in tables
+    ]
+    return table_info_summaries
+
+
+def _split_columns_str(columns: List[str], model_dimension: int):
+    """Split columns str.
+
+    Args:
+    columns (List[str]): fields string
+    model_dimension (int, optional): The threshold for splitting field string.
+    """
+    result = []
+    current_string = ""
+    current_length = 0
+
+    for element_str in columns:
+        element_length = len(element_str)
+
+        # 如果加上当前元素的长度会超过阈值，则将当前字符串添加到结果中，并重置
+        if current_length + element_length > model_dimension:
+            result.append(current_string.strip())  # 去掉末尾的空格
+            current_string = element_str
+            current_length = element_length
+        else:
+            # 如果当前字符串为空，直接添加元素
+            if current_string:
+                current_string += "," + element_str
+            else:
+                current_string = element_str
+            current_length += element_length + 1  # 加上空格的长度
+
+    # 最后一段字符串
+    if current_string:
+        result.append(current_string.strip())
+
+    return result
+
+
+def _parse_table_summary_with_metadata(
+    conn: BaseConnector,
+    summary_template: str,
+    separator,
+    table_name: str,
+    model_dimension=512,
+) -> Tuple[str, Dict[str, Any]]:
+    """Get table summary for table.
+
+    Args:
+        conn (BaseConnector): database connection
+        summary_template (str): summary template
+        separator(str, optional): separator used to separate table's
+            basic info and fields. defaults to `-- table-field-separator--`
+        model_dimension(int, optional): The threshold for splitting field string
+
+    Examples:
+        metadata: {'table_name': 'asd', 'separated': 0/1}
+
+        table_name: table1
+        table_comment: comment
+        index_keys: keys
+        --table-field-separator--
+        (column1,comment), (column2, comment), (column3, comment)
+        (column4,comment), (column5, comment), (column6, comment)
+    """
+    columns = []
+    metadata = {"table_name": table_name, "separated": 0}
+    for column in conn.get_columns(table_name):
+        if column.get("comment"):
+            columns.append(f"{column['name']} ({column.get('comment')})")
+        else:
+            columns.append(f"{column['name']}")
+    metadata.update({"field_num": len(columns)})
+    separated_columns = _split_columns_str(columns, model_dimension=model_dimension)
+    if len(separated_columns) > 1:
+        metadata["separated"] = 1
+    column_str = "\n".join(separated_columns)
+    # Obtain index information
+    index_keys = []
+    raw_indexes = conn.get_indexes(table_name)
+    for index in raw_indexes:
+        if isinstance(index, tuple):  # Process tuple type index information
+            index_name, index_creation_command = index
+            # Extract column names using re
+            matched_columns = re.findall(r"\(([^)]+)\)", index_creation_command)
+            if matched_columns:
+                key_str = ", ".join(matched_columns)
+                index_keys.append(f"{index_name}(`{key_str}`) ")
+        else:
+            key_str = ", ".join(index["column_names"])
+            index_keys.append(f"{index['name']}(`{key_str}`) ")
+    table_str = summary_template.format(table_name=table_name)
+
+    try:
+        comment = conn.get_table_comment(table_name)
+    except Exception:
+        comment = dict(text=None)
+    if comment.get("text"):
+        table_str += f"\ntable_comment: {comment.get('text')}"
+
+    if len(index_keys) > 0:
+        index_key_str = ", ".join(index_keys)
+        table_str += f"\nindex_keys: {index_key_str}"
+    table_str += f"\n{separator}\n{column_str}"
+    return table_str, metadata
 
 
 def _parse_table_summary(
