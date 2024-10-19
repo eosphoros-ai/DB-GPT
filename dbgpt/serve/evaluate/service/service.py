@@ -1,6 +1,3 @@
-import asyncio
-import io
-import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
@@ -19,20 +16,20 @@ from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.evaluation import RetrieverEvaluator
 from dbgpt.rag.evaluation.answer import AnswerRelevancyMetric
 from dbgpt.rag.evaluation.retriever import RetrieverSimilarityMetric
-from dbgpt.serve.core import BaseService
 from dbgpt.serve.rag.operators.knowledge_space import SpaceRetrieverOperator
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.vector_store.base import VectorStoreConfig
+from ..models.models import ServeEntity, ServeDao
 
 from ...agent.agents.controller import multi_agents
 from ...agent.evaluation.evaluation import AgentEvaluator, AgentOutputOperator
 from ...agent.evaluation.evaluation_metric import IntentMetric
+from ...core import BaseService
 from ...prompt.service.service import Service as PromptService
 from ...rag.connector import VectorStoreConnector
 from ...rag.service.service import Service as RagService
 from ..api.schemas import EvaluateServeRequest, EvaluateServeResponse, EvaluationScene
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
-from ..models.models import ServeDao, ServeEntity
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +67,6 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
-        self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
 
     @property

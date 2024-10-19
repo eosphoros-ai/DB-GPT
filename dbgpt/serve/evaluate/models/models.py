@@ -6,13 +6,13 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
 from dbgpt.agent.core.schema import Status
-from dbgpt.storage.metadata import BaseDao, Model, db
+from dbgpt.storage.metadata import BaseDao, Model
 
 from ..api.schemas import EvaluateServeRequest, EvaluateServeResponse
-from ..config import SERVER_APP_TABLE_NAME, ServeConfig
+from ..config import ServeConfig
 
 
 class ServeEntity(Model):

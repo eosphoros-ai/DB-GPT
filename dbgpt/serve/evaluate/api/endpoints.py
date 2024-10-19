@@ -6,11 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import ComponentType, SystemApp
-from dbgpt.core.interface.evaluation import metric_manage
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
-from dbgpt.rag.evaluation.answer import AnswerRelevancyMetric
 from dbgpt.serve.core import Result
-from dbgpt.serve.evaluate.api.schemas import EvaluateServeRequest, EvaluateServeResponse
+from dbgpt.serve.evaluate.api.schemas import EvaluateServeRequest
 from dbgpt.serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME
 from dbgpt.serve.evaluate.service.service import Service
 
