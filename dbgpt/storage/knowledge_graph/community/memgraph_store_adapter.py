@@ -38,7 +38,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     async def discover_communities(self, **kwargs) -> List[str]:
         """Run community discovery with leiden."""
-        pass
+        []
 
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
