@@ -42,7 +42,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
-        pass
+        raise NotImplementedError("Memory graph store does not have community")
 
     def get_graph_config(self):
         """Get the graph store config."""
