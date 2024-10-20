@@ -58,6 +58,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=0.0,
         description="Recall score of community search in knowledge graph",
     )
+    knowledge_graph_chunk_search_top_size: int = Field(
+        default=10,
+        description="Top size of knowledge graph chunk search",
+    )
 
 
 class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
@@ -237,14 +241,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         self._graph_store_apdater.upsert_graph(graph_of_all)
 
-        # use asyncio.gather
-        # tasks = [self._graph_extractor.extract(chunk.content) for chunk in chunks]
-        # results = await asyncio.gather(*tasks)
-        # for result in results:
-        #     self._graph_store_apdater.upsert_graph(result[0])
-
-        # build communities and save
-
         await self._community_store.build_communities()
 
         return [chunk.chunk_id for chunk in chunks]
@@ -338,7 +334,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         if triplet_graph_enabled:
             subgraph: MemoryGraph = self._graph_store_apdater.explore(
-                subs=keywords, limit=10, search_scope="knowledge_graph"
+                subs=keywords, limit=topk, search_scope="knowledge_graph"
             )
 
             if document_graph_enabled:
@@ -348,14 +344,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords_for_document_graph,
-                    limit=5,
+                    limit=self._config.knowledge_graph_chunk_search_top_size,
                     search_scope="document_graph",
                 )
         else:
             if document_graph_enabled:
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords,
-                    limit=10,
+                    limit=self._config.knowledge_graph_chunk_search_top_size,
                     search_scope="document_graph",
                 )
 

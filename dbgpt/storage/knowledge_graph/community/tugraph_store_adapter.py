@@ -242,6 +242,51 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self.graph_store.conn.run(query=vertex_query)
         self.graph_store.conn.run(query=edge_query)
 
+    def upsert_doc_include_chunk(self, edges: Iterator[Edge]) -> None:
+        """Upsert document include chunk edges."""
+        self.upsert_edge(
+            edges,
+            GraphElemType.INCLUDE.value,
+            GraphElemType.DOCUMENT.value,
+            GraphElemType.CHUNK.value,
+        )
+
+    def upsert_chunk_include_chunk(self, edges: Iterator[Edge]) -> None:
+        """Upsert chunk include chunk edges."""
+        self.upsert_edge(
+            edges,
+            GraphElemType.INCLUDE.value,
+            GraphElemType.CHUNK.value,
+            GraphElemType.CHUNK.value,
+        )
+
+    def upsert_chunk_include_entity(self, edges: Iterator[Edge]) -> None:
+        """Upsert chunk include entity edges."""
+        self.upsert_edge(
+            edges,
+            GraphElemType.INCLUDE.value,
+            GraphElemType.CHUNK.value,
+            GraphElemType.ENTITY.value,
+        )
+
+    def upsert_chunk_next_chunk(self, edges: Iterator[Edge]) -> None:
+        """Upsert chunk next chunk edges."""
+        self.upsert_edge(
+            edges,
+            GraphElemType.NEXT.value,
+            GraphElemType.CHUNK.value,
+            GraphElemType.CHUNK.value,
+        )
+
+    def upsert_relation(self, edges: Iterator[Edge]) -> None:
+        """Upsert relation edges."""
+        self.upsert_edge(
+            edges,
+            GraphElemType.RELATION.value,
+            GraphElemType.ENTITY.value,
+            GraphElemType.ENTITY.value,
+        )
+
     def upsert_graph(self, graph: MemoryGraph) -> None:
         """Add graph to the graph store.
 
@@ -283,36 +328,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self.upsert_entities(entities)
         self.upsert_chunks(chunks)
         self.upsert_documents(documents)
-        self.upsert_edge(
-            doc_include_chunk,
-            GraphElemType.INCLUDE.value,
-            GraphElemType.DOCUMENT.value,
-            GraphElemType.CHUNK.value,
-        )
-        self.upsert_edge(
-            chunk_include_chunk,
-            GraphElemType.INCLUDE.value,
-            GraphElemType.CHUNK.value,
-            GraphElemType.CHUNK.value,
-        )
-        self.upsert_edge(
-            chunk_include_entity,
-            GraphElemType.INCLUDE.value,
-            GraphElemType.CHUNK.value,
-            GraphElemType.ENTITY.value,
-        )
-        self.upsert_edge(
-            chunk_next_chunk,
-            GraphElemType.NEXT.value,
-            GraphElemType.CHUNK.value,
-            GraphElemType.CHUNK.value,
-        )
-        self.upsert_edge(
-            relation,
-            GraphElemType.RELATION.value,
-            GraphElemType.ENTITY.value,
-            GraphElemType.ENTITY.value,
-        )
+        self.upsert_doc_include_chunk(doc_include_chunk)
+        self.upsert_chunk_include_chunk(chunk_include_chunk)
+        self.upsert_chunk_include_entity(chunk_include_entity)
+        self.upsert_chunk_next_chunk(chunk_next_chunk)
+        self.upsert_relation(relation)
 
     def delete_document(self, chunk_ids: str) -> None:
         """Delete document in the graph."""
@@ -525,7 +545,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: Optional[int] = None,
+        depth: int = 3,
         limit: Optional[int] = None,
         search_scope: Optional[
             Literal["knowledge_graph", "document_graph"]
@@ -535,10 +555,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if not subs:
             return MemoryGraph()
 
-        if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
-            # TODO: to be discussed, be none or MAX_HIERARCHY_LEVEL
-            # depth_string = ".."
-            depth = self.MAX_HIERARCHY_LEVEL
+        if depth < 0 or depth > 3:
+            depth = 3
         depth_string = f"1..{depth}"
 
         if limit is None:
