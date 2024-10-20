@@ -465,10 +465,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "properties": graph_properties,
             })
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
-
-            gql_check_exist = (
-                f"""CALL db.getLabelSchema('VERTEX', '{graph_elem_type.value}')"""
-            )
         else:  # edge
 
             def edge_direction(graph_elem_type: GraphElemType) -> List[List[str]]:
@@ -501,20 +497,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             })
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
-            gql_check_exist = (
-                f"""CALL db.getLabelSchema('EDGE', '{graph_elem_type.value}')"""
-            )
-
-        # Make sure the graph label is identical
-        try:
-            self.graph_store.conn.run(
-                gql_check_exist
-            )  # if not exist, qurying raises an exception
-        except Exception:
-            self.graph_store.conn.run(gql)  # create the graph label
-            return
-
-        logger.info(f"Graph label {graph_elem_type.value} already exists.")
+        self.graph_store.conn.run(gql)
 
     def truncate(self):
         """Truncate Graph."""

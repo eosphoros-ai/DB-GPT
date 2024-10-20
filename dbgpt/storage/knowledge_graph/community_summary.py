@@ -11,7 +11,6 @@ from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.graph import GraphElemType, MemoryGraph
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
-from dbgpt.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
@@ -124,7 +123,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             cfg.score_threshold = self._community_score_threshold
 
         self._community_store = CommunityStore(
-            GraphStoreAdapterFactory.create(self._graph_store),
+            self._graph_store_apdater,
             CommunitySummarizer(self._llm_client, self._model_name),
             VectorStoreFactory.create(
                 self._vector_store_type,
@@ -297,6 +296,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 chunk_data["parent_id"] = "document"
             data.append(chunk_data)
         return data
+
+    def similar_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        """Similar search in index database.
+
+        Args:
+            text(str): The query text.
+            topk(int): The number of similar documents to return.
+            filters(Optional[MetadataFilters]): metadata filters.
+        Return:
+            List[Chunk]: The similar documents.
+        """
+        pass
 
     async def asimilar_search_with_scores(
         self,
