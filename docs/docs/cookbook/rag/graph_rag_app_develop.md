@@ -112,9 +112,9 @@ TUGRAPH_HOST=127.0.0.1
 TUGRAPH_PORT=7687
 TUGRAPH_USERNAME=admin
 TUGRAPH_PASSWORD=73@TuGraph
-ENABLE_GRAPH_COMMUNITY_SUMMARY=True # enable the graph community summary
-ENABLE_TRIPLET_GRAPH=True  # enable the graph search for the triplets
-ENABLE_DOCUMENT_GRAPH=True  # enable the graph search for documents and chunks
+GRAPH_COMMUNITY_SUMMARY_ENABLED=True # enable the graph community summary
+TRIPLET_GRAPH_ENABLED=True  # enable the graph search for the triplets
+DOCUMENT_GRAPH_ENABLED=True  # enable the graph search for documents and chunks
 ```
 
 

@@ -128,7 +128,7 @@ class VectorStoreConnector:
 
     def __rewrite_index_store_type(self, index_store_type):
         # Rewrite Knowledge Graph Type
-        if CFG.ENABLE_GRAPH_COMMUNITY_SUMMARY:
+        if CFG.GRAPH_COMMUNITY_SUMMARY_ENABLED:
             if index_store_type == "KnowledgeGraph":
                 return "CommunitySummaryKnowledgeGraph"
         return index_store_type

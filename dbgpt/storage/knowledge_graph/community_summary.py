@@ -142,7 +142,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         graph_of_all = MemoryGraph()
 
         # Support graph search by the document and the chunks
-        if self._graph_store.get_config().enable_document_graph:
+        if self._graph_store.get_config().document_graph_enabled:
             doc_vid = str(uuid.uuid4())
             doc_name = os.path.basename(chunks[0].metadata["source"] or "Text_Node")
             for chunk_index, chunk in enumerate(data_list):
@@ -203,7 +203,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     )
 
         # Support knowledge graph search by the entities and the relationships
-        if self._graph_store.get_config().enable_triplet_graph:
+        if self._graph_store.get_config().triplet_graph_enabled:
             for chunk_index, chunk in enumerate(data_list):
                 # TODO: Use asyncio to extract graph to accelerate the process
                 # (attention to the CAP of the graph db)
@@ -216,7 +216,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     graph_of_all.upsert_graph(graph)
 
                     # chunk -> include -> entity
-                    if self._graph_store.get_config().enable_document_graph:
+                    if self._graph_store.get_config().document_graph_enabled:
                         for vertex in graph.vertices():
                             graph_of_all.upsert_vertex_and_edge(
                                 src_vid=chunk["id"],
@@ -333,15 +333,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         subgraph = MemoryGraph()
         subgraph_for_doc = MemoryGraph()
 
-        enable_triplet_graph = self._graph_store.get_config().enable_triplet_graph
-        enable_document_graph = self._graph_store.get_config().enable_document_graph
+        triplet_graph_enabled = self._graph_store.get_config().triplet_graph_enabled
+        document_graph_enabled = self._graph_store.get_config().document_graph_enabled
 
-        if enable_triplet_graph:
+        if triplet_graph_enabled:
             subgraph: MemoryGraph = self._graph_store_apdater.explore(
                 subs=keywords, limit=10, search_scope="knowledge_graph"
             )
 
-            if enable_document_graph:
+            if document_graph_enabled:
                 keywords_for_document_graph = keywords
                 for vertex in subgraph.vertices():
                     keywords_for_document_graph.append(vertex.name)
@@ -352,7 +352,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     search_scope="document_graph",
                 )
         else:
-            if enable_document_graph:
+            if document_graph_enabled:
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords,
                     limit=10,

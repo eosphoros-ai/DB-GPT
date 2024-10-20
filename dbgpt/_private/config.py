@@ -70,9 +70,9 @@ class Config(metaclass=Singleton):
         self.wenxin_model_version = os.getenv("WEN_XIN_MODEL_VERSION")
         if self.wenxin_proxy_api_key and self.wenxin_proxy_api_secret:
             os.environ["wenxin_proxyllm_proxy_api_key"] = self.wenxin_proxy_api_key
-            os.environ[
-                "wenxin_proxyllm_proxy_api_secret"
-            ] = self.wenxin_proxy_api_secret
+            os.environ["wenxin_proxyllm_proxy_api_secret"] = (
+                self.wenxin_proxy_api_secret
+            )
             os.environ["wenxin_proxyllm_proxyllm_backend"] = (
                 self.wenxin_model_version or ""
             )
@@ -213,8 +213,8 @@ class Config(metaclass=Singleton):
 
         # Vector Store Configuration
         self.VECTOR_STORE_TYPE = os.getenv("VECTOR_STORE_TYPE", "Chroma")
-        self.ENABLE_GRAPH_COMMUNITY_SUMMARY = (
-            os.getenv("ENABLE_GRAPH_COMMUNITY_SUMMARY", "").lower() == "true"
+        self.GRAPH_COMMUNITY_SUMMARY_ENABLED = (
+            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
         )
         self.MILVUS_URL = os.getenv("MILVUS_URL", "127.0.0.1")
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")

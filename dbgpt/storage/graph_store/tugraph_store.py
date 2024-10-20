@@ -80,16 +80,16 @@ class TuGraphStore(GraphStoreBase):
         self._username = os.getenv("TUGRAPH_USERNAME", config.username)
         self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
         self._enable_summary = (
-            os.getenv("ENABLE_GRAPH_COMMUNITY_SUMMARY", "").lower() == "true"
+            os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
             or config.enable_summary
         )
         self._enable_document_graph = (
-            os.getenv("ENABLE_DOCUMENT_GRAPH", "").lower() == "true"
-            or config.enable_document_graph
+            os.getenv("DOCUMENT_GRAPH_ENABLED", "").lower() == "true"
+            or config.document_graph_enabled
         )
         self._enable_triplet_graph = (
-            os.getenv("ENABLE_TRIPLET_GRAPH", "").lower() == "true"
-            or config.enable_triplet_graph
+            os.getenv("TRIPLET_GRAPH_ENABLED", "").lower() == "true"
+            or config.triplet_graph_enabled
         )
         self._plugin_names = (
             os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")

@@ -19,8 +19,8 @@ class GraphElemType(Enum):
 
     DOCUMENT = "document"
     CHUNK = "chunk"
-    ENTITY = "entity"  # view as general vertex in the general case
-    RELATION = "relation"  # view as general edge in the general case
+    ENTITY = "entity"  # default vertex type in knowledge graph
+    RELATION = "relation"  # default edge type in knowledge graph
     INCLUDE = "include"
     NEXT = "next"
 
@@ -39,7 +39,15 @@ class GraphElemType(Enum):
 
     def is_edge(self) -> bool:
         """Check if the element is an edge."""
-        return not self.is_vertex()
+        return self in [
+            GraphElemType.RELATION,
+            GraphElemType.INCLUDE,
+            GraphElemType.NEXT,
+            GraphElemType.DOCUMENT_INCLUDE_CHUNK,
+            GraphElemType.CHUNK_INCLUDE_CHUNK,
+            GraphElemType.CHUNK_INCLUDE_ENTITY,
+            GraphElemType.CHUNK_NEXT_CHUNK,
+        ]
 
 
 class Direction(Enum):
