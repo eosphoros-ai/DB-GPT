@@ -133,11 +133,3 @@ class Chunk(Document):
                 "Please install llama_index by command `pip install llama_index"
             )
         return TextNode(text=chunk.content, metadata=chunk.metadata)
-
-
-class LoadedChunk(Chunk):
-    """Loaded chunk, used in GraphRAG."""
-
-    chunk_parent_id: str = Field(default=None, description="id of parent chunk")
-    chunk_parent_name: str = Field(default=None, description="parent chunk name")
-    parent_content: str = Field(default=None, description="parent chunk text content")

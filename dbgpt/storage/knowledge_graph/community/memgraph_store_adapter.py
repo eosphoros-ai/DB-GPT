@@ -4,7 +4,6 @@ import json
 import logging
 from typing import AsyncGenerator, Iterator, List, Optional, Tuple
 
-from dbgpt.core import LoadedChunk
 from dbgpt.storage.graph_store.graph import (
     Direction,
     Edge,
@@ -17,6 +16,7 @@ from dbgpt.storage.graph_store.memgraph_store import (
     MemoryGraphStore,
     MemoryGraphStoreConfig,
 )
+from dbgpt.storage.knowledge_graph.base import ParentChunk
 from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
 logger = logging.getLogger(__name__)
@@ -109,24 +109,22 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         """Upsert relations."""
         pass
 
-    def upsert_doc_include_chunk_by_chunk(
+    def upsert_doc_include_chunk(
         self,
-        chunk: LoadedChunk,
+        chunk: ParentChunk,
         doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
         pass
 
-    def upsert_chunk_include_chunk_by_chunk(
+    def upsert_chunk_include_chunk(
         self,
-        chunk: LoadedChunk,
+        chunk: ParentChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
         pass
 
-    def upsert_chunk_next_chunk_by_chunk(
-        self, chunk: LoadedChunk, next_chunk: LoadedChunk
-    ):
+    def upsert_chunk_next_chunk(self, chunk: ParentChunk, next_chunk: ParentChunk):
         """Uperst the vertices and the edge in chunk_next_chunk."""
         pass
 

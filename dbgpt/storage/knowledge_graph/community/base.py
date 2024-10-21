@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import AsyncGenerator, Iterator, List, Optional
 
-from dbgpt.core import LoadedChunk
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -15,6 +14,7 @@ from dbgpt.storage.graph_store.graph import (
     MemoryGraph,
     Vertex,
 )
+from dbgpt.storage.knowledge_graph.base import ParentChunk
 
 logger = logging.getLogger(__name__)
 
@@ -100,10 +100,6 @@ class GraphStoreAdapter(ABC):
         """Upsert documents."""
 
     @abstractmethod
-    def upsert_relations(self, relations: Iterator[Edge]) -> None:
-        """Upsert relations."""
-
-    @abstractmethod
     def insert_triplet(self, sub: str, rel: str, obj: str) -> None:
         """Insert triplet."""
 
@@ -112,25 +108,25 @@ class GraphStoreAdapter(ABC):
         """Insert graph."""
 
     @abstractmethod
-    def upsert_doc_include_chunk_by_chunk(
+    def upsert_doc_include_chunk(
         self,
-        chunk: LoadedChunk,
+        chunk: ParentChunk,
         doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
 
     @abstractmethod
-    def upsert_chunk_include_chunk_by_chunk(
+    def upsert_chunk_include_chunk(
         self,
-        chunk: LoadedChunk,
+        chunk: ParentChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
 
     @abstractmethod
-    def upsert_chunk_next_chunk_by_chunk(
+    def upsert_chunk_next_chunk(
         self,
-        chunk: LoadedChunk,
-        next_chunk: LoadedChunk,
+        chunk: ParentChunk,
+        next_chunk: ParentChunk,
     ):
         """Uperst the vertices and the edge in chunk_next_chunk."""
 

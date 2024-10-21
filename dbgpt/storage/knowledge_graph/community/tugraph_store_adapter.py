@@ -14,7 +14,6 @@ from typing import (
     Union,
 )
 
-from dbgpt.core import LoadedChunk
 from dbgpt.storage.graph_store.graph import (
     Direction,
     Edge,
@@ -24,6 +23,7 @@ from dbgpt.storage.graph_store.graph import (
     Vertex,
 )
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
+from dbgpt.storage.knowledge_graph.base import ParentChunk
 from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
 logger = logging.getLogger(__name__)
@@ -210,10 +210,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
         self.graph_store.conn.run(query=document_query)
 
-    def upsert_relations(self, relations: Iterator[Edge]) -> None:
-        """Upsert relations."""
-        pass
-
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
         subj_escaped = subj.replace("'", "\\'").replace('"', '\\"')
@@ -235,51 +231,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         self.graph_store.conn.run(query=vertex_query)
         self.graph_store.conn.run(query=edge_query)
-
-    def upsert_doc_include_chunk(self, edges: Iterator[Edge]) -> None:
-        """Upsert document include chunk edges."""
-        self.upsert_edge(
-            edges,
-            GraphElemType.INCLUDE.value,
-            GraphElemType.DOCUMENT.value,
-            GraphElemType.CHUNK.value,
-        )
-
-    def upsert_chunk_include_chunk(self, edges: Iterator[Edge]) -> None:
-        """Upsert chunk include chunk edges."""
-        self.upsert_edge(
-            edges,
-            GraphElemType.INCLUDE.value,
-            GraphElemType.CHUNK.value,
-            GraphElemType.CHUNK.value,
-        )
-
-    def upsert_chunk_include_entity(self, edges: Iterator[Edge]) -> None:
-        """Upsert chunk include entity edges."""
-        self.upsert_edge(
-            edges,
-            GraphElemType.INCLUDE.value,
-            GraphElemType.CHUNK.value,
-            GraphElemType.ENTITY.value,
-        )
-
-    def upsert_chunk_next_chunk(self, edges: Iterator[Edge]) -> None:
-        """Upsert chunk next chunk edges."""
-        self.upsert_edge(
-            edges,
-            GraphElemType.NEXT.value,
-            GraphElemType.CHUNK.value,
-            GraphElemType.CHUNK.value,
-        )
-
-    def upsert_relation(self, edges: Iterator[Edge]) -> None:
-        """Upsert relation edges."""
-        self.upsert_edge(
-            edges,
-            GraphElemType.RELATION.value,
-            GraphElemType.ENTITY.value,
-            GraphElemType.ENTITY.value,
-        )
 
     def upsert_graph(self, graph: MemoryGraph) -> None:
         """Add graph to the graph store.
@@ -322,11 +273,36 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self.upsert_entities(entities)
         self.upsert_chunks(chunks)
         self.upsert_documents(documents)
-        self.upsert_doc_include_chunk(doc_include_chunk)
-        self.upsert_chunk_include_chunk(chunk_include_chunk)
-        self.upsert_chunk_include_entity(chunk_include_entity)
-        self.upsert_chunk_next_chunk(chunk_next_chunk)
-        self.upsert_relation(relation)
+        self.upsert_edge(
+            doc_include_chunk,
+            GraphElemType.INCLUDE.value,
+            GraphElemType.DOCUMENT.value,
+            GraphElemType.CHUNK.value,
+        )
+        self.upsert_edge(
+            chunk_include_chunk,
+            GraphElemType.INCLUDE.value,
+            GraphElemType.CHUNK.value,
+            GraphElemType.CHUNK.value,
+        )
+        self.upsert_edge(
+            chunk_include_entity,
+            GraphElemType.INCLUDE.value,
+            GraphElemType.CHUNK.value,
+            GraphElemType.ENTITY.value,
+        )
+        self.upsert_edge(
+            chunk_next_chunk,
+            GraphElemType.NEXT.value,
+            GraphElemType.CHUNK.value,
+            GraphElemType.CHUNK.value,
+        )
+        self.upsert_edge(
+            relation,
+            GraphElemType.RELATION.value,
+            GraphElemType.ENTITY.value,
+            GraphElemType.ENTITY.value,
+        )
 
     def delete_document(self, chunk_ids: str) -> None:
         """Delete document in the graph."""
@@ -472,14 +448,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         (vertices) and edges in the graph.
         """
         if graph_elem_type.is_vertex():  # vertex
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "VERTEX",
-                    "primary": "id",
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "VERTEX",
+                "primary": "id",
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
         else:  # edge
 
@@ -505,14 +479,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 else:
                     raise ValueError("Invalid graph element type.")
 
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "EDGE",
-                    "constraints": edge_direction(graph_elem_type),
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "EDGE",
+                "constraints": edge_direction(graph_elem_type),
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
         self.graph_store.conn.run(gql)
@@ -652,19 +624,15 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append(
-                            {
-                                "id": nodes[i]._properties["id"],
-                                "description": nodes[i]._properties["description"],
-                            }
-                        )
+                        formatted_path.append({
+                            "id": nodes[i]._properties["id"],
+                            "description": nodes[i]._properties["description"],
+                        })
                         if i < len(rels):
-                            formatted_path.append(
-                                {
-                                    "id": rels[i]._properties["id"],
-                                    "description": rels[i]._properties["description"],
-                                }
-                            )
+                            formatted_path.append({
+                                "id": rels[i]._properties["id"],
+                                "description": rels[i]._properties["description"],
+                            })
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(
@@ -817,9 +785,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if value is not None:
             return value.replace("'", "").replace('"', "")
 
-    def upsert_doc_include_chunk_by_chunk(
+    def upsert_doc_include_chunk(
         self,
-        chunk: LoadedChunk,
+        chunk: ParentChunk,
         doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
@@ -848,11 +816,16 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         self.upsert_documents(iter([src_vertex]))
         self.upsert_chunks(iter([dst_vertex]))
-        self.upsert_doc_include_chunk(iter([edge]))
+        self.upsert_edge(
+            set([edge]),
+            edge_type=GraphElemType.INCLUDE.value,
+            src_type=GraphElemType.DOCUMENT.value,
+            dst_type=GraphElemType.CHUNK.value,
+        )
 
-    def upsert_chunk_include_chunk_by_chunk(
+    def upsert_chunk_include_chunk(
         self,
-        chunk: LoadedChunk,
+        chunk: ParentChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
         assert (
@@ -879,11 +852,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         self.upsert_chunks(iter([src_vertex, dst_vertex]))
-        self.upsert_chunk_include_chunk(iter([edge]))
+        self.upsert_edge(
+            edges=iter([edge]),
+            edge_type=GraphElemType.INCLUDE.value,
+            src_type=GraphElemType.CHUNK.value,
+            dst_type=GraphElemType.CHUNK.value,
+        )
 
-    def upsert_chunk_next_chunk_by_chunk(
-        self, chunk: LoadedChunk, next_chunk: LoadedChunk
-    ):
+    def upsert_chunk_next_chunk(self, chunk: ParentChunk, next_chunk: ParentChunk):
         """Uperst the vertices and the edge in chunk_next_chunk."""
         src_vertex = Vertex(
             vid=chunk.chunk_id,
@@ -905,4 +881,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         self.upsert_chunks(iter([src_vertex, dst_vertex]))
-        self.upsert_chunk_next_chunk(iter([edge]))
+        self.upsert_edge(
+            edges=iter([edge]),
+            edge_type=GraphElemType.NEXT.value,
+            src_type=GraphElemType.CHUNK.value,
+            dst_type=GraphElemType.CHUNK.value,
+        )

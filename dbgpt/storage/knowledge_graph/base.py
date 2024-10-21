@@ -4,7 +4,10 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from pydantic import Field
+
 from dbgpt._private.pydantic import ConfigDict
+from dbgpt.core import Chunk
 from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.graph_store.graph import Graph
 
@@ -31,3 +34,11 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
     @abstractmethod
     def delete_by_ids(self, ids: str) -> List[str]:
         """Delete document by ids."""
+
+
+class ParentChunk(Chunk):
+    """Loaded chunk, used in GraphRAG."""
+
+    chunk_parent_id: str = Field(default=None, description="id of parent chunk")
+    chunk_parent_name: str = Field(default=None, description="parent chunk name")
+    parent_content: str = Field(default=None, description="parent chunk text content")

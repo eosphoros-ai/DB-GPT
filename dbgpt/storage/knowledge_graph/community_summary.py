@@ -6,10 +6,11 @@ import uuid
 from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
-from dbgpt.core import Chunk, LoadedChunk
+from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.graph import Edge, GraphElemType, MemoryGraph
+from dbgpt.storage.knowledge_graph.base import ParentChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
@@ -148,15 +149,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         return [chunk.chunk_id for chunk in chunks]
 
-    async def _aload_document_graph(self, chunks: List[LoadedChunk]) -> List[str]:
+    async def _aload_document_graph(self, chunks: List[ParentChunk]) -> List[str]:
         """Load the knowledge graph from the chunks.
 
         The chunks include the doc structure.
         """
-        chunks: List[LoadedChunk] = [
-            LoadedChunk.model_validate(chunk.model_dump()) for chunk in chunks
+        chunks: List[ParentChunk] = [
+            ParentChunk.model_validate(chunk.model_dump()) for chunk in chunks
         ]
-        chunks: List[LoadedChunk] = self._load_chunks(chunks)
+        chunks: List[ParentChunk] = self._load_chunks(chunks)
 
         graph_of_all = MemoryGraph()
 
@@ -166,17 +167,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             for chunk_index, chunk in enumerate(chunks):
                 # document -> include -> chunk
                 if chunk.chunk_parent_id == "document":
-                    self._graph_store_apdater.upsert_doc_include_chunk_by_chunk(
+                    self._graph_store_apdater.upsert_doc_include_chunk(
                         chunk=chunk, doc_vid=doc_vid
                     )
                 else:  # chunk -> include -> chunk
-                    self._graph_store_apdater.upsert_chunk_include_chunk_by_chunk(
-                        chunk=chunk
-                    )
+                    self._graph_store_apdater.upsert_chunk_include_chunk(chunk=chunk)
 
                 # chunk -> next -> chunk
                 if chunk_index >= 1:
-                    self._graph_store_apdater.upsert_chunk_next_chunk_by_chunk(
+                    self._graph_store_apdater.upsert_chunk_next_chunk(
                         chunk=chunks[chunk_index - 1], next_chunk=chunk
                     )
         self._graph_store_apdater.upsert_graph(graph_of_all)
@@ -218,7 +217,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                             graph_of_all.append_edge(edge=edge)
             self._graph_store_apdater.upsert_graph(graph_of_all)
 
-    def _load_chunks(slef, chunks: List[LoadedChunk]) -> List[LoadedChunk]:
+    def _load_chunks(slef, chunks: List[ParentChunk]) -> List[ParentChunk]:
         """Load the chunks, and add the parent-child relationship within chunks."""
         doc_name = os.path.basename(chunks[0].metadata["source"] or "Text_Node")
         # chunk.metadate = {"Header0": "title", "Header1": "title", ..., "source": "source_path"}  # noqa: E501
