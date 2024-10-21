@@ -9,7 +9,7 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.graph import GraphElemType, MemoryGraph
+from dbgpt.storage.graph_store.graph import Edge, GraphElemType, MemoryGraph
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
@@ -141,137 +141,90 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         return self._config
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
-        """Extract and persist graph."""
-        data_list = self._parse_chunks(chunks)  # parse the chunks by def _lod_doc_graph
+        """Extract and persist graph from the document file."""
+        chunks: List[Chunk] = self._load_chunks(chunks)
+
+        await self._aload_document_graph(chunks)
+
+        await self._community_store.build_communities()
+
+        return [chunk.chunk_id for chunk in chunks]
+
+    async def _aload_document_graph(self, chunks: List[Chunk]) -> List[str]:
+        """Load the knowledge graph from the chunks that include the doc structure within chunks."""
+
+        document_graph_enabled = self._graph_store.get_config().document_graph_enabled
+        triplet_graph_enabled = self._graph_store.get_config().triplet_graph_enabled
+
         graph_of_all = MemoryGraph()
 
         # Support graph search by the document and the chunks
-        if self._graph_store.get_config().document_graph_enabled:
+        if document_graph_enabled:
             doc_vid = str(uuid.uuid4())
-            doc_name = os.path.basename(chunks[0].metadata["source"] or "Text_Node")
-            for chunk_index, chunk in enumerate(data_list):
-                if chunk["parent_id"] != "document":
-                    # chunk -> include -> chunk
-                    graph_of_all.upsert_vertex_and_edge(
-                        src_vid=chunk["parent_id"],
-                        src_name=chunk["parent_title"],
-                        src_props={
-                            "vertex_type": GraphElemType.CHUNK.value,
-                            "content": chunk["content"],
-                        },
-                        dst_vid=chunk["id"],
-                        dst_name=chunk["title"],
-                        dst_props={
-                            "vertex_type": GraphElemType.CHUNK.value,
-                            "content": chunk["content"],
-                        },
-                        edge_name=GraphElemType.INCLUDE.value,
-                        edge_type=GraphElemType.CHUNK_INCLUDE_CHUNK.value,
-                    )
-                else:
-                    # document -> include -> chunk
-                    graph_of_all.upsert_vertex_and_edge(
-                        src_vid=doc_vid,
-                        src_name=doc_name,
-                        src_props={
-                            "vertex_type": GraphElemType.DOCUMENT.value,
-                            "content": "",
-                        },
-                        dst_vid=chunk["id"],
-                        dst_name=chunk["title"],
-                        dst_props={
-                            "vertex_type": GraphElemType.CHUNK.value,
-                            "content": chunk["content"],
-                        },
-                        edge_name=GraphElemType.INCLUDE.value,
-                        edge_type=GraphElemType.DOCUMENT_INCLUDE_CHUNK.value,
+            for chunk_index, chunk in enumerate(chunks):
+                if chunk.chunk_parent_id != "document":
+                    graph_of_all.upsert_document_include_chunk(
+                        chunk=chunk, doc_vid=doc_vid
                     )
 
                 # chunk -> next -> chunk
                 if chunk_index >= 1:
-                    graph_of_all.upsert_vertex_and_edge(
-                        src_vid=data_list[chunk_index - 1]["id"],
-                        src_name=data_list[chunk_index - 1]["title"],
-                        src_props={
-                            "vertex_type": GraphElemType.CHUNK.value,
-                            "content": data_list[chunk_index - 1]["content"],
-                        },
-                        dst_vid=chunk["id"],
-                        dst_name=chunk["title"],
-                        dst_props={
-                            "vertex_type": GraphElemType.CHUNK.value,
-                            "content": chunk["content"],
-                        },
-                        edge_name=GraphElemType.NEXT.value,
-                        edge_type=GraphElemType.CHUNK_NEXT_CHUNK.value,
+                    graph_of_all.upsert_chunk_next_chunk(
+                        chunk=chunks[chunk_index - 1], next_chunk=chunk
                     )
 
         # Support knowledge graph search by the entities and the relationships
-        if self._graph_store.get_config().triplet_graph_enabled:
-            for chunk_index, chunk in enumerate(data_list):
+        if triplet_graph_enabled:
+            for chunk_index, chunk in enumerate(chunks):
                 # TODO: Use asyncio to extract graph to accelerate the process
                 # (attention to the CAP of the graph db)
 
                 graphs: List[MemoryGraph] = await self._graph_extractor.extract(
-                    chunk["content"]
+                    chunk.content
                 )
 
                 for graph in graphs:
                     graph_of_all.upsert_graph(graph)
 
                     # chunk -> include -> entity
-                    if self._graph_store.get_config().document_graph_enabled:
+                    if document_graph_enabled:
                         for vertex in graph.vertices():
-                            graph_of_all.upsert_vertex_and_edge(
-                                src_vid=chunk["id"],
-                                src_name=chunk["title"],
-                                src_props={
-                                    "vertex_type": GraphElemType.CHUNK.value,
-                                    "content": chunk["content"],
+                            vertex.set_prop("chunk_id", chunk.chunk_id)
+                            graph_of_all.upsert_vertex(vertex)
+
+                            edge = Edge(
+                                sid=chunk.chunk_id,
+                                tid=vertex.vid,
+                                name=GraphElemType.INCLUDE.value,
+                                **{
+                                    "edge_type": GraphElemType.CHUNK_INCLUDE_ENTITY.value,
                                 },
-                                dst_vid=vertex.vid,
-                                dst_name=vertex.name,
-                                dst_props={
-                                    "vertex_type": GraphElemType.ENTITY.value,
-                                    "description": vertex.props.get("description", ""),
-                                },  # note: description is only used for the entity
-                                edge_name=GraphElemType.INCLUDE.value,
-                                edge_type=GraphElemType.CHUNK_INCLUDE_ENTITY.value,
                             )
+
+                            graph_of_all.append_edge(edge=edge)
 
         self._graph_store_apdater.upsert_graph(graph_of_all)
 
-        await self._community_store.build_communities()
-
-        return [chunk.chunk_id for chunk in chunks]
-
-    def _parse_chunks(slef, chunks: List[Chunk]):
-        """Parse the chunks by anlyzing the markdown chunks."""
-        # TODO: Need to refact.
-        data = []
+    def _load_chunks(slef, chunks: List[Chunk]) -> List[Chunk]:
+        """Load the chunks, and add the parent-child relationship within chunks."""
+        doc_name = os.path.basename(chunks[0].metadata["source"] or "Text_Node")
+        # chunk.metadate = {"Header0": "title", "Header1": "title", ..., "source": "source_path"}  # noqa: E501
         for chunk_index, chunk in enumerate(chunks):
             parent = None
-            directory_keys = list(chunk.metadata.keys())[:-1]
+            directory_keys = list(chunk.metadata.keys())[
+                :-1
+            ]  # ex: ['Header0', 'Header1', 'Header2', ...]
             parent_level = directory_keys[-2] if len(directory_keys) > 1 else None
             current_level = directory_keys[-1] if directory_keys else "Header0"
 
-            chunk_data = {
-                "id": chunk.chunk_id,
-                "title": chunk.metadata.get(current_level, "none_header_chunk"),
-                "directory_keys": directory_keys,
-                "level": current_level,
-                "content": chunk.content,
-                "parent_id": None,
-                "parent_title": None,
-                "type": "chunk",
-                "chunk_index": chunk_index,
-            }
+            chunk.chunk_name = chunk.metadata.get(current_level, "none_header_chunk")
 
-            # Find the parent chunk
+            # Find the parent chunk for every chunk
+            # parent chunk -> chunk
             if parent_level:
                 for parent_direct in reversed(directory_keys[:-1]):
                     parent_titile = chunk.metadata.get(parent_direct, None)
-                    for n in range(chunk_index - 1, -1, -1):
+                    for n in reversed(range(chunk_index)):
                         metadata = chunks[n].metadata
                         keys = list(metadata.keys())[:-1]
                         if (
@@ -280,18 +233,21 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                             and parent_titile == metadata.get(parent_direct)
                         ):
                             parent = chunks[n]
-                            chunk_data["parent_id"] = parent.chunk_id
-                            chunk_data["parent_title"] = parent_titile
+                            chunk.chunk_parent_id = parent.chunk_id
+                            chunk.chunk_parent_name = parent_titile
+                            chunk.parent_content = parent.content
                             break
                         if chunk_index - n > len(directory_keys):
                             break
-                    if chunk_data["parent_id"]:
+                    if chunk.chunk_parent_id:
                         break
 
-            if not chunk_data["parent_id"]:
-                chunk_data["parent_id"] = "document"
-            data.append(chunk_data)
-        return data
+            if not chunk.chunk_parent_id:
+                chunk.chunk_parent_id = "document"
+                chunk.chunk_parent_name = doc_name
+                chunk.parent_content = ""
+
+        return chunks
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

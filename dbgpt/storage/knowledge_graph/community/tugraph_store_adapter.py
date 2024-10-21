@@ -144,7 +144,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 )
                 or "",
                 "_document_id": "0",
-                "_chunk_id": "0",
+                "_chunk_id": self.graph_store._escape_quotes(
+                    entity.get_prop("chunk_id") or ""
+                )
+                or "",
                 "_community_id": "0",
             }
             for entity in entities
@@ -152,7 +155,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         entity_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.ENTITY.value}", '
-            f"[{self._parser(entity_list)}])"
+            f"[{self._convert_dict_to_str(entity_list)}])"
         )
         self.graph_store.conn.run(query=entity_query)
 
@@ -178,7 +181,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         relation_query = f"""CALL db.upsertEdge("{edge_type}",
             {{type:"{src_type}", key:"sid"}},
             {{type:"{dst_type}", key:"tid"}},
-            [{self._parser(edge_list)}])"""
+            [{self._convert_dict_to_str(edge_list)}])"""
         self.graph_store.conn.run(query=relation_query)
 
     def upsert_chunks(self, chunks: Iterator[Vertex]) -> None:
@@ -194,7 +197,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         chunk_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.CHUNK.value}", '
-            f"[{self._parser(chunk_list)}])"
+            f"[{self._convert_dict_to_str(chunk_list)}])"
         )
         self.graph_store.conn.run(query=chunk_query)
 
@@ -212,7 +215,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         document_query = (
             "CALL db.upsertVertex("
             f'"{GraphElemType.DOCUMENT.value}", '
-            f"[{self._parser(document_list)}])"
+            f"[{self._convert_dict_to_str(document_list)}])"
         )
         self.graph_store.conn.run(query=document_query)
 
@@ -795,8 +798,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         vertex_list.append(vertex)
         return vertex_list, edge_list
 
-    def _parser(self, entity_list: List[Dict[str, Any]]) -> str:
-        """Parse entities to string."""
+    def _convert_dict_to_str(self, entity_list: List[Dict[str, Any]]) -> str:
+        """Convert a list of entities to a formatted string representation."""
         formatted_nodes = [
             "{"
             + ", ".join(

@@ -49,7 +49,17 @@ class Chunk(Document):
     chunk_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="unique id for the chunk"
     )
+    chunk_parent_id: Optional[str] = Field(
+        default=None, description="id of parent chunk"
+    )  # used by the document structure in GraphRAG
+    chunk_name: str = Field(default="", description="chunk name")
+    chunk_parent_name: str = Field(
+        default=None, description="parent chunk name"
+    )  # used by the document structure in GraphRAG
     content: str = Field(default="", description="chunk text content")
+    parent_content: str = Field(
+        default=None, description="parent chunk text content"
+    )  # used by the document structure in GraphRAG
 
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
