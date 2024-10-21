@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import AsyncGenerator, Iterator, List, Optional, Tuple
+from typing import AsyncGenerator, Iterator, List, Optional, Tuple, Union
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -97,11 +97,15 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         """Upsert edges."""
         pass
 
-    def upsert_chunks(self, chunks: Iterator[Vertex]) -> None:
+    def upsert_chunks(
+        self, chunks: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert chunks."""
         pass
 
-    def upsert_documents(self, documents: Iterator[Vertex]) -> None:
+    def upsert_documents(
+        self, documents: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert documents."""
         pass
 
@@ -112,7 +116,6 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
     def upsert_doc_include_chunk(
         self,
         chunk: ParagraphChunk,
-        doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
         pass
@@ -128,6 +131,12 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         self, chunk: ParagraphChunk, next_chunk: ParagraphChunk
     ):
         """Uperst the vertices and the edge in chunk_next_chunk."""
+        pass
+
+    def upsert_chunk_include_entity(
+        self, chunk: ParagraphChunk, entity: Vertex
+    ) -> None:
+        """Convert chunk to chunk include entity."""
         pass
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:

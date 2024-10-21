@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Iterator, List, Optional
+from typing import AsyncGenerator, Iterator, List, Optional, Union
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (
@@ -92,11 +92,15 @@ class GraphStoreAdapter(ABC):
         """Upsert edge."""
 
     @abstractmethod
-    def upsert_chunks(self, chunk: Iterator[Vertex]) -> None:
+    def upsert_chunks(
+        self, chunks: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert chunk."""
 
     @abstractmethod
-    def upsert_documents(self, documents: Iterator[Vertex]) -> None:
+    def upsert_documents(
+        self, documents: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert documents."""
 
     @abstractmethod
@@ -111,7 +115,6 @@ class GraphStoreAdapter(ABC):
     def upsert_doc_include_chunk(
         self,
         chunk: ParagraphChunk,
-        doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
 
@@ -129,6 +132,12 @@ class GraphStoreAdapter(ABC):
         next_chunk: ParagraphChunk,
     ):
         """Uperst the vertices and the edge in chunk_next_chunk."""
+
+    @abstractmethod
+    def upsert_chunk_include_entity(
+        self, chunk: ParagraphChunk, entity: Vertex
+    ) -> None:
+        """Convert chunk to chunk include entity."""
 
     @abstractmethod
     def delete_document(self, chunk_id: str) -> None:

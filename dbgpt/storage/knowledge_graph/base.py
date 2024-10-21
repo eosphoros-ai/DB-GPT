@@ -42,3 +42,6 @@ class ParagraphChunk(Chunk):
     chunk_parent_id: str = Field(default=None, description="id of parent chunk")
     chunk_parent_name: str = Field(default=None, description="parent chunk name")
     parent_content: str = Field(default=None, description="parent chunk text content")
+    parent_is_document: bool = Field(
+        default=False, description="is parent chunk a document"
+    )

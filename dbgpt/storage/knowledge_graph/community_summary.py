@@ -3,13 +3,13 @@
 import logging
 import os
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.graph import Edge, GraphElemType, MemoryGraph
+from dbgpt.storage.graph_store.graph import MemoryGraph
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -149,78 +149,84 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         return [chunk.chunk_id for chunk in chunks]
 
-    async def _aload_document_graph(self, chunks: List[ParagraphChunk]) -> List[str]:
+    async def _aload_document_graph(self, chunks: List[Chunk]) -> List[str]:
         """Load the knowledge graph from the chunks.
 
         The chunks include the doc structure.
         """
+        if not self._graph_store.get_config().document_graph_enabled:
+            return []
+
         chunks: List[ParagraphChunk] = [
             ParagraphChunk.model_validate(chunk.model_dump()) for chunk in chunks
         ]
-        chunks: List[ParagraphChunk] = self._load_chunks(chunks)
+        documment_chunk, chunks = self._load_chunks(chunks)
 
-        graph_of_all = MemoryGraph()
+        # upsert the document and chunks vertices
+        self._graph_store_apdater.upsert_documents(iter([documment_chunk]))
+        self._graph_store_apdater.upsert_chunks(iter(chunks))
 
-        # Support graph search by the document and the chunks
-        if self._graph_store.get_config().document_graph_enabled:
-            doc_vid = str(uuid.uuid4())
-            for chunk_index, chunk in enumerate(chunks):
-                # document -> include -> chunk
-                if chunk.chunk_parent_id == "document":
-                    self._graph_store_apdater.upsert_doc_include_chunk(
-                        chunk=chunk, doc_vid=doc_vid
-                    )
-                else:  # chunk -> include -> chunk
-                    self._graph_store_apdater.upsert_chunk_include_chunk(chunk=chunk)
+        # upsert the document structure
+        for chunk_index, chunk in enumerate(chunks):
+            # document -> include -> chunk
+            if chunk.parent_is_document:
+                self._graph_store_apdater.upsert_doc_include_chunk(chunk=chunk)
+            else:  # chunk -> include -> chunk
+                self._graph_store_apdater.upsert_chunk_include_chunk(chunk=chunk)
 
-                # chunk -> next -> chunk
-                if chunk_index >= 1:
-                    self._graph_store_apdater.upsert_chunk_next_chunk(
-                        chunk=chunks[chunk_index - 1], next_chunk=chunk
-                    )
-        self._graph_store_apdater.upsert_graph(graph_of_all)
+            # chunk -> next -> chunk
+            if chunk_index >= 1:
+                self._graph_store_apdater.upsert_chunk_next_chunk(
+                    chunk=chunks[chunk_index - 1], next_chunk=chunk
+                )
 
     async def _aload_triplet_graph(self, chunks: List[Chunk]) -> None:
         """Load the knowledge graph from the chunks.
 
         The chunks include the doc structure.
         """
-        # Support knowledge graph search by the entities and the relationships
-        graph_of_all = MemoryGraph()
-        if self._graph_store.get_config().triplet_graph_enabled:
-            for chunk in chunks:
-                # TODO: Use asyncio to extract graph to accelerate the process
-                # (attention to the CAP of the graph db)
+        if not self._graph_store.get_config().triplet_graph_enabled:
+            return
 
-                graphs: List[MemoryGraph] = await self._graph_extractor.extract(
-                    chunk.content
-                )
+        document_graph_enabled = self._graph_store.get_config().document_graph_enabled
+        for chunk in chunks:
+            # TODO: Use asyncio to extract graph to accelerate the process
+            # (attention to the CAP of the graph db)
 
-                for graph in graphs:
-                    graph_of_all.upsert_graph(graph)
+            graphs: List[MemoryGraph] = await self._graph_extractor.extract(
+                chunk.content
+            )
 
-                    # chunk -> include -> entity
-                    if self._graph_store.get_config().document_graph_enabled:
-                        for vertex in graph.vertices():
-                            graph_of_all.upsert_vertex(vertex)
+            for graph in graphs:
+                if document_graph_enabled:
+                    # append the chunk id to the edge
+                    for edge in graph.edges():
+                        edge.set_prop("_chunk_id", chunk.chunk_id)
+                        graph.append_edge(edge=edge)
 
-                            edge = Edge(
-                                sid=chunk.chunk_id,
-                                tid=vertex.vid,
-                                name=GraphElemType.INCLUDE.value,
-                                edge_type=GraphElemType.CHUNK_INCLUDE_ENTITY.value,
-                            )
-                            graph_of_all.append_edge(edge=edge)
+                # upsert the graph
+                self._graph_store_apdater.upsert_graph(graph)
 
-                        for edge in graph.edges():
-                            edge.set_prop("_chunk_id", chunk.chunk_id)
-                            graph_of_all.append_edge(edge=edge)
-            self._graph_store_apdater.upsert_graph(graph_of_all)
+                # chunk -> include -> entity
+                if document_graph_enabled:
+                    for vertex in graph.vertices():
+                        self._graph_store_apdater.upsert_chunk_include_entity(
+                            chunk=chunk, entity=vertex
+                        )
 
-    def _load_chunks(slef, chunks: List[ParagraphChunk]) -> List[ParagraphChunk]:
+    def _load_chunks(
+        self, chunks: List[ParagraphChunk]
+    ) -> Tuple[ParagraphChunk, List[ParagraphChunk]]:
         """Load the chunks, and add the parent-child relationship within chunks."""
+        # init default document
+        doc_id = str(uuid.uuid4())
         doc_name = os.path.basename(chunks[0].metadata["source"] or "Text_Node")
-        # chunk.metadate = {"Header0": "title", "Header1": "title", ..., "source": "source_path"}  # noqa: E501
+        doc_chunk = ParagraphChunk(
+            chunk_id=doc_id,
+            chunk_name=doc_name,
+        )
+
+        # chunk.metadata = {"Header0": "title", "Header1": "title", ..., "source": "source_path"}  # noqa: E501
         for chunk_index, chunk in enumerate(chunks):
             parent = None
             directory_keys = list(chunk.metadata.keys())[
@@ -255,11 +261,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                         break
 
             if not chunk.chunk_parent_id:
-                chunk.chunk_parent_id = "document"
+                chunk.chunk_parent_id = doc_id
                 chunk.chunk_parent_name = doc_name
                 chunk.parent_content = ""
+                chunk.parent_is_document = True
 
-        return chunks
+        return doc_chunk, chunks
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

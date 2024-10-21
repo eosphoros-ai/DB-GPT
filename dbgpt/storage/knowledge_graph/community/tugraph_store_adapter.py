@@ -176,16 +176,29 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             [{self._convert_dict_to_str(edge_list)}])"""
         self.graph_store.conn.run(query=relation_query)
 
-    def upsert_chunks(self, chunks: Iterator[Vertex]) -> None:
+    def upsert_chunks(
+        self, chunks: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert chunks."""
-        chunk_list = [
-            {
-                "id": self._escape_quotes(chunk.vid),
-                "name": self._escape_quotes(chunk.name),
-                "content": self._escape_quotes(chunk.get_prop("content")),
-            }
-            for chunk in chunks
-        ]
+        chunks_list = list(chunks)
+        if chunks_list and isinstance(chunks_list[0], ParagraphChunk):
+            chunk_list = [
+                {
+                    "id": self._escape_quotes(chunk.chunk_id),
+                    "name": self._escape_quotes(chunk.chunk_name),
+                    "content": self._escape_quotes(chunk.content),
+                }
+                for chunk in chunks
+            ]
+        else:
+            chunk_list = [
+                {
+                    "id": self._escape_quotes(chunk.vid),
+                    "name": self._escape_quotes(chunk.name),
+                    "content": self._escape_quotes(chunk.get_prop("content")),
+                }
+                for chunk in chunks
+            ]
         chunk_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.CHUNK.value}", '
@@ -193,16 +206,29 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
         self.graph_store.conn.run(query=chunk_query)
 
-    def upsert_documents(self, documents: Iterator[Vertex]) -> None:
+    def upsert_documents(
+        self, documents: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert documents."""
-        document_list = [
-            {
-                "id": self._escape_quotes(document.vid),
-                "name": self._escape_quotes(document.name),
-                "content": self._escape_quotes(document.get_prop("content")) or "",
-            }
-            for document in documents
-        ]
+        documents_list = list(documents)
+        if documents_list and isinstance(documents_list[0], ParagraphChunk):
+            document_list = [
+                {
+                    "id": self._escape_quotes(document.chunk_id),
+                    "name": self._escape_quotes(document.chunk_name),
+                    "content": "",
+                }
+                for document in documents
+            ]
+        else:
+            document_list = [
+                {
+                    "id": self._escape_quotes(document.vid),
+                    "name": self._escape_quotes(document.name),
+                    "content": self._escape_quotes(document.get_prop("content")) or "",
+                }
+                for document in documents
+            ]
         document_query = (
             "CALL db.upsertVertex("
             f'"{GraphElemType.DOCUMENT.value}", '
@@ -788,34 +814,19 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def upsert_doc_include_chunk(
         self,
         chunk: ParagraphChunk,
-        doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
         assert (
             chunk.chunk_parent_id and chunk.chunk_parent_name
         ), "Chunk parent ID and name are required (document_include_chunk)"
 
-        src_vertex = Vertex(
-            vid=doc_vid,
-            name=chunk.chunk_parent_name,
-            vertext_type=GraphElemType.DOCUMENT.value,
-            content="",
-        )
-        dst_vertex = Vertex(
-            vid=chunk.chunk_id,
-            name=chunk.chunk_name,
-            vertext_type=GraphElemType.CHUNK.value,
-            content=chunk.content,
-        )
         edge = Edge(
-            sid=doc_vid,
+            sid=chunk.chunk_parent_id,
             tid=chunk.chunk_id,
             name=GraphElemType.INCLUDE.value,
             edge_type=GraphElemType.DOCUMENT_INCLUDE_CHUNK.value,
         )
 
-        self.upsert_documents(iter([src_vertex]))
-        self.upsert_chunks(iter([dst_vertex]))
         self.upsert_edge(
             set([edge]),
             edge_type=GraphElemType.INCLUDE.value,
@@ -832,18 +843,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             chunk.chunk_parent_id and chunk.chunk_parent_name
         ), "Chunk parent ID and name are required (chunk_include_chunk)"
 
-        src_vertex = Vertex(
-            vid=chunk.chunk_parent_id,
-            name=chunk.chunk_parent_name,
-            vertext_type=GraphElemType.CHUNK.value,
-            content=chunk.parent_content,
-        )
-        dst_vertex = Vertex(
-            vid=chunk.chunk_id,
-            name=chunk.chunk_name,
-            vertext_type=GraphElemType.CHUNK.value,
-            content=chunk.content,
-        )
         edge = Edge(
             sid=chunk.chunk_parent_id,
             tid=chunk.chunk_id,
@@ -851,7 +850,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             edge_type=GraphElemType.CHUNK_INCLUDE_CHUNK.value,
         )
 
-        self.upsert_chunks(iter([src_vertex, dst_vertex]))
         self.upsert_edge(
             edges=iter([edge]),
             edge_type=GraphElemType.INCLUDE.value,
@@ -863,18 +861,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self, chunk: ParagraphChunk, next_chunk: ParagraphChunk
     ):
         """Uperst the vertices and the edge in chunk_next_chunk."""
-        src_vertex = Vertex(
-            vid=chunk.chunk_id,
-            name=chunk.chunk_name,
-            vertex_type=GraphElemType.CHUNK.value,
-            content=chunk.content,
-        )
-        dst_vertex = Vertex(
-            vid=next_chunk.chunk_id,
-            name=next_chunk.chunk_name,
-            vertex_type=GraphElemType.CHUNK.value,
-            content=next_chunk.content,
-        )
         edge = Edge(
             sid=chunk.chunk_id,
             tid=next_chunk.chunk_id,
@@ -882,10 +868,27 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             edge_type=GraphElemType.CHUNK_NEXT_CHUNK.value,
         )
 
-        self.upsert_chunks(iter([src_vertex, dst_vertex]))
         self.upsert_edge(
             edges=iter([edge]),
             edge_type=GraphElemType.NEXT.value,
             src_type=GraphElemType.CHUNK.value,
             dst_type=GraphElemType.CHUNK.value,
+        )
+
+    def upsert_chunk_include_entity(
+        self, chunk: ParagraphChunk, entity: Vertex
+    ) -> None:
+        """Convert chunk to chunk include entity."""
+        edge = Edge(
+            sid=chunk.chunk_id,
+            tid=entity.vid,
+            name=GraphElemType.INCLUDE.value,
+            edge_type=GraphElemType.CHUNK_INCLUDE_ENTITY.value,
+        )
+
+        self.upsert_edge(
+            edges=iter([edge]),
+            edge_type=GraphElemType.INCLUDE.value,
+            src_type=GraphElemType.CHUNK.value,
+            dst_type=GraphElemType.ENTITY.value,
         )
