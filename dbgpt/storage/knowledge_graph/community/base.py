@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Iterator, List, Optional, Union, Literal
+from typing import AsyncGenerator, Iterator, List, Literal, Optional, Union
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (

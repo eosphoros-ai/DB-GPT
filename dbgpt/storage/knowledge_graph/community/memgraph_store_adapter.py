@@ -2,8 +2,7 @@
 
 import json
 import logging
-from typing import AsyncGenerator, Iterator, List, Optional, Tuple, Union, \
-    Literal
+from typing import AsyncGenerator, Iterator, List, Literal, Optional, Tuple, Union
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
