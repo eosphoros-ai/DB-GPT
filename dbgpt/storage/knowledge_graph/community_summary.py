@@ -59,7 +59,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         description="Recall score of community search in knowledge graph",
     )
     knowledge_graph_chunk_search_top_size: int = Field(
-        default=10,
+        default=5,
         description="Top size of knowledge graph chunk search",
     )
 
@@ -143,20 +143,18 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
 
-        chunks: List[LoadedChunk] = [
-            LoadedChunk.model_validate(chunk.model_dump()) for chunk in chunks
-        ]
-        laoded_chunks: List[LoadedChunk] = self._load_chunks(chunks)
-
-        await self._aload_document_graph(laoded_chunks)
-        await self._load_triplet_graph(laoded_chunks)
-
+        await self._aload_document_graph(chunks)
+        await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities()
 
-        return [chunk.chunk_id for chunk in laoded_chunks]
+        return [chunk.chunk_id for chunk in chunks]
 
     async def _aload_document_graph(self, chunks: List[LoadedChunk]) -> List[str]:
         """Load the knowledge graph from the chunks that include the doc structure within chunks."""
+        chunks: List[LoadedChunk] = [
+            LoadedChunk.model_validate(chunk.model_dump()) for chunk in chunks
+        ]
+        chunks: List[LoadedChunk] = self._load_chunks(chunks)
 
         graph_of_all = MemoryGraph()
 
@@ -181,7 +179,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     )
         self._graph_store_apdater.upsert_graph(graph_of_all)
 
-    async def _load_triplet_graph(self, chunks: List[LoadedChunk]) -> None:
+    async def _aload_triplet_graph(self, chunks: List[Chunk]) -> None:
+        """Load the knowledge graph from the chunks that include the doc structure within chunks."""
         # Support knowledge graph search by the entities and the relationships
         graph_of_all = MemoryGraph()
         if self._graph_store.get_config().triplet_graph_enabled:
