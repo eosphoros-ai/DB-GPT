@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Iterator, List, Optional
+from typing import AsyncGenerator, Iterator, List, Optional, Union
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (
@@ -14,6 +14,7 @@ from dbgpt.storage.graph_store.graph import (
     MemoryGraph,
     Vertex,
 )
+from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 
 logger = logging.getLogger(__name__)
 
@@ -91,16 +92,16 @@ class GraphStoreAdapter(ABC):
         """Upsert edge."""
 
     @abstractmethod
-    def upsert_chunks(self, chunk: Iterator[Vertex]) -> None:
+    def upsert_chunks(
+        self, chunks: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert chunk."""
 
     @abstractmethod
-    def upsert_documents(self, documents: Iterator[Vertex]) -> None:
+    def upsert_documents(
+        self, documents: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert documents."""
-
-    @abstractmethod
-    def upsert_relations(self, relations: Iterator[Edge]) -> None:
-        """Upsert relations."""
 
     @abstractmethod
     def insert_triplet(self, sub: str, rel: str, obj: str) -> None:
@@ -109,6 +110,34 @@ class GraphStoreAdapter(ABC):
     @abstractmethod
     def upsert_graph(self, graph: Graph) -> None:
         """Insert graph."""
+
+    @abstractmethod
+    def upsert_doc_include_chunk(
+        self,
+        chunk: ParagraphChunk,
+    ) -> None:
+        """Convert chunk to document include chunk."""
+
+    @abstractmethod
+    def upsert_chunk_include_chunk(
+        self,
+        chunk: ParagraphChunk,
+    ) -> None:
+        """Convert chunk to chunk include chunk."""
+
+    @abstractmethod
+    def upsert_chunk_next_chunk(
+        self,
+        chunk: ParagraphChunk,
+        next_chunk: ParagraphChunk,
+    ):
+        """Uperst the vertices and the edge in chunk_next_chunk."""
+
+    @abstractmethod
+    def upsert_chunk_include_entity(
+        self, chunk: ParagraphChunk, entity: Vertex
+    ) -> None:
+        """Convert chunk to chunk include entity."""
 
     @abstractmethod
     def delete_document(self, chunk_id: str) -> None:

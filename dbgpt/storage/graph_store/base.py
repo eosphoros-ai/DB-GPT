@@ -27,11 +27,11 @@ class GraphStoreConfig(BaseModel):
         default=False,
         description="Enable graph community summary or not.",
     )
-    enable_document_graph: bool = Field(
+    document_graph_enabled: bool = Field(
         default=True,
         description="Enable document graph search or not.",
     )
-    enable_triplet_graph: bool = Field(
+    triplet_graph_enabled: bool = Field(
         default=True,
         description="Enable knowledge graph search or not.",
     )
@@ -48,11 +48,3 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:
         """Get the graph store config."""
-
-    @abstractmethod
-    def _escape_quotes(self, text: str) -> str:
-        """Escape single and double quotes in a string for queries."""
-
-    # @abstractmethod
-    # def _paser(self, entities: List[Vertex]) -> str:
-    #     """Parse entities to string."""

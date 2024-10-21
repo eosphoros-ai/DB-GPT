@@ -19,8 +19,8 @@ class GraphElemType(Enum):
 
     DOCUMENT = "document"
     CHUNK = "chunk"
-    ENTITY = "entity"  # view as general vertex in the general case
-    RELATION = "relation"  # view as general edge in the general case
+    ENTITY = "entity"  # default vertex type in knowledge graph
+    RELATION = "relation"  # default edge type in knowledge graph
     INCLUDE = "include"
     NEXT = "next"
 
@@ -39,7 +39,15 @@ class GraphElemType(Enum):
 
     def is_edge(self) -> bool:
         """Check if the element is an edge."""
-        return not self.is_vertex()
+        return self in [
+            GraphElemType.RELATION,
+            GraphElemType.INCLUDE,
+            GraphElemType.NEXT,
+            GraphElemType.DOCUMENT_INCLUDE_CHUNK,
+            GraphElemType.CHUNK_INCLUDE_CHUNK,
+            GraphElemType.CHUNK_INCLUDE_ENTITY,
+            GraphElemType.CHUNK_NEXT_CHUNK,
+        ]
 
 
 class Direction(Enum):
@@ -334,26 +342,6 @@ class MemoryGraph(Graph):
         self._edge_prop_keys.update(edge.props.keys())
         self._edge_count += 1
         return True
-
-    def upsert_vertex_and_edge(
-        self,
-        src_vid: str,
-        src_name: str,
-        src_props: Dict[str, Any],
-        dst_vid: str,
-        dst_name: str,
-        dst_props: Dict[str, Any],
-        edge_name: str,
-        edge_type: str,
-    ):
-        """Uperst src and dst vertex, and edge."""
-        src_vertex = Vertex(src_vid, src_name, **src_props)
-        dst_vertex = Vertex(dst_vid, dst_name, **dst_props)
-        edge = Edge(src_vid, dst_vid, edge_name, **{"edge_type": edge_type})
-
-        self.upsert_vertex(src_vertex)
-        self.upsert_vertex(dst_vertex)
-        self.append_edge(edge)
 
     def upsert_graph(self, graph: "MemoryGraph"):
         """Upsert a graph."""

@@ -49,6 +49,7 @@ class Chunk(Document):
     chunk_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="unique id for the chunk"
     )
+    chunk_name: str = Field(default="", description="chunk name")
     content: str = Field(default="", description="chunk text content")
 
     metadata: Dict[str, Any] = Field(

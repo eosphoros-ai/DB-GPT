@@ -26,9 +26,3 @@ class MemoryGraphStore(GraphStoreBase):
     def get_config(self):
         """Get the graph store config."""
         return self._graph_store_config
-
-    def _escape_quotes(self, text: str) -> str:
-        """Escape single and double quotes in a string for queries."""
-        raise NotImplementedError(
-            "_escape_quotes is not implemented by MemoryGraphStore"
-        )

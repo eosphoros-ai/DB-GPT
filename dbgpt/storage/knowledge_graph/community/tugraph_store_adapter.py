@@ -23,6 +23,7 @@ from dbgpt.storage.graph_store.graph import (
     Vertex,
 )
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
+from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
 logger = logging.getLogger(__name__)
@@ -137,11 +138,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Upsert entities."""
         entity_list = [
             {
-                "id": self.graph_store._escape_quotes(entity.vid),
-                "name": self.graph_store._escape_quotes(entity.name),
-                "description": self.graph_store._escape_quotes(
-                    entity.get_prop("description")
-                )
+                "id": self._escape_quotes(entity.vid),
+                "name": self._escape_quotes(entity.name),
+                "description": self._escape_quotes(entity.get_prop("description"))
                 or "",
                 "_document_id": "0",
                 "_chunk_id": "0",
@@ -152,7 +151,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         entity_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.ENTITY.value}", '
-            f"[{self._parser(entity_list)}])"
+            f"[{self._convert_dict_to_str(entity_list)}])"
         )
         self.graph_store.conn.run(query=entity_query)
 
@@ -162,63 +161,80 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Upsert edges."""
         edge_list = [
             {
-                "sid": self.graph_store._escape_quotes(edge.sid),
-                "tid": self.graph_store._escape_quotes(edge.tid),
-                "id": self.graph_store._escape_quotes(edge.name),
-                "name": self.graph_store._escape_quotes(edge.name),
-                "description": self.graph_store._escape_quotes(
-                    edge.get_prop("description")
-                )
-                or "",
-                "_chunk_id": self.graph_store._escape_quotes(edge.get_prop("_chunk_id"))
-                or "",
+                "sid": self._escape_quotes(edge.sid),
+                "tid": self._escape_quotes(edge.tid),
+                "id": self._escape_quotes(edge.name),
+                "name": self._escape_quotes(edge.name),
+                "description": self._escape_quotes(edge.get_prop("description")) or "",
+                "_chunk_id": self._escape_quotes(edge.get_prop("_chunk_id")) or "",
             }
             for edge in edges
         ]
         relation_query = f"""CALL db.upsertEdge("{edge_type}",
             {{type:"{src_type}", key:"sid"}},
             {{type:"{dst_type}", key:"tid"}},
-            [{self._parser(edge_list)}])"""
+            [{self._convert_dict_to_str(edge_list)}])"""
         self.graph_store.conn.run(query=relation_query)
 
-    def upsert_chunks(self, chunks: Iterator[Vertex]) -> None:
+    def upsert_chunks(
+        self, chunks: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert chunks."""
-        chunk_list = [
-            {
-                "id": self.graph_store._escape_quotes(chunk.vid),
-                "name": self.graph_store._escape_quotes(chunk.name),
-                "content": self.graph_store._escape_quotes(chunk.get_prop("content")),
-            }
-            for chunk in chunks
-        ]
+        chunks_list = list(chunks)
+        if chunks_list and isinstance(chunks_list[0], ParagraphChunk):
+            chunk_list = [
+                {
+                    "id": self._escape_quotes(chunk.chunk_id),
+                    "name": self._escape_quotes(chunk.chunk_name),
+                    "content": self._escape_quotes(chunk.content),
+                }
+                for chunk in chunks_list
+            ]
+        else:
+            chunk_list = [
+                {
+                    "id": self._escape_quotes(chunk.vid),
+                    "name": self._escape_quotes(chunk.name),
+                    "content": self._escape_quotes(chunk.get_prop("content")),
+                }
+                for chunk in chunks_list
+            ]
         chunk_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.CHUNK.value}", '
-            f"[{self._parser(chunk_list)}])"
+            f"[{self._convert_dict_to_str(chunk_list)}])"
         )
         self.graph_store.conn.run(query=chunk_query)
 
-    def upsert_documents(self, documents: Iterator[Vertex]) -> None:
+    def upsert_documents(
+        self, documents: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert documents."""
-        document_list = [
-            {
-                "id": self.graph_store._escape_quotes(document.vid),
-                "name": self.graph_store._escape_quotes(document.name),
-                "content": self.graph_store._escape_quotes(document.get_prop("content"))
-                or "",
-            }
-            for document in documents
-        ]
+        documents_list = list(documents)
+        if documents_list and isinstance(documents_list[0], ParagraphChunk):
+            document_list = [
+                {
+                    "id": self._escape_quotes(document.chunk_id),
+                    "name": self._escape_quotes(document.chunk_name),
+                    "content": "",
+                }
+                for document in documents_list
+            ]
+        else:
+            document_list = [
+                {
+                    "id": self._escape_quotes(document.vid),
+                    "name": self._escape_quotes(document.name),
+                    "content": self._escape_quotes(document.get_prop("content")) or "",
+                }
+                for document in documents_list
+            ]
         document_query = (
             "CALL db.upsertVertex("
             f'"{GraphElemType.DOCUMENT.value}", '
-            f"[{self._parser(document_list)}])"
+            f"[{self._convert_dict_to_str(document_list)}])"
         )
         self.graph_store.conn.run(query=document_query)
-
-    def upsert_relations(self, relations: Iterator[Edge]) -> None:
-        """Upsert relations."""
-        pass
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
@@ -465,10 +481,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "properties": graph_properties,
             })
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
-
-            gql_check_exist = (
-                f"""CALL db.getLabelSchema('VERTEX', '{graph_elem_type.value}')"""
-            )
         else:  # edge
 
             def edge_direction(graph_elem_type: GraphElemType) -> List[List[str]]:
@@ -501,20 +513,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             })
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
-            gql_check_exist = (
-                f"""CALL db.getLabelSchema('EDGE', '{graph_elem_type.value}')"""
-            )
-
-        # Make sure the graph label is identical
-        try:
-            self.graph_store.conn.run(
-                gql_check_exist
-            )  # if not exist, qurying raises an exception
-        except Exception:
-            self.graph_store.conn.run(gql)  # create the graph label
-            return
-
-        logger.info(f"Graph label {graph_elem_type.value} already exists.")
+        self.graph_store.conn.run(gql)
 
     def truncate(self):
         """Truncate Graph."""
@@ -542,7 +541,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: Optional[int] = None,
+        depth: int = 3,
         limit: Optional[int] = None,
         search_scope: Optional[
             Literal["knowledge_graph", "document_graph"]
@@ -552,10 +551,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if not subs:
             return MemoryGraph()
 
-        if depth is None or depth < 0 or depth > self.MAX_HIERARCHY_LEVEL:
-            # TODO: to be discussed, be none or MAX_HIERARCHY_LEVEL
-            # depth_string = ".."
-            depth = self.MAX_HIERARCHY_LEVEL
+        if depth < 0:
+            depth = 3
         depth_string = f"1..{depth}"
 
         if limit is None:
@@ -573,7 +570,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             query = (
                 f"MATCH p=(n:{GraphElemType.ENTITY.value})"
                 f"{rel}(m:{GraphElemType.ENTITY.value}) "
-                f"WHERE n.id IN {subs} RETURN p {limit_string}"
+                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+                f"RETURN p {limit_string}"
             )
             return self.query(query)
         else:
@@ -583,7 +581,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 query = (
                     f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
                     f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]-"
-                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' "
+                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS "
+                    f"'{self._escape_quotes(sub)}' "
                     f"RETURN p {limit_string}"
                 )  # if it contains the subjects
                 result = self.query(query)
@@ -794,8 +793,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         vertex_list.append(vertex)
         return vertex_list, edge_list
 
-    def _parser(self, entity_list: List[Dict[str, Any]]) -> str:
-        """Parse entities to string."""
+    def _convert_dict_to_str(self, entity_list: List[Dict[str, Any]]) -> str:
+        """Convert a list of entities to a formatted string representation."""
         formatted_nodes = [
             "{"
             + ", ".join(
@@ -806,3 +805,90 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             for node in entity_list
         ]
         return f"""{", ".join(formatted_nodes)}"""
+
+    def _escape_quotes(self, value: str) -> str:
+        """Escape single and double quotes in a string for queries."""
+        if value is not None:
+            return value.replace("'", "").replace('"', "")
+
+    def upsert_doc_include_chunk(
+        self,
+        chunk: ParagraphChunk,
+    ) -> None:
+        """Convert chunk to document include chunk."""
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (document_include_chunk)"
+
+        edge = Edge(
+            sid=chunk.chunk_parent_id,
+            tid=chunk.chunk_id,
+            name=GraphElemType.INCLUDE.value,
+            edge_type=GraphElemType.DOCUMENT_INCLUDE_CHUNK.value,
+        )
+
+        self.upsert_edge(
+            edges=iter([edge]),
+            edge_type=GraphElemType.INCLUDE.value,
+            src_type=GraphElemType.DOCUMENT.value,
+            dst_type=GraphElemType.CHUNK.value,
+        )
+
+    def upsert_chunk_include_chunk(
+        self,
+        chunk: ParagraphChunk,
+    ) -> None:
+        """Convert chunk to chunk include chunk."""
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (chunk_include_chunk)"
+
+        edge = Edge(
+            sid=chunk.chunk_parent_id,
+            tid=chunk.chunk_id,
+            name=GraphElemType.INCLUDE.value,
+            edge_type=GraphElemType.CHUNK_INCLUDE_CHUNK.value,
+        )
+
+        self.upsert_edge(
+            edges=iter([edge]),
+            edge_type=GraphElemType.INCLUDE.value,
+            src_type=GraphElemType.CHUNK.value,
+            dst_type=GraphElemType.CHUNK.value,
+        )
+
+    def upsert_chunk_next_chunk(
+        self, chunk: ParagraphChunk, next_chunk: ParagraphChunk
+    ):
+        """Uperst the vertices and the edge in chunk_next_chunk."""
+        edge = Edge(
+            sid=chunk.chunk_id,
+            tid=next_chunk.chunk_id,
+            name=GraphElemType.NEXT.value,
+            edge_type=GraphElemType.CHUNK_NEXT_CHUNK.value,
+        )
+
+        self.upsert_edge(
+            edges=iter([edge]),
+            edge_type=GraphElemType.NEXT.value,
+            src_type=GraphElemType.CHUNK.value,
+            dst_type=GraphElemType.CHUNK.value,
+        )
+
+    def upsert_chunk_include_entity(
+        self, chunk: ParagraphChunk, entity: Vertex
+    ) -> None:
+        """Convert chunk to chunk include entity."""
+        edge = Edge(
+            sid=chunk.chunk_id,
+            tid=entity.vid,
+            name=GraphElemType.INCLUDE.value,
+            edge_type=GraphElemType.CHUNK_INCLUDE_ENTITY.value,
+        )
+
+        self.upsert_edge(
+            edges=iter([edge]),
+            edge_type=GraphElemType.INCLUDE.value,
+            src_type=GraphElemType.CHUNK.value,
+            dst_type=GraphElemType.ENTITY.value,
+        )

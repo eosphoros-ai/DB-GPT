@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import AsyncGenerator, Iterator, List, Optional, Tuple
+from typing import AsyncGenerator, Iterator, List, Optional, Tuple, Union
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -16,6 +16,7 @@ from dbgpt.storage.graph_store.memgraph_store import (
     MemoryGraphStore,
     MemoryGraphStoreConfig,
 )
+from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
 logger = logging.getLogger(__name__)
@@ -38,11 +39,11 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     async def discover_communities(self, **kwargs) -> List[str]:
         """Run community discovery with leiden."""
-        pass
+        []
 
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
-        pass
+        raise NotImplementedError("Memory graph store does not have community")
 
     def get_graph_config(self):
         """Get the graph store config."""
@@ -96,16 +97,46 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         """Upsert edges."""
         pass
 
-    def upsert_chunks(self, chunks: Iterator[Vertex]) -> None:
+    def upsert_chunks(
+        self, chunks: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert chunks."""
         pass
 
-    def upsert_documents(self, documents: Iterator[Vertex]) -> None:
+    def upsert_documents(
+        self, documents: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+    ) -> None:
         """Upsert documents."""
         pass
 
     def upsert_relations(self, relations: Iterator[Edge]) -> None:
         """Upsert relations."""
+        pass
+
+    def upsert_doc_include_chunk(
+        self,
+        chunk: ParagraphChunk,
+    ) -> None:
+        """Convert chunk to document include chunk."""
+        pass
+
+    def upsert_chunk_include_chunk(
+        self,
+        chunk: ParagraphChunk,
+    ) -> None:
+        """Convert chunk to chunk include chunk."""
+        pass
+
+    def upsert_chunk_next_chunk(
+        self, chunk: ParagraphChunk, next_chunk: ParagraphChunk
+    ):
+        """Uperst the vertices and the edge in chunk_next_chunk."""
+        pass
+
+    def upsert_chunk_include_entity(
+        self, chunk: ParagraphChunk, entity: Vertex
+    ) -> None:
+        """Convert chunk to chunk include entity."""
         pass
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:
