@@ -142,7 +142,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
-
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities()
@@ -150,7 +149,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         return [chunk.chunk_id for chunk in chunks]
 
     async def _aload_document_graph(self, chunks: List[LoadedChunk]) -> List[str]:
-        """Load the knowledge graph from the chunks that include the doc structure within chunks."""
+        """Load the knowledge graph from the chunks.
+
+        The chunks include the doc structure.
+        """
         chunks: List[LoadedChunk] = [
             LoadedChunk.model_validate(chunk.model_dump()) for chunk in chunks
         ]
@@ -180,7 +182,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._graph_store_apdater.upsert_graph(graph_of_all)
 
     async def _aload_triplet_graph(self, chunks: List[Chunk]) -> None:
-        """Load the knowledge graph from the chunks that include the doc structure within chunks."""
+        """Load the knowledge graph from the chunks.
+
+        The chunks include the doc structure.
+        """
         # Support knowledge graph search by the entities and the relationships
         graph_of_all = MemoryGraph()
         if self._graph_store.get_config().triplet_graph_enabled:

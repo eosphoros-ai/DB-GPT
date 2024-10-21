@@ -8,7 +8,7 @@ from dbgpt.core.interface.cache import (  # noqa: F401
     CacheValue,
 )
 from dbgpt.core.interface.embeddings import Embeddings, RerankEmbeddings  # noqa: F401
-from dbgpt.core.interface.knowledge import Chunk, LoadedChunk, Document  # noqa: F401
+from dbgpt.core.interface.knowledge import Chunk, Document, LoadedChunk  # noqa: F401
 from dbgpt.core.interface.llm import (  # noqa: F401
     DefaultMessageConverter,
     LLMClient,
