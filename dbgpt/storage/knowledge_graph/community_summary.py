@@ -149,25 +149,25 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         return [chunk.chunk_id for chunk in chunks]
 
-    async def _aload_document_graph(self, chunks: List[Chunk]) -> List[str]:
+    async def _aload_document_graph(self, chunks: List[Chunk]) -> None:
         """Load the knowledge graph from the chunks.
 
         The chunks include the doc structure.
         """
         if not self._graph_store.get_config().document_graph_enabled:
-            return []
+            return
 
-        chunks: List[ParagraphChunk] = [
+        _chunks: List[ParagraphChunk] = [
             ParagraphChunk.model_validate(chunk.model_dump()) for chunk in chunks
         ]
-        documment_chunk, chunks = self._load_chunks(chunks)
+        documment_chunk, paragraph_chunks = self._load_chunks(_chunks)
 
         # upsert the document and chunks vertices
         self._graph_store_apdater.upsert_documents(iter([documment_chunk]))
-        self._graph_store_apdater.upsert_chunks(iter(chunks))
+        self._graph_store_apdater.upsert_chunks(iter(paragraph_chunks))
 
         # upsert the document structure
-        for chunk_index, chunk in enumerate(chunks):
+        for chunk_index, chunk in enumerate(paragraph_chunks):
             # document -> include -> chunk
             if chunk.parent_is_document:
                 self._graph_store_apdater.upsert_doc_include_chunk(chunk=chunk)
@@ -177,7 +177,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             # chunk -> next -> chunk
             if chunk_index >= 1:
                 self._graph_store_apdater.upsert_chunk_next_chunk(
-                    chunk=chunks[chunk_index - 1], next_chunk=chunk
+                    chunk=paragraph_chunks[chunk_index - 1], next_chunk=chunk
                 )
 
     async def _aload_triplet_graph(self, chunks: List[Chunk]) -> None:
@@ -280,7 +280,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         Return:
             List[Chunk]: The similar documents.
         """
-        pass
+        return []
 
     async def asimilar_search_with_scores(
         self,
@@ -301,9 +301,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         keywords: List[str] = await self._keyword_extractor.extract(text)
 
         # Local search: extract keywords and explore subgraph
-        subgraph = MemoryGraph()
-        subgraph_for_doc = MemoryGraph()
-
         triplet_graph_enabled = self._graph_store.get_config().triplet_graph_enabled
         document_graph_enabled = self._graph_store.get_config().document_graph_enabled
 
@@ -329,9 +326,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     limit=self._config.knowledge_graph_chunk_search_top_size,
                     search_scope="document_graph",
                 )
-
-        knowledge_graph_str = subgraph.format()
-        knowledge_graph_for_doc_str = subgraph_for_doc.format()
+        knowledge_graph_str = subgraph.format() if subgraph else ""
+        knowledge_graph_for_doc_str = (
+            subgraph_for_doc.format() if subgraph_for_doc else ""
+        )
 
         logger.info(f"Search subgraph from the following keywords:\n{len(keywords)}")
 

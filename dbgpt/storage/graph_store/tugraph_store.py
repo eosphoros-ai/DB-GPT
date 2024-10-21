@@ -141,8 +141,8 @@ class TuGraphStore(GraphStoreBase):
         if len(missing_plugins):
             for name in missing_plugins:
                 try:
-                    from dbgpt_tugraph_plugins import (
-                        get_plugin_binary_path,  # type:ignore[import-untyped]
+                    from dbgpt_tugraph_plugins import (  # type: ignore
+                        get_plugin_binary_path,
                     )
                 except ImportError:
                     logger.error(
@@ -150,7 +150,7 @@ class TuGraphStore(GraphStoreBase):
                         "pip install dbgpt-tugraph-plugins==0.1.0rc1 -U -i "
                         "https://pypi.org/simple"
                     )
-                plugin_path = get_plugin_binary_path("leiden")
+                plugin_path = get_plugin_binary_path("leiden")  # type: ignore
                 with open(plugin_path, "rb") as f:
                     content = f.read()
                 content = base64.b64encode(content).decode()
