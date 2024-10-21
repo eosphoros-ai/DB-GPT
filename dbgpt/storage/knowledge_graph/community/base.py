@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import AsyncGenerator, Iterator, List, Optional
 
+from dbgpt.core import LoadedChunk
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -109,6 +110,29 @@ class GraphStoreAdapter(ABC):
     @abstractmethod
     def upsert_graph(self, graph: Graph) -> None:
         """Insert graph."""
+
+    @abstractmethod
+    def upsert_doc_include_chunk_by_chunk(
+        self,
+        chunk: LoadedChunk,
+        doc_vid: str,
+    ) -> None:
+        """Convert chunk to document include chunk."""
+
+    @abstractmethod
+    def upsert_chunk_include_chunk_by_chunk(
+        self,
+        chunk: LoadedChunk,
+    ) -> None:
+        """Convert chunk to chunk include chunk."""
+
+    @abstractmethod
+    def upsert_chunk_next_chunk_by_chunk(
+        self,
+        chunk: LoadedChunk,
+        next_chunk: LoadedChunk,
+    ):
+        """Uperst the vertices and the edge in chunk_next_chunk."""
 
     @abstractmethod
     def delete_document(self, chunk_id: str) -> None:

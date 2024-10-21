@@ -14,6 +14,7 @@ from typing import (
     Union,
 )
 
+from dbgpt.core import LoadedChunk
 from dbgpt.storage.graph_store.graph import (
     Direction,
     Edge,
@@ -137,17 +138,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Upsert entities."""
         entity_list = [
             {
-                "id": self.graph_store._escape_quotes(entity.vid),
-                "name": self.graph_store._escape_quotes(entity.name),
-                "description": self.graph_store._escape_quotes(
-                    entity.get_prop("description")
-                )
+                "id": self._escape_quotes(entity.vid),
+                "name": self._escape_quotes(entity.name),
+                "description": self._escape_quotes(entity.get_prop("description"))
                 or "",
                 "_document_id": "0",
-                "_chunk_id": self.graph_store._escape_quotes(
-                    entity.get_prop("chunk_id") or ""
-                )
-                or "",
+                "_chunk_id": "0",
                 "_community_id": "0",
             }
             for entity in entities
@@ -165,16 +161,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Upsert edges."""
         edge_list = [
             {
-                "sid": self.graph_store._escape_quotes(edge.sid),
-                "tid": self.graph_store._escape_quotes(edge.tid),
-                "id": self.graph_store._escape_quotes(edge.name),
-                "name": self.graph_store._escape_quotes(edge.name),
-                "description": self.graph_store._escape_quotes(
-                    edge.get_prop("description")
-                )
-                or "",
-                "_chunk_id": self.graph_store._escape_quotes(edge.get_prop("_chunk_id"))
-                or "",
+                "sid": self._escape_quotes(edge.sid),
+                "tid": self._escape_quotes(edge.tid),
+                "id": self._escape_quotes(edge.name),
+                "name": self._escape_quotes(edge.name),
+                "description": self._escape_quotes(edge.get_prop("description")) or "",
+                "_chunk_id": self._escape_quotes(edge.get_prop("_chunk_id")) or "",
             }
             for edge in edges
         ]
@@ -188,9 +180,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Upsert chunks."""
         chunk_list = [
             {
-                "id": self.graph_store._escape_quotes(chunk.vid),
-                "name": self.graph_store._escape_quotes(chunk.name),
-                "content": self.graph_store._escape_quotes(chunk.get_prop("content")),
+                "id": self._escape_quotes(chunk.vid),
+                "name": self._escape_quotes(chunk.name),
+                "content": self._escape_quotes(chunk.get_prop("content")),
             }
             for chunk in chunks
         ]
@@ -205,10 +197,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Upsert documents."""
         document_list = [
             {
-                "id": self.graph_store._escape_quotes(document.vid),
-                "name": self.graph_store._escape_quotes(document.name),
-                "content": self.graph_store._escape_quotes(document.get_prop("content"))
-                or "",
+                "id": self._escape_quotes(document.vid),
+                "name": self._escape_quotes(document.name),
+                "content": self._escape_quotes(document.get_prop("content")) or "",
             }
             for document in documents
         ]
@@ -558,7 +549,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if not subs:
             return MemoryGraph()
 
-        if depth < 0 or depth > 3:
+        if depth < 0:
             depth = 3
         depth_string = f"1..{depth}"
 
@@ -577,7 +568,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             query = (
                 f"MATCH p=(n:{GraphElemType.ENTITY.value})"
                 f"{rel}(m:{GraphElemType.ENTITY.value}) "
-                f"WHERE n.id IN {subs} RETURN p {limit_string}"
+                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} RETURN p {limit_string}"
             )
             return self.query(query)
         else:
@@ -587,7 +578,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 query = (
                     f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
                     f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]-"
-                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{sub}' "
+                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS '{self._escape_quotes(sub)}' "
                     f"RETURN p {limit_string}"
                 )  # if it contains the subjects
                 result = self.query(query)
@@ -810,3 +801,98 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             for node in entity_list
         ]
         return f"""{", ".join(formatted_nodes)}"""
+
+    def _escape_quotes(self, value: str) -> str:
+        """Escape single and double quotes in a string for queries."""
+        if value is not None:
+            return value.replace("'", "").replace('"', "")
+
+    def upsert_doc_include_chunk_by_chunk(
+        self,
+        chunk: LoadedChunk,
+        doc_vid: str,
+    ) -> None:
+        """Convert chunk to document include chunk."""
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (document_include_chunk)"
+
+        src_vertex = Vertex(
+            vid=doc_vid,
+            name=chunk.chunk_parent_name,
+            vertext_type=GraphElemType.DOCUMENT.value,
+            content="",
+        )
+        dst_vertex = Vertex(
+            vid=chunk.chunk_id,
+            name=chunk.chunk_name,
+            vertext_type=GraphElemType.CHUNK.value,
+            content=chunk.content,
+        )
+        edge = Edge(
+            sid=doc_vid,
+            tid=chunk.chunk_id,
+            name=GraphElemType.INCLUDE.value,
+            edge_type=GraphElemType.DOCUMENT_INCLUDE_CHUNK.value,
+        )
+
+        self.upsert_documents(iter([src_vertex]))
+        self.upsert_chunks(iter([dst_vertex]))
+        self.upsert_doc_include_chunk(iter([edge]))
+
+    def upsert_chunk_include_chunk_by_chunk(
+        self,
+        chunk: LoadedChunk,
+    ) -> None:
+        """Convert chunk to chunk include chunk."""
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (chunk_include_chunk)"
+
+        src_vertex = Vertex(
+            vid=chunk.chunk_parent_id,
+            name=chunk.chunk_parent_name,
+            vertext_type=GraphElemType.CHUNK.value,
+            content=chunk.parent_content,
+        )
+        dst_vertex = Vertex(
+            vid=chunk.chunk_id,
+            name=chunk.chunk_name,
+            vertext_type=GraphElemType.CHUNK.value,
+            content=chunk.content,
+        )
+        edge = Edge(
+            sid=chunk.chunk_parent_id,
+            tid=chunk.chunk_id,
+            name=GraphElemType.INCLUDE.value,
+            edge_type=GraphElemType.CHUNK_INCLUDE_CHUNK.value,
+        )
+
+        self.upsert_chunks(iter([src_vertex, dst_vertex]))
+        self.upsert_chunk_include_chunk(iter([edge]))
+
+    def upsert_chunk_next_chunk_by_chunk(
+        self, chunk: LoadedChunk, next_chunk: LoadedChunk
+    ):
+        """Uperst the vertices and the edge in chunk_next_chunk."""
+        src_vertex = Vertex(
+            vid=chunk.chunk_id,
+            name=chunk.chunk_name,
+            vertex_type=GraphElemType.CHUNK.value,
+            content=chunk.content,
+        )
+        dst_vertex = Vertex(
+            vid=next_chunk.chunk_id,
+            name=next_chunk.chunk_name,
+            vertex_type=GraphElemType.CHUNK.value,
+            content=next_chunk.content,
+        )
+        edge = Edge(
+            sid=chunk.chunk_id,
+            tid=next_chunk.chunk_id,
+            name=GraphElemType.NEXT.value,
+            edge_type=GraphElemType.CHUNK_NEXT_CHUNK.value,
+        )
+
+        self.upsert_chunks(iter([src_vertex, dst_vertex]))
+        self.upsert_chunk_next_chunk(iter([edge]))

@@ -11,8 +11,6 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Tuple
 
 import networkx as nx
 
-from dbgpt.core import Chunk
-
 logger = logging.getLogger(__name__)
 
 
@@ -344,89 +342,6 @@ class MemoryGraph(Graph):
         self._edge_prop_keys.update(edge.props.keys())
         self._edge_count += 1
         return True
-
-    def upsert_chunk_include_chunk(self, chunk: Chunk):
-        """Uperst the vertices and the edge in chunk_include_chunk."""
-        assert (
-            chunk.chunk_parent_id and chunk.chunk_parent_name and chunk.parent_content
-        ), "Chunk parent ID, name, and parent content are required (chunk_include_chunk)"
-
-        src_vertex = Vertex(
-            vid=chunk.chunk_parent_id,
-            name=chunk.chunk_parent_name,
-            **{
-                "vertex_type": GraphElemType.CHUNK.value,
-                "content": chunk.parent_content,
-            },
-        )
-        dst_vertex = Vertex(
-            vid=chunk.chunk_id,
-            name=chunk.chunk_name,
-            **{"vertex_type": GraphElemType.CHUNK.value, "content": chunk.content},
-        )
-        edge = Edge(
-            sid=chunk.chunk_parent_id,
-            tid=chunk.chunk_id,
-            name=GraphElemType.INCLUDE.value,
-            **{"edge_type": GraphElemType.CHUNK_INCLUDE_CHUNK.value},
-        )
-
-        self.upsert_vertex(src_vertex)
-        self.upsert_vertex(dst_vertex)
-        self.append_edge(edge)
-
-    def upsert_document_include_chunk(self, chunk: Chunk, doc_vid: str):
-        """Uperst the vertices and the edge in document_include_chunk."""
-        assert (
-            chunk.chunk_parent_id and chunk.chunk_parent_name
-        ), "Chunk parent ID and name are required (document_include_chunk)"
-
-        src_vertex = Vertex(
-            vid=doc_vid,
-            name=chunk.chunk_parent_name,
-            **{
-                "vertex_type": GraphElemType.DOCUMENT.value,
-                "content": "",
-            },
-        )
-        dst_vertex = Vertex(
-            vid=chunk.chunk_id,
-            name=chunk.chunk_name,
-            **{"vertex_type": GraphElemType.CHUNK.value, "content": chunk.content},
-        )
-        edge = Edge(
-            sid=doc_vid,
-            tid=chunk.chunk_id,
-            name=GraphElemType.INCLUDE.value,
-            **{"edge_type": GraphElemType.DOCUMENT_INCLUDE_CHUNK.value},
-        )
-
-        self.upsert_vertex(src_vertex)
-        self.upsert_vertex(dst_vertex)
-        self.append_edge(edge)
-
-    def upsert_chunk_next_chunk(self, chunk: Chunk, next_chunk: Chunk):
-        """Uperst the vertices and the edge in chunk_next_chunk."""
-        src_vertex = Vertex(
-            vid=chunk.chunk_id,
-            name=chunk.chunk_name,
-            **{"vertex_type": GraphElemType.CHUNK.value, "content": chunk.content},
-        )
-        dst_vertex = Vertex(
-            vid=next_chunk.chunk_id,
-            name=next_chunk.chunk_name,
-            **{"vertex_type": GraphElemType.CHUNK.value, "content": next_chunk.content},
-        )
-        edge = Edge(
-            sid=chunk.chunk_id,
-            tid=next_chunk.chunk_id,
-            name=GraphElemType.NEXT.value,
-            **{"edge_type": GraphElemType.CHUNK_NEXT_CHUNK.value},
-        )
-
-        self.upsert_vertex(src_vertex)
-        self.upsert_vertex(dst_vertex)
-        self.append_edge(edge)
 
     def upsert_graph(self, graph: "MemoryGraph"):
         """Upsert a graph."""

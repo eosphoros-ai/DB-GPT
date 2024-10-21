@@ -4,6 +4,7 @@ import json
 import logging
 from typing import AsyncGenerator, Iterator, List, Optional, Tuple
 
+from dbgpt.core import LoadedChunk
 from dbgpt.storage.graph_store.graph import (
     Direction,
     Edge,
@@ -106,6 +107,27 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def upsert_relations(self, relations: Iterator[Edge]) -> None:
         """Upsert relations."""
+        pass
+
+    def upsert_doc_include_chunk_by_chunk(
+        self,
+        chunk: LoadedChunk,
+        doc_vid: str,
+    ) -> None:
+        """Convert chunk to document include chunk."""
+        pass
+
+    def upsert_chunk_include_chunk_by_chunk(
+        self,
+        chunk: LoadedChunk,
+    ) -> None:
+        """Convert chunk to chunk include chunk."""
+        pass
+
+    def upsert_chunk_next_chunk_by_chunk(
+        self, chunk: LoadedChunk, next_chunk: LoadedChunk
+    ):
+        """Uperst the vertices and the edge in chunk_next_chunk."""
         pass
 
     def insert_triplet(self, subj: str, rel: str, obj: str) -> None:

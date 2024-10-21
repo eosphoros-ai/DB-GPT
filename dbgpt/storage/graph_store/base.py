@@ -48,11 +48,3 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:
         """Get the graph store config."""
-
-    @abstractmethod
-    def _escape_quotes(self, text: str) -> str:
-        """Escape single and double quotes in a string for queries."""
-
-    # @abstractmethod
-    # def _paser(self, entities: List[Vertex]) -> str:
-    #     """Parse entities to string."""

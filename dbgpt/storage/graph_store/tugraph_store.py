@@ -159,8 +159,3 @@ class TuGraphStore(GraphStoreBase):
                     f"'{name} Plugin', false, 'v1')"
                 )
                 self.conn.run(gql)
-
-    def _escape_quotes(self, value: str) -> str:
-        """Escape single and double quotes in a string for queries."""
-        if value is not None:
-            return value.replace("'", "").replace('"', "")
