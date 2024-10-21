@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import AsyncGenerator, Iterator, List, Literal, Optional, Tuple, Union
+from typing import AsyncGenerator, Dict, Iterator, List, Literal, Optional, Tuple, Union
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -173,6 +173,8 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def create_graph_label(
         self,
+        graph_elem_type: GraphElemType,
+        graph_properties: List[Dict[str, Union[str, bool]]],
     ) -> None:
         """Create a graph label.
 

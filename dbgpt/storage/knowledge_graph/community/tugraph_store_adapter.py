@@ -79,7 +79,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     @property
     def graph_store(self) -> TuGraphStore:
         """Get the graph store."""
-        return self._graph_store
+        return self._graph_store  # type: ignore[return-value]
 
     def get_graph_config(self):
         """Get the graph store config."""
@@ -176,29 +176,23 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             [{self._convert_dict_to_str(edge_list)}])"""
         self.graph_store.conn.run(query=relation_query)
 
-    def upsert_chunks(
-        self, chunks: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
-    ) -> None:
+    def upsert_chunks(self, chunks: Iterator[Union[Vertex, ParagraphChunk]]) -> None:
         """Upsert chunks."""
-        chunks_list = list(chunks)
-        if chunks_list and isinstance(chunks_list[0], ParagraphChunk):
-            chunk_list = [
-                {
-                    "id": self._escape_quotes(chunk.chunk_id),
-                    "name": self._escape_quotes(chunk.chunk_name),
-                    "content": self._escape_quotes(chunk.content),
-                }
-                for chunk in chunks_list
-            ]
-        else:
-            chunk_list = [
-                {
-                    "id": self._escape_quotes(chunk.vid),
-                    "name": self._escape_quotes(chunk.name),
-                    "content": self._escape_quotes(chunk.get_prop("content")),
-                }
-                for chunk in chunks_list
-            ]
+        chunk_list = [
+            {
+                "id": self._escape_quotes(chunk.chunk_id),
+                "name": self._escape_quotes(chunk.chunk_name),
+                "content": self._escape_quotes(chunk.content),
+            }
+            if isinstance(chunk, ParagraphChunk)
+            else {
+                "id": self._escape_quotes(chunk.vid),
+                "name": self._escape_quotes(chunk.name),
+                "content": self._escape_quotes(chunk.get_prop("content")),
+            }
+            for chunk in chunks
+        ]
+
         chunk_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.CHUNK.value}", '
@@ -207,28 +201,24 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self.graph_store.conn.run(query=chunk_query)
 
     def upsert_documents(
-        self, documents: Union[Iterator[Vertex], Iterator[ParagraphChunk]]
+        self, documents: Iterator[Union[Vertex, ParagraphChunk]]
     ) -> None:
         """Upsert documents."""
-        documents_list = list(documents)
-        if documents_list and isinstance(documents_list[0], ParagraphChunk):
-            document_list = [
-                {
-                    "id": self._escape_quotes(document.chunk_id),
-                    "name": self._escape_quotes(document.chunk_name),
-                    "content": "",
-                }
-                for document in documents_list
-            ]
-        else:
-            document_list = [
-                {
-                    "id": self._escape_quotes(document.vid),
-                    "name": self._escape_quotes(document.name),
-                    "content": self._escape_quotes(document.get_prop("content")) or "",
-                }
-                for document in documents_list
-            ]
+        document_list = [
+            {
+                "id": self._escape_quotes(document.chunk_id),
+                "name": self._escape_quotes(document.chunk_name),
+                "content": "",
+            }
+            if isinstance(document, ParagraphChunk)
+            else {
+                "id": self._escape_quotes(document.vid),
+                "name": self._escape_quotes(document.name),
+                "content": "",
+            }
+            for document in documents
+        ]
+
         document_query = (
             "CALL db.upsertVertex("
             f'"{GraphElemType.DOCUMENT.value}", '
@@ -258,7 +248,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         self.graph_store.conn.run(query=vertex_query)
         self.graph_store.conn.run(query=edge_query)
 
-    def upsert_graph(self, graph: MemoryGraph) -> None:
+    def upsert_graph(self, graph: Graph) -> None:
         """Add graph to the graph store.
 
         Args:
@@ -475,14 +465,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         (vertices) and edges in the graph.
         """
         if graph_elem_type.is_vertex():  # vertex
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "VERTEX",
-                    "primary": "id",
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "VERTEX",
+                "primary": "id",
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
         else:  # edge
 
@@ -508,14 +496,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 else:
                     raise ValueError("Invalid graph element type.")
 
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "EDGE",
-                    "constraints": edge_direction(graph_elem_type),
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "EDGE",
+                "constraints": edge_direction(graph_elem_type),
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
         self.graph_store.conn.run(gql)
@@ -535,12 +521,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             True if the label exists in the specified graph element type, otherwise
             False.
         """
-        vertex_tables, edge_tables = self.graph_store.conn.get_table_names()
+        tables = self.graph_store.conn.get_table_names()
 
-        if graph_elem_type.is_vertex():
-            return graph_elem_type in vertex_tables
-        else:
-            return graph_elem_type in edge_tables
+        return graph_elem_type.value in tables
 
     def explore(
         self,
@@ -627,11 +610,17 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             mg.append_edge(edge)
         return mg
 
-    async def stream_query(self, query: str, **kwargs) -> AsyncGenerator[Graph, None]:
+    # type: ignore[override]
+    # mypy: ignore-errors
+    async def stream_query(  # type: ignore[override]
+        self,
+        query: str,
+        **kwargs,
+    ) -> AsyncGenerator[Graph, None]:
         """Execute a stream query."""
         from neo4j import graph
 
-        async for record in self.graph_store.conn.run_stream(query):
+        async for record in self.graph_store.conn.run_stream(query):  # type: ignore[attr-defined]
             mg = MemoryGraph()
             for key in record.keys():
                 value = record[key]
@@ -656,19 +645,15 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append(
-                            {
-                                "id": nodes[i]._properties["id"],
-                                "description": nodes[i]._properties["description"],
-                            }
-                        )
+                        formatted_path.append({
+                            "id": nodes[i]._properties["id"],
+                            "description": nodes[i]._properties["description"],
+                        })
                         if i < len(rels):
-                            formatted_path.append(
-                                {
-                                    "id": rels[i]._properties["id"],
-                                    "description": rels[i]._properties["description"],
-                                }
-                            )
+                            formatted_path.append({
+                                "id": rels[i]._properties["id"],
+                                "description": rels[i]._properties["description"],
+                            })
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(

@@ -1,7 +1,7 @@
 """TuGraph Connector."""
 
 import json
-from typing import Dict, Generator, List, Tuple, cast
+from typing import Dict, Generator, Iterator, List, cast
 
 from .base import BaseConnector
 
@@ -62,20 +62,18 @@ class TuGraphConnector(BaseConnector):
                 "`pip install neo4j`"
             ) from err
 
-    def get_table_names(self) -> Tuple[List[str], List[str]]:
+    def get_table_names(self) -> Iterator[str]:
         """Get all table names from the TuGraph by Neo4j driver."""
         with self._driver.session(database=self._graph) as session:
             # Run the query to get vertex labels
-            raw_vertex_labels: Dict[str, str] = session.run(
-                "CALL db.vertexLabels()"
-            ).data()
+            raw_vertex_labels = session.run("CALL db.vertexLabels()").data()
             vertex_labels = [table_name["label"] for table_name in raw_vertex_labels]
 
             # Run the query to get edge labels
-            raw_edge_labels: Dict[str, str] = session.run("CALL db.edgeLabels()").data()
+            raw_edge_labels = session.run("CALL db.edgeLabels()").data()
             edge_labels = [table_name["label"] for table_name in raw_edge_labels]
 
-            return vertex_labels, edge_labels
+            return iter(vertex_labels + edge_labels)
 
     def get_grants(self):
         """Get grants."""

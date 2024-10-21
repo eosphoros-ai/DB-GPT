@@ -142,7 +142,7 @@ class TuGraphStore(GraphStoreBase):
             for name in missing_plugins:
                 try:
                     from dbgpt_tugraph_plugins import (
-                        get_plugin_binary_path,  # type:ignore[import-untyped]
+                        get_plugin_binary_path,  # type: ignore
                     )
                 except ImportError:
                     logger.error(

@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Iterator, List, Literal, Optional, Union
+from typing import AsyncGenerator, Dict, Iterator, List, Literal, Optional, Union
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (
@@ -156,7 +156,11 @@ class GraphStoreAdapter(ABC):
         """Create graph."""
 
     @abstractmethod
-    def create_graph_label(self) -> None:
+    def create_graph_label(
+        self,
+        graph_elem_type: GraphElemType,
+        graph_properties: List[Dict[str, Union[str, bool]]],
+    ) -> None:
         """Create a graph label.
 
         The graph label is used to identify and distinguish different types of nodes
