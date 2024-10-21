@@ -20,7 +20,7 @@ class TuGraphConnector(BaseConnector):
         self._graph = graph
         self._session = None
 
-    def create_graph(self, graph_name: str) -> None:
+    def create_graph(self, graph_name: str) -> bool:
         """Create a new graph in the database if it doesn't already exist."""
         try:
             with self._driver.session(database="default") as session:
@@ -32,6 +32,8 @@ class TuGraphConnector(BaseConnector):
                     )
         except Exception as e:
             raise Exception(f"Failed to create graph '{graph_name}': {str(e)}") from e
+
+        return not exists
 
     def delete_graph(self, graph_name: str) -> None:
         """Delete a graph in the database if it exists."""

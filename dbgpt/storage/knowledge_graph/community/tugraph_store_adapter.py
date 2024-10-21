@@ -362,7 +362,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
     def create_graph(self, graph_name: str):
         """Create a graph."""
-        self.graph_store.conn.create_graph(graph_name=graph_name)
+        if not self.graph_store.conn.create_graph(graph_name=graph_name):
+            return
 
         # Create the graph schema
         def _format_graph_propertity_schema(
