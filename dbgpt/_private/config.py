@@ -70,9 +70,9 @@ class Config(metaclass=Singleton):
         self.wenxin_model_version = os.getenv("WEN_XIN_MODEL_VERSION")
         if self.wenxin_proxy_api_key and self.wenxin_proxy_api_secret:
             os.environ["wenxin_proxyllm_proxy_api_key"] = self.wenxin_proxy_api_key
-            os.environ["wenxin_proxyllm_proxy_api_secret"] = (
-                self.wenxin_proxy_api_secret
-            )
+            os.environ[
+                "wenxin_proxyllm_proxy_api_secret"
+            ] = self.wenxin_proxy_api_secret
             os.environ["wenxin_proxyllm_proxyllm_backend"] = (
                 self.wenxin_model_version or ""
             )
