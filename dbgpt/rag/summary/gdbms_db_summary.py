@@ -76,8 +76,8 @@ def _parse_db_summary(
     table_info_summaries = None
     if isinstance(conn, TuGraphConnector):
         table_names = conn.get_table_names()
-        v_tables = table_names.get("vertex_tables", [])
-        e_tables = table_names.get("edge_tables", [])
+        v_tables = table_names.get("vertex_tables", [])  # type: ignore
+        e_tables = table_names.get("edge_tables", [])  # type: ignore
         table_info_summaries = [
             _parse_table_summary(conn, summary_template, table_name, "vertex")
             for table_name in v_tables
