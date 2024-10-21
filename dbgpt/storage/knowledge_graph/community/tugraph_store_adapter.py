@@ -23,7 +23,7 @@ from dbgpt.storage.graph_store.graph import (
     Vertex,
 )
 from dbgpt.storage.graph_store.tugraph_store import TuGraphStore
-from dbgpt.storage.knowledge_graph.base import ParentChunk
+from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
 
 logger = logging.getLogger(__name__)
@@ -787,7 +787,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
     def upsert_doc_include_chunk(
         self,
-        chunk: ParentChunk,
+        chunk: ParagraphChunk,
         doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
@@ -825,7 +825,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
     def upsert_chunk_include_chunk(
         self,
-        chunk: ParentChunk,
+        chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
         assert (
@@ -859,7 +859,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             dst_type=GraphElemType.CHUNK.value,
         )
 
-    def upsert_chunk_next_chunk(self, chunk: ParentChunk, next_chunk: ParentChunk):
+    def upsert_chunk_next_chunk(
+        self, chunk: ParagraphChunk, next_chunk: ParagraphChunk
+    ):
         """Uperst the vertices and the edge in chunk_next_chunk."""
         src_vertex = Vertex(
             vid=chunk.chunk_id,

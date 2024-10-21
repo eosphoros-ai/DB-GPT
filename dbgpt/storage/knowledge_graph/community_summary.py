@@ -10,7 +10,7 @@ from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.graph_store.graph import Edge, GraphElemType, MemoryGraph
-from dbgpt.storage.knowledge_graph.base import ParentChunk
+from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
@@ -149,15 +149,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         return [chunk.chunk_id for chunk in chunks]
 
-    async def _aload_document_graph(self, chunks: List[ParentChunk]) -> List[str]:
+    async def _aload_document_graph(self, chunks: List[ParagraphChunk]) -> List[str]:
         """Load the knowledge graph from the chunks.
 
         The chunks include the doc structure.
         """
-        chunks: List[ParentChunk] = [
-            ParentChunk.model_validate(chunk.model_dump()) for chunk in chunks
+        chunks: List[ParagraphChunk] = [
+            ParagraphChunk.model_validate(chunk.model_dump()) for chunk in chunks
         ]
-        chunks: List[ParentChunk] = self._load_chunks(chunks)
+        chunks: List[ParagraphChunk] = self._load_chunks(chunks)
 
         graph_of_all = MemoryGraph()
 
@@ -217,7 +217,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                             graph_of_all.append_edge(edge=edge)
             self._graph_store_apdater.upsert_graph(graph_of_all)
 
-    def _load_chunks(slef, chunks: List[ParentChunk]) -> List[ParentChunk]:
+    def _load_chunks(slef, chunks: List[ParagraphChunk]) -> List[ParagraphChunk]:
         """Load the chunks, and add the parent-child relationship within chunks."""
         doc_name = os.path.basename(chunks[0].metadata["source"] or "Text_Node")
         # chunk.metadate = {"Header0": "title", "Header1": "title", ..., "source": "source_path"}  # noqa: E501

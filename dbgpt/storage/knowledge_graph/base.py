@@ -36,7 +36,7 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
         """Delete document by ids."""
 
 
-class ParentChunk(Chunk):
+class ParagraphChunk(Chunk):
     """Loaded chunk, used in GraphRAG."""
 
     chunk_parent_id: str = Field(default=None, description="id of parent chunk")

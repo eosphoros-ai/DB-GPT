@@ -14,7 +14,7 @@ from dbgpt.storage.graph_store.graph import (
     MemoryGraph,
     Vertex,
 )
-from dbgpt.storage.knowledge_graph.base import ParentChunk
+from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ class GraphStoreAdapter(ABC):
     @abstractmethod
     def upsert_doc_include_chunk(
         self,
-        chunk: ParentChunk,
+        chunk: ParagraphChunk,
         doc_vid: str,
     ) -> None:
         """Convert chunk to document include chunk."""
@@ -118,15 +118,15 @@ class GraphStoreAdapter(ABC):
     @abstractmethod
     def upsert_chunk_include_chunk(
         self,
-        chunk: ParentChunk,
+        chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
 
     @abstractmethod
     def upsert_chunk_next_chunk(
         self,
-        chunk: ParentChunk,
-        next_chunk: ParentChunk,
+        chunk: ParagraphChunk,
+        next_chunk: ParagraphChunk,
     ):
         """Uperst the vertices and the edge in chunk_next_chunk."""
 
