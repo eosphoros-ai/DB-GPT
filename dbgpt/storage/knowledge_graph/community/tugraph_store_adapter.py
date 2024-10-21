@@ -542,6 +542,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         subs: List[str],
         direct: Direction = Direction.BOTH,
         depth: int = 3,
+        fan: Optional[int] = None,
         limit: Optional[int] = None,
         search_scope: Optional[
             Literal["knowledge_graph", "document_graph"]

@@ -46,9 +46,9 @@ def test_insert_and_get_triplets(tugraph_store_adapter: TuGraphStoreAdapter):
     assert len(triplets) == 1
 
 
-def test_query(store: TuGraphStore):
+def test_query(tugraph_store_adapter: TuGraphStoreAdapter):
     query = "MATCH (n)-[r]->(n1) return n,n1,r limit 3"
-    result = store.query(query)
+    result = tugraph_store_adapter.query(query)
     v_c = result.vertex_count
     e_c = result.edge_count
     assert v_c == 3 and e_c == 3

@@ -88,7 +88,8 @@ def __create_community_kg_connector():
 
 async def ask_chunk(chunk: Chunk, question) -> str:
     rag_template = (
-        "Based on the following [Context] {context}, " "answer [Question] {question}."
+        "Based on the following [Context] {context}, "
+        "answer [Question] {question}."
     )
     template = HumanPromptTemplate.from_template(rag_template)
     messages = template.format_messages(context=chunk.content, question=question)

@@ -2,7 +2,8 @@
 
 import json
 import logging
-from typing import AsyncGenerator, Iterator, List, Optional, Tuple, Union
+from typing import AsyncGenerator, Iterator, List, Optional, Tuple, Union, \
+    Literal
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -201,9 +202,12 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
-        depth: int | None = None,
-        fan: int | None = None,
-        limit: int | None = None,
+        depth: int = 3,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
+        search_scope: Optional[
+            Literal["knowledge_graph", "document_graph"]
+        ] = "knowledge_graph",
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         return self._graph_store._graph.search(subs, direct, depth, fan, limit)
