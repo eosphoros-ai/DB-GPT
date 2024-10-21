@@ -188,7 +188,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     "name": self._escape_quotes(chunk.chunk_name),
                     "content": self._escape_quotes(chunk.content),
                 }
-                for chunk in chunks
+                for chunk in chunks_list
             ]
         else:
             chunk_list = [
@@ -197,7 +197,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     "name": self._escape_quotes(chunk.name),
                     "content": self._escape_quotes(chunk.get_prop("content")),
                 }
-                for chunk in chunks
+                for chunk in chunks_list
             ]
         chunk_query = (
             f"CALL db.upsertVertex("
@@ -218,7 +218,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     "name": self._escape_quotes(document.chunk_name),
                     "content": "",
                 }
-                for document in documents
+                for document in documents_list
             ]
         else:
             document_list = [
@@ -227,7 +227,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     "name": self._escape_quotes(document.name),
                     "content": self._escape_quotes(document.get_prop("content")) or "",
                 }
-                for document in documents
+                for document in documents_list
             ]
         document_query = (
             "CALL db.upsertVertex("
@@ -474,14 +474,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         (vertices) and edges in the graph.
         """
         if graph_elem_type.is_vertex():  # vertex
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "VERTEX",
-                    "primary": "id",
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "VERTEX",
+                "primary": "id",
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
         else:  # edge
 
@@ -507,14 +505,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 else:
                     raise ValueError("Invalid graph element type.")
 
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "EDGE",
-                    "constraints": edge_direction(graph_elem_type),
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "EDGE",
+                "constraints": edge_direction(graph_elem_type),
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
         self.graph_store.conn.run(gql)
@@ -654,19 +650,15 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append(
-                            {
-                                "id": nodes[i]._properties["id"],
-                                "description": nodes[i]._properties["description"],
-                            }
-                        )
+                        formatted_path.append({
+                            "id": nodes[i]._properties["id"],
+                            "description": nodes[i]._properties["description"],
+                        })
                         if i < len(rels):
-                            formatted_path.append(
-                                {
-                                    "id": rels[i]._properties["id"],
-                                    "description": rels[i]._properties["description"],
-                                }
-                            )
+                            formatted_path.append({
+                                "id": rels[i]._properties["id"],
+                                "description": rels[i]._properties["description"],
+                            })
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(
