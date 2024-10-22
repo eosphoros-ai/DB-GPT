@@ -268,20 +268,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         return doc_chunk, chunks
 
-    def similar_search(
-        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
-    ) -> List[Chunk]:
-        """Similar search in index database.
-
-        Args:
-            text(str): The query text.
-            topk(int): The number of similar documents to return.
-            filters(Optional[MetadataFilters]): metadata filters.
-        Return:
-            List[Chunk]: The similar documents.
-        """
-        return []
-
     async def asimilar_search_with_scores(
         self,
         text,
