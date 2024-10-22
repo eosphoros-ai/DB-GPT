@@ -184,7 +184,6 @@ class IndexStoreBase(ABC):
             max_threads,
         )
 
-    @abstractmethod
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
@@ -197,6 +196,7 @@ class IndexStoreBase(ABC):
         Return:
             List[Chunk]: The similar documents.
         """
+        return self.similar_search_with_scores(text, topk, 1.0, filters)
 
     async def asimilar_search(
         self,
