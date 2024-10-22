@@ -20,11 +20,9 @@ from dbgpt.storage.knowledge_graph.knowledge_graph import (
 )
 
 """GraphRAG example.
-    pre-requirements:
-    * Set LLM config (url/sk) in `.env`.
-    * Install pytest utils: `pip install pytest pytest-asyncio`
-    * Config TuGraph following the format below. 
     ```
+    # Set LLM config (url/sk) in `.env`.
+    # Install pytest utils: `pip install pytest pytest-asyncio`
     GRAPH_STORE_TYPE=TuGraph
     TUGRAPH_HOST=127.0.0.1
     TUGRAPH_PORT=7687
@@ -88,8 +86,7 @@ def __create_community_kg_connector():
 
 async def ask_chunk(chunk: Chunk, question) -> str:
     rag_template = (
-        "Based on the following [Context] {context}, "
-        "answer [Question] {question}."
+        "Based on the following [Context] {context}, " "answer [Question] {question}."
     )
     template = HumanPromptTemplate.from_template(rag_template)
     messages = template.format_messages(context=chunk.content, question=question)
