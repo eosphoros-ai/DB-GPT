@@ -1,5 +1,6 @@
 """Define the CommunitySummaryKnowledgeGraph."""
 
+import asyncio
 import logging
 import os
 import uuid
@@ -63,6 +64,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=5,
         description="Top size of knowledge graph chunk search",
     )
+    triplet_extraction_batch_size: int = Field(
+        default=20,
+        description="Batch size of triplets extraction from the text",
+    )
 
 
 class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
@@ -94,6 +99,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             os.getenv(
                 "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
                 config.community_score_threshold,
+            )
+        )
+        self._triplet_extraction_batch_size = int(
+            os.getenv(
+                "TRIPLET_EXTRACTION_BATCH_SIZE", config.triplet_extraction_batch_size
             )
         )
 
@@ -189,30 +199,35 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             return
 
         document_graph_enabled = self._graph_store.get_config().document_graph_enabled
-        for chunk in chunks:
-            # TODO: Use asyncio to extract graph to accelerate the process
-            # (attention to the CAP of the graph db)
+        batch_size = self._triplet_extraction_batch_size
 
-            graphs: List[MemoryGraph] = await self._graph_extractor.extract(
-                chunk.content
+        for i in range(0, len(chunks), batch_size):
+            batch_chunks = chunks[i : i + batch_size]
+
+            extraction_tasks = [
+                self._graph_extractor.extract(chunk.content) for chunk in batch_chunks
+            ]
+            async_graphs: List[List[MemoryGraph]] = await asyncio.gather(
+                *extraction_tasks
             )
 
-            for graph in graphs:
-                if document_graph_enabled:
-                    # append the chunk id to the edge
-                    for edge in graph.edges():
-                        edge.set_prop("_chunk_id", chunk.chunk_id)
-                        graph.append_edge(edge=edge)
+            for chunk, graphs in zip(batch_chunks, async_graphs):
+                for graph in graphs:
+                    if document_graph_enabled:
+                        # append the chunk id to the edge
+                        for edge in graph.edges():
+                            edge.set_prop("_chunk_id", chunk.chunk_id)
+                            graph.append_edge(edge=edge)
 
-                # upsert the graph
-                self._graph_store_apdater.upsert_graph(graph)
+                    # upsert the graph
+                    self._graph_store_apdater.upsert_graph(graph)
 
-                # chunk -> include -> entity
-                if document_graph_enabled:
-                    for vertex in graph.vertices():
-                        self._graph_store_apdater.upsert_chunk_include_entity(
-                            chunk=chunk, entity=vertex
-                        )
+                    # chunk -> include -> entity
+                    if document_graph_enabled:
+                        for vertex in graph.vertices():
+                            self._graph_store_apdater.upsert_chunk_include_entity(
+                                chunk=chunk, entity=vertex
+                            )
 
     def _load_chunks(
         self, chunks: List[ParagraphChunk]
