@@ -172,6 +172,7 @@ class MilvusStore(VectorStoreBase):
             "MILVUS_PASSWORD"
         )
         self.secure = milvus_vector_config.get("secure") or os.getenv("MILVUS_SECURE")
+        self.db_name = milvus_vector_config.get("db_name") or os.getenv("MILVUS_DB_NAME")
 
         self.collection_name = (
             milvus_vector_config.get("name") or vector_store_config.name
@@ -228,6 +229,7 @@ class MilvusStore(VectorStoreBase):
             port=self.port or "19530",
             user=self.username,
             password=self.password,
+            db_name=self.db_name,
             alias="default",
         )
 

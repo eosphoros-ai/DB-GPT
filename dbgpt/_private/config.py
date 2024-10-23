@@ -220,6 +220,7 @@ class Config(metaclass=Singleton):
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
+        self.MILVUS_DB_NAME = os.getenv("MILVUS_DB_NAME", None)
         # Elasticsearch Vector Configuration
         self.ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "127.0.0.1")
         self.ELASTICSEARCH_PORT = os.getenv("ELASTICSEARCH_PORT", "9200")
