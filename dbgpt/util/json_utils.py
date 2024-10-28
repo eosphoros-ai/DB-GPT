@@ -117,3 +117,28 @@ def _format_json_str(jstr):
             char = "\\t"
         result.append(char)
     return "".join(result)
+
+
+def compare_json_properties(json1, json2):
+    """
+    Check whether the attributes of two json are consistent
+    """
+    obj1 = json.loads(json1)
+    obj2 = json.loads(json2)
+
+    # 检查两个对象的键集合是否相同
+    if set(obj1.keys()) == set(obj2.keys()):
+        return True
+
+    return False
+
+
+def compare_json_properties_ex(json1, json2):
+    """
+    Check whether the attributes of two json are consistent
+    """
+    # 检查两个对象的键集合是否相同
+    if set(json1.keys()) == set(json2.keys()):
+        return True
+
+    return False

@@ -1,4 +1,5 @@
 """Http trigger for AWEL."""
+
 import json
 import logging
 from enum import Enum
@@ -24,9 +25,11 @@ from dbgpt._private.pydantic import (
     model_to_dict,
 )
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.tracer import root_tracer
 
 from ..dag.base import DAG
 from ..flow import (
+    TAGS_ORDER_HIGH,
     IOField,
     OperatorCategory,
     OperatorType,
@@ -41,7 +44,7 @@ from ..operators.base import BaseOperator
 from ..operators.common_operator import MapOperator
 from ..util._typing_util import _parse_bool
 from ..util.http_util import join_paths
-from .base import Trigger
+from .base import Trigger, TriggerMetadata
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
@@ -54,6 +57,8 @@ if TYPE_CHECKING:
     StreamingPredictFunc = Callable[[CommonRequestType], bool]
 
 logger = logging.getLogger(__name__)
+
+ENDPOINT_PLACEHOLDER_DAG_ID = "{dag_id}"
 
 
 class AWELHttpError(RuntimeError):
@@ -78,6 +83,19 @@ def _default_streaming_predict_func(body: "CommonRequestType") -> bool:
         return False
     streaming = body.get("streaming") or body.get("stream")
     return _parse_bool(streaming)
+
+
+class HttpTriggerMetadata(TriggerMetadata):
+    """Trigger metadata."""
+
+    path: str = Field(..., description="The path of the trigger")
+    methods: List[str] = Field(..., description="The methods of the trigger")
+    trigger_mode: str = Field(
+        default="command", description="The mode of the trigger, command or chat"
+    )
+    trigger_type: Optional[str] = Field(
+        default="http", description="The type of the trigger"
+    )
 
 
 class BaseHttpBody(BaseModel):
@@ -442,21 +460,18 @@ class HttpTrigger(Trigger):
 
     def mount_to_router(
         self, router: "APIRouter", global_prefix: Optional[str] = None
-    ) -> None:
+    ) -> HttpTriggerMetadata:
         """Mount the trigger to a router.
 
         Args:
             router (APIRouter): The router to mount the trigger.
             global_prefix (Optional[str], optional): The global prefix of the router.
         """
-        path = (
-            join_paths(global_prefix, self._endpoint)
-            if global_prefix
-            else self._endpoint
-        )
+        endpoint = self._resolved_endpoint()
+        path = join_paths(global_prefix, endpoint) if global_prefix else endpoint
         dynamic_route_function = self._create_route_func()
         router.api_route(
-            self._endpoint,
+            endpoint,
             methods=self._methods,
             response_model=self._response_model,
             status_code=self._status_code,
@@ -464,8 +479,13 @@ class HttpTrigger(Trigger):
         )(dynamic_route_function)
 
         logger.info(f"Mount http trigger success, path: {path}")
+        return HttpTriggerMetadata(
+            path=path, methods=self._methods, trigger_mode=self._trigger_mode()
+        )
 
-    def mount_to_app(self, app: "FastAPI", global_prefix: Optional[str] = None) -> None:
+    def mount_to_app(
+        self, app: "FastAPI", global_prefix: Optional[str] = None
+    ) -> HttpTriggerMetadata:
         """Mount the trigger to a FastAPI app.
 
         TODO: The performance of this method is not good, need to be optimized.
@@ -477,11 +497,9 @@ class HttpTrigger(Trigger):
         """
         from dbgpt.util.fastapi import PriorityAPIRouter
 
-        path = (
-            join_paths(global_prefix, self._endpoint)
-            if global_prefix
-            else self._endpoint
-        )
+        endpoint = self._resolved_endpoint()
+
+        path = join_paths(global_prefix, endpoint) if global_prefix else endpoint
         dynamic_route_function = self._create_route_func()
         router = cast(PriorityAPIRouter, app.router)
         router.add_api_route(
@@ -496,6 +514,9 @@ class HttpTrigger(Trigger):
         app.openapi_schema = None
         app.middleware_stack = None
         logger.info(f"Mount http trigger success, path: {path}")
+        return HttpTriggerMetadata(
+            path=path, methods=self._methods, trigger_mode=self._trigger_mode()
+        )
 
     def remove_from_app(
         self, app: "FastAPI", global_prefix: Optional[str] = None
@@ -509,16 +530,57 @@ class HttpTrigger(Trigger):
         """
         from fastapi import APIRouter
 
-        path = (
-            join_paths(global_prefix, self._endpoint)
-            if global_prefix
-            else self._endpoint
-        )
+        endpoint = self._resolved_endpoint()
+
+        path = join_paths(global_prefix, endpoint) if global_prefix else endpoint
         app_router = cast(APIRouter, app.router)
         for i, r in enumerate(app_router.routes):
             if r.path_format == path:  # type: ignore
                 # TODO, remove with path and methods
                 del app_router.routes[i]
+
+    def _resolved_endpoint(self) -> str:
+        """Get the resolved endpoint.
+
+        Replace the placeholder {dag_id} with the real dag_id.
+        """
+        endpoint = self._endpoint
+        if ENDPOINT_PLACEHOLDER_DAG_ID not in endpoint:
+            return endpoint
+        if not self.dag:
+            raise AWELHttpError("DAG is not set")
+        dag_id = self.dag.dag_id
+        return endpoint.replace(ENDPOINT_PLACEHOLDER_DAG_ID, dag_id)
+
+    def _trigger_mode(self) -> str:
+        if (
+            self._req_body
+            and isinstance(self._req_body, type)
+            and issubclass(self._req_body, CommonLLMHttpRequestBody)
+        ):
+            return "chat"
+        return "command"
+
+    async def map(self, input_data: Any) -> Any:
+        """Map the input data.
+
+        Do some transformation for the input data.
+
+        Args:
+            input_data (Any): The input data from caller.
+
+        Returns:
+            Any: The mapped data.
+        """
+        if not self._req_body or not input_data:
+            return await super().map(input_data)
+        if (
+            isinstance(self._req_body, type)
+            and issubclass(self._req_body, BaseModel)
+            and isinstance(input_data, dict)
+        ):
+            return self._req_body(**input_data)
+        return await super().map(input_data)
 
     def _create_route_func(self):
         from inspect import Parameter, Signature
@@ -650,12 +712,21 @@ async def _trigger_dag(
     from fastapi import BackgroundTasks
     from fastapi.responses import StreamingResponse
 
+    span_id = root_tracer._parse_span_id(body)
+
     leaf_nodes = dag.leaf_nodes
     if len(leaf_nodes) != 1:
         raise ValueError("HttpTrigger just support one leaf node in dag")
     end_node = cast(BaseOperator, leaf_nodes[0])
+    metadata = {
+        "awel_node_id": end_node.node_id,
+        "awel_node_name": end_node.node_name,
+    }
     if not streaming_response:
-        return await end_node.call(call_data=body)
+        with root_tracer.start_span(
+            "dbgpt.core.trigger.http.run_dag", span_id, metadata=metadata
+        ):
+            return await end_node.call(call_data=body)
     else:
         headers = response_headers
         media_type = response_media_type if response_media_type else "text/event-stream"
@@ -666,7 +737,10 @@ async def _trigger_dag(
                 "Connection": "keep-alive",
                 "Transfer-Encoding": "chunked",
             }
-        generator = await end_node.call_stream(call_data=body)
+        _generator = await end_node.call_stream(call_data=body)
+        trace_generator = root_tracer.wrapper_async_stream(
+            _generator, "dbgpt.core.trigger.http.run_dag", span_id, metadata=metadata
+        )
 
         async def _after_dag_end():
             await dag._after_dag_end(end_node.current_event_loop_task_id)
@@ -674,7 +748,7 @@ async def _trigger_dag(
         background_tasks = BackgroundTasks()
         background_tasks.add_task(_after_dag_end)
         return StreamingResponse(
-            generator,
+            trace_generator,
             headers=headers,
             media_type=media_type,
             background=background_tasks,
@@ -871,6 +945,16 @@ class StringHttpTrigger(HttpTrigger):
 class CommonLLMHttpTrigger(HttpTrigger):
     """Common LLM http trigger for AWEL."""
 
+    class MessagesOutputMapper(MapOperator[CommonLLMHttpRequestBody, str]):
+        """Messages output mapper."""
+
+        async def map(self, request_body: CommonLLMHttpRequestBody) -> str:
+            """Map the request body to messages."""
+            if isinstance(request_body.messages, str):
+                return request_body.messages
+            else:
+                raise ValueError("Messages to be transformed is not a string")
+
     metadata = ViewMetadata(
         label=_("Common LLM Http Trigger"),
         name="common_llm_http_trigger",
@@ -891,20 +975,38 @@ class CommonLLMHttpTrigger(HttpTrigger):
                     "LLM http body"
                 ),
             ),
+            IOField.build_from(
+                _("Request String Messages"),
+                "request_string_messages",
+                str,
+                description=_(
+                    "The request string messages of the API endpoint, parsed from "
+                    "'messages' field of the request body"
+                ),
+                mappers=[MessagesOutputMapper],
+            ),
         ],
         parameters=[
-            _PARAMETER_ENDPOINT.new(),
+            Parameter.build_from(
+                _("API Endpoint"),
+                "endpoint",
+                str,
+                optional=True,
+                default="/example/" + ENDPOINT_PLACEHOLDER_DAG_ID,
+                description=_("The API endpoint"),
+            ),
             _PARAMETER_METHODS_POST_PUT.new(),
             _PARAMETER_STREAMING_RESPONSE.new(),
             _PARAMETER_RESPONSE_BODY.new(),
             _PARAMETER_MEDIA_TYPE.new(),
             _PARAMETER_STATUS_CODE.new(),
         ],
+        tags={"order": TAGS_ORDER_HIGH},
     )
 
     def __init__(
         self,
-        endpoint: str,
+        endpoint: str = "/example/" + ENDPOINT_PLACEHOLDER_DAG_ID,
         methods: Optional[Union[str, List[str]]] = "POST",
         streaming_response: bool = False,
         http_response_body: Optional[Type[BaseHttpBody]] = None,
@@ -1138,6 +1240,7 @@ class RequestedParsedOperator(MapOperator[CommonLLMHttpRequestBody, str]):
             "User input parsed operator, parse the user input from request body and "
             "return as a string"
         ),
+        tags={"order": TAGS_ORDER_HIGH},
     )
 
     def __init__(self, key: str = "user_input", **kwargs):

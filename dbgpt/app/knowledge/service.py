@@ -1,6 +1,9 @@
 import json
 import logging
+import re
+import timeit
 from datetime import datetime
+from typing import List
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
@@ -11,6 +14,7 @@ from dbgpt.app.knowledge.document_db import (
 from dbgpt.app.knowledge.request.request import (
     ChunkQueryRequest,
     DocumentQueryRequest,
+    DocumentRecallTestRequest,
     DocumentSummaryRequest,
     KnowledgeDocumentRequest,
     KnowledgeSpaceRequest,
@@ -19,9 +23,11 @@ from dbgpt.app.knowledge.request.request import (
 from dbgpt.app.knowledge.request.response import (
     ChunkQueryResponse,
     DocumentQueryResponse,
+    DocumentResponse,
     SpaceQueryResponse,
 )
 from dbgpt.component import ComponentType
+from dbgpt.configs import DOMAIN_TYPE_FINANCIAL_REPORT
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
@@ -31,8 +37,10 @@ from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
+from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from dbgpt.serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 from dbgpt.serve.rag.service.service import SyncStatus
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
@@ -79,6 +87,10 @@ class KnowledgeService:
         )
         if request.vector_type == "VectorStore":
             request.vector_type = CFG.VECTOR_STORE_TYPE
+        if request.vector_type == "KnowledgeGraph":
+            knowledge_space_name_pattern = r"^[a-zA-Z0-9\u4e00-\u9fa5]+$"
+            if not re.match(knowledge_space_name_pattern, request.name):
+                raise Exception(f"space name:{request.name} invalid")
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) > 0:
             raise Exception(f"space name:{request.name} have already named")
@@ -115,7 +127,10 @@ class KnowledgeService:
            - request: KnowledgeSpaceRequest
         """
         query = KnowledgeSpaceEntity(
-            name=request.name, vector_type=request.vector_type, owner=request.owner
+            id=request.id,
+            name=request.name,
+            vector_type=request.vector_type,
+            owner=request.owner,
         )
         spaces = knowledge_space_dao.get_knowledge_space(query)
         space_names = [space.name for space in spaces]
@@ -128,6 +143,7 @@ class KnowledgeService:
             res.id = space.id
             res.name = space.name
             res.vector_type = space.vector_type
+            res.domain_type = space.domain_type
             res.desc = space.desc
             res.owner = space.owner
             res.gmt_created = space.gmt_created
@@ -137,15 +153,15 @@ class KnowledgeService:
             responses.append(res)
         return responses
 
-    def arguments(self, space_name):
+    def arguments(self, space):
         """show knowledge space arguments
         Args:
             - space_name: Knowledge Space Name
         """
-        query = KnowledgeSpaceEntity(name=space_name)
+        query = KnowledgeSpaceEntity(name=space)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
-            raise Exception(f"there are no or more than one space called {space_name}")
+            raise Exception(f"there are no or more than one space called {space}")
         space = spaces[0]
         if space.context is None:
             context = self._build_default_context()
@@ -153,16 +169,16 @@ class KnowledgeService:
             context = space.context
         return json.loads(context)
 
-    def argument_save(self, space_name, argument_request: SpaceArgumentRequest):
+    def argument_save(self, space, argument_request: SpaceArgumentRequest):
         """save argument
         Args:
             - space_name: Knowledge Space Name
             - argument_request: SpaceArgumentRequest
         """
-        query = KnowledgeSpaceEntity(name=space_name)
+        query = KnowledgeSpaceEntity(name=space)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
-            raise Exception(f"there are no or more than one space called {space_name}")
+            raise Exception(f"there are no or more than one space called {space}")
         space = spaces[0]
         space.context = argument_request.argument
         return knowledge_space_dao.update_knowledge_space(space)
@@ -175,23 +191,42 @@ class KnowledgeService:
         Returns:
             - res DocumentQueryResponse
         """
-
-        total = None
-        page = request.page
+        if request.page_size <= 0:
+            request.page_size = 20
+        ks = knowledge_space_dao.get_one({"name": space})
+        if ks is None:
+            raise Exception(f"there is no space id called {space}")
+        res = DocumentQueryResponse()
         if request.doc_ids and len(request.doc_ids) > 0:
-            data = knowledge_document_dao.documents_by_ids(request.doc_ids)
+            documents: List[
+                KnowledgeDocumentEntity
+            ] = knowledge_document_dao.documents_by_ids(request.doc_ids)
+            res.data = [item.to_dict() for item in documents]
         else:
-            query = KnowledgeDocumentEntity(
-                doc_name=request.doc_name,
-                doc_type=request.doc_type,
-                space=space,
-                status=request.status,
-            )
-            data = knowledge_document_dao.get_knowledge_documents(
-                query, page=request.page, page_size=request.page_size
-            )
-            total = knowledge_document_dao.get_knowledge_documents_count(query)
-        return DocumentQueryResponse(data=data, total=total, page=page)
+            space_name = ks.name
+            query = {
+                "doc_type": request.doc_type,
+                "space": space_name,
+                "status": request.status,
+            }
+            if request.doc_name:
+                docs = knowledge_document_dao.get_list({"space": space_name})
+                docs = [DocumentResponse.serve_to_response(doc) for doc in docs]
+                res.data = [
+                    doc
+                    for doc in docs
+                    if doc.doc_name and request.doc_name in doc.doc_name
+                ]
+            else:
+                result = knowledge_document_dao.get_list_page(
+                    query, page=request.page, page_size=request.page_size
+                )
+                docs = result.items
+                docs = [DocumentResponse.serve_to_response(doc) for doc in docs]
+                res.data = docs
+                res.total = result.total_count
+                res.page = result.page
+        return res
 
     async def document_summary(self, request: DocumentSummaryRequest):
         """get document summary
@@ -252,6 +287,96 @@ class KnowledgeService:
             summary, request.conv_uid, request.model_name
         )
 
+    def get_space_context_by_space_id(self, space_id):
+        """get space contect
+        Args:
+           - space_id: space name
+        """
+        spaces = self.get_knowledge_space_by_ids([space_id])
+        if len(spaces) != 1:
+            raise Exception(
+                f"have not found {space_id} space or found more than one space called {space_id}"
+            )
+        space = spaces[0]
+        if space.context is not None:
+            return json.loads(spaces[0].context)
+        return None
+
+    def get_knowledge_space_by_ids(self, ids):
+        """
+        get knowledge space by ids.
+        """
+        return knowledge_space_dao.get_knowledge_space_by_ids(ids)
+
+    async def recall_test(
+        self, space_name, doc_recall_test_request: DocumentRecallTestRequest
+    ):
+        logger.info(f"recall_test {space_name}, {doc_recall_test_request}")
+        from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
+
+        try:
+            start_time = timeit.default_timer()
+            question = doc_recall_test_request.question
+            space_context = self.get_space_context(space_name)
+            logger.info(f"space_context is {space_context}")
+            space = knowledge_space_dao.get_one({"name": space_name})
+
+            top_k = int(doc_recall_test_request.recall_top_k)
+            score_threshold = (
+                float(space_context["embedding"].get("recall_score", 0.3))
+                if (space_context and "embedding" in space_context)
+                else 0.3
+            )
+
+            if CFG.RERANK_MODEL is not None:
+                if top_k < int(CFG.RERANK_TOP_K) or top_k < 20:
+                    # We use reranker, so if the top_k is less than 20,
+                    # we need to set it to 20
+                    top_k = max(int(CFG.RERANK_TOP_K), 20)
+
+            knowledge_space_retriever = KnowledgeSpaceRetriever(
+                space_id=space.id, top_k=top_k
+            )
+            chunks = await knowledge_space_retriever.aretrieve_with_scores(
+                question, score_threshold
+            )
+            retrievers_end_time = timeit.default_timer()
+            retrievers_cost_time = retrievers_end_time - start_time
+            logger.info(
+                f"retrieve chunks size is {len(chunks)}, "
+                f"retrievers_cost_time is {retrievers_cost_time} seconds"
+            )
+
+            recall_top_k = int(doc_recall_test_request.recall_top_k)
+            if CFG.RERANK_MODEL is not None:
+                rerank_embeddings = RerankEmbeddingFactory.get_instance(
+                    CFG.SYSTEM_APP
+                ).create()
+                reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=recall_top_k)
+                chunks = reranker.rank(candidates_with_scores=chunks, query=question)
+
+            recall_score_threshold = doc_recall_test_request.recall_score_threshold
+            if recall_score_threshold is not None:
+                chunks = [
+                    chunk for chunk in chunks if chunk.score >= recall_score_threshold
+                ]
+            recall_end_time = timeit.default_timer()
+            recall_cost_time = recall_end_time - start_time
+            cost_time_map = {
+                "retrievers_cost_time": retrievers_cost_time,
+                "recall_cost_time": recall_cost_time,
+            }
+            logger.info(
+                f"recall chunks size is {len(chunks)}, "
+                f"recall_cost_time is {recall_cost_time} seconds, {cost_time_map}"
+            )
+
+            # return chunks, cost_time_map
+            return chunks
+        except Exception as e:
+            logger.error(f" recall_test error: {str(e)}")
+        return []
+
     def update_knowledge_space(
         self, space_id: int, space_request: KnowledgeSpaceRequest
     ):
@@ -294,6 +419,10 @@ class KnowledgeService:
             llm_client=self.llm_client,
             model_name=None,
         )
+        if space.domain_type == DOMAIN_TYPE_FINANCIAL_REPORT:
+            conn_manager = CFG.local_db_manager
+            conn_manager.delete_db(f"{space.name}_fin_report")
+
         vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type, vector_store_config=config
         )
@@ -360,18 +489,13 @@ class KnowledgeService:
             doc_name=request.doc_name,
             doc_type=request.doc_type,
         )
-        document_query = KnowledgeDocumentEntity(id=request.document_id)
-        documents = knowledge_document_dao.get_documents(document_query)
-
-        data = document_chunk_dao.get_document_chunks(
-            query, page=request.page, page_size=request.page_size
-        )
-        res = ChunkQueryResponse(
-            data=data,
-            summary=documents[0].summary,
-            total=document_chunk_dao.get_document_chunks_count(query),
-            page=request.page,
-        )
+        res = ChunkQueryResponse()
+        res.data = [
+            chunk.to_dict()
+            for chunk in document_chunk_dao.get_document_chunks(
+                query, page=request.page, page_size=request.page_size
+            )
+        ]
         return res
 
     @trace("async_doc_embedding")
@@ -521,13 +645,21 @@ class KnowledgeService:
         graph = vector_store_connector.client.query_graph(limit=limit)
         res = {"nodes": [], "edges": []}
         for node in graph.vertices():
-            res["nodes"].append({"vid": node.vid})
+            res["nodes"].append(
+                {
+                    "id": node.vid,
+                    "communityId": node.get_prop("_community_id"),
+                    "name": node.name,
+                    "type": node.get_prop("type") or "",
+                }
+            )
         for edge in graph.edges():
             res["edges"].append(
                 {
-                    "src": edge.sid,
-                    "dst": edge.tid,
-                    "label": edge.props[graph.edge_label],
+                    "source": edge.sid,
+                    "target": edge.tid,
+                    "name": edge.name,
+                    "type": edge.get_prop("type") or "",
                 }
             )
         return res

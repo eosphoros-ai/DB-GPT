@@ -25,28 +25,37 @@ VALID_TEMPLATE_KEYS = {
 }
 
 _DEFAULT_SYSTEM_TEMPLATE = """\
-You are a {{ role }}, {% if name %}named {{ name }}, {% endif %}your goal is {{ goal }}.
-Please think step by step to achieve the goal. You can use the resources given below. 
-At the same time, please strictly abide by the constraints and specifications in IMPORTANT REMINDER.
+You are a {{ role }}, {% if name %}named {{ name }}.
+{% endif %}your goal is {% if is_retry_chat %}{{ retry_goal }}{% else %}{{ goal }}{% endif %}.\
+Please think step-by-step to achieve your goals based on user input. You can use the resources given below.
+At the same time, please strictly abide by the constraints and specifications in the "IMPORTANT REMINDER" below.
 {% if resource_prompt %}\
+Given resources information:
 {{ resource_prompt }} 
-{% endif %}\
+{% endif %}
 {% if expand_prompt %}\
 {{ expand_prompt }} 
 {% endif %}\
 
 *** IMPORTANT REMINDER ***
-{% if language == 'zh' %}\
-Please answer in simplified Chinese.
-{% else %}\
 Please answer in English.
-{% endif %}\
+The current time is:{{now_time}}.
 
+{% if is_retry_chat %}\
+{% if retry_constraints %}\
+{% for retry_constraint in retry_constraints %}\
+{{ loop.index }}. {{ retry_constraint }}
+{% endfor %}\
+{% endif %}\
+{% else %}\
 {% if constraints %}\
 {% for constraint in constraints %}\
 {{ loop.index }}. {{ constraint }}
 {% endfor %}\
 {% endif %}\
+{% endif %}\
+
+
 
 {% if examples %}\
 You can refer to the following examples:
@@ -56,14 +65,63 @@ You can refer to the following examples:
 {% if out_schema %} {{ out_schema }} {% endif %}\
 """  # noqa
 
+_DEFAULT_SYSTEM_TEMPLATE_ZH = """\
+你是一个 {{ role }}, {% if name %}名字叫 {{ name }}.
+{% endif %}你的目标是 {% if is_retry_chat %}{{ retry_goal }}{% else %}{{ goal }}{% endif %}.\
+请一步一步思考完根据下面给出的已知信息和用户问题完成目标，同时请严格遵守下面"重要提醒"中的约束和规范。
+{% if resource_prompt %}\
+已知资源信息：
+{{ resource_prompt }} 
+{% endif %}\
+{% if expand_prompt %}\
+{{ expand_prompt }} 
+{% endif %}\
+
+*** 重要提醒 ***
+请用简体中文进行回答.
+当前时间是:{{now_time}}
+{% if is_retry_chat %}\
+{% if retry_constraints %}\
+{% for retry_constraint in retry_constraints %}\
+{{ loop.index }}. {{ retry_constraint }}
+{% endfor %}\
+{% endif %}\
+{% else %}\
+{% if constraints %}\
+{% for constraint in constraints %}\
+{{ loop.index }}. {{ constraint }}
+{% endfor %}\
+{% endif %}\
+{% endif %}\
+
+{% if examples %}\
+你也可以参考如下对话示例:
+{{ examples }}\
+{% endif %}\
+
+{% if out_schema %} {{ out_schema }} {% endif %}\
+"""  # noqa
+
+
 _DEFAULT_USER_TEMPLATE = """\
 {% if most_recent_memories %}\
-Most recent observations:
+Most recent message:
 {{ most_recent_memories }}
 {% endif %}\
 
 {% if question %}\
-Question: {{ question }}
+User input: {{ question }}
+{% endif %}
+"""
+
+_DEFAULT_USER_TEMPLATE_ZH = """\
+{% if most_recent_memories %}\
+最近消息记录:
+{{ most_recent_memories }}
+{% endif %}\
+
+{% if question %}\
+用户输入: {{ question }}
 {% endif %}
 """
 
@@ -71,6 +129,11 @@ _DEFAULT_WRITE_MEMORY_TEMPLATE = """\
 {% if question %}Question: {{ question }} {% endif %}
 {% if thought %}Thought: {{ thought }} {% endif %}
 {% if action %}Action: {{ action }} {% endif %}
+"""
+_DEFAULT_WRITE_MEMORY_TEMPLATE_ZH = """\
+{% if question %}问题: {{ question }} {% endif %}
+{% if thought %}思考答案: {{ thought }} {% endif %}
+{% if action %}行动结果: {{ action }} {% endif %}
 """
 
 
@@ -89,7 +152,15 @@ class Profile(ABC):
         """Return the goal of current agent."""
         return None
 
+    def get_retry_goal(self) -> Optional[str]:
+        """Return the goal of current agent."""
+        return None
+
     def get_constraints(self) -> Optional[List[str]]:
+        """Return the constraints of current agent."""
+        return None
+
+    def get_retry_constraints(self) -> Optional[List[str]]:
         """Return the constraints of current agent."""
         return None
 
@@ -127,6 +198,7 @@ class Profile(ABC):
         language: str = "en",
         most_recent_memories: Optional[str] = None,
         resource_vars: Optional[Dict[str, Any]] = None,
+        is_retry_chat: bool = False,
         **kwargs
     ) -> str:
         """Format the system prompt.
@@ -149,6 +221,7 @@ class Profile(ABC):
             language=language,
             most_recent_memories=most_recent_memories,
             resource_vars=resource_vars,
+            is_retry_chat=is_retry_chat,
             **kwargs
         )
 
@@ -204,6 +277,7 @@ class Profile(ABC):
         language: str = "en",
         most_recent_memories: Optional[str] = None,
         resource_vars: Optional[Dict[str, Any]] = None,
+        is_retry_chat: bool = False,
         **kwargs
     ) -> str:
         """Format the prompt."""
@@ -213,12 +287,15 @@ class Profile(ABC):
             "role": self.get_role(),
             "name": self.get_name(),
             "goal": self.get_goal(),
+            "retry_goal": self.get_retry_goal(),
             "expand_prompt": self.get_expand_prompt(),
             "language": language,
             "constraints": self.get_constraints(),
+            "retry_constraints": self.get_retry_constraints(),
             "most_recent_memories": (
                 most_recent_memories if most_recent_memories else None
             ),
+            "is_retry_chat": is_retry_chat,
             "examples": self.get_examples(),
             "question": question,
         }
@@ -229,6 +306,7 @@ class Profile(ABC):
 
         # Parse the template to find all variables in the template
         template_vars = find_undeclared_variables(template_env.parse(template))
+
         # Just keep the valid template key variables
         filtered_data = {
             key: pass_vars[key] for key in template_vars if key in pass_vars
@@ -259,14 +337,20 @@ class DefaultProfile(BaseModel, Profile):
     name: str = Field("", description="The name of the agent.")
     role: str = Field("", description="The role of the agent.")
     goal: Optional[str] = Field(None, description="The goal of the agent.")
+    retry_goal: Optional[str] = Field(None, description="The retry goal of the agent.")
     constraints: Optional[List[str]] = Field(
         None, description="The constraints of the agent."
     )
-
+    retry_constraints: Optional[List[str]] = Field(
+        None, description="The retry constraints of the agent."
+    )
     desc: Optional[str] = Field(
         None, description="The description of the agent, not used to generate prompt."
     )
-
+    resource_introduction: Optional[str] = Field(
+        None,
+        description="The resource introduction of the agent, not used to generate prompt.",  # noqa
+    )  # noqa
     expand_prompt: Optional[str] = Field(
         None, description="The expand prompt of the agent."
     )
@@ -299,9 +383,17 @@ class DefaultProfile(BaseModel, Profile):
         """Return the goal of current agent."""
         return self.goal
 
+    def get_retry_goal(self) -> Optional[str]:
+        """Return the retry goal of current agent."""
+        return self.retry_goal
+
     def get_constraints(self) -> Optional[List[str]]:
         """Return the constraints of current agent."""
         return self.constraints
+
+    def get_retry_constraints(self) -> Optional[List[str]]:
+        """Return the retry constraints of current agent."""
+        return self.retry_constraints
 
     def get_description(self) -> Optional[str]:
         """Return the description of current agent.
@@ -437,8 +529,10 @@ class ProfileConfig(BaseModel):
     profile_id: int = Field(0, description="The profile ID.")
     name: str | ConfigInfo | None = DynConfig(..., description="The name of the agent.")
     role: str | ConfigInfo | None = DynConfig(..., description="The role of the agent.")
-    goal: str | ConfigInfo | None = DynConfig(None, description="The goal.")
+    goal: str | ConfigInfo | None = DynConfig(None, description="The retry goal.")
+    retry_goal: str | ConfigInfo | None = DynConfig(None, description="The goal.")
     constraints: List[str] | ConfigInfo | None = DynConfig(None, is_list=True)
+    retry_constraints: List[str] | ConfigInfo | None = DynConfig(None, is_list=True)
     desc: str | ConfigInfo | None = DynConfig(
         None, description="The description of the agent."
     )
@@ -488,6 +582,8 @@ class ProfileConfig(BaseModel):
         name = self.name
         role = self.role
         goal = self.goal
+        retry_goal = self.retry_goal
+        retry_constraints = self.retry_constraints
         constraints = self.constraints
         desc = self.desc
         expand_prompt = self.expand_prompt
@@ -505,8 +601,12 @@ class ProfileConfig(BaseModel):
             role = role.query(**call_args)
         if isinstance(goal, ConfigInfo):
             goal = goal.query(**call_args)
+        if isinstance(retry_goal, ConfigInfo):
+            retry_goal = retry_goal.query(**call_args)
         if isinstance(constraints, ConfigInfo):
             constraints = constraints.query(**call_args)
+        if isinstance(retry_constraints, ConfigInfo):
+            retry_constraints = retry_constraints.query(**call_args)
         if isinstance(desc, ConfigInfo):
             desc = desc.query(**call_args)
         if isinstance(expand_prompt, ConfigInfo):
@@ -514,8 +614,18 @@ class ProfileConfig(BaseModel):
         if isinstance(examples, ConfigInfo):
             examples = examples.query(**call_args)
         if isinstance(system_prompt_template, ConfigInfo):
+            system_prompt_template.default = (
+                _DEFAULT_SYSTEM_TEMPLATE
+                if prefer_prompt_language == "en"
+                else _DEFAULT_SYSTEM_TEMPLATE_ZH
+            )
             system_prompt_template = system_prompt_template.query(**call_args)
         if isinstance(user_prompt_template, ConfigInfo):
+            user_prompt_template.default = (
+                _DEFAULT_USER_TEMPLATE
+                if prefer_prompt_language == "en"
+                else _DEFAULT_USER_TEMPLATE_ZH
+            )
             user_prompt_template = user_prompt_template.query(**call_args)
         if isinstance(write_memory_template, ConfigInfo):
             write_memory_template = write_memory_template.query(**call_args)
@@ -536,7 +646,9 @@ class ProfileConfig(BaseModel):
             name=name,
             role=role,
             goal=goal,
+            retry_goal=retry_goal,
             constraints=constraints,
+            retry_constraints=retry_constraints,
             desc=desc,
             expand_prompt=expand_prompt,
             examples=examples,

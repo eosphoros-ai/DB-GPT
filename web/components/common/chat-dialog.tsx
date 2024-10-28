@@ -1,15 +1,15 @@
+import { apiInterceptors, newDialogue } from '@/client/api';
 import useChat from '@/hooks/use-chat';
-import CompletionInput from './completion-input';
-import { useCallback, useState } from 'react';
 import { IChatDialogueMessageSchema, IChatDialogueSchema } from '@/types/chat';
+import { CaretLeftOutlined } from '@ant-design/icons';
+import { useRequest } from 'ahooks';
+import classNames from 'classnames';
+import { useCallback, useState } from 'react';
 import AgentContent from '../chat/agent-content';
+import ChatContent from '../chat/chat-content';
 import { renderModelIcon } from '../chat/header/model-selector';
 import MyEmpty from './MyEmpty';
-import { CaretLeftOutlined } from '@ant-design/icons';
-import classNames from 'classnames';
-import { useRequest } from 'ahooks';
-import { apiInterceptors, newDialogue } from '@/client/api';
-import ChatContent from '../chat/chat-content';
+import CompletionInput from './completion-input';
 
 interface Props {
   title?: string;
@@ -22,7 +22,7 @@ interface Props {
 }
 
 function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: Props) {
-  const chat = useChat({ queryAgentURL: completionApi });
+  const { chat } = useChat({ queryAgentURL: completionApi });
 
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<IChatDialogueMessageSchema[]>([]);
@@ -41,7 +41,7 @@ function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: 
   const handleChat = useCallback(
     (content: string) => {
       if (!data) return;
-      return new Promise<void>((resolve) => {
+      return new Promise<void>(resolve => {
         const tempList: IChatDialogueMessageSchema[] = [
           ...list,
           { role: 'human', context: content, model_name: model, order: 0, time_stamp: 0 },
@@ -53,7 +53,7 @@ function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: 
         chat({
           chatId: data?.conv_uid,
           data: { ...chatParams, chat_mode: chatMode, model_name: model, user_input: content },
-          onMessage: (message) => {
+          onMessage: message => {
             tempList[index].context = message;
             setList([...tempList]);
           },
@@ -63,7 +63,7 @@ function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: 
           onClose: () => {
             resolve();
           },
-          onError: (message) => {
+          onError: message => {
             tempList[index].context = message;
             setList([...tempList]);
             resolve();
@@ -86,19 +86,25 @@ function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: 
         },
       )}
     >
-      {title && <div className="p-4 border-b border-solid border-gray-100">{title}</div>}
-      <div className="flex-1 overflow-y-auto px-2">
+      {title && <div className='p-4 border-b border-solid border-gray-100'>{title}</div>}
+      <div className='flex-1 overflow-y-auto px-2'>
         {list.map((item, index) => (
-          <>{chatParams?.chat_mode === 'chat_agent' ? <AgentContent key={index} content={item} /> : <ChatContent key={index} content={item} />}</>
+          <>
+            {chatParams?.chat_mode === 'chat_agent' ? (
+              <AgentContent key={index} content={item} />
+            ) : (
+              <ChatContent key={index} content={item} />
+            )}
+          </>
         ))}
-        {!list.length && <MyEmpty description="" />}
+        {!list.length && <MyEmpty description='' />}
       </div>
-      <div className="flex w-full p-4 border-t border-solid border-gray-100 items-center">
-        {model && <div className="mr-2 flex">{renderModelIcon(model)}</div>}
+      <div className='flex w-full p-4 border-t border-solid border-gray-100 items-center'>
+        {model && <div className='mr-2 flex'>{renderModelIcon(model)}</div>}
         <CompletionInput loading={loading} onSubmit={handleChat} />
       </div>
       <div
-        className="flex items-center justify-center rounded-tl rounded-bl cursor-pointer w-5 h-11 absolute top-[50%] -left-5 -translate-y-[50%] bg-white"
+        className='flex items-center justify-center rounded-tl rounded-bl cursor-pointer w-5 h-11 absolute top-[50%] -left-5 -translate-y-[50%] bg-white'
         onClick={() => {
           setOpen(!open);
         }}

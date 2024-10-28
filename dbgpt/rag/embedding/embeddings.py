@@ -9,6 +9,7 @@ from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -655,6 +656,9 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
     timeout: int = Field(
         default=60, description="The timeout for the request in seconds."
     )
+    pass_trace_id: bool = Field(
+        default=True, description="Whether to pass the trace ID to the API."
+    )
 
     session: Optional[requests.Session] = None
 
@@ -688,10 +692,16 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
                 corresponds to a single input text.
         """
         # Call OpenAI Embedding API
+        headers = {}
+        current_span_id = root_tracer.get_current_span_id()
+        if self.pass_trace_id and current_span_id:
+            # Set the trace ID if available
+            headers[DBGPT_TRACER_SPAN_ID] = current_span_id
         res = self.session.post(  # type: ignore
             self.api_url,
             json={"input": texts, "model": self.model_name},
             timeout=self.timeout,
+            headers=headers,
         )
         return _handle_request_result(res)
 
@@ -717,6 +727,10 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
                 List[float] corresponds to a single input text.
         """
         headers = {"Authorization": f"Bearer {self.api_key}"}
+        current_span_id = root_tracer.get_current_span_id()
+        if self.pass_trace_id and current_span_id:
+            # Set the trace ID if available
+            headers[DBGPT_TRACER_SPAN_ID] = current_span_id
         async with aiohttp.ClientSession(
             headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
         ) as session:
@@ -874,11 +888,17 @@ class TongYiEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         self._api_key = kwargs.get("api_key")
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], max_batch_chunks_size=25
+    ) -> List[List[float]]:
         """Get the embeddings for a list of texts.
+
+        refer:https://help.aliyun.com/zh/model-studio/getting-started/models?
+        spm=a2c4g.11186623.0.0.62524a77NlILDI#c05fe72732770
 
         Args:
             texts (Documents): A list of texts to get embeddings for.
+            max_batch_chunks_size: The max batch size for embedding.
 
         Returns:
             Embedded texts as List[List[float]], where each inner List[float]
@@ -886,17 +906,27 @@ class TongYiEmbeddings(BaseModel, Embeddings):
         """
         from dashscope import TextEmbedding
 
-        # 最多支持10条，每条最长支持2048tokens
-        resp = TextEmbedding.call(
-            model=self.model_name, input=texts, api_key=self._api_key
-        )
-        if "output" not in resp:
-            raise RuntimeError(resp["message"])
+        embeddings = []
+        # batch size too longer may cause embedding error,eg: qwen online embedding
+        # models must not be larger than 25
+        # text-embedding-v3  embedding batch size should not be larger than 6
+        if str(self.model_name) == "text-embedding-v3":
+            max_batch_chunks_size = 6
 
-        embeddings = resp["output"]["embeddings"]
-        sorted_embeddings = sorted(embeddings, key=lambda e: e["text_index"])
+        for i in range(0, len(texts), max_batch_chunks_size):
+            batch_texts = texts[i : i + max_batch_chunks_size]
+            resp = TextEmbedding.call(
+                model=self.model_name, input=batch_texts, api_key=self._api_key
+            )
+            if "output" not in resp:
+                raise RuntimeError(resp["message"])
 
-        return [result["embedding"] for result in sorted_embeddings]
+            # 提取并排序嵌入
+            batch_embeddings = resp["output"]["embeddings"]
+            sorted_embeddings = sorted(batch_embeddings, key=lambda e: e["text_index"])
+            embeddings.extend([result["embedding"] for result in sorted_embeddings])
+
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a OpenAPI embedding model.
@@ -908,3 +938,106 @@ class TongYiEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         return self.embed_documents([text])[0]
+
+
+class QianFanEmbeddings(BaseModel, Embeddings):
+    """Baidu Qianfan Embeddings embedding models.
+
+    Embed:
+       .. code-block:: python
+
+           # embed the documents
+           vectors = embeddings.embed_documents([text1, text2, ...])
+
+           # embed the query
+           vectors = embeddings.embed_query(text)
+
+    """  # noqa: E501
+
+    client: Any
+    chunk_size: int = 16
+    endpoint: str = ""
+    """Endpoint of the Qianfan Embedding, required if custom model used."""
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
+    api_key: Optional[str] = Field(
+        default=None, description="The API key for the embeddings API."
+    )
+    api_secret: Optional[str] = Field(
+        default=None, description="The Secret key for the embeddings API."
+    )
+    """Model name
+    you could get from https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu
+
+    for now, we support Embedding-V1 and
+    - Embedding-V1 （默认模型）
+    - bge-large-en
+    - bge-large-zh
+
+    preset models are mapping to an endpoint.
+    `model` will be ignored if `endpoint` is set
+    """
+    model_name: str = Field(
+        default="text-embedding-v1", description="The name of the model to use."
+    )
+    init_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """init kwargs for qianfan client init, such as `query_per_second` which is
+        associated with qianfan resource object to limit QPS"""
+
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """extra params for model invoke using with `do`."""
+
+    def __init__(self, **kwargs):
+        """Initialize the QianFanEmbeddings."""
+        try:
+            import qianfan
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import python package: qianfan. "
+                "Please install qianfan by running `pip install qianfan`."
+            ) from exc
+
+        qianfan_ak = kwargs.get("api_key")
+        qianfan_sk = kwargs.get("api_secret")
+        model_name = kwargs.get("model_name")
+
+        if not qianfan_ak or not qianfan_sk or not model_name:
+            raise ValueError(
+                "API key, API secret, and model name are required to initialize "
+                "QianFanEmbeddings."
+            )
+
+        params = {
+            "model": model_name,
+            "ak": qianfan_ak,
+            "sk": qianfan_sk,
+        }
+
+        # Initialize the qianfan.Embedding client
+        kwargs["client"] = qianfan.Embedding(**params)
+        super().__init__(**kwargs)
+
+    def embed_query(self, text: str) -> List[float]:
+        """Compute query embeddings using a QianFan embedding model."""
+        resp = self.embed_documents([text])
+        return resp[0]
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """
+        Embeds a list of text documents using the AutoVOT algorithm.
+
+        Args:
+            texts (List[str]): A list of text documents to embed.
+
+        Returns:
+            List[List[float]]: A list of embeddings for each document in the input list.
+                            Each embedding is represented as a list of float values.
+        """
+        text_in_chunks = [
+            texts[i : i + self.chunk_size]
+            for i in range(0, len(texts), self.chunk_size)
+        ]
+        lst = []
+        for chunk in text_in_chunks:
+            resp = self.client.do(texts=chunk, **self.model_kwargs)
+            lst.extend([res["embedding"] for res in resp["data"]])
+        return lst

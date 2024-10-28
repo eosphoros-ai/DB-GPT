@@ -1,10 +1,11 @@
 """Build AWEL DAGs from serialized data."""
 
+import dataclasses
 import logging
 import uuid
 from contextlib import suppress
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
 
 from typing_extensions import Annotated
 
@@ -17,7 +18,9 @@ from dbgpt._private.pydantic import (
     model_to_dict,
     model_validator,
 )
+from dbgpt.configs import VARIABLES_SCOPE_FLOW_PRIVATE
 from dbgpt.core.awel.dag.base import DAG, DAGNode
+from dbgpt.core.awel.dag.dag_manager import DAGMetadata
 
 from .base import (
     OperatorType,
@@ -95,6 +98,12 @@ class FlowNodeData(BaseModel):
                 return ResourceMetadata(**value)
         raise ValueError("Unable to infer the type for `data`")
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict."""
+        dict_value = model_to_dict(self, exclude={"data"})
+        dict_value["data"] = self.data.to_dict()
+        return dict_value
+
 
 class FlowEdgeData(BaseModel):
     """Edge data in a flow."""
@@ -163,6 +172,149 @@ class FlowData(BaseModel):
     nodes: List[FlowNodeData] = Field(..., description="Nodes in the flow")
     edges: List[FlowEdgeData] = Field(..., description="Edges in the flow")
     viewport: FlowPositionData = Field(..., description="Viewport of the flow")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict."""
+        dict_value = model_to_dict(self, exclude={"nodes"})
+        dict_value["nodes"] = [n.to_dict() for n in self.nodes]
+        return dict_value
+
+
+class _VariablesRequestBase(BaseModel):
+    key: str = Field(
+        ...,
+        description="The key of the variable to create",
+        examples=["dbgpt.model.openai.api_key"],
+    )
+
+    label: str = Field(
+        ...,
+        description="The label of the variable to create",
+        examples=["My First OpenAI Key"],
+    )
+
+    description: Optional[str] = Field(
+        None,
+        description="The description of the variable to create",
+        examples=["Your OpenAI API key"],
+    )
+    value_type: Literal["str", "int", "float", "bool"] = Field(
+        "str",
+        description="The type of the value of the variable to create",
+        examples=["str", "int", "float", "bool"],
+    )
+    category: Literal["common", "secret"] = Field(
+        ...,
+        description="The category of the variable to create",
+        examples=["common"],
+    )
+    scope: str = Field(
+        ...,
+        description="The scope of the variable to create",
+        examples=["global"],
+    )
+    scope_key: Optional[str] = Field(
+        None,
+        description="The scope key of the variable to create",
+        examples=["dbgpt"],
+    )
+
+
+class VariablesRequest(_VariablesRequestBase):
+    """Variable request model.
+
+    For creating a new variable in the DB-GPT.
+    """
+
+    name: str = Field(
+        ...,
+        description="The name of the variable to create",
+        examples=["my_first_openai_key"],
+    )
+    value: Any = Field(
+        ..., description="The value of the variable to create", examples=["1234567890"]
+    )
+    enabled: Optional[bool] = Field(
+        True,
+        description="Whether the variable is enabled",
+        examples=[True],
+    )
+    user_name: Optional[str] = Field(None, description="User name")
+    sys_code: Optional[str] = Field(None, description="System code")
+
+
+class ParsedFlowVariables(BaseModel):
+    """Parsed variables for the flow."""
+
+    key: str = Field(
+        ...,
+        description="The key of the variable",
+        examples=["dbgpt.model.openai.api_key"],
+    )
+    name: Optional[str] = Field(
+        None,
+        description="The name of the variable",
+        examples=["my_first_openai_key"],
+    )
+    scope: str = Field(
+        ...,
+        description="The scope of the variable",
+        examples=["global"],
+    )
+    scope_key: Optional[str] = Field(
+        None,
+        description="The scope key of the variable",
+        examples=["dbgpt"],
+    )
+    sys_code: Optional[str] = Field(None, description="System code")
+    user_name: Optional[str] = Field(None, description="User name")
+
+
+class FlowVariables(_VariablesRequestBase):
+    """Variables for the flow."""
+
+    name: Optional[str] = Field(
+        None,
+        description="The name of the variable",
+        examples=["my_first_openai_key"],
+    )
+    value: Optional[Any] = Field(
+        None, description="The value of the variable", examples=["1234567890"]
+    )
+    parsed_variables: Optional[ParsedFlowVariables] = Field(
+        None, description="The parsed variables, parsed from the value"
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the metadata."""
+        if not isinstance(values, dict):
+            return values
+        if "parsed_variables" not in values:
+            parsed_variables = cls.parse_value_to_variables(values.get("value"))
+            if parsed_variables:
+                values["parsed_variables"] = parsed_variables
+        return values
+
+    @classmethod
+    def parse_value_to_variables(cls, value: Any) -> Optional[ParsedFlowVariables]:
+        """Parse the value to variables.
+
+        Args:
+            value (Any): The value to parse
+
+        Returns:
+            Optional[ParsedFlowVariables]: The parsed variables, None if the value is
+                invalid
+        """
+        from ...interface.variables import _is_variable_format, parse_variable
+
+        if not value or not isinstance(value, str) or not _is_variable_format(value):
+            return None
+
+        variable_dict = parse_variable(value)
+        return ParsedFlowVariables(**variable_dict)
 
 
 class State(str, Enum):
@@ -352,6 +504,15 @@ class FlowPanel(BaseModel):
         description="The flow panel modified time.",
         examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
     )
+    metadata: Optional[Union[DAGMetadata, Dict[str, Any]]] = Field(
+        default=None, description="The metadata of the flow"
+    )
+    variables: Optional[List[FlowVariables]] = Field(
+        default=None, description="The variables of the flow"
+    )
+    authors: Optional[List[str]] = Field(
+        default=None, description="The authors of the flow"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -370,9 +531,50 @@ class FlowPanel(BaseModel):
             values["name"] = name
         return values
 
+    def model_dump(self, **kwargs):
+        """Override the model dump method."""
+        exclude = kwargs.get("exclude", set())
+        if "flow_dag" not in exclude:
+            exclude.add("flow_dag")
+        if "flow_data" not in exclude:
+            exclude.add("flow_data")
+        kwargs["exclude"] = exclude
+        common_dict = super().model_dump(**kwargs)
+        if self.flow_dag:
+            common_dict["flow_dag"] = None
+        if self.flow_data:
+            common_dict["flow_data"] = self.flow_data.to_dict()
+        return common_dict
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dict."""
-        return model_to_dict(self, exclude={"flow_dag"})
+        return model_to_dict(self, exclude={"flow_dag", "flow_data"})
+
+    def get_variables_dict(self) -> List[Dict[str, Any]]:
+        """Get the variables dict."""
+        if not self.variables:
+            return []
+        return [v.dict() for v in self.variables]
+
+    @classmethod
+    def parse_variables(
+        cls, variables: Optional[List[Dict[str, Any]]] = None
+    ) -> Optional[List[FlowVariables]]:
+        """Parse the variables."""
+        if not variables:
+            return None
+        return [FlowVariables(**v) for v in variables]
+
+
+@dataclasses.dataclass
+class _KeyToNodeItem:
+    """Key to node item."""
+
+    key: str
+    source_order: int
+    target_order: int
+    mappers: List[str]
+    edge_index: int
 
 
 class FlowFactory:
@@ -390,8 +592,10 @@ class FlowFactory:
         key_to_operator_nodes: Dict[str, FlowNodeData] = {}
         key_to_resource_nodes: Dict[str, FlowNodeData] = {}
         key_to_resource: Dict[str, ResourceMetadata] = {}
-        key_to_downstream: Dict[str, List[Tuple[str, int, int]]] = {}
-        key_to_upstream: Dict[str, List[Tuple[str, int, int]]] = {}
+        # Record current node's downstream
+        key_to_downstream: Dict[str, List[_KeyToNodeItem]] = {}
+        # Record current node's upstream
+        key_to_upstream: Dict[str, List[_KeyToNodeItem]] = {}
         key_to_upstream_node: Dict[str, List[FlowNodeData]] = {}
         for node in flow_data.nodes:
             key = node.id
@@ -405,7 +609,12 @@ class FlowFactory:
                 key_to_resource_nodes[key] = node
                 key_to_resource[key] = node.data
 
-        for edge in flow_data.edges:
+        if not key_to_operator_nodes and not key_to_resource_nodes:
+            raise FlowMetadataException(
+                "No operator or resource nodes found in the flow."
+            )
+
+        for edge_index, edge in enumerate(flow_data.edges):
             source_key = edge.source
             target_key = edge.target
             source_node: FlowNodeData | None = key_to_operator_nodes.get(
@@ -425,12 +634,37 @@ class FlowFactory:
 
             if source_node.data.is_operator and target_node.data.is_operator:
                 # Operator to operator.
+                mappers = []
+                for i, out in enumerate(source_node.data.outputs):
+                    if i != edge.source_order:
+                        continue
+                    if out.mappers:
+                        # Current edge is a mapper edge, find the mappers.
+                        mappers = out.mappers
+                # Note: Not support mappers in the inputs of the target node now.
+
                 downstream = key_to_downstream.get(source_key, [])
-                downstream.append((target_key, edge.source_order, edge.target_order))
+                downstream.append(
+                    _KeyToNodeItem(
+                        key=target_key,
+                        source_order=edge.source_order,
+                        target_order=edge.target_order,
+                        mappers=mappers,
+                        edge_index=edge_index,
+                    )
+                )
                 key_to_downstream[source_key] = downstream
 
                 upstream = key_to_upstream.get(target_key, [])
-                upstream.append((source_key, edge.source_order, edge.target_order))
+                upstream.append(
+                    _KeyToNodeItem(
+                        key=source_key,
+                        source_order=edge.source_order,
+                        target_order=edge.target_order,
+                        mappers=mappers,
+                        edge_index=edge_index,
+                    )
+                )
                 key_to_upstream[target_key] = upstream
             elif not source_node.data.is_operator and target_node.data.is_operator:
                 # Resource to operator.
@@ -488,10 +722,10 @@ class FlowFactory:
         # Sort the keys by the order of the nodes.
         for key, value in key_to_downstream.items():
             # Sort by source_order.
-            key_to_downstream[key] = sorted(value, key=lambda x: x[1])
+            key_to_downstream[key] = sorted(value, key=lambda x: x.source_order)
         for key, value in key_to_upstream.items():
             # Sort by target_order.
-            key_to_upstream[key] = sorted(value, key=lambda x: x[2])
+            key_to_upstream[key] = sorted(value, key=lambda x: x.target_order)
 
         sorted_key_to_resource_nodes = list(key_to_resource_nodes.values())
         sorted_key_to_resource_nodes = sorted(
@@ -532,6 +766,7 @@ class FlowFactory:
             except FlowMetadataException as e:
                 raise e
             except Exception as e:
+                logger.warning(str(e), e)
                 raise FlowMetadataException(
                     f"Unable to build resource instance: {resource_key}, resource_cls: "
                     f"{resource_cls}, error: {e}"
@@ -588,15 +823,41 @@ class FlowFactory:
         self,
         flow_panel: FlowPanel,
         key_to_tasks: Dict[str, DAGNode],
-        key_to_downstream: Dict[str, List[Tuple[str, int, int]]],
-        key_to_upstream: Dict[str, List[Tuple[str, int, int]]],
+        key_to_downstream: Dict[str, List[_KeyToNodeItem]],
+        key_to_upstream: Dict[str, List[_KeyToNodeItem]],
         dag_id: Optional[str] = None,
     ) -> DAG:
         """Build the DAG."""
+        from ..dag.base import DAGVariables, _DAGVariablesItem
+
         formatted_name = flow_panel.name.replace(" ", "_")
         if not dag_id:
             dag_id = f"{self._dag_prefix}_{formatted_name}_{flow_panel.uid}"
-        with DAG(dag_id) as dag:
+
+        default_dag_variables: Optional[DAGVariables] = None
+        if flow_panel.variables:
+            variables = []
+            for v in flow_panel.variables:
+                scope_key = v.scope_key
+                if v.scope == VARIABLES_SCOPE_FLOW_PRIVATE and not scope_key:
+                    scope_key = dag_id
+                variables.append(
+                    _DAGVariablesItem(
+                        key=v.key,
+                        name=v.name,  # type: ignore
+                        label=v.label,
+                        description=v.description,
+                        value_type=v.value_type,
+                        category=v.category,
+                        scope=v.scope,
+                        scope_key=scope_key,
+                        value=v.value,
+                        user_name=flow_panel.user_name,
+                        sys_code=flow_panel.sys_code,
+                    )
+                )
+            default_dag_variables = DAGVariables(items=variables)
+        with DAG(dag_id, default_dag_variables=default_dag_variables) as dag:
             for key, task in key_to_tasks.items():
                 if not task._node_id:
                     task.set_node_id(dag._new_node_id())
@@ -610,7 +871,8 @@ class FlowFactory:
 
                 # This upstream has been sorted according to the order in the downstream
                 # So we just need to connect the task to the upstream.
-                for upstream_key, _, _ in upstream:
+                for up_item in upstream:
+                    upstream_key = up_item.key
                     # Just one direction.
                     upstream_task = key_to_tasks.get(upstream_key)
                     if not upstream_task:
@@ -621,7 +883,13 @@ class FlowFactory:
                         upstream_task.set_node_id(dag._new_node_id())
                     if upstream_task is None:
                         raise ValueError("Unable to find upstream task.")
-                    upstream_task >> task
+                    tasks = _build_mapper_operators(dag, up_item.mappers)
+                    tasks.append(task)
+                    last_task = upstream_task
+                    for t in tasks:
+                        # Connect the task to the upstream task.
+                        last_task >> t
+                        last_task = t
             return dag
 
     def pre_load_requirements(self, flow_panel: FlowPanel):
@@ -728,6 +996,23 @@ def _topological_sort(
     return key_to_order
 
 
+def _build_mapper_operators(dag: DAG, mappers: List[str]) -> List[DAGNode]:
+    from .base import _get_type_cls
+
+    tasks = []
+    for mapper in mappers:
+        try:
+            mapper_cls = _get_type_cls(mapper)
+            task = mapper_cls()
+            if not task._node_id:
+                task.set_node_id(dag._new_node_id())
+            tasks.append(task)
+        except Exception as e:
+            err_msg = f"Unable to build mapper task: {mapper}, error: {e}"
+            raise FlowMetadataException(err_msg)
+    return tasks
+
+
 def fill_flow_panel(flow_panel: FlowPanel):
     """Fill the flow panel with the latest metadata.
 
@@ -753,11 +1038,19 @@ def fill_flow_panel(flow_panel: FlowPanel):
                         new_param = input_parameters[i.name]
                         i.label = new_param.label
                         i.description = new_param.description
+                        i.dynamic = new_param.dynamic
+                        i.is_list = new_param.is_list
+                        i.dynamic_minimum = new_param.dynamic_minimum
+                        i.mappers = new_param.mappers
                 for i in node.data.outputs:
                     if i.name in output_parameters:
                         new_param = output_parameters[i.name]
                         i.label = new_param.label
                         i.description = new_param.description
+                        i.dynamic = new_param.dynamic
+                        i.is_list = new_param.is_list
+                        i.dynamic_minimum = new_param.dynamic_minimum
+                        i.mappers = new_param.mappers
             else:
                 data = cast(ResourceMetadata, node.data)
                 key = data.get_origin_id()
@@ -782,6 +1075,8 @@ def fill_flow_panel(flow_panel: FlowPanel):
                     param.options = new_param.get_dict_options()  # type: ignore
                     param.default = new_param.default
                     param.placeholder = new_param.placeholder
+                    param.alias = new_param.alias
+                    param.ui = new_param.ui
 
         except (FlowException, ValueError) as e:
             logger.warning(f"Unable to fill the flow panel: {e}")

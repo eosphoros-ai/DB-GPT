@@ -201,7 +201,7 @@ except ImportError as e:
     logging.warning(f"Integrating dbgpt dbgpts command line tool failed: {e}")
 
 try:
-    from dbgpt.client._cli import run_flow
+    from dbgpt.client._cli import flow as run_flow
 
     add_command_alias(run_flow, name="flow", parent_group=run)
 except ImportError as e:

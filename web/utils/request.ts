@@ -1,9 +1,11 @@
+import { getUserId } from '@/utils';
 import { message } from 'antd';
-import axios from './ctx-axios';
 import { isPlainObject } from 'lodash';
+import axios from './ctx-axios';
 
 const DEFAULT_HEADERS = {
   'content-type': 'application/json',
+  'User-Id': getUserId(),
 };
 
 // body 字段 trim
@@ -23,8 +25,8 @@ const sanitizeBody = (obj: Record<string, any>): string => {
 export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
   if (qs) {
     const str = Object.keys(qs)
-      .filter((k) => qs[k] !== undefined && qs[k] !== '')
-      .map((k) => `${k}=${qs[k]}`)
+      .filter(k => qs[k] !== undefined && qs[k] !== '')
+      .map(k => `${k}=${qs[k]}`)
       .join('&');
     if (str) {
       url += `?${str}`;
@@ -34,8 +36,8 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
     .get<null, any>('/api' + url, {
       headers: DEFAULT_HEADERS,
     })
-    .then((res) => res)
-    .catch((err) => {
+    .then(res => res)
+    .catch(err => {
       message.error(err);
       Promise.reject(err);
     });
@@ -44,8 +46,8 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
 export const sendSpaceGetRequest = (url: string, qs?: { [key: string]: any }) => {
   if (qs) {
     const str = Object.keys(qs)
-      .filter((k) => qs[k] !== undefined && qs[k] !== '')
-      .map((k) => `${k}=${qs[k]}`)
+      .filter(k => qs[k] !== undefined && qs[k] !== '')
+      .map(k => `${k}=${qs[k]}`)
       .join('&');
     if (str) {
       url += `?${str}`;
@@ -55,8 +57,8 @@ export const sendSpaceGetRequest = (url: string, qs?: { [key: string]: any }) =>
     .get<null, any>(url, {
       headers: DEFAULT_HEADERS,
     })
-    .then((res) => res)
-    .catch((err) => {
+    .then(res => res)
+    .catch(err => {
       message.error(err);
       Promise.reject(err);
     });
@@ -69,8 +71,8 @@ export const sendPostRequest = (url: string, body?: any) => {
       body: reqBody,
       headers: DEFAULT_HEADERS,
     })
-    .then((res) => res)
-    .catch((err) => {
+    .then(res => res)
+    .catch(err => {
       message.error(err);
       Promise.reject(err);
     });
@@ -81,8 +83,8 @@ export const sendSpacePostRequest = (url: string, body?: any) => {
     .post<null, any>(url, body, {
       headers: DEFAULT_HEADERS,
     })
-    .then((res) => res)
-    .catch((err) => {
+    .then(res => res)
+    .catch(err => {
       message.error(err);
       Promise.reject(err);
     });
@@ -91,8 +93,8 @@ export const sendSpacePostRequest = (url: string, body?: any) => {
 export const sendSpaceUploadPostRequest = (url: string, body?: any) => {
   return axios
     .post<null, any>(url, body)
-    .then((res) => res)
-    .catch((err) => {
+    .then(res => res)
+    .catch(err => {
       message.error(err);
       Promise.reject(err);
     });

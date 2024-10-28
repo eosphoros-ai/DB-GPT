@@ -85,8 +85,8 @@ vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
         name="test_vstore",
         persist_path="/tmp/awel_rag_test_vector_store",
-    ),
-    embedding_fn=embeddings
+        embedding_fn=embeddings
+    )
 )
 
 with DAG("load_knowledge_dag") as knowledge_dag:
@@ -98,7 +98,7 @@ with DAG("load_knowledge_dag") as knowledge_dag:
     )
     knowledge_task >> assembler_task
 
-chunks = asyncio.run(assembler_task.call("https://docs.dbgpt.site/docs/latest/awel/"))
+chunks = asyncio.run(assembler_task.call("https://docs.dbgpt.site/docs/awel/"))
 print(f"Chunk length: {len(chunks)}")
 ```
 
@@ -275,8 +275,8 @@ vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
         name="test_vstore",
         persist_path="/tmp/awel_rag_test_vector_store",
+        embedding_fn=embeddings
     ),
-    embedding_fn=embeddings
 )
 
 with DAG("load_knowledge_dag") as knowledge_dag:
@@ -288,7 +288,7 @@ with DAG("load_knowledge_dag") as knowledge_dag:
     )
     knowledge_task >> assembler_task
 
-chunks = asyncio.run(assembler_task.call("https://docs.dbgpt.site/docs/latest/awel/"))
+chunks = asyncio.run(assembler_task.call("https://docs.dbgpt.site/docs/awel/"))
 print(f"Chunk length: {len(chunks)}\n")
 
 prompt = """Based on the known information below, provide users with professional and concise answers to their questions. 

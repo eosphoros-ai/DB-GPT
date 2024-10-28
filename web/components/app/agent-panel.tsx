@@ -1,8 +1,8 @@
-import { apiInterceptors, getAppStrategy, getAppStrategyValues, getResource } from '@/client/api';
+import { apiInterceptors, getAppStrategy, getAppStrategyValues } from '@/client/api';
 import { Button, Input, Select } from 'antd';
-import React, { useEffect, useMemo, useState } from 'react';
-import ResourceCard from './resource-card';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import ResourceCard from './resource-card';
 
 interface IProps {
   resourceTypes: any;
@@ -40,14 +40,14 @@ export default function AgentPanel(props: IProps) {
   const getStrategy = async () => {
     const [_, data] = await apiInterceptors(getAppStrategy());
     if (data) {
-      setStrategyOptions(data?.map((item) => ({ label: item, value: item })));
+      setStrategyOptions(data?.map(item => ({ label: item.name_cn, value: item.value })));
     }
   };
 
   const getStrategyValues = async (type: string) => {
     const [_, data] = await apiInterceptors(getAppStrategyValues(type));
     if (data) {
-      setStrategyValueOptions(data.map((item) => ({ label: item, value: item })) ?? []);
+      setStrategyValueOptions(data.map(item => ({ label: item, value: item })) ?? []);
     }
   };
 
@@ -88,35 +88,35 @@ export default function AgentPanel(props: IProps) {
 
   return (
     <div>
-      <div className="flex items-center mb-6 mt-6">
-        <div className="mr-2 w-16 text-center">{t('Prompt')}:</div>
+      <div className='flex items-center mb-6 mt-6'>
+        <div className='mr-2 w-16 text-center'>{t('Prompt')}:</div>
         <Input
           required
-          className="mr-6 w-1/4"
+          className='mr-6 w-1/4'
           value={agent.prompt_template}
-          onChange={(e) => {
+          onChange={e => {
             updateAgent(e.target.value, 'prompt_template');
           }}
         />
-        <div className="mr-2">{t('LLM_strategy')}:</div>
+        <div className='mr-2'>{t('LLM_strategy')}:</div>
         <Select
           value={agent.llm_strategy}
           options={strategyOptions}
-          className="w-1/6 mr-6"
-          onChange={(value) => {
+          className='w-1/6 mr-6'
+          onChange={value => {
             updateAgent(value, 'llm_strategy');
             getStrategyValues(value);
           }}
         />
         {strategyValueOptions && strategyValueOptions.length > 0 && (
           <>
-            <div className="mr-2">{t('LLM_strategy_value')}:</div>
+            <div className='mr-2'>{t('LLM_strategy_value')}:</div>
             <Select
               value={formatStrategyValue(agent.llm_strategy_value)}
-              className="w-1/4"
-              mode="multiple"
+              className='w-1/4'
+              mode='multiple'
               options={strategyValueOptions}
-              onChange={(value) => {
+              onChange={value => {
                 if (!value || value?.length === 0) {
                   updateAgent(null, 'llm_strategy_value');
                   return null;
@@ -136,7 +136,7 @@ export default function AgentPanel(props: IProps) {
           </>
         )}
       </div>
-      <div className="mb-3 text-lg font-bold">{t('available_resources')}</div>
+      <div className='mb-3 text-lg font-bold'>{t('available_resources')}</div>
       {resources.map((resource: any, index: number) => {
         return (
           <ResourceCard
@@ -148,7 +148,7 @@ export default function AgentPanel(props: IProps) {
           />
         );
       })}
-      <Button type="primary" className="mt-2" size="middle" onClick={handelAdd}>
+      <Button type='primary' className='mt-2' size='middle' onClick={handelAdd}>
         {t('add_resource')}
       </Button>
     </div>

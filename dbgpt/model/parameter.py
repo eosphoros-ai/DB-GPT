@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Optional, Tuple, Union
 
-from dbgpt.util.parameter_utils import BaseParameters
+from dbgpt.util.parameter_utils import BaseParameters, BaseServerParameters
 
 
 class WorkerType(str, Enum):
@@ -48,10 +48,7 @@ class WorkerType(str, Enum):
 
 
 @dataclass
-class ModelControllerParameters(BaseParameters):
-    host: Optional[str] = field(
-        default="0.0.0.0", metadata={"help": "Model Controller deploy host"}
-    )
+class ModelControllerParameters(BaseServerParameters):
     port: Optional[int] = field(
         default=8000, metadata={"help": "Model Controller deploy port"}
     )
@@ -133,24 +130,6 @@ class ModelControllerParameters(BaseParameters):
         },
     )
 
-    daemon: Optional[bool] = field(
-        default=False, metadata={"help": "Run Model Controller in background"}
-    )
-    log_level: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Logging level",
-            "valid_values": [
-                "FATAL",
-                "ERROR",
-                "WARNING",
-                "WARNING",
-                "INFO",
-                "DEBUG",
-                "NOTSET",
-            ],
-        },
-    )
     log_file: Optional[str] = field(
         default="dbgpt_model_controller.log",
         metadata={
@@ -172,15 +151,9 @@ class ModelControllerParameters(BaseParameters):
 
 
 @dataclass
-class ModelAPIServerParameters(BaseParameters):
-    host: Optional[str] = field(
-        default="0.0.0.0", metadata={"help": "Model API server deploy host"}
-    )
+class ModelAPIServerParameters(BaseServerParameters):
     port: Optional[int] = field(
         default=8100, metadata={"help": "Model API server deploy port"}
-    )
-    daemon: Optional[bool] = field(
-        default=False, metadata={"help": "Run Model API server in background"}
     )
     controller_addr: Optional[str] = field(
         default="http://127.0.0.1:8000",
@@ -194,22 +167,10 @@ class ModelAPIServerParameters(BaseParameters):
     embedding_batch_size: Optional[int] = field(
         default=None, metadata={"help": "Embedding batch size"}
     )
-
-    log_level: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Logging level",
-            "valid_values": [
-                "FATAL",
-                "ERROR",
-                "WARNING",
-                "WARNING",
-                "INFO",
-                "DEBUG",
-                "NOTSET",
-            ],
-        },
+    ignore_stop_exceeds_error: Optional[bool] = field(
+        default=False, metadata={"help": "Ignore exceeds stop words error"}
     )
+
     log_file: Optional[str] = field(
         default="dbgpt_model_apiserver.log",
         metadata={
@@ -237,7 +198,7 @@ class BaseModelParameters(BaseParameters):
 
 
 @dataclass
-class ModelWorkerParameters(BaseModelParameters):
+class ModelWorkerParameters(BaseServerParameters, BaseModelParameters):
     worker_type: Optional[str] = field(
         default=None,
         metadata={"valid_values": WorkerType.values(), "help": "Worker type"},
@@ -257,15 +218,9 @@ class ModelWorkerParameters(BaseModelParameters):
             "tags": "fixed",
         },
     )
-    host: Optional[str] = field(
-        default="0.0.0.0", metadata={"help": "Model worker deploy host"}
-    )
 
     port: Optional[int] = field(
         default=8001, metadata={"help": "Model worker deploy port"}
-    )
-    daemon: Optional[bool] = field(
-        default=False, metadata={"help": "Run Model Worker in background"}
     )
     limit_model_concurrency: Optional[int] = field(
         default=5, metadata={"help": "Model concurrency limit"}
@@ -280,7 +235,8 @@ class ModelWorkerParameters(BaseModelParameters):
     worker_register_host: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The ip address of current worker to register to ModelController. If None, the address is automatically determined"
+            "help": "The ip address of current worker to register to ModelController. "
+            "If None, the address is automatically determined"
         },
     )
     controller_addr: Optional[str] = field(
@@ -293,21 +249,6 @@ class ModelWorkerParameters(BaseModelParameters):
         default=20, metadata={"help": "The interval for sending heartbeats (seconds)"}
     )
 
-    log_level: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Logging level",
-            "valid_values": [
-                "FATAL",
-                "ERROR",
-                "WARNING",
-                "WARNING",
-                "INFO",
-                "DEBUG",
-                "NOTSET",
-            ],
-        },
-    )
     log_file: Optional[str] = field(
         default="dbgpt_model_worker_manager.log",
         metadata={
@@ -620,6 +561,13 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
             "help": "The api type of current proxy the current embedding model(OPENAI_API_TYPE), if you use Azure, it can be: azure"
         },
     )
+    proxy_api_secret: str = field(
+        default=None,
+        metadata={
+            "tags": "privacy",
+            "help": "The api secret of the current embedding model(OPENAI_API_SECRET)",
+        },
+    )
     proxy_api_version: Optional[str] = field(
         default=None,
         metadata={
@@ -665,7 +613,7 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
 
 
 _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {
-    ProxyEmbeddingParameters: "proxy_openai,proxy_azure,proxy_http_openapi,proxy_ollama,proxy_tongyi,rerank_proxy_http_openapi",
+    ProxyEmbeddingParameters: "proxy_openai,proxy_azure,proxy_http_openapi,proxy_ollama,proxy_tongyi,proxy_qianfan,rerank_proxy_http_openapi",
 }
 
 EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG = {}

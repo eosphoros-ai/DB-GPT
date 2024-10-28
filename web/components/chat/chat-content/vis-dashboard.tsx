@@ -24,7 +24,7 @@ function VisDashboard({ data }: Props) {
     if (data.chart_count > 1) {
       const layout = chartLayout[data.chart_count - 2];
       let prevIndex = 0;
-      return layout.map((item) => {
+      return layout.map(item => {
         const items = data.data.slice(prevIndex, prevIndex + item);
         prevIndex = item;
         return items;
@@ -34,17 +34,17 @@ function VisDashboard({ data }: Props) {
   }, [data.data, data.chart_count]);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className='flex flex-col gap-3'>
       {charts.map((row, index) => (
-        <div key={`row-${index}`} className="flex gap-3">
+        <div key={`row-${index}`} className='flex gap-3'>
           {row.map((chart, subIndex) => (
             <div
               key={`chart-${subIndex}`}
-              className="flex flex-1 flex-col justify-between p-4 rounded border border-gray-200 dark:border-gray-500 whitespace-normal"
+              className='flex flex-1 flex-col justify-between p-4 rounded border border-gray-200 dark:border-gray-500 whitespace-normal'
             >
               <div>
-                {chart.title && <div className="mb-2 text-lg">{chart.title}</div>}
-                {chart.describe && <div className="mb-4 text-sm text-gray-500">{chart.describe}</div>}
+                {chart.title && <div className='mb-2 text-lg'>{chart.title}</div>}
+                {chart.describe && <div className='mb-4 text-sm text-gray-500'>{chart.describe}</div>}
               </div>
               <AutoChart data={chart.data} chartType={getChartType(chart.type)} />
             </div>

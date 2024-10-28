@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 class BlankAction(Action):
     """Blank action class."""
 
-    def __init__(self):
-        """Create a blank action."""
-        super().__init__()
+    def __init__(self, **kwargs):
+        """Blank action init."""
+        super().__init__(**kwargs)
 
     @property
     def ai_out_schema(self) -> Optional[str]:

@@ -7,6 +7,8 @@ body {
   font-family: var(--joy-fontFamily-body, var(--joy-Josefin Sans, sans-serif));
   line-height: var(--joy-lineHeight-md, 1.5);
   --antd-primary-color: #0069fe;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-appearance: none;
 }
 
 .light {
@@ -18,6 +20,7 @@ body {
   color: #f7f7f7;
   background-color: #151622;
 }
+
 .dark-sub-bg {
   background-color: rgb(35, 38, 44);
 }
@@ -46,15 +49,11 @@ body {
   color: white !important;
 }
 
-table tr td {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 .scrollbar-default::-webkit-scrollbar {
   display: block;
   width: 6px;
 }
+
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
   display: none;
@@ -72,11 +71,13 @@ table tr td {
   background: #555;
 }
 
+
+
 .dark :where(.css-dev-only-do-not-override-18iikkb).ant-tabs .ant-tabs-tab-btn {
   color: white;
 }
 
-:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label > label {
+:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label>label {
   height: 36px;
 }
 
@@ -85,6 +86,40 @@ table tr td {
     transform: rotate(360deg);
   }
 }
+
 .react-flow__panel {
   display: none !important;
+}
+
+#home-container .ant-tabs-tab-active {
+  font-size: 16px;
+}
+
+#home-container .ant-tabs-tab {
+  font-size: 16px;
+}
+
+#home-container .ant-card-body {
+  padding: 12px 24px;
+}
+
+pre {
+  width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding-left: 0.5rem;
+}
+
+table {
+  display: block;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.rc-md-editor {
+  height: inherit;
+}
+
+.rc-md-editor .editor-container>.section {
+  border-right: none !important;
 }

@@ -33,6 +33,10 @@ class ModelInstance:
     prompt_template: Optional[str] = None
     last_heartbeat: Optional[datetime] = None
 
+    def to_dict(self) -> Dict:
+        """Convert to dict"""
+        return asdict(self)
+
 
 class WorkerApplyType(str, Enum):
     START = "start"

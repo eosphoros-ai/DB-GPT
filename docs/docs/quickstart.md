@@ -6,7 +6,7 @@ DB-GPT supports the installation and use of a variety of open source and closed 
 
 
 :::info note
-- Detailed installation and deployment tutorials can be found in [Installation](/docs/installation).
+- Detailed installation and deployment tutorials can be found in [Installation](./installation).
 - This page only introduces deployment based on ChatGPT proxy and local glm model.
 :::
 
@@ -26,7 +26,7 @@ git clone https://github.com/eosphoros-ai/DB-GPT.git
 
 ### Miniconda environment installation
 
-- The default database uses SQLite, so there is no need to install a database in the default startup mode. If you need to use other databases, you can read the [advanced tutorials](/docs/application_manual/advanced_tutorial/rag) below. We recommend installing the Python virtual environment through the conda virtual environment. For the installation of Miniconda environment, please refer to the [Miniconda installation tutorial](https://docs.conda.io/projects/miniconda/en/latest/).
+- The default database uses SQLite, so there is no need to install a database in the default startup mode. If you need to use other databases, you can read the [advanced tutorials](./application/advanced_tutorial/rag.md) below. We recommend installing the Python virtual environment through the conda virtual environment. For the installation of Miniconda environment, please refer to the [Miniconda installation tutorial](https://docs.conda.io/projects/miniconda/en/latest/).
 
 :::tip
 Create a Python virtual environment

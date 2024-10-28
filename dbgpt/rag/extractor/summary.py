@@ -164,7 +164,7 @@ class SummaryExtractor(Extractor):
             prompt = prompt_template.format(context=chunk_text)
             messages = [ModelMessage(role=ModelMessageRoleType.HUMAN, content=prompt)]
             request = ModelRequest(model=self._model_name, messages=messages)
-            tasks.append(self._llm_client.generate(request))
+            tasks.append(self._llm_client.generate(request))  # type ignore
         summary_results = await run_async_tasks(
             tasks=tasks, concurrency_limit=self._concurrency_limit_with_llm
         )

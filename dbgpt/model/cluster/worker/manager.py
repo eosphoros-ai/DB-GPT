@@ -827,11 +827,17 @@ async def api_model_shutdown(request: WorkerStartupRequest):
 
 
 def _setup_fastapi(
-    worker_params: ModelWorkerParameters, app=None, ignore_exception: bool = False
+    worker_params: ModelWorkerParameters,
+    app=None,
+    ignore_exception: bool = False,
+    system_app: Optional[SystemApp] = None,
 ):
     if not app:
         app = create_app()
         setup_http_service_logging()
+
+        if system_app:
+            system_app._asgi_app = app
 
     if worker_params.standalone:
         from dbgpt.model.cluster.controller.controller import initialize_controller
@@ -848,7 +854,7 @@ def _setup_fastapi(
         logger.info(
             f"Run WorkerManager with standalone mode, controller_addr: {worker_params.controller_addr}"
         )
-        initialize_controller(app=app)
+        initialize_controller(app=app, system_app=system_app)
         app.include_router(controller_router, prefix="/api")
 
     async def startup_event():
@@ -1074,7 +1080,7 @@ def initialize_worker_manager_in_client(
         worker_params.register = True
         worker_params.port = local_port
         logger.info(f"Worker params: {worker_params}")
-        _setup_fastapi(worker_params, app, ignore_exception=True)
+        _setup_fastapi(worker_params, app, ignore_exception=True, system_app=system_app)
         _start_local_worker(worker_manager, worker_params)
         worker_manager.after_start(start_listener)
         _start_local_embedding_worker(
@@ -1100,7 +1106,9 @@ def initialize_worker_manager_in_client(
         worker_manager.worker_manager = RemoteWorkerManager(client)
         worker_manager.after_start(start_listener)
         initialize_controller(
-            app=app, remote_controller_addr=worker_params.controller_addr
+            app=app,
+            remote_controller_addr=worker_params.controller_addr,
+            system_app=system_app,
         )
         loop = asyncio.get_event_loop()
         loop.run_until_complete(worker_manager.start())
@@ -1140,17 +1148,22 @@ def run_worker_manager(
 
     embedded_mod = True
     logger.info(f"Worker params: {worker_params}")
+    system_app = SystemApp()
     if not app:
         # Run worker manager independently
         embedded_mod = False
-        app = _setup_fastapi(worker_params)
+        app = _setup_fastapi(worker_params, system_app=system_app)
+    system_app._asgi_app = app
 
-    system_app = SystemApp(app)
     initialize_tracer(
         os.path.join(LOGDIR, worker_params.tracer_file),
         system_app=system_app,
-        root_operation_name="DB-GPT-WorkerManager-Entry",
+        root_operation_name="DB-GPT-ModelWorker",
         tracer_storage_cls=worker_params.tracer_storage_cls,
+        enable_open_telemetry=worker_params.tracer_to_open_telemetry,
+        otlp_endpoint=worker_params.otel_exporter_otlp_traces_endpoint,
+        otlp_insecure=worker_params.otel_exporter_otlp_traces_insecure,
+        otlp_timeout=worker_params.otel_exporter_otlp_traces_timeout,
     )
 
     _start_local_worker(worker_manager, worker_params)

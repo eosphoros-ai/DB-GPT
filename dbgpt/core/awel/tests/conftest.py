@@ -1,17 +1,17 @@
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager
 from typing import AsyncIterator, List
 
 import pytest
 import pytest_asyncio
 
-from .. import (
-    DAGContext,
-    DefaultWorkflowRunner,
-    InputOperator,
-    SimpleInputSource,
-    TaskState,
-    WorkflowRunner,
+from dbgpt.component import SystemApp
+
+from ...interface.variables import (
+    StorageVariables,
+    StorageVariablesProvider,
+    VariablesIdentifier,
 )
+from .. import DAGVar, DefaultWorkflowRunner, InputOperator, SimpleInputSource
 from ..task.task_impl import _is_async_iterator
 
 
@@ -102,3 +102,34 @@ async def stream_input_nodes(request):
     param["is_stream"] = True
     async with _create_input_node(**param) as input_nodes:
         yield input_nodes
+
+
+@asynccontextmanager
+async def _create_variables(**kwargs):
+    sys_app = SystemApp()
+    DAGVar.set_current_system_app(sys_app)
+    vp = StorageVariablesProvider(system_app=sys_app)
+    vars = kwargs.get("vars")
+    if vars and isinstance(vars, dict):
+        for param_key, param_var in vars.items():
+            key = param_var.get("key")
+            value = param_var.get("value")
+            value_type = param_var.get("value_type")
+            category = param_var.get("category", "common")
+            id = VariablesIdentifier.from_str_identifier(key)
+            vp.save(
+                StorageVariables.from_identifier(
+                    id, value, value_type, label="", category=category
+                )
+            )
+    else:
+        raise ValueError("vars is required.")
+
+    yield vp
+
+
+@pytest_asyncio.fixture
+async def variables_provider(request):
+    param = getattr(request, "param", {})
+    async with _create_variables(**param) as vp:
+        yield vp

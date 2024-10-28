@@ -178,4 +178,4 @@ In the above code, we use the `ToolAssistantAgent` to select and call the approp
 In the above code, we use the `tool` decorator to define the tool function. It will wrap the function to a 
 `FunctionTool` object. And `FunctionTool` is a subclass of `BaseTool`, which is a base class of all tools.
 
-Actually, **tool** is a special **resource** in the `DB-GPT` agent. You will see more details in the [Resource](./resource.md) section.
+Actually, **tool** is a special **resource** in the `DB-GPT` agent. You will see more details in the [Resource](../modules/resource/resource.md) section.

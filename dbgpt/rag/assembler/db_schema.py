@@ -85,7 +85,7 @@ class DBSchemaAssembler(BaseAssembler):
         """Return chunk ids."""
         return self._chunks
 
-    def persist(self) -> List[str]:
+    def persist(self, **kwargs: Any) -> List[str]:
         """Persist chunks into vector store.
 
         Returns:

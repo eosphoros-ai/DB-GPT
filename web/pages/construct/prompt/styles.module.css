@@ -1,0 +1,19 @@
+.prompt-container table {
+  display: table;
+}
+
+.prompt-operate-container :global .ant-card-head {
+  min-height: fit-content;
+  padding: 5px 0 5px 20px;
+}
+
+.prompt-operate-container :global .ant-card-head-title {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.prompt-operate-container :global .ant-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}

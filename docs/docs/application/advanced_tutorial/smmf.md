@@ -1,9 +1,9 @@
 # SMMF
 
-The DB-GPT project provides service-oriented multi-model management capabilities. Developer who are interested in related capabilities can read the [SMMF](/docs/modules/smmf) module part. Here we focus on how to use multi-LLMs.
+The DB-GPT project provides service-oriented multi-model management capabilities. Developer who are interested in related capabilities can read the [SMMF](../../modules/smmf.md) module part. Here we focus on how to use multi-LLMs.
 
 
-Here we mainly introduce the usage through the web interface. For developer interested in the command line, you can refer to the [cluster deployment](/docs/installation/model_service/cluster) model. Open the DB-GPT-Web frontend service and click on `Model Management` to enter the multi-model management interface.
+Here we mainly introduce the usage through the web interface. For developer interested in the command line, you can refer to the [cluster deployment](../../installation/model_service/cluster.md) model. Open the DB-GPT-Web frontend service and click on `Model Management` to enter the multi-model management interface.
 
 
 ## List Models
@@ -61,4 +61,4 @@ Observability tools (viewing and analyzing observability logs)
 
 We won't go into detail about the usage of the command-line tool here. You can use the `dbgpt --help` command to obtain specific usage documentation. Additionally, you can check the documentation for individual subcommands. For example, you can use `dbgpt start --help` to view the documentation for starting a service. For more information, please refer to the document provided below.
 
-- [Debugging](/docs/application/advanced_tutorial/debugging)
+- [Debugging](../advanced_tutorial/debugging.md)

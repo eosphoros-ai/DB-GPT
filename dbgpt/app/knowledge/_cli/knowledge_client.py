@@ -125,7 +125,7 @@ def knowledge_init(
     logger.info(f"Create space: {space}")
     client.space_add(space)
     logger.info("Create space successfully")
-    space_list = client.space_list(KnowledgeSpaceRequest(name=space.name))
+    space_list = client.space_list(space)
     if len(space_list) != 1:
         raise Exception(f"List space {space.name} error")
     space = KnowledgeSpaceRequest(**space_list[0])
@@ -146,7 +146,10 @@ def knowledge_init(
                         f"Document {filename} already exist in space {space.name}, overwrite it"
                     )
                     client.document_delete(
-                        space.name, KnowledgeDocumentRequest(doc_name=filename)
+                        space.name,
+                        KnowledgeDocumentRequest(
+                            doc_name=filename, doc_type=KnowledgeType.DOCUMENT.value
+                        ),
                     )
                     doc_id = client.document_upload(
                         space.name, filename, KnowledgeType.DOCUMENT.value, filename

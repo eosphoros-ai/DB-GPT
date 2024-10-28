@@ -40,7 +40,7 @@ class URLKnowledge(Knowledge):
             from langchain.document_loaders import WebBaseLoader  # mypy: ignore
 
             if self._path is not None:
-                web_reader = WebBaseLoader(web_path=self._path)
+                web_reader = WebBaseLoader(web_path=self._path, encoding="utf8")
                 documents = web_reader.load()
             else:
                 # Handle the case where self._path is None

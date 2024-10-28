@@ -15,7 +15,6 @@ DBGPTS_REPO_HOME = os.getenv("DBGPTS_REPO_HOME", str(DEFAULT_DBGPTS_DIR / "repos
 
 DEFAULT_REPO_MAP = {
     "eosphoros/dbgpts": "https://github.com/eosphoros-ai/dbgpts.git",
-    "fangyinc/dbgpts": "https://github.com/fangyinc/dbgpts.git",
 }
 
 DEFAULT_PACKAGES = ["agents", "apps", "operators", "workflow", "resources"]

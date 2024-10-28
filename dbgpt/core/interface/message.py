@@ -317,6 +317,25 @@ class ModelMessage(BaseModel):
         """
         return _messages_to_str(messages, human_prefix, ai_prefix, system_prefix)
 
+    @staticmethod
+    def parse_user_message(messages: List[ModelMessage]) -> str:
+        """Parse user message from messages.
+
+        Args:
+            messages (List[ModelMessage]): The all messages in the conversation.
+
+        Returns:
+            str: The user message
+        """
+        lass_user_message = None
+        for message in messages[::-1]:
+            if message.role == ModelMessageRoleType.HUMAN:
+                lass_user_message = message.content
+                break
+        if not lass_user_message:
+            raise ValueError("No user message")
+        return lass_user_message
+
 
 _SingleRoundMessage = List[BaseMessage]
 _MultiRoundMessageMapper = Callable[[List[_SingleRoundMessage]], List[BaseMessage]]
@@ -481,6 +500,7 @@ class OnceConversation:
         user_name: Optional[str] = None,
         sys_code: Optional[str] = None,
         summary: Optional[str] = None,
+        app_code: Optional[str] = None,
         **kwargs,
     ):
         """Create a new conversation."""
@@ -488,6 +508,7 @@ class OnceConversation:
         self.user_name: Optional[str] = user_name
         self.sys_code: Optional[str] = sys_code
         self.summary: Optional[str] = summary
+        self.app_code: Optional[str] = app_code
 
         self.messages: List[BaseMessage] = kwargs.get("messages", [])
         self.start_date: str = kwargs.get("start_date", "")
@@ -640,6 +661,8 @@ class OnceConversation:
         self.chat_order = conversation.chat_order
         if not self.model_name and conversation.model_name:
             self.model_name = conversation.model_name
+        if not self.app_code and conversation.app_code:
+            self.app_code = conversation.app_code
         if not self.param_type and conversation.param_type:
             self.param_type = conversation.param_type
         if not self.param_value and conversation.param_value:
@@ -973,6 +996,7 @@ class StorageConversation(OnceConversation, StorageItem):
         sys_code: Optional[str] = None,
         message_ids: Optional[List[str]] = None,
         summary: Optional[str] = None,
+        app_code: Optional[str] = None,
         save_message_independent: bool = True,
         conv_storage: Optional[StorageInterface] = None,
         message_storage: Optional[StorageInterface] = None,
@@ -980,7 +1004,7 @@ class StorageConversation(OnceConversation, StorageItem):
         **kwargs,
     ):
         """Create a conversation."""
-        super().__init__(chat_mode, user_name, sys_code, summary, **kwargs)
+        super().__init__(chat_mode, user_name, sys_code, summary, app_code, **kwargs)
         self.conv_uid = conv_uid
         self._message_ids = message_ids
         # Record the message index last time saved to the storage,
@@ -1036,6 +1060,8 @@ class StorageConversation(OnceConversation, StorageItem):
             # Save messages independently
             self.message_storage.save_list(messages_to_save)
         # Save conversation
+        if self.summary is not None and len(self.summary) > 4000:
+            self.summary = self.summary[0:4000]
         self.conv_storage.save_or_update(self)
 
     def load_from_storage(
@@ -1111,6 +1137,24 @@ class StorageConversation(OnceConversation, StorageItem):
         message_ids = [message.identifier for message in message_list]
         self.message_storage.delete_list(message_ids)
         # Delete conversation
+        self.conv_storage.delete(self.identifier)
+        # Overwrite the current conversation with empty conversation
+        self.from_conversation(
+            StorageConversation(
+                self.conv_uid,
+                save_message_independent=self.save_message_independent,
+                conv_storage=self.conv_storage,
+                message_storage=self.message_storage,
+            )
+        )
+
+    def clear(self) -> None:
+        """Clear all the messages and conversation."""
+        # Clear messages first
+        message_list = self._get_message_items()
+        message_ids = [message.identifier for message in message_list]
+        self.message_storage.delete_list(message_ids)
+        # Clear conversation
         self.conv_storage.delete(self.identifier)
         # Overwrite the current conversation with empty conversation
         self.from_conversation(

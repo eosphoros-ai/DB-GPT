@@ -4,6 +4,8 @@ from typing import Dict, Type
 from .base import Vis
 from .tags.vis_agent_message import VisAgentMessages
 from .tags.vis_agent_plans import VisAgentPlans
+from .tags.vis_api_response import VisApiResponse
+from .tags.vis_app_link import VisAppLink
 from .tags.vis_chart import VisChart
 from .tags.vis_code import VisCode
 from .tags.vis_dashboard import VisDashboard
@@ -40,3 +42,17 @@ vis_client.register(VisDashboard)
 vis_client.register(VisAgentPlans)
 vis_client.register(VisAgentMessages)
 vis_client.register(VisPlugin)
+vis_client.register(VisAppLink)
+vis_client.register(VisApiResponse)
+
+
+def vis_name_change(vis_message: str) -> str:
+    """Change vis tag name use new name."""
+    replacements = {
+        "```vis-chart": "```vis-db-chart",
+    }
+
+    for old_tag, new_tag in replacements.items():
+        vis_message = vis_message.replace(old_tag, new_tag)
+
+    return vis_message

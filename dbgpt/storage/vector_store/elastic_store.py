@@ -126,20 +126,22 @@ class ElasticStore(VectorStoreBase):
             vector_store_config (ElasticsearchVectorConfig): ElasticsearchStore config.
         """
         super().__init__()
+        self._vector_store_config = vector_store_config
+
         connect_kwargs = {}
         elasticsearch_vector_config = vector_store_config.dict()
-        self.uri = elasticsearch_vector_config.get("uri") or os.getenv(
+        self.uri = os.getenv(
             "ELASTICSEARCH_URL", "localhost"
-        )
-        self.port = elasticsearch_vector_config.get("post") or os.getenv(
+        ) or elasticsearch_vector_config.get("uri")
+        self.port = os.getenv(
             "ELASTICSEARCH_PORT", "9200"
-        )
-        self.username = elasticsearch_vector_config.get("username") or os.getenv(
+        ) or elasticsearch_vector_config.get("post")
+        self.username = os.getenv(
             "ELASTICSEARCH_USERNAME"
-        )
-        self.password = elasticsearch_vector_config.get("password") or os.getenv(
+        ) or elasticsearch_vector_config.get("username")
+        self.password = os.getenv(
             "ELASTICSEARCH_PASSWORD"
-        )
+        ) or elasticsearch_vector_config.get("password")
 
         self.collection_name = (
             elasticsearch_vector_config.get("name") or vector_store_config.name
@@ -233,6 +235,10 @@ class ElasticStore(VectorStoreBase):
             logger.error("ElasticSearch connection failed")
         except Exception as e:
             logger.error(f"ElasticSearch connection failed: {e}")
+
+    def get_config(self) -> ElasticsearchVectorConfig:
+        """Get the vector store config."""
+        return self._vector_store_config
 
     def load_document(
         self,

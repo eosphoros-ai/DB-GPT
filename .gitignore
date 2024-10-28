@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 
 # C extensions
-*.so
 message/
 dbgpt/util/extensions/
 .env*
@@ -158,6 +157,7 @@ thirdparty
 #web
 # dependencies
 /web/node_modules
+/web/yarn.lock
 
 .idea
 # next.js

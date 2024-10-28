@@ -41,6 +41,12 @@ class JoinOperator(BaseOperator, Generic[OUT]):
         super().__init__(can_skip_in_branch=can_skip_in_branch, **kwargs)
         if not callable(combine_function):
             raise ValueError("combine_function must be callable")
+
+        if self.check_serializable:
+            super()._do_check_serializable(
+                combine_function,
+                f"JoinOperator: {self}, combine_function: {combine_function}",
+            )
         self.combine_function = combine_function
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
@@ -83,6 +89,11 @@ class ReduceStreamOperator(BaseOperator, Generic[IN, OUT]):
         super().__init__(**kwargs)
         if reduce_function and not callable(reduce_function):
             raise ValueError("reduce_function must be callable")
+        if reduce_function and self.check_serializable:
+            super()._do_check_serializable(
+                reduce_function, f"Operator: {self}, reduce_function: {reduce_function}"
+            )
+
         self.reduce_function = reduce_function
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
@@ -133,6 +144,12 @@ class MapOperator(BaseOperator, Generic[IN, OUT]):
         super().__init__(**kwargs)
         if map_function and not callable(map_function):
             raise ValueError("map_function must be callable")
+
+        if map_function and self.check_serializable:
+            super()._do_check_serializable(
+                map_function, f"Operator: {self}, map_function: {map_function}"
+            )
+
         self.map_function = map_function
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
@@ -334,13 +351,18 @@ class InputOperator(BaseOperator, Generic[OUT]):
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         curr_task_ctx: TaskContext[OUT] = dag_ctx.current_task_context
         task_output = await self._input_source.read(curr_task_ctx)
-        curr_task_ctx.set_task_output(task_output)
+        new_task_output: TaskOutput[OUT] = await task_output.map(self.map)
+        curr_task_ctx.set_task_output(new_task_output)
         return task_output
 
     @classmethod
     def dummy_input(cls, dummy_data: Any = SKIP_DATA, **kwargs) -> "InputOperator[OUT]":
         """Create a dummy InputOperator with a given input value."""
         return cls(input_source=InputSource.from_data(dummy_data), **kwargs)
+
+    async def map(self, input_data: OUT) -> OUT:
+        """Map the input data to a new value."""
+        return input_data
 
 
 class TriggerOperator(InputOperator[OUT], Generic[OUT]):

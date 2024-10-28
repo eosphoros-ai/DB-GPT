@@ -17,7 +17,6 @@ services:
       - OB_PORT=2881
       - OB_USER=root@test
       - OB_DATABASE=test
-      - OB_SQL_DBG_LOG_PATH=/sql_log/sql.log
       - LOCAL_DB_TYPE=sqlite
       - LLM_MODEL=tongyi_proxyllm
       - PROXYLLM_BACKEND=qwen-plus
@@ -26,7 +25,6 @@ services:
       # - TONGYI_PROXY_API_KEY={your-api-key}
       - LANGUAGE=zh
       # - OB_ENABLE_NORMALIZE_VECTOR=True
-      # - OB_ENABLE_INDEX=True
     ports:
       - 3306:3306
       - 12345:12345

@@ -14,6 +14,8 @@ router = APIRouter()
 gpts_dao = GptsAppDao()
 collection_dao = GptsAppCollectionDao()
 
+gpts_dao.init_native_apps("dbgpt")
+
 
 @router.get("/v2/serve/apps")
 async def app_list(

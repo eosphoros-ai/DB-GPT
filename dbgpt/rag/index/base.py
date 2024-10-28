@@ -8,7 +8,10 @@ from typing import Any, Dict, List, Optional
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt.util.executor_utils import blocking_func_to_async
+from dbgpt.util.executor_utils import (
+    blocking_func_to_async,
+    blocking_func_to_async_no_executor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +53,10 @@ class IndexStoreBase(ABC):
     def __init__(self, executor: Optional[Executor] = None):
         """Init index store."""
         self._executor = executor or ThreadPoolExecutor()
+
+    @abstractmethod
+    def get_config(self) -> IndexStoreConfig:
+        """Get the index store config."""
 
     @abstractmethod
     def load_document(self, chunks: List[Chunk]) -> List[str]:
@@ -100,6 +107,10 @@ class IndexStoreBase(ABC):
         Args:
             ids(str): The vector ids to delete, separated by comma.
         """
+
+    @abstractmethod
+    def truncate(self) -> List[str]:
+        """Truncate data by name."""
 
     @abstractmethod
     def delete_vector_name(self, index_name: str):
@@ -187,12 +198,25 @@ class IndexStoreBase(ABC):
         """
         return self.similar_search_with_scores(text, topk, 1.0, filters)
 
+    async def asimilar_search(
+        self,
+        query: str,
+        topk: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
+        """Async similar_search in vector database."""
+        return await blocking_func_to_async_no_executor(
+            self.similar_search, query, topk, filters
+        )
+
     async def asimilar_search_with_scores(
         self,
-        doc: str,
+        query: str,
         topk: int,
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        """Aynsc similar_search_with_score in vector database."""
-        return self.similar_search_with_scores(doc, topk, score_threshold, filters)
+        """Async similar_search_with_score in vector database."""
+        return await blocking_func_to_async_no_executor(
+            self.similar_search_with_scores, query, topk, score_threshold, filters
+        )

@@ -67,3 +67,7 @@ class FullTextStoreBase(IndexStoreBase):
 
     def delete_vector_name(self, index_name: str):
         """Delete name."""
+
+    def truncate(self) -> List[str]:
+        """Truncate the collection."""
+        raise NotImplementedError

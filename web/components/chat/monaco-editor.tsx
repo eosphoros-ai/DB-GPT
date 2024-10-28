@@ -1,13 +1,13 @@
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js';
-import Editor, { OnChange, loader } from '@monaco-editor/react';
-import classNames from 'classnames';
-import { useContext, useMemo } from 'react';
-import { formatSql } from '@/utils';
-import { getModelService } from './ob-editor/service';
-import { useLatest } from 'ahooks';
 import { ChatContext } from '@/app/chat-context';
-import { github, githubDark } from './ob-editor/theme';
+import { formatSql } from '@/utils';
+import Editor, { OnChange, loader } from '@monaco-editor/react';
+import { useLatest } from 'ahooks';
+import classNames from 'classnames';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js';
+import { useContext, useMemo } from 'react';
 import { register } from './ob-editor/ob-plugin';
+import { getModelService } from './ob-editor/service';
+import { github, githubDark } from './ob-editor/theme';
 
 loader.config({ monaco });
 
@@ -24,15 +24,21 @@ interface MonacoEditorProps {
   onChange?: OnChange;
   thoughts?: string;
   session?: ISession;
-
 }
 
-let plugin = null;
 monaco.editor.defineTheme('github', github as any);
 monaco.editor.defineTheme('githubDark', githubDark as any);
 
-export default function MonacoEditor({ className, value, language = 'mysql', onChange, thoughts, session }: MonacoEditorProps) {
+export default function MonacoEditor({
+  className,
+  value,
+  language = 'mysql',
+  onChange,
+  thoughts,
+  session,
+}: MonacoEditorProps) {
   // merge value and thoughts
+
   const editorValue = useMemo(() => {
     if (language !== 'mysql') {
       return value;
@@ -48,16 +54,18 @@ export default function MonacoEditor({ className, value, language = 'mysql', onC
   const context = useContext(ChatContext);
 
   async function pluginRegister(editor: monaco.editor.IStandaloneCodeEditor) {
-    const plugin = await register()
+    const plugin = await register();
     plugin.setModelOptions(
       editor.getModel()?.id || '',
-      getModelService({
-        modelId: editor.getModel()?.id || '',
-        delimiter: ';',
-      }, () => sessionRef.current || null)
-    )
+      getModelService(
+        {
+          modelId: editor.getModel()?.id || '',
+          delimiter: ';',
+        },
+        () => sessionRef.current || null,
+      ),
+    );
   }
-
 
   return (
     <Editor
@@ -66,7 +74,7 @@ export default function MonacoEditor({ className, value, language = 'mysql', onC
       value={editorValue}
       defaultLanguage={language}
       onChange={onChange}
-      theme={context?.mode !== "dark" ? "github" : "githubDark"}
+      theme={context?.mode !== 'dark' ? 'github' : 'githubDark'}
       options={{
         minimap: {
           enabled: false,

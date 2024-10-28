@@ -1,13 +1,13 @@
-import { AgentParams, IAgent as IAgentParams, IApp, IDetail } from '@/types/app';
+import { addApp, apiInterceptors, getAgents, getResourceType, getTeamMode, updateApp } from '@/client/api';
+import { AgentParams, CreateAppParams, IAgent as IAgentParams, IDetail } from '@/types/app';
+import { IFlow } from '@/types/flow';
+import type { TabsProps } from 'antd';
 import { Dropdown, Form, Input, Modal, Select, Space, Spin, Tabs } from 'antd';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '../icons/add-icon';
 import AgentPanel from './agent-panel';
-import { addApp, apiInterceptors, getAgents, getResourceType, getTeamMode, updateApp } from '@/client/api';
-import type { TabsProps } from 'antd';
 import DagLayout from './dag-layout';
-import { IFlow } from '@/types/flow';
 
 type TargetKey = string;
 
@@ -60,7 +60,7 @@ export default function AppModal(props: IProps) {
     setActiveKey(newActiveKey);
   };
 
-  const createApp = async (app: IApp) => {
+  const createApp = async (app: CreateAppParams) => {
     await apiInterceptors(type === 'add' ? addApp(app) : updateApp(app));
     await updateApps();
   };
@@ -99,7 +99,7 @@ export default function AppModal(props: IProps) {
     const [_, data] = await apiInterceptors(getTeamMode());
     if (!data) return null;
 
-    const teamModalOptions = data.map((item) => {
+    const teamModalOptions = data.map(item => {
       return { value: item, label: item };
     });
     setTeamModal(teamModalOptions);
@@ -113,7 +113,7 @@ export default function AppModal(props: IProps) {
 
     setDropItems(
       data
-        .map((agent) => {
+        .map(agent => {
           return {
             label: agent.name,
             key: agent.name,
@@ -123,7 +123,7 @@ export default function AppModal(props: IProps) {
             agent,
           };
         })
-        .filter((item) => {
+        .filter(item => {
           if (!app.details || app.details?.length === 0) {
             return item;
           }
@@ -182,7 +182,13 @@ export default function AppModal(props: IProps) {
           label: newActiveKey,
           children: (
             <AgentPanel
-              detail={{ key: newActiveKey, llm_strategy: 'default', agent_name: newActiveKey, prompt_template: '', llm_strategy_value: null }}
+              detail={{
+                key: newActiveKey,
+                llm_strategy: 'default',
+                agent_name: newActiveKey,
+                prompt_template: '',
+                llm_strategy_value: null,
+              }}
               updateDetailsByAgentKey={updateDetailsByAgentKey}
               resourceTypes={data}
             />
@@ -192,8 +198,8 @@ export default function AppModal(props: IProps) {
       ];
     });
 
-    setDropItems((items) => {
-      return items.filter((item) => item.key !== tabBar.name);
+    setDropItems(items => {
+      return items.filter(item => item.key !== tabBar.name);
     });
   };
 
@@ -211,7 +217,7 @@ export default function AppModal(props: IProps) {
       }
     });
 
-    const newPanes = agents.filter((item) => item.key !== targetKey);
+    const newPanes = agents.filter(item => item.key !== targetKey);
     if (newPanes.length && newActiveKey === targetKey) {
       if (lastIndex >= 0) {
         newActiveKey = newPanes[lastIndex].key;
@@ -274,7 +280,7 @@ export default function AppModal(props: IProps) {
 
     try {
       await createApp(data);
-    } catch (error) {
+    } catch {
       return;
     }
 
@@ -289,7 +295,7 @@ export default function AppModal(props: IProps) {
   const renderAddIcon = () => {
     return (
       <Dropdown menu={{ items: dropItems }} trigger={['click']}>
-        <a className="h-8 flex items-center" onClick={(e) => e.preventDefault()}>
+        <a className='h-8 flex items-center' onClick={e => e.preventDefault()}>
           <Space>
             <AddIcon />
           </Space>
@@ -302,7 +308,7 @@ export default function AppModal(props: IProps) {
     <div>
       <Modal
         okText={t('Submit')}
-        title={type === 'edit' ? t('edit_application') : t('add_application')}
+        title={type === 'edit' ? 'edit application' : 'add application'}
         open={open}
         width={'65%'}
         onCancel={handleCancel}
@@ -313,10 +319,10 @@ export default function AppModal(props: IProps) {
           <Form
             form={form}
             preserve={false}
-            size="large"
-            className="mt-4 max-h-[70vh] overflow-auto h-[90vh]"
-            layout="horizontal"
-            labelAlign="left"
+            size='large'
+            className='mt-4 max-h-[70vh] overflow-auto h-[90vh]'
+            layout='horizontal'
+            labelAlign='left'
             labelCol={{ span: 4 }}
             initialValues={{
               app_name: app.app_name,
@@ -324,27 +330,43 @@ export default function AppModal(props: IProps) {
               language: app.language || languageOptions[0].value,
               team_mode: app.team_mode || 'auto_plan',
             }}
-            autoComplete="off"
+            autoComplete='off'
             onFinish={handleSubmit}
           >
-            <Form.Item<FieldType> label={t('app_name')} name="app_name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
+            <Form.Item<FieldType>
+              label={'App Name'}
+              name='app_name'
+              rules={[{ required: true, message: t('Please_input_the_name') }]}
+            >
               <Input placeholder={t('Please_input_the_name')} />
             </Form.Item>
             <Form.Item<FieldType>
               label={t('Description')}
-              name="app_describe"
+              name='app_describe'
               rules={[{ required: true, message: t('Please_input_the_description') }]}
             >
               <Input.TextArea rows={3} placeholder={t('Please_input_the_description')} />
             </Form.Item>
-            <div className="flex w-full">
-              <Form.Item<FieldType> labelCol={{ span: 7 }} label={t('language')} name="language" className="w-1/2" rules={[{ required: true }]}>
-                <Select className="w-2/3 ml-4" placeholder={t('language_select_tips')} options={languageOptions} />
+            <div className='flex w-full'>
+              <Form.Item<FieldType>
+                labelCol={{ span: 7 }}
+                label={t('language')}
+                name='language'
+                className='w-1/2'
+                rules={[{ required: true }]}
+              >
+                <Select className='w-2/3 ml-4' placeholder={t('language_select_tips')} options={languageOptions} />
               </Form.Item>
-              <Form.Item<FieldType> label={t('team_modal')} name="team_mode" className="w-1/2" labelCol={{ span: 6 }} rules={[{ required: true }]}>
+              <Form.Item<FieldType>
+                label={t('team_modal')}
+                name='team_mode'
+                className='w-1/2'
+                labelCol={{ span: 6 }}
+                rules={[{ required: true }]}
+              >
                 <Select
                   defaultValue={app.team_mode || 'auto_plan'}
-                  className="ml-4 w-72"
+                  className='ml-4 w-72'
                   onChange={handleTeamModalChange}
                   placeholder={t('Please_input_the_work_modal')}
                   options={teamModal}
@@ -353,8 +375,15 @@ export default function AppModal(props: IProps) {
             </div>
             {curTeamModal !== 'awel_layout' ? (
               <>
-                <div className="mb-5">{t('Agents')}</div>
-                <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
+                <div className='mb-5'>Agents</div>
+                <Tabs
+                  addIcon={renderAddIcon()}
+                  type='editable-card'
+                  onChange={onChange}
+                  activeKey={activeKey}
+                  onEdit={onEdit}
+                  items={agents}
+                />
               </>
             ) : (
               <DagLayout onFlowsChange={handleFlowsChange} teamContext={app.team_context} />

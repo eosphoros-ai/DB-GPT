@@ -5,7 +5,7 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import List, Optional
 
 from dbgpt.core import Chunk
-from dbgpt.rag.index.base import logger
+from dbgpt.rag.index.base import IndexStoreConfig, logger
 from dbgpt.storage.full_text.base import FullTextStoreBase
 from dbgpt.storage.vector_store.elastic_store import ElasticsearchVectorConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -35,6 +35,7 @@ class ElasticDocumentStore(FullTextStoreBase):
         This similarity has the following options:
         """
         super().__init__()
+        self._es_config = es_config
         from elasticsearch import Elasticsearch
 
         self._es_config = es_config
@@ -93,6 +94,10 @@ class ElasticDocumentStore(FullTextStoreBase):
                 settings=self._es_index_settings,
             )
         self._executor = executor or ThreadPoolExecutor()
+
+    def get_config(self) -> IndexStoreConfig:
+        """Get the es store config."""
+        return self._es_config
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in elasticsearch.

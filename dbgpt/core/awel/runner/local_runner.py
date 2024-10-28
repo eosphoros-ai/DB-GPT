@@ -9,8 +9,9 @@ import traceback
 from typing import Any, Dict, List, Optional, Set, cast
 
 from dbgpt.component import SystemApp
+from dbgpt.util.tracer import root_tracer
 
-from ..dag.base import DAGContext, DAGVar
+from ..dag.base import DAGContext, DAGVar, DAGVariables
 from ..operators.base import CALL_DATA, BaseOperator, WorkflowRunner
 from ..operators.common_operator import BranchOperator
 from ..task.base import SKIP_DATA, TaskContext, TaskState
@@ -45,6 +46,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
         exist_dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> DAGContext:
         """Execute the workflow.
 
@@ -56,6 +58,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
                 Defaults to False.
             exist_dag_ctx (Optional[DAGContext], optional): The exist DAG context.
                 Defaults to None.
+            dag_variables (Optional[DAGVariables], optional): The DAG variables.
         """
         # Save node output
         # dag = node.dag
@@ -70,12 +73,19 @@ class DefaultWorkflowRunner(WorkflowRunner):
             node_outputs = exist_dag_ctx._node_to_outputs
             share_data = exist_dag_ctx._share_data
             event_loop_task_id = exist_dag_ctx._event_loop_task_id
+            if dag_variables and exist_dag_ctx._dag_variables:
+                # Merge dag variables, prefer the `dag_variables` in the parameter
+                dag_variables = dag_variables.merge(exist_dag_ctx._dag_variables)
+        if node.dag and not dag_variables and node.dag._default_dag_variables:
+            # Use default dag variables if not set
+            dag_variables = node.dag._default_dag_variables
         dag_ctx = DAGContext(
             event_loop_task_id=event_loop_task_id,
             node_to_outputs=node_outputs,
             share_data=share_data,
             streaming_call=streaming_call,
             node_name_to_ids=job_manager._node_name_to_ids,
+            dag_variables=dag_variables,
         )
         # if node.dag:
         #     self._running_dag_ctx[node.dag.dag_id] = dag_ctx
@@ -90,9 +100,20 @@ class DefaultWorkflowRunner(WorkflowRunner):
             # Save dag context
             await node.dag._save_dag_ctx(dag_ctx)
         await job_manager.before_dag_run()
-        await self._execute_node(
-            job_manager, node, dag_ctx, node_outputs, skip_node_ids, system_app
-        )
+
+        with root_tracer.start_span(
+            "dbgpt.awel.workflow.run_workflow",
+            metadata={
+                "exist_dag_ctx": exist_dag_ctx is not None,
+                "event_loop_task_id": event_loop_task_id,
+                "streaming_call": streaming_call,
+                "awel_node_id": node.node_id,
+                "awel_node_name": node.node_name,
+            },
+        ):
+            await self._execute_node(
+                job_manager, node, dag_ctx, node_outputs, skip_node_ids, system_app
+            )
         if not streaming_call and node.dag and exist_dag_ctx is None:
             # streaming call not work for dag end
             # if exist_dag_ctx is not None, it means current dag is a sub dag
@@ -158,9 +179,23 @@ class DefaultWorkflowRunner(WorkflowRunner):
             if system_app is not None and node.system_app is None:
                 node.set_system_app(system_app)
 
-            await node._run(dag_ctx, task_ctx.log_id)
-            node_outputs[node.node_id] = dag_ctx.current_task_context
-            task_ctx.set_current_state(TaskState.SUCCESS)
+            run_metadata = {
+                "awel_node_id": node.node_id,
+                "awel_node_name": node.node_name,
+                "awel_node_type": str(node),
+                "state": TaskState.RUNNING.value,
+                "task_log_id": task_ctx.log_id,
+            }
+            with root_tracer.start_span(
+                "dbgpt.awel.workflow.run_operator", metadata=run_metadata
+            ) as span:
+                await node._run(dag_ctx, task_ctx.log_id)
+                node_outputs[node.node_id] = dag_ctx.current_task_context
+                task_ctx.set_current_state(TaskState.SUCCESS)
+
+                run_metadata["skip_node_ids"] = ",".join(skip_node_ids)
+                run_metadata["state"] = TaskState.SUCCESS.value
+                span.metadata = run_metadata
 
             if isinstance(node, BranchOperator):
                 skip_nodes = task_ctx.metadata.get("skip_node_names", [])

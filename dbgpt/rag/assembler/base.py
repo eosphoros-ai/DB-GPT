@@ -52,7 +52,7 @@ class BaseAssembler(ABC):
         with root_tracer.start_span("BaseAssembler.load_knowledge", metadata=metadata):
             self.load_knowledge(self._knowledge)
 
-    def load_knowledge(self, knowledge: Optional[Knowledge] = None) -> None:
+    def load_knowledge(self, knowledge: Knowledge) -> None:
         """Load knowledge Pipeline."""
         if not knowledge:
             raise ValueError("knowledge must be provided.")
@@ -66,14 +66,14 @@ class BaseAssembler(ABC):
         """Return a retriever."""
 
     @abstractmethod
-    def persist(self) -> List[str]:
+    def persist(self, **kwargs: Any) -> List[str]:
         """Persist chunks.
 
         Returns:
             List[str]: List of persisted chunk ids.
         """
 
-    async def apersist(self) -> List[str]:
+    async def apersist(self, **kwargs: Any) -> List[str]:
         """Persist chunks.
 
         Returns:

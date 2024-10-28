@@ -1,0 +1,113 @@
+# An example of using docker-compose to start a cluster with observability enabled.
+# For simplicity, we use chatgpt_proxyllm as the model for the worker, and we build a new docker image named eosphorosai/dbgpt-openai:latest.
+# How to build the image:
+# run `bash ./docker/base/build_proxy_image.sh` in the root directory of the project.
+# If you want to use other pip index url, you can run command with `--pip-index-url` option.
+# For example, `bash ./docker/base/build_proxy_image.sh --pip-index-url https://pypi.tuna.tsinghua.edu.cn/simple`
+#
+# How to start the cluster:
+# 1. run `cd docker/compose_examples/observability`
+# 2. run `OPENAI_API_KEY="{your api key}" OPENAI_API_BASE="https://api.openai.com/v1" docker compose up -d`
+# Note: Make sure you have set the environment variables OPENAI_API_KEY.
+version: '3.10'
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ports:
+      # serve frontend
+      - "16686:16686"
+      # accept jaeger.thrift over Thrift-compact protocol (used by most SDKs)
+      - "6831:6831"
+      # accept OpenTelemetry Protocol (OTLP) over HTTP
+      - "4318:4318"
+      # accept OpenTelemetry Protocol (OTLP) over gRPC
+      - "4317:4317"
+      - "14268:14268"
+    environment:
+      - LOG_LEVEL=debug
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    volumes:
+      # Set the uid and gid to the same as the user in the container
+      - jaeger-badger:/badger:uid=10001,gid=10001
+    user: root
+  controller:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start controller
+    restart: unless-stopped
+    environment:
+      - TRACER_TO_OPEN_TELEMETRY=True
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
+      - DBGPT_LOG_LEVEL=DEBUG
+    volumes:
+      - ../../../:/app
+    networks:
+      - dbgptnet
+  llm-worker:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start worker --model_type proxy --model_name chatgpt_proxyllm --model_path chatgpt_proxyllm --proxy_server_url ${OPENAI_API_BASE}/chat/completions --proxy_api_key ${OPENAI_API_KEY} --controller_addr http://controller:8000
+    environment:
+      # Your real openai model name, e.g. gpt-3.5-turbo, gpt-4o
+      - PROXYLLM_BACKEND=gpt-3.5-turbo
+      - TRACER_TO_OPEN_TELEMETRY=True
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
+      - DBGPT_LOG_LEVEL=DEBUG
+    depends_on:
+      - controller
+    volumes:
+      - ../../../:/app
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ipc: host
+  embedding-worker:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start worker --worker_type text2vec --model_name proxy_http_openapi --model_path proxy_http_openapi --proxy_server_url ${OPENAI_API_BASE}/embeddings --proxy_api_key ${OPENAI_API_KEY} --controller_addr http://controller:8000
+    environment:
+      - proxy_http_openapi_proxy_backend=text-embedding-3-small
+      - TRACER_TO_OPEN_TELEMETRY=True
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
+      - DBGPT_LOG_LEVEL=DEBUG
+    depends_on:
+      - controller
+    volumes:
+      - ../../../:/app
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ipc: host
+  webserver:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start webserver --light --remote_embedding --controller_addr http://controller:8000
+    environment:
+      - LLM_MODEL=chatgpt_proxyllm
+      - EMBEDDING_MODEL=proxy_http_openapi
+      - TRACER_TO_OPEN_TELEMETRY=True
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4317
+    depends_on:
+      - controller
+      - llm-worker
+      - embedding-worker
+    volumes:
+      - ../../../:/app
+      - dbgpt-data:/app/pilot/data
+      - dbgpt-message:/app/pilot/message
+    ports:
+      - 5670:5670/tcp
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+volumes:
+  dbgpt-data:
+  dbgpt-message:
+  jaeger-badger:
+networks:
+  dbgptnet:
+    driver: bridge
+    name: dbgptnet

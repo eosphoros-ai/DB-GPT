@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text, or_
 
 from dbgpt._private.pydantic import model_to_dict
+from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.serve.rag.api.schemas import SpaceServeRequest, SpaceServeResponse
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -13,6 +14,7 @@ class KnowledgeSpaceEntity(Model):
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     vector_type = Column(String(100))
+    domain_type = Column(String(100))
     desc = Column(String(100))
     owner = Column(String(100))
     context = Column(Text)
@@ -24,12 +26,13 @@ class KnowledgeSpaceEntity(Model):
 
 
 class KnowledgeSpaceDao(BaseDao):
-    def create_knowledge_space(self, space: SpaceServeRequest):
+    def create_knowledge_space(self, space: KnowledgeSpaceRequest):
         """Create knowledge space"""
         session = self.get_raw_session()
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=space.vector_type,
+            domain_type=space.domain_type,
             desc=space.desc,
             owner=space.owner,
             gmt_created=datetime.now(),
@@ -37,9 +40,23 @@ class KnowledgeSpaceDao(BaseDao):
         )
         session.add(knowledge_space)
         session.commit()
-        space_id = knowledge_space.id
         session.close()
-        return self.to_response(knowledge_space)
+        ks = self.get_knowledge_space(KnowledgeSpaceEntity(name=space.name))
+        if ks is not None and len(ks) == 1:
+            return ks[0].id
+        raise Exception(f"create space error, find more than 1 or 0 space.")
+
+    def get_knowledge_space_by_ids(self, ids):
+        session = self.get_raw_session()
+        if ids:
+            knowledge_spaces = session.query(KnowledgeSpaceEntity).filter(
+                KnowledgeSpaceEntity.id.in_(ids)
+            )
+        else:
+            return []
+        knowledge_spaces_list = knowledge_spaces.all()
+        session.close()
+        return knowledge_spaces_list
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
         """Get knowledge space by query"""
@@ -56,6 +73,10 @@ class KnowledgeSpaceDao(BaseDao):
         if query.vector_type is not None:
             knowledge_spaces = knowledge_spaces.filter(
                 KnowledgeSpaceEntity.vector_type == query.vector_type
+            )
+        if query.domain_type is not None:
+            knowledge_spaces = knowledge_spaces.filter(
+                KnowledgeSpaceEntity.domain_type == query.domain_type
             )
         if query.desc is not None:
             knowledge_spaces = knowledge_spaces.filter(
@@ -158,4 +179,6 @@ class KnowledgeSpaceDao(BaseDao):
             vector_type=entity.vector_type,
             desc=entity.desc,
             owner=entity.owner,
+            context=entity.context,
+            domain_type=entity.domain_type,
         )

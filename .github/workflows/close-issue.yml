@@ -12,8 +12,8 @@ jobs:
     steps:
       - uses: actions/stale@v5
         with:
-          days-before-issue-stale: 30
-          days-before-issue-close: 7 
+          days-before-issue-stale: 120
+          days-before-issue-close: 90 
           stale-issue-label: "stale"
           stale-issue-message: "This issue has been marked as `stale`, because it has been over 30 days without any activity."
           close-issue-message: "This issue bas been closed, because it has been marked as `stale` and there has been no activity for over 7 days."

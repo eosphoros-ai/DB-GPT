@@ -88,4 +88,4 @@ class VisChart(Vis):
     @classmethod
     def vis_tag(cls) -> str:
         """Return the tag name of the vis protocol."""
-        return "vis-chart"
+        return "vis-db-chart"

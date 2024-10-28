@@ -55,7 +55,7 @@ class SQLiteConnector(RDBMSConnector):
         ans = cursor.fetchall()
         return ans[0][0]
 
-    def get_fields(self, table_name) -> List[Tuple]:
+    def get_fields(self, table_name, db_name=None) -> List[Tuple]:
         """Get column fields about specified table."""
         cursor = self.session.execute(text(f"PRAGMA table_info('{table_name}')"))
         fields = cursor.fetchall()

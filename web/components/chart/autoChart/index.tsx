@@ -1,23 +1,21 @@
-import { Empty, Row, Col, Select, Tooltip, Button, Space } from 'antd';
+import { ChatContext } from '@/app/chat-context';
+import i18n, { I18nKeys } from '@/app/i18n';
+import { DownloadOutlined } from '@ant-design/icons';
 import { Advice, Advisor, Datum } from '@antv/ava';
 import { Chart, ChartRef } from '@berryv/g2-react';
-import i18n, { I18nKeys } from '@/app/i18n';
-import { customizeAdvisor, getVisAdvices } from './advisor/pipeline';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { defaultAdvicesFilter } from './advisor/utils';
-import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
-import { customCharts } from './charts';
-import { ChatContext } from '@/app/chat-context';
+import { Button, Col, Empty, Row, Select, Space, Tooltip } from 'antd';
 import { compact, concat, uniq } from 'lodash';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { downloadImage } from '../helpers/downloadChartImage';
+import { customizeAdvisor, getVisAdvices } from './advisor/pipeline';
+import { defaultAdvicesFilter } from './advisor/utils';
+import { customCharts } from './charts';
 import { processNilData, sortData } from './charts/util';
-import { downloadImage } from '../helpers/downloadChartImage';;
-import { DownloadOutlined } from '@ant-design/icons';
-
+import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
 const { Option } = Select;
 
 export const AutoChart = (props: AutoChartProps) => {
-  const { chartType, scopeOfCharts, ruleConfig, data: originalData } = props;
-
+  const { data: originalData, chartType, scopeOfCharts, ruleConfig } = props;
   // 处理空值数据 (为'-'的数据)
   const data = processNilData(originalData) as Datum[];
   const { mode } = useContext(ChatContext);
@@ -25,7 +23,7 @@ export const AutoChart = (props: AutoChartProps) => {
   const [advisor, setAdvisor] = useState<Advisor>();
   const [advices, setAdvices] = useState<Advice[]>([]);
   const [renderChartType, setRenderChartType] = useState<ChartType>();
-  const chartRef = useRef<ChartRef>()
+  const chartRef = useRef<ChartRef>();
 
   useEffect(() => {
     const input_charts: CustomChart[] = customCharts;
@@ -50,13 +48,13 @@ export const AutoChart = (props: AutoChartProps) => {
       compact(
         concat(
           chartType,
-          avaAdvices.map((item) => item.type),
+          avaAdvices.map(item => item.type),
         ),
       ),
     );
     const allAdvices = allChartTypes
-      .map((chartTypeItem) => {
-        const avaAdvice = filteredAdvices.find((item) => item.type === chartTypeItem);
+      .map(chartTypeItem => {
+        const avaAdvice = filteredAdvices.find(item => item.type === chartTypeItem);
         // 如果在 AVA 推荐列表中，直接采用推荐列表中的结果
         if (avaAdvice) {
           return avaAdvice;
@@ -72,7 +70,7 @@ export const AutoChart = (props: AutoChartProps) => {
           if ('advices' in specGeneratorOutput) return specGeneratorOutput.advices?.[0];
         }
       })
-      .filter((advice) => advice?.spec) as Advice[];
+      .filter(advice => advice?.spec) as Advice[];
     return allAdvices;
   };
 
@@ -97,18 +95,26 @@ export const AutoChart = (props: AutoChartProps) => {
       if (spec) {
         if (spec.data && ['line_chart', 'step_line_chart'].includes(chartTypeInput)) {
           // 处理 ava 内置折线图的排序问题
-          const dataAnalyzerOutput = advisor?.dataAnalyzer.execute({ data })
+          const dataAnalyzerOutput = advisor?.dataAnalyzer.execute({ data });
           if (dataAnalyzerOutput && 'dataProps' in dataAnalyzerOutput) {
-            spec.data = sortData({ data: spec.data, xField: dataAnalyzerOutput.dataProps?.find(field => field.recommendation === 'date'), chartType: chartTypeInput });
+            spec.data = sortData({
+              data: spec.data,
+              xField: dataAnalyzerOutput.dataProps?.find((field: any) => field.recommendation === 'date'),
+              chartType: chartTypeInput,
+            });
           }
+        }
+        if (chartTypeInput === 'pie_chart' && spec?.encode?.color) {
+          // 补充饼图的 tooltip title 展示
+          spec.tooltip = { title: { field: spec.encode.color } };
         }
         return (
           <Chart
             key={chartTypeInput}
             options={{
               ...spec,
-              theme: mode,
               autoFit: true,
+              theme: mode,
               height: 300,
             }}
             ref={chartRef}
@@ -116,23 +122,23 @@ export const AutoChart = (props: AutoChartProps) => {
         );
       }
     }
-  }, [advices, renderChartType]);
+  }, [advices, mode, renderChartType]);
 
   if (renderChartType) {
     return (
       <div>
-        <Row justify='space-between' className="mb-2">
+        <Row justify='space-between' className='mb-2'>
           <Col>
             <Space>
               <span>{i18n.t('Advices')}</span>
               <Select
-                className="w-52"
+                className='w-52'
                 value={renderChartType}
                 placeholder={'Chart Switcher'}
-                onChange={(value) => setRenderChartType(value)}
+                onChange={value => setRenderChartType(value)}
                 size={'small'}
               >
-                {advices?.map((item) => {
+                {advices?.map(item => {
                   const name = i18n.t(item.type as I18nKeys);
                   return (
                     <Option key={item.type} value={item.type}>
@@ -155,7 +161,7 @@ export const AutoChart = (props: AutoChartProps) => {
             </Tooltip>
           </Col>
         </Row>
-        <div className="auto-chart-content">{visComponent}</div>
+        <div className='flex'>{visComponent}</div>
       </div>
     );
   }

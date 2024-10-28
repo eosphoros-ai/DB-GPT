@@ -1,0 +1,19 @@
+/* 在全局 CSS 文件中 */
+/* 选择 Ant Design Tabs 组件的 tab 栏 */
+.ant-tabs-nav {
+  @apply bg-[#edf8fb] backdrop-filter backdrop-blur-lg dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60 h-14 px-6;
+}
+.ant-tabs-nav::before {
+  @apply dark:border-[#6f7f95];
+}
+.ant-tabs-tab {
+  @apply dark:text-slate-400;
+}
+/* 选择被激活的 Ant Design Tabs 组件的 tab */
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  @apply dark:text-white;
+}
+.ant-tabs-ink-bar {
+  @apply dark:bg-white;
+}
+/* 你可能需要添加更多的自定义样式，取决于你的需求 */

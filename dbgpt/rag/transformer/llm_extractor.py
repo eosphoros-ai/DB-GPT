@@ -19,9 +19,20 @@ class LLMExtractor(ExtractorBase, ABC):
         self._prompt_template = prompt_template
 
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
-        """Extract by LLm."""
+        """Extract by LLM."""
+        return await self._extract(text, None, limit)
+
+    async def _extract(
+        self, text: str, history: str = None, limit: Optional[int] = None
+    ) -> List:
+        """Inner extract by LLM."""
         template = HumanPromptTemplate.from_template(self._prompt_template)
-        messages = template.format_messages(text=text)
+
+        messages = (
+            template.format_messages(text=text, history=history)
+            if history is not None
+            else template.format_messages(text=text)
+        )
 
         # use default model if needed
         if not self._model_name:
@@ -44,6 +55,12 @@ class LLMExtractor(ExtractorBase, ABC):
         if limit and limit < 1:
             ValueError("optional argument limit >= 1")
         return self._parse_response(response.text, limit)
+
+    def truncate(self):
+        """Do nothing by default."""
+
+    def drop(self):
+        """Do nothing by default."""
 
     @abstractmethod
     def _parse_response(self, text: str, limit: Optional[int] = None) -> List:

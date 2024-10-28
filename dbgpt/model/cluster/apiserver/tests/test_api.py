@@ -52,7 +52,7 @@ async def client(request, system_app: SystemApp):
             worker_manager, model_registry = cluster
             system_app.register(_DefaultWorkerManagerFactory, worker_manager)
             system_app.register_instance(model_registry)
-            initialize_apiserver(None, app, system_app, api_keys=api_keys)
+            initialize_apiserver(None, None, app, system_app, api_keys=api_keys)
             yield client
 
 

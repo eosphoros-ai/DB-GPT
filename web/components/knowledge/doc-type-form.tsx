@@ -29,6 +29,12 @@ export default function DocTypeForm(props: IProps) {
       subTitle: t('Upload_a_document'),
       iconType: 'DOCUMENT',
     },
+    {
+      type: 'YUQUEURL',
+      title: t('yuque'),
+      subTitle: t('Get_yuque_document'),
+      iconType: 'YUQUEURL',
+    },
   ];
 
   return (
@@ -36,12 +42,12 @@ export default function DocTypeForm(props: IProps) {
       {docTypeList.map((type, index) => (
         <Card
           key={index}
-          className="mt-4 mb-4 cursor-pointer"
+          className='mt-4 mb-4 cursor-pointer'
           onClick={() => {
             handleStepChange({ label: 'forward', docType: type.type });
           }}
         >
-          <div className="font-semibold">
+          <div className='font-semibold'>
             <DocIcon type={type.iconType} />
             {type.title}
           </div>

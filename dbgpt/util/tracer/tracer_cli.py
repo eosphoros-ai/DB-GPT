@@ -249,7 +249,7 @@ def chat(
     for sp in spans:
         span_type = sp["span_type"]
         metadata = sp.get("metadata")
-        if span_type == SpanType.RUN:
+        if span_type == SpanType.RUN and metadata and "run_service" in metadata:
             service_name = metadata["run_service"]
             service_spans[service_name] = sp.copy()
             if set(service_spans.keys()) == service_names and found_trace_id:

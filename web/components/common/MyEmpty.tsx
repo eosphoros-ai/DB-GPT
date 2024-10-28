@@ -14,16 +14,16 @@ function MyEmpty({ className, error, description, refresh }: Props) {
 
   return (
     <Empty
-      image="/empty.png"
+      image='/empty.png'
       imageStyle={{ width: 320, height: 196, margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
       className={classNames('flex items-center justify-center flex-col h-full w-full', className)}
       description={
         error ? (
-          <Button type="primary" onClick={refresh}>
+          <Button type='primary' onClick={refresh}>
             {t('try_again')}
           </Button>
         ) : (
-          description ?? t('no_data')
+          (description ?? t('no_data'))
         )
       }
     />

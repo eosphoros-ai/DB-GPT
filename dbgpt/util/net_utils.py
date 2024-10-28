@@ -1,5 +1,6 @@
 import errno
 import socket
+from typing import Set, Tuple
 
 
 def _get_ip_address(address: str = "10.254.254.254:1") -> str:
@@ -22,3 +23,34 @@ def _get_ip_address(address: str = "10.254.254.254:1") -> str:
     finally:
         s.close()
     return curr_address
+
+
+async def _async_get_free_port(
+    port_range: Tuple[int, int], timeout: int, used_ports: Set[int]
+):
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None, _get_free_port, port_range, timeout, used_ports
+    )
+
+
+def _get_free_port(port_range: Tuple[int, int], timeout: int, used_ports: Set[int]):
+    import random
+
+    available_ports = set(range(port_range[0], port_range[1] + 1)) - used_ports
+    if not available_ports:
+        raise RuntimeError("No available ports in the specified range")
+
+    while available_ports:
+        port = random.choice(list(available_ports))
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("", port))
+                used_ports.add(port)
+                return port
+        except OSError:
+            available_ports.remove(port)
+
+    raise RuntimeError("No available ports in the specified range")

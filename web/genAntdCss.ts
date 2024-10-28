@@ -1,8 +1,8 @@
+import { extractStyle } from '@ant-design/cssinjs';
+import type Entity from '@ant-design/cssinjs/lib/Cache';
 import { createHash } from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { extractStyle } from '@ant-design/cssinjs';
-import type Entity from '@ant-design/cssinjs/lib/Cache';
 
 export type DoExtraStyleOptions = {
   cache: Entity;

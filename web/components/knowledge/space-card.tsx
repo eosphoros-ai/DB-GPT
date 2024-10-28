@@ -1,13 +1,12 @@
-import { Popover, ConfigProvider, Modal, Badge } from 'antd';
-import { useRouter } from 'next/router';
-import Image from 'next/image';
-import { ClockCircleOutlined, DeleteFilled, MessageFilled, UserOutlined, WarningOutlined } from '@ant-design/icons';
-import { ISpace } from '@/types/knowledge';
-import DocPanel from './doc-panel';
-import moment from 'moment';
 import { apiInterceptors, delSpace, newDialogue } from '@/client/api';
+import { ISpace } from '@/types/knowledge';
+import { ClockCircleOutlined, DeleteFilled, MessageFilled, UserOutlined, WarningOutlined } from '@ant-design/icons';
+import { Badge, ConfigProvider, Modal, Popover } from 'antd';
+import moment from 'moment';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'react-i18next';
 import GptCard from '../common/gpt-card';
+import DocPanel from './doc-panel';
 
 interface IProps {
   space: ISpace;
@@ -21,6 +20,7 @@ export default function SpaceCard(props: IProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { space, getSpaces } = props;
+
   const showDeleteConfirm = () => {
     confirm({
       title: t('Tips'),
@@ -62,22 +62,30 @@ export default function SpaceCard(props: IProps) {
       }}
     >
       <Popover
-        className="cursor-pointer"
-        placement="bottom"
-        trigger="click"
+        className='cursor-pointer'
+        placement='bottom'
+        trigger='click'
         content={<DocPanel space={space} onAddDoc={props.onAddDoc} onDeleteDoc={onDeleteDoc} />}
       >
-        <Badge className="mb-4 min-w-[200px] sm:w-60 lg:w-72" count={space.docs || 0}>
+        <Badge className='mb-4 min-w-[200px] sm:w-60 lg:w-72' count={space.docs || 0}>
           <GptCard
             title={space.name}
             desc={space.desc}
-            icon={space.vector_type === 'KnowledgeGraph'?"/models/knowledge-graph.png":space.vector_type === 'FullText'?"/models/knowledge-full-text.jpg":"/models/knowledge-default.jpg"}
+            icon={
+              space.domain_type === 'FinancialReport'
+                ? '/models/fin_report.jpg'
+                : space.vector_type === 'KnowledgeGraph'
+                  ? '/models/knowledge-graph.png'
+                  : space.vector_type === 'FullText'
+                    ? '/models/knowledge-full-text.jpg'
+                    : '/models/knowledge-default.jpg'
+            }
             iconBorder={false}
             tags={[
               {
                 text: (
                   <>
-                    <UserOutlined className="mr-1" />
+                    <UserOutlined className='mr-1' />
                     {space?.owner}
                   </>
                 ),
@@ -85,7 +93,7 @@ export default function SpaceCard(props: IProps) {
               {
                 text: (
                   <>
-                    <ClockCircleOutlined className="mr-1" />
+                    <ClockCircleOutlined className='mr-1' />
                     {moment(space.gmt_modified).format('YYYY-MM-DD')}
                   </>
                 ),

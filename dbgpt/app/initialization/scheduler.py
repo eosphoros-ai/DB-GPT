@@ -19,12 +19,14 @@ class DefaultScheduler(BaseComponent):
         system_app: SystemApp,
         scheduler_delay_ms: int = 5000,
         scheduler_interval_ms: int = 1000,
+        scheduler_enable: bool = True,
     ):
         super().__init__(system_app)
         self.system_app = system_app
         self._scheduler_interval_ms = scheduler_interval_ms
         self._scheduler_delay_ms = scheduler_delay_ms
         self._stop_event = threading.Event()
+        self._scheduler_enable = scheduler_enable
 
     def init_app(self, system_app: SystemApp):
         self.system_app = system_app
@@ -39,7 +41,7 @@ class DefaultScheduler(BaseComponent):
 
     def _scheduler(self):
         time.sleep(self._scheduler_delay_ms / 1000)
-        while not self._stop_event.is_set():
+        while self._scheduler_enable and not self._stop_event.is_set():
             try:
                 schedule.run_pending()
             except Exception as e:

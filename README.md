@@ -1,5 +1,5 @@
-# DB-GPT: Revolutionizing Database Interactions with Private LLM Technology
- 
+# DB-GPT: AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents
+
 <p align="left">
   <img src="./assets/LOGO.png" width="100%" />
 </p>
@@ -48,15 +48,23 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ### AI-Native Data App 
 ---
-- 🔥🔥🔥 [Released V0.5.0 | Develop native data applications through workflows and agents](https://docs.dbgpt.site/docs/changelog/Released_V0.5.0)
+- 🔥🔥🔥 [Released V0.6.0 | A set of significant upgrades](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
+  - [The AWEL upgrade to 2.0]()
+  - [GraphRAG]()
+  - [AI Native Data App construction and management]()
+  - [The GPT-Vis upgrade, supporting a variety of visualization charts]()
+  - [Support Text2NLU and Text2GQL fine-tuning]()
+  - [Support Intent recognition, slot filling, and Prompt management]()
+
 ---
 
-![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
+![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
 
-![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
+![app_manage_chat_data_v0 6](https://github.com/user-attachments/assets/c8cc85bb-e3c2-4fab-8fb9-7b4b469d0611)
 
-![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
+![chat_dashboard_display_v0 6](https://github.com/user-attachments/assets/b15d6ebe-54c4-4527-a16d-02fbbaf20dc9)
 
+![agent_prompt_awel_v0 6](https://github.com/user-attachments/assets/40761507-a1e1-49d4-b49a-3dd9a5ea41cc)
 
 ## Contents
 - [Introduction](#introduction)
@@ -119,19 +127,20 @@ As of October 10, 2023, through the fine-tuning of an open-source model with 13 
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**Usage Tutorial**](http://docs.dbgpt.site/docs/overview)
-- [**Install**](http://docs.dbgpt.site/docs/installation)
-  - [Docker](https://docs.dbgpt.site/docs/installation/docker)
-  - [Source Code](https://docs.dbgpt.site/docs/installation/sourcecode)
-- [**Quickstart**](http://docs.dbgpt.site/docs/quickstart)
-- [**Application**](http://docs.dbgpt.site/docs/operation_manual)
-  - [App Usage](https://docs.dbgpt.site/docs/application/app_usage)
-  - [AWEL Flow Usage](https://docs.dbgpt.site/docs/application/awel_flow_usage)
-- [**Debugging**](http://docs.dbgpt.site/docs/operation_manual/advanced_tutorial/debugging)
-- [**Advanced Usage**](https://docs.dbgpt.site/docs/application/advanced_tutorial/cli)
-  - [SMMF](https://docs.dbgpt.site/docs/application/advanced_tutorial/smmf)
-  - [Finetune](https://docs.dbgpt.site/docs/application/fine_tuning_manual/dbgpt_hub)
-  - [AWEL](https://docs.dbgpt.site/docs/latest/awel/tutorial)
+[**Usage Tutorial**](http://docs.dbgpt.cn/docs/overview)
+- [**Install**](http://docs.dbgpt.cn/docs/installation)
+  - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
+  - [Source Code](http://docs.dbgpt.cn/docs/installation/sourcecode)
+- [**Quickstart**](http://docs.dbgpt.cn/docs/quickstart)
+- [**Application**](http://docs.dbgpt.cn/docs/operation_manual)
+  - [Development Guide](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop) 
+  - [App Usage](http://docs.dbgpt.cn/docs/application/app_usage)
+  - [AWEL Flow Usage](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
+- [**Debugging**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
+- [**Advanced Usage**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
+  - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
+  - [Finetune](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
+  - [AWEL](http://docs.dbgpt.cn/docs/latest/awel/tutorial)
 
 
 ## Features
@@ -158,6 +167,18 @@ At present, we have introduced several key features to showcase our current capa
   We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more. 
 
   - News
+    - 🔥🔥🔥  [Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-32B-Instruct](https://huggingface.co/Qwen/Qwen2.5-32B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-14B-Instruct](https://huggingface.co/Qwen/Qwen2.5-14B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-3B-Instruct](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-Coder-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-Coder-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct)
+    - 🔥🔥🔥  [Meta-Llama-3.1-405B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-405B-Instruct)
+    - 🔥🔥🔥  [Meta-Llama-3.1-70B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-70B-Instruct)
+    - 🔥🔥🔥  [Meta-Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct)
     - 🔥🔥🔥  [gemma-2-27b-it](https://huggingface.co/google/gemma-2-27b-it)
     - 🔥🔥🔥  [gemma-2-9b-it](https://huggingface.co/google/gemma-2-9b-it)
     - 🔥🔥🔥  [DeepSeek-Coder-V2-Instruct](https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Instruct)
@@ -192,9 +213,7 @@ At present, we have introduced several key features to showcase our current capa
   We ensure the privacy and security of data through the implementation of various technologies, including privatized large models and proxy desensitization.
 
 - Support Datasources
-  - [Datasources](http://docs.dbgpt.site/docs/modules/connections)
-
-
+  - [Datasources](http://docs.dbgpt.cn/docs/modules/connections)
 
 ## Image
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
@@ -211,7 +230,6 @@ At present, we have introduced several key features to showcase our current capa
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" />
 </a>
-
 
 
 ## Licence

@@ -60,10 +60,11 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         """
         # TODO implement your own logic here, transfer the entity to a response
         return ServerResponse(
+            app_code=entity.app_code,
             conv_uid=entity.conv_uid,
             user_input=entity.summary,
             chat_mode=entity.chat_mode,
-            user_name=entity.user_name,
+            user_name="",
             sys_code=entity.sys_code,
         )
 

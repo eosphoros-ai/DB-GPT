@@ -2,15 +2,29 @@
 
 DAG is the core component of AWEL, it is used to define the relationship between tasks.
 """
+
 import asyncio
 import contextvars
+import dataclasses
 import logging
 import threading
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
 from concurrent.futures import Executor
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 from dbgpt.component import SystemApp
 
@@ -21,6 +35,9 @@ from ..task.base import TaskContext, TaskOutput
 logger = logging.getLogger(__name__)
 
 DependencyType = Union["DependencyMixin", Sequence["DependencyMixin"]]
+
+if TYPE_CHECKING:
+    from ...interface.variables import VariablesProvider
 
 
 def _is_async_context():
@@ -127,6 +144,11 @@ class DAGVar:
     # The executor for current DAG, this is used run some sync tasks in async DAG
     _executor: Optional[Executor] = None
 
+    _variables_provider: Optional["VariablesProvider"] = None
+    # Whether check serializable for AWEL, it will be set to True when running AWEL
+    # operator in remote environment
+    _check_serializable: Optional[bool] = None
+
     @classmethod
     def enter_dag(cls, dag) -> None:
         """Enter a DAG context.
@@ -220,6 +242,42 @@ class DAGVar:
         """
         cls._executor = executor
 
+    @classmethod
+    def get_variables_provider(cls) -> Optional["VariablesProvider"]:
+        """Get the current variables provider.
+
+        Returns:
+            Optional[VariablesProvider]: The current variables provider
+        """
+        return cls._variables_provider
+
+    @classmethod
+    def set_variables_provider(cls, variables_provider: "VariablesProvider") -> None:
+        """Set the current variables provider.
+
+        Args:
+            variables_provider (VariablesProvider): The variables provider to set
+        """
+        cls._variables_provider = variables_provider
+
+    @classmethod
+    def get_check_serializable(cls) -> Optional[bool]:
+        """Get the check serializable flag.
+
+        Returns:
+            Optional[bool]: The check serializable flag
+        """
+        return cls._check_serializable
+
+    @classmethod
+    def set_check_serializable(cls, check_serializable: bool) -> None:
+        """Set the check serializable flag.
+
+        Args:
+            check_serializable (bool): The check serializable flag to set
+        """
+        cls._check_serializable = check_serializable
+
 
 class DAGLifecycle:
     """The lifecycle of DAG."""
@@ -249,6 +307,7 @@ class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
         node_name: Optional[str] = None,
         system_app: Optional[SystemApp] = None,
         executor: Optional[Executor] = None,
+        check_serializable: Optional[bool] = None,
         **kwargs,
     ) -> None:
         """Initialize a DAGNode.
@@ -274,6 +333,7 @@ class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
             node_id = self._dag._new_node_id()
         self._node_id: Optional[str] = node_id
         self._node_name: Optional[str] = node_name
+        self._check_serializable = check_serializable
         if self._dag:
             self._dag._append_node(self)
 
@@ -449,9 +509,117 @@ class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
         """Return the string of current DAGNode."""
         return self.__repr__()
 
+    @classmethod
+    def _do_check_serializable(cls, obj: Any, obj_name: str = "Object"):
+        """Check whether the current DAGNode is serializable."""
+        from dbgpt.util.serialization.check import check_serializable
+
+        check_serializable(obj, obj_name)
+
+    @property
+    def check_serializable(self) -> bool:
+        """Whether check serializable for current DAGNode."""
+        if self._check_serializable is not None:
+            return self._check_serializable or False
+        return DAGVar.get_check_serializable() or False
+
 
 def _build_task_key(task_name: str, key: str) -> str:
     return f"{task_name}___$$$$$$___{key}"
+
+
+@dataclasses.dataclass
+class _DAGVariablesItem:
+    """The DAG variables item.
+
+    It is a private class, just used for internal.
+    """
+
+    key: str
+    name: str
+    label: str
+    value: Any
+    category: Literal["common", "secret"] = "common"
+    scope: str = "global"
+    value_type: Optional[str] = None
+    scope_key: Optional[str] = None
+    sys_code: Optional[str] = None
+    user_name: Optional[str] = None
+    description: Optional[str] = None
+
+
+@dataclasses.dataclass
+class DAGVariables:
+    """The DAG variables."""
+
+    items: List[_DAGVariablesItem] = dataclasses.field(default_factory=list)
+    _cached_provider: Optional["VariablesProvider"] = None
+    _lock: threading.Lock = dataclasses.field(default_factory=threading.Lock)
+
+    def merge(self, dag_variables: "DAGVariables") -> "DAGVariables":
+        """Merge the DAG variables.
+
+        Args:
+            dag_variables (DAGVariables): The DAG variables to merge
+        """
+
+        def _build_key(item: _DAGVariablesItem):
+            key = "_".join([item.key, item.name, item.scope])
+            if item.scope_key:
+                key += f"_{item.scope_key}"
+            if item.sys_code:
+                key += f"_{item.sys_code}"
+            if item.user_name:
+                key += f"_{item.user_name}"
+            return key
+
+        new_items = []
+        exist_vars = set()
+        for item in self.items:
+            new_items.append(item)
+            exist_vars.add(_build_key(item))
+        for item in dag_variables.items:
+            key = _build_key(item)
+            if key not in exist_vars:
+                new_items.append(item)
+        return DAGVariables(
+            items=new_items,
+            _cached_provider=self._cached_provider or dag_variables._cached_provider,
+        )
+
+    def to_provider(self) -> "VariablesProvider":
+        """Convert the DAG variables to variables provider.
+
+        Returns:
+            VariablesProvider: The variables provider
+        """
+        if not self._cached_provider:
+            from ...interface.variables import (
+                StorageVariables,
+                StorageVariablesProvider,
+            )
+
+            with self._lock:
+                # Create a new provider safely
+                provider = StorageVariablesProvider()
+                for item in self.items:
+                    storage_vars = StorageVariables(
+                        key=item.key,
+                        name=item.name,
+                        label=item.label,
+                        value=item.value,
+                        category=item.category,
+                        scope=item.scope,
+                        value_type=item.value_type,
+                        scope_key=item.scope_key,
+                        sys_code=item.sys_code,
+                        user_name=item.user_name,
+                        description=item.description,
+                    )
+                    provider.save(storage_vars)
+                self._cached_provider = provider
+
+        return self._cached_provider
 
 
 class DAGContext:
@@ -467,6 +635,7 @@ class DAGContext:
         event_loop_task_id: int,
         streaming_call: bool = False,
         node_name_to_ids: Optional[Dict[str, str]] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> None:
         """Initialize a DAGContext.
 
@@ -476,6 +645,7 @@ class DAGContext:
             streaming_call (bool, optional): Whether the current DAG is streaming call.
                 Defaults to False.
             node_name_to_ids (Optional[Dict[str, str]], optional): The node name to node
+            dag_variables (Optional[DAGVariables], optional): The DAG variables.
         """
         if not node_name_to_ids:
             node_name_to_ids = {}
@@ -485,6 +655,8 @@ class DAGContext:
         self._node_to_outputs: Dict[str, TaskContext] = node_to_outputs
         self._node_name_to_ids: Dict[str, str] = node_name_to_ids
         self._event_loop_task_id = event_loop_task_id
+        self._dag_variables = dag_variables
+        self._share_data_lock = asyncio.Lock()
 
     @property
     def _task_outputs(self) -> Dict[str, TaskContext]:
@@ -546,8 +718,9 @@ class DAGContext:
         Returns:
             Any: The share data, you can cast it to the real type
         """
-        logger.debug(f"Get share data by key {key} from {id(self._share_data)}")
-        return self._share_data.get(key)
+        async with self._share_data_lock:
+            logger.debug(f"Get share data by key {key} from {id(self._share_data)}")
+            return self._share_data.get(key)
 
     async def save_to_share_data(
         self, key: str, data: Any, overwrite: bool = False
@@ -560,10 +733,11 @@ class DAGContext:
             overwrite (bool): Whether overwrite the share data if the key
                 already exists. Defaults to None.
         """
-        if key in self._share_data and not overwrite:
-            raise ValueError(f"Share data key {key} already exists")
-        logger.debug(f"Save share data by key {key} to {id(self._share_data)}")
-        self._share_data[key] = data
+        async with self._share_data_lock:
+            if key in self._share_data and not overwrite:
+                raise ValueError(f"Share data key {key} already exists")
+            logger.debug(f"Save share data by key {key} to {id(self._share_data)}")
+            self._share_data[key] = data
 
     async def get_task_share_data(self, task_name: str, key: str) -> Any:
         """Get share data by task name and key.
@@ -613,10 +787,17 @@ class DAG:
     """
 
     def __init__(
-        self, dag_id: str, resource_group: Optional[ResourceGroup] = None
+        self,
+        dag_id: str,
+        resource_group: Optional[ResourceGroup] = None,
+        tags: Optional[Dict[str, str]] = None,
+        description: Optional[str] = None,
+        default_dag_variables: Optional[DAGVariables] = None,
     ) -> None:
         """Initialize a DAG."""
         self._dag_id = dag_id
+        self._tags: Dict[str, str] = tags or {}
+        self._description = description
         self.node_map: Dict[str, DAGNode] = {}
         self.node_name_to_node: Dict[str, DAGNode] = {}
         self._root_nodes: List[DAGNode] = []
@@ -625,6 +806,7 @@ class DAG:
         self._resource_group: Optional[ResourceGroup] = resource_group
         self._lock = asyncio.Lock()
         self._event_loop_task_id_to_ctx: Dict[int, DAGContext] = {}
+        self._default_dag_variables = default_dag_variables
 
     def _append_node(self, node: DAGNode) -> None:
         if node.node_id in self.node_map:
@@ -650,6 +832,27 @@ class DAG:
     def dag_id(self) -> str:
         """Return the dag id of current DAG."""
         return self._dag_id
+
+    @property
+    def tags(self) -> Dict[str, str]:
+        """Return the tags of current DAG."""
+        return self._tags
+
+    @property
+    def description(self) -> Optional[str]:
+        """Return the description of current DAG."""
+        return self._description
+
+    @property
+    def dev_mode(self) -> bool:
+        """Whether the current DAG is in dev mode.
+
+        Returns:
+            bool: Whether the current DAG is in dev mode
+        """
+        from ..operators.base import _dev_mode
+
+        return _dev_mode()
 
     def _build(self) -> None:
         from ..operators.common_operator import TriggerOperator

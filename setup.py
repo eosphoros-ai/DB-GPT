@@ -20,7 +20,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.9")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.6.1")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -32,6 +32,7 @@ BUILD_FROM_SOURCE_URL_FAST_CHAT = os.getenv(
 )
 BUILD_VERSION_OPENAI = os.getenv("BUILD_VERSION_OPENAI")
 INCLUDE_QUANTIZATION = os.getenv("INCLUDE_QUANTIZATION", "true").lower() == "true"
+INCLUDE_OBSERVABILITY = os.getenv("INCLUDE_OBSERVABILITY", "true").lower() == "true"
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -189,10 +190,15 @@ def get_cpu_avx_support() -> Tuple[OSType, AVXType]:
         print("Current platform is windows, use avx2 as default cpu architecture")
     elif system == "Linux":
         os_type = OSType.LINUX
-        result = subprocess.run(
-            ["lscpu"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        output = result.stdout.decode()
+        if os.path.exists("/etc/alpine-release"):
+            # For Alpine, we'll check /proc/cpuinfo directly
+            with open("/proc/cpuinfo", "r") as f:
+                output = f.read()
+        else:
+            result = subprocess.run(
+                ["lscpu"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            output = result.stdout.decode()
     elif system == "Darwin":
         os_type = OSType.DARWIN
         result = subprocess.run(
@@ -442,6 +448,7 @@ def core_requires():
         "termcolor",
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         # TODO: remove pandas dependency
+        # alpine can't install pandas by default
         "pandas==2.0.3",
         # numpy should less than 2.0.0
         "numpy>=1.21.0,<2.0.0",
@@ -458,6 +465,8 @@ def core_requires():
         "SQLAlchemy>=2.0.25,<2.0.29",
         # for cache
         "msgpack",
+        # for AWEL operator serialization
+        "cloudpickle",
         # for cache
         # TODO: pympler has not been updated for a long time and needs to
         #  find a new toolkit.
@@ -497,6 +506,24 @@ def core_requires():
         "GitPython",
         # For AWEL dag visualization, graphviz is a small package, also we can move it to default.
         "graphviz",
+        # For security
+        "cryptography",
+        # For high performance RPC communication in code execution
+        "pyzmq",
+    ]
+
+
+def code_execution_requires():
+    """
+    pip install "dbgpt[code]"
+
+    Code execution dependencies. For building a docker image.
+    """
+    setup_spec.extras["code"] = setup_spec.extras["core"] + [
+        "pyzmq",
+        "msgpack",
+        # for AWEL operator serialization
+        "cloudpickle",
     ]
 
 
@@ -505,14 +532,20 @@ def knowledge_requires():
     pip install "dbgpt[rag]"
     """
     setup_spec.extras["rag"] = setup_spec.extras["vstore"] + [
-        "spacy>=3.7",
+        "spacy==3.7",
         "markdown",
         "bs4",
         "python-pptx",
         "python-docx",
         "pypdf",
+        "pdfplumber",
         "python-multipart",
         "sentence-transformers",
+    ]
+
+    setup_spec.extras["graph_rag"] = setup_spec.extras["rag"] + [
+        "neo4j",
+        "dbgpt-tugraph-plugins>=0.1.0rc1",
     ]
 
 
@@ -613,7 +646,6 @@ def all_datasource_requires():
         "pyhive",
         "thrift",
         "thrift_sasl",
-        "neo4j",
         "vertica_python",
     ]
 
@@ -628,6 +660,9 @@ def openai_requires():
         setup_spec.extras["openai"].append(f"openai=={BUILD_VERSION_OPENAI}")
     else:
         setup_spec.extras["openai"].append("openai")
+
+    if INCLUDE_OBSERVABILITY:
+        setup_spec.extras["openai"] += setup_spec.extras["observability"]
 
     setup_spec.extras["openai"] += setup_spec.extras["framework"]
     setup_spec.extras["openai"] += setup_spec.extras["rag"]
@@ -654,6 +689,19 @@ def cache_requires():
     setup_spec.extras["cache"] = ["rocksdict"]
 
 
+def observability_requires():
+    """
+    pip install "dbgpt[observability]"
+
+    Send DB-GPT traces to OpenTelemetry compatible backends.
+    """
+    setup_spec.extras["observability"] = [
+        "opentelemetry-api",
+        "opentelemetry-sdk",
+        "opentelemetry-exporter-otlp",
+    ]
+
+
 def default_requires():
     """
     pip install "dbgpt[default]"
@@ -667,15 +715,19 @@ def default_requires():
         "chardet",
         "sentencepiece",
         "ollama",
+        "qianfan",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]
+    setup_spec.extras["default"] += setup_spec.extras["graph_rag"]
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
+    setup_spec.extras["default"] += setup_spec.extras["cache"]
     if INCLUDE_QUANTIZATION:
         # Add quantization extra to default, default is True
         setup_spec.extras["default"] += setup_spec.extras["quantization"]
-    setup_spec.extras["default"] += setup_spec.extras["cache"]
+    if INCLUDE_OBSERVABILITY:
+        setup_spec.extras["default"] += setup_spec.extras["observability"]
 
 
 def all_requires():
@@ -692,6 +744,7 @@ def init_install_requires():
 
 
 core_requires()
+code_execution_requires()
 torch_requires()
 llama_cpp_requires()
 quantization_requires()
@@ -699,11 +752,12 @@ quantization_requires()
 all_vector_store_requires()
 all_datasource_requires()
 knowledge_requires()
-openai_requires()
 gpt4all_requires()
 vllm_requires()
 cache_requires()
+observability_requires()
 
+openai_requires()
 # must be last
 default_requires()
 all_requires()

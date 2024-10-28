@@ -1,20 +1,15 @@
 import json
 import logging
-import traceback
-from typing import Any, AsyncIterator, List, Optional, cast
+import os
+from typing import AsyncIterator, List, Optional, cast
 
 import schedule
 from fastapi import HTTPException
 
 from dbgpt._private.pydantic import model_to_json
+from dbgpt.agent import AgentDummyTrigger
 from dbgpt.component import SystemApp
-from dbgpt.core.awel import (
-    DAG,
-    BaseOperator,
-    CommonLLMHttpRequestBody,
-    CommonLLMHttpResponseBody,
-)
-from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.core.awel import DAG, BaseOperator, CommonLLMHttpRequestBody
 from dbgpt.core.awel.flow.flow_factory import (
     FlowCategory,
     FlowFactory,
@@ -22,21 +17,24 @@ from dbgpt.core.awel.flow.flow_factory import (
     fill_flow_panel,
 )
 from dbgpt.core.awel.trigger.http_trigger import CommonLLMHttpTrigger
+from dbgpt.core.awel.util.chat_util import (
+    is_chat_flow_type,
+    safe_chat_stream_with_dag_task,
+    safe_chat_with_dag_task,
+)
 from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.core.schema.api import (
-    ChatCompletionResponse,
-    ChatCompletionResponseChoice,
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
     DeltaMessage,
 )
-from dbgpt.serve.core import BaseService
+from dbgpt.serve.core import BaseService, blocking_func_to_async
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.pagination_utils import PaginationResult
 
-from ..api.schemas import ServeRequest, ServerResponse
+from ..api.schemas import FlowDebugRequest, ServeRequest, ServerResponse
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
 
@@ -52,7 +50,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._system_app = None
         self._serve_config: ServeConfig = None
         self._dao: ServeDao = dao
-        self._dag_manager: Optional[DAGManager] = None
         self._flow_factory: FlowFactory = FlowFactory()
         self._dbgpts_loader: Optional[DBGPTsLoader] = None
 
@@ -64,6 +61,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Args:
             system_app (SystemApp): The system app
         """
+        super().init_app(system_app)
+
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
@@ -78,7 +77,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
     def before_start(self):
         """Execute before the application starts"""
-        self._dag_manager = DAGManager.get_instance(self._system_app)
+        super().before_start()
         self._pre_load_dag_from_db()
         self._pre_load_dag_from_dbgpts()
 
@@ -94,13 +93,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
         """Returns the internal DAO."""
         return self._dao
-
-    @property
-    def dag_manager(self) -> DAGManager:
-        """Returns the internal DAGManager."""
-        if self._dag_manager is None:
-            raise ValueError("DAGManager is not initialized")
-        return self._dag_manager
 
     @property
     def dbgpts_loader(self) -> DBGPTsLoader:
@@ -155,7 +147,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 raise ValueError(
                     f"Create DAG {request.name} error, define_type: {request.define_type}, error: {str(e)}"
                 ) from e
-        res = self.dao.create(request)
+        self.dao.create(request)
+        # Query from database
+        res = self.get({"uid": request.uid})
 
         state = request.state
         try:
@@ -237,7 +231,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     continue
                 # Set state to DEPLOYED
                 flow.state = State.DEPLOYED
-                exist_inst = self.get({"name": flow.name})
+                exist_inst = self.dao.get_one({"name": flow.name})
                 if not exist_inst:
                     self.create_and_save_dag(flow, save_failed_flow=True)
                 elif is_first_load or exist_inst.state != State.RUNNING:
@@ -267,7 +261,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             ServerResponse: The response
         """
-        new_state = request.state
+        new_state = State.DEPLOYED
         try:
             # Try to build the dag from the request
             if request.define_type == "json":
@@ -333,6 +327,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         flow = self.dao.get_one(query_request)
         if flow:
             fill_flow_panel(flow)
+            metadata = self.dag_manager.get_dag_metadata(
+                flow.dag_id, alias_name=flow.uid
+            )
+            if metadata:
+                flow.metadata = metadata.to_dict()
         return flow
 
     def delete(self, uid: str) -> Optional[ServerResponse]:
@@ -390,7 +389,57 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
-        return self.dao.get_list_page(request, page, page_size)
+        page_result = self.dao.get_list_page(
+            request, page, page_size, desc_order_column=ServeEntity.gmt_modified.name
+        )
+        for item in page_result.items:
+            metadata = self.dag_manager.get_dag_metadata(
+                item.dag_id, alias_name=item.uid
+            )
+            if metadata:
+                item.metadata = metadata.to_dict()
+        return page_result
+
+    def get_flow_templates(
+        self,
+        user_name: Optional[str] = None,
+        sys_code: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> PaginationResult[ServerResponse]:
+        """Get a list of Flow templates
+
+        Args:
+            user_name (Optional[str]): The user name
+            sys_code (Optional[str]): The system code
+            page (int): The page number
+            page_size (int): The page size
+        Returns:
+            List[ServerResponse]: The response
+        """
+        local_file_templates = self._get_flow_templates_from_files()
+        return PaginationResult.build_from_all(local_file_templates, page, page_size)
+
+    def _get_flow_templates_from_files(self) -> List[ServerResponse]:
+        """Get a list of Flow templates from files"""
+        user_lang = self._system_app.config.get_current_lang(default="en")
+        # List files in current directory
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        template_dir = os.path.join(parent_dir, "templates", user_lang)
+        default_template_dir = os.path.join(parent_dir, "templates", "en")
+        if not os.path.exists(template_dir):
+            template_dir = default_template_dir
+        templates = []
+        for root, _, files in os.walk(template_dir):
+            for file in files:
+                if file.endswith(".json"):
+                    try:
+                        with open(os.path.join(root, file), "r") as f:
+                            data = json.load(f)
+                            templates.append(_parse_flow_template_from_json(data))
+                    except Exception as e:
+                        logger.warning(f"Load template {file} error: {str(e)}")
+        return templates
 
     async def chat_stream_flow_str(
         self, flow_uid: str, request: CommonLLMHttpRequestBody
@@ -463,7 +512,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         incremental = request.incremental
         try:
             task = await self._get_callable_task(flow_uid)
-            return await _safe_chat_with_dag_task(task, request)
+            return await safe_chat_with_dag_task(task, request)
         except HTTPException as e:
             return ModelOutput(error_code=1, text=e.detail, incremental=incremental)
         except Exception as e:
@@ -484,7 +533,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         incremental = request.incremental
         try:
             task = await self._get_callable_task(flow_uid)
-            async for output in _safe_chat_stream_with_dag_task(
+            async for output in safe_chat_stream_with_dag_task(
                 task, request, incremental
             ):
                 yield output
@@ -515,11 +564,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 status_code=404, detail=f"Flow {flow_uid}'s dag id not found"
             )
         dag = self.dag_manager.dag_map[dag_id]
-        if (
-            flow.flow_category != FlowCategory.CHAT_FLOW
-            and self._parse_flow_category(dag) != FlowCategory.CHAT_FLOW
-        ):
-            raise ValueError(f"Flow {flow_uid} is not a chat flow")
+        # if (
+        #     flow.flow_category != FlowCategory.CHAT_FLOW
+        #     and self._parse_flow_category(dag) != FlowCategory.CHAT_FLOW
+        # ):
+        #     raise ValueError(f"Flow {flow_uid} is not a chat flow")
         leaf_nodes = dag.leaf_nodes
         if len(leaf_nodes) != 1:
             raise ValueError("Chat Flow just support one leaf node in dag")
@@ -545,231 +594,106 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             or not isinstance(leaf_nodes[0], BaseOperator)
         ):
             return FlowCategory.COMMON
+
+        leaf_node = cast(BaseOperator, leaf_nodes[0])
+        if not leaf_node.metadata or not leaf_node.metadata.outputs:
+            return FlowCategory.COMMON
+
         common_http_trigger = False
+        agent_trigger = False
         for trigger in triggers:
             if isinstance(trigger, CommonLLMHttpTrigger):
                 common_http_trigger = True
                 break
-        leaf_node = cast(BaseOperator, leaf_nodes[0])
-        if not leaf_node.metadata or not leaf_node.metadata.outputs:
-            return FlowCategory.COMMON
+
+            if isinstance(trigger, AgentDummyTrigger):
+                agent_trigger = True
+                break
+
         output = leaf_node.metadata.outputs[0]
         try:
             real_class = _get_type_cls(output.type_cls)
-            if common_http_trigger and _is_chat_flow_type(real_class, is_class=True):
+            if agent_trigger:
+                return FlowCategory.CHAT_AGENT
+            elif common_http_trigger and is_chat_flow_type(real_class, is_class=True):
                 return FlowCategory.CHAT_FLOW
         except Exception:
             return FlowCategory.COMMON
 
+    async def debug_flow(
+        self, request: FlowDebugRequest, default_incremental: Optional[bool] = None
+    ) -> AsyncIterator[ModelOutput]:
+        """Debug the flow.
 
-def _is_chat_flow_type(output_obj: Any, is_class: bool = False) -> bool:
-    if is_class:
-        return (
-            output_obj == str
-            or output_obj == CommonLLMHttpResponseBody
-            or output_obj == ModelOutput
+        Args:
+            request (FlowDebugRequest): The request
+            default_incremental (Optional[bool]): The default incremental configuration
+
+        Returns:
+            AsyncIterator[ModelOutput]: The output
+        """
+        from dbgpt.core.awel.dag.dag_manager import DAGMetadata, _parse_metadata
+
+        dag = await blocking_func_to_async(
+            self._system_app,
+            self._flow_factory.build,
+            request.flow,
         )
-    else:
-        chat_types = (str, CommonLLMHttpResponseBody)
-        return isinstance(output_obj, chat_types)
+        leaf_nodes = dag.leaf_nodes
+        if len(leaf_nodes) != 1:
+            raise ValueError("Chat Flow just support one leaf node in dag")
+        task = cast(BaseOperator, leaf_nodes[0])
+        dag_metadata = _parse_metadata(dag)
+        # TODO: Run task with variables
+        variables = request.variables
+        dag_request = request.request
 
+        if isinstance(request.request, CommonLLMHttpRequestBody):
+            incremental = request.request.incremental
+        elif isinstance(request.request, dict):
+            incremental = request.request.get("incremental", False)
+        else:
+            raise ValueError("Invalid request type")
 
-async def _safe_chat_with_dag_task(task: BaseOperator, request: Any) -> ModelOutput:
-    """Chat with the DAG task."""
-    try:
-        finish_reason = None
-        usage = None
-        metrics = None
-        error_code = 0
-        text = ""
-        async for output in _safe_chat_stream_with_dag_task(task, request, False):
-            finish_reason = output.finish_reason
-            usage = output.usage
-            metrics = output.metrics
-            error_code = output.error_code
-            text = output.text
-        return ModelOutput(
-            error_code=error_code,
-            text=text,
-            metrics=metrics,
-            usage=usage,
-            finish_reason=finish_reason,
-        )
-    except Exception as e:
-        return ModelOutput(error_code=1, text=str(e), incremental=False)
+        if default_incremental is not None:
+            incremental = default_incremental
 
-
-async def _safe_chat_stream_with_dag_task(
-    task: BaseOperator,
-    request: Any,
-    incremental: bool,
-) -> AsyncIterator[ModelOutput]:
-    """Chat with the DAG task."""
-    try:
-        async for output in _chat_stream_with_dag_task(task, request, incremental):
-            yield output
-    except Exception as e:
-        yield ModelOutput(error_code=1, text=str(e), incremental=incremental)
-    finally:
-        if task.streaming_operator:
-            if task.dag:
-                await task.dag._after_dag_end(task.current_event_loop_task_id)
-
-
-async def _chat_stream_with_dag_task(
-    task: BaseOperator,
-    request: Any,
-    incremental: bool,
-) -> AsyncIterator[ModelOutput]:
-    """Chat with the DAG task."""
-    is_sse = task.output_format and task.output_format.upper() == "SSE"
-    if not task.streaming_operator:
         try:
-            result = await task.call(request)
-            model_output = _parse_single_output(result, is_sse)
-            model_output.incremental = incremental
-            yield model_output
+            async for output in safe_chat_stream_with_dag_task(
+                task, dag_request, incremental
+            ):
+                yield output
+        except HTTPException as e:
+            yield ModelOutput(error_code=1, text=e.detail, incremental=incremental)
         except Exception as e:
             yield ModelOutput(error_code=1, text=str(e), incremental=incremental)
-    else:
-        from dbgpt.model.utils.chatgpt_utils import OpenAIStreamingOutputOperator
 
-        if OpenAIStreamingOutputOperator and isinstance(
-            task, OpenAIStreamingOutputOperator
-        ):
-            full_text = ""
-            async for output in await task.call_stream(request):
-                model_output = _parse_openai_output(output)
-                # The output of the OpenAI streaming API is incremental
-                full_text += model_output.text
-                model_output.incremental = incremental
-                model_output.text = model_output.text if incremental else full_text
-                yield model_output
-                if not model_output.success:
-                    break
-        else:
-            full_text = ""
-            previous_text = ""
-            async for output in await task.call_stream(request):
-                model_output = _parse_single_output(output, is_sse)
-                model_output.incremental = incremental
-                if task.incremental_output:
-                    # Output is incremental, append the text
-                    full_text += model_output.text
-                else:
-                    # Output is not incremental, last output is the full text
-                    full_text = model_output.text
-                if not incremental:
-                    # Return the full text
-                    model_output.text = full_text
-                else:
-                    # Return the incremental text
-                    delta_text = full_text[len(previous_text) :]
-                    previous_text = (
-                        full_text
-                        if len(full_text) > len(previous_text)
-                        else previous_text
-                    )
-                    model_output.text = delta_text
-                yield model_output
-                if not model_output.success:
-                    break
-
-
-def _parse_single_output(output: Any, is_sse: bool) -> ModelOutput:
-    """Parse the single output."""
-    finish_reason = None
-    usage = None
-    metrics = None
-    if output is None:
-        error_code = 1
-        text = "The output is None!"
-    elif isinstance(output, str):
-        if is_sse:
-            sse_output = _parse_sse_data(output)
-            if sse_output is None:
-                error_code = 1
-                text = "The output is not a SSE format"
+    async def _wrapper_chat_stream_flow_str(
+        self, stream_iter: AsyncIterator[ModelOutput]
+    ) -> AsyncIterator[str]:
+        async for output in stream_iter:
+            text = output.text
+            if text:
+                text = text.replace("\n", "\\n")
+            if output.error_code != 0:
+                yield f"data:[SERVER_ERROR]{text}\n\n"
+                break
             else:
-                error_code = 0
-                text = sse_output
-        else:
-            error_code = 0
-            text = output
-    elif isinstance(output, ModelOutput):
-        error_code = output.error_code
-        text = output.text
-        finish_reason = output.finish_reason
-        usage = output.usage
-        metrics = output.metrics
-    elif isinstance(output, CommonLLMHttpResponseBody):
-        error_code = output.error_code
-        text = output.text
-    elif isinstance(output, dict):
-        error_code = 0
-        text = json.dumps(output, ensure_ascii=False)
-    else:
-        error_code = 1
-        text = f"The output is not a valid format({type(output)})"
-    return ModelOutput(
-        error_code=error_code,
-        text=text,
-        finish_reason=finish_reason,
-        usage=usage,
-        metrics=metrics,
-    )
+                yield f"data:{text}\n\n"
 
 
-def _parse_openai_output(output: Any) -> ModelOutput:
-    """Parse the OpenAI output."""
-    text = ""
-    if not isinstance(output, str):
-        return ModelOutput(
-            error_code=1,
-            text="The output is not a stream format",
-        )
-    if output.strip() == "data: [DONE]" or output.strip() == "data:[DONE]":
-        return ModelOutput(error_code=0, text="")
-    if not output.startswith("data:"):
-        return ModelOutput(
-            error_code=1,
-            text="The output is not a stream format",
-        )
+def _parse_flow_template_from_json(json_dict: dict) -> ServerResponse:
+    """Parse the flow from json
 
-    sse_output = _parse_sse_data(output)
-    if sse_output is None:
-        return ModelOutput(error_code=1, text="The output is not a SSE format")
-    json_data = sse_output.strip()
-    try:
-        dict_data = json.loads(json_data)
-    except Exception as e:
-        return ModelOutput(
-            error_code=1,
-            text=f"Invalid JSON data: {json_data}, {e}",
-        )
-    if "choices" not in dict_data:
-        return ModelOutput(
-            error_code=1,
-            text=dict_data.get("text", "Unknown error"),
-        )
-    choices = dict_data["choices"]
-    finish_reason: Optional[str] = None
-    if choices:
-        choice = choices[0]
-        delta_data = ChatCompletionResponseStreamChoice(**choice)
-        if delta_data.delta.content:
-            text = delta_data.delta.content
-        finish_reason = delta_data.finish_reason
-    return ModelOutput(error_code=0, text=text, finish_reason=finish_reason)
+    Args:
+        json_dict (dict): The json dict
 
-
-def _parse_sse_data(output: str) -> Optional[str]:
-    if output.startswith("data:"):
-        if output.startswith("data: "):
-            output = output[6:]
-        else:
-            output = output[5:]
-
-        return output
-    else:
-        return None
+    Returns:
+        ServerResponse: The flow
+    """
+    flow_json = json_dict["flow"]
+    flow_json["editable"] = False
+    del flow_json["uid"]
+    flow_json["state"] = State.INITIALIZING
+    flow_json["dag_id"] = None
+    return ServerResponse(**flow_json)

@@ -1,0 +1,95 @@
+FROM node:lts-alpine as build
+
+RUN apk add --no-cache git
+
+ARG NPM_REGISTRY=https://registry.npmjs.org
+ENV NPM_REGISTRY=$NPM_REGISTRY
+
+# Set github CI environment variable
+ARG CI=true
+ENV CI=$CI
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json to a separate build directory
+COPY docs/package*.json /app-build/docs/
+
+# Install dependencies in the separate build directory
+RUN cd /app-build/docs && \
+    npm config set registry $NPM_REGISTRY && \
+    npm ci
+
+# Copy the rest of the application to /app and /app-build
+COPY . /app-build
+COPY . /app
+
+# Make sure we have the latest version of the repository
+RUN if [ "$CI" = "true" ]; then \
+        git fetch --prune --unshallow; \
+    fi
+
+ARG NUM_VERSION=2
+ENV NUM_VERSION=$NUM_VERSION
+
+# Commit the changes to the repository, just for local testing
+# Sometimes, we just want to test the changes in the Dockerfile
+RUN git config --global user.email "dbgpt@example.com" && \
+    git config --global user.name "DB-GPT" && \
+    git add . && git commit --no-verify -m "Commit message"
+
+# New logic for building versions directly in Dockerfile
+RUN git config --global --add safe.directory /app && \
+    # Record the current position
+    CURRENT_POSITION=$(git rev-parse --abbrev-ref HEAD) && \
+    # Get the latest tags
+    TAGS=$(git tag --sort=-creatordate | head -n $NUM_VERSION | tac) && \
+    # If there are no tags, get the latest commits
+    if [ -z "$TAGS" ]; then \
+        TAGS=$(git log --format="%h" -n $NUM_VERSION | tac); \
+    fi && \
+    for TAG in $TAGS; do \
+        echo "Creating version $TAG"; \
+        cd /app/docs && git checkout $TAG; \
+        echo "Checked out to tag: $TAG"; \
+        # Copy the necessary files to the build directory for each tag
+        rm -rf /app-build/docs/docs /app-build/docs/sidebars.js /app-build/docs/static /app-build/docs/src && \
+        cp -r /app/docs/docs /app-build/docs/ && \
+        cp /app/docs/sidebars.js /app-build/docs/ && \
+        cp -r /app/docs/static /app-build/docs/ && \
+        cp -r /app/docs/src /app-build/docs/; \
+        # Create a new version
+        cd /app-build/docs && npm run docusaurus docs:version $TAG || exit 1; \
+    done && \
+    # Return to the original position, build dev version
+    cd /app/docs && git checkout $CURRENT_POSITION && \
+    rm -rf /app-build/docs/docs /app-build/docs/sidebars.js /app-build/docs/static /app-build/docs/src && \
+    cp -r /app/docs/docs /app-build/docs/ && \
+    cp /app/docs/sidebars.js /app-build/docs/ && \
+    cp -r /app/docs/static /app-build/docs/ && \
+    cp -r /app/docs/src /app-build/docs/; \
+    cd /app-build/docs && npm run build && \
+    echo $TAGS | tr ' ' '\n' | tac > /app-build/docs/build/versions.txt && \
+    echo "latest" >> /app-build/docs/build/versions.txt && \
+    echo "Built versions:" && \
+    cat /app-build/docs/build/versions.txt
+
+# For production
+FROM nginx:alpine
+
+# Copy the nginx configuration file
+# COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy the build output to replace the default nginx contents.
+COPY --from=build /app-build/docs/build /usr/share/nginx/html
+COPY --from=build /app-build/docs/versioned_docs/ /usr/share/nginx/html/versioned_docs/
+COPY --from=build /app-build/docs/versioned_sidebars/ /usr/share/nginx/html/versioned_sidebars/
+
+RUN echo '#!/bin/sh' > /usr/share/nginx/html/versions.sh && \
+    echo 'echo "Available versions:"' >> /usr/share/nginx/html/versions.sh && \
+    echo 'cat /usr/share/nginx/html/versions.txt' >> /usr/share/nginx/html/versions.sh && \
+    chmod +x /usr/share/nginx/html/versions.sh
+
+EXPOSE 80
+
+# Start Nginx server
+CMD ["nginx", "-g", "daemon off;"]

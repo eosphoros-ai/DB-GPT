@@ -13,7 +13,9 @@ from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import REQ, RES
 from dbgpt.util.pagination_utils import PaginationResult
+from dbgpt.vis.client import vis_name_change
 
+from ...feedback.api.endpoints import get_service
 from ..api.schemas import MessageVo, ServeRequest, ServerResponse
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
@@ -44,6 +46,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Args:
             system_app (SystemApp): The system app
         """
+        super().init_app(system_app)
+
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
@@ -147,6 +151,15 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         conv: StorageConversation = self.create_storage_conv(request)
         conv.delete()
 
+    def clear(self, request: ServeRequest) -> None:
+        """Clear current conversation and its messages
+
+        Args:
+            request (ServeRequest): The request
+        """
+        conv: StorageConversation = self.create_storage_conv(request)
+        conv.clear()
+
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:
         """Get a list of Conversation entities
 
@@ -190,13 +203,27 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         conv: StorageConversation = self.create_storage_conv(request)
         result = []
         messages = _append_view_messages(conv.messages)
+
+        feedback_service = get_service()
+
+        feedbacks = feedback_service.list_conv_feedbacks(conv_uid=request.conv_uid)
+        fb_map = {fb.message_id: fb.to_dict() for fb in feedbacks}
+
         for msg in messages:
+            feedback = {}
+            if (
+                msg.round_index is not None
+                and fb_map.get(str(msg.round_index)) is not None
+            ):
+                feedback = fb_map.get(str(msg.round_index))
+
             result.append(
                 MessageVo(
                     role=msg.type,
-                    context=msg.content,
+                    context=vis_name_change(msg.content),
                     order=msg.round_index,
                     model_name=self.config.default_model,
+                    feedback=feedback,
                 )
             )
         return result

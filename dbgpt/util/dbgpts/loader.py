@@ -91,18 +91,22 @@ class BasePackage(BaseModel):
             raise ValueError("The root is required")
         if root not in sys.path:
             sys.path.append(root)
-        with pkg_resources.path(name, "__init__.py") as path:
-            mods = _load_modules_from_file(str(path), name, show_log=False)
-            all_cls = [_get_classes_from_module(m) for m in mods]
-            all_predicate_results = []
-            for m in mods:
-                all_predicate_results.extend(_get_from_module(m, predicates))
-            module_cls = []
-            for list_cls in all_cls:
-                for c in list_cls:
-                    if issubclass(c, expected_cls):
-                        module_cls.append(c)
-            return module_cls, all_predicate_results, mods
+        try:
+            with pkg_resources.path(name, "__init__.py") as path:
+                mods = _load_modules_from_file(str(path), name, show_log=False)
+                all_cls = [_get_classes_from_module(m) for m in mods]
+                all_predicate_results = []
+                for m in mods:
+                    all_predicate_results.extend(_get_from_module(m, predicates))
+                module_cls = []
+                for list_cls in all_cls:
+                    for c in list_cls:
+                        if issubclass(c, expected_cls):
+                            module_cls.append(c)
+                return module_cls, all_predicate_results, mods
+        except Exception as e:
+            logger.warning(f"load_module_class error!{str(e)}", e)
+            raise e
 
 
 class FlowPackage(BasePackage):
@@ -249,7 +253,7 @@ def _get_from_module(module, predicates: Optional[List[str]] = None):
     return results
 
 
-def _parse_package_metadata(package: InstalledPackage) -> BasePackage:
+def parse_package_metadata(package: InstalledPackage) -> BasePackage:
     with open(
         Path(package.root) / DBGPTS_METADATA_FILE, mode="r+", encoding="utf-8"
     ) as f:
@@ -316,8 +320,92 @@ def _load_package_from_path(path: str):
     packages = _load_installed_package(path)
     parsed_packages = []
     for package in packages:
-        parsed_packages.append(_parse_package_metadata(package))
+        try:
+            parsed_packages.append(parse_package_metadata(package))
+        except Exception as e:
+            logger.warning(f"Load package failed!{str(e)}", e)
+
     return parsed_packages
+
+
+def _load_flow_package_from_path(
+    name: str, path: str = INSTALL_DIR, filter_by_name: bool = True
+) -> FlowPackage:
+    raw_packages = _load_installed_package(path)
+    new_name = name.replace("_", "-")
+    if filter_by_name:
+        packages = [p for p in raw_packages if p.package == name or p.name == name]
+        if not packages:
+            packages = [
+                p for p in raw_packages if p.package == new_name or p.name == new_name
+            ]
+    else:
+        packages = raw_packages
+    if not packages:
+        raise ValueError(f"Can't find the package {name} or {new_name}")
+    flow_package = parse_package_metadata(packages[0])
+    if flow_package.package_type != "flow":
+        raise ValueError(f"Unsupported package type: {flow_package.package_type}")
+    return cast(FlowPackage, flow_package)
+
+
+def _load_flow_package_from_zip_path(zip_path: str) -> FlowPanel:
+    import tempfile
+    import zipfile
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(temp_dir)
+        package_names = os.listdir(temp_dir)
+        if not package_names:
+            raise ValueError("No package found in the zip file")
+        if len(package_names) > 1:
+            raise ValueError("Only support one package in the zip file")
+        package_name = package_names[0]
+        with open(
+            Path(temp_dir) / package_name / INSTALL_METADATA_FILE, mode="w+"
+        ) as f:
+            # Write the metadata
+            import tomlkit
+
+            install_metadata = {
+                "name": package_name,
+                "repo": "local/dbgpts",
+            }
+            tomlkit.dump(install_metadata, f)
+
+        package = _load_flow_package_from_path("", path=temp_dir, filter_by_name=False)
+        return _flow_package_to_flow_panel(package)
+
+
+def _flow_package_to_flow_panel(package: FlowPackage) -> FlowPanel:
+    dict_value = {
+        "name": package.name,
+        "label": package.label,
+        "version": package.version,
+        "editable": False,
+        "description": package.description,
+        "source": package.repo,
+        "define_type": "json",
+        "authors": package.authors,
+    }
+    if isinstance(package, FlowJsonPackage):
+        dict_value["flow_data"] = package.read_definition_json()
+    elif isinstance(package, FlowPythonPackage):
+        dict_value["flow_data"] = {
+            "nodes": [],
+            "edges": [],
+            "viewport": {
+                "x": 213,
+                "y": 269,
+                "zoom": 0,
+            },
+        }
+        dict_value["flow_dag"] = package.dag
+        dict_value["define_type"] = "python"
+    else:
+        raise ValueError(f"Unsupported package type: {package}")
+    return FlowPanel(**dict_value)
 
 
 class DBGPTsLoader(BaseComponent):
@@ -360,7 +448,7 @@ class DBGPTsLoader(BaseComponent):
                 self._packages[package.name] = package
                 self._register_packages(package)
         except Exception as e:
-            logger.warning(f"Load dbgpts package error: {e}")
+            logger.warning(f"Load dbgpts package error: {e}", e)
 
     def get_flows(self) -> List[FlowPanel]:
         """Get the flows.
@@ -373,32 +461,8 @@ class DBGPTsLoader(BaseComponent):
             if package.package_type != "flow":
                 continue
             package = cast(FlowPackage, package)
-            dict_value = {
-                "name": package.name,
-                "label": package.label,
-                "version": package.version,
-                "editable": False,
-                "description": package.description,
-                "source": package.repo,
-                "define_type": "json",
-            }
-            if isinstance(package, FlowJsonPackage):
-                dict_value["flow_data"] = package.read_definition_json()
-            elif isinstance(package, FlowPythonPackage):
-                dict_value["flow_data"] = {
-                    "nodes": [],
-                    "edges": [],
-                    "viewport": {
-                        "x": 213,
-                        "y": 269,
-                        "zoom": 0,
-                    },
-                }
-                dict_value["flow_dag"] = package.dag
-                dict_value["define_type"] = "python"
-            else:
-                raise ValueError(f"Unsupported package type: {package}")
-            panels.append(FlowPanel(**dict_value))
+            flow_panel = _flow_package_to_flow_panel(package)
+            panels.append(flow_panel)
         return panels
 
     def _register_packages(self, package: BasePackage):

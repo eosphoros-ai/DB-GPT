@@ -1,16 +1,20 @@
+import { ChatContext } from '@/app/chat-context';
+import i18n from '@/app/i18n';
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
-import { useCallback, useContext, useEffect, useMemo } from 'react';
-import i18n from '@/app/i18n';
-import { ChatContext } from '@/app/chat-context';
+import { useCallback, useContext, useState } from 'react';
 
 type Props = {
   queryAgentURL?: string;
+  app_code?: string;
 };
 
 type ChatParams = {
   chatId: string;
-  data?: Record<string, any>;
+  ctrl?: AbortController;
+  data?: any;
   query?: Record<string, string>;
   onMessage: (message: string) => void;
   onClose?: () => void;
@@ -18,49 +22,58 @@ type ChatParams = {
   onError?: (content: string, error?: Error) => void;
 };
 
-const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
-  const ctrl = useMemo(() => new AbortController(), []);
+const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props) => {
+  const [ctrl, setCtrl] = useState<AbortController>({} as AbortController);
   const { scene } = useContext(ChatContext);
-
   const chat = useCallback(
-    async ({ data, chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
+    async ({ data, chatId, onMessage, onClose, onDone, onError, ctrl }: ChatParams) => {
+      ctrl && setCtrl(ctrl);
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));
         return;
       }
 
-      const parmas = {
+      const params = {
         ...data,
         conv_uid: chatId,
+        app_code,
       };
 
-      if (!parmas.conv_uid) {
-        message.error('conv_uid 不存在，请刷新后重试');
-        return;
-      }
+      //       if (!params.conv_uid) {
+      //         message.error('conv_uid 不存在，请刷新后重试');
+      //         return;
+      //       }
 
       try {
         await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            [HEADER_USER_ID_KEY]: getUserId() ?? '',
           },
-          body: JSON.stringify(parmas),
-          signal: ctrl.signal,
+          body: JSON.stringify(params),
+          signal: ctrl ? ctrl.signal : null,
           openWhenHidden: true,
           async onopen(response) {
             if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
               return;
             }
+            if (response.headers.get('content-type') === 'application/json') {
+              response.json().then(data => {
+                onMessage?.(data);
+                onDone?.();
+                ctrl && ctrl.abort();
+              });
+            }
           },
           onclose() {
-            ctrl.abort();
+            ctrl && ctrl.abort();
             onClose?.();
           },
           onerror(err) {
             throw new Error(err);
           },
-          onmessage: (event) => {
+          onmessage: event => {
             let message = event.data;
             try {
               if (scene === 'chat_agent') {
@@ -68,7 +81,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
               } else {
                 message = JSON.parse(message);
               }
-            } catch (e) {
+            } catch {
               message.replaceAll('\\n', '\n');
             }
             if (typeof message === 'string') {
@@ -86,20 +99,14 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
           },
         });
       } catch (err) {
-        ctrl.abort();
+        ctrl && ctrl.abort();
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }
     },
-    [queryAgentURL],
+    [queryAgentURL, app_code, scene],
   );
 
-  useEffect(() => {
-    return () => {
-      ctrl.abort();
-    };
-  }, []);
-
-  return chat;
+  return { chat, ctrl };
 };
 
 export default useChat;

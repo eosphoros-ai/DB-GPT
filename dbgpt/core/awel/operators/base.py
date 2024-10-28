@@ -2,10 +2,12 @@
 
 import asyncio
 import functools
+import logging
 from abc import ABC, ABCMeta, abstractmethod
 from contextvars import ContextVar
 from types import FunctionType
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -18,15 +20,22 @@ from typing import (
 )
 
 from dbgpt.component import ComponentType, SystemApp
+from dbgpt.configs import VARIABLES_SCOPE_FLOW_PRIVATE
 from dbgpt.util.executor_utils import (
     AsyncToSyncIterator,
     BlockingFunction,
     DefaultExecutorFactory,
     blocking_func_to_async,
 )
+from dbgpt.util.tracer import root_tracer
 
-from ..dag.base import DAG, DAGContext, DAGNode, DAGVar
+from ..dag.base import DAG, DAGContext, DAGNode, DAGVar, DAGVariables
 from ..task.base import EMPTY_DATA, OUT, T, TaskOutput, is_empty_data
+
+if TYPE_CHECKING:
+    from ...interface.variables import VariablesProvider
+
+logger = logging.getLogger(__name__)
 
 F = TypeVar("F", bound=FunctionType)
 
@@ -50,6 +59,7 @@ class WorkflowRunner(ABC, Generic[T]):
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
         exist_dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> DAGContext:
         """Execute the workflow starting from a given operator.
 
@@ -59,6 +69,7 @@ class WorkflowRunner(ABC, Generic[T]):
             streaming_call (bool): Whether the call is a streaming call.
             exist_dag_ctx (DAGContext): The context of the DAG when this node is run,
                 Defaults to None.
+            dag_variables (DAGVariables): The DAG variables.
         Returns:
             DAGContext: The context after executing the workflow, containing the final
                 state and data.
@@ -66,6 +77,15 @@ class WorkflowRunner(ABC, Generic[T]):
 
 
 default_runner: Optional[WorkflowRunner] = None
+
+
+def _dev_mode() -> bool:
+    """Check if the operator is in dev mode.
+
+    In production mode, the default runner is not None, and the operator will run in
+    the same process with the DB-GPT webserver.
+    """
+    return default_runner is None
 
 
 class BaseOperatorMeta(ABCMeta):
@@ -82,22 +102,37 @@ class BaseOperatorMeta(ABCMeta):
                 kwargs.get("system_app") or DAGVar.get_current_system_app()
             )
             executor = kwargs.get("executor") or DAGVar.get_executor()
+            variables_provider = (
+                kwargs.get("variables_provider") or DAGVar.get_variables_provider()
+            )
             if not executor:
                 if system_app:
                     executor = system_app.get_component(
-                        ComponentType.EXECUTOR_DEFAULT, DefaultExecutorFactory
+                        ComponentType.EXECUTOR_DEFAULT,
+                        DefaultExecutorFactory,
+                        default_component=DefaultExecutorFactory(),
                     ).create()  # type: ignore
                 else:
                     executor = DefaultExecutorFactory().create()
                 DAGVar.set_executor(executor)
+            if not variables_provider:
+                from ...interface.variables import VariablesProvider
+
+                if system_app:
+                    variables_provider = system_app.get_component(
+                        ComponentType.VARIABLES_PROVIDER,
+                        VariablesProvider,
+                        default_component=None,
+                    )
+                else:
+                    from ...interface.variables import StorageVariablesProvider
+
+                    variables_provider = StorageVariablesProvider()
+                DAGVar.set_variables_provider(variables_provider)
 
             if not task_id and dag:
                 task_id = dag._new_node_id()
             runner: Optional[WorkflowRunner] = kwargs.get("runner") or default_runner
-            # print(f"self: {self}, kwargs dag: {kwargs.get('dag')}, kwargs: {kwargs}")
-            # for arg in sig_cache.parameters:
-            #     if arg not in kwargs:
-            #         kwargs[arg] = default_args[arg]
             if not kwargs.get("dag"):
                 kwargs["dag"] = dag
             if not kwargs.get("task_id"):
@@ -108,6 +143,8 @@ class BaseOperatorMeta(ABCMeta):
                 kwargs["system_app"] = system_app
             if not kwargs.get("executor"):
                 kwargs["executor"] = executor
+            if not kwargs.get("variables_provider"):
+                kwargs["variables_provider"] = variables_provider
             real_obj = func(self, *args, **kwargs)
             return real_obj
 
@@ -138,6 +175,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         dag: Optional[DAG] = None,
         runner: Optional[WorkflowRunner] = None,
         can_skip_in_branch: bool = True,
+        variables_provider: Optional["VariablesProvider"] = None,
         **kwargs,
     ) -> None:
         """Create a BaseOperator with an optional workflow runner.
@@ -155,10 +193,28 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             self.incremental_output = bool(kwargs["incremental_output"])
         if "output_format" in kwargs:
             self.output_format = kwargs["output_format"]
-
         self._runner: WorkflowRunner = runner
         self._dag_ctx: Optional[DAGContext] = None
         self._can_skip_in_branch = can_skip_in_branch
+        self._variables_provider = variables_provider
+
+    def __getstate__(self):
+        """Customize the pickling process."""
+        state = self.__dict__.copy()
+        if "_runner" in state:
+            del state["_runner"]
+        if "_executor" in state:
+            del state["_executor"]
+        if "_system_app" in state:
+            del state["_system_app"]
+        return state
+
+    def __setstate__(self, state):
+        """Customize the unpickling process."""
+        self.__dict__.update(state)
+        self._runner = default_runner
+        self._system_app = DAGVar.get_current_system_app()
+        self._executor = DAGVar.get_executor()
 
     @property
     def current_dag_context(self) -> DAGContext:
@@ -172,13 +228,14 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     def dev_mode(self) -> bool:
         """Whether the operator is in dev mode.
 
-        In production mode, the default runner is not None.
+        In production mode, the default runner is not None, and the operator will run in
+        the same process with the DB-GPT webserver.
 
         Returns:
             bool: Whether the operator is in dev mode. True if the
                 default runner is None.
         """
-        return default_runner is None
+        return _dev_mode()
 
     async def _run(self, dag_ctx: DAGContext, task_log_id: str) -> TaskOutput[OUT]:
         if not self.node_id:
@@ -186,6 +243,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         if not task_log_id:
             raise ValueError(f"The task log ID can't be empty, current node {self}")
         CURRENT_DAG_CONTEXT.set(dag_ctx)
+        # Resolve variables
+        await self._resolve_variables(dag_ctx)
         return await self._do_run(dag_ctx)
 
     @abstractmethod
@@ -204,6 +263,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
         dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> OUT:
         """Execute the node and return the output.
 
@@ -213,19 +273,23 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             call_data (CALL_DATA): The data pass to root operator node.
             dag_ctx (DAGContext): The context of the DAG when this node is run,
                 Defaults to None.
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
         Returns:
             OUT: The output of the node after execution.
         """
         if not is_empty_data(call_data):
             call_data = {"data": call_data}
-        out_ctx = await self._runner.execute_workflow(
-            self, call_data, exist_dag_ctx=dag_ctx
-        )
-        return out_ctx.current_task_context.task_output.output
+        with root_tracer.start_span("dbgpt.awel.operator.call"):
+            out_ctx = await self._runner.execute_workflow(
+                self, call_data, exist_dag_ctx=dag_ctx, dag_variables=dag_variables
+            )
+            return out_ctx.current_task_context.task_output.output
 
     def _blocking_call(
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
+        dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
         loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> OUT:
         """Execute the node and return the output.
@@ -235,7 +299,10 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
-
+            dag_ctx (DAGContext): The context of the DAG when this node is run,
+                Defaults to None.
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
+            loop (asyncio.BaseEventLoop): The event loop to run the operator.
         Returns:
             OUT: The output of the node after execution.
         """
@@ -244,12 +311,13 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         if not loop:
             loop = get_or_create_event_loop()
         loop = cast(asyncio.BaseEventLoop, loop)
-        return loop.run_until_complete(self.call(call_data))
+        return loop.run_until_complete(self.call(call_data, dag_ctx, dag_variables))
 
     async def call_stream(
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
         dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
     ) -> AsyncIterator[OUT]:
         """Execute the node and return the output as a stream.
 
@@ -259,29 +327,41 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             call_data (CALL_DATA): The data pass to root operator node.
             dag_ctx (DAGContext): The context of the DAG when this node is run,
                 Defaults to None.
-
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
         Returns:
             AsyncIterator[OUT]: An asynchronous iterator over the output stream.
         """
         if call_data != EMPTY_DATA:
             call_data = {"data": call_data}
-        out_ctx = await self._runner.execute_workflow(
-            self, call_data, streaming_call=True, exist_dag_ctx=dag_ctx
-        )
+        with root_tracer.start_span("dbgpt.awel.operator.call_stream"):
+            out_ctx = await self._runner.execute_workflow(
+                self,
+                call_data,
+                streaming_call=True,
+                exist_dag_ctx=dag_ctx,
+                dag_variables=dag_variables,
+            )
 
-        task_output = out_ctx.current_task_context.task_output
-        if task_output.is_stream:
-            return out_ctx.current_task_context.task_output.output_stream
-        else:
+            task_output = out_ctx.current_task_context.task_output
+            if task_output.is_stream:
+                stream_generator = (
+                    out_ctx.current_task_context.task_output.output_stream
+                )
+            else:
+                # No stream output, wrap the output in a stream
+                async def _gen():
+                    yield task_output.output
 
-            async def _gen():
-                yield task_output.output
-
-            return _gen()
+                stream_generator = _gen()
+            return root_tracer.wrapper_async_stream(
+                stream_generator, "dbgpt.awel.operator.call_stream.iterate"
+            )
 
     def _blocking_call_stream(
         self,
         call_data: Optional[CALL_DATA] = EMPTY_DATA,
+        dag_ctx: Optional[DAGContext] = None,
+        dag_variables: Optional[DAGVariables] = None,
         loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> Iterator[OUT]:
         """Execute the node and return the output as a stream.
@@ -291,7 +371,10 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
-
+            dag_ctx (DAGContext): The context of the DAG when this node is run,
+                Defaults to None.
+            dag_variables (DAGVariables): The DAG variables passed to current DAG.
+            loop (asyncio.BaseEventLoop): The event loop to run the operator.
         Returns:
             Iterator[OUT]: An iterator over the output stream.
         """
@@ -299,7 +382,9 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         if not loop:
             loop = get_or_create_event_loop()
-        return AsyncToSyncIterator(self.call_stream(call_data), loop)
+        return AsyncToSyncIterator(
+            self.call_stream(call_data, dag_ctx, dag_variables), loop
+        )
 
     async def blocking_func_to_async(
         self, func: BlockingFunction, *args, **kwargs
@@ -326,6 +411,83 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     def can_skip_in_branch(self) -> bool:
         """Check if the operator can be skipped in the branch."""
         return self._can_skip_in_branch
+
+    async def _resolve_variables(self, dag_ctx: DAGContext):
+        """Resolve variables in the operator.
+
+        Some attributes of the operator may be VariablesPlaceHolder, which need to be
+        resolved before the operator is executed.
+
+        Args:
+            dag_ctx (DAGContext): The context of the DAG when this node is run.
+        """
+        from ...interface.variables import (
+            VariablesIdentifier,
+            VariablesPlaceHolder,
+            is_variable_string,
+        )
+
+        if not self._variables_provider:
+            return
+
+        if dag_ctx._dag_variables:
+            # Resolve variables in DAG context
+            resolve_tasks = []
+            resolve_items = []
+            for item in dag_ctx._dag_variables.items:
+                # TODO: Resolve variables just once?
+                if not item.value:
+                    continue
+                if isinstance(item.value, str) and is_variable_string(item.value):
+                    item.value = VariablesPlaceHolder(item.name, item.value)
+                if isinstance(item.value, VariablesPlaceHolder):
+                    resolve_tasks.append(
+                        item.value.async_parse(self._variables_provider)
+                    )
+                    resolve_items.append(item)
+            resolved_values = await asyncio.gather(*resolve_tasks)
+            for item, rv in zip(resolve_items, resolved_values):
+                item.value = rv
+        dag_provider: Optional["VariablesProvider"] = None
+        if dag_ctx._dag_variables:
+            dag_provider = dag_ctx._dag_variables.to_provider()
+
+        # TODO: Resolve variables parallel
+        for attr, value in self.__dict__.items():
+            # Handle all attributes that are VariablesPlaceHolder
+            if isinstance(value, VariablesPlaceHolder):
+                resolved_value: Any = None
+                default_identifier_map = None
+                id_key = VariablesIdentifier.from_str_identifier(value.full_key)
+                if (
+                    id_key.scope == VARIABLES_SCOPE_FLOW_PRIVATE
+                    and id_key.scope_key is None
+                    and self.dag
+                ):
+                    default_identifier_map = {"scope_key": self.dag.dag_id}
+
+                if dag_provider:
+                    # First try to resolve the variable with the DAG variables
+                    resolved_value = await value.async_parse(
+                        dag_provider,
+                        ignore_not_found_error=True,
+                        default_identifier_map=default_identifier_map,
+                    )
+                if resolved_value is None:
+                    resolved_value = await value.async_parse(
+                        self._variables_provider,
+                        default_identifier_map=default_identifier_map,
+                    )
+                    logger.debug(
+                        f"Resolve variable {attr} with value {resolved_value} for "
+                        f"{self} from system variables"
+                    )
+                else:
+                    logger.debug(
+                        f"Resolve variable {attr} with value {resolved_value} for "
+                        f"{self} from DAG variables"
+                    )
+                setattr(self, attr, resolved_value)
 
 
 def initialize_runner(runner: WorkflowRunner):

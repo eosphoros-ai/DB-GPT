@@ -22,7 +22,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
     const arr = fileName.split('.');
     filleSuffix = arr[arr.length - 1];
   }
-  const ableStrategies = filleSuffix ? strategies.filter((i) => i.suffix.indexOf(filleSuffix) > -1) : strategies;
+  const ableStrategies = filleSuffix ? strategies.filter(i => i.suffix.indexOf(filleSuffix) > -1) : strategies;
   const { t } = useTranslation();
   const DEFAULT_STRATEGY = {
     strategy: 'Automatic',
@@ -38,16 +38,16 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
     if (!selectedStrategy) {
       return null;
     }
-    if (selectedStrategy === DEFAULT_STRATEGY.strategy) {
-      return <p className="my-4">{DEFAULT_STRATEGY.desc}</p>;
+    if (selectedStrategy === DEFAULT_STRATEGY.name) {
+      return <p className='my-4'>{DEFAULT_STRATEGY.desc}</p>;
     }
-    const parameters = ableStrategies?.filter((i) => i.strategy === selectedStrategy)[0].parameters;
+    const parameters = ableStrategies?.filter(i => i.strategy === selectedStrategy)[0]?.parameters;
     if (!parameters || !parameters.length) {
-      return <Alert className="my-2" type="warning" message={t('No_parameter')} />;
+      return <Alert className='my-2' type='warning' message={t('No_parameter')} />;
     }
     return (
-      <div className="mt-2">
-        {parameters?.map((param) => (
+      <div className='mt-2'>
+        {parameters?.map(param => (
           <Form.Item
             key={`param_${param.param_name}`}
             label={param.param_name}
@@ -67,9 +67,9 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
   function renderParamByType(type: string) {
     switch (type) {
       case 'int':
-        return <InputNumber className="w-full" min={1} />;
+        return <InputNumber className='w-full' min={1} />;
       case 'string':
-        return <TextArea className="w-full" rows={2} />;
+        return <TextArea className='w-full' rows={2} />;
       case 'boolean':
         return <Checkbox />;
     }
@@ -79,7 +79,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
       <Form.Item name={[field!.name, 'chunk_parameters', 'chunk_strategy']} initialValue={DEFAULT_STRATEGY.strategy}>
         <Radio.Group style={{ marginTop: 16 }} onChange={radioChange}>
           <Radio value={DEFAULT_STRATEGY.strategy}>{DEFAULT_STRATEGY.name}</Radio>
-          {ableStrategies.map((strategy) => (
+          {ableStrategies.map(strategy => (
             <Radio key={`strategy_radio_${strategy.strategy}`} value={strategy.strategy}>
               {strategy.name}
             </Radio>

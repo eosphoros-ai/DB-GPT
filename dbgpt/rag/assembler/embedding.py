@@ -124,7 +124,7 @@ class EmbeddingAssembler(BaseAssembler):
             retrieve_strategy,
         )
 
-    def persist(self) -> List[str]:
+    def persist(self, **kwargs) -> List[str]:
         """Persist chunks into store.
 
         Returns:
@@ -132,7 +132,7 @@ class EmbeddingAssembler(BaseAssembler):
         """
         return self._index_store.load_document(self._chunks)
 
-    async def apersist(self) -> List[str]:
+    async def apersist(self, **kwargs) -> List[str]:
         """Persist chunks into store.
 
         Returns:

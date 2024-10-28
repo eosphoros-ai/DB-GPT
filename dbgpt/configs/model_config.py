@@ -14,6 +14,7 @@ DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")
 PLUGINS_DIR = os.path.join(ROOT_PATH, "plugins")
 MODEL_DISK_CACHE_DIR = os.path.join(DATA_DIR, "model_cache")
+FILE_SERVER_LOCAL_STORAGE_PATH = os.path.join(DATA_DIR, "file_server")
 _DAG_DEFINITION_DIR = os.path.join(ROOT_PATH, "examples/awel")
 # Global language setting
 LOCALES_DIR = os.path.join(ROOT_PATH, "i18n/locales")
@@ -55,6 +56,8 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/THUDM/glm-4-9b-chat
     "glm-4-9b-chat": os.path.join(MODEL_PATH, "glm-4-9b-chat"),
     "glm-4-9b-chat-1m": os.path.join(MODEL_PATH, "glm-4-9b-chat-1m"),
+    # https://huggingface.co/THUDM/codegeex4-all-9b
+    "codegeex4-all-9b": os.path.join(MODEL_PATH, "codegeex4-all-9b"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
@@ -83,6 +86,15 @@ LLM_MODEL_CONFIG = {
     "meta-llama-3-8b-instruct": os.path.join(MODEL_PATH, "Meta-Llama-3-8B-Instruct"),
     # https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct
     "meta-llama-3-70b-instruct": os.path.join(MODEL_PATH, "Meta-Llama-3-70B-Instruct"),
+    "meta-llama-3.1-8b-instruct": os.path.join(
+        MODEL_PATH, "Meta-Llama-3.1-8B-Instruct"
+    ),
+    "meta-llama-3.1-70b-instruct": os.path.join(
+        MODEL_PATH, "Meta-Llama-3.1-70B-Instruct"
+    ),
+    "meta-llama-3.1-405b-instruct": os.path.join(
+        MODEL_PATH, "Meta-Llama-3.1-405B-Instruct"
+    ),
     "baichuan-13b": os.path.join(MODEL_PATH, "Baichuan-13B-Chat"),
     # please rename "fireballoon/baichuan-vicuna-chinese-7b" to "baichuan-7b"
     "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),
@@ -161,6 +173,17 @@ LLM_MODEL_CONFIG = {
     "qwen2-0.5b-instruct-gptq-int4": os.path.join(
         MODEL_PATH, "Qwen2-0.5B-Instruct-GPTQ-Int4"
     ),
+    "qwen2.5-0.5b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-0.5B-Instruct"),
+    "qwen2.5-1.5b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-1.5B-Instruct"),
+    "qwen2.5-3b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-3B-Instruct"),
+    "qwen2.5-7b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-7B-Instruct"),
+    "qwen2.5-14b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-14B-Instruct"),
+    "qwen2.5-32b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-32B-Instruct"),
+    "qwen2.5-72b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-72B-Instruct"),
+    "qwen2.5-coder-1.5b-instruct": os.path.join(
+        MODEL_PATH, "Qwen2.5-Coder-1.5B-Instruct"
+    ),
+    "qwen2.5-coder-7b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-Coder-7B-Instruct"),
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
     # wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf
@@ -169,6 +192,8 @@ LLM_MODEL_CONFIG = {
     "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b"),
     "internlm-7b-8k": os.path.join(MODEL_PATH, "internlm-chat-7b-8k"),
     "internlm-20b": os.path.join(MODEL_PATH, "internlm-chat-20b"),
+    "internlm2_5-7b-chat": os.path.join(MODEL_PATH, "internlm2_5-7b-chat"),
+    "internlm2_5-7b-chat-1m": os.path.join(MODEL_PATH, "internlm2_5-7b-chat-1m"),
     "codellama-7b": os.path.join(MODEL_PATH, "CodeLlama-7b-Instruct-hf"),
     "codellama-7b-sql-sft": os.path.join(MODEL_PATH, "codellama-7b-sql-sft"),
     "codellama-13b": os.path.join(MODEL_PATH, "CodeLlama-13b-Instruct-hf"),
@@ -198,6 +223,9 @@ LLM_MODEL_CONFIG = {
     "mixtral-8x7b-instruct-v0.1": os.path.join(
         MODEL_PATH, "Mixtral-8x7B-Instruct-v0.1"
     ),
+    "mistral-nemo-instruct-2407": os.path.join(
+        MODEL_PATH, "Mistral-Nemo-Instruct-2407"
+    ),
     # https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0
     "solar-10.7b-instruct-v1.0": os.path.join(MODEL_PATH, "SOLAR-10.7B-Instruct-v1.0"),
     # https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca
@@ -225,6 +253,7 @@ LLM_MODEL_CONFIG = {
     "gemma-7b-it": os.path.join(MODEL_PATH, "gemma-7b-it"),
     # https://huggingface.co/google/gemma-2b-it
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
+    "gemma-2-2b-it": os.path.join(MODEL_PATH, "gemma-2-2b-it"),
     "gemma-2-9b-it": os.path.join(MODEL_PATH, "gemma-2-9b-it"),
     "gemma-2-27b-it": os.path.join(MODEL_PATH, "gemma-2-27b-it"),
     "starling-lm-7b-beta": os.path.join(MODEL_PATH, "Starling-LM-7B-beta"),
@@ -272,6 +301,7 @@ EMBEDDING_MODEL_CONFIG = {
     "proxy_http_openapi": "proxy_http_openapi",
     "proxy_ollama": "proxy_ollama",
     "proxy_tongyi": "proxy_tongyi",
+    "proxy_qianfan": "proxy_qianfan",
     # Rerank model, rerank mode is a special embedding model
     "bge-reranker-base": os.path.join(MODEL_PATH, "bge-reranker-base"),
     "bge-reranker-large": os.path.join(MODEL_PATH, "bge-reranker-large"),

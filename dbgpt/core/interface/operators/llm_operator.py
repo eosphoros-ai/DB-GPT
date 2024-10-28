@@ -24,6 +24,7 @@ from dbgpt.core.awel.flow import (
     OperatorType,
     Parameter,
     ViewMetadata,
+    ui,
 )
 from dbgpt.core.interface.llm import (
     LLMClient,
@@ -69,6 +70,10 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest]):
                 optional=True,
                 default=None,
                 description=_("The temperature of the model request."),
+                ui=ui.UISlider(
+                    show_input=True,
+                    attr=ui.UISlider.UIAttribute(min=0.0, max=2.0, step=0.1),
+                ),
             ),
             Parameter.build_from(
                 _("Max New Tokens"),
@@ -241,10 +246,16 @@ class BaseLLM:
 
     SHARE_DATA_KEY_MODEL_NAME = "share_data_key_model_name"
     SHARE_DATA_KEY_MODEL_OUTPUT = "share_data_key_model_output"
+    SHARE_DATA_KEY_MODEL_OUTPUT_VIEW = "share_data_key_model_output_view"
 
-    def __init__(self, llm_client: Optional[LLMClient] = None):
+    def __init__(
+        self,
+        llm_client: Optional[LLMClient] = None,
+        save_model_output: bool = True,
+    ):
         """Create a new LLM operator."""
         self._llm_client = llm_client
+        self._save_model_output = save_model_output
 
     @property
     def llm_client(self) -> LLMClient:
@@ -257,9 +268,10 @@ class BaseLLM:
         self, current_dag_context: DAGContext, model_output: ModelOutput
     ) -> None:
         """Save the model output to the share data."""
-        await current_dag_context.save_to_share_data(
-            self.SHARE_DATA_KEY_MODEL_OUTPUT, model_output
-        )
+        if self._save_model_output:
+            await current_dag_context.save_to_share_data(
+                self.SHARE_DATA_KEY_MODEL_OUTPUT, model_output
+            )
 
 
 class BaseLLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
@@ -271,9 +283,14 @@ class BaseLLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
     This operator will generate a no streaming response.
     """
 
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
+    def __init__(
+        self,
+        llm_client: Optional[LLMClient] = None,
+        save_model_output: bool = True,
+        **kwargs,
+    ):
         """Create a new LLM operator."""
-        super().__init__(llm_client=llm_client)
+        super().__init__(llm_client=llm_client, save_model_output=save_model_output)
         MapOperator.__init__(self, **kwargs)
 
     async def map(self, request: ModelRequest) -> ModelOutput:
@@ -304,13 +321,18 @@ class BaseStreamingLLMOperator(
     This operator will generate streaming response.
     """
 
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
+    def __init__(
+        self,
+        llm_client: Optional[LLMClient] = None,
+        save_model_output: bool = True,
+        **kwargs,
+    ):
         """Create a streaming operator for a LLM.
 
         Args:
             llm_client (LLMClient, optional): The LLM client. Defaults to None.
         """
-        super().__init__(llm_client=llm_client)
+        super().__init__(llm_client=llm_client, save_model_output=save_model_output)
         BaseOperator.__init__(self, **kwargs)
 
     async def streamify(  # type: ignore

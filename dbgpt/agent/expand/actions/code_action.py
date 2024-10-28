@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 class CodeAction(Action[None]):
     """Code Action Module."""
 
-    def __init__(self):
-        """Create a code action."""
-        super().__init__()
+    def __init__(self, **kwargs):
+        """Code action init."""
+        super().__init__(**kwargs)
         self._render_protocol = VisCode()
         self._code_execution_config = {}
 

@@ -26,6 +26,7 @@ async def yi_generate_stream(
         temperature=params.get("temperature"),
         context=context,
         max_new_tokens=params.get("max_new_tokens"),
+        stop=params.get("stop"),
     )
     async for r in client.generate_stream(request):
         yield r

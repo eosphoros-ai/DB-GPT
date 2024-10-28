@@ -39,6 +39,7 @@ async def chatgpt_generate_stream(
         temperature=params.get("temperature"),
         context=context,
         max_new_tokens=params.get("max_new_tokens"),
+        stop=params.get("stop"),
     )
     async for r in client.generate_stream(request):
         yield r
@@ -188,6 +189,8 @@ class OpenAILLMClient(ProxyLLMClient):
             payload["temperature"] = request.temperature
         if request.max_new_tokens:
             payload["max_tokens"] = request.max_new_tokens
+        if request.stop:
+            payload["stop"] = request.stop
         return payload
 
     async def generate(
@@ -261,6 +264,9 @@ class OpenAILLMClient(ProxyLLMClient):
         text = ""
         async for r in chat_completion:
             if len(r.choices) == 0:
+                continue
+            # Check for empty 'choices' issue in Azure GPT-4o responses
+            if r.choices[0] is not None and r.choices[0].delta is None:
                 continue
             if r.choices[0].delta.content is not None:
                 content = r.choices[0].delta.content
