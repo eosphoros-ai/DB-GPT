@@ -224,7 +224,7 @@ def process_function(function):
 
 def is_chinese(text):
     for char in text:
-        if "一" <= char <= "鿿":
+        if "\u4e00" <= char <= "\u9fa5":  # BMP中的常用汉字范围
             return True
     return False
 
