@@ -1,7 +1,10 @@
 """Transformer base class."""
+
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Union
+
+from dbgpt.core import Chunk
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +39,15 @@ class ExtractorBase(TransformerBase, ABC):
     @abstractmethod
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
         """Extract results from text."""
+
+    @abstractmethod
+    async def batch_extract(
+        self,
+        texts: Union[List[str], List[Chunk]],
+        batch_size: int = 1,
+        limit: Optional[int] = None,
+    ) -> List:
+        """Batch extract results from texts."""
 
 
 class TranslatorBase(TransformerBase, ABC):
