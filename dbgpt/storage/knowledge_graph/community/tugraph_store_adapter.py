@@ -560,29 +560,42 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 rel = f"<-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
             else:
                 rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
-            query = (
+            path_query = (
                 f"MATCH p=(n:{GraphElemType.ENTITY.value})"
                 f"{rel}(m:{GraphElemType.ENTITY.value}) "
                 f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
-                f"RETURN p {limit_string}"
+                f"RETURN n {limit_string}"
             )
-            return self.query(query)
+            return self.query(path_query, white_list=["description"])
         else:
             graph = MemoryGraph()
 
             for sub in subs:
-                query = (
+                # Query the chain from documents to chunks,
+                # document -> chunk -> chunk -> chunk -> ...
+                chain_query = (
                     f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
-                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]-"
+                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
                     f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS "
                     f"'{self._escape_quotes(sub)}' "
-                    f"RETURN p {limit_string}"
-                )  # if it contains the subjects
-                result = self.query(query)
-                for vertex in result.vertices():
-                    graph.upsert_vertex(vertex)
-                for edge in result.edges():
-                    graph.append_edge(edge)
+                    f"RETURN p"
+                )
+                # Query and filter all the properties
+                graph_of_path = self.query(query=chain_query, white_list=[""])
+                graph.upsert_graph(graph_of_path)
+
+                # Query the leaf chunks in the chain from documents to chunks
+                leaf_chunk_query = (
+                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS "
+                    f"'{self._escape_quotes(sub)}' "
+                    f"RETURN m {limit_string}"
+                )
+                graph_of_leaf_chunk = self.query(
+                    query=leaf_chunk_query, white_list=["content"]
+                )
+                graph.upsert_graph(graph_of_leaf_chunk)
 
             return graph
 
@@ -607,6 +620,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         vertices, edges = self._get_nodes_edges_from_queried_data(
             query_result, white_list
         )
+
         mg = MemoryGraph()
         for vertex in vertices:
             mg.upsert_vertex(vertex)
@@ -714,7 +728,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         from neo4j import graph
 
         def filter_properties(
-            properties: dict[str, Any], white_list: List[str]
+            properties: dict[str, Any], white_list: List[str] = None
         ) -> Dict[str, Any]:
             """Filter the properties.
 
@@ -723,13 +737,26 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 entity_properties = ["id", "name", "description", "_document_id",
                                         "_chunk_id", "_community_id"]
                 edge_properties = ["id", "name", "description", "_chunk_id"]
+            Args:
+                properties: Dictionary of properties to filter
+                white_list: List of properties to keep
+                    - If None: Keep default properties (those not starting with '_'
+                        and not in ['id', 'name'])
+                    - If [""]: Remove all properties (return empty dict)
+                    - If list of strings: Keep only properties in white_list
             """
-            return {
-                key: value
-                for key, value in properties.items()
-                if (not key.startswith("_") and key not in ["id", "name"])
-                or key in white_list
-            }
+            return (
+                {}
+                if white_list == [""]
+                else {
+                    key: value
+                    for key, value in properties.items()
+                    if (
+                        (not key.startswith("_") and key not in ["id", "name"])
+                        or (white_list is not None and key in white_list)
+                    )
+                }
+            )
 
         # Parse the data to nodes and relationships
         for record in data:
