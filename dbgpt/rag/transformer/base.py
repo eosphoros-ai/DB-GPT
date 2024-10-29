@@ -2,9 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
-
-from dbgpt.core import Chunk
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +41,7 @@ class ExtractorBase(TransformerBase, ABC):
     @abstractmethod
     async def batch_extract(
         self,
-        texts: Union[List[str], List[Chunk]],
+        texts: List[str],
         batch_size: int = 1,
         limit: Optional[int] = None,
     ) -> List:

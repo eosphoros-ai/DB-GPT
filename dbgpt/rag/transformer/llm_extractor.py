@@ -1,10 +1,11 @@
 """TripletExtractor class."""
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import List, Optional
 
-from dbgpt.core import Chunk, HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
+from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
 from dbgpt.rag.transformer.base import ExtractorBase
 
 logger = logging.getLogger(__name__)
@@ -25,17 +26,25 @@ class LLMExtractor(ExtractorBase, ABC):
 
     async def batch_extract(
         self,
-        texts: Union[List[str], List[Chunk]],
+        texts: List[str],
         batch_size: int = 1,
         limit: Optional[int] = None,
     ) -> List:
         """Batch extract by LLM."""
-        if isinstance(texts, list) and any(not isinstance(text, str) for text in texts):
-            raise ValueError("All elements must be strings")
-
         results = []
-        for text in texts:
-            results.append(await self.extract(text, limit))
+
+        for i in range(0, len(texts), batch_size):
+            batch_texts = texts[i : i + batch_size]
+
+            # Create tasks for current batch
+            extraction_tasks = [
+                self._extract(text, None, limit) for text in batch_texts
+            ]
+
+            # Execute batch concurrently and wait for all to complete
+            batch_results = await asyncio.gather(*extraction_tasks)
+            results.extend(batch_results)
+
         return results
 
     async def _extract(
