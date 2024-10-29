@@ -116,7 +116,7 @@ GRAPH_COMMUNITY_SUMMARY_ENABLED=True  # enable the graph community summary
 TRIPLET_GRAPH_ENABLED=True  # enable the graph search for the triplets
 DOCUMENT_GRAPH_ENABLED=True  # enable the graph search for documents and chunks
 KNOWLEDGE_GRAPH_CHUNK_SEARCH_TOP_SIZE=5  # the number of the searched triplets in a retrieval
-TRIPLET_EXTRACTION_BATCH_SIZE=20  # the batch size of triplet extraction from the text
+KNOWLEDGE_GRAPH_EXTRACTION_BATCH_SIZE=20  # the batch size of triplet extraction from the text
 ```
 
 
