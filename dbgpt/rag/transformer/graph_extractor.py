@@ -40,7 +40,9 @@ class GraphExtractor(LLMExtractor):
             chunks = await self._chunk_history.asimilar_search_with_scores(
                 text, self._topk, self._score_threshold
             )
-            history = [f"Section {i + 1}:\n{chunk}" for i, chunk in enumerate(chunks)]
+            history = [
+                f"Section {i + 1}:\n{chunk.content}" for i, chunk in enumerate(chunks)
+            ]
 
             # Save chunk to history
             await self._chunk_history.aload_document_with_limit(
@@ -60,20 +62,8 @@ class GraphExtractor(LLMExtractor):
         Suggestion: to extract triplets in batches, call `batch_extract`.
         """
         # Load similar chunks
-        chunks = await self._chunk_history.asimilar_search_with_scores(
-            text, self._topk, self._score_threshold
-        )
-        history = [f"Section {i + 1}:\n{chunk}" for i, chunk in enumerate(chunks)]
-
-        # Save chunk to history
-        await self._chunk_history.aload_document_with_limit(
-            [Chunk(content=text, metadata={"relevant_cnt": len(history)})],
-            self._max_chunks_once_load,
-            self._max_threads,
-        )
-
-        # Save chunk context to map
-        context = "\n".join(history) if history else ""
+        text_context_map = await self.aload_chunk_context([text])
+        context = text_context_map[text]
 
         # Extract with chunk history
         return await super()._extract(text, context, limit)
@@ -88,6 +78,9 @@ class GraphExtractor(LLMExtractor):
 
         Returns list of graphs in same order as input texts (text <-> graphs).
         """
+        if batch_size < 1:
+            raise ValueError("batch_size >= 1")
+
         # 1. Load chunk context
         text_context_map = await self.aload_chunk_context(texts)
 

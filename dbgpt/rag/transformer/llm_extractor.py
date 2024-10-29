@@ -31,6 +31,9 @@ class LLMExtractor(ExtractorBase, ABC):
         limit: Optional[int] = None,
     ) -> List:
         """Batch extract by LLM."""
+        if batch_size < 1:
+            raise ValueError("batch_size >= 1")
+
         results = []
 
         for i in range(0, len(texts), batch_size):
