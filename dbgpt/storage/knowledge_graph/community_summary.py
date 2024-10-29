@@ -100,6 +100,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.community_score_threshold,
             )
         )
+        self._knowledge_graph_chunk_search_top_size = int(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_CHUNK_SEARCH_TOP_SIZE",
+                config.knowledge_graph_chunk_search_top_size,
+            )
+        )
         self._triplet_extraction_batch_size = int(
             os.getenv(
                 "KNOWLEDGE_GRAPH_EXTRACTION_BATCH_SIZE",
@@ -314,14 +320,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords_for_document_graph,
-                    limit=self._config.knowledge_graph_chunk_search_top_size,
+                    limit=self._knowledge_graph_chunk_search_top_size,
                     search_scope="document_graph",
                 )
         else:
             if document_graph_enabled:
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords,
-                    limit=self._config.knowledge_graph_chunk_search_top_size,
+                    limit=self._knowledge_graph_chunk_search_top_size,
                     search_scope="document_graph",
                 )
         knowledge_graph_str = subgraph.format() if subgraph else ""
@@ -335,7 +341,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             return []
 
         # merge search results into context
-        content = HYBRID_SEARCH_PT_CN.format(
+        content = HYBRID_SEARCH_PT.format(
             context=context,
             knowledge_graph=knowledge_graph_str,
             knowledge_graph_for_doc=knowledge_graph_for_doc_str,
@@ -365,179 +371,86 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._graph_extractor.drop()
 
 
-HYBRID_SEARCH_PT_CN = """## 角色
-你非常擅长结合提示词模板提供的[上下文]信息与[知识图谱]信息，
-准确恰当地回答用户的问题，并保证不会输出与上下文和知识图谱无关的信息。
-
-## 技能
-### 技能 1: 上下文理解
-- 准确地理解[上下文]提供的信息，上下文信息可能被拆分为多个章节。
-- 上下文的每个章节内容都会以[Section]开始，并按需进行了编号。
-- 上下文信息提供了与用户问题相关度最高的总结性描述，请合理使用它们。
-### 技能 2: 知识图谱理解
-- 准确地识别[知识图谱]中提供的[Entities:]章节中的实体信息和[Relationships:]章节中的关系信息，实体和关系信息的一般格式为：
-```
-* 实体信息格式:
-- (实体名)
-- (实体名:实体描述)
-- (实体名:实体属性表)
-- (文本块ID:文档块内容)
-- (目录ID:目录名)
-- (文档ID:文档名称)
-
-* 关系信息的格式:
-- (来源实体名)-[关系名]->(目标实体名)
-- (来源实体名)-[关系名:关系描述]->(目标实体名)
-- (来源实体名)-[关系名:关系属性表]->(目标实体名)
-- (文本块实体)-[包含]->(实体名)
-- (目录ID)-[包含]->(文本块实体)
-- (目录ID)-[包含]->(子目录ID)
-- (文档ID)-[包含]->(文本块实体)
-- (文档ID)-[包含]->(目录ID)
-```
-- 正确地将关系信息中的实体名/ID与实体信息关联，还原出图结构。
-- 将图结构所表达的信息作为用户提问的明细上下文，辅助生成更好的答案。
-
-
-## 约束条件
-- 不要在答案中描述你的思考过程，直接给出用户问题的答案，不要生成无关信息。
-- 若[知识图谱]或者[知识库原文]没有提供信息，此时应根据[上下文]提供的信息回答问题。
-- 确保以第三人称书写，从客观角度结合[上下文]、[知识图谱]和[知识库原文]表达的信息回答问题。
-- 若提供的信息相互矛盾，请解决矛盾并提供一个单一、连贯的描述。
-- 避免使用停用词和过于常见的词汇。
-
-## 参考案例
-```
-[上下文]:
-Section 1:
-菲尔・贾伯的大儿子叫雅各布・贾伯。
-Section 2:
-菲尔・贾伯的小儿子叫比尔・贾伯。
-
-[知识图谱]:
-Entities:
-(菲尔・贾伯#菲尔兹咖啡创始人)
-(菲尔兹咖啡#加利福尼亚州伯克利创立的咖啡品牌)
-(雅各布・贾伯#菲尔・贾伯的儿子)
-(美国多地#菲尔兹咖啡的扩展地区)
-
-Relationships:
-(菲尔・贾伯#创建#菲尔兹咖啡#1978年在加利福尼亚州伯克利创立)
-(菲尔兹咖啡#位于#加利福尼亚州伯克利#菲尔兹咖啡的创立地点)
-(菲尔・贾伯#拥有#雅各布・贾伯#菲尔・贾伯的儿子)
-(雅各布・贾伯#担任#首席执行官#在2005年成为菲尔兹咖啡的首席执行官)
-(菲尔兹咖啡#扩展至#美国多地#菲尔兹咖啡的扩展范围)
-
-[知识库原文]:
-...
-```
-
-----
-
-接下来的[上下文]、[知识图谱]和[知识库原文]的信息，可以帮助你回答更好地用户的问题。
-
-[上下文]:
-{context}
-
-[知识图谱]:
-{knowledge_graph}
-
-[知识库原文]
-{knowledge_graph_for_doc}
-"""  # noqa: E501
-
-HYBRID_SEARCH_PT_EN = """## Role
-You excel at combining the information provided in the [Context] with
-information from the [KnowledgeGraph] to accurately and appropriately
-answer user questions, ensuring that you do not output information
-unrelated to the context and knowledge graph.
-
-## Skills
-### Skill 1: Context Understanding
-- Accurately understand the information provided in the [Context],
-which may be divided into several sections.
-- Each section in the context will start with [Section]
-and may be numbered as needed.
-- The context provides a summary description most relevant to the user's
-question, and it should be used wisely.
-### Skill 2: Knowledge Graph Understanding
-- Accurately identify entity information in the [Entities:] section and
-relationship information in the [Relationships:] section
-of the [KnowledgeGraph]. The general format for entity
-and relationship information is:
-```
-* Entity Information Format:
-- (entity_name)
-- (entity_name: entity_description)
-- (entity_name: entity_property_map)
-- (chunk_id: chunk_content)
-- (catalog_id: catalog_name)
-- (document_id: document_name)
-
-* Relationship Information Format:
-- (source_entity_name)-[relationship_name]->(target_entity_name)
-- (source_entity_name)-[relationship_name: relationship_description]->(target_entity_name)
-- (source_entity_name)-[relationship_name: relationship_property_map]->(target_entity_name)
-- (chunk_id)-[Contains]->(entity_name)
-- (catalog_id)-[Contains]->(chunk_id)
-- (catalog_id)-[Contains]->(sub_catalog_id)
-- (document_id)-[Contains]->(chunk_id)
-- (document_id)-[Contains]->(catalog_id)
-```
-- Correctly associate entity names/IDs in the relationship information
-with entity information to restore the graph structure.
-- Use the information expressed by the graph structure as detailed
-context for the user's query to assist in generating better answers.
-
-## Constraints
-- Don't describe your thought process in the answer, provide the answer
-to the user's question directly without generating irrelevant information.
-- If the [KnowledgeGraph] or [Knowledge base original text] does not provide information, you should answer
-the question based on the information provided in the [Context].
-- Ensure to write in the third person, responding to questions from
-an objective perspective based on the information combined from the
-[Context], the [KnowledgeGraph] and the [Knowledge base original text].
-- If the provided information is contradictory, resolve the
-contradictions and provide a single, coherent description.
-- Avoid using stop words and overly common vocabulary.
-
-## Reference Example
-```
-[Context]:
-Section 1:
-Phil Schiller's eldest son is Jacob Schiller.
-Section 2:
-Phil Schiller's youngest son is Bill Schiller.
-
-[KnowledgeGraph]:
-Entities:
-(Phil Jaber#Founder of Philz Coffee)
-(Philz Coffee#Coffee brand founded in Berkeley, California)
-(Jacob Jaber#Son of Phil Jaber)
-(Multiple locations in the USA#Expansion regions of Philz Coffee)
-
-Relationships:
-(Phil Jaber#Created#Philz Coffee#Founded in Berkeley, California in 1978)
-(Philz Coffee#Located in#Berkeley, California#Founding location of Philz Coffee)
-(Phil Jaber#Has#Jacob Jaber#Son of Phil Jaber)
-(Jacob Jaber#Serves as#CEO#Became CEO of Philz Coffee in 2005)
-(Philz Coffee#Expanded to#Multiple locations in the USA#Expansion regions of Philz Coffee)
-
-[Knowledge base original text]
-...
-```
-
-----
-
-The following information from the [Context], [KnowledgeGraph] and [Knowledge base original text]
-can help you better answer user questions.
+HYBRID_SEARCH_PT = """
+=====
+[Context]、[Knowledge Graph]和[Original Text From RAG]的信息，可以帮助你回答更好地用户的问题。
 
 [Context]:
 {context}
 
-[KnowledgeGraph]:
+[Knowledge Graph]:
 {knowledge_graph}
 
-[Knowledge base original text]
+[Original Text From RAG]
 {knowledge_graph_for_doc}
+=====
+
+You are very good at combining the [Context] information provided by the prompt word template with the [Knowledge Graph] information,
+answering the user's questions accurately and appropriately, and ensuring that no information irrelevant to the context and knowledge graph is output.
+
+## Role: GraphRAG Assistant
+
+### Core Capabilities
+0. Make sure DO NOT answer irrelevant questions from the user.
+
+1. Information Processing
+- Process contextual information across multiple sections ([Section] markers)
+- Interpret knowledge graph relationships ((entity)-[relationship]->(entity))
+- Synthesize information from both structured and unstructured sources
+
+2. Response Generation
+- Provide nuanced, multi-perspective answers
+- Balance technical accuracy with conversational engagement
+- Connect related concepts across different information sources
+- Highlight uncertainties and limitations when appropriate
+
+3. Interaction Style
+- Maintain a natural, engaging conversation flow
+- Ask clarifying questions when needed
+- Provide examples and analogies to illustrate complex points
+- Adapt explanation depth based on user's apparent expertise
+
+4. Knowledge Integration
+- Seamlessly blend information from:
+  * Context sections
+  * Knowledge graph relationships
+  * Background knowledge (when appropriate)
+- Prioritize relevance over comprehensiveness
+- Acknowledge information gaps explicitly
+
+5. Quality Assurance
+- Verify logical consistency across sources
+- Cross-reference relationships for validation
+- Flag potential contradictions or ambiguities
+- Provide confidence levels when appropriate
+
+### Information Sources Handling
+1. Context Processing [Context]
+- Parse information from numbered sections systematically
+- Identify key concepts and relationships within each section
+- Track section dependencies and cross-references
+- Prioritize recent/relevant sections for the query
+
+2. Knowledge Graph Integration [Knowledge Graph]
+- Parse Entities and Relationships sections separately
+- Map entity-relationship-entity triples accurately
+- Understand relationship directionality
+- Use graph structure to find connected information
+
+3. Original Text Reference [Original Text From RAG]
+- The GraphRAG document directory is stored as an edge in relationships to show the hierarchy of the current source text in the entire document.
+- Use as authoritative source for detailed information
+- Cross-reference with Context and Knowledge Graph
+- Extract supporting evidence and examples
+- Resolve conflicts between sources using this as primary reference
+
+### Output Format
+1. Answer Structure
+- Lead with synthesized core information
+- Support with specific references to sources
+- Include relevant entity-relationship pairs
+- Conclude with confidence assessment
+- Use the markdown format of the "quote" to highlight the original text from "GraphRAG"
+
+=====
 """  # noqa: E501
