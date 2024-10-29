@@ -63,7 +63,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=5,
         description="Top size of knowledge graph chunk search",
     )
-    triplet_extraction_batch_size: int = Field(
+    knowledge_graph_extraction_batch_size: int = Field(
         default=20,
         description="Batch size of triplets extraction from the text",
     )
@@ -102,7 +102,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         )
         self._triplet_extraction_batch_size = int(
             os.getenv(
-                "TRIPLET_EXTRACTION_BATCH_SIZE", config.triplet_extraction_batch_size
+                "KNOWLEDGE_GRAPH_EXTRACTION_BATCH_SIZE",
+                config.knowledge_graph_extraction_batch_size,
             )
         )
 
@@ -199,16 +200,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         document_graph_enabled = self._graph_store.get_config().document_graph_enabled
 
-        chunk_graph_pairs = await self._graph_extractor.batch_extract(
-            chunks, batch_size=self._triplet_extraction_batch_size
+        # Extract the triplets from the chunks, and return the list of graphs
+        # in the same order as the input texts
+        graphs_list = await self._graph_extractor.batch_extract(
+            [chunk.content for chunk in chunks],
+            batch_size=self._triplet_extraction_batch_size,
         )
 
-        for chunk, graphs in chunk_graph_pairs:
+        # Upsert the graphs into the graph store
+        for idx, graphs in enumerate(graphs_list):
             for graph in graphs:
                 if document_graph_enabled:
                     # Append the chunk id to the edge
                     for edge in graph.edges():
-                        edge.set_prop("_chunk_id", chunk.chunk_id)
+                        edge.set_prop("_chunk_id", chunks[idx].chunk_id)
                         graph.append_edge(edge=edge)
 
                 # Upsert the graph
@@ -218,7 +223,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 if document_graph_enabled:
                     for vertex in graph.vertices():
                         self._graph_store_apdater.upsert_chunk_include_entity(
-                            chunk=chunk, entity=vertex
+                            chunk=chunks[idx], entity=vertex
                         )
 
     def _load_chunks(
