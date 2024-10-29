@@ -450,7 +450,7 @@ answering the user's questions accurately and appropriately, and ensuring that n
 - Support with specific references to sources
 - Include relevant entity-relationship pairs
 - Conclude with confidence assessment
-- Use the markdown format of the "quote" to highlight the original text from "GraphRAG"
+- Use the markdown format of the "quote" to highlight the original text (in details) from "GraphRAG"
 
 =====
 """  # noqa: E501
