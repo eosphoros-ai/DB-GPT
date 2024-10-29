@@ -728,7 +728,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         from neo4j import graph
 
         def filter_properties(
-            properties: dict[str, Any], white_list: List[str] = None
+            properties: dict[str, Any], white_list: Optional[List[str]] = None
         ) -> Dict[str, Any]:
             """Filter the properties.
 
