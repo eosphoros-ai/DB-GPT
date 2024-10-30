@@ -130,24 +130,24 @@ class OceanBaseConfig(VectorStoreConfig):
         arbitrary_types_allowed = True
 
     """OceanBase config"""
-    ob_host: str = Field(
-        default="127.0.0.1",
+    ob_host: Optional[str] = Field(
+        default=None,
         description="oceanbase host",
     )
-    ob_port: int = Field(
-        default=2881,
+    ob_port: Optional[int] = Field(
+        default=None,
         description="oceanbase port",
     )
-    ob_user: str = Field(
-        default="root@test",
+    ob_user: Optional[str] = Field(
+        default=None,
         description="user to login",
     )
-    ob_password: str = Field(
-        default="",
+    ob_password: Optional[str] = Field(
+        default=None,
         description="password to login",
     )
-    ob_database: str = Field(
-        default="test",
+    ob_database: Optional[str] = Field(
+        default=None,
         description="database for vector tables",
     )
 
