@@ -465,14 +465,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         (vertices) and edges in the graph.
         """
         if graph_elem_type.is_vertex():  # vertex
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "VERTEX",
-                    "primary": "id",
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "VERTEX",
+                "primary": "id",
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
         else:  # edge
 
@@ -498,14 +496,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 else:
                     raise ValueError("Invalid graph element type.")
 
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "EDGE",
-                    "constraints": edge_direction(graph_elem_type),
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "EDGE",
+                "constraints": edge_direction(graph_elem_type),
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
         self.graph_store.conn.run(gql)
@@ -544,7 +540,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if not subs:
             return MemoryGraph()
 
-        if depth < 0:
+        if depth <= 0:
             depth = 3
         depth_string = f"1..{depth}"
 
@@ -560,42 +556,76 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 rel = f"<-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
             else:
                 rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
-            path_query = (
+            query = (
                 f"MATCH p=(n:{GraphElemType.ENTITY.value})"
                 f"{rel}(m:{GraphElemType.ENTITY.value}) "
                 f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
-                f"RETURN n {limit_string}"
+                f"RETURN p {limit_string}"
             )
-            return self.query(path_query, white_list=["description"])
+            return self.query(query=query, white_list=["description"])
         else:
             graph = MemoryGraph()
+            check_entity_query = (
+                f"MATCH (n:{GraphElemType.ENTITY.value}) "
+                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+                "RETURN n"
+            )
 
-            for sub in subs:
+            if self.query(check_entity_query):
                 # Query the chain from documents to chunks,
-                # document -> chunk -> chunk -> chunk -> ...
+                # document -> chunk -> ... -> chunk (-> entity, do not reach entity)
+                chain_query = (
+                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+                    f"[:{GraphElemType.INCLUDE.value}*1..{depth + 1}]->"
+                    f"(leaf_chunk:{GraphElemType.CHUNK.value})-[:{GraphElemType.INCLUDE.value}]->"
+                    f"(m:{GraphElemType.ENTITY.value}) "
+                    f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
+                    # "WITH n, leaf_chunk "
+                    # f"MATCH p = (n)-[:{GraphElemType.INCLUDE.value}*1..{depth}]->(leaf_chunk:{GraphElemType.CHUNK.value}) "
+                    "RETURN p"
+                )
+                # Filter all the properties by with_list
+                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
+
+                # Query the leaf chunks in the chain from documents to chunks
+                leaf_chunk_query = (
+                    f"MATCH p=(n:{GraphElemType.CHUNK.value})-"
+                    f"[r:{GraphElemType.INCLUDE.value}]->"
+                    f"(m:{GraphElemType.ENTITY.value})"
+                    f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
+                    f"RETURN n {limit_string}"
+                )
+                graph.upsert_graph(
+                    self.query(query=leaf_chunk_query, white_list=["content"])
+                )
+            else:
+                _subs_condition = " OR ".join([
+                    f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs
+                ])
+
+                # Query the chain from documents to chunks,
+                # document -> chunk -> chunk -> chunk -> ... -> chunk
                 chain_query = (
                     f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
                     f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
-                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS "
-                    f"'{self._escape_quotes(sub)}' "
-                    f"RETURN p"
+                    f"(m:{GraphElemType.CHUNK.value})"
+                    f"WHERE {_subs_condition}"
+                    "RETURN p"
                 )
-                # Query and filter all the properties
-                graph_of_path = self.query(query=chain_query, white_list=[""])
-                graph.upsert_graph(graph_of_path)
+                # Filter all the properties by with_list
+                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
 
                 # Query the leaf chunks in the chain from documents to chunks
                 leaf_chunk_query = (
                     f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
                     f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
-                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS "
-                    f"'{self._escape_quotes(sub)}' "
+                    f"(m:{GraphElemType.CHUNK.value})"
+                    f"WHERE {_subs_condition}"
                     f"RETURN m {limit_string}"
                 )
-                graph_of_leaf_chunk = self.query(
-                    query=leaf_chunk_query, white_list=["content"]
+                graph.upsert_graph(
+                    self.query(query=leaf_chunk_query, white_list=["content"])
                 )
-                graph.upsert_graph(graph_of_leaf_chunk)
 
             return graph
 
@@ -663,19 +693,15 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append(
-                            {
-                                "id": nodes[i]._properties["id"],
-                                "description": nodes[i]._properties["description"],
-                            }
-                        )
+                        formatted_path.append({
+                            "id": nodes[i]._properties["id"],
+                            "description": nodes[i]._properties["description"],
+                        })
                         if i < len(rels):
-                            formatted_path.append(
-                                {
-                                    "id": rels[i]._properties["id"],
-                                    "description": rels[i]._properties["description"],
-                                }
-                            )
+                            formatted_path.append({
+                                "id": rels[i]._properties["id"],
+                                "description": rels[i]._properties["description"],
+                            })
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(

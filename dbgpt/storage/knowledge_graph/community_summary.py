@@ -59,6 +59,15 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=0.0,
         description="Recall score of community search in knowledge graph",
     )
+    triplet_graph_enabled: bool = Field(
+        default=True,
+        description="Enable the graph search for triplets",
+    )
+    document_graph_enabled: bool = Field(
+        default=True,
+        description="Enable the graph search for documents and chunks",
+    )
+
     knowledge_graph_chunk_search_top_size: int = Field(
         default=5,
         description="Top size of knowledge graph chunk search",
@@ -98,6 +107,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             os.getenv(
                 "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
                 config.community_score_threshold,
+            )
+        )
+        self._document_graph_enabled = bool(
+            (
+                os.environ["DOCUMENT_GRAPH_ENABLED"].lower() == "true"
+                if "DOCUMENT_GRAPH_ENABLED" in os.environ
+                else config.document_graph_enabled
+            )
+        )
+        self._triplet_graph_enabled = bool(
+            (
+                os.environ["TRIPLET_GRAPH_ENABLED"].lower() == "true"
+                if "TRIPLET_GRAPH_ENABLED" in os.environ
+                else config.triplet_graph_enabled
             )
         )
         self._knowledge_graph_chunk_search_top_size = int(
@@ -170,7 +193,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         The chunks include the doc structure.
         """
-        if not self._graph_store.get_config().document_graph_enabled:
+        if not self._document_graph_enabled:
             return
 
         _chunks: List[ParagraphChunk] = [
@@ -201,10 +224,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         The chunks include the doc structure.
         """
-        if not self._graph_store.get_config().triplet_graph_enabled:
+        if not self._triplet_graph_enabled:
             return
 
-        document_graph_enabled = self._graph_store.get_config().document_graph_enabled
+        document_graph_enabled = self._document_graph_enabled
 
         # Extract the triplets from the chunks, and return the list of graphs
         # in the same order as the input texts
@@ -303,10 +326,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         context = "\n".join(summaries) if summaries else ""
 
         keywords: List[str] = await self._keyword_extractor.extract(text)
+        subgraph = None
+        subgraph_for_doc = None
 
         # Local search: extract keywords and explore subgraph
-        triplet_graph_enabled = self._graph_store.get_config().triplet_graph_enabled
-        document_graph_enabled = self._graph_store.get_config().document_graph_enabled
+        triplet_graph_enabled = self._triplet_graph_enabled
+        document_graph_enabled = self._document_graph_enabled
 
         if triplet_graph_enabled:
             subgraph: MemoryGraph = self._graph_store_apdater.explore(

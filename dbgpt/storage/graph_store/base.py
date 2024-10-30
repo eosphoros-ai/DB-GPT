@@ -27,14 +27,6 @@ class GraphStoreConfig(BaseModel):
         default=False,
         description="Enable graph community summary or not.",
     )
-    document_graph_enabled: bool = Field(
-        default=True,
-        description="Enable document graph search or not.",
-    )
-    triplet_graph_enabled: bool = Field(
-        default=True,
-        description="Enable knowledge graph search or not.",
-    )
 
 
 class GraphStoreBase(ABC):
