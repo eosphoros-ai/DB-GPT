@@ -568,42 +568,65 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             )
             return self.query(query=query, white_list=["description"])
         else:
+            # If there exists the entities in the graph, return the graph that
+            # includes the leaf chunks that connect to the entities, the chains from
+            # documents to the leaf chunks, and the chain from documents to chunks;
+            # document -> chunk -> chunk -> ... -> leaf chunk -> (entity)
+            #
+            # If not, return the graph that includes the chains from documents to chunks
+            # that contain the subs (keywords).
+            # document -> chunk -> chunk -> ... -> leaf chunk (that contains the subs)
+            #
+            # And only the leaf chunks contain the content, and the other chunks do not
+            # contain any properties except the id, name.
+
             graph = MemoryGraph()
+
+            # Check if the entities exist in the graph
             check_entity_query = (
                 f"MATCH (n:{GraphElemType.ENTITY.value}) "
                 f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
                 "RETURN n"
             )
-
             if self.query(check_entity_query):
-                # Query the chain from documents to chunks,
-                # document -> chunk -> ... -> chunk (-> entity, do not reach entity)
-                chain_query = (
-                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
-                    f"[:{GraphElemType.INCLUDE.value}*1..{depth + 1}]->"
-                    f"(leaf_chunk:{GraphElemType.CHUNK.value})-"
-                    f"[:{GraphElemType.INCLUDE.value}]->"
-                    f"(m:{GraphElemType.ENTITY.value}) "
-                    f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
-                    # "WITH n, leaf_chunk "
-                    # f"MATCH p = (n)-[:{GraphElemType.INCLUDE.value}*1..{depth}]->"
-                    # f"(leaf_chunk:{GraphElemType.CHUNK.value}) "
-                    "RETURN p"
-                )
-                # Filter all the properties by with_list
-                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
-
                 # Query the leaf chunks in the chain from documents to chunks
                 leaf_chunk_query = (
                     f"MATCH p=(n:{GraphElemType.CHUNK.value})-"
                     f"[r:{GraphElemType.INCLUDE.value}]->"
                     f"(m:{GraphElemType.ENTITY.value})"
                     f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
-                    f"RETURN n {limit_string}"
+                    f"RETURN n"
                 )
-                graph.upsert_graph(
-                    self.query(query=leaf_chunk_query, white_list=["content"])
+                graph_of_leaf_chunks = self.query(
+                    query=leaf_chunk_query, white_list=["content"]
                 )
+
+                # Query the chain from documents to chunks,
+                # document -> chunk -> ... ->  leaf_chunks
+                chunk_names = [
+                    self._escape_quotes(vertex.name)
+                    for vertex in graph_of_leaf_chunks.vertices()
+                ]
+                chain_query = (
+                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+                    f"[:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+                    f"(m:{GraphElemType.CHUNK.value})"
+                    f"WHERE m.name IN {chunk_names} "
+                    "RETURN p"
+                )
+                # Filter all the properties by with_list
+                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
+
+                # The number of leaf chunks caompared to the `limit`
+                if not limit or len(chunk_names) <= limit:
+                    graph.upsert_graph(graph_of_leaf_chunks)
+                else:
+                    limited_leaf_chunk_query = leaf_chunk_query + f" {limit_string}"
+                    graph.upsert_graph(
+                        self.query(
+                            query=limited_leaf_chunk_query, white_list=["content"]
+                        )
+                    )
             else:
                 _subs_condition = " OR ".join(
                     [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
