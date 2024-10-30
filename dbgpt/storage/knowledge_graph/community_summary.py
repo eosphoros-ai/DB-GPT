@@ -108,19 +108,15 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.community_score_threshold,
             )
         )
-        self._document_graph_enabled = bool(
-            (
-                os.environ["DOCUMENT_GRAPH_ENABLED"].lower() == "true"
-                if "DOCUMENT_GRAPH_ENABLED" in os.environ
-                else config.document_graph_enabled
-            )
+        self._document_graph_enabled = (
+            os.environ["DOCUMENT_GRAPH_ENABLED"].lower() == "true"
+            if "DOCUMENT_GRAPH_ENABLED" in os.environ
+            else config.document_graph_enabled
         )
-        self._triplet_graph_enabled = bool(
-            (
-                os.environ["TRIPLET_GRAPH_ENABLED"].lower() == "true"
-                if "TRIPLET_GRAPH_ENABLED" in os.environ
-                else config.triplet_graph_enabled
-            )
+        self._triplet_graph_enabled = (
+            os.environ["TRIPLET_GRAPH_ENABLED"].lower() == "true"
+            if "TRIPLET_GRAPH_ENABLED" in os.environ
+            else config.triplet_graph_enabled
         )
         self._knowledge_graph_chunk_search_top_size = int(
             os.getenv(
