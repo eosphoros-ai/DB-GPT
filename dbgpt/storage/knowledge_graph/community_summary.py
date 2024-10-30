@@ -393,7 +393,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
 HYBRID_SEARCH_PT = """
 =====
-[Context]、[Knowledge Graph]和[Original Text From RAG]的信息，可以帮助你回答更好地用户的问题。
+The following information from [Context], [Knowledge Graph], and [Original Text From RAG] can help you answer user questions better.
 
 [Context]:
 {context}
