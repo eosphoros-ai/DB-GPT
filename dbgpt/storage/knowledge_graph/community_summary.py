@@ -9,7 +9,6 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.storage.graph_store.graph import MemoryGraph
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -334,7 +333,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         document_graph_enabled = self._document_graph_enabled
 
         if triplet_graph_enabled:
-            subgraph: MemoryGraph = self._graph_store_apdater.explore(
+            subgraph = self._graph_store_apdater.explore(
                 subs=keywords, limit=topk, search_scope="knowledge_graph"
             )
 
