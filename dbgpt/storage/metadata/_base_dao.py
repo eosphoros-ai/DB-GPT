@@ -297,7 +297,7 @@ class BaseDao(Generic[T, REQ, RES]):
                 elif isinstance(value, (tuple, dict, set)):
                     continue
                 else:
-                    query = query.filter(getattr(model_cls, key).like(f"%{value}%"))
+                    query = query.filter(getattr(model_cls, key) == value)
 
         if desc_order_column:
             query = query.order_by(desc(getattr(model_cls, desc_order_column)))

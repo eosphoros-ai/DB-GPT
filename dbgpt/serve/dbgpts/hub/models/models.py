@@ -2,11 +2,12 @@
 You can define your own models and DAOs here
 """
 from datetime import datetime
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, Index, Integer, String, UniqueConstraint, desc
 
 from dbgpt.storage.metadata import BaseDao, Model, db
+from dbgpt.util.pagination_utils import PaginationResult
 
 from ..api.schemas import ServeRequest, ServerResponse
 from ..config import SERVER_APP_TABLE_NAME, ServeConfig
@@ -108,4 +109,43 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             **request.to_dict(),
             gmt_created=gmt_created_str,
             gmt_modified=gmt_modified_str,
+        )
+
+    def dbgpts_list(
+        self,
+        query_request: ServeRequest,
+        page: int,
+        page_size: int,
+        desc_order_column: Optional[str] = None,
+    ) -> PaginationResult[ServerResponse]:
+        """Get a page of dbgpts.
+
+        Args:
+            query_request (ServeRequest): The request schema object or dict for query.
+            page (int): The page number.
+            page_size (int): The page size.
+            desc_order_column(Optional[str]): The column for descending order.
+        Returns:
+            PaginationResult: The pagination result.
+        """
+        session = self.get_raw_session()
+        try:
+            query = session.query(ServeEntity)
+            if query_request.name:
+                query = query.filter(ServeEntity.name.like(f"%{query_request.name}%"))
+            if desc_order_column:
+                query = query.order_by(desc(getattr(ServeEntity, desc_order_column)))
+            total_count = query.count()
+            items = query.offset((page - 1) * page_size).limit(page_size)
+            res_items = [self.to_response(item) for item in items]
+            total_pages = (total_count + page_size - 1) // page_size
+        finally:
+            session.close()
+
+        return PaginationResult(
+            items=res_items,
+            total_count=total_count,
+            total_pages=total_pages,
+            page=page,
+            page_size=page_size,
         )
