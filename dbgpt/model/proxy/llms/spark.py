@@ -135,15 +135,43 @@ class SparkLLMClient(ProxyLLMClient):
         context_length: Optional[int] = 4096,
         executor: Optional[Executor] = None,
     ):
+        """
+        Tips: 星火大模型API当前有Lite、Pro、Pro-128K、Max、Max-32K和4.0 Ultra六个版本，各版本独立计量tokens。
+        传输协议 ：ws(s),为提高安全性，强烈推荐wss
+
+        Spark4.0 Ultra 请求地址，对应的domain参数为4.0Ultra：
+        wss://spark-api.xf-yun.com/v4.0/chat
+
+        Spark Max-32K请求地址，对应的domain参数为max-32k
+        wss://spark-api.xf-yun.com/chat/max-32k
+
+        Spark Max请求地址，对应的domain参数为generalv3.5
+        wss://spark-api.xf-yun.com/v3.5/chat
+
+        Spark Pro-128K请求地址，对应的domain参数为pro-128k：
+        wss://spark-api.xf-yun.com/chat/pro-128k
+
+        Spark Pro请求地址，对应的domain参数为generalv3：
+        wss://spark-api.xf-yun.com/v3.1/chat
+
+        Spark Lite请求地址，对应的domain参数为lite：
+        wss://spark-api.xf-yun.com/v1.1/chat
+        """
         if not model_version:
             model_version = model or os.getenv("XUNFEI_SPARK_API_VERSION")
         if not api_base:
             if model_version == SPARK_DEFAULT_API_VERSION:
                 api_base = "ws://spark-api.xf-yun.com/v3.1/chat"
                 domain = "generalv3"
+            elif model_version == "v4.0":
+                api_base = "ws://spark-api.xf-yun.com/v4.0/chat"
+                domain = "4.0Ultra"
+            elif model_version == "v3.5":
+                api_base = "ws://spark-api.xf-yun.com/v3.5/chat"
+                domain = "generalv3.5"
             else:
-                api_base = "ws://spark-api.xf-yun.com/v2.1/chat"
-                domain = "generalv2"
+                api_base = "ws://spark-api.xf-yun.com/v1.1/chat"
+                domain = "lite"
             if not api_domain:
                 api_domain = domain
         self._model = model
