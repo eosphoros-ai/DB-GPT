@@ -35,7 +35,7 @@ class GptsMemory:
             message_memory if message_memory is not None else DefaultGptsMessageMemory()
         )
 
-        self.messages_cache: defaultdict = defaultdict(List[GptsMessage])
+        self.messages_cache: defaultdict = defaultdict(list)
         self.channels: defaultdict = defaultdict(Queue)
         self.enable_vis_map: defaultdict = defaultdict(bool)
         self.start_round_map: defaultdict = defaultdict(int)

@@ -336,6 +336,9 @@ class Config(metaclass=Singleton):
         self.SCHEDULER_ENABLED = (
             os.getenv("SCHEDULER_ENABLED", "True").lower() == "true"
         )
+        self.NOTE_BOOK_ENABLE: bool = (
+            os.getenv("NOTE_BOOK_ENABLE", "True").lower() == "true"
+        )
 
     @property
     def local_db_manager(self) -> "ConnectorManager":

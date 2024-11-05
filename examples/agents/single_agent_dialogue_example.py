@@ -33,6 +33,26 @@ async def main():
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test123")
     agent_memory = AgentMemory(HybridMemory[AgentMemoryFragment].from_chroma())
+    agent_memory.gpts_memory.init(conv_id="test123")
+    try:
+        coder = (
+            await CodeAssistantAgent()
+            .bind(context)
+            .bind(LLMConfig(llm_client=llm_client))
+            .bind(agent_memory)
+            .build()
+        )
+
+        user_proxy = await UserProxyAgent().bind(context).bind(agent_memory).build()
+
+        await user_proxy.initiate_chat(
+            recipient=coder,
+            reviewer=user_proxy,
+            message="计算下321 * 123等于多少",  # 用python代码的方式计算下321 * 123等于多少
+            # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
+        )
+    finally:
+        agent_memory.gpts_memory.clear(conv_id="test123")
 
     coder = (
         await CodeAssistantAgent()

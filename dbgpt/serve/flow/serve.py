@@ -37,7 +37,6 @@ class Serve(BaseServe):
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
         try_create_tables: Optional[bool] = False,
     ):
-
         if api_prefix is None:
             api_prefix = [f"/api/v1/serve/awel", "/api/v2/serve/awel"]
         if api_tags is None:
