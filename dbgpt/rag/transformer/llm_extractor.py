@@ -1,4 +1,6 @@
 """TripletExtractor class."""
+
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
@@ -21,6 +23,32 @@ class LLMExtractor(ExtractorBase, ABC):
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
         """Extract by LLM."""
         return await self._extract(text, None, limit)
+
+    async def batch_extract(
+        self,
+        texts: List[str],
+        batch_size: int = 1,
+        limit: Optional[int] = None,
+    ) -> List:
+        """Batch extract by LLM."""
+        if batch_size < 1:
+            raise ValueError("batch_size >= 1")
+
+        results = []
+
+        for i in range(0, len(texts), batch_size):
+            batch_texts = texts[i : i + batch_size]
+
+            # Create tasks for current batch
+            extraction_tasks = [
+                self._extract(text, None, limit) for text in batch_texts
+            ]
+
+            # Execute batch concurrently and wait for all to complete
+            batch_results = await asyncio.gather(*extraction_tasks)
+            results.extend(batch_results)
+
+        return results
 
     async def _extract(
         self, text: str, history: str = None, limit: Optional[int] = None
