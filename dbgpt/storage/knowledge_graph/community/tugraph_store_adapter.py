@@ -544,7 +544,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if not subs:
             return MemoryGraph()
 
-        if depth < 0:
+        if depth <= 0:
             depth = 3
         depth_string = f"1..{depth}"
 
@@ -566,23 +566,95 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
                 f"RETURN p {limit_string}"
             )
-            return self.query(query)
+            return self.query(query=query, white_list=["description"])
         else:
+            # If there exists the entities in the graph, return the graph that
+            # includes the leaf chunks that connect to the entities, the chains from
+            # documents to the leaf chunks, and the chain from documents to chunks;
+            # document -> chunk -> chunk -> ... -> leaf chunk -> (entity)
+            #
+            # If not, return the graph that includes the chains from documents to chunks
+            # that contain the subs (keywords).
+            # document -> chunk -> chunk -> ... -> leaf chunk (that contains the subs)
+            #
+            # And only the leaf chunks contain the content, and the other chunks do not
+            # contain any properties except the id, name.
+
             graph = MemoryGraph()
 
-            for sub in subs:
-                query = (
+            # Check if the entities exist in the graph
+            check_entity_query = (
+                f"MATCH (n:{GraphElemType.ENTITY.value}) "
+                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+                "RETURN n"
+            )
+            if self.query(check_entity_query):
+                # Query the leaf chunks in the chain from documents to chunks
+                leaf_chunk_query = (
+                    f"MATCH p=(n:{GraphElemType.CHUNK.value})-"
+                    f"[r:{GraphElemType.INCLUDE.value}]->"
+                    f"(m:{GraphElemType.ENTITY.value})"
+                    f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
+                    f"RETURN n"
+                )
+                graph_of_leaf_chunks = self.query(
+                    query=leaf_chunk_query, white_list=["content"]
+                )
+
+                # Query the chain from documents to chunks,
+                # document -> chunk -> ... ->  leaf_chunks
+                chunk_names = [
+                    self._escape_quotes(vertex.name)
+                    for vertex in graph_of_leaf_chunks.vertices()
+                ]
+                chain_query = (
                     f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
-                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]-"
-                    f"(m:{GraphElemType.CHUNK.value})WHERE m.content CONTAINS "
-                    f"'{self._escape_quotes(sub)}' "
-                    f"RETURN p {limit_string}"
-                )  # if it contains the subjects
-                result = self.query(query)
-                for vertex in result.vertices():
-                    graph.upsert_vertex(vertex)
-                for edge in result.edges():
-                    graph.append_edge(edge)
+                    f"[:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+                    f"(m:{GraphElemType.CHUNK.value})"
+                    f"WHERE m.name IN {chunk_names} "
+                    "RETURN p"
+                )
+                # Filter all the properties by with_list
+                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
+
+                # The number of leaf chunks caompared to the `limit`
+                if not limit or len(chunk_names) <= limit:
+                    graph.upsert_graph(graph_of_leaf_chunks)
+                else:
+                    limited_leaf_chunk_query = leaf_chunk_query + f" {limit_string}"
+                    graph.upsert_graph(
+                        self.query(
+                            query=limited_leaf_chunk_query, white_list=["content"]
+                        )
+                    )
+            else:
+                _subs_condition = " OR ".join(
+                    [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
+                )
+
+                # Query the chain from documents to chunks,
+                # document -> chunk -> chunk -> chunk -> ... -> chunk
+                chain_query = (
+                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+                    f"(m:{GraphElemType.CHUNK.value})"
+                    f"WHERE {_subs_condition}"
+                    "RETURN p"
+                )
+                # Filter all the properties by with_list
+                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
+
+                # Query the leaf chunks in the chain from documents to chunks
+                leaf_chunk_query = (
+                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+                    f"(m:{GraphElemType.CHUNK.value})"
+                    f"WHERE {_subs_condition}"
+                    f"RETURN m {limit_string}"
+                )
+                graph.upsert_graph(
+                    self.query(query=leaf_chunk_query, white_list=["content"])
+                )
 
             return graph
 
@@ -607,6 +679,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         vertices, edges = self._get_nodes_edges_from_queried_data(
             query_result, white_list
         )
+
         mg = MemoryGraph()
         for vertex in vertices:
             mg.upsert_vertex(vertex)
@@ -714,7 +787,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         from neo4j import graph
 
         def filter_properties(
-            properties: dict[str, Any], white_list: List[str]
+            properties: dict[str, Any], white_list: Optional[List[str]] = None
         ) -> Dict[str, Any]:
             """Filter the properties.
 
@@ -723,13 +796,26 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 entity_properties = ["id", "name", "description", "_document_id",
                                         "_chunk_id", "_community_id"]
                 edge_properties = ["id", "name", "description", "_chunk_id"]
+            Args:
+                properties: Dictionary of properties to filter
+                white_list: List of properties to keep
+                    - If None: Keep default properties (those not starting with '_'
+                        and not in ['id', 'name'])
+                    - If [""]: Remove all properties (return empty dict)
+                    - If list of strings: Keep only properties in white_list
             """
-            return {
-                key: value
-                for key, value in properties.items()
-                if (not key.startswith("_") and key not in ["id", "name"])
-                or key in white_list
-            }
+            return (
+                {}
+                if white_list == [""]
+                else {
+                    key: value
+                    for key, value in properties.items()
+                    if (
+                        (not key.startswith("_") and key not in ["id", "name"])
+                        or (white_list is not None and key in white_list)
+                    )
+                }
+            )
 
         # Parse the data to nodes and relationships
         for record in data:
