@@ -34,7 +34,7 @@ from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.pagination_utils import PaginationResult
 
-from ..api.schemas import FlowDebugRequest, ServeRequest, ServerResponse
+from ..api.schemas import FlowDebugRequest, FlowInfo, ServeRequest, ServerResponse
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
 
@@ -680,6 +680,23 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 break
             else:
                 yield f"data:{text}\n\n"
+
+    async def get_flow_files(self, flow_name: str):
+        logger.info(f"get_flow_files:{flow_name}")
+
+        package = self.dbgpts_loader.get_flow_package(flow_name)
+        if package:
+            return FlowInfo(
+                name=package.name,
+                definition_type=package.definition_type,
+                description=package.description,
+                label=package.label,
+                package=package.package,
+                package_type=package.package_type,
+                root=package.root,
+                version=package.version,
+            )
+        return None
 
 
 def _parse_flow_template_from_json(json_dict: dict) -> ServerResponse:

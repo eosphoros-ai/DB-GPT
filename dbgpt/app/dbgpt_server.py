@@ -234,9 +234,13 @@ async def startup_event():
         try:
             import subprocess
 
-            command = ["libro", f"--port={int(CFG.DBGPT_WEBSERVER_PORT) + 1}"]
+            current_file_path = os.path.abspath(__file__)
+            command = [
+                "libro",
+                f"--config='{os.path.dirname(current_file_path)}/jupyter_server_config.py'",
+            ]
             # 使用 subprocess.Popen 启动服务
-            subprocess.Popen(command, cwd=f"{ROOT_PATH}/examples")
+            subprocess.Popen(command, cwd=f"{os.path.expanduser('~')}")
         except Exception as e:
             print(f"start libro exception！{str(e)}")
 
