@@ -1134,7 +1134,23 @@ class ExampleFlowCodeEditorOperator(MapOperator[str, str]):
                 ui=ui.UICodeEditor(
                     language="python",
                 ),
-            )
+            ),
+            Parameter.build_from(
+                "Language",
+                "lang",
+                type=str,
+                optional=True,
+                default="python",
+                placeholder="Please select the language",
+                description="The language of the code.",
+                options=[
+                    OptionValue(label="Python", name="python", value="python"),
+                    OptionValue(
+                        label="JavaScript", name="javascript", value="javascript"
+                    ),
+                ],
+                ui=ui.UISelect(),
+            ),
         ],
         inputs=[
             IOField.build_from(
@@ -1154,95 +1170,34 @@ class ExampleFlowCodeEditorOperator(MapOperator[str, str]):
         ],
     )
 
-    def __init__(self, code: str, **kwargs):
+    def __init__(self, code: str, lang: str = "python", **kwargs):
         super().__init__(**kwargs)
         self.code = code
+        self.lang = lang
 
     async def map(self, user_name: str) -> str:
         """Map the user name to the code."""
-        from dbgpt.util.code_utils import UNKNOWN, extract_code
 
         code = self.code
-        exitcode = -1
+        exit_code = -1
         try:
-            code_blocks = extract_code(self.code)
-            if len(code_blocks) < 1:
-                logger.info(
-                    f"No executable code found in: \n{code}",
-                )
-                raise ValueError(f"No executable code found in: \n{code}")
-            elif len(code_blocks) > 1 and code_blocks[0][0] == UNKNOWN:
-                # found code blocks, execute code and push "last_n_messages" back
-                logger.info(
-                    f"Missing available code block type, unable to execute code,"
-                    f"\n{code}",
-                )
-                raise ValueError(
-                    "Missing available code block type, unable to execute code, "
-                    f"\n{code}"
-                )
-            exitcode, logs = await self.blocking_func_to_async(
-                self.execute_code_blocks, code_blocks
-            )
-            # exitcode, logs = self.execute_code_blocks(code_blocks)
+            exit_code, logs = await self.execute_code_blocks(code, self.lang)
         except Exception as e:
             logger.error(f"Failed to execute code: {e}")
             logs = f"Failed to execute code: {e}"
         return (
-            f"Your name is {user_name}, and your code is \n\n```python\n{self.code}"
+            f"Your name is {user_name}, and your code is \n\n```python\n{code}"
             f"\n\n```\n\nThe execution result is \n\n```\n{logs}\n\n```\n\n"
-            f"Exit code: {exitcode}."
+            f"Exit code: {exit_code}."
         )
 
-    def execute_code_blocks(self, code_blocks):
+    async def execute_code_blocks(self, code_blocks: str, lang: str):
         """Execute the code blocks and return the result."""
-        from dbgpt.util.code_utils import execute_code, infer_lang
-        from dbgpt.util.utils import colored
+        from dbgpt.util.code.server import CodeResult, get_code_server
 
-        logs_all = ""
-        exitcode = -1
-        _code_execution_config = {"use_docker": False}
-        for i, code_block in enumerate(code_blocks):
-            lang, code = code_block
-            if not lang:
-                lang = infer_lang(code)
-            print(
-                colored(
-                    f"\n>>>>>>>> EXECUTING CODE BLOCK {i} "
-                    f"(inferred language is {lang})...",
-                    "red",
-                ),
-                flush=True,
-            )
-            if lang in ["bash", "shell", "sh"]:
-                exitcode, logs, image = execute_code(
-                    code, lang=lang, **_code_execution_config
-                )
-            elif lang in ["python", "Python"]:
-                if code.startswith("# filename: "):
-                    filename = code[11 : code.find("\n")].strip()
-                else:
-                    filename = None
-                exitcode, logs, image = execute_code(
-                    code,
-                    lang="python",
-                    filename=filename,
-                    **_code_execution_config,
-                )
-            else:
-                # In case the language is not supported, we return an error message.
-                exitcode, logs, image = (
-                    1,
-                    f"unknown language {lang}",
-                    None,
-                )
-                # raise NotImplementedError
-            if image is not None:
-                _code_execution_config["use_docker"] = image
-            logs_all += "\n" + logs
-            if exitcode != 0:
-                return exitcode, logs_all
-        return exitcode, logs_all
+        code_server = await get_code_server(self.system_app)
+        result: CodeResult = await code_server.exec(code_blocks, lang)
+        return result.exit_code, result.logs
 
 
 class ExampleFlowDynamicParametersOperator(MapOperator[str, str]):

@@ -151,6 +151,7 @@ _OPERATOR_CATEGORY_DETAIL = {
     "database": _CategoryDetail("Database", "Interact with the database"),
     "type_converter": _CategoryDetail("Type Converter", "Convert the type"),
     "example": _CategoryDetail("Example", "Example operator"),
+    "code": _CategoryDetail("Code", "Code operator"),
 }
 
 
@@ -169,6 +170,7 @@ class OperatorCategory(str, Enum):
     DATABASE = "database"
     TYPE_CONVERTER = "type_converter"
     EXAMPLE = "example"
+    CODE = "code"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -1361,6 +1363,8 @@ def _register_operator(view_cls: Optional[Type[T]]):
     """Register the operator."""
     if not view_cls or not view_cls.metadata:
         return
+    if "metadata" not in view_cls.__dict__:
+        return  # Skip the base class
     metadata = view_cls.metadata
     metadata.type_name = view_cls.__qualname__
     metadata.type_cls = _get_type_name(view_cls)
