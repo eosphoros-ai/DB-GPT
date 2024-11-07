@@ -339,6 +339,7 @@ class Config(metaclass=Singleton):
         self.NOTE_BOOK_ENABLE: bool = (
             os.getenv("NOTE_BOOK_ENABLE", "True").lower() == "true"
         )
+        self.NOTE_BOOK_ROOT: str = os.getenv("NOTE_BOOK_ROOT", os.path.expanduser("~"))
 
     @property
     def local_db_manager(self) -> "ConnectorManager":

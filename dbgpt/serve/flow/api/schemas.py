@@ -30,6 +30,7 @@ class FlowInfo(BaseModel):
     package: Optional[str] = None
     package_type: Optional[str] = None
     root: Optional[str] = None
+    path: Optional[str] = None
     version: Optional[str] = None
 
 

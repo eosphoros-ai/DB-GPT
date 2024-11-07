@@ -6,6 +6,7 @@ from typing import AsyncIterator, List, Optional, cast
 import schedule
 from fastapi import HTTPException
 
+from dbgpt._private.config import Config
 from dbgpt._private.pydantic import model_to_json
 from dbgpt.agent import AgentDummyTrigger
 from dbgpt.component import SystemApp
@@ -39,6 +40,8 @@ from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, Serv
 from ..models.models import ServeDao, ServeEntity
 
 logger = logging.getLogger(__name__)
+
+CFG = Config()
 
 
 class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
@@ -681,10 +684,14 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             else:
                 yield f"data:{text}\n\n"
 
-    async def get_flow_files(self, flow_name: str):
-        logger.info(f"get_flow_files:{flow_name}")
+    async def get_flow_files(self, flow_uid: str):
+        logger.info(f"get_flow_files:{flow_uid}")
 
-        package = self.dbgpts_loader.get_flow_package(flow_name)
+        flow = self.get({"uid": flow_uid})
+        if not flow:
+            logger.warning(f"cant't find flow info!{flow_uid}")
+            return None
+        package = self.dbgpts_loader.get_flow_package(flow.name)
         if package:
             return FlowInfo(
                 name=package.name,
@@ -694,6 +701,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 package=package.package,
                 package_type=package.package_type,
                 root=package.root,
+                path=f"{package.root.replace(CFG.NOTE_BOOK_ROOT+'/', '')}/{package.name}",
                 version=package.version,
             )
         return None

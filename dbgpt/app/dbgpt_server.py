@@ -240,7 +240,7 @@ async def startup_event():
                 f"--config='{os.path.dirname(current_file_path)}/jupyter_server_config.py'",
             ]
             # 使用 subprocess.Popen 启动服务
-            subprocess.Popen(command, cwd=f"{os.path.expanduser('~')}")
+            subprocess.Popen(command, cwd=f"{CFG.NOTE_BOOK_ROOT}")
         except Exception as e:
             print(f"start libro exception！{str(e)}")
 

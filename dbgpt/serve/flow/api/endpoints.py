@@ -568,11 +568,11 @@ async def query_flow_templates(
     dependencies=[Depends(check_api_key)],
 )
 async def flow_file_path(
-    flow_name: str,
+    flow_uid: str,
     service: Service = Depends(get_service),
 ) -> Result[FlowInfo]:
     try:
-        return Result.succ(await service.get_flow_files(flow_name))
+        return Result.succ(await service.get_flow_files(flow_uid))
     except Exception as e:
         return Result.failed(f"获取Flow文件异常！{str(e)}")
 
