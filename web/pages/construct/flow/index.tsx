@@ -184,7 +184,12 @@ function Flow() {
                 key={flow.uid}
                 logo='/pictures/flow.png'
                 onClick={() => {
-                  router.push('/construct/flow/canvas?id=' + flow.uid);
+                  if (flow.define_type === 'json') {
+                    router.push('/construct/flow/canvas?id=' + flow.uid);
+                  }
+                  if (flow.define_type === 'python') {
+                    router.push('/construct/flow/libro?id=' + flow.uid);
+                  }
                 }}
                 RightTop={
                   <InnerDropdown
