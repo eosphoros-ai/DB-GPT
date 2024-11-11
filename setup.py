@@ -716,6 +716,7 @@ def default_requires():
         "sentencepiece",
         "ollama",
         "qianfan",
+        "libro-server==0.1.8.dev0",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]
