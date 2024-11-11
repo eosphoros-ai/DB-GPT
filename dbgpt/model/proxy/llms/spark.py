@@ -1,13 +1,7 @@
-import base64
-import hashlib
-import hmac
 import json
 import os
 from concurrent.futures import Executor
-from datetime import datetime
-from time import mktime
-from typing import Iterator, Optional, AsyncIterator
-from urllib.parse import urlencode, urlparse
+from typing import Optional, AsyncIterator
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
 from dbgpt.model.parameter import ProxyModelParameters
