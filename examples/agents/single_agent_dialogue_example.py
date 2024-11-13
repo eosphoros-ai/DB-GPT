@@ -34,12 +34,10 @@ async def main():
     # llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
 
-    # os.environ["TONGYI_PROXY_API_KEY"] = "sk-4b0668661ae14bd390bfa6ca1da03f3c"
-    # # os.environ["api_key"] = "sk-4b0668661ae14bd390bfa6ca1da03f3c"
-    # os.environ["tongyi_proxyllm_proxyllm_backend"] = "qwen2-72b-instruct"
+    os.environ["DASHSCOPE_API_KEY"] = "sk-4b0668661ae14bd390bfa6ca1da03f3c"
+
     llm_client = TongyiLLMClient(
         model_alias="qwen2-72b-instruct",
-        api_key="sk-4b0668661ae14bd390bfa6ca1da03f3c",
     )
 
     context: AgentContext = AgentContext(conv_id="test123")

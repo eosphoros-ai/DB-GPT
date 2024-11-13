@@ -15,6 +15,7 @@
 """
 
 import asyncio
+import os
 
 from dbgpt.agent import (
     AgentContext,
@@ -39,7 +40,6 @@ async def main():
 
     llm_client = TongyiLLMClient(
         model_alias="qwen2-72b-instruct",
-        api_key="sk-4b0668661ae14bd390bfa6ca1da03f3c",
     )
 
     context: AgentContext = AgentContext(

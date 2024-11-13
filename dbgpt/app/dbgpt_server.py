@@ -229,26 +229,6 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     return param
 
 
-async def startup_event():
-    if CFG.NOTE_BOOK_ENABLE:
-        try:
-            import subprocess
-
-            print("Libro Server start!")
-            current_file_path = os.path.abspath(__file__)
-            command = [
-                "libro",
-                f"--config='{os.path.dirname(current_file_path)}/jupyter_server_config.py'",
-            ]
-            # 使用 subprocess.Popen 启动服务
-            subprocess.Popen(command, cwd=f"{CFG.NOTE_BOOK_ROOT}")
-        except Exception as e:
-            print(f"start libro exception！{str(e)}")
-
-
-register_event_handler(app, "startup", startup_event)
-
-
 def run_uvicorn(param: WebServerParameters):
     import uvicorn
 
