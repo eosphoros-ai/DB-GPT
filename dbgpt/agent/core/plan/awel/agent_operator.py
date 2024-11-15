@@ -22,7 +22,6 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 
 # TODO: Don't dependent on MixinLLMOperator
 from dbgpt.model.operators.llm_operator import MixinLLMOperator
-from dbgpt.serve.prompt.api.endpoints import get_service
 from dbgpt.util.i18n_utils import _
 
 from .... import ActionOutput
@@ -291,6 +290,7 @@ class AWELAgentOperator(
 
         prompt_template = None
         if self.awel_agent.agent_prompt:
+            from dbgpt.serve.prompt.api.endpoints import get_service
             prompt_service = get_service()
             prompt_template = prompt_service.get_template(
                 self.awel_agent.agent_prompt.code
