@@ -449,7 +449,7 @@ def core_requires():
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         # TODO: remove pandas dependency
         # alpine can't install pandas by default
-        "pandas==2.0.3",
+        "pandas>=2.2.2",
         # numpy should less than 2.0.0
         "numpy>=1.21.0,<2.0.0",
     ]
@@ -462,7 +462,7 @@ def core_requires():
         "uvicorn",
         "shortuuid",
         # 2.0.29 not support duckdb now
-        "SQLAlchemy>=2.0.25,<2.0.29",
+        "SQLAlchemy>=2.0.25",
         # for cache
         "msgpack",
         # for AWEL operator serialization
@@ -718,7 +718,8 @@ def default_requires():
         "sentencepiece",
         "ollama",
         "qianfan",
-        "libro",
+        "libro>=0.1.25",
+        "poetry",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]
