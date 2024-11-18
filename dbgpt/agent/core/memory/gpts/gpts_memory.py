@@ -374,9 +374,9 @@ class GptsMemory:
                     "receiver": message.receiver,
                     "model": message.model_name,
                     "markdown": view_info,
-                    "resource": message.resource_info
-                    if message.resource_info
-                    else None,
+                    "resource": (
+                        message.resource_info if message.resource_info else None
+                    ),
                 }
             )
         return await vis_client.get(VisAgentMessages.vis_tag()).display(
@@ -427,3 +427,20 @@ class GptsMemory:
         else:
             param["status"] = Status.COMPLETE.value
         return await vis_client.get(VisAppLink.vis_tag()).display(content=param)
+
+    async def chat_messages(
+        self,
+        conv_id: str,
+    ):
+        """Get chat messages."""
+        while True:
+            queue = self.queue(conv_id)
+            if not queue:
+                break
+            item = await queue.get()
+            if item == "[DONE]":
+                queue.task_done()
+                break
+            else:
+                yield item
+                await asyncio.sleep(0.005)

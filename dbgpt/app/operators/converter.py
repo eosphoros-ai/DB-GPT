@@ -1,5 +1,6 @@
 """Type Converter Operators."""
 
+from dbgpt.core import ModelOutput
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
@@ -184,3 +185,22 @@ class BooleanToString(MapOperator[bool, str]):
     def __init__(self, **kwargs):
         """Create a new BooleanToString operator."""
         super().__init__(map_function=lambda x: str(x), **kwargs)
+
+
+class ModelOutputToDict(MapOperator[ModelOutput, dict]):
+    """Converts a model output to a dictionary."""
+
+    metadata = ViewMetadata(
+        label=_("Model Output to Dict"),
+        name="default_converter_model_output_to_dict",
+        description=_("Converts a model output to a dictionary."),
+        category=OperatorCategory.TYPE_CONVERTER,
+        parameters=[],
+        inputs=[IOField.build_from(_("Model Output"), "model_output", ModelOutput)],
+        outputs=[IOField.build_from(_("Dictionary"), "dict", dict)],
+        tags={"order": TAGS_ORDER_HIGH},
+    )
+
+    def __init__(self, **kwargs):
+        """Create a new ModelOutputToDict operator."""
+        super().__init__(map_function=lambda x: x.to_dict(), **kwargs)

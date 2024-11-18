@@ -276,6 +276,8 @@ class BaseChat(ABC):
         )
         payload.span_id = span.span_id
         try:
+            msg = "<span style='color:red'>ERROR!</span> No response from model"
+            view_msg = msg
             async for output in self.call_streaming_operator(payload):
                 # Plugin research in result generation
                 msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(

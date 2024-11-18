@@ -83,14 +83,6 @@ class TuGraphStore(GraphStoreBase):
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
             or config.enable_summary
         )
-        self._enable_document_graph = (
-            os.getenv("DOCUMENT_GRAPH_ENABLED", "").lower() == "true"
-            or config.document_graph_enabled
-        )
-        self._enable_triplet_graph = (
-            os.getenv("TRIPLET_GRAPH_ENABLED", "").lower() == "true"
-            or config.triplet_graph_enabled
-        )
         self._plugin_names = (
             os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")
             or config.plugin_names

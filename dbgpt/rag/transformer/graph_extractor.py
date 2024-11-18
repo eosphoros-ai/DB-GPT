@@ -1,8 +1,9 @@
 """GraphExtractor class."""
 
+import asyncio
 import logging
 import re
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.transformer.llm_extractor import LLMExtractor
@@ -23,34 +24,95 @@ class GraphExtractor(LLMExtractor):
         self._chunk_history = chunk_history
 
         config = self._chunk_history.get_config()
+
         self._vector_space = config.name
         self._max_chunks_once_load = config.max_chunks_once_load
         self._max_threads = config.max_threads
         self._topk = config.topk
         self._score_threshold = config.score_threshold
 
-    async def extract(self, text: str, limit: Optional[int] = None) -> List:
-        """Load similar chunks."""
-        # load similar chunks
-        chunks = await self._chunk_history.asimilar_search_with_scores(
-            text, self._topk, self._score_threshold
-        )
-        history = [
-            f"Section {i + 1}:\n{chunk.content}" for i, chunk in enumerate(chunks)
-        ]
-        context = "\n".join(history) if history else ""
+    async def aload_chunk_context(self, texts: List[str]) -> Dict[str, str]:
+        """Load chunk context."""
+        text_context_map: Dict[str, str] = {}
 
-        try:
-            # extract with chunk history
-            return await super()._extract(text, context, limit)
+        for text in texts:
+            # Load similar chunks
+            chunks = await self._chunk_history.asimilar_search_with_scores(
+                text, self._topk, self._score_threshold
+            )
+            history = [
+                f"Section {i + 1}:\n{chunk.content}" for i, chunk in enumerate(chunks)
+            ]
 
-        finally:
-            # save chunk to history
+            # Save chunk to history
             await self._chunk_history.aload_document_with_limit(
                 [Chunk(content=text, metadata={"relevant_cnt": len(history)})],
                 self._max_chunks_once_load,
                 self._max_threads,
             )
+
+            # Save chunk context to map
+            context = "\n".join(history) if history else ""
+            text_context_map[text] = context
+        return text_context_map
+
+    async def extract(self, text: str, limit: Optional[int] = None) -> List:
+        """Extract graphs from text.
+
+        Suggestion: to extract triplets in batches, call `batch_extract`.
+        """
+        # Load similar chunks
+        text_context_map = await self.aload_chunk_context([text])
+        context = text_context_map[text]
+
+        # Extract with chunk history
+        return await super()._extract(text, context, limit)
+
+    async def batch_extract(
+        self,
+        texts: List[str],
+        batch_size: int = 1,
+        limit: Optional[int] = None,
+    ) -> List[List[Graph]]:
+        """Extract graphs from chunks in batches.
+
+        Returns list of graphs in same order as input texts (text <-> graphs).
+        """
+        if batch_size < 1:
+            raise ValueError("batch_size >= 1")
+
+        # 1. Load chunk context
+        text_context_map = await self.aload_chunk_context(texts)
+
+        # Pre-allocate results list to maintain order
+        graphs_list: List[List[Graph]] = [None] * len(texts)
+        total_batches = (len(texts) + batch_size - 1) // batch_size
+
+        for batch_idx in range(total_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, len(texts))
+            batch_texts = texts[start_idx:end_idx]
+
+            # 2. Create tasks with their original indices
+            extraction_tasks = [
+                (
+                    idx,
+                    self._extract(text, text_context_map[text], limit),
+                )
+                for idx, text in enumerate(batch_texts, start=start_idx)
+            ]
+
+            # 3. Process extraction in parallel while keeping track of indices
+            batch_results = await asyncio.gather(
+                *(task for _, task in extraction_tasks)
+            )
+
+            # 4. Place results in the correct positions
+            for (idx, _), graphs in zip(extraction_tasks, batch_results):
+                graphs_list[idx] = graphs
+
+        assert all(x is not None for x in graphs_list), "All positions should be filled"
+        return graphs_list
 
     def _parse_response(self, text: str, limit: Optional[int] = None) -> List[Graph]:
         graph = MemoryGraph()

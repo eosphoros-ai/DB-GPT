@@ -1,4 +1,5 @@
 """Transformer base class."""
+
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
@@ -36,6 +37,15 @@ class ExtractorBase(TransformerBase, ABC):
     @abstractmethod
     async def extract(self, text: str, limit: Optional[int] = None) -> List:
         """Extract results from text."""
+
+    @abstractmethod
+    async def batch_extract(
+        self,
+        texts: List[str],
+        batch_size: int = 1,
+        limit: Optional[int] = None,
+    ) -> List:
+        """Batch extract results from texts."""
 
 
 class TranslatorBase(TransformerBase, ABC):
