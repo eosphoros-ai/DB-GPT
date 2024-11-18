@@ -34,8 +34,6 @@ async def main():
     # llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
 
-    os.environ["DASHSCOPE_API_KEY"] = "sk-4b0668661ae14bd390bfa6ca1da03f3c"
-
     llm_client = TongyiLLMClient(
         model_alias="qwen2-72b-instruct",
     )
