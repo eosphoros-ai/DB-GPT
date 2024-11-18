@@ -449,7 +449,7 @@ def core_requires():
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         # TODO: remove pandas dependency
         # alpine can't install pandas by default
-        "pandas>=2.2.2",
+        "pandas==2.0.3",
         # numpy should less than 2.0.0
         "numpy>=1.21.0,<2.0.0",
     ]
@@ -472,7 +472,7 @@ def core_requires():
         #  find a new toolkit.
         "pympler",
         "duckdb",
-        "duckdb-engine",
+        "duckdb-engine==0.9.1",
         # lightweight python library for scheduling jobs
         "schedule",
         # For datasource subpackage

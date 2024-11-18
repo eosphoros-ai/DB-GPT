@@ -17,25 +17,25 @@ def db():
     yield conn
 
 
-# def test_get_users(db):
-#     assert db.get_users() == []
+def test_get_users(db):
+    assert db.get_users() == []
 
-#
-# def test_get_table_names(db):
-#     assert list(db.get_table_names()) == []
-#
-#
-# def test_get_charset(db):
-#     assert db.get_charset() == "UTF-8"
-#
-#
-# def test_get_table_comments(db):
-#     assert db.get_table_comments("test") == []
-#
-#
-# def test_table_simple_info(db):
-#     assert db.table_simple_info() == []
-#
-#
-# def test_execute(db):
-#     assert list(db.run("SELECT 42")[0]) == ["42"]
+
+def test_get_table_names(db):
+    assert list(db.get_table_names()) == []
+
+
+def test_get_charset(db):
+    assert db.get_charset() == "UTF-8"
+
+
+def test_get_table_comments(db):
+    assert db.get_table_comments("test") == []
+
+
+def test_table_simple_info(db):
+    assert db.table_simple_info() == []
+
+
+def test_execute(db):
+    assert list(db.run("SELECT 42")[0]) == ["42"]
