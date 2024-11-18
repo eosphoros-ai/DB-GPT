@@ -81,9 +81,10 @@ class Config(metaclass=Singleton):
         self.spark_proxy_api_password = os.getenv("XUNFEI_SPARK_API_PASSWORD")
         self.spark_proxy_api_model = os.getenv("XUNFEI_SPARK_API_MODEL")
         if self.spark_proxy_api_model and self.spark_proxy_api_password:
-            os.environ["spark_proxyllm_proxy_api_password"] = self.spark_proxy_api_password
+            os.environ[
+                "spark_proxyllm_proxy_api_password"
+            ] = self.spark_proxy_api_password
             os.environ["spark_proxyllm_proxy_api_model"] = self.spark_proxy_api_model
-
 
         # baichuan proxy
         self.bc_proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")

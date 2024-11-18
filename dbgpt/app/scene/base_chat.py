@@ -232,7 +232,8 @@ class BaseChat(ABC):
         )
         node = AppChatComposerOperator(
             model=self.llm_model,
-            temperature=self._chat_param.get("temperature") or float(self.prompt_template.temperature),
+            temperature=self._chat_param.get("temperature")
+            or float(self.prompt_template.temperature),
             max_new_tokens=int(self.prompt_template.max_new_tokens),
             prompt=self.prompt_template.prompt,
             message_version=self._message_version,

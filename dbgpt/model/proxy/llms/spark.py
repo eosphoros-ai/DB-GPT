@@ -1,7 +1,7 @@
 import json
 import os
 from concurrent.futures import Executor
-from typing import Optional, AsyncIterator
+from typing import AsyncIterator, Optional
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
 from dbgpt.model.parameter import ProxyModelParameters
@@ -65,32 +65,30 @@ def get_response(request_url, data):
                 raise e
     yield result
 
+
 def extract_content(line: str):
     if not line.strip():
         return line
-    if line.startswith('data: '):
-        json_str = line[len('data: '):]
+    if line.startswith("data: "):
+        json_str = line[len("data: ") :]
     else:
-        raise ValueError(
-            "Error line content "
-        )
+        raise ValueError("Error line content ")
 
     try:
         data = json.loads(json_str)
-        if data == '[DONE]':
-            return ''
+        if data == "[DONE]":
+            return ""
 
-        choices = data.get('choices', [])
+        choices = data.get("choices", [])
         if choices and isinstance(choices, list):
-            delta = choices[0].get('delta', {})
-            content = delta.get('content', '')
+            delta = choices[0].get("delta", {})
+            content = delta.get("content", "")
             return content
         else:
-            raise ValueError(
-                "Error line content "
-            )
+            raise ValueError("Error line content ")
     except json.JSONDecodeError:
-        return ''
+        return ""
+
 
 class SparkLLMClient(ProxyLLMClient):
     def __init__(
@@ -143,7 +141,6 @@ class SparkLLMClient(ProxyLLMClient):
     def default_model(self) -> str:
         return self._model
 
-
     def generate_stream(
         self,
         request: ModelRequest,
@@ -166,8 +163,8 @@ class SparkLLMClient(ProxyLLMClient):
         data = {
             "model": self._model,  # 指定请求的模型
             "messages": messages,
-            "temperature" : request.temperature,
-            "stream": True
+            "temperature": request.temperature,
+            "stream": True,
         }
         header = {
             "Authorization": f"Bearer {self._api_password}"  # 注意此处替换自己的APIPassword
@@ -177,11 +174,11 @@ class SparkLLMClient(ProxyLLMClient):
         response.encoding = "utf-8"
         try:
             content = ""
-            #data: {"code":0,"message":"Success","sid":"cha000bf865@dx19307263c06b894532","id":"cha000bf865@dx19307263c06b894532","created":1730991766,"choices":[{"delta":{"role":"assistant","content":"你好"},"index":0}]}
-            #data: [DONE]
+            # data: {"code":0,"message":"Success","sid":"cha000bf865@dx19307263c06b894532","id":"cha000bf865@dx19307263c06b894532","created":1730991766,"choices":[{"delta":{"role":"assistant","content":"你好"},"index":0}]}
+            # data: [DONE]
             for line in response.iter_lines(decode_unicode=True):
                 print("llm out:", line)
-                content=content + extract_content(line)
+                content = content + extract_content(line)
                 yield ModelOutput(text=content, error_code=0)
         except Exception as e:
             return ModelOutput(
