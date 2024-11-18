@@ -457,9 +457,7 @@ class MilvusStore(VectorStoreBase):
                 self.vector_field = x.name
         # convert to milvus expr filter.
         milvus_filter_expr = self.convert_metadata_filters(filters) if filters else None
-        _, docs_and_scores = self._search(
-            query=text, k=topk, expr=milvus_filter_expr
-        )
+        _, docs_and_scores = self._search(query=text, k=topk, expr=milvus_filter_expr)
         if any(score < 0.0 or score > 1.0 for _, score, id in docs_and_scores):
             logger.warning(
                 "similarity score need between" f" 0 and 1, got {docs_and_scores}"

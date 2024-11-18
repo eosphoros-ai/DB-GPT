@@ -2,10 +2,10 @@ import logging
 import os
 import shutil
 import tempfile
-from typing import List
 from pathlib import Path
+from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import (
@@ -333,70 +333,72 @@ def document_delete(space_name: str, query_request: DocumentQueryRequest):
 
 @router.post("/knowledge/{space_name}/document/upload")
 async def document_upload(
-   space_name: str,
-   doc_name: str = Form(...),
-   doc_type: str = Form(...),
-   doc_file: UploadFile = File(...),
+    space_name: str,
+    doc_name: str = Form(...),
+    doc_type: str = Form(...),
+    doc_file: UploadFile = File(...),
 ):
-   print(f"/document/upload params: {space_name}")
-   try:
-       if doc_file:
-           # Sanitize inputs to prevent path traversal
-           safe_space_name = os.path.basename(space_name)
-           safe_filename = os.path.basename(doc_file.filename)
+    print(f"/document/upload params: {space_name}")
+    try:
+        if doc_file:
+            # Sanitize inputs to prevent path traversal
+            safe_space_name = os.path.basename(space_name)
+            safe_filename = os.path.basename(doc_file.filename)
 
-           # Create absolute paths and verify they are within allowed directory
-           upload_dir = os.path.abspath(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, safe_space_name))
-           target_path = os.path.abspath(os.path.join(upload_dir, safe_filename))
+            # Create absolute paths and verify they are within allowed directory
+            upload_dir = os.path.abspath(
+                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, safe_space_name)
+            )
+            target_path = os.path.abspath(os.path.join(upload_dir, safe_filename))
 
-           if not os.path.abspath(KNOWLEDGE_UPLOAD_ROOT_PATH) in target_path:
-               raise HTTPException(status_code=400, detail="Invalid path detected")
+            if not os.path.abspath(KNOWLEDGE_UPLOAD_ROOT_PATH) in target_path:
+                raise HTTPException(status_code=400, detail="Invalid path detected")
 
-           if not os.path.exists(upload_dir):
-               os.makedirs(upload_dir)
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
 
-           # Create temp file
-           tmp_fd, tmp_path = tempfile.mkstemp(dir=upload_dir)
-           
-           try:
-               with os.fdopen(tmp_fd, "wb") as tmp:
-                   tmp.write(await doc_file.read())
-               
-               shutil.move(tmp_path, target_path)
+            # Create temp file
+            tmp_fd, tmp_path = tempfile.mkstemp(dir=upload_dir)
 
-               request = KnowledgeDocumentRequest()
-               request.doc_name = doc_name 
-               request.doc_type = doc_type
-               request.content = target_path
+            try:
+                with os.fdopen(tmp_fd, "wb") as tmp:
+                    tmp.write(await doc_file.read())
 
-               space_res = knowledge_space_service.get_knowledge_space(
-                   KnowledgeSpaceRequest(name=safe_space_name)
-               )
-               if len(space_res) == 0:
-                   # create default space
-                   if "default" != safe_space_name:
-                       raise Exception(f"you have not create your knowledge space.")
-                   knowledge_space_service.create_knowledge_space(
-                       KnowledgeSpaceRequest(
-                           name=safe_space_name,
-                           desc="first db-gpt rag application",
-                           owner="dbgpt",
-                       )
-                   )
-               return Result.succ(
-                   knowledge_space_service.create_knowledge_document(
-                       space=safe_space_name, request=request
-                   )
-               )
-           except Exception as e:
-               # Clean up temp file if anything goes wrong
-               if os.path.exists(tmp_path):
-                   os.unlink(tmp_path)
-               raise e
+                shutil.move(tmp_path, target_path)
 
-       return Result.failed(code="E000X", msg=f"doc_file is None")
-   except Exception as e:
-       return Result.failed(code="E000X", msg=f"document add error {e}")
+                request = KnowledgeDocumentRequest()
+                request.doc_name = doc_name
+                request.doc_type = doc_type
+                request.content = target_path
+
+                space_res = knowledge_space_service.get_knowledge_space(
+                    KnowledgeSpaceRequest(name=safe_space_name)
+                )
+                if len(space_res) == 0:
+                    # create default space
+                    if "default" != safe_space_name:
+                        raise Exception(f"you have not create your knowledge space.")
+                    knowledge_space_service.create_knowledge_space(
+                        KnowledgeSpaceRequest(
+                            name=safe_space_name,
+                            desc="first db-gpt rag application",
+                            owner="dbgpt",
+                        )
+                    )
+                return Result.succ(
+                    knowledge_space_service.create_knowledge_document(
+                        space=safe_space_name, request=request
+                    )
+                )
+            except Exception as e:
+                # Clean up temp file if anything goes wrong
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                raise e
+
+        return Result.failed(code="E000X", msg=f"doc_file is None")
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"document add error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/sync")
