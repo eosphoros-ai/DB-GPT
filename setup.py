@@ -517,13 +517,15 @@ def code_execution_requires():
     """
     pip install "dbgpt[code]"
 
-    Code execution dependencies. For building a docker image.
+    Code execution dependencies.
     """
     setup_spec.extras["code"] = setup_spec.extras["core"] + [
-        "pyzmq",
         "msgpack",
         # for AWEL operator serialization
         "cloudpickle",
+        "lyric-py>=0.1.4",
+        "lyric-py-worker>=0.1.4",
+        "lyric-js-worker>=0.1.4",
     ]
 
 
@@ -723,6 +725,7 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
+    setup_spec.extras["default"] += setup_spec.extras["code"]
     if INCLUDE_QUANTIZATION:
         # Add quantization extra to default, default is True
         setup_spec.extras["default"] += setup_spec.extras["quantization"]
