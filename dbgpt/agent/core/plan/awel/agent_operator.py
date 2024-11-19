@@ -291,6 +291,7 @@ class AWELAgentOperator(
         prompt_template = None
         if self.awel_agent.agent_prompt:
             from dbgpt.serve.prompt.api.endpoints import get_service
+
             prompt_service = get_service()
             prompt_template = prompt_service.get_template(
                 self.awel_agent.agent_prompt.code
