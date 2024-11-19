@@ -462,7 +462,7 @@ def core_requires():
         "uvicorn",
         "shortuuid",
         # 2.0.29 not support duckdb now
-        "SQLAlchemy>=2.0.25",
+        "SQLAlchemy>=2.0.25, <2.0.29",
         # for cache
         "msgpack",
         # for AWEL operator serialization
