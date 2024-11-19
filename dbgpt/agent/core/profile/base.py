@@ -129,11 +129,13 @@ _DEFAULT_WRITE_MEMORY_TEMPLATE = """\
 {% if question %}Question: {{ question }} {% endif %}
 {% if thought %}Thought: {{ thought }} {% endif %}
 {% if action %}Action: {{ action }} {% endif %}
+{% if observation %}Observation: {{ observation }} {% endif %}
 """
 _DEFAULT_WRITE_MEMORY_TEMPLATE_ZH = """\
 {% if question %}问题: {{ question }} {% endif %}
 {% if thought %}思考答案: {{ thought }} {% endif %}
 {% if action %}行动结果: {{ action }} {% endif %}
+{% if observation %}观察: {{ observation }} {% endif %}
 """
 
 
