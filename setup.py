@@ -462,7 +462,7 @@ def core_requires():
         "uvicorn",
         "shortuuid",
         # 2.0.29 not support duckdb now
-        "SQLAlchemy>=2.0.25,<2.0.29",
+        "SQLAlchemy>=2.0.25, <2.0.29",
         # for cache
         "msgpack",
         # for AWEL operator serialization
@@ -472,7 +472,7 @@ def core_requires():
         #  find a new toolkit.
         "pympler",
         "duckdb",
-        "duckdb-engine",
+        "duckdb-engine==0.9.1",
         # lightweight python library for scheduling jobs
         "schedule",
         # For datasource subpackage
@@ -718,6 +718,8 @@ def default_requires():
         "sentencepiece",
         "ollama",
         "qianfan",
+        "libro>=0.1.25",
+        "poetry",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]

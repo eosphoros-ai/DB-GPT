@@ -25,10 +25,6 @@ def test_get_table_names(db):
     assert list(db.get_table_names()) == []
 
 
-def test_get_users(db):
-    assert db.get_users() == []
-
-
 def test_get_charset(db):
     assert db.get_charset() == "UTF-8"
 

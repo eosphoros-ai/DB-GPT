@@ -28,7 +28,7 @@ from dbgpt.configs.model_config import (
     STATIC_MESSAGE_IMG_PATH,
 )
 from dbgpt.serve.core import add_exception_handler
-from dbgpt.util.fastapi import create_app, replace_router
+from dbgpt.util.fastapi import create_app, register_event_handler, replace_router
 from dbgpt.util.i18n_utils import _, set_default_language
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
@@ -42,7 +42,6 @@ from dbgpt.util.utils import (
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-
 
 CFG = Config()
 set_default_language(CFG.LANGUAGE)
@@ -60,7 +59,6 @@ app = create_app(
 )
 # Use custom router to support priority
 replace_router(app)
-
 
 system_app = SystemApp(app)
 
