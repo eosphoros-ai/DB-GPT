@@ -58,9 +58,15 @@ class TextSplitter(ABC):
         _metadatas = metadatas or [{}] * len(texts)
         chunks = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(text, separator=separator, **kwargs):
-                new_doc = Chunk(content=chunk, metadata=copy.deepcopy(_metadatas[i]))
-                chunks.append(new_doc)
+            if _metadatas[i].get("type") == "excel":
+                table_chunk = Chunk(content=text, metadata=copy.deepcopy(_metadatas[i]))
+                chunks.append(table_chunk)
+            else:
+                for chunk in self.split_text(text, separator=separator, **kwargs):
+                    new_doc = Chunk(
+                        content=chunk, metadata=copy.deepcopy(_metadatas[i])
+                    )
+                    chunks.append(new_doc)
         return chunks
 
     def split_documents(self, documents: Iterable[Document], **kwargs) -> List[Chunk]:
@@ -489,11 +495,15 @@ class MarkdownHeaderTextSplitter(TextSplitter):
         _metadatas = metadatas or [{}] * len(texts)
         chunks = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(text, separator, **kwargs):
-                metadata = chunk.metadata or {}
-                metadata.update(_metadatas[i])
-                new_doc = Chunk(content=chunk.content, metadata=metadata)
-                chunks.append(new_doc)
+            if _metadatas[i].get("type") == "excel":
+                table_chunk = Chunk(content=text, metadata=copy.deepcopy(_metadatas[i]))
+                chunks.append(table_chunk)
+            else:
+                for chunk in self.split_text(text, separator, **kwargs):
+                    metadata = chunk.metadata or {}
+                    metadata.update(_metadatas[i])
+                    new_doc = Chunk(content=chunk.content, metadata=metadata)
+                    chunks.append(new_doc)
         return chunks
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Chunk]:
