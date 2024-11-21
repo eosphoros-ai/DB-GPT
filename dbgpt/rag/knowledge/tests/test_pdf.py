@@ -32,6 +32,6 @@ def test_load_from_pdf(mock_pdf_open_and_reader):
     for i, document in enumerate(documents):
         assert MOCK_PDF_PAGES[i][0] in document.content
         assert document.metadata["title"] == file_path
-        assert document.metadata["type"] == 'text'
+        assert document.metadata["type"] == "text"
 
     #
