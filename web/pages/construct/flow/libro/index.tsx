@@ -39,7 +39,11 @@ const Libro: React.FC = () => {
 
   return (
     <>
-      <iframe src={`http://localhost:5671/dbgpt?flow_uid=${id}`} className='h-full' ref={iframeRef}></iframe>
+      <iframe
+        src={`${window.location.protocol}//${window.location.hostname}:5671/dbgpt?flow_uid=${id}`}
+        className='h-full'
+        ref={iframeRef}
+      ></iframe>
     </>
   );
 };
