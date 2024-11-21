@@ -138,7 +138,7 @@ class PDFKnowledge(Knowledge):
             temp_table = []
             temp_title = None
             page_documents = []
-            merged_data = {}  # type ignore
+            merged_data = {}  # type: ignore # noqa
             for i, data in enumerate(self.all_text):
                 content_type = data.get("type")
                 inside_content = data.get("inside")
