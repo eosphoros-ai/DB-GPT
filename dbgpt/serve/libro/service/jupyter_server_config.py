@@ -11,3 +11,5 @@ c.ServerApp.port = 5671
 # 禁用自动寻找空闲端口
 c.ServerApp.port_retries = 0
 c.ContentsManager.allow_hidden = True
+c.ServerApp.token = ""
+c.ServerApp.password = ""
