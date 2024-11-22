@@ -71,6 +71,7 @@ PROMPT_SCENE_DEFINE = (
 
 RESPONSE_FORMAT_SIMPLE = {
     "thoughts": "thoughts summary to say to user",
+    "direct_response": "If the context is sufficient to answer user, reply directly without sql",
     "sql": "SQL Query to run",
     "display_type": "Data display method",
 }
