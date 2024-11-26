@@ -1,12 +1,12 @@
 import json
 import os
 from concurrent.futures import Executor
-from typing import AsyncIterator, Optional
+from typing import Iterator, Optional
 
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
+from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
 from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 
 
 def getlength(text):
@@ -28,20 +28,8 @@ def spark_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
     client: SparkLLMClient = model.proxy_llm_client
-    context = ModelRequestContext(
-        stream=True,
-        user_name=params.get("user_name"),
-        request_id=params.get("request_id"),
-    )
-    request = ModelRequest.build_request(
-        client.default_model,
-        messages=params["messages"],
-        temperature=params.get("temperature"),
-        context=context,
-        max_new_tokens=params.get("max_new_tokens"),
-        stop=params.get("stop"),
-    )
-    for r in client.generate_stream(request):
+    request = parse_model_request(params, client.default_model, stream=True)
+    for r in client.sync_generate_stream(request):
         yield r
 
 
@@ -141,11 +129,11 @@ class SparkLLMClient(ProxyLLMClient):
     def default_model(self) -> str:
         return self._model
 
-    def generate_stream(
+    def sync_generate_stream(
         self,
         request: ModelRequest,
         message_converter: Optional[MessageConverter] = None,
-    ) -> AsyncIterator[ModelOutput]:
+    ) -> Iterator[ModelOutput]:
         """
         reference:
         https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_3-%E8%AF%B7%E6%B1%82%E8%AF%B4%E6%98%8E

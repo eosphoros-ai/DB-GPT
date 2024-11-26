@@ -2,17 +2,11 @@ import os
 from concurrent.futures import Executor
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-from dbgpt.core import (
-    MessageConverter,
-    ModelMessage,
-    ModelOutput,
-    ModelRequest,
-    ModelRequestContext,
-)
+from dbgpt.core import MessageConverter, ModelMessage, ModelOutput, ModelRequest
 from dbgpt.core.interface.message import parse_model_messages
 from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 
 GEMINI_DEFAULT_MODEL = "gemini-pro"
 
@@ -39,15 +33,7 @@ def gemini_generate_stream(
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
     client: GeminiLLMClient = model.proxy_llm_client
-    context = ModelRequestContext(stream=True, user_name=params.get("user_name"))
-    request = ModelRequest.build_request(
-        client.default_model,
-        messages=params["messages"],
-        temperature=params.get("temperature"),
-        context=context,
-        max_new_tokens=params.get("max_new_tokens"),
-        stop=params.get("stop"),
-    )
+    request = parse_model_request(params, client.default_model, stream=True)
     for r in client.sync_generate_stream(request):
         yield r
 

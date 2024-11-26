@@ -97,6 +97,26 @@ class OpenAIProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return chatgpt_generate_stream
 
 
+class ClaudeProxyLLMModelAdapter(ProxyLLMModelAdapter):
+    def support_async(self) -> bool:
+        return True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path == "claude_proxyllm"
+
+    def get_llm_client_class(
+        self, params: ProxyModelParameters
+    ) -> Type[ProxyLLMClient]:
+        from dbgpt.model.proxy.llms.claude import ClaudeLLMClient
+
+        return ClaudeLLMClient
+
+    def get_async_generate_stream_function(self, model, model_path: str):
+        from dbgpt.model.proxy.llms.claude import claude_generate_stream
+
+        return claude_generate_stream
+
+
 class TongyiProxyLLMModelAdapter(ProxyLLMModelAdapter):
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
         return lower_model_name_or_path == "tongyi_proxyllm"
@@ -320,6 +340,7 @@ class DeepseekProxyLLMModelAdapter(ProxyLLMModelAdapter):
 
 
 register_model_adapter(OpenAIProxyLLMModelAdapter)
+register_model_adapter(ClaudeProxyLLMModelAdapter)
 register_model_adapter(TongyiProxyLLMModelAdapter)
 register_model_adapter(OllamaLLMModelAdapter)
 register_model_adapter(ZhipuProxyLLMModelAdapter)

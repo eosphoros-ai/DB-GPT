@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import Future
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import AsyncIterator, Callable, Dict, Iterator, List, Optional
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import ModelMetadata, ModelOutput
@@ -113,7 +113,9 @@ class WorkerManager(ABC):
         """Shutdown model instance"""
 
     @abstractmethod
-    async def generate_stream(self, params: Dict, **kwargs) -> Iterator[ModelOutput]:
+    async def generate_stream(
+        self, params: Dict, **kwargs
+    ) -> AsyncIterator[ModelOutput]:
         """Generate stream result, chat scene"""
 
     @abstractmethod

@@ -1,9 +1,25 @@
 """Proxy models."""
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
+    from dbgpt.model.proxy.llms.claude import ClaudeLLMClient
+    from dbgpt.model.proxy.llms.deepseek import DeepseekLLMClient
+    from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
+    from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
+    from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
+    from dbgpt.model.proxy.llms.spark import SparkLLMClient
+    from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
+    from dbgpt.model.proxy.llms.wenxin import WenxinLLMClient
+    from dbgpt.model.proxy.llms.yi import YiLLMClient
+    from dbgpt.model.proxy.llms.zhipu import ZhipuLLMClient
+
 
 def __lazy_import(name):
     module_path = {
         "OpenAILLMClient": "dbgpt.model.proxy.llms.chatgpt",
+        "ClaudeLLMClient": "dbgpt.model.proxy.llms.claude",
         "GeminiLLMClient": "dbgpt.model.proxy.llms.gemini",
         "SparkLLMClient": "dbgpt.model.proxy.llms.spark",
         "TongyiLLMClient": "dbgpt.model.proxy.llms.tongyi",
@@ -28,6 +44,7 @@ def __getattr__(name):
 
 __all__ = [
     "OpenAILLMClient",
+    "ClaudeLLMClient",
     "GeminiLLMClient",
     "TongyiLLMClient",
     "ZhipuLLMClient",

@@ -131,6 +131,15 @@ class Config(metaclass=Singleton):
             os.environ["deepseek_proxyllm_api_base"] = os.getenv(
                 "DEEPSEEK_API_BASE", "https://api.deepseek.com/v1"
             )
+        self.claude_proxy_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if self.claude_proxy_api_key:
+            os.environ["claude_proxyllm_proxy_api_key"] = self.claude_proxy_api_key
+            os.environ["claude_proxyllm_proxyllm_backend"] = os.getenv(
+                "ANTHROPIC_MODEL_VERSION", "claude-3-5-sonnet-20241022"
+            )
+            os.environ["claude_proxyllm_api_base"] = os.getenv(
+                "ANTHROPIC_BASE_URL", "https://api.anthropic.com"
+            )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
