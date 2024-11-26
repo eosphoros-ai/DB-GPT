@@ -79,6 +79,8 @@ LLM_MODEL_CONFIG = {
     "ollama_proxyllm": "ollama_proxyllm",
     # https://platform.deepseek.com/api-docs/
     "deepseek_proxyllm": "deepseek_proxyllm",
+    # https://docs.siliconflow.cn/quickstart
+    "silicon_flow_proxyllm": "silicon_flow_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),

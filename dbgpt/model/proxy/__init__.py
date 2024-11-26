@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
     from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
     from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
+    from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
     from dbgpt.model.proxy.llms.spark import SparkLLMClient
     from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
     from dbgpt.model.proxy.llms.wenxin import WenxinLLMClient
@@ -21,6 +22,7 @@ def __lazy_import(name):
         "OpenAILLMClient": "dbgpt.model.proxy.llms.chatgpt",
         "ClaudeLLMClient": "dbgpt.model.proxy.llms.claude",
         "GeminiLLMClient": "dbgpt.model.proxy.llms.gemini",
+        "SiliconFlowLLMClient": "dbgpt.model.proxy.llms.siliconflow",
         "SparkLLMClient": "dbgpt.model.proxy.llms.spark",
         "TongyiLLMClient": "dbgpt.model.proxy.llms.tongyi",
         "WenxinLLMClient": "dbgpt.model.proxy.llms.wenxin",
@@ -49,6 +51,7 @@ __all__ = [
     "TongyiLLMClient",
     "ZhipuLLMClient",
     "WenxinLLMClient",
+    "SiliconFlowLLMClient",
     "SparkLLMClient",
     "YiLLMClient",
     "MoonshotLLMClient",
