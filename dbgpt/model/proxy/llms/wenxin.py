@@ -2,19 +2,12 @@ import json
 import logging
 import os
 from concurrent.futures import Executor
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 import requests
 from cachetools import TTLCache, cached
 
-from dbgpt.core import (
-    MessageConverter,
-    ModelMessage,
-    ModelMessageRoleType,
-    ModelOutput,
-    ModelRequest,
-    ModelRequestContext,
-)
+from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
 from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
@@ -51,26 +44,16 @@ def _build_access_token(api_key: str, secret_key: str) -> str:
         return res.json().get("access_token")
 
 
-def _to_wenxin_messages(messages: List[ModelMessage]):
+def _to_wenxin_messages(request: ModelRequest):
     """Convert messages to wenxin compatible format
 
     See https://cloud.baidu.com/doc/WENXINWORKSHOP/s/jlil56u11
     """
-    wenxin_messages = []
-    system_messages = []
-    for message in messages:
-        if message.role == ModelMessageRoleType.HUMAN:
-            wenxin_messages.append({"role": "user", "content": message.content})
-        elif message.role == ModelMessageRoleType.SYSTEM:
-            system_messages.append(message.content)
-        elif message.role == ModelMessageRoleType.AI:
-            wenxin_messages.append({"role": "assistant", "content": message.content})
-        else:
-            pass
+    messages, system_messages = request.split_messages()
     if len(system_messages) > 1:
         raise ValueError("Wenxin only support one system message")
     str_system_message = system_messages[0] if len(system_messages) > 0 else ""
-    return wenxin_messages, str_system_message
+    return messages, str_system_message
 
 
 def wenxin_generate_stream(
@@ -167,7 +150,7 @@ class WenxinLLMClient(ProxyLLMClient):
                     "Failed to get access token. please set the correct api_key and secret key."
                 )
 
-            history, system_message = _to_wenxin_messages(request.get_messages())
+            history, system_message = _to_wenxin_messages(request)
             payload = {
                 "messages": history,
                 "system": system_message,

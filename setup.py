@@ -670,6 +670,13 @@ def openai_requires():
     setup_spec.extras["openai"] += setup_spec.extras["rag"]
 
 
+def proxy_requires():
+    """
+    pip install "dbgpt[proxy]"
+    """
+    setup_spec.extras["proxy"] = setup_spec.extras["openai"] + ["anthropic"]
+
+
 def gpt4all_requires():
     """
     pip install "dbgpt[gpt4all]"
@@ -727,6 +734,7 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
+    setup_spec.extras["default"] += setup_spec.extras["proxy"]
     setup_spec.extras["default"] += setup_spec.extras["code"]
     if INCLUDE_QUANTIZATION:
         # Add quantization extra to default, default is True
@@ -763,6 +771,7 @@ cache_requires()
 observability_requires()
 
 openai_requires()
+proxy_requires()
 # must be last
 default_requires()
 all_requires()
