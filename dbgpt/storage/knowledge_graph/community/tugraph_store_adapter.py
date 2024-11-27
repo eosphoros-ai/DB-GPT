@@ -356,7 +356,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             return
 
         # Create the graph schema
-        def _format_graph_propertity_schema(
+        def _format_graph_property_schema(
             name: str,
             type: str = "STRING",
             optional: bool = False,
@@ -390,9 +390,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for document vertex
         document_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.DOCUMENT, graph_properties=document_proerties
@@ -400,10 +400,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for chunk vertex
         chunk_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
-            _format_graph_propertity_schema("content", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("content", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
@@ -411,10 +411,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for entity vertex
         vertex_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
-            _format_graph_propertity_schema("description", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("description", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
@@ -422,10 +422,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for relation edge
         edge_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_chunk_id", "STRING", True, True),
-            _format_graph_propertity_schema("description", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_chunk_id", "STRING", True, True),
+            _format_graph_property_schema("description", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.RELATION, graph_properties=edge_proerties
@@ -433,9 +433,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for include edge
         include_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("description", "STRING", True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("description", "STRING", True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.INCLUDE, graph_properties=include_proerties
@@ -443,9 +443,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for next edge
         next_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("description", "STRING", True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("description", "STRING", True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.NEXT, graph_properties=next_proerties
@@ -465,14 +465,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         (vertices) and edges in the graph.
         """
         if graph_elem_type.is_vertex():  # vertex
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "VERTEX",
-                    "primary": "id",
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "VERTEX",
+                "primary": "id",
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
         else:  # edge
 
@@ -498,14 +496,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 else:
                     raise ValueError("Invalid graph element type.")
 
-            data = json.dumps(
-                {
-                    "label": graph_elem_type.value,
-                    "type": "EDGE",
-                    "constraints": edge_direction(graph_elem_type),
-                    "properties": graph_properties,
-                }
-            )
+            data = json.dumps({
+                "label": graph_elem_type.value,
+                "type": "EDGE",
+                "constraints": edge_direction(graph_elem_type),
+                "properties": graph_properties,
+            })
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
         self.graph_store.conn.run(gql)
@@ -628,9 +624,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         )
                     )
             else:
-                _subs_condition = " OR ".join(
-                    [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
-                )
+                _subs_condition = " OR ".join([
+                    f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs
+                ])
 
                 # Query the chain from documents to chunks,
                 # document -> chunk -> chunk -> chunk -> ... -> chunk
@@ -722,19 +718,15 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append(
-                            {
-                                "id": nodes[i]._properties["id"],
-                                "description": nodes[i]._properties["description"],
-                            }
-                        )
+                        formatted_path.append({
+                            "id": nodes[i]._properties["id"],
+                            "description": nodes[i]._properties["description"],
+                        })
                         if i < len(rels):
-                            formatted_path.append(
-                                {
-                                    "id": rels[i]._properties["id"],
-                                    "description": rels[i]._properties["description"],
-                                }
-                            )
+                            formatted_path.append({
+                                "id": rels[i]._properties["id"],
+                                "description": rels[i]._properties["description"],
+                            })
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(
@@ -905,9 +897,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to document include chunk."""
-        assert (
-            chunk.chunk_parent_id and chunk.chunk_parent_name
-        ), "Chunk parent ID and name are required (document_include_chunk)"
+        assert chunk.chunk_parent_id and chunk.chunk_parent_name, (
+            "Chunk parent ID and name are required (document_include_chunk)"
+        )
 
         edge = Edge(
             sid=chunk.chunk_parent_id,
@@ -928,9 +920,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
-        assert (
-            chunk.chunk_parent_id and chunk.chunk_parent_name
-        ), "Chunk parent ID and name are required (chunk_include_chunk)"
+        assert chunk.chunk_parent_id and chunk.chunk_parent_name, (
+            "Chunk parent ID and name are required (chunk_include_chunk)"
+        )
 
         edge = Edge(
             sid=chunk.chunk_parent_id,
