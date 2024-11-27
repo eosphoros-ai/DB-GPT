@@ -86,11 +86,12 @@ class GraphExtractor(LLMExtractor):
 
         # Pre-allocate results list to maintain order
         graphs_list: List[List[Graph]] = [None] * len(texts)
-        total_batches = (len(texts) + batch_size - 1) // batch_size
 
-        for batch_idx in range(total_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, len(texts))
+        n_texts = len(texts)
+
+        for batch_idx in range(0, n_texts, batch_size):
+            start_idx = batch_idx
+            end_idx = min(start_idx + batch_size, n_texts)
             batch_texts = texts[start_idx:end_idx]
 
             # 2. Create tasks with their original indices
@@ -104,11 +105,13 @@ class GraphExtractor(LLMExtractor):
 
             # 3. Process extraction in parallel while keeping track of indices
             batch_results = await asyncio.gather(
-                *(task for _, task in extraction_tasks)
+                *(task for _, task in extraction_tasks), return_exceptions=True
             )
 
             # 4. Place results in the correct positions
             for (idx, _), graphs in zip(extraction_tasks, batch_results):
+                if isinstance(graphs, Exception):
+                    raise RuntimeError(f"Failed to extract graph: {graphs}")
                 graphs_list[idx] = graphs
 
         assert all(x is not None for x in graphs_list), "All positions should be filled"
