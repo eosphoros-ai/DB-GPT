@@ -73,7 +73,7 @@ class GraphExtractor(LLMExtractor):
         texts: List[str],
         batch_size: int = 1,
         limit: Optional[int] = None,
-    ) -> List[List[Graph]]:
+    ) -> Optional[List[List[Graph]]]:
         """Extract graphs from chunks in batches.
 
         Returns list of graphs in same order as input texts (text <-> graphs).
@@ -112,6 +112,10 @@ class GraphExtractor(LLMExtractor):
             for (idx, _), graphs in zip(extraction_tasks, batch_results):
                 if isinstance(graphs, Exception):
                     raise RuntimeError(f"Failed to extract graph: {graphs}")
+                if not isinstance(graphs, list) or not all(
+                    isinstance(g, Graph) for g in graphs
+                ):
+                    raise RuntimeError(f"Invalid graph extraction result: {graphs}")
                 graphs_list[idx] = graphs
 
         assert all(x is not None for x in graphs_list), "All positions should be filled"

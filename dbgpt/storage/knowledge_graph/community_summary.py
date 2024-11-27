@@ -241,6 +241,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             [chunk.content for chunk in chunks],
             batch_size=self._triplet_extraction_batch_size,
         )
+        if not graphs_list:
+            raise ValueError("No graphs extracted from the chunks")
 
         # Upsert the graphs into the graph store
         for idx, graphs in enumerate(graphs_list):

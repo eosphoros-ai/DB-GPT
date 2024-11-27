@@ -465,12 +465,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         (vertices) and edges in the graph.
         """
         if graph_elem_type.is_vertex():  # vertex
-            data = json.dumps({
-                "label": graph_elem_type.value,
-                "type": "VERTEX",
-                "primary": "id",
-                "properties": graph_properties,
-            })
+            data = json.dumps(
+                {
+                    "label": graph_elem_type.value,
+                    "type": "VERTEX",
+                    "primary": "id",
+                    "properties": graph_properties,
+                }
+            )
             gql = f"""CALL db.createVertexLabelByJson('{data}')"""
         else:  # edge
 
@@ -496,12 +498,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 else:
                     raise ValueError("Invalid graph element type.")
 
-            data = json.dumps({
-                "label": graph_elem_type.value,
-                "type": "EDGE",
-                "constraints": edge_direction(graph_elem_type),
-                "properties": graph_properties,
-            })
+            data = json.dumps(
+                {
+                    "label": graph_elem_type.value,
+                    "type": "EDGE",
+                    "constraints": edge_direction(graph_elem_type),
+                    "properties": graph_properties,
+                }
+            )
             gql = f"""CALL db.createEdgeLabelByJson('{data}')"""
 
         self.graph_store.conn.run(gql)
@@ -624,9 +628,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         )
                     )
             else:
-                _subs_condition = " OR ".join([
-                    f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs
-                ])
+                _subs_condition = " OR ".join(
+                    [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
+                )
 
                 # Query the chain from documents to chunks,
                 # document -> chunk -> chunk -> chunk -> ... -> chunk
@@ -718,15 +722,19 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append({
-                            "id": nodes[i]._properties["id"],
-                            "description": nodes[i]._properties["description"],
-                        })
+                        formatted_path.append(
+                            {
+                                "id": nodes[i]._properties["id"],
+                                "description": nodes[i]._properties["description"],
+                            }
+                        )
                         if i < len(rels):
-                            formatted_path.append({
-                                "id": rels[i]._properties["id"],
-                                "description": rels[i]._properties["description"],
-                            })
+                            formatted_path.append(
+                                {
+                                    "id": rels[i]._properties["id"],
+                                    "description": rels[i]._properties["description"],
+                                }
+                            )
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(
@@ -897,9 +905,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to document include chunk."""
-        assert chunk.chunk_parent_id and chunk.chunk_parent_name, (
-            "Chunk parent ID and name are required (document_include_chunk)"
-        )
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (document_include_chunk)"
 
         edge = Edge(
             sid=chunk.chunk_parent_id,
@@ -920,9 +928,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
-        assert chunk.chunk_parent_id and chunk.chunk_parent_name, (
-            "Chunk parent ID and name are required (chunk_include_chunk)"
-        )
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (chunk_include_chunk)"
 
         edge = Edge(
             sid=chunk.chunk_parent_id,

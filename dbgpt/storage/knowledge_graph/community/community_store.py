@@ -38,9 +38,9 @@ class CommunityStore:
 
         for i in range(0, n_communities, batch_size):
             batch_ids = community_ids[i : i + batch_size]
-            batch_results = await asyncio.gather(*[
-                self._summary_community(cid) for cid in batch_ids
-            ])
+            batch_results = await asyncio.gather(
+                *[self._summary_community(cid) for cid in batch_ids]
+            )
             # filter out None returns
             communities.extend([c for c in batch_results if c is not None])
 
@@ -51,7 +51,7 @@ class CommunityStore:
     async def _summary_community(self, community_id: str) -> Optional[Community]:
         """Summarize single community."""
         community = await self._graph_store_adapter.get_community(community_id)
-        if community is None:
+        if community is None or community.data is None:
             logger.warning(f"Community {community_id} is empty")
             return None
 
