@@ -1,7 +1,6 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
-from dbgpt.core import ModelRequestContext
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 
 from .chatgpt import OpenAILLMClient
@@ -12,22 +11,23 @@ if TYPE_CHECKING:
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
-_MOONSHOT_DEFAULT_MODEL = "moonshot-v1-8k"
+
+_SILICON_FLOW_DEFAULT_MODEL = "Qwen/Qwen2.5-Coder-32B-Instruct"
 
 
-async def moonshot_generate_stream(
+async def silicon_flow_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
-    client: MoonshotLLMClient = cast(MoonshotLLMClient, model.proxy_llm_client)
+    client: SiliconFlowLLMClient = model.proxy_llm_client
     request = parse_model_request(params, client.default_model, stream=True)
     async for r in client.generate_stream(request):
         yield r
 
 
-class MoonshotLLMClient(OpenAILLMClient):
-    """Moonshot LLM Client.
+class SiliconFlowLLMClient(OpenAILLMClient):
+    """SiliconFlow LLM Client.
 
-    Moonshot's API is compatible with OpenAI's API, so we inherit from OpenAILLMClient.
+    SiliconFlow's API is compatible with OpenAI's API, so we inherit from OpenAILLMClient.
     """
 
     def __init__(
@@ -36,34 +36,34 @@ class MoonshotLLMClient(OpenAILLMClient):
         api_base: Optional[str] = None,
         api_type: Optional[str] = None,
         api_version: Optional[str] = None,
-        model: Optional[str] = _MOONSHOT_DEFAULT_MODEL,
+        model: Optional[str] = None,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "moonshot_proxyllm",
+        model_alias: Optional[str] = "silicon_flow_proxyllm",
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        **kwargs
     ):
         api_base = (
-            api_base or os.getenv("MOONSHOT_API_BASE") or "https://api.moonshot.cn/v1"
+            api_base
+            or os.getenv("SILICON_FLOW_API_BASE")
+            or "https://api.siliconflow.cn/v1"
         )
-        api_key = api_key or os.getenv("MOONSHOT_API_KEY")
-        model = model or _MOONSHOT_DEFAULT_MODEL
+        api_key = api_key or os.getenv("SILICON_FLOW_API_KEY")
+        model = model or _SILICON_FLOW_DEFAULT_MODEL
         if not context_length:
-            if "128k" in model:
-                context_length = 1024 * 128
-            elif "32k" in model:
-                context_length = 1024 * 32
+            if "200k" in model:
+                context_length = 200 * 1024
             else:
-                # 8k
-                context_length = 1024 * 8
+                context_length = 4096
 
         if not api_key:
             raise ValueError(
-                "Moonshot API key is required, please set 'MOONSHOT_API_KEY' in "
-                "environment variable or pass it to the client."
+                "SiliconFlow API key is required, please set 'SILICON_FLOW_API_KEY' in environment "
+                "or pass it as an argument."
             )
+
         super().__init__(
             api_key=api_key,
             api_base=api_base,
@@ -76,19 +76,12 @@ class MoonshotLLMClient(OpenAILLMClient):
             context_length=context_length,
             openai_client=openai_client,
             openai_kwargs=openai_kwargs,
-            **kwargs,
+            **kwargs
         )
-
-    def check_sdk_version(self, version: str) -> None:
-        if not version >= "1.0":
-            raise ValueError(
-                "Moonshot API requires openai>=1.0, please upgrade it by "
-                "`pip install --upgrade 'openai>=1.0'`"
-            )
 
     @property
     def default_model(self) -> str:
         model = self._model
         if not model:
-            model = _MOONSHOT_DEFAULT_MODEL
+            model = _SILICON_FLOW_DEFAULT_MODEL
         return model
