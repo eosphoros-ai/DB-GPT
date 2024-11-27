@@ -140,6 +140,17 @@ class Config(metaclass=Singleton):
             os.environ["claude_proxyllm_api_base"] = os.getenv(
                 "ANTHROPIC_BASE_URL", "https://api.anthropic.com"
             )
+        self.silicon_flow_proxy_api_key = os.getenv("SILICON_FLOW_API_KEY")
+        if self.silicon_flow_proxy_api_key:
+            os.environ[
+                "silicon_flow_proxyllm_proxy_api_key"
+            ] = self.silicon_flow_proxy_api_key
+            os.environ["silicon_flow_proxyllm_proxyllm_backend"] = os.getenv(
+                "SILICON_FLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+            )
+            os.environ["silicon_flow_proxyllm_api_base"] = os.getenv(
+                "SILICON_FLOW_API_BASE", "https://api.siliconflow.cn/v1"
+            )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
