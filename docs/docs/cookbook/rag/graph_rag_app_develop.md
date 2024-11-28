@@ -234,7 +234,8 @@ First, create a knowledge base using the `Knowledge Graph` type.
   <img src={'/img/chat_knowledge/graph_rag/create_knowledge_graph.png'} width="1000px"/>
 </p>
 
-Then, upload the documents ([tugraph.md](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/test_files/tugraph.md), [osgraph.md](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/test_files/osgraph.md), [dbgpt.md](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/test_files/dbgpt.md)) and process them automatically (markdown header by default).
+Then, upload the documents ([test_graph_rag.md](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/test_files/test_graph_rag.md)) and process them automatically (markdown header by default).
+
 <p align="left">
   <img src={'/img/chat_knowledge/graph_rag/upload_file.png'} width="1000px"/>
 </p>
@@ -255,13 +256,15 @@ Performance testing is based on the `gpt-4o-mini` model.
 
 #### Indexing Performance
 
-|                   | DB-GPT                | GraphRAG(microsoft)  |
-| ----------------- | --------------------- | -------------------- |
-| Document Tokens   | 42631                 | 42631                |
-| Graph Size        | 808 nodes, 1170 edges | 779 nodes, 967 edges |
-| Prompt Tokens     | 452614                | 744990               |
-| Completion Tokens | 48325                 | 227230               |
-| Total Tokens      | 500939                | 972220               |
+|                                       | DB-GPT                          | GraphRAG(microsoft)  |
+| ------------------------------------- | ------------------------------- | -------------------- |
+| Document Tokens                       | 42631                           | 42631                |
+| Graph Size (Triplets Graph)           | 734 nodes, 1064 edges           | 779 nodes, 967 edges |
+| Graph Size (Document Structure Graph) | **75 chunks, 1090 chunk edges** | Do not support       |
+| Indexing Time                         | **170s**                        | 210s                 |
+| Prompt Tokens                         | **375768**                      | 744990               |
+| Completion Tokens                     | **41797**                       | 227230               |
+| Total Tokens                          | **417565**                      | 972220               |
 
 
 #### Querying Performance
@@ -370,6 +373,12 @@ Knowledge Graph = Triplets Graph + Document Structure Graph
 
 <p align="left">
   <img src={'/img/chat_knowledge/graph_rag/image_graphrag_0_6_1.png'} width="1000px"/>
+</p>
+
+Thanks to the Document Structure Graph, GraphRAG now can provide references to the original text when answering:
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/doc_structure_graph_demo.png'} width="1000px"/>
 </p>
 
 How?

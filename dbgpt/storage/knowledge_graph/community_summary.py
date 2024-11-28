@@ -186,11 +186,22 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
+        import time
+
         await self._aload_document_graph(chunks)
+        time_stop_1 = time.time()
         await self._aload_triplet_graph(chunks)
+        time_stop_2 = time.time()
         await self._community_store.build_communities(
             batch_size=self._community_build_batch_size
         )
+        time_stop_3 = time.time()
+        time_slot_1 = time_stop_2 - time_stop_1
+        time_slot_2 = time_stop_3 - time_stop_2
+        with open("cache.txt", "a") as f:
+            f.write(
+                f"_aload_triplet_graph: {time_slot_1} | build_communities: {time_slot_2}\n\n"
+            )
 
         return [chunk.chunk_id for chunk in chunks]
 

@@ -90,6 +90,9 @@ class GraphExtractor(LLMExtractor):
         n_texts = len(texts)
 
         for batch_idx in range(0, n_texts, batch_size):
+            import time
+
+            time_stop_1 = time.time()
             start_idx = batch_idx
             end_idx = min(start_idx + batch_size, n_texts)
             batch_texts = texts[start_idx:end_idx]
@@ -117,6 +120,10 @@ class GraphExtractor(LLMExtractor):
                 ):
                     raise RuntimeError(f"Invalid graph extraction result: {graphs}")
                 graphs_list[idx] = graphs
+            time_stop_2 = time.time()
+            time_slot_1 = time_stop_2 - time_stop_1
+            with open("cache.txt", "a") as f:
+                f.write(f"batch_extract: {time_slot_1}\n")
 
         assert all(x is not None for x in graphs_list), "All positions should be filled"
         return graphs_list
