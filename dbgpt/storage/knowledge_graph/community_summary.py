@@ -74,7 +74,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=20,
         description="Batch size of triplets extraction from the text",
     )
-    community_build_batch_size: int = Field(
+    community_summary_batch_size: int = Field(
         default=20,
         description="Batch size of parallel community building process",
     )
@@ -133,10 +133,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.knowledge_graph_extraction_batch_size,
             )
         )
-        self._community_build_batch_size = int(
+        self._community_summary_batch_size = int(
             os.getenv(
-                "COMMUNITY_BUILD_BATCH_SIZE",
-                config.community_build_batch_size,
+                "COMMUNITY_SUMMARY_BATCH_SIZE",
+                config.community_summary_batch_size,
             )
         )
 
@@ -190,7 +190,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities(
-            batch_size=self._community_build_batch_size
+            batch_size=self._community_summary_batch_size
         )
 
         return [chunk.chunk_id for chunk in chunks]
