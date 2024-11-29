@@ -234,7 +234,7 @@ First, create a knowledge base using the `Knowledge Graph` type.
   <img src={'/img/chat_knowledge/graph_rag/create_knowledge_graph.png'} width="1000px"/>
 </p>
 
-Then, upload the documents ([test_graph_rag.md](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/test_files/test_graph_rag.md)) and process them automatically (markdown header by default).
+Then, upload the documents ([graphrag-test.md](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/test_files/graphrag-test.md)) and process them automatically (markdown header by default).
 
 <p align="left">
   <img src={'/img/chat_knowledge/graph_rag/upload_file.png'} width="1000px"/>
