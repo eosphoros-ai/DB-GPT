@@ -38,8 +38,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     password: Optional[str] = Field(
         default=None,
         description=(
-            "The password of vector store, "
-            "if not set, will use the default password."
+            "The password of vector store, if not set, will use the default password."
         ),
     )
     extract_topk: int = Field(
@@ -74,6 +73,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     knowledge_graph_extraction_batch_size: int = Field(
         default=20,
         description="Batch size of triplets extraction from the text",
+    )
+    community_summary_batch_size: int = Field(
+        default=20,
+        description="Batch size of parallel community building process",
     )
 
 
@@ -130,6 +133,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.knowledge_graph_extraction_batch_size,
             )
         )
+        self._community_summary_batch_size = int(
+            os.getenv(
+                "COMMUNITY_SUMMARY_BATCH_SIZE",
+                config.community_summary_batch_size,
+            )
+        )
 
         def extractor_configure(name: str, cfg: VectorStoreConfig):
             cfg.name = name
@@ -177,9 +186,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
+
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
-        await self._community_store.build_communities()
+        await self._community_store.build_communities(
+            batch_size=self._community_summary_batch_size
+        )
 
         return [chunk.chunk_id for chunk in chunks]
 
@@ -230,6 +242,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             [chunk.content for chunk in chunks],
             batch_size=self._triplet_extraction_batch_size,
         )
+        if not graphs_list:
+            raise ValueError("No graphs extracted from the chunks")
 
         # Upsert the graphs into the graph store
         for idx, graphs in enumerate(graphs_list):

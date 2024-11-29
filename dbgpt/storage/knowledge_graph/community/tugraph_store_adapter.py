@@ -356,7 +356,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             return
 
         # Create the graph schema
-        def _format_graph_propertity_schema(
+        def _format_graph_property_schema(
             name: str,
             type: str = "STRING",
             optional: bool = False,
@@ -390,9 +390,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for document vertex
         document_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.DOCUMENT, graph_properties=document_proerties
@@ -400,10 +400,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for chunk vertex
         chunk_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
-            _format_graph_propertity_schema("content", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("content", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
@@ -411,10 +411,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for entity vertex
         vertex_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
-            _format_graph_propertity_schema("description", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("description", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
@@ -422,10 +422,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for relation edge
         edge_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_chunk_id", "STRING", True, True),
-            _format_graph_propertity_schema("description", "STRING", True, True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_chunk_id", "STRING", True, True),
+            _format_graph_property_schema("description", "STRING", True, True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.RELATION, graph_properties=edge_proerties
@@ -433,9 +433,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for include edge
         include_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("description", "STRING", True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("description", "STRING", True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.INCLUDE, graph_properties=include_proerties
@@ -443,9 +443,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for next edge
         next_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("description", "STRING", True),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("description", "STRING", True),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.NEXT, graph_properties=next_proerties
