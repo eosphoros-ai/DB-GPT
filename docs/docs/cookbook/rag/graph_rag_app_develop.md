@@ -256,16 +256,17 @@ Performance testing is based on the `gpt-4o-mini` model.
 
 #### Indexing Performance
 
-|                                       | DB-GPT                          | GraphRAG(microsoft)  |
-| ------------------------------------- | ------------------------------- | -------------------- |
-| Document Tokens                       | 42631                           | 42631                |
-| Graph Size (Triplets Graph)           | 734 nodes, 1064 edges           | 779 nodes, 967 edges |
-| Graph Size (Document Structure Graph) | **75 chunks, 1090 chunk edges** | Do not support       |
-| Indexing Time                         | **170s**                        | 210s                 |
-| Prompt Tokens                         | **375768**                      | 744990               |
-| Completion Tokens                     | **41797**                       | 227230               |
-| Total Tokens                          | **417565**                      | 972220               |
-
+|                     | DB-GPT                      | GraphRAG(microsoft)  |
+| ------------------- | --------------------------- | -------------------- |
+| Doc Tokens          | 42631                       | 42631                |
+| Triplets Graph      | 734 nodes, 1064 edges       | 779 nodes, 967 edges |
+| Doc Structure Graph | 75 chunks, 1090 chunk edges | Do not support       |
+| Prompt Tokens       | 375768                      | 744990               |
+| Completion Tokens   | 41797                       | 227230               |
+| Total Tokens        | 417565                      | 972220               |
+| Indexing Time       | 170s                        | 210s                 |
+| Global Search       | 10S                         | 40S                  |
+| Local Search        | 15S                         | 15S                  |
 
 #### Querying Performance
 
