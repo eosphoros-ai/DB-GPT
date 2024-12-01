@@ -155,7 +155,7 @@ class EmbeddingAssemblerOperator(AssemblerOperator[Knowledge, List[Chunk]]):
             IOField.build_from(
                 _("Chunks"),
                 "chunks",
-                Chunk,
+                List[Chunk],
                 description=_(
                     "The assembled chunks, it has been persisted to vector " "store."
                 ),

@@ -21,10 +21,10 @@ CHROMA_COLLECTION_NAME = "langchain"
 
 
 @register_resource(
-    _("Chroma Vector Store"),
-    "chroma_vector_store",
+    _("Chroma Config"),
+    "chroma_vector_config",
     category=ResourceCategory.VECTOR_STORE,
-    description=_("Chroma vector store."),
+    description=_("Chroma vector store config."),
     parameters=[
         *_COMMON_PARAMETERS,
         Parameter.build_from(
@@ -53,6 +53,22 @@ class ChromaVectorConfig(VectorStoreConfig):
     )
 
 
+@register_resource(
+    _("Chroma Vector Store"),
+    "chroma_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("Chroma vector store."),
+    parameters=[
+        Parameter.build_from(
+            _("Chroma Config"),
+            "vector_store_config",
+            ChromaVectorConfig,
+            description=_("the chroma config of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class ChromaStore(VectorStoreBase):
     """Chroma vector store."""
 
