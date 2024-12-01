@@ -20,7 +20,7 @@ class KnowledgeOperator(MapOperator[str, Knowledge]):
     """Knowledge Factory Operator."""
 
     metadata = ViewMetadata(
-        label=_("Knowledge Operator"),
+        label=_("Knowledge Loader Operator"),
         name="knowledge_operator",
         category=OperatorCategory.RAG,
         description=_(
