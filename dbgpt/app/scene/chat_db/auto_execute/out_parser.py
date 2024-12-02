@@ -3,6 +3,8 @@ import logging
 import xml.etree.ElementTree as ET
 from typing import Dict, NamedTuple
 
+import numpy as np
+import pandas as pd
 import sqlparse
 
 from dbgpt._private.config import Config
@@ -63,6 +65,44 @@ class DbChatOutputParser(BaseOutputParser):
             except Exception as e:
                 logger.error(f"json load failed:{clean_str}")
                 return SqlAction("", clean_str, "")
+    
+    def parse_vector_data_with_pca(self, df):
+        try:
+            from sklearn.decomposition import PCA
+        except ImportError:
+            raise ImportError(
+                "Could not import scikit-learn package. "
+                "Please install it with `pip install scikit-learn`."
+            )
+        
+        _, ncol = df.shape
+        vec_col = -1
+        for i_col in range(ncol):
+            if isinstance(df.iloc[:, i_col][0], list):
+                vec_col = i_col
+                break
+            elif isinstance(df.iloc[:, i_col][0], bytes):
+                sample = df.iloc[:, i_col][0]
+                if isinstance(json.loads(sample.decode()), list):
+                    vec_col = i_col
+                    break
+        if vec_col == -1:
+            return df
+        df.iloc[:, vec_col] = df.iloc[:, vec_col].apply(lambda x: json.loads(x.decode()))
+        X = np.array(df.iloc[:, vec_col].tolist())
+
+        pca = PCA(n_components=2)
+        X_pca = pca.fit_transform(X)
+
+        new_df = pd.DataFrame()
+        for i_col in range(ncol):
+            if i_col == vec_col:
+                continue
+            col_name = df.columns[i_col]
+            new_df[col_name] = df[col_name]
+        new_df["__x"] = [pos[0] for pos in X_pca]
+        new_df["__y"] = [pos[1] for pos in X_pca]
+        return new_df
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
         param = {}
@@ -75,6 +115,11 @@ class DbChatOutputParser(BaseOutputParser):
 
             df = data(prompt_response.sql)
             param["type"] = prompt_response.display
+            
+            if param["type"] == "response_vector_chart":
+                df = self.parse_vector_data_with_pca(df)
+                param["type"] = "response_scatter_chart"
+
             param["sql"] = prompt_response.sql
             param["data"] = json.loads(
                 df.to_json(orient="records", date_format="iso", date_unit="s")
