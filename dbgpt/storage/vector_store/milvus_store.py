@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @register_resource(
-    _("Milvus Vector Store"),
-    "milvus_vector_store",
+    _("Milvus Config"),
+    "milvus_vector_config",
     category=ResourceCategory.VECTOR_STORE,
     parameters=[
         *_COMMON_PARAMETERS,
@@ -91,7 +91,7 @@ logger = logging.getLogger(__name__)
             default="vector",
         ),
     ],
-    description=_("Milvus vector store."),
+    description=_("Milvus vector config."),
 )
 class MilvusVectorConfig(VectorStoreConfig):
     """Milvus vector store config."""
@@ -139,6 +139,22 @@ class MilvusVectorConfig(VectorStoreConfig):
     )
 
 
+@register_resource(
+    _("Milvus Vector Store"),
+    "milvus_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("Milvus vector store."),
+    parameters=[
+        Parameter.build_from(
+            _("Milvus Config"),
+            "vector_store_config",
+            MilvusVectorConfig,
+            description=_("the milvus config of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class MilvusStore(VectorStoreBase):
     """Milvus vector store."""
 

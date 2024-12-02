@@ -232,6 +232,7 @@ class PDFKnowledge(Knowledge):
                         "page": page,
                         "type": "excel",
                         "title": file_title,
+                        "source": self.file_path,
                     }
                     page_documents.append(
                         Document(
@@ -244,6 +245,7 @@ class PDFKnowledge(Knowledge):
                         "page": page,
                         "type": "text",
                         "title": file_title,
+                        "source": self.file_path,
                     }
                     page_documents.append(
                         Document(content=inside_content, metadata=content_metadata)
