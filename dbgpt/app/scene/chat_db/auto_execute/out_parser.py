@@ -65,7 +65,7 @@ class DbChatOutputParser(BaseOutputParser):
             except Exception as e:
                 logger.error(f"json load failed:{clean_str}")
                 return SqlAction("", clean_str, "")
-    
+
     def parse_vector_data_with_pca(self, df):
         try:
             from sklearn.decomposition import PCA
@@ -74,7 +74,7 @@ class DbChatOutputParser(BaseOutputParser):
                 "Could not import scikit-learn package. "
                 "Please install it with `pip install scikit-learn`."
             )
-        
+
         _, ncol = df.shape
         vec_col = -1
         for i_col in range(ncol):
@@ -88,7 +88,9 @@ class DbChatOutputParser(BaseOutputParser):
                     break
         if vec_col == -1:
             return df
-        df.iloc[:, vec_col] = df.iloc[:, vec_col].apply(lambda x: json.loads(x.decode()))
+        df.iloc[:, vec_col] = df.iloc[:, vec_col].apply(
+            lambda x: json.loads(x.decode())
+        )
         X = np.array(df.iloc[:, vec_col].tolist())
 
         pca = PCA(n_components=2)
@@ -115,7 +117,7 @@ class DbChatOutputParser(BaseOutputParser):
 
             df = data(prompt_response.sql)
             param["type"] = prompt_response.display
-            
+
             if param["type"] == "response_vector_chart":
                 df = self.parse_vector_data_with_pca(df)
                 param["type"] = "response_scatter_chart"

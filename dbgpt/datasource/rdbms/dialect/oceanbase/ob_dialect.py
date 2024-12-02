@@ -7,16 +7,18 @@ from sqlalchemy.dialects import registry
 from sqlalchemy.dialects.mysql import pymysql
 from sqlalchemy.dialects.mysql.reflection import MySQLTableDefinitionParser, _re_compile
 
+
 class OceanBaseTableDefinitionParser(MySQLTableDefinitionParser):
     """OceanBase table definition parser."""
+
     def __init__(self, dialect, preparer, *, default_schema=None):
+        """Initialize OceanBaseTableDefinitionParser."""
         MySQLTableDefinitionParser.__init__(self, dialect, preparer)
         self.default_schema = default_schema
 
     def _prep_regexes(self):
         super()._prep_regexes()
 
-        ### this block is copied from MySQLTableDefinitionParser._prep_regexes
         _final = self.preparer.final_quote
         quotes = dict(
             zip(
@@ -31,7 +33,6 @@ class OceanBaseTableDefinitionParser(MySQLTableDefinitionParser):
                 ],
             )
         )
-        ### end of block
 
         self._re_key = _re_compile(
             r"  "
@@ -75,9 +76,12 @@ class OceanBaseTableDefinitionParser(MySQLTableDefinitionParser):
                 # do not handle partition
                 return ret
             # logger.info(f"{tp} {spec}")
-            if tp == "fk_constraint":
-                if len(spec["table"]) == 2 and spec["table"][0] == self.default_schema:
-                    spec["table"] = spec["table"][1:]
+            if (
+                tp == "fk_constraint"
+                and len(spec["table"]) == 2
+                and spec["table"][0] == self.default_schema
+            ):
+                spec["table"] = spec["table"][1:]
             if spec.get("onupdate", "").lower() == "restrict":
                 spec["onupdate"] = None
             if spec.get("ondelete", "").lower() == "restrict":
@@ -87,9 +91,11 @@ class OceanBaseTableDefinitionParser(MySQLTableDefinitionParser):
 
 class OBDialect(pymysql.MySQLDialect_pymysql):
     """OBDialect expend."""
+
     supports_statement_cache = True
 
     def __init__(self, **kwargs):
+        """Initialize OBDialect."""
         try:
             from pyobvector import VECTOR  # type: ignore
         except ImportError:
@@ -114,10 +120,10 @@ class OBDialect(pymysql.MySQLDialect_pymysql):
         """Ob set fixed version ending compatibility issue."""
         self.server_version_info = (5, 7, 19)
         return super(OBDialect, self).get_isolation_level(dbapi_connection)
-    
+
     @util.memoized_property
     def _tabledef_parser(self):
-        """return the MySQLTableDefinitionParser, generate if needed.
+        """Return the MySQLTableDefinitionParser, generate if needed.
 
         The deferred creation ensures that the dialect has
         retrieved server version information first.

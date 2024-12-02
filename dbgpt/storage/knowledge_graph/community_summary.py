@@ -186,7 +186,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
-
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities(
