@@ -414,11 +414,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for chunk vertex
         chunk_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
-            _format_graph_propertity_schema("content", "STRING", True, True),
-            _format_graph_propertity_schema("embedding", "FLOAT_VECTOR", True, False),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("content", "STRING", True, True),
+            _format_graph_property_schema("embedding", "FLOAT_VECTOR", True, False),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
@@ -426,11 +426,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for entity vertex
         vertex_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_propertity_schema("id", "STRING", False),
-            _format_graph_propertity_schema("name", "STRING", False),
-            _format_graph_propertity_schema("_community_id", "STRING", True, True),
-            _format_graph_propertity_schema("description", "STRING", True, True),
-            _format_graph_propertity_schema("embedding", "FLOAT_VECTOR", True, False),
+            _format_graph_property_schema("id", "STRING", False),
+            _format_graph_property_schema("name", "STRING", False),
+            _format_graph_property_schema("_community_id", "STRING", True, True),
+            _format_graph_property_schema("description", "STRING", True, True),
+            _format_graph_property_schema("embedding", "FLOAT_VECTOR", True, False),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
