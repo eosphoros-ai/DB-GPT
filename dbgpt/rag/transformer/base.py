@@ -22,6 +22,17 @@ class TransformerBase:
 class EmbedderBase(TransformerBase, ABC):
     """Embedder base class."""
 
+    @abstractmethod
+    async def embed(self, text: str) -> List[float]:
+        """Embed vector from text."""
+
+    @abstractmethod
+    async def batch_embed(
+        self,
+        texts: List[str],
+    ) -> List[List[float]]:
+        """Batch embed vectors from texts."""
+
 
 class SummarizerBase(TransformerBase, ABC):
     """Summarizer base class."""

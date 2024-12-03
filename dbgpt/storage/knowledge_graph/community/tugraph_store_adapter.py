@@ -145,6 +145,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "_document_id": "0",
                 "_chunk_id": "0",
                 "_community_id": "0",
+                "embedding": str(entity.get_prop("embedding")),
             }
             for entity in entities
         ]
@@ -153,7 +154,13 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             f'"{GraphElemType.ENTITY.value}", '
             f"[{self._convert_dict_to_str(entity_list)}])"
         )
+        create_vector_index_query = (
+            f"CALL db.addVertexVectorIndex("
+            f'"{GraphElemType.ENTITY.value}", "embedding", '
+            "{dimension: 1536})"
+        )
         self.graph_store.conn.run(query=entity_query)
+        self.graph_store.conn.run(query=create_vector_index_query)
 
     def upsert_edge(
         self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str
@@ -189,6 +196,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "id": self._escape_quotes(chunk.vid),
                 "name": self._escape_quotes(chunk.name),
                 "content": self._escape_quotes(chunk.get_prop("content")),
+                "embedding": str(chunk.get_prop("embedding")),
             }
             for chunk in chunks
         ]
@@ -198,7 +206,13 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             f'"{GraphElemType.CHUNK.value}", '
             f"[{self._convert_dict_to_str(chunk_list)}])"
         )
+        create_vector_index_query = (
+            f"CALL db.addVertexVectorIndex("
+            f'"{GraphElemType.CHUNK.value}", "embedding", '
+            "{dimension: 1536})"
+        )
         self.graph_store.conn.run(query=chunk_query)
+        self.graph_store.conn.run(query=create_vector_index_query)
 
     def upsert_documents(
         self, documents: Iterator[Union[Vertex, ParagraphChunk]]
@@ -400,10 +414,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for chunk vertex
         chunk_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_property_schema("id", "STRING", False),
-            _format_graph_property_schema("name", "STRING", False),
-            _format_graph_property_schema("_community_id", "STRING", True, True),
-            _format_graph_property_schema("content", "STRING", True, True),
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("_community_id", "STRING", True, True),
+            _format_graph_propertity_schema("content", "STRING", True, True),
+            _format_graph_propertity_schema("embedding", "FLOAT_VECTOR", True, False),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
@@ -411,10 +426,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         # Create the graph label for entity vertex
         vertex_proerties: List[Dict[str, Union[str, bool]]] = [
-            _format_graph_property_schema("id", "STRING", False),
-            _format_graph_property_schema("name", "STRING", False),
-            _format_graph_property_schema("_community_id", "STRING", True, True),
-            _format_graph_property_schema("description", "STRING", True, True),
+            _format_graph_propertity_schema("id", "STRING", False),
+            _format_graph_propertity_schema("name", "STRING", False),
+            _format_graph_propertity_schema("_community_id", "STRING", True, True),
+            _format_graph_propertity_schema("description", "STRING", True, True),
+            _format_graph_propertity_schema("embedding", "FLOAT_VECTOR", True, False),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
@@ -531,7 +547,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
     def explore(
         self,
-        subs: List[str],
+        subs: Union[List[str], List[List[float]]],
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
@@ -560,10 +576,26 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 rel = f"<-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
             else:
                 rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
+            
+            if isinstance(subs, List[str]):
+                header = f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+            else:
+                for sub in subs:
+                    vector = str(sub);
+                    similarity_search = (
+                        f"CALL db.vertexVectorKnnSearch("
+                        f"'{GraphElemType.ENTITY.value}','embedding', {vector}, "
+                        "{top_k:2, hnsw_ef_search:10})"
+                        "YIELD node RETURN node.id AS id"
+                    )
+                    result_list = self.graph_store.conn.run(query=similarity_search)
+                    final_list = final_list + result_list
+                header = f"WHERE n.id IN {[(record["id"]) for record in final_list]} "
+
             query = (
                 f"MATCH p=(n:{GraphElemType.ENTITY.value})"
                 f"{rel}(m:{GraphElemType.ENTITY.value}) "
-                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+                f"{header}"
                 f"RETURN p {limit_string}"
             )
             return self.query(query=query, white_list=["description"])
@@ -583,18 +615,49 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             graph = MemoryGraph()
 
             # Check if the entities exist in the graph
+
+            if isinstance(subs, List[str]):
+                header = f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+            else:
+                for sub in subs:
+                    vector = str(sub);
+                    similarity_search = (
+                        f"CALL db.vertexVectorKnnSearch("
+                        f"'{GraphElemType.ENTITY.value}','embedding', {vector}, "
+                        "{top_k:2, hnsw_ef_search:10})"
+                        "YIELD node RETURN node.id AS id"
+                    )
+                    result_list = self.graph_store.conn.run(query=similarity_search)
+                    final_list = final_list + result_list
+                header = f"WHERE n.id IN {[(record["id"]) for record in final_list]} "
+            
             check_entity_query = (
                 f"MATCH (n:{GraphElemType.ENTITY.value}) "
-                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+                f"{header}" 
                 "RETURN n"
             )
             if self.query(check_entity_query):
                 # Query the leaf chunks in the chain from documents to chunks
+                if isinstance(subs, List[str]):
+                    header = f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
+                else:
+                    for sub in subs:
+                        vector = str(sub);
+                        similarity_search = (
+                            f"CALL db.vertexVectorKnnSearch("
+                            f"'{GraphElemType.ENTITY.value}','embedding', {vector}, "
+                            "{top_k:2, hnsw_ef_search:10})"
+                            "YIELD node RETURN node.name AS name"
+                        )
+                        result_list = self.graph_store.conn.run(query=similarity_search)
+                        final_list = final_list + result_list
+                header = f"WHERE m.name IN {[(record["name"]) for record in final_list]} "
+                
                 leaf_chunk_query = (
                     f"MATCH p=(n:{GraphElemType.CHUNK.value})-"
                     f"[r:{GraphElemType.INCLUDE.value}]->"
                     f"(m:{GraphElemType.ENTITY.value})"
-                    f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
+                    f"{header} "
                     f"RETURN n"
                 )
                 graph_of_leaf_chunks = self.query(
@@ -628,9 +691,22 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         )
                     )
             else:
-                _subs_condition = " OR ".join(
-                    [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
-                )
+                if isinstance(subs, List[str]):
+                    _subs_condition = " OR ".join(
+                        [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
+                    )
+                else:
+                    for sub in subs:
+                        vector = str(sub);
+                        similarity_search = (
+                            f"CALL db.vertexVectorKnnSearch("
+                            f"'{GraphElemType.CHUNK.value}','embedding', {vector}, "
+                            "{top_k:2, hnsw_ef_search:10})"
+                            "YIELD node RETURN node.name AS name"
+                        )
+                        result_list = self.graph_store.conn.run(query=similarity_search)
+                        final_list = final_list + result_list
+                    _subs_condition = f"m.name IN {[(record["name"]) for record in final_list]} "
 
                 # Query the chain from documents to chunks,
                 # document -> chunk -> chunk -> chunk -> ... -> chunk

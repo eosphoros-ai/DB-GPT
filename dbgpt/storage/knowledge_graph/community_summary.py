@@ -9,6 +9,7 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
+from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -78,6 +79,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=20,
         description="Batch size of parallel community building process",
     )
+    similar_search_enabled: bool = Field(
+        default=False,
+        description="Enable the similarity search",
+    )
 
 
 class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
@@ -139,6 +144,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.community_summary_batch_size,
             )
         )
+        self._similar_search_enabled = (
+            os.environ["SIMILAR_SEARCH_ENABLED"].lower() == "true"
+            if "SIMILAR_SEARCH_ENABLED" in os.environ
+            else config.similar_search_enabled
+        )
 
         def extractor_configure(name: str, cfg: VectorStoreConfig):
             cfg.name = name
@@ -159,6 +169,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 extractor_configure,
             ),
         )
+
+        self._garph_embedder = GraphEmbedder()
 
         def community_store_configure(name: str, cfg: VectorStoreConfig):
             cfg.name = name
@@ -243,6 +255,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         )
         if not graphs_list:
             raise ValueError("No graphs extracted from the chunks")
+
+        graphs_list = await self._garph_embedder.batch_embed(graphs_list)
 
         # Upsert the graphs into the graph store
         for idx, graphs in enumerate(graphs_list):
@@ -333,7 +347,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        keywords: List[str] = await self._keyword_extractor.extract(text)
+        # Vector similarity search
+        similar_search_enabled = self._similar_search_enabled
+
+        if similar_search_enabled:
+            keywords: List[List[float]] = await self._garph_embedder.embed(text)
+        else:
+            keywords: List[str] = await self._keyword_extractor.extract(text)
+        
         subgraph = None
         subgraph_for_doc = None
 
@@ -390,6 +411,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._keyword_extractor.truncate()
         logger.info("Truncate triplet extractor")
         self._graph_extractor.truncate()
+        logger.info("Truncate graph embedder")
+        self._garph_embedder.truncate()
         return [self._config.name]
 
     def delete_vector_name(self, index_name: str):
@@ -402,6 +425,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         logger.info("Drop triplet extractor")
         self._graph_extractor.drop()
+
+        logger.info("Drop graph embedder")
+        self._garph_embedder.drop()
 
 
 HYBRID_SEARCH_PT = """
