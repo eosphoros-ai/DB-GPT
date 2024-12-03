@@ -79,6 +79,8 @@ LLM_MODEL_CONFIG = {
     "ollama_proxyllm": "ollama_proxyllm",
     # https://platform.deepseek.com/api-docs/
     "deepseek_proxyllm": "deepseek_proxyllm",
+    # https://docs.siliconflow.cn/quickstart
+    "silicon_flow_proxyllm": "silicon_flow_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
@@ -183,7 +185,20 @@ LLM_MODEL_CONFIG = {
     "qwen2.5-coder-1.5b-instruct": os.path.join(
         MODEL_PATH, "Qwen2.5-Coder-1.5B-Instruct"
     ),
+    "qwen2.5-coder-32b-instruct": os.path.join(
+        MODEL_PATH, "Qwen2.5-Coder-32B-Instruct"
+    ),
+    "qwen2.5-coder-14b-instruct": os.path.join(
+        MODEL_PATH, "Qwen2.5-Coder-14B-Instruct"
+    ),
+    "qwen2.5-coder-3b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-Coder-3B-Instruct"),
     "qwen2.5-coder-7b-instruct": os.path.join(MODEL_PATH, "Qwen2.5-Coder-7B-Instruct"),
+    "qwen2.5-coder-1.5b-instruct": os.path.join(
+        MODEL_PATH, "Qwen2.5-Coder-1.5B-Instruct"
+    ),
+    "qwen2.5-coder-0.5b-instruct": os.path.join(
+        MODEL_PATH, "Qwen2.5-Coder-0.5B-Instruct"
+    ),
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
     # wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf

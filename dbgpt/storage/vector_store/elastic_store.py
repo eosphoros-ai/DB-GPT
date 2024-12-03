@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @register_resource(
-    _("ElasticSearch Vector Store"),
-    "elasticsearch_vector_store",
+    _("Elastic Vector Config"),
+    "elasticsearch_vector_config",
     category=ResourceCategory.VECTOR_STORE,
     parameters=[
         *_COMMON_PARAMETERS,
@@ -72,7 +72,7 @@ logger = logging.getLogger(__name__)
             default="index_name_test",
         ),
     ],
-    description=_("Elasticsearch vector store."),
+    description=_("Elasticsearch vector config."),
 )
 class ElasticsearchVectorConfig(VectorStoreConfig):
     """Elasticsearch vector store config."""
@@ -116,6 +116,22 @@ class ElasticsearchVectorConfig(VectorStoreConfig):
     )
 
 
+@register_resource(
+    _("Elastic Vector Store"),
+    "elastic_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("Elastic vector store."),
+    parameters=[
+        Parameter.build_from(
+            _("Elastic Config"),
+            "vector_store_config",
+            ElasticsearchVectorConfig,
+            description=_("the elastic config of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class ElasticStore(VectorStoreBase):
     """Elasticsearch vector store."""
 

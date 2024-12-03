@@ -44,6 +44,7 @@ export type IFlow = {
   admins?: string[];
   nick_name: string;
   state?: FlowState;
+  define_type?: string;
   error_message?: string;
 };
 

@@ -39,8 +39,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     password: Optional[str] = Field(
         default=None,
         description=(
-            "The password of vector store, "
-            "if not set, will use the default password."
+            "The password of vector store, if not set, will use the default password."
         ),
     )
     extract_topk: int = Field(
@@ -75,6 +74,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     knowledge_graph_extraction_batch_size: int = Field(
         default=20,
         description="Batch size of triplets extraction from the text",
+    )
+    community_summary_batch_size: int = Field(
+        default=20,
+        description="Batch size of parallel community building process",
     )
     similar_search_enabled: bool = Field(
         default=False,
@@ -135,6 +138,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.knowledge_graph_extraction_batch_size,
             )
         )
+        self._community_summary_batch_size = int(
+            os.getenv(
+                "COMMUNITY_SUMMARY_BATCH_SIZE",
+                config.community_summary_batch_size,
+            )
+        )
         self._similar_search_enabled = (
             os.environ["SIMILAR_SEARCH_ENABLED"].lower() == "true"
             if "SIMILAR_SEARCH_ENABLED" in os.environ
@@ -189,15 +198,17 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
+
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
-        await self._community_store.build_communities()
+        await self._community_store.build_communities(
+            batch_size=self._community_summary_batch_size
+        )
 
         return [chunk.chunk_id for chunk in chunks]
 
     async def _aload_document_graph(self, chunks: List[Chunk]) -> None:
         """Load the knowledge graph from the chunks.
-
         The chunks include the doc structure.
         """
         if not self._document_graph_enabled:
@@ -242,6 +253,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             [chunk.content for chunk in chunks],
             batch_size=self._triplet_extraction_batch_size,
         )
+        if not graphs_list:
+            raise ValueError("No graphs extracted from the chunks")
 
         graphs_list = await self._garph_embedder.batch_embed(graphs_list)
 

@@ -138,7 +138,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             ai_response = ai_response.replace("\t", "")
 
             # ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
-            print("un_stream ai response:", ai_response)
+            # print("un_stream ai response:", ai_response)
             return ai_response
         else:
             raise ValueError(

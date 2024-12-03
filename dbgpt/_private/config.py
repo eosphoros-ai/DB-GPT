@@ -78,17 +78,13 @@ class Config(metaclass=Singleton):
             )
 
         # xunfei spark
-        self.spark_api_version = os.getenv("XUNFEI_SPARK_API_VERSION")
-        self.spark_proxy_api_key = os.getenv("XUNFEI_SPARK_API_KEY")
-        self.spark_proxy_api_secret = os.getenv("XUNFEI_SPARK_API_SECRET")
-        self.spark_proxy_api_appid = os.getenv("XUNFEI_SPARK_APPID")
-        if self.spark_proxy_api_key and self.spark_proxy_api_secret:
-            os.environ["spark_proxyllm_proxy_api_key"] = self.spark_proxy_api_key
-            os.environ["spark_proxyllm_proxy_api_secret"] = self.spark_proxy_api_secret
-            os.environ["spark_proxyllm_proxyllm_backend"] = self.spark_api_version or ""
-            os.environ["spark_proxyllm_proxy_api_app_id"] = (
-                self.spark_proxy_api_appid or ""
-            )
+        self.spark_proxy_api_password = os.getenv("XUNFEI_SPARK_API_PASSWORD")
+        self.spark_proxy_api_model = os.getenv("XUNFEI_SPARK_API_MODEL")
+        if self.spark_proxy_api_model and self.spark_proxy_api_password:
+            os.environ[
+                "spark_proxyllm_proxy_api_password"
+            ] = self.spark_proxy_api_password
+            os.environ["spark_proxyllm_proxy_api_model"] = self.spark_proxy_api_model
 
         # baichuan proxy
         self.bc_proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")
@@ -134,6 +130,26 @@ class Config(metaclass=Singleton):
             )
             os.environ["deepseek_proxyllm_api_base"] = os.getenv(
                 "DEEPSEEK_API_BASE", "https://api.deepseek.com/v1"
+            )
+        self.claude_proxy_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if self.claude_proxy_api_key:
+            os.environ["claude_proxyllm_proxy_api_key"] = self.claude_proxy_api_key
+            os.environ["claude_proxyllm_proxyllm_backend"] = os.getenv(
+                "ANTHROPIC_MODEL_VERSION", "claude-3-5-sonnet-20241022"
+            )
+            os.environ["claude_proxyllm_api_base"] = os.getenv(
+                "ANTHROPIC_BASE_URL", "https://api.anthropic.com"
+            )
+        self.silicon_flow_proxy_api_key = os.getenv("SILICON_FLOW_API_KEY")
+        if self.silicon_flow_proxy_api_key:
+            os.environ[
+                "silicon_flow_proxyllm_proxy_api_key"
+            ] = self.silicon_flow_proxy_api_key
+            os.environ["silicon_flow_proxyllm_proxyllm_backend"] = os.getenv(
+                "SILICON_FLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+            )
+            os.environ["silicon_flow_proxyllm_api_base"] = os.getenv(
+                "SILICON_FLOW_API_BASE", "https://api.siliconflow.cn/v1"
             )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
@@ -336,6 +352,10 @@ class Config(metaclass=Singleton):
         self.SCHEDULER_ENABLED = (
             os.getenv("SCHEDULER_ENABLED", "True").lower() == "true"
         )
+        self.NOTE_BOOK_ENABLE: bool = (
+            os.getenv("NOTE_BOOK_ENABLE", "True").lower() == "true"
+        )
+        self.NOTE_BOOK_ROOT: str = os.getenv("NOTE_BOOK_ROOT", os.path.expanduser("~"))
 
     @property
     def local_db_manager(self) -> "ConnectorManager":

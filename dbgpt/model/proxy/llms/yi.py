@@ -1,8 +1,7 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
-from dbgpt.core import ModelRequest, ModelRequestContext
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 
 from .chatgpt import OpenAILLMClient
 
@@ -19,15 +18,7 @@ async def yi_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
     client: YiLLMClient = model.proxy_llm_client
-    context = ModelRequestContext(stream=True, user_name=params.get("user_name"))
-    request = ModelRequest.build_request(
-        client.default_model,
-        messages=params["messages"],
-        temperature=params.get("temperature"),
-        context=context,
-        max_new_tokens=params.get("max_new_tokens"),
-        stop=params.get("stop"),
-    )
+    request = parse_model_request(params, client.default_model, stream=True)
     async for r in client.generate_stream(request):
         yield r
 

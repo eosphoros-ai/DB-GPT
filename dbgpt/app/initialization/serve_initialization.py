@@ -123,10 +123,16 @@ def register_serve_apps(system_app: SystemApp, cfg: Config, webserver_port: int)
 
     # ################################ File Serve Register End ########################################
 
-    # ################################ Evaluate Serve Register Begin #######################################
+    # ################################ Evaluate Serve Register Begin ##################################
     from dbgpt.serve.evaluate.serve import Serve as EvaluateServe
 
     # Register serve Evaluate
     system_app.register(EvaluateServe)
+    # ################################ Evaluate Serve Register End ####################################
 
-    # ################################ Evaluate Serve Register End ########################################
+    # ################################ Libro Serve Register Begin #####################################
+    from dbgpt.serve.libro.serve import Serve as LibroServe
+
+    # Register serve libro
+    system_app.register(LibroServe)
+    # ################################ Libro Serve Register End #######################################

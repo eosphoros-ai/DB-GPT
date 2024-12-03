@@ -20,7 +20,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.6.1")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.6.2")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -462,7 +462,7 @@ def core_requires():
         "uvicorn",
         "shortuuid",
         # 2.0.29 not support duckdb now
-        "SQLAlchemy>=2.0.25,<2.0.29",
+        "SQLAlchemy>=2.0.25, <2.0.29",
         # for cache
         "msgpack",
         # for AWEL operator serialization
@@ -472,7 +472,7 @@ def core_requires():
         #  find a new toolkit.
         "pympler",
         "duckdb",
-        "duckdb-engine",
+        "duckdb-engine==0.9.1",
         # lightweight python library for scheduling jobs
         "schedule",
         # For datasource subpackage
@@ -517,13 +517,15 @@ def code_execution_requires():
     """
     pip install "dbgpt[code]"
 
-    Code execution dependencies. For building a docker image.
+    Code execution dependencies.
     """
     setup_spec.extras["code"] = setup_spec.extras["core"] + [
-        "pyzmq",
         "msgpack",
         # for AWEL operator serialization
         "cloudpickle",
+        "lyric-py>=0.1.4",
+        "lyric-py-worker>=0.1.4",
+        "lyric-js-worker>=0.1.4",
     ]
 
 
@@ -668,6 +670,13 @@ def openai_requires():
     setup_spec.extras["openai"] += setup_spec.extras["rag"]
 
 
+def proxy_requires():
+    """
+    pip install "dbgpt[proxy]"
+    """
+    setup_spec.extras["proxy"] = setup_spec.extras["openai"] + ["anthropic"]
+
+
 def gpt4all_requires():
     """
     pip install "dbgpt[gpt4all]"
@@ -716,6 +725,8 @@ def default_requires():
         "sentencepiece",
         "ollama",
         "qianfan",
+        "libro>=0.1.25",
+        "poetry",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]
@@ -723,6 +734,8 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
+    setup_spec.extras["default"] += setup_spec.extras["proxy"]
+    setup_spec.extras["default"] += setup_spec.extras["code"]
     if INCLUDE_QUANTIZATION:
         # Add quantization extra to default, default is True
         setup_spec.extras["default"] += setup_spec.extras["quantization"]
@@ -758,6 +771,7 @@ cache_requires()
 observability_requires()
 
 openai_requires()
+proxy_requires()
 # must be last
 default_requires()
 all_requires()

@@ -232,7 +232,8 @@ class BaseChat(ABC):
         )
         node = AppChatComposerOperator(
             model=self.llm_model,
-            temperature=float(self.prompt_template.temperature),
+            temperature=self._chat_param.get("temperature")
+            or float(self.prompt_template.temperature),
             max_new_tokens=int(self.prompt_template.max_new_tokens),
             prompt=self.prompt_template.prompt,
             message_version=self._message_version,
@@ -276,6 +277,8 @@ class BaseChat(ABC):
         )
         payload.span_id = span.span_id
         try:
+            msg = "<span style='color:red'>ERROR!</span> No response from model"
+            view_msg = msg
             async for output in self.call_streaming_operator(payload):
                 # Plugin research in result generation
                 msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(

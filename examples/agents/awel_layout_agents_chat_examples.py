@@ -15,6 +15,7 @@
 """
 
 import asyncio
+import os
 
 from dbgpt.agent import (
     AgentContext,
@@ -35,49 +36,56 @@ initialize_tracer("/tmp/agent_trace.jsonl", create_system_app=True)
 async def main():
     from dbgpt.model.proxy import OpenAILLMClient
 
-    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
-    context: AgentContext = AgentContext(conv_id="test456", gpts_app_name="信息析助手")
-
     agent_memory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="test456")
+    try:
+        from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
 
-    tools = ToolPack([baidu_search])
-    tool_engineer = (
-        await ToolAssistantAgent()
-        .bind(context)
-        .bind(LLMConfig(llm_client=llm_client))
-        .bind(agent_memory)
-        .bind(tools)
-        .build()
-    )
-    summarizer = (
-        await SummaryAssistantAgent()
-        .bind(context)
-        .bind(agent_memory)
-        .bind(LLMConfig(llm_client=llm_client))
-        .build()
-    )
+        llm_client = TongyiLLMClient(
+            model_alias="qwen2-72b-instruct",
+        )
 
-    manager = (
-        await WrappedAWELLayoutManager()
-        .bind(context)
-        .bind(agent_memory)
-        .bind(LLMConfig(llm_client=llm_client))
-        .build()
-    )
-    manager.hire([tool_engineer, summarizer])
+        context: AgentContext = AgentContext(conv_id="test456", gpts_app_name="信息析助手")
 
-    user_proxy = await UserProxyAgent().bind(context).bind(agent_memory).build()
+        tools = ToolPack([baidu_search])
+        tool_engineer = (
+            await ToolAssistantAgent()
+            .bind(context)
+            .bind(LLMConfig(llm_client=llm_client))
+            .bind(agent_memory)
+            .bind(tools)
+            .build()
+        )
+        summarizer = (
+            await SummaryAssistantAgent()
+            .bind(context)
+            .bind(agent_memory)
+            .bind(LLMConfig(llm_client=llm_client))
+            .build()
+        )
 
-    await user_proxy.initiate_chat(
-        recipient=manager,
-        reviewer=user_proxy,
-        message="查询北京今天天气",
-        # message="查询今天的最新热点财经新闻",
-        # message="Find papers on gpt-4 in the past three weeks on arxiv, and organize their titles, authors, and links into a markdown table",
-        # message="find papers on LLM applications from arxiv in the last month, create a markdown table of different domains.",
-    )
+        manager = (
+            await WrappedAWELLayoutManager()
+            .bind(context)
+            .bind(agent_memory)
+            .bind(LLMConfig(llm_client=llm_client))
+            .build()
+        )
+        manager.hire([tool_engineer, summarizer])
 
-    print(await agent_memory.gpts_memory.one_chat_completions("test456"))
+        user_proxy = await UserProxyAgent().bind(context).bind(agent_memory).build()
+
+        await user_proxy.initiate_chat(
+            recipient=manager,
+            reviewer=user_proxy,
+            message="查询北京今天天气",
+            # message="查询今天的最新热点财经新闻",
+            # message="Find papers on gpt-4 in the past three weeks on arxiv, and organize their titles, authors, and links into a markdown table",
+            # message="find papers on LLM applications from arxiv in the last month, create a markdown table of different domains.",
+        )
+
+    finally:
+        agent_memory.gpts_memory.clear(conv_id="test456")
 
 
 if __name__ == "__main__":

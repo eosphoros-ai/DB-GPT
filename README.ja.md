@@ -128,7 +128,7 @@ DB-GPTのアーキテクチャは以下の図に示されています：
 - [**高度な使用法**](https://docs.dbgpt.site/docs/application/advanced_tutorial/cli)
   - [SMMF](https://docs.dbgpt.site/docs/application/advanced_tutorial/smmf)
   - [ファインチューニング](https://docs.dbgpt.site/docs/application/fine_tuning_manual/dbgpt_hub)
-  - [AWEL](https://docs.dbgpt.site/docs/latest/awel/tutorial)
+  - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
 
 ## 特徴
 
