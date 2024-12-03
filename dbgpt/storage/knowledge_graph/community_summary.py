@@ -186,7 +186,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
-
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities(
@@ -197,6 +196,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def _aload_document_graph(self, chunks: List[Chunk]) -> None:
         """Load the knowledge graph from the chunks.
+
         The chunks include the doc structure.
         """
         if not self._document_graph_enabled:
