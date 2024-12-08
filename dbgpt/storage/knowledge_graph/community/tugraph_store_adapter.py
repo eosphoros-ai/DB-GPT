@@ -42,6 +42,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         # Create the graph
         self.create_graph(self.graph_store.get_config().name)
 
+        # vector index create control
+        self._chunk_vector_index = False
+        self._entity_vector_index = False
+
     async def discover_communities(self, **kwargs) -> List[str]:
         """Run community discovery with leiden."""
         mg = self.query(
@@ -145,7 +149,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "_document_id": "0",
                 "_chunk_id": "0",
                 "_community_id": "0",
-                "embedding": str(entity.get_prop("embedding")),
+                "embedding": entity.get_prop("embedding"),
             }
             for entity in entities
         ]
@@ -157,10 +161,13 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         create_vector_index_query = (
             f"CALL db.addVertexVectorIndex("
             f'"{GraphElemType.ENTITY.value}", "embedding", '
-            "{dimension: 1536})"
+            "{dimension: 512})"
         )
         self.graph_store.conn.run(query=entity_query)
-        self.graph_store.conn.run(query=create_vector_index_query)
+
+        if not self._entity_vector_index :
+            self.graph_store.conn.run(query=create_vector_index_query)
+            self._entity_vector_index = True
 
     def upsert_edge(
         self, edges: Iterator[Edge], edge_type: str, src_type: str, dst_type: str
@@ -196,7 +203,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "id": self._escape_quotes(chunk.vid),
                 "name": self._escape_quotes(chunk.name),
                 "content": self._escape_quotes(chunk.get_prop("content")),
-                "embedding": str(chunk.get_prop("embedding")),
+                "embedding": chunk.get_prop("embedding"),
             }
             for chunk in chunks
         ]
@@ -209,10 +216,13 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         create_vector_index_query = (
             f"CALL db.addVertexVectorIndex("
             f'"{GraphElemType.CHUNK.value}", "embedding", '
-            "{dimension: 1536})"
+            "{dimension: 512})"
         )
         self.graph_store.conn.run(query=chunk_query)
-        self.graph_store.conn.run(query=create_vector_index_query)
+        
+        if not self._chunk_vector_index :
+            self.graph_store.conn.run(query=create_vector_index_query)
+            self._chunk_vector_index = True
 
     def upsert_documents(
         self, documents: Iterator[Union[Vertex, ParagraphChunk]]

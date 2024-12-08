@@ -2,6 +2,7 @@
 
 import logging
 import dashscope
+import json
 from http import HTTPStatus
 from abc import ABC
 from typing import List
@@ -28,19 +29,19 @@ class Text2Vector(EmbedderBase, ABC):
         """Batch embed vectors from texts."""
         results = []
         for text in texts:
-            vector = self._embed(text)
+            vector = await self._embed(text)
             results.extend(vector)
         return results
 
     async def _embed(self, text: str) -> List[float]:
         """Embed vector from text."""
         resp = dashscope.TextEmbedding.call(
-            model = dashscope.TextEmbedding.Models.text_embedding_v1,
-            input = text)
-        if resp.status_code == HTTPStatus.OK:
-            return list(resp.embeddings.embedding)
-        else:
-            return list(resp.embeddings.embedding)
+            model = dashscope.TextEmbedding.Models.text_embedding_v3,
+            input = text,
+            dimension = 512)
+        embeddings = resp.output['embeddings']
+        embedding = embeddings[0]['embedding']
+        return list(embedding)
 
     def truncate(self):
         """Do nothing by default."""
