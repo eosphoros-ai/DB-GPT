@@ -97,7 +97,20 @@ def space_list(request: KnowledgeSpaceRequest):
 @router.post("/knowledge/space/delete")
 def space_delete(request: KnowledgeSpaceRequest):
     print(f"/space/delete params:")
+    print(request.name)
     try:
+        # delete Files in 'pilot/data/
+        safe_space_name = os.path.basename(request.name)
+
+        # obtain absolute paths of uploaded space-docfiles
+        space_dir = os.path.abspath(
+            os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, safe_space_name)
+        )
+        try:
+            if os.path.exists(space_dir):
+                shutil.rmtree(space_dir)
+        except Exception as e:
+            print(e)
         return Result.succ(knowledge_space_service.delete_space(request.name))
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space delete error {e}")
