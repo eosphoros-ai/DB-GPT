@@ -120,12 +120,8 @@ OB_USER=root@test
 OB_DATABASE=test
 ## Optional
 # OB_PASSWORD=
-## Optional: SQL statements executed by OceanBase is recorded in the log file specified by {OB_SQL_DBG_LOG_PATH}.
-# OB_SQL_DBG_LOG_PATH={your-sql-dbg-log-dir}/sql.log
 ## Optional: If {OB_ENABLE_NORMALIZE_VECTOR} is set, the vector stored in OceanBase is normalized.
 # OB_ENABLE_NORMALIZE_VECTOR=True
-## Optional: If {OB_ENABLE_INDEX} is set, OceanBase will automatically create a vector index table.
-# OB_ENABLE_INDEX=True
 ```
  </TabItem>
 </Tabs>

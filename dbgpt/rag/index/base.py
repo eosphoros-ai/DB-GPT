@@ -196,16 +196,27 @@ class IndexStoreBase(ABC):
         Return:
             List[Chunk]: The similar documents.
         """
-        return self.similar_search_with_scores(text, topk, 0.0, filters)
+        return self.similar_search_with_scores(text, topk, 1.0, filters)
+
+    async def asimilar_search(
+        self,
+        query: str,
+        topk: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
+        """Async similar_search in vector database."""
+        return await blocking_func_to_async_no_executor(
+            self.similar_search, query, topk, filters
+        )
 
     async def asimilar_search_with_scores(
         self,
-        doc: str,
+        query: str,
         topk: int,
         score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        """Aynsc similar_search_with_score in vector database."""
+        """Async similar_search_with_score in vector database."""
         return await blocking_func_to_async_no_executor(
-            self.similar_search_with_scores, doc, topk, score_threshold, filters
+            self.similar_search_with_scores, query, topk, score_threshold, filters
         )

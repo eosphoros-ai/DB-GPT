@@ -5,8 +5,8 @@ import pytest
 from dbgpt.rag.knowledge.pdf import PDFKnowledge
 
 MOCK_PDF_PAGES = [
-    ("This is the content of the first page.", 0),
-    ("This is the content of the second page.", 1),
+    ("", 0),
+    ("", 1),
 ]
 
 
@@ -19,19 +19,19 @@ def mock_pdf_open_and_reader():
         for page in MOCK_PDF_PAGES
     ]
     with patch("builtins.open", mock_pdf_file):
-        with patch("pypdf.PdfReader", return_value=mock_reader) as mock:
+        with patch("pdfplumber.open", return_value=mock_reader) as mock:
             yield mock
 
 
 def test_load_from_pdf(mock_pdf_open_and_reader):
-    file_path = "test_document.pdf"
+    file_path = "test_document"
     knowledge = PDFKnowledge(file_path=file_path)
     documents = knowledge._load()
 
     assert len(documents) == len(MOCK_PDF_PAGES)
     for i, document in enumerate(documents):
         assert MOCK_PDF_PAGES[i][0] in document.content
-        assert document.metadata["source"] == file_path
-        assert document.metadata["page"] == MOCK_PDF_PAGES[i][1]
+        assert document.metadata["title"] == file_path
+        assert document.metadata["type"] == "text"
 
     #

@@ -22,7 +22,6 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 
 # TODO: Don't dependent on MixinLLMOperator
 from dbgpt.model.operators.llm_operator import MixinLLMOperator
-from dbgpt.serve.prompt.api.endpoints import get_service
 from dbgpt.util.i18n_utils import _
 
 from .... import ActionOutput
@@ -125,6 +124,12 @@ class WrappedAgentOperator(
             # Default single step transfer of information
             rely_messages=now_rely_messages,
             silent=input_value.silent,
+            memory=input_value.memory.structure_clone() if input_value.memory else None,
+            agent_context=input_value.agent_context,
+            llm_client=input_value.llm_client,
+            begin_agent=None,
+            last_speaker=self.agent,
+            already_started=True,
         )
 
 
@@ -291,6 +296,8 @@ class AWELAgentOperator(
 
         prompt_template = None
         if self.awel_agent.agent_prompt:
+            from dbgpt.serve.prompt.api.endpoints import get_service
+
             prompt_service = get_service()
             prompt_template = prompt_service.get_template(
                 self.awel_agent.agent_prompt.code

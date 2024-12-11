@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @register_resource(
-    _("Milvus Vector Store"),
-    "milvus_vector_store",
+    _("Milvus Config"),
+    "milvus_vector_config",
     category=ResourceCategory.VECTOR_STORE,
     parameters=[
         *_COMMON_PARAMETERS,
@@ -91,7 +91,7 @@ logger = logging.getLogger(__name__)
             default="vector",
         ),
     ],
-    description=_("Milvus vector store."),
+    description=_("Milvus vector config."),
 )
 class MilvusVectorConfig(VectorStoreConfig):
     """Milvus vector store config."""
@@ -139,6 +139,22 @@ class MilvusVectorConfig(VectorStoreConfig):
     )
 
 
+@register_resource(
+    _("Milvus Vector Store"),
+    "milvus_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("Milvus vector store."),
+    parameters=[
+        Parameter.build_from(
+            _("Milvus Config"),
+            "vector_store_config",
+            MilvusVectorConfig,
+            description=_("the milvus config of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class MilvusStore(VectorStoreBase):
     """Milvus vector store."""
 
@@ -457,9 +473,7 @@ class MilvusStore(VectorStoreBase):
                 self.vector_field = x.name
         # convert to milvus expr filter.
         milvus_filter_expr = self.convert_metadata_filters(filters) if filters else None
-        _, docs_and_scores = self._search(
-            query=text, topk=topk, expr=milvus_filter_expr
-        )
+        _, docs_and_scores = self._search(query=text, k=topk, expr=milvus_filter_expr)
         if any(score < 0.0 or score > 1.0 for _, score, id in docs_and_scores):
             logger.warning(
                 "similarity score need between" f" 0 and 1, got {docs_and_scores}"

@@ -1,4 +1,5 @@
 """Knowledge graph class."""
+
 import asyncio
 import logging
 import os
@@ -12,6 +13,8 @@ from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.community.base import GraphStoreAdapter
+from dbgpt.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
@@ -46,15 +49,19 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._model_name = config.model_name
         self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
-        self._graph_store = self.__init_graph_store(config)
+        self._graph_store: GraphStoreBase = self.__init_graph_store(config)
+        self._graph_store_apdater: GraphStoreAdapter = self.__init_graph_store_adapter()
 
-    def __init_graph_store(self, config) -> GraphStoreBase:
+    def __init_graph_store(self, config: BuiltinKnowledgeGraphConfig) -> GraphStoreBase:
         def configure(cfg: GraphStoreConfig):
             cfg.name = config.name
             cfg.embedding_fn = config.embedding_fn
 
         graph_store_type = os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
         return GraphStoreFactory.create(graph_store_type, configure)
+
+    def __init_graph_store_adapter(self):
+        return GraphStoreAdapterFactory.create(self._graph_store)
 
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
         """Get the knowledge graph config."""
@@ -63,10 +70,10 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist triplets to graph store."""
 
-        async def process_chunk(chunk):
+        async def process_chunk(chunk: Chunk):
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
-                self._graph_store.insert_triplet(*triplet)
+                self._graph_store_apdater.insert_triplet(*triplet)
             logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
             return chunk.chunk_id
 
@@ -89,7 +96,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         for chunk in chunks:
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
-                self._graph_store.insert_triplet(*triplet)
+                self._graph_store_apdater.insert_triplet(*triplet)
             logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         return [chunk.chunk_id for chunk in chunks]
 
@@ -116,7 +123,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store.explore(keywords, limit=topk).format()
+        subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()
+
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
         if not subgraph:
@@ -147,12 +155,12 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Query graph."""
-        return self._graph_store.get_full_graph(limit)
+        return self._graph_store_apdater.get_full_graph(limit)
 
     def truncate(self) -> List[str]:
         """Truncate knowledge graph."""
         logger.info(f"Truncate graph {self._config.name}")
-        self._graph_store.truncate()
+        self._graph_store_apdater.truncate()
 
         logger.info("Truncate keyword extractor")
         self._keyword_extractor.truncate()
@@ -165,10 +173,15 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
     def delete_vector_name(self, index_name: str):
         """Delete vector name."""
         logger.info(f"Drop graph {index_name}")
-        self._graph_store.drop()
+        self._graph_store_apdater.drop()
 
         logger.info("Drop keyword extractor")
         self._keyword_extractor.drop()
 
         logger.info("Drop triplet extractor")
         self._triplet_extractor.drop()
+
+    def delete_by_ids(self, ids: str) -> List[str]:
+        """Delete by ids."""
+        self._graph_store_apdater.delete_document(chunk_id=ids)
+        return []

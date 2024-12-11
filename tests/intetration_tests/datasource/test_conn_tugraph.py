@@ -1,4 +1,5 @@
 import pytest
+
 from dbgpt.datasource.conn_tugraph import TuGraphConnector
 
 # Set database connection parameters.
@@ -21,10 +22,10 @@ def connector():
 
 def test_get_table_names(connector):
     """Test retrieving table names from the graph database."""
-    table_names = connector.get_table_names()
+    vertex_tables, edge_tables = connector.get_table_names()
     # Verify the quantity of vertex and edge tables.
-    assert len(table_names["vertex_tables"]) == 5
-    assert len(table_names["edge_tables"]) == 8
+    assert len(vertex_tables) == 5
+    assert len(edge_tables) == 8
 
 
 def test_get_columns(connector):

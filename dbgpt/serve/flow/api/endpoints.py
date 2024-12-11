@@ -18,6 +18,7 @@ from ..service.service import Service, _parse_flow_template_from_json
 from ..service.variables_service import VariablesService
 from .schemas import (
     FlowDebugRequest,
+    FlowInfo,
     RefreshNodeRequest,
     ServeRequest,
     ServerResponse,
@@ -559,6 +560,49 @@ async def query_flow_templates(
         page_size,
     )
     return Result.succ(res)
+
+
+@router.get(
+    "/flow/notebook/file/path",
+    response_model=Result[FlowInfo],
+    dependencies=[Depends(check_api_key)],
+)
+async def flow_file_path(
+    flow_uid: str,
+    service: Service = Depends(get_service),
+) -> Result[FlowInfo]:
+    try:
+        return Result.succ(await service.get_flow_files(flow_uid))
+    except Exception as e:
+        return Result.failed(f"获取Flow文件异常！{str(e)}")
+
+
+# @router.get(
+#     "/flow/notebook/file/read",
+#     response_model=Result[PaginationResult[ServerResponse]],
+#     dependencies=[Depends(check_api_key)],
+# )
+# async def read_flow_python_file(
+#         user_name: Optional[str] = Query(default=None, description="user name"),
+#         sys_code: Optional[str] = Query(default=None, description="system code"),
+#         page: int = Query(default=1, description="current page"),
+#         page_size: int = Query(default=20, description="page size"),
+#         service: Service = Depends(get_service),
+# ) -> Result[PaginationResult[ServerResponse]]:
+#
+#
+# @router.get(
+#     "/flow/notebook/file/write",
+#     response_model=Result[PaginationResult[ServerResponse]],
+#     dependencies=[Depends(check_api_key)],
+# )
+# async def write_flow_python_file(
+#         user_name: Optional[str] = Query(default=None, description="user name"),
+#         sys_code: Optional[str] = Query(default=None, description="system code"),
+#         page: int = Query(default=1, description="current page"),
+#         page_size: int = Query(default=20, description="page size"),
+#         service: Service = Depends(get_service),
+# ) -> Result[PaginationResult[ServerResponse]]:
 
 
 def init_endpoints(system_app: SystemApp) -> None:

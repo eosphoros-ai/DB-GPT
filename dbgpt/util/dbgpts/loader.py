@@ -450,6 +450,17 @@ class DBGPTsLoader(BaseComponent):
         except Exception as e:
             logger.warning(f"Load dbgpts package error: {e}", e)
 
+    def get_flow_package(self, flow_name: str) -> Optional[BasePackage]:
+        try:
+            packages = _load_package_from_path(self._install_dir)
+            for package in packages:
+                if package.name == flow_name:
+                    return package
+            return None
+        except Exception as e:
+            logger.warning(f"Get flow package error: {str(e)}", e)
+            return None
+
     def get_flows(self) -> List[FlowPanel]:
         """Get the flows.
 

@@ -1,4 +1,5 @@
 """Graph definition."""
+
 import itertools
 import json
 import logging
@@ -6,11 +7,47 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Tuple
 
 import networkx as nx
 
 logger = logging.getLogger(__name__)
+
+
+class GraphElemType(Enum):
+    """Type of element in graph."""
+
+    DOCUMENT = "document"
+    CHUNK = "chunk"
+    ENTITY = "entity"  # default vertex type in knowledge graph
+    RELATION = "relation"  # default edge type in knowledge graph
+    INCLUDE = "include"
+    NEXT = "next"
+
+    DOCUMENT_INCLUDE_CHUNK = "document_include_chunk"
+    CHUNK_INCLUDE_CHUNK = "chunk_include_chunk"
+    CHUNK_INCLUDE_ENTITY = "chunk_include_entity"
+    CHUNK_NEXT_CHUNK = "chunk_next_chunk"
+
+    def is_vertex(self) -> bool:
+        """Check if the element is a vertex."""
+        return self in [
+            GraphElemType.DOCUMENT,
+            GraphElemType.CHUNK,
+            GraphElemType.ENTITY,
+        ]
+
+    def is_edge(self) -> bool:
+        """Check if the element is an edge."""
+        return self in [
+            GraphElemType.RELATION,
+            GraphElemType.INCLUDE,
+            GraphElemType.NEXT,
+            GraphElemType.DOCUMENT_INCLUDE_CHUNK,
+            GraphElemType.CHUNK_INCLUDE_CHUNK,
+            GraphElemType.CHUNK_INCLUDE_ENTITY,
+            GraphElemType.CHUNK_NEXT_CHUNK,
+        ]
 
 
 class Direction(Enum):
@@ -41,7 +78,7 @@ class Elem(ABC):
 
     def set_prop(self, key: str, value: Any):
         """Set a property of ELem."""
-        self._props[key] = value
+        self._props[key] = value  # note: always update the value
 
     def get_prop(self, key: str):
         """Get one of the properties of Elem."""
@@ -124,6 +161,18 @@ class Edge(Elem):
         for k, v in props.items():
             self.set_prop(k, v)
 
+    def __eq__(self, other):
+        """Check if two edges are equal.
+
+        Let's say two edges are equal if they have the same source vertex ID,
+        target vertex ID, and edge label. The properties are not considered.
+        """
+        return (self.sid, self.tid, self.name) == (other.sid, other.tid, other.name)
+
+    def __hash__(self):
+        """Return the hash value of the edge."""
+        return hash((self.sid, self.tid, self.name))
+
     @property
     def sid(self) -> str:
         """Return the source vertex ID of the edge."""
@@ -188,11 +237,15 @@ class Graph(ABC):
         """Get neighbor edges."""
 
     @abstractmethod
-    def vertices(self) -> Iterator[Vertex]:
+    def vertices(
+        self, filter_fn: Optional[Callable[[Vertex], bool]] = None
+    ) -> Iterator[Vertex]:
         """Get vertex iterator."""
 
     @abstractmethod
-    def edges(self) -> Iterator[Edge]:
+    def edges(
+        self, filter_fn: Optional[Callable[[Edge], bool]] = None
+    ) -> Iterator[Edge]:
         """Get edge iterator."""
 
     @abstractmethod
@@ -241,7 +294,7 @@ class MemoryGraph(Graph):
         self._edge_prop_keys = set()
         self._edge_count = 0
 
-        # init vertices, out edges, in edges index
+        # vertices index, out edges index, in edges index
         self._vs: Any = defaultdict()
         self._oes: Any = defaultdict(lambda: defaultdict(set))
         self._ies: Any = defaultdict(lambda: defaultdict(set))
@@ -269,7 +322,7 @@ class MemoryGraph(Graph):
         # update metadata
         self._vertex_prop_keys.update(vertex.props.keys())
 
-    def append_edge(self, edge: Edge):
+    def append_edge(self, edge: Edge) -> bool:
         """Append an edge if it doesn't exist; requires edge label."""
         sid = edge.sid
         tid = edge.tid
@@ -289,6 +342,14 @@ class MemoryGraph(Graph):
         self._edge_prop_keys.update(edge.props.keys())
         self._edge_count += 1
         return True
+
+    def upsert_graph(self, graph: "MemoryGraph"):
+        """Upsert a graph."""
+        for vertex in graph.vertices():
+            self.upsert_vertex(vertex)
+
+        for edge in graph.edges():
+            self.append_edge(edge)
 
     def has_vertex(self, vid: str) -> bool:
         """Retrieve a vertex by ID."""
@@ -335,13 +396,26 @@ class MemoryGraph(Graph):
 
         return itertools.islice(es, limit) if limit else es
 
-    def vertices(self) -> Iterator[Vertex]:
+    def vertices(
+        self, filter_fn: Optional[Callable[[Vertex], bool]] = None
+    ) -> Iterator[Vertex]:
         """Return vertices."""
-        return iter(self._vs.values())
+        # Get all vertices in the graph
+        all_vertices = self._vs.values()
 
-    def edges(self) -> Iterator[Edge]:
+        return all_vertices if filter_fn is None else filter(filter_fn, all_vertices)
+
+    def edges(
+        self, filter_fn: Optional[Callable[[Edge], bool]] = None
+    ) -> Iterator[Edge]:
         """Return edges."""
-        return iter(e for nbs in self._oes.values() for es in nbs.values() for e in es)
+        # Get all edges in the graph
+        all_edges = (e for nbs in self._oes.values() for es in nbs.values() for e in es)
+
+        if filter_fn is None:
+            return all_edges
+        else:
+            return filter(filter_fn, all_edges)
 
     def del_vertices(self, *vids: str):
         """Delete specified vertices."""
@@ -353,7 +427,7 @@ class MemoryGraph(Graph):
         """Delete edges."""
         old_edge_cnt = len(self._oes[sid][tid])
 
-        def remove_matches(es):
+        def remove_matches(es: Set[Edge]):
             return set(
                 filter(
                     lambda e: not (
@@ -452,7 +526,7 @@ class MemoryGraph(Graph):
             ]
         }
 
-    def format(self) -> str:
+    def format(self, entities_only: Optional[bool] = False) -> str:
         """Format graph to string."""
         vs_str = "\n".join(v.format() for v in self.vertices())
         es_str = "\n".join(
@@ -461,11 +535,14 @@ class MemoryGraph(Graph):
             f"{self.get_vertex(e.tid).format(concise=True)}"
             for e in self.edges()
         )
-        return (
-            f"Entities:\n{vs_str}\n\n" f"Relationships:\n{es_str}"
-            if (vs_str or es_str)
-            else ""
-        )
+        if entities_only:
+            return f"Entities:\n{vs_str}" if vs_str else ""
+        else:
+            return (
+                f"Entities:\n{vs_str}\n\nRelationships:\n{es_str}"
+                if (vs_str or es_str)
+                else ""
+            )
 
     def truncate(self):
         """Truncate graph."""

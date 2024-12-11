@@ -20,11 +20,9 @@ from dbgpt.storage.knowledge_graph.knowledge_graph import (
 )
 
 """GraphRAG example.
-    pre-requirements:
-    * Set LLM config (url/sk) in `.env`.
-    * Install pytest utils: `pip install pytest pytest-asyncio`
-    * Config TuGraph following the format below. 
     ```
+    # Set LLM config (url/sk) in `.env`.
+    # Install pytest utils: `pip install pytest pytest-asyncio`
     GRAPH_STORE_TYPE=TuGraph
     TUGRAPH_HOST=127.0.0.1
     TUGRAPH_PORT=7687

@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 @register_resource(
-    _("ElasticSearch Vector Store"),
-    "elasticsearch_vector_store",
+    _("Elastic Vector Config"),
+    "elasticsearch_vector_config",
     category=ResourceCategory.VECTOR_STORE,
     parameters=[
         *_COMMON_PARAMETERS,
@@ -72,7 +72,7 @@ logger = logging.getLogger(__name__)
             default="index_name_test",
         ),
     ],
-    description=_("Elasticsearch vector store."),
+    description=_("Elasticsearch vector config."),
 )
 class ElasticsearchVectorConfig(VectorStoreConfig):
     """Elasticsearch vector store config."""
@@ -116,6 +116,22 @@ class ElasticsearchVectorConfig(VectorStoreConfig):
     )
 
 
+@register_resource(
+    _("Elastic Vector Store"),
+    "elastic_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("Elastic vector store."),
+    parameters=[
+        Parameter.build_from(
+            _("Elastic Config"),
+            "vector_store_config",
+            ElasticsearchVectorConfig,
+            description=_("the elastic config of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class ElasticStore(VectorStoreBase):
     """Elasticsearch vector store."""
 
@@ -130,18 +146,18 @@ class ElasticStore(VectorStoreBase):
 
         connect_kwargs = {}
         elasticsearch_vector_config = vector_store_config.dict()
-        self.uri = elasticsearch_vector_config.get("uri") or os.getenv(
+        self.uri = os.getenv(
             "ELASTICSEARCH_URL", "localhost"
-        )
-        self.port = elasticsearch_vector_config.get("post") or os.getenv(
+        ) or elasticsearch_vector_config.get("uri")
+        self.port = os.getenv(
             "ELASTICSEARCH_PORT", "9200"
-        )
-        self.username = elasticsearch_vector_config.get("username") or os.getenv(
+        ) or elasticsearch_vector_config.get("post")
+        self.username = os.getenv(
             "ELASTICSEARCH_USERNAME"
-        )
-        self.password = elasticsearch_vector_config.get("password") or os.getenv(
+        ) or elasticsearch_vector_config.get("username")
+        self.password = os.getenv(
             "ELASTICSEARCH_PASSWORD"
-        )
+        ) or elasticsearch_vector_config.get("password")
 
         self.collection_name = (
             elasticsearch_vector_config.get("name") or vector_store_config.name

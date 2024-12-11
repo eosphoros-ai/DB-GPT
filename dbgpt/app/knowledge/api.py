@@ -2,9 +2,10 @@ import logging
 import os
 import shutil
 import tempfile
+from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import (
@@ -96,7 +97,20 @@ def space_list(request: KnowledgeSpaceRequest):
 @router.post("/knowledge/space/delete")
 def space_delete(request: KnowledgeSpaceRequest):
     print(f"/space/delete params:")
+    print(request.name)
     try:
+        # delete Files in 'pilot/data/
+        safe_space_name = os.path.basename(request.name)
+
+        # obtain absolute paths of uploaded space-docfiles
+        space_dir = os.path.abspath(
+            os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, safe_space_name)
+        )
+        try:
+            if os.path.exists(space_dir):
+                shutil.rmtree(space_dir)
+        except Exception as e:
+            print(e)
         return Result.succ(knowledge_space_service.delete_space(request.name))
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space delete error {e}")
@@ -340,43 +354,61 @@ async def document_upload(
     print(f"/document/upload params: {space_name}")
     try:
         if doc_file:
-            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name)):
-                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name))
-            # We can not move temp file in windows system when we open file in context of `with`
-            tmp_fd, tmp_path = tempfile.mkstemp(
-                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name)
+            # Sanitize inputs to prevent path traversal
+            safe_space_name = os.path.basename(space_name)
+            safe_filename = os.path.basename(doc_file.filename)
+
+            # Create absolute paths and verify they are within allowed directory
+            upload_dir = os.path.abspath(
+                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, safe_space_name)
             )
-            with os.fdopen(tmp_fd, "wb") as tmp:
-                tmp.write(await doc_file.read())
-            shutil.move(
-                tmp_path,
-                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename),
-            )
-            request = KnowledgeDocumentRequest()
-            request.doc_name = doc_name
-            request.doc_type = doc_type
-            request.content = os.path.join(
-                KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
-            )
-            space_res = knowledge_space_service.get_knowledge_space(
-                KnowledgeSpaceRequest(name=space_name)
-            )
-            if len(space_res) == 0:
-                # create default space
-                if "default" != space_name:
-                    raise Exception(f"you have not create your knowledge space.")
-                knowledge_space_service.create_knowledge_space(
-                    KnowledgeSpaceRequest(
-                        name=space_name,
-                        desc="first db-gpt rag application",
-                        owner="dbgpt",
+            target_path = os.path.abspath(os.path.join(upload_dir, safe_filename))
+
+            if not os.path.abspath(KNOWLEDGE_UPLOAD_ROOT_PATH) in target_path:
+                raise HTTPException(status_code=400, detail="Invalid path detected")
+
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
+
+            # Create temp file
+            tmp_fd, tmp_path = tempfile.mkstemp(dir=upload_dir)
+
+            try:
+                with os.fdopen(tmp_fd, "wb") as tmp:
+                    tmp.write(await doc_file.read())
+
+                shutil.move(tmp_path, target_path)
+
+                request = KnowledgeDocumentRequest()
+                request.doc_name = doc_name
+                request.doc_type = doc_type
+                request.content = target_path
+
+                space_res = knowledge_space_service.get_knowledge_space(
+                    KnowledgeSpaceRequest(name=safe_space_name)
+                )
+                if len(space_res) == 0:
+                    # create default space
+                    if "default" != safe_space_name:
+                        raise Exception(f"you have not create your knowledge space.")
+                    knowledge_space_service.create_knowledge_space(
+                        KnowledgeSpaceRequest(
+                            name=safe_space_name,
+                            desc="first db-gpt rag application",
+                            owner="dbgpt",
+                        )
+                    )
+                return Result.succ(
+                    knowledge_space_service.create_knowledge_document(
+                        space=safe_space_name, request=request
                     )
                 )
-            return Result.succ(
-                knowledge_space_service.create_knowledge_document(
-                    space=space_name, request=request
-                )
-            )
+            except Exception as e:
+                # Clean up temp file if anything goes wrong
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                raise e
+
         return Result.failed(code="E000X", msg=f"doc_file is None")
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document add error {e}")
@@ -447,7 +479,7 @@ def chunk_list(
             "doc_type": query_request.doc_type,
             "content": query_request.content,
         }
-        chunk_res = service.get_chunk_list(
+        chunk_res = service.get_chunk_list_page(
             query, query_request.page, query_request.page_size
         )
         res = ChunkQueryResponse(

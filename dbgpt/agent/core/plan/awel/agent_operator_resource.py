@@ -1,4 +1,5 @@
 """Agent operator define."""
+
 import json
 from typing import Any, Dict, List, Optional
 
@@ -11,7 +12,6 @@ from dbgpt.core.awel.flow import (
     ResourceCategory,
     register_resource,
 )
-from dbgpt.serve.prompt.api.endpoints import get_service
 
 from ....resource.base import AgentResource, ResourceType
 from ....resource.manage import get_resource_manager
@@ -20,6 +20,8 @@ from ...agent_manage import get_agent_manager
 
 
 def _agent_resource_prompt_values() -> List[OptionValue]:
+    from dbgpt.serve.prompt.api.endpoints import get_service
+
     prompt_service = get_service()
     prompts = prompt_service.get_target_prompt()
     return [
@@ -146,6 +148,7 @@ class AWELAgentKnowledgeResource(AgentResource):
     """AWELAgentKnowledgeResource."""
 
     @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the agent ResourceType."""
         value = values.pop("agent_resource_value")
@@ -191,6 +194,7 @@ class AgentPrompt(BaseModel):
     code: str
 
     @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the agent ResourceType."""
         code = values.pop("agent_prompt_code")
@@ -243,6 +247,7 @@ class AWELAgentConfig(LLMConfig):
     """AWEL Agent Config."""
 
     @model_validator(mode="before")
+    @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Prefill the agent ResourceType."""
         strategy_context = values.pop("strategy_context")

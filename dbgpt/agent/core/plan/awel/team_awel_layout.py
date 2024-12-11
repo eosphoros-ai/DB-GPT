@@ -165,16 +165,15 @@ class AWELBaseManager(ManagerAgent, ABC):
             )
             last_message = final_generate_context.rely_messages[-1]
             last_message.rounds = last_message.rounds + 1
-            if not final_generate_context.last_speaker:
-                raise ValueError("Dont have last speaker agent!")
-            await final_generate_context.last_speaker.send(
-                last_message,
-                sender,
-                start_message_context.reviewer,
-                False,
-                is_retry_chat=is_retry_chat,
-                last_speaker_name=last_speaker_name,
-            )
+            if final_generate_context.last_speaker:
+                await final_generate_context.last_speaker.send(
+                    last_message,
+                    sender,
+                    start_message_context.reviewer,
+                    False,
+                    is_retry_chat=is_retry_chat,
+                    last_speaker_name=last_speaker_name,
+                )
 
             view_message = None
             if last_message.action_report:
@@ -269,16 +268,15 @@ class WrappedAWELLayoutManager(AWELBaseManager):
 
             last_message = final_generate_context.rely_messages[-1]
             last_message.rounds = last_message.rounds + 1
-            if not final_generate_context.last_speaker:
-                raise ValueError("Not have last speaker!")
-            await final_generate_context.last_speaker.send(
-                last_message,
-                sender,
-                start_message_context.reviewer,
-                False,
-                is_retry_chat=is_retry_chat,
-                last_speaker_name=last_speaker_name,
-            )
+            if final_generate_context.last_speaker:
+                await final_generate_context.last_speaker.send(
+                    last_message,
+                    sender,
+                    start_message_context.reviewer,
+                    False,
+                    is_retry_chat=is_retry_chat,
+                    last_speaker_name=last_speaker_name,
+                )
 
             view_message = None
             if last_message.action_report:

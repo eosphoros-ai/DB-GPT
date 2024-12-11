@@ -1,5 +1,5 @@
-# DB-GPT: Revolutionizing Database Interactions with Private LLM Technology
- 
+# DB-GPT: AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents
+
 <p align="left">
   <img src="./assets/LOGO.png" width="100%" />
 </p>
@@ -56,8 +56,6 @@ The purpose is to build infrastructure in the field of large models, through the
   - [Support Text2NLU and Text2GQL fine-tuning]()
   - [Support Intent recognition, slot filling, and Prompt management]()
 
-
-- [Released V0.5.0 | Develop native data applications through workflows and agents](http://docs.dbgpt.cn/docs/changelog/Released_V0.5.0)
 ---
 
 ![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
@@ -129,19 +127,20 @@ As of October 10, 2023, through the fine-tuning of an open-source model with 13 
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**Usage Tutorial**](http://docs.dbgpt.site/docs/overview)
-- [**Install**](http://docs.dbgpt.site/docs/installation)
-  - [Docker](https://docs.dbgpt.site/docs/installation/docker)
-  - [Source Code](https://docs.dbgpt.site/docs/installation/sourcecode)
-- [**Quickstart**](http://docs.dbgpt.site/docs/quickstart)
-- [**Application**](http://docs.dbgpt.site/docs/operation_manual)
-  - [App Usage](https://docs.dbgpt.site/docs/application/app_usage)
-  - [AWEL Flow Usage](https://docs.dbgpt.site/docs/application/awel_flow_usage)
-- [**Debugging**](http://docs.dbgpt.site/docs/operation_manual/advanced_tutorial/debugging)
-- [**Advanced Usage**](https://docs.dbgpt.site/docs/application/advanced_tutorial/cli)
-  - [SMMF](https://docs.dbgpt.site/docs/application/advanced_tutorial/smmf)
-  - [Finetune](https://docs.dbgpt.site/docs/application/fine_tuning_manual/dbgpt_hub)
-  - [AWEL](https://docs.dbgpt.site/docs/latest/awel/tutorial)
+[**Usage Tutorial**](http://docs.dbgpt.cn/docs/overview)
+- [**Install**](http://docs.dbgpt.cn/docs/installation)
+  - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
+  - [Source Code](http://docs.dbgpt.cn/docs/installation/sourcecode)
+- [**Quickstart**](http://docs.dbgpt.cn/docs/quickstart)
+- [**Application**](http://docs.dbgpt.cn/docs/operation_manual)
+  - [Development Guide](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop) 
+  - [App Usage](http://docs.dbgpt.cn/docs/application/app_usage)
+  - [AWEL Flow Usage](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
+- [**Debugging**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
+- [**Advanced Usage**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
+  - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
+  - [Finetune](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
+  - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
 
 
 ## Features
@@ -214,7 +213,7 @@ At present, we have introduced several key features to showcase our current capa
   We ensure the privacy and security of data through the implementation of various technologies, including privatized large models and proxy desensitization.
 
 - Support Datasources
-  - [Datasources](http://docs.dbgpt.site/docs/modules/connections)
+  - [Datasources](http://docs.dbgpt.cn/docs/modules/connections)
 
 ## Image
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)

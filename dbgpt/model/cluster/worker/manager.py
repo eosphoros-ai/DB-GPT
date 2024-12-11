@@ -9,7 +9,7 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import Awaitable, Callable, Iterator
+from typing import AsyncIterator, Awaitable, Callable, Iterator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -327,7 +327,7 @@ class LocalWorkerManager(WorkerManager):
 
     async def generate_stream(
         self, params: Dict, async_wrapper=None, **kwargs
-    ) -> Iterator[ModelOutput]:
+    ) -> AsyncIterator[ModelOutput]:
         """Generate stream result, chat scene"""
         with root_tracer.start_span(
             "WorkerManager.generate_stream", params.get("span_id")
@@ -693,7 +693,9 @@ class WorkerManagerAdapter(WorkerManager):
             worker_type, model_name, healthy_only
         )
 
-    async def generate_stream(self, params: Dict, **kwargs) -> Iterator[ModelOutput]:
+    async def generate_stream(
+        self, params: Dict, **kwargs
+    ) -> AsyncIterator[ModelOutput]:
         async for output in self.worker_manager.generate_stream(params, **kwargs):
             yield output
 

@@ -1,4 +1,4 @@
-# DB-GPT: 用私有化LLM技术定义数据库下一代交互方式
+# DB-GPT: AI原生数据应用开发框架
 
 <p align="left">
   <img src="./assets/LOGO.png" width="100%" />
@@ -56,8 +56,6 @@
   - GPT-Vis前端可视化升级，支持更丰富的可视化图表。 
   - 支持Text2NLU与Text2GQL微调, 即新增意图分类与从自然语言到图语言的微调。 
 
-- [V0.5.0发布——通过工作流与智能体开发原生数据应用](https://www.yuque.com/eosphoros/dbgpt-docs/owcrh9423f9rqkg2)
----
 
 ### Data Agents 
 
@@ -129,6 +127,7 @@
   - [报表分析](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
   - [Agents](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
 - [**进阶教程**](https://www.yuque.com/eosphoros/dbgpt-docs/dxalqb8wsv2xkm5f)
+  - [数智应用开发](https://www.yuque.com/eosphoros/dbgpt-docs/ancwnrsk9agc6e4w)
   - [智能体工作流使用](https://www.yuque.com/eosphoros/dbgpt-docs/hcomfb3yrleg7gmq)
   - [智能应用使用](https://www.yuque.com/eosphoros/dbgpt-docs/aiagvxeb86iarq6r)
   - [多模型管理](https://www.yuque.com/eosphoros/dbgpt-docs/huzgcf2abzvqy8uv)
@@ -278,18 +277,19 @@ The MIT License (MIT)
 
 ## 联系我们
 
+  **说明: 由于微信群人数上限的限制, 我们的答疑与问题支持优先会在钉钉大群进行。**
 <div style="display: flex; justify-content: space-around;">
-    <figure style="display: flex; flex-direction: column;">
-        <img src="./assets/wechat.jpg" alt="图片1" style="width: 200px;">
-        <p style="text-align: center;">
-          微信
-        </p> 
-    </figure>
     <figure style="display: flex; flex-direction: column;">
         <img src="./assets/ding.jpg" alt="图片2" style="width: 220px;">
         <p style="text-align: center;">
           钉钉
         </p>
+    </figure>
+    <figure style="display: flex; flex-direction: column;">
+        <img src="./assets/wechat.jpg" alt="图片1" style="width: 200px;">
+        <p style="text-align: center;">
+          微信
+        </p> 
     </figure>
 </div>
 

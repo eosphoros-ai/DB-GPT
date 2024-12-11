@@ -22,6 +22,18 @@ class ServerResponse(FlowPanel):
     model_config = ConfigDict(title=f"ServerResponse for {SERVE_APP_NAME_HUMP}")
 
 
+class FlowInfo(BaseModel):
+    name: str
+    definition_type: str
+    description: Optional[str] = None
+    label: Optional[str] = None
+    package: Optional[str] = None
+    package_type: Optional[str] = None
+    root: Optional[str] = None
+    path: Optional[str] = None
+    version: Optional[str] = None
+
+
 class VariablesResponse(VariablesRequest):
     """Variable response model."""
 

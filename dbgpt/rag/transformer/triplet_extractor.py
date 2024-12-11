@@ -1,4 +1,5 @@
 """TripletExtractor class."""
+
 import logging
 import re
 from typing import Any, List, Optional, Tuple
@@ -12,7 +13,7 @@ TRIPLET_EXTRACT_PT = (
     "Some text is provided below. Given the text, "
     "extract up to knowledge triplets as more as possible "
     "in the form of (subject, predicate, object).\n"
-    "Avoid stopwords.\n"
+    "Avoid stopwords. The subject, predicate, object can not be none.\n"
     "---------------------\n"
     "Example:\n"
     "Text: Alice is Bob's mother.\n"

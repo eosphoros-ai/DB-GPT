@@ -61,6 +61,7 @@ def initialize_components(
     # Register serve apps
     register_serve_apps(system_app, CFG, param.port)
     _initialize_operators()
+    _initialize_code_server(system_app)
 
 
 def _initialize_model_cache(system_app: SystemApp, port: int):
@@ -132,6 +133,7 @@ def _initialize_openapi(system_app: SystemApp):
 
 
 def _initialize_operators():
+    from dbgpt.app.operators.code import CodeMapOperator
     from dbgpt.app.operators.converter import StringToInteger
     from dbgpt.app.operators.datasource import (
         HODatasourceExecutorOperator,
@@ -140,3 +142,9 @@ def _initialize_operators():
     from dbgpt.app.operators.llm import HOLLMOperator, HOStreamingLLMOperator
     from dbgpt.app.operators.rag import HOKnowledgeOperator
     from dbgpt.serve.agent.resource.datasource import DatasourceResource
+
+
+def _initialize_code_server(system_app: SystemApp):
+    from dbgpt.util.code.server import initialize_code_server
+
+    initialize_code_server(system_app)

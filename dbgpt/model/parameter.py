@@ -167,6 +167,9 @@ class ModelAPIServerParameters(BaseServerParameters):
     embedding_batch_size: Optional[int] = field(
         default=None, metadata={"help": "Embedding batch size"}
     )
+    ignore_stop_exceeds_error: Optional[bool] = field(
+        default=False, metadata={"help": "Ignore exceeds stop words error"}
+    )
 
     log_file: Optional[str] = field(
         default="dbgpt_model_apiserver.log",

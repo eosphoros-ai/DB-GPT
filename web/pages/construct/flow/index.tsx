@@ -182,9 +182,14 @@ function Flow() {
                 description={flow.description}
                 name={flow.name}
                 key={flow.uid}
-                logo='/pictures/flow.png'
+                logo={`${flow.define_type === 'python' ? '/pictures/libro.png' : '/pictures/flow.png'}`}
                 onClick={() => {
-                  router.push('/construct/flow/canvas?id=' + flow.uid);
+                  if (flow.define_type === 'json') {
+                    router.push('/construct/flow/canvas?id=' + flow.uid);
+                  }
+                  if (flow.define_type === 'python') {
+                    router.push('/construct/flow/libro?id=' + flow.uid);
+                  }
                 }}
                 RightTop={
                   <InnerDropdown
@@ -218,6 +223,7 @@ function Flow() {
                 Tags={
                   <div>
                     <Tag color={flow.source === 'DBGPT-WEB' ? 'green' : 'blue'}>{flow.source}</Tag>
+                    {flow.define_type && <Tag color={'purple'}>{flow.define_type}</Tag>}
                     <Tag color={flow.editable ? 'green' : 'gray'}>{flow.editable ? 'Editable' : 'Can not Edit'}</Tag>
                     <Tag color={flow.state === 'load_failed' ? 'red' : flow.state === 'running' ? 'green' : 'blue'}>
                       {flow.state}

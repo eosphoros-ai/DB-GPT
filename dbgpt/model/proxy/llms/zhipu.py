@@ -2,10 +2,10 @@ import os
 from concurrent.futures import Executor
 from typing import Iterator, Optional
 
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
+from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
 from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 
 CHATGLM_DEFAULT_MODEL = "chatglm_pro"
 
@@ -21,14 +21,7 @@ def zhipu_generate_stream(
     # convert_to_compatible_format = params.get("convert_to_compatible_format", False)
     # history, systems = __convert_2_zhipu_messages(messages)
     client: ZhipuLLMClient = model.proxy_llm_client
-    context = ModelRequestContext(stream=True, user_name=params.get("user_name"))
-    request = ModelRequest.build_request(
-        client.default_model,
-        messages=params["messages"],
-        temperature=params.get("temperature"),
-        context=context,
-        max_new_tokens=params.get("max_new_tokens"),
-    )
+    request = parse_model_request(params, client.default_model, stream=True)
     for r in client.sync_generate_stream(request):
         yield r
 

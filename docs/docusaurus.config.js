@@ -209,18 +209,11 @@ const config = {
           },
           {
             type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Tutorials',
-            to: "/docs/tutorials",
+            sidebarId: "tutorials",
+            to: '/turtorials', 
+            label: 'Turtorial', 
+            position: 'left'
           },
-          // {
-          //   type: 'docSidebar',
-          //   sidebarId: 'tutorialSidebar',
-          //   position: 'left',
-          //   label: 'Community',
-          //   to: "/docs/tutorials",
-          // },
           {
             href: 'https://github.com/eosphoros-ai/community',
             position: 'left',

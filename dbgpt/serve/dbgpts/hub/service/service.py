@@ -41,7 +41,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._system_app = system_app
 
     @property
-    def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
+    def dao(self) -> ServeDao:
         """Returns the internal DAO."""
         return self._dao
 
@@ -130,7 +130,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             installed=request.installed,
         )
 
-        return self.dao.get_list_page(query_request, page, page_size)
+        return self.dao.dbgpts_list(query_request, page, page_size)
 
     def refresh_hub_from_git(
         self,

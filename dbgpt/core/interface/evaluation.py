@@ -287,7 +287,7 @@ class MetricManage:
 
     def register_metric(self, cls: Type[EvaluationMetric]):
         """Register metric."""
-        self.metrics[cls.name] = cls
+        self.metrics[cls.name()] = cls
 
     def get_by_name(self, name: str) -> Type[EvaluationMetric]:
         """Get by name."""
@@ -308,4 +308,4 @@ class MetricManage:
         return result
 
 
-metric_mange = MetricManage()
+metric_manage = MetricManage()

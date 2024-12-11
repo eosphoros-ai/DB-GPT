@@ -69,7 +69,7 @@ class StartAppAssistantAgent(ConversableAgent):
         rely_messages: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
         is_retry_chat: Optional[bool] = False,
-    ) -> (List[AgentMessage], Optional[Dict]):
+    ) -> tuple[List[AgentMessage], Optional[Dict]]:
         if rely_messages and len(rely_messages) > 0:
             return rely_messages[-1:], None
         else:
