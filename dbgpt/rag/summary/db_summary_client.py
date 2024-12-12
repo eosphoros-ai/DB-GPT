@@ -54,7 +54,7 @@ class DBSummaryClient:
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         vector_store_name = dbname + "_profile"
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name + "_table")
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
         field_vector_store_config = VectorStoreConfig(name=vector_store_name + "_field")
         table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
@@ -85,7 +85,7 @@ class DBSummaryClient:
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         vector_store_name = dbname + "_profile"
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name + "_table")
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
         field_vector_store_config = VectorStoreConfig(name=vector_store_name + "_field")
         table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
@@ -134,7 +134,7 @@ class DBSummaryClient:
         from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name + "_table")
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
         field_vector_store_config = VectorStoreConfig(name=vector_store_name + "_field")
         table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
