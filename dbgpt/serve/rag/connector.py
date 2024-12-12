@@ -8,17 +8,9 @@ from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt.app.component_configs import CFG
 from dbgpt.core import Chunk, Embeddings
-from dbgpt.core.awel.flow import (
-    FunctionDynamicOptions,
-    OptionValue,
-    Parameter,
-    ResourceCategory,
-    register_resource,
-)
 from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
@@ -26,40 +18,6 @@ connector: Dict[str, Tuple[Type, Type]] = {}
 pools: DefaultDict[str, Dict] = defaultdict(dict)
 
 
-def _load_vector_options() -> List[OptionValue]:
-    from dbgpt.storage import vector_store
-
-    return [
-        OptionValue(label=cls, name=cls, value=cls)
-        for cls in vector_store.__all__
-        if issubclass(getattr(vector_store, cls)[0], IndexStoreBase)
-    ]
-
-
-@register_resource(
-    _("Vector Store Connector"),
-    "vector_store_connector",
-    category=ResourceCategory.VECTOR_STORE,
-    parameters=[
-        Parameter.build_from(
-            _("Vector Store Type"),
-            "vector_store_type",
-            str,
-            description=_("The type of vector store."),
-            options=FunctionDynamicOptions(func=_load_vector_options),
-        ),
-        Parameter.build_from(
-            _("Vector Store Implementation"),
-            "vector_store_config",
-            VectorStoreConfig,
-            description=_("The vector store implementation."),
-            optional=True,
-            default=None,
-        ),
-    ],
-    # Compatible with the old version
-    alias=["dbgpt.storage.vector_store.connector.VectorStoreConnector"],
-)
 class VectorStoreConnector:
     """The connector for vector store.
 

@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 @register_resource(
-    _("PG Vector Store"),
-    "pg_vector_store",
+    _("PGVector Config"),
+    "pg_vector_config",
     category=ResourceCategory.VECTOR_STORE,
     parameters=[
         *_COMMON_PARAMETERS,
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
             default=None,
         ),
     ],
-    description="PG vector store.",
+    description="PG vector config.",
 )
 class PGVectorConfig(VectorStoreConfig):
     """PG vector store config."""
@@ -49,6 +49,22 @@ class PGVectorConfig(VectorStoreConfig):
     )
 
 
+@register_resource(
+    _("PG Vector Store"),
+    "pg_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("PG vector store."),
+    parameters=[
+        Parameter.build_from(
+            _("PG Config"),
+            "vector_store_config",
+            PGVectorConfig,
+            description=_("the pg config of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class PGVectorStore(VectorStoreBase):
     """PG vector store.
 
