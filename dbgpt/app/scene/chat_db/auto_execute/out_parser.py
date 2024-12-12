@@ -79,7 +79,10 @@ class DbChatOutputParser(BaseOutputParser):
                 "Please install it with `pip install scikit-learn`."
             )
 
-        _, ncol = df.shape
+        nrow, ncol = df.shape
+        if nrow == 0 or ncol == 0:
+            return df, False
+
         vec_col = -1
         for i_col in range(ncol):
             if isinstance(df.iloc[:, i_col][0], list):
@@ -91,7 +94,10 @@ class DbChatOutputParser(BaseOutputParser):
                     vec_col = i_col
                     break
         if vec_col == -1:
-            return df
+            return df, False
+        vec_dim = len(json.loads(df.iloc[:, vec_col][0].decode()))
+        if min(nrow, vec_dim) < 2:
+            return df, False
         df.iloc[:, vec_col] = df.iloc[:, vec_col].apply(
             lambda x: json.loads(x.decode())
         )
@@ -108,7 +114,7 @@ class DbChatOutputParser(BaseOutputParser):
             new_df[col_name] = df[col_name]
         new_df["__x"] = [pos[0] for pos in X_pca]
         new_df["__y"] = [pos[1] for pos in X_pca]
-        return new_df
+        return new_df, True
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
         param = {}
@@ -127,8 +133,8 @@ class DbChatOutputParser(BaseOutputParser):
                 param["type"] = prompt_response.display
 
                 if param["type"] == "response_vector_chart":
-                    df = self.parse_vector_data_with_pca(df)
-                    param["type"] = "response_scatter_chart"
+                    df, visualizable = self.parse_vector_data_with_pca(df)
+                    param["type"] = "response_scatter_chart" if visualizable else "response_table"
 
                 param["sql"] = prompt_response.sql
                 param["data"] = json.loads(
