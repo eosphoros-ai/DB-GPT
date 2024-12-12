@@ -16,7 +16,7 @@ from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.util.i18n_utils import _
 
 
-class KnowledgeOperator(MapOperator[str, Knowledge]):
+class KnowledgeOperator(MapOperator[dict, Knowledge]):
     """Knowledge Factory Operator."""
 
     metadata = ViewMetadata(
@@ -91,10 +91,11 @@ class KnowledgeOperator(MapOperator[str, Knowledge]):
 
     async def map(self, datasource: dict) -> Knowledge:
         """Create knowledge from datasource."""
+        source = datasource.get("source")
         if self._datasource:
-            datasource = self._datasource
+            source = self._datasource
         return await self.blocking_func_to_async(
-            KnowledgeFactory.create, datasource, self._knowledge_type
+            KnowledgeFactory.create, source, self._knowledge_type
         )
 
 
