@@ -109,7 +109,7 @@ class EmbeddingLoader:
                 if proxy_param.proxy_backend:
                     openapi_param["model_name"] = proxy_param.proxy_backend
                 return OpenAPIRerankEmbeddings(**openapi_param)
-            elif model_name in ["rerank_proxy_silicon_flow"]:
+            elif model_name in ["rerank_proxy_siliconflow"]:
                 from dbgpt.rag.embedding.rerank import SiliconFlowRerankEmbeddings
 
                 proxy_param = cast(ProxyEmbeddingParameters, param)

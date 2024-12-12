@@ -349,7 +349,7 @@ class SiliconFlowProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return True
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "silicon_flow_proxyllm"
+        return lower_model_name_or_path == "siliconflow_proxyllm"
 
     def get_llm_client_class(
         self, params: ProxyModelParameters
@@ -359,9 +359,9 @@ class SiliconFlowProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return SiliconFlowLLMClient
 
     def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.siliconflow import silicon_flow_generate_stream
+        from dbgpt.model.proxy.llms.siliconflow import siliconflow_generate_stream
 
-        return silicon_flow_generate_stream
+        return siliconflow_generate_stream
 
 
 register_model_adapter(OpenAIProxyLLMModelAdapter)
