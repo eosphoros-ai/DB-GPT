@@ -143,7 +143,7 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
     if api_type == "azure":
         from openai import AsyncAzureOpenAI
 
-        api_type, async_client = AsyncAzureOpenAI(
+        async_client = AsyncAzureOpenAI(
             api_key=openai_params["api_key"],
             api_version=api_version,
             azure_deployment=api_azure_deployment,
