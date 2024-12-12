@@ -140,16 +140,16 @@ class Config(metaclass=Singleton):
             os.environ["claude_proxyllm_api_base"] = os.getenv(
                 "ANTHROPIC_BASE_URL", "https://api.anthropic.com"
             )
-        self.silicon_flow_proxy_api_key = os.getenv("SILICON_FLOW_API_KEY")
-        if self.silicon_flow_proxy_api_key:
+        self.siliconflow_proxy_api_key = os.getenv("SILICONFLOW_API_KEY")
+        if self.siliconflow_proxy_api_key:
             os.environ[
-                "silicon_flow_proxyllm_proxy_api_key"
-            ] = self.silicon_flow_proxy_api_key
-            os.environ["silicon_flow_proxyllm_proxyllm_backend"] = os.getenv(
-                "SILICON_FLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+                "siliconflow_proxyllm_proxy_api_key"
+            ] = self.siliconflow_proxy_api_key
+            os.environ["siliconflow_proxyllm_proxyllm_backend"] = os.getenv(
+                "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
             )
-            os.environ["silicon_flow_proxyllm_api_base"] = os.getenv(
-                "SILICON_FLOW_API_BASE", "https://api.siliconflow.cn/v1"
+            os.environ["siliconflow_proxyllm_api_base"] = os.getenv(
+                "SILICONFLOW_API_BASE", "https://api.siliconflow.cn/v1"
             )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
@@ -277,6 +277,7 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD = int(
             os.getenv("KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD", 10)
         )
+        self.KNOWLEDGE_MAX_THREADS = int(os.getenv("KNOWLEDGE_MAX_THREADS", 1))
         # default recall similarity score, between 0 and 1
         self.KNOWLEDGE_SEARCH_RECALL_SCORE = float(
             os.getenv("KNOWLEDGE_SEARCH_RECALL_SCORE", 0.3)
