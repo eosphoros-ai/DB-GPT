@@ -15,6 +15,7 @@ fi
 DEFAULT_DB_FILE="DB-GPT/pilot/data/default_sqlite.db"
 DEFAULT_SQL_FILE="DB-GPT/docker/examples/sqls/*_sqlite.sql"
 DB_FILE="$WORK_DIR/pilot/data/default_sqlite.db"
+WIDE_DB_FILE="$WORK_DIR/pilot/data/wide_sqlite.db"
 SQL_FILE=""
 
 usage () {
@@ -59,6 +60,12 @@ if [ -n $SQL_FILE ];then
     do
         echo "execute sql file: $file"
         sqlite3 $DB_FILE  < "$file"
+    done
+
+    for file in $WORK_DIR/docker/examples/sqls/*_sqlite_wide.sql
+    do
+        echo "execute sql file: $file"
+        sqlite3 $WIDE_DB_FILE  < "$file"
     done
 
 else

@@ -55,15 +55,8 @@ class ChatWithDbQA(BaseChat):
         if self.db_name:
             client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
             try:
-                # table_infos = client.get_db_summary(
-                #     dbname=self.db_name, query=self.current_user_input, topk=self.top_k
-                # )
-                table_infos = await blocking_func_to_async(
-                    self._executor,
-                    client.get_db_summary,
-                    self.db_name,
-                    self.current_user_input,
-                    self.top_k,
+                table_infos = await client.aget_db_summary(
+                    dbname=self.db_name, query=self.current_user_input, topk=self.top_k
                 )
             except Exception as e:
                 print("db summary find error!" + str(e))

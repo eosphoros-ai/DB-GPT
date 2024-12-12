@@ -1,12 +1,14 @@
 """DBSchemaAssembler."""
+import os
 from typing import Any, List, Optional
 
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.datasource.base import BaseConnector
 
+from ...serve.rag.connector import VectorStoreConnector
 from ..assembler.base import BaseAssembler
 from ..chunk_manager import ChunkParameters
-from ..index.base import IndexStoreBase
+from ..embedding.embedding_factory import DefaultEmbeddingFactory
 from ..knowledge.datasource import DatasourceKnowledge
 from ..retriever.db_schema import DBSchemaRetriever
 
@@ -35,23 +37,53 @@ class DBSchemaAssembler(BaseAssembler):
     def __init__(
         self,
         connector: BaseConnector,
-        index_store: IndexStoreBase,
+        table_vector_store_connector: VectorStoreConnector,
+        field_vector_store_connector: VectorStoreConnector,
         chunk_parameters: Optional[ChunkParameters] = None,
+        embedding_model: Optional[str] = None,
+        embeddings: Optional[Embeddings] = None,
+        max_seq_length: int = 512,
         **kwargs: Any,
     ) -> None:
         """Initialize with Embedding Assembler arguments.
 
         Args:
             connector: (BaseConnector) BaseConnector connection.
-            index_store: (IndexStoreBase) IndexStoreBase to use.
+            table_vector_store_connector: VectorStoreConnector to load
+                                        and retrieve table info.
+            field_vector_store_connector: VectorStoreConnector to load
+                                        and retrieve field info.
             chunk_manager: (Optional[ChunkManager]) ChunkManager to use for chunking.
             embedding_model: (Optional[str]) Embedding model to use.
             embeddings: (Optional[Embeddings]) Embeddings to use.
         """
-        knowledge = DatasourceKnowledge(connector)
         self._connector = connector
-        self._index_store = index_store
+        self._table_vector_store_connector = table_vector_store_connector
+        self._field_vector_store_connector = field_vector_store_connector
 
+        self._embedding_model = embedding_model
+        if self._embedding_model and not embeddings:
+            embeddings = DefaultEmbeddingFactory(
+                default_model_name=self._embedding_model
+            ).create(self._embedding_model)
+
+        if (
+            embeddings
+            and self._table_vector_store_connector.vector_store_config.embedding_fn
+            is None
+        ):
+            self._table_vector_store_connector.vector_store_config.embedding_fn = (
+                embeddings
+            )
+        if (
+            embeddings
+            and self._field_vector_store_connector.vector_store_config.embedding_fn
+            is None
+        ):
+            self._field_vector_store_connector.vector_store_config.embedding_fn = (
+                embeddings
+            )
+        knowledge = DatasourceKnowledge(connector, model_dimension=max_seq_length)
         super().__init__(
             knowledge=knowledge,
             chunk_parameters=chunk_parameters,
@@ -62,23 +94,36 @@ class DBSchemaAssembler(BaseAssembler):
     def load_from_connection(
         cls,
         connector: BaseConnector,
-        index_store: IndexStoreBase,
+        table_vector_store_connector: VectorStoreConnector,
+        field_vector_store_connector: VectorStoreConnector,
         chunk_parameters: Optional[ChunkParameters] = None,
+        embedding_model: Optional[str] = None,
+        embeddings: Optional[Embeddings] = None,
+        max_seq_length: int = 512,
     ) -> "DBSchemaAssembler":
         """Load document embedding into vector store from path.
 
         Args:
             connector: (BaseConnector) BaseConnector connection.
-            index_store: (IndexStoreBase) IndexStoreBase to use.
+            table_vector_store_connector: used to load table chunks.
+            field_vector_store_connector: used to load field chunks
+                                        if field in table is too much.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
+            embedding_model: (Optional[str]) Embedding model to use.
+            embeddings: (Optional[Embeddings]) Embeddings to use.
+            max_seq_length: Embedding model max sequence length
         Returns:
              DBSchemaAssembler
         """
         return cls(
             connector=connector,
-            index_store=index_store,
+            table_vector_store_connector=table_vector_store_connector,
+            field_vector_store_connector=field_vector_store_connector,
+            embedding_model=embedding_model,
             chunk_parameters=chunk_parameters,
+            embeddings=embeddings,
+            max_seq_length=max_seq_length,
         )
 
     def get_chunks(self) -> List[Chunk]:
@@ -91,7 +136,19 @@ class DBSchemaAssembler(BaseAssembler):
         Returns:
             List[str]: List of chunk ids.
         """
-        return self._index_store.load_document(self._chunks)
+        table_chunks, field_chunks = [], []
+        for chunk in self._chunks:
+            metadata = chunk.metadata
+            if metadata.get("separated"):
+                if metadata.get("part") == "table":
+                    table_chunks.append(chunk)
+                else:
+                    field_chunks.append(chunk)
+            else:
+                table_chunks.append(chunk)
+
+        self._field_vector_store_connector.load_document(field_chunks)
+        return self._table_vector_store_connector.load_document(table_chunks)
 
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""
@@ -110,5 +167,6 @@ class DBSchemaAssembler(BaseAssembler):
             top_k=top_k,
             connector=self._connector,
             is_embeddings=True,
-            index_store=self._index_store,
+            table_vector_store_connector=self._table_vector_store_connector,
+            field_vector_store_connector=self._field_vector_store_connector,
         )
