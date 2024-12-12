@@ -1,4 +1,5 @@
 """DBSchemaAssembler."""
+import os
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
@@ -41,6 +42,7 @@ class DBSchemaAssembler(BaseAssembler):
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
+        max_seq_length: int = 512,
         **kwargs: Any,
     ) -> None:
         """Initialize with Embedding Assembler arguments.
@@ -81,10 +83,6 @@ class DBSchemaAssembler(BaseAssembler):
             self._field_vector_store_connector.vector_store_config.embedding_fn = (
                 embeddings
             )
-        max_seq_length = 512
-        current_embeddings = self._table_vector_store_connector.current_embeddings
-        if current_embeddings:
-            max_seq_length = current_embeddings.client.max_seq_length  # type: ignore
         knowledge = DatasourceKnowledge(connector, model_dimension=max_seq_length)
         super().__init__(
             knowledge=knowledge,
@@ -101,6 +99,7 @@ class DBSchemaAssembler(BaseAssembler):
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
+        max_seq_length: int = 512,
     ) -> "DBSchemaAssembler":
         """Load document embedding into vector store from path.
 
@@ -113,6 +112,7 @@ class DBSchemaAssembler(BaseAssembler):
                 chunking.
             embedding_model: (Optional[str]) Embedding model to use.
             embeddings: (Optional[Embeddings]) Embeddings to use.
+            max_seq_length: Embedding model max sequence length
         Returns:
              DBSchemaAssembler
         """
@@ -123,6 +123,7 @@ class DBSchemaAssembler(BaseAssembler):
             embedding_model=embedding_model,
             chunk_parameters=chunk_parameters,
             embeddings=embeddings,
+            max_seq_length=max_seq_length,
         )
 
     def get_chunks(self) -> List[Chunk]:

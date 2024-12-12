@@ -56,14 +56,12 @@ def mock_embedding_factory():
 @pytest.fixture
 def mock_table_vector_store_connector():
     mock_connector = MagicMock(spec=VectorStoreConnector)
-    mock_connector.current_embeddings.client.max_seq_length = 10
     return mock_connector
 
 
 @pytest.fixture
 def mock_field_vector_store_connector():
     mock_connector = MagicMock(spec=VectorStoreConnector)
-    mock_connector.current_embeddings.client.max_seq_length = 10
     return mock_connector
 
 
@@ -85,5 +83,6 @@ def test_load_knowledge(
         embeddings=mock_embedding_factory.create(),
         table_vector_store_connector=mock_table_vector_store_connector,
         field_vector_store_connector=mock_field_vector_store_connector,
+        max_seq_length=10
     )
     assert len(assembler._chunks) > 1
