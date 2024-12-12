@@ -80,7 +80,7 @@ LLM_MODEL_CONFIG = {
     # https://platform.deepseek.com/api-docs/
     "deepseek_proxyllm": "deepseek_proxyllm",
     # https://docs.siliconflow.cn/quickstart
-    "silicon_flow_proxyllm": "silicon_flow_proxyllm",
+    "siliconflow_proxyllm": "siliconflow_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
@@ -322,6 +322,7 @@ EMBEDDING_MODEL_CONFIG = {
     "bge-reranker-large": os.path.join(MODEL_PATH, "bge-reranker-large"),
     # Proxy rerank model
     "rerank_proxy_http_openapi": "rerank_proxy_http_openapi",
+    "rerank_proxy_siliconflow": "rerank_proxy_siliconflow",
 }
 
 

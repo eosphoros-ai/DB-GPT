@@ -109,6 +109,18 @@ class EmbeddingLoader:
                 if proxy_param.proxy_backend:
                     openapi_param["model_name"] = proxy_param.proxy_backend
                 return OpenAPIRerankEmbeddings(**openapi_param)
+            elif model_name in ["rerank_proxy_siliconflow"]:
+                from dbgpt.rag.embedding.rerank import SiliconFlowRerankEmbeddings
+
+                proxy_param = cast(ProxyEmbeddingParameters, param)
+                openapi_param = {}
+                if proxy_param.proxy_server_url:
+                    openapi_param["api_url"] = proxy_param.proxy_server_url
+                if proxy_param.proxy_api_key:
+                    openapi_param["api_key"] = proxy_param.proxy_api_key
+                if proxy_param.proxy_backend:
+                    openapi_param["model_name"] = proxy_param.proxy_backend
+                return SiliconFlowRerankEmbeddings(**openapi_param)
             else:
                 from dbgpt.rag.embedding.rerank import CrossEncoderRerankEmbeddings
 
