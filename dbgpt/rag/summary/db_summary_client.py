@@ -146,10 +146,7 @@ class DBSummaryClient:
             self.embeddings,
             vector_store_config=field_vector_store_config,
         )
-        if (
-            not table_vector_connector.vector_name_exists()
-            or not field_vector_connector.vector_name_exists()
-        ):
+        if not table_vector_connector.vector_name_exists():
             from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
 
             chunk_parameters = ChunkParameters(
