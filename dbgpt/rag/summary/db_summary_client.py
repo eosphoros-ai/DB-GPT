@@ -157,7 +157,7 @@ class DBSummaryClient:
                 table_vector_store_connector=table_vector_connector,
                 field_vector_store_connector=field_vector_connector,
                 chunk_parameters=chunk_parameters,
-                max_seq_length=CFG.EMBEDDING_MODEL_MAX_SEQ_LEN
+                max_seq_length=CFG.EMBEDDING_MODEL_MAX_SEQ_LEN,
             )
 
             if len(db_assembler.get_chunks()) > 0:

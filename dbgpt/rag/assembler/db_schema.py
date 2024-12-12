@@ -1,5 +1,4 @@
 """DBSchemaAssembler."""
-import os
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
