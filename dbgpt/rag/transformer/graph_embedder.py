@@ -1,13 +1,9 @@
 """GraphEmbedder class."""
 
-import asyncio
 import logging
-import re
-from typing import Dict, List, Optional
+from typing import List
 
-from dbgpt.core import Chunk, LLMClient
-from dbgpt.storage.graph_store.graph import Edge, Graph, MemoryGraph, Vertex, GraphElemType
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from dbgpt.storage.graph_store.graph import Graph, GraphElemType
 from dbgpt.rag.transformer.text2vector import Text2Vector
 
 logger = logging.getLogger(__name__)
@@ -23,7 +19,7 @@ class GraphEmbedder(Text2Vector):
     async def embed(
         self,
         text: str,
-    ) -> List[List[Graph]]:
+    ) -> List[float]:
         """Embed"""
         return await super()._embed(text)
             

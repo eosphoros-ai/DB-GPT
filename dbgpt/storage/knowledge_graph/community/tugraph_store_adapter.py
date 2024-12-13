@@ -74,6 +74,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         all_edge_graph = self.query(edge_query)
         all_graph = MemoryGraph()
         for vertex in all_vertex_graph.vertices():
+            vertex.del_prop("embedding")
             all_graph.upsert_vertex(vertex)
         for edge in all_edge_graph.edges():
             all_graph.append_edge(edge)
@@ -587,20 +588,22 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             else:
                 rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
             
-            if isinstance(subs, List[str]):
+            if all(isinstance(item, str) for item in subs):
                 header = f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
             else:
+                final_list = []
                 for sub in subs:
                     vector = str(sub);
                     similarity_search = (
                         f"CALL db.vertexVectorKnnSearch("
                         f"'{GraphElemType.ENTITY.value}','embedding', {vector}, "
                         "{top_k:2, hnsw_ef_search:10})"
-                        "YIELD node RETURN node.id AS id"
+                        "YIELD node RETURN node.id AS id;"
                     )
                     result_list = self.graph_store.conn.run(query=similarity_search)
-                    final_list = final_list + result_list
-                header = f"WHERE n.id IN {[(record["id"]) for record in final_list]} "
+                    final_list.extend(result_list)
+                id_list = [(record["id"]) for record in final_list]
+                header = f"WHERE n.id IN {id_list} "
 
             query = (
                 f"MATCH p=(n:{GraphElemType.ENTITY.value})"
@@ -626,9 +629,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
             # Check if the entities exist in the graph
 
-            if isinstance(subs, List[str]):
+            if all(isinstance(item, str) for item in subs):
                 header = f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
             else:
+                final_list = []
                 for sub in subs:
                     vector = str(sub);
                     similarity_search = (
@@ -638,9 +642,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         "YIELD node RETURN node.id AS id"
                     )
                     result_list = self.graph_store.conn.run(query=similarity_search)
-                    final_list = final_list + result_list
-                header = f"WHERE n.id IN {[(record["id"]) for record in final_list]} "
-            
+                    final_list.extend(result_list)
+                id_list = [(record["id"]) for record in final_list]
+                header = f"WHERE n.id IN {id_list} "
             check_entity_query = (
                 f"MATCH (n:{GraphElemType.ENTITY.value}) "
                 f"{header}" 
@@ -648,9 +652,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             )
             if self.query(check_entity_query):
                 # Query the leaf chunks in the chain from documents to chunks
-                if isinstance(subs, List[str]):
+                if all(isinstance(item, str) for item in subs):
                     header = f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
                 else:
+                    final_list = []
                     for sub in subs:
                         vector = str(sub);
                         similarity_search = (
@@ -660,8 +665,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                             "YIELD node RETURN node.name AS name"
                         )
                         result_list = self.graph_store.conn.run(query=similarity_search)
-                        final_list = final_list + result_list
-                header = f"WHERE m.name IN {[(record["name"]) for record in final_list]} "
+                        final_list.extend(result_list)
+                    name_list = [(record["name"]) for record in final_list]
+                    header = f"WHERE n.name IN {name_list} "
                 
                 leaf_chunk_query = (
                     f"MATCH p=(n:{GraphElemType.CHUNK.value})-"
@@ -701,11 +707,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         )
                     )
             else:
-                if isinstance(subs, List[str]):
+                if all(isinstance(item, str) for item in subs):
                     _subs_condition = " OR ".join(
                         [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
                     )
                 else:
+                    final_list = []
                     for sub in subs:
                         vector = str(sub);
                         similarity_search = (
@@ -715,9 +722,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                             "YIELD node RETURN node.name AS name"
                         )
                         result_list = self.graph_store.conn.run(query=similarity_search)
-                        final_list = final_list + result_list
-                    _subs_condition = f"m.name IN {[(record["name"]) for record in final_list]} "
-
+                        final_list.extend(result_list)
+                    name_list = [(record["name"]) for record in final_list]
+                    _subs_condition = f"n.name IN {name_list} "
+                
                 # Query the chain from documents to chunks,
                 # document -> chunk -> chunk -> chunk -> ... -> chunk
                 chain_query = (

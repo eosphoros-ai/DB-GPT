@@ -2,7 +2,6 @@
 
 import logging
 import dashscope
-import json
 from http import HTTPStatus
 from abc import ABC
 from typing import List

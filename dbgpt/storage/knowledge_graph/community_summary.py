@@ -351,7 +351,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         similar_search_enabled = self._similar_search_enabled
 
         if similar_search_enabled:
-            keywords: List[List[float]] = await self._garph_embedder.embed(text)
+            keywords: List[List[float]] = []
+            vector = await self._garph_embedder.embed(text)
+            keywords.append(vector)
         else:
             keywords: List[str] = await self._keyword_extractor.extract(text)
         
@@ -369,8 +371,13 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
             if document_graph_enabled:
                 keywords_for_document_graph = keywords
-                for vertex in subgraph.vertices():
-                    keywords_for_document_graph.append(vertex.name)
+                if similar_search_enabled:
+                    for vertex in subgraph.vertices():
+                        vector = await self._garph_embedder.embed(vertex.name)
+                        keywords_for_document_graph.append(vector)
+                else: 
+                    for vertex in subgraph.vertices():
+                        keywords_for_document_graph.append(vertex.name)
 
                 subgraph_for_doc = self._graph_store_apdater.explore(
                     subs=keywords_for_document_graph,
@@ -384,6 +391,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     limit=self._knowledge_graph_chunk_search_top_size,
                     search_scope="document_graph",
                 )
+                
+        for vertex in subgraph.vertices():
+            vertex.del_prop("embedding")
+
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (
             subgraph_for_doc.format() if subgraph_for_doc else ""
