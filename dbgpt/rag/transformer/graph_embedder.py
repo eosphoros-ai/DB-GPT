@@ -3,8 +3,8 @@
 import logging
 from typing import List
 
-from dbgpt.storage.graph_store.graph import Graph, GraphElemType
 from dbgpt.rag.transformer.text2vector import Text2Vector
+from dbgpt.storage.graph_store.graph import Graph, GraphElemType
 
 logger = logging.getLogger(__name__)
 

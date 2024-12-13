@@ -74,7 +74,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         all_edge_graph = self.query(edge_query)
         all_graph = MemoryGraph()
         for vertex in all_vertex_graph.vertices():
-            vertex.del_prop("embedding")
             all_graph.upsert_vertex(vertex)
         for edge in all_edge_graph.edges():
             all_graph.append_edge(edge)
@@ -150,7 +149,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "_document_id": "0",
                 "_chunk_id": "0",
                 "_community_id": "0",
-                "embedding": entity.get_prop("embedding"),
+                "_embedding": entity.get_prop("embedding"),
             }
             for entity in entities
         ]
@@ -161,7 +160,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
         create_vector_index_query = (
             f"CALL db.addVertexVectorIndex("
-            f'"{GraphElemType.ENTITY.value}", "embedding", '
+            f'"{GraphElemType.ENTITY.value}", "_embedding", '
             "{dimension: 512})"
         )
         self.graph_store.conn.run(query=entity_query)
@@ -204,7 +203,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "id": self._escape_quotes(chunk.vid),
                 "name": self._escape_quotes(chunk.name),
                 "content": self._escape_quotes(chunk.get_prop("content")),
-                "embedding": chunk.get_prop("embedding"),
+                "_embedding": chunk.get_prop("embedding"),
             }
             for chunk in chunks
         ]
@@ -216,7 +215,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
         create_vector_index_query = (
             f"CALL db.addVertexVectorIndex("
-            f'"{GraphElemType.CHUNK.value}", "embedding", '
+            f'"{GraphElemType.CHUNK.value}", "_embedding", '
             "{dimension: 512})"
         )
         self.graph_store.conn.run(query=chunk_query)
@@ -429,7 +428,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_property_schema("name", "STRING", False),
             _format_graph_property_schema("_community_id", "STRING", True, True),
             _format_graph_property_schema("content", "STRING", True, True),
-            _format_graph_property_schema("embedding", "FLOAT_VECTOR", True, False),
+            _format_graph_property_schema("_embedding", "FLOAT_VECTOR", True, False),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
@@ -441,7 +440,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_property_schema("name", "STRING", False),
             _format_graph_property_schema("_community_id", "STRING", True, True),
             _format_graph_property_schema("description", "STRING", True, True),
-            _format_graph_property_schema("embedding", "FLOAT_VECTOR", True, False),
+            _format_graph_property_schema("_embedding", "FLOAT_VECTOR", True, False),
         ]
         self.create_graph_label(
             graph_elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
@@ -596,7 +595,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     vector = str(sub);
                     similarity_search = (
                         f"CALL db.vertexVectorKnnSearch("
-                        f"'{GraphElemType.ENTITY.value}','embedding', {vector}, "
+                        f"'{GraphElemType.ENTITY.value}','_embedding', {vector}, "
                         "{top_k:2, hnsw_ef_search:10})"
                         "YIELD node RETURN node.id AS id;"
                     )
@@ -637,7 +636,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     vector = str(sub);
                     similarity_search = (
                         f"CALL db.vertexVectorKnnSearch("
-                        f"'{GraphElemType.ENTITY.value}','embedding', {vector}, "
+                        f"'{GraphElemType.ENTITY.value}','_embedding', {vector}, "
                         "{top_k:2, hnsw_ef_search:10})"
                         "YIELD node RETURN node.id AS id"
                     )
@@ -660,7 +659,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         vector = str(sub);
                         similarity_search = (
                             f"CALL db.vertexVectorKnnSearch("
-                            f"'{GraphElemType.ENTITY.value}','embedding', {vector}, "
+                            f"'{GraphElemType.ENTITY.value}','_embedding', {vector}, "
                             "{top_k:2, hnsw_ef_search:10})"
                             "YIELD node RETURN node.name AS name"
                         )
@@ -717,7 +716,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         vector = str(sub);
                         similarity_search = (
                             f"CALL db.vertexVectorKnnSearch("
-                            f"'{GraphElemType.CHUNK.value}','embedding', {vector}, "
+                            f"'{GraphElemType.CHUNK.value}','_embedding', {vector}, "
                             "{top_k:2, hnsw_ef_search:10})"
                             "YIELD node RETURN node.name AS name"
                         )

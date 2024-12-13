@@ -1,10 +1,11 @@
 """Text2Vector class."""
 
 import logging
-import dashscope
-from http import HTTPStatus
 from abc import ABC
+from http import HTTPStatus
 from typing import List
+
+import dashscope
 
 from dbgpt.rag.transformer.base import EmbedderBase
 

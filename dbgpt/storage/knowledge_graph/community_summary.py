@@ -8,8 +8,8 @@ from typing import List, Optional, Tuple
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
-from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
+from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -391,9 +391,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     limit=self._knowledge_graph_chunk_search_top_size,
                     search_scope="document_graph",
                 )
-                
-        for vertex in subgraph.vertices():
-            vertex.del_prop("embedding")
 
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (
