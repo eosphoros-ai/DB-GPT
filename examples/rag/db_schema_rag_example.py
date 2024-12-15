@@ -62,8 +62,7 @@ if __name__ == "__main__":
     connection = _create_temporary_connection()
     vector_connector = _create_vector_connector()
     assembler = DBSchemaAssembler.load_from_connection(
-        connector=connection,
-        table_vector_store_connector=vector_connector
+        connector=connection, table_vector_store_connector=vector_connector
     )
     assembler.persist()
     # get db schema retriever

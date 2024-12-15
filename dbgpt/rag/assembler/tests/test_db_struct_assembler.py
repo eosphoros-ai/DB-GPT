@@ -1,5 +1,5 @@
 from typing import List
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -26,7 +26,7 @@ def mock_table_vector_store_connector():
             "table_name": "user",
         },
     )
-    mock_connector.asimilar_search_with_scores = AsyncMock(return_value=[chunk])
+    mock_connector.similar_search_with_scores = MagicMock(return_value=[chunk])
     return mock_connector
 
 
@@ -63,7 +63,7 @@ def mock_field_vector_store_connector():
             "table_name": "user",
         },
     )
-    mock_connector.asimilar_search_with_scores = AsyncMock(
+    mock_connector.similar_search_with_scores = MagicMock(
         return_value=[chunk1, chunk2, chunk3]
     )
     return mock_connector
@@ -96,10 +96,9 @@ def mock_parse_db_summary() -> str:
 @patch.object(
     dbgpt.rag.summary.rdbms_db_summary, "_parse_db_summary", mock_parse_db_summary
 )
-@pytest.mark.asyncio
-async def test_retrieve_with_mocked_summary(dbstruct_retriever):
+def test_retrieve_with_mocked_summary(dbstruct_retriever):
     query = "Table summary"
-    chunks: List[Chunk] = await dbstruct_retriever._aretrieve(query)
+    chunks: List[Chunk] = dbstruct_retriever._retrieve(query)
     assert isinstance(chunks[0], Chunk)
     assert chunks[0].content == (
         "table_name: user\ncomment: user about dbgpt\n"
@@ -108,7 +107,7 @@ async def test_retrieve_with_mocked_summary(dbstruct_retriever):
     )
 
 
-async def async_mock_parse_db_summary() -> str:
+def async_mock_parse_db_summary() -> str:
     """Asynchronous patch for _parse_db_summary method."""
     return (
         "table_name: user\ncomment: user about dbgpt\n"

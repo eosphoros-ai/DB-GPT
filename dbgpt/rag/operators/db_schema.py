@@ -7,11 +7,11 @@ from dbgpt.core.interface.operators.retriever import RetrieverOperator
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.serve.rag.connector import VectorStoreConnector
 
+from ...storage.vector_store.base import VectorStoreConfig
 from ..assembler.db_schema import DBSchemaAssembler
 from ..chunk_manager import ChunkParameters
 from ..retriever.db_schema import DBSchemaRetriever
 from .assembler import AssemblerOperator
-from ...storage.vector_store.base import VectorStoreConfig
 
 
 class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
@@ -77,12 +77,13 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
         field_vector_store_config = VectorStoreConfig(
             name=table_vector_store_connector.vector_store_config.name + "_field"
         )
-        self._field_vector_store_connector = field_vector_store_connector or VectorStoreConnector.from_default(
-            os.getenv(
-                "VECTOR_STORE_TYPE", "Chroma"
-            ),
-            self._table_vector_store_connector.current_embeddings,
-            vector_store_config=field_vector_store_config,
+        self._field_vector_store_connector = (
+            field_vector_store_connector
+            or VectorStoreConnector.from_default(
+                os.getenv("VECTOR_STORE_TYPE", "Chroma"),
+                self._table_vector_store_connector.current_embeddings,
+                vector_store_config=field_vector_store_config,
+            )
         )
         self._connector = connector
         super().__init__(**kwargs)

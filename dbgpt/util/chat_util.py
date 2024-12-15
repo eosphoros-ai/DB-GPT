@@ -1,6 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Coroutine, List, Callable
+from typing import Any, Callable, Coroutine, List
 
 
 async def llm_chat_response_nostream(chat_scene: str, **chat_param):
@@ -48,8 +48,8 @@ async def run_async_tasks(
 
 
 def run_tasks(
-        tasks: List[Callable],
-        concurrency_limit: int = None,
+    tasks: List[Callable],
+    concurrency_limit: int = None,
 ) -> List[Any]:
     """
     Run a list of tasks concurrently using a thread pool.

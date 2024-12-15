@@ -6,12 +6,12 @@ from dbgpt.core import Chunk, Embeddings
 from dbgpt.datasource.base import BaseConnector
 
 from ...serve.rag.connector import VectorStoreConnector
+from ...storage.vector_store.base import VectorStoreConfig
 from ..assembler.base import BaseAssembler
 from ..chunk_manager import ChunkParameters
 from ..embedding.embedding_factory import DefaultEmbeddingFactory
 from ..knowledge.datasource import DatasourceKnowledge
 from ..retriever.db_schema import DBSchemaRetriever
-from ...storage.vector_store.base import VectorStoreConfig
 
 
 class DBSchemaAssembler(BaseAssembler):
@@ -64,12 +64,13 @@ class DBSchemaAssembler(BaseAssembler):
         field_vector_store_config = VectorStoreConfig(
             name=table_vector_store_connector.vector_store_config.name + "_field"
         )
-        self._field_vector_store_connector = field_vector_store_connector or VectorStoreConnector.from_default(
-            os.getenv(
-                "VECTOR_STORE_TYPE", "Chroma"
-            ),
-            self._table_vector_store_connector.current_embeddings,
-            vector_store_config=field_vector_store_config,
+        self._field_vector_store_connector = (
+            field_vector_store_connector
+            or VectorStoreConnector.from_default(
+                os.getenv("VECTOR_STORE_TYPE", "Chroma"),
+                self._table_vector_store_connector.current_embeddings,
+                vector_store_config=field_vector_store_config,
+            )
         )
 
         self._embedding_model = embedding_model

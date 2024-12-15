@@ -5,7 +5,7 @@ import pytest
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
-from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
+from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddings, EmbeddingFactory
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
 from dbgpt.serve.rag.connector import VectorStoreConnector
 
@@ -56,12 +56,8 @@ def mock_embedding_factory():
 @pytest.fixture
 def mock_table_vector_store_connector():
     mock_connector = MagicMock(spec=VectorStoreConnector)
-    return mock_connector
-
-
-@pytest.fixture
-def mock_field_vector_store_connector():
-    mock_connector = MagicMock(spec=VectorStoreConnector)
+    mock_connector.vector_store_config.name = "table_vector_store_name"
+    mock_connector.current_embeddings = DefaultEmbeddings()
     return mock_connector
 
 
@@ -70,7 +66,6 @@ def test_load_knowledge(
     mock_chunk_parameters,
     mock_embedding_factory,
     mock_table_vector_store_connector,
-    mock_field_vector_store_connector,
 ):
     mock_chunk_parameters.chunk_strategy = "CHUNK_BY_SIZE"
     mock_chunk_parameters.text_splitter = RDBTextSplitter(
@@ -82,7 +77,6 @@ def test_load_knowledge(
         chunk_parameters=mock_chunk_parameters,
         embeddings=mock_embedding_factory.create(),
         table_vector_store_connector=mock_table_vector_store_connector,
-        field_vector_store_connector=mock_field_vector_store_connector,
         max_seq_length=10,
     )
     assert len(assembler._chunks) > 1

@@ -1,22 +1,23 @@
 """DBSchema retriever."""
 import logging
-from functools import reduce
-from typing import List, Optional, cast
-from dbgpt._private.config import Config
+from typing import List, Optional
 
+from dbgpt._private.config import Config
 from dbgpt.core import Chunk
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
-from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
+from dbgpt.rag.summary.gdbms_db_summary import _parse_db_summary
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.vector_store.filters import MetadataFilter, MetadataFilters
-from dbgpt.util.chat_util import run_async_tasks, run_tasks
+from dbgpt.util.chat_util import run_tasks
 from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 
 logger = logging.getLogger(__name__)
 
 CFG = Config()
+
+
 class DBSchemaRetriever(BaseRetriever):
     """DBSchema retriever."""
 
@@ -122,9 +123,6 @@ class DBSchemaRetriever(BaseRetriever):
         if self._need_embeddings:
             return self._similarity_search(query, filters)
         else:
-            from dbgpt.rag.summary.rdbms_db_summary import (  # noqa: F401
-                _parse_db_summary,
-            )
             table_summaries = _parse_db_summary(self._connector)
             return [Chunk(content=table_summary) for table_summary in table_summaries]
 
@@ -184,7 +182,8 @@ class DBSchemaRetriever(BaseRetriever):
         metadata["part"] = "field"
         filters = [MetadataFilter(key=k, value=v) for k, v in metadata.items()]
         field_chunks = self._field_vector_store_connector.similar_search_with_scores(
-                query, self._top_k, 0, MetadataFilters(filters=filters))
+            query, self._top_k, 0, MetadataFilters(filters=filters)
+        )
         field_contents = [chunk.content for chunk in field_chunks]
         table_chunk.content += "\n" + self._separator + "\n" + "\n".join(field_contents)
         return table_chunk
@@ -194,8 +193,8 @@ class DBSchemaRetriever(BaseRetriever):
     ) -> List[Chunk]:
         """Similar search."""
         table_chunks = self._table_vector_store_connector.similar_search_with_scores(
-                query, self._top_k, 0, filters
-            )
+            query, self._top_k, 0, filters
+        )
 
         not_sep_chunks = [
             chunk for chunk in table_chunks if not chunk.metadata.get("separated")
@@ -208,8 +207,7 @@ class DBSchemaRetriever(BaseRetriever):
 
         # Create tasks list
         tasks = [
-            lambda c=chunk: self._retrieve_field(c, query)
-            for chunk in separated_chunks
+            lambda c=chunk: self._retrieve_field(c, query) for chunk in separated_chunks
         ]
         # Run tasks concurrently
         separated_result = run_tasks(tasks, concurrency_limit=3)
