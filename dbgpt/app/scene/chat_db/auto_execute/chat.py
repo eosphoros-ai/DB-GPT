@@ -55,8 +55,12 @@ class ChatWithDbAutoExecute(BaseChat):
         table_infos = None
         try:
             with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
-                table_infos = await client.aget_db_summary(
-                    self.db_name, self.current_user_input, CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+                table_infos = await blocking_func_to_async(
+                    self._executor,
+                    client.get_db_summary,
+                    self.db_name,
+                    self.current_user_input,
+                    CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
                 )
         except Exception as e:
             print("db summary find error!" + str(e))

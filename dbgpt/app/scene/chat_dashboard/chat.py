@@ -61,8 +61,12 @@ class ChatDashboard(BaseChat):
 
         client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
         try:
-            table_infos = await client.aget_db_summary(
-                self.db_name, self.current_user_input, self.top_k
+            table_infos = await blocking_func_to_async(
+                self._executor,
+                client.get_db_summary,
+                self.db_name,
+                self.current_user_input,
+                self.top_k,
             )
             print("dashboard vector find tables:{}", table_infos)
         except Exception as e:

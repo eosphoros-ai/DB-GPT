@@ -55,57 +55,21 @@ class DBSummaryClient:
 
         vector_store_name = dbname + "_profile"
         table_vector_store_config = VectorStoreConfig(name=vector_store_name)
-        field_vector_store_config = VectorStoreConfig(name=vector_store_name + "_field")
         table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
             self.embeddings,
             vector_store_config=table_vector_store_config,
         )
-        field_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=field_vector_store_config,
-        )
+
         from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 
         retriever = DBSchemaRetriever(
             top_k=topk,
             table_vector_store_connector=table_vector_connector,
-            field_vector_store_connector=field_vector_connector,
             separator="--table-field-separator--",
         )
 
         table_docs = retriever.retrieve(query)
-        ans = [d.content for d in table_docs]
-        return ans
-
-    async def aget_db_summary(self, dbname, query, topk):
-        """Get user query related tables info."""
-        from dbgpt.serve.rag.connector import VectorStoreConnector
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
-
-        vector_store_name = dbname + "_profile"
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
-        field_vector_store_config = VectorStoreConfig(name=vector_store_name + "_field")
-        table_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=table_vector_store_config,
-        )
-        field_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=field_vector_store_config,
-        )
-        from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
-
-        retriever = DBSchemaRetriever(
-            top_k=topk,
-            table_vector_store_connector=table_vector_connector,
-            field_vector_store_connector=field_vector_connector,
-        )
-
-        table_docs = await retriever.aretrieve(query)
         ans = [d.content for d in table_docs]
         return ans
 
@@ -135,16 +99,10 @@ class DBSummaryClient:
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         table_vector_store_config = VectorStoreConfig(name=vector_store_name)
-        field_vector_store_config = VectorStoreConfig(name=vector_store_name + "_field")
         table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
             self.embeddings,
             vector_store_config=table_vector_store_config,
-        )
-        field_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=field_vector_store_config,
         )
         if not table_vector_connector.vector_name_exists():
             from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
@@ -155,7 +113,6 @@ class DBSummaryClient:
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connector=db_summary_client.db,
                 table_vector_store_connector=table_vector_connector,
-                field_vector_store_connector=field_vector_connector,
                 chunk_parameters=chunk_parameters,
                 max_seq_length=CFG.EMBEDDING_MODEL_MAX_SEQ_LEN,
             )

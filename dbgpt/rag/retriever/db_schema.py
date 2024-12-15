@@ -1,6 +1,8 @@
 """DBSchema retriever."""
+import logging
 from functools import reduce
 from typing import List, Optional, cast
+from dbgpt._private.config import Config
 
 from dbgpt.core import Chunk
 from dbgpt.datasource.base import BaseConnector
@@ -9,16 +11,19 @@ from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 from dbgpt.serve.rag.connector import VectorStoreConnector
 from dbgpt.storage.vector_store.filters import MetadataFilter, MetadataFilters
-from dbgpt.util.chat_util import run_async_tasks
+from dbgpt.util.chat_util import run_async_tasks, run_tasks
+from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 
+logger = logging.getLogger(__name__)
 
+CFG = Config()
 class DBSchemaRetriever(BaseRetriever):
     """DBSchema retriever."""
 
     def __init__(
         self,
         table_vector_store_connector: VectorStoreConnector,
-        field_vector_store_connector: VectorStoreConnector,
+        field_vector_store_connector: VectorStoreConnector = None,
         separator: str = "--table-field-separator--",
         top_k: int = 4,
         connector: Optional[BaseConnector] = None,
@@ -115,17 +120,11 @@ class DBSchemaRetriever(BaseRetriever):
             List[Chunk]: list of chunks
         """
         if self._need_embeddings:
-            queries = [query]
-            candidates = [
-                self._table_vector_store_connector.similar_search(
-                    query, self._top_k, filters
-                )
-                for query in queries
-            ]
-            return cast(List[Chunk], reduce(lambda x, y: x + y, candidates))
+            return self._similarity_search(query, filters)
         else:
-            if not self._connector:
-                raise RuntimeError("RDBMSConnector connection is required.")
+            from dbgpt.rag.summary.rdbms_db_summary import (  # noqa: F401
+                _parse_db_summary,
+            )
             table_summaries = _parse_db_summary(self._connector)
             return [Chunk(content=table_summary) for table_summary in table_summaries]
 
@@ -159,21 +158,11 @@ class DBSchemaRetriever(BaseRetriever):
         Returns:
             List[Chunk]: list of chunks
         """
-        if self._need_embeddings:
-            candidates = [self._similarity_search(query, filters)]
-            result_candidates = await run_async_tasks(
-                tasks=candidates, concurrency_limit=3
-            )
-            return result_candidates[0]
-        else:
-            from dbgpt.rag.summary.rdbms_db_summary import (  # noqa: F401
-                _parse_db_summary,
-            )
-
-            table_summaries = await run_async_tasks(
-                tasks=[self._aparse_db_summary()], concurrency_limit=1
-            )
-            return [Chunk(content=table_summary) for table_summary in table_summaries]
+        return await blocking_func_to_async_no_executor(
+            func=self._retrieve,
+            query=query,
+            filters=filters,
+        )
 
     async def _aretrieve_with_score(
         self,
@@ -190,43 +179,40 @@ class DBSchemaRetriever(BaseRetriever):
         """
         return await self._aretrieve(query, filters)
 
-    async def _retrieve_field(self, table_chunk: Chunk, query) -> Chunk:
+    def _retrieve_field(self, table_chunk: Chunk, query) -> Chunk:
         metadata = table_chunk.metadata
         metadata["part"] = "field"
         filters = [MetadataFilter(key=k, value=v) for k, v in metadata.items()]
-        field_chunks = (
-            await self._field_vector_store_connector.asimilar_search_with_scores(
-                query, self._top_k, 0, MetadataFilters(filters=filters)
-            )
-        )
+        field_chunks = self._field_vector_store_connector.similar_search_with_scores(
+                query, self._top_k, 0, MetadataFilters(filters=filters))
         field_contents = [chunk.content for chunk in field_chunks]
         table_chunk.content += "\n" + self._separator + "\n" + "\n".join(field_contents)
         return table_chunk
 
-    async def _similarity_search(
+    def _similarity_search(
         self, query, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
         """Similar search."""
-        table_chunks = (
-            await self._table_vector_store_connector.asimilar_search_with_scores(
+        table_chunks = self._table_vector_store_connector.similar_search_with_scores(
                 query, self._top_k, 0, filters
             )
-        )
+
         not_sep_chunks = [
             chunk for chunk in table_chunks if not chunk.metadata.get("separated")
         ]
         separated_chunks = [
             chunk for chunk in table_chunks if chunk.metadata.get("separated")
         ]
-        separated_result = await run_async_tasks(
-            tasks=[self._retrieve_field(chunk, query) for chunk in separated_chunks]
-        )
+        if not separated_chunks:
+            return not_sep_chunks
+
+        # Create tasks list
+        tasks = [
+            lambda c=chunk: self._retrieve_field(c, query)
+            for chunk in separated_chunks
+        ]
+        # Run tasks concurrently
+        separated_result = run_tasks(tasks, concurrency_limit=3)
+
+        # Combine and return results
         return not_sep_chunks + separated_result
-
-    async def _aparse_db_summary(self) -> List[str]:
-        """Similar search."""
-        from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
-
-        if not self._connector:
-            raise RuntimeError("RDBMSConnector connection is required.")
-        return _parse_db_summary(self._connector)

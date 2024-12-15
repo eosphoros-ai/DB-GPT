@@ -1,5 +1,5 @@
 """The DBSchema Retriever Operator."""
-
+import os
 from typing import List, Optional
 
 from dbgpt.core import Chunk
@@ -11,6 +11,7 @@ from ..assembler.db_schema import DBSchemaAssembler
 from ..chunk_manager import ChunkParameters
 from ..retriever.db_schema import DBSchemaRetriever
 from .assembler import AssemblerOperator
+from ...storage.vector_store.base import VectorStoreConfig
 
 
 class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
@@ -56,7 +57,7 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
         self,
         connector: BaseConnector,
         table_vector_store_connector: VectorStoreConnector,
-        field_vector_store_connector: VectorStoreConnector,
+        field_vector_store_connector: VectorStoreConnector = None,
         chunk_parameters: Optional[ChunkParameters] = None,
         **kwargs
     ):
@@ -72,7 +73,17 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
             chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
         self._chunk_parameters = chunk_parameters
         self._table_vector_store_connector = table_vector_store_connector
-        self._field_vector_store_connector = field_vector_store_connector
+
+        field_vector_store_config = VectorStoreConfig(
+            name=table_vector_store_connector.vector_store_config.name + "_field"
+        )
+        self._field_vector_store_connector = field_vector_store_connector or VectorStoreConnector.from_default(
+            os.getenv(
+                "VECTOR_STORE_TYPE", "Chroma"
+            ),
+            self._table_vector_store_connector.current_embeddings,
+            vector_store_config=field_vector_store_config,
+        )
         self._connector = connector
         super().__init__(**kwargs)
 

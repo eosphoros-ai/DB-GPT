@@ -17,14 +17,14 @@ def mock_db_connection():
 @pytest.fixture
 def mock_table_vector_store_connector():
     mock_connector = MagicMock()
-    mock_connector.similar_search.return_value = [Chunk(content="Table summary")] * 4
+    mock_connector.similar_search_with_scores.return_value = [Chunk(content="Table summary")] * 4
     return mock_connector
 
 
 @pytest.fixture
 def mock_field_vector_store_connector():
     mock_connector = MagicMock()
-    mock_connector.similar_search.return_value = [Chunk(content="Field summary")] * 4
+    mock_connector.similar_search_with_scores.return_value = [Chunk(content="Field summary")] * 4
     return mock_connector
 
 

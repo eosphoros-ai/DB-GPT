@@ -119,20 +119,21 @@ def _split_columns_str(columns: List[str], model_dimension: int):
     for element_str in columns:
         element_length = len(element_str)
 
-        # 如果加上当前元素的长度会超过阈值，则将当前字符串添加到结果中，并重置
+        # If adding the current element's length would exceed the threshold,
+        # add the current string to results and reset
         if current_length + element_length > model_dimension:
-            result.append(current_string.strip())  # 去掉末尾的空格
+            result.append(current_string.strip())  # Remove trailing spaces
             current_string = element_str
             current_length = element_length
         else:
-            # 如果当前字符串为空，直接添加元素
+            # If current string is empty, add element directly
             if current_string:
                 current_string += "," + element_str
             else:
                 current_string = element_str
-            current_length += element_length + 1  # 加上空格的长度
+            current_length += element_length + 1  # Add length of space
 
-    # 最后一段字符串
+    # Handle the last string segment
     if current_string:
         result.append(current_string.strip())
 
