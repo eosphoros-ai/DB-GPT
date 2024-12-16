@@ -995,7 +995,7 @@
                                 "default": null,
                                 "placeholder": null,
                                 "description": "Default datasource.",
-                                "value": "/Users/chenketing/Downloads/站点OB合并时间对应关系表.md",
+                                "value": "../../docs/docs/awel/awel.md",
                                 "options": null
                             },
                             {
