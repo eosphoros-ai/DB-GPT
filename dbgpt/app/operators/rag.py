@@ -104,7 +104,7 @@ class HOKnowledgeOperator(MapOperator[str, HOContextBody]):
             return chunks
 
     metadata = ViewMetadata(
-        label=_("Knowledge Operator"),
+        label=_("Knowledge Space Operator"),
         name="higher_order_knowledge_operator",
         category=OperatorCategory.RAG,
         description=_(

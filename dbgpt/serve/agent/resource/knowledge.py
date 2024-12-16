@@ -67,7 +67,9 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
         # TODO: Build the retriever in a thread pool, it will block the event loop
         retriever = KnowledgeSpaceRetriever(
             space_id=space_name,
-            top_k=context.get("top_k", None) if context else 4,
+            top_k=context.get("top_k", None)
+            if context
+            else CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
         )
         super().__init__(name, retriever=retriever)
 
