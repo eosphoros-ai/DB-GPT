@@ -1,11 +1,11 @@
-import { apiInterceptors, getDbList, getDbSupportType, postDbDelete } from '@/client/api';
+import { apiInterceptors, getDbList, getDbSupportType, postDbDelete, postDbRefresh } from '@/client/api';
 import GPTCard from '@/components/common/gpt-card';
 import MuiLoading from '@/components/common/loading';
 import FormDialog from '@/components/database/form-dialog';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { DBOption, DBType, DbListResponse, DbSupportTypeResponse } from '@/types/db';
 import { dbMapper } from '@/utils';
-import { DeleteFilled, EditFilled, PlusOutlined } from '@ant-design/icons';
+import { DeleteFilled, EditFilled, PlusOutlined, RedoOutlined } from '@ant-design/icons';
 import { useAsyncEffect } from 'ahooks';
 import { Badge, Button, Card, Drawer, Empty, Modal, message } from 'antd';
 import { useMemo, useState } from 'react';
@@ -36,6 +36,7 @@ function Database() {
     name?: string;
     type?: DBType;
   }>({ open: false });
+  const [refreshLoading, setRefreshLoading] = useState(false);
 
   const getDbSupportList = async () => {
     const [, data] = await apiInterceptors(getDbSupportType());
@@ -121,6 +122,13 @@ function Database() {
       name: info.label,
       type: info.value,
     });
+  };
+
+  const onRefresh = async (item: DBItem) => {
+    setRefreshLoading(true);
+    const [, res] = await apiInterceptors(postDbRefresh({ db_name: item.db_name, db_type: item.db_type }));
+    if (res) message.success(t('refreshSuccess'));
+    setRefreshLoading(false);
   };
 
   // TODO: unused function call
@@ -282,6 +290,13 @@ function Database() {
                   title={item.db_name}
                   extra={
                     <>
+                      <RedoOutlined
+                        className='mr-2'
+                        style={{ color: 'gray' }}
+                        onClick={() => {
+                          onRefresh(item);
+                        }}
+                      />
                       <EditFilled
                         className='mr-2'
                         style={{ color: '#1b7eff' }}

@@ -35,20 +35,24 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
       title: t('Template_Name'),
       dataIndex: 'name',
       key: 'name',
+      width: '30%',
     },
     {
       title: t('Template_Label'),
       dataIndex: 'label',
       key: 'label',
+      width: '30%',
     },
     {
       title: t('Template_Description'),
       dataIndex: 'description',
       key: 'description',
+      width: '30%',
     },
     {
       title: t('Template_Action'),
       key: 'action',
+      width: '10%',
       render: (_, record) => (
         <Space size='middle'>
           <Button
@@ -75,14 +79,19 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
   return (
     <>
       <Modal
-        className='w-[700px]'
+        className='w-[900px]'
         title={t('Import_From_Template')}
         open={isFlowTemplateModalOpen}
         onCancel={() => setIsFlowTemplateModalOpen(false)}
         cancelButtonProps={{ className: 'hidden' }}
         okButtonProps={{ className: 'hidden' }}
       >
-        <Table className='w-full' dataSource={dataSource} columns={columns} />;
+        <Table
+          className='w-full'
+          // scroll={{ x: 'max-content' }}
+          dataSource={dataSource}
+          columns={columns}
+        />;
       </Modal>
     </>
   );
