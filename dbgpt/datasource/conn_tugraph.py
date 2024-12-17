@@ -36,7 +36,7 @@ class TuGraphConnector(BaseConnector):
         return not exists
 
     def is_exist(self, graph_name: str) -> bool:
-        """check a new graph in the database if it doesn't already exist."""
+        """Check a new graph in the database if it doesn't already exist."""
         try:
             with self._driver.session(database="default") as session:
                 graph_list = session.run("CALL dbms.graph.listGraphs()").data()
