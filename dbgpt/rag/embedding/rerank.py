@@ -175,10 +175,10 @@ class SiliconFlowRerankEmbeddings(OpenAPIRerankEmbeddings):
         """Initialize the SiliconFlowRerankEmbeddings."""
         # If the API key is not provided, try to get it from the environment
         if "api_key" not in kwargs:
-            kwargs["api_key"] = os.getenv("SILICON_FLOW_API_KEY")
+            kwargs["api_key"] = os.getenv("SILICONFLOW_API_KEY")
 
         if "api_url" not in kwargs:
-            env_api_url = os.getenv("SILICON_FLOW_API_BASE")
+            env_api_url = os.getenv("SILICONFLOW_API_BASE")
             if env_api_url:
                 env_api_url = env_api_url.rstrip("/")
                 kwargs["api_url"] = env_api_url + "/rerank"

@@ -621,7 +621,7 @@ _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {
         "proxy_tongyi",
         "proxy_qianfan",
         "rerank_proxy_http_openapi",
-        "rerank_proxy_silicon_flow",
+        "rerank_proxy_siliconflow",
     ]
 }
 
