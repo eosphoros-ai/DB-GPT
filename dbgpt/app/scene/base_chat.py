@@ -513,7 +513,7 @@ class BaseChat(ABC):
             },
             # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
             {
-                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
+                "response_scatter_chart": "Suitable for exploring relationships between variables, detecting outliers, etc."
             },
             {
                 "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
@@ -526,6 +526,9 @@ class BaseChat(ABC):
             },
             {
                 "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            },
+            {
+                "response_vector_chart": "Suitable for projecting high-dimensional vector data onto a two-dimensional plot through the PCA algorithm."
             },
         ]
 
