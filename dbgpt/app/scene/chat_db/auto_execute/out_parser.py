@@ -134,7 +134,9 @@ class DbChatOutputParser(BaseOutputParser):
 
                 if param["type"] == "response_vector_chart":
                     df, visualizable = self.parse_vector_data_with_pca(df)
-                    param["type"] = "response_scatter_chart" if visualizable else "response_table"
+                    param["type"] = (
+                        "response_scatter_chart" if visualizable else "response_table"
+                    )
 
                 param["sql"] = prompt_response.sql
                 param["data"] = json.loads(

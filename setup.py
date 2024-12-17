@@ -547,7 +547,7 @@ def knowledge_requires():
 
     setup_spec.extras["graph_rag"] = setup_spec.extras["rag"] + [
         "neo4j",
-        "dbgpt-tugraph-plugins>=0.1.0rc1",
+        "dbgpt-tugraph-plugins>=0.1.1",
     ]
 
 
