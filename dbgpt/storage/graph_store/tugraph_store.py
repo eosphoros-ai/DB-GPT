@@ -102,6 +102,10 @@ class TuGraphStore(GraphStoreBase):
         """Get the TuGraph store config."""
         return self._config
 
+    def is_exist(self, name) -> bool:
+        """Check Graph Name is Exist."""
+        return self.conn.is_exist(name)
+
     def _add_vertex_index(self, field_name):
         """Add an index to the vertex table."""
         # TODO: Not used in the current implementation.
@@ -139,7 +143,8 @@ class TuGraphStore(GraphStoreBase):
                 except ImportError:
                     logger.error(
                         "dbgpt-tugraph-plugins is not installed, "
-                        "pip install dbgpt-tugraph-plugins==0.1.1"
+                        "pip install dbgpt-tugraph-plugins==0.1.0rc1 -U -i "
+                        "https://pypi.org/simple"
                     )
                 plugin_path = get_plugin_binary_path("leiden")  # type: ignore
                 with open(plugin_path, "rb") as f:
