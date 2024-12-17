@@ -430,7 +430,7 @@ def core_requires():
     # For DB-GPT python client SDK
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
         "httpx",
-        "fastapi>=0.100.0",
+        "fastapi>=0.100.0,<0.113.0",
         # For retry, chromadb need tenacity<=8.3.0
         "tenacity<=8.3.0",
     ]
