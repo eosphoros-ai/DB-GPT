@@ -108,9 +108,7 @@ class HOKnowledgeOperator(MapOperator[str, HOContextBody]):
         name="higher_order_knowledge_operator",
         category=OperatorCategory.RAG,
         description=_(
-            _(
-                "Knowledge Space Operator, retrieve your knowledge from knowledge space"
-            )
+            _("Knowledge Space Operator, retrieve your knowledge from knowledge space")
         ),
         parameters=[
             Parameter.build_from(

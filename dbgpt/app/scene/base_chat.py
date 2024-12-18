@@ -230,11 +230,16 @@ class BaseChat(ABC):
             chat_mode=self.chat_mode.value(),
             span_id=root_tracer.get_current_span_id(),
         )
+        temperature = float(
+            self._chat_param.get("temperature", self.prompt_template.temperature)
+        )
+        max_new_tokens = int(
+            self._chat_param.get("max_new_tokens", self.prompt_template.max_new_tokens)
+        )
         node = AppChatComposerOperator(
             model=self.llm_model,
-            temperature=self._chat_param.get("temperature")
-            or float(self.prompt_template.temperature),
-            max_new_tokens=int(self.prompt_template.max_new_tokens),
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
             prompt=self.prompt_template.prompt,
             message_version=self._message_version,
             echo=self.llm_echo,

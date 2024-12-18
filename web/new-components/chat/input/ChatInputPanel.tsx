@@ -17,6 +17,7 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
     appInfo,
     currentDialogue,
     temperatureValue,
+    maxNewTokensValue,
     resourceValue,
     refreshDialogList,
   } = useContext(ChatContentContext);
@@ -47,6 +48,7 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
     await handleChat(userInput, {
       app_code: appInfo.app_code || '',
       ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
+      ...(paramKey.includes('max_new_tokens') && { max_new_tokens: maxNewTokensValue }),
       select_param,
       ...(paramKey.includes('resource') && {
         select_param:

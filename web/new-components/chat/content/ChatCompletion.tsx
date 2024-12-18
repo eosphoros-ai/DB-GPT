@@ -19,8 +19,16 @@ const ChatCompletion: React.FC = () => {
   const chatId = searchParams?.get('id') ?? '';
 
   const { currentDialogInfo, model } = useContext(ChatContext);
-  const { history, handleChat, refreshDialogList, setAppInfo, setModelValue, setTemperatureValue, setResourceValue } =
-    useContext(ChatContentContext);
+  const {
+    history,
+    handleChat,
+    refreshDialogList,
+    setAppInfo,
+    setModelValue,
+    setTemperatureValue,
+    setMaxNewTokensValue,
+    setResourceValue,
+  } = useContext(ChatContentContext);
 
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
   const [jsonValue, setJsonValue] = useState<string>('');
@@ -49,15 +57,18 @@ const ChatCompletion: React.FC = () => {
         const paramKey: string[] = res?.param_need?.map(i => i.type) || [];
         const resModel = res?.param_need?.filter(item => item.type === 'model')[0]?.value || model;
         const temperature = res?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.5;
+        const maxNewTokens = res?.param_need?.filter(item => item.type === 'max_new_tokens')[0]?.value || 2048;
         const resource = res?.param_need?.filter(item => item.type === 'resource')[0]?.bind_value;
         setAppInfo(res || ({} as IApp));
         setTemperatureValue(temperature || 0.5);
+        setMaxNewTokensValue(maxNewTokens || 2048);
         setModelValue(resModel);
         setResourceValue(resource);
         await handleChat(initMessage.message, {
           app_code: res?.app_code,
           model_name: resModel,
           ...(paramKey?.includes('temperature') && { temperature }),
+          ...(paramKey?.includes('max_new_tokens') && { max_new_tokens: maxNewTokens }),
           ...(paramKey.includes('resource') && {
             select_param: typeof resource === 'string' ? resource : JSON.stringify(resource),
           }),

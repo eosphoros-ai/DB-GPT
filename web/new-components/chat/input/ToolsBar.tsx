@@ -8,6 +8,7 @@ import Image from 'next/image';
 import React, { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import MaxNewTokens from './MaxNewTokens';
 import ModelSwitcher from './ModelSwitcher';
 import Resource from './Resource';
 import Temperature from './Temperature';
@@ -33,8 +34,10 @@ const ToolsBar: React.FC<{
     currentDialogue,
     appInfo,
     temperatureValue,
+    maxNewTokensValue,
     resourceValue,
     setTemperatureValue,
+    setMaxNewTokensValue,
     refreshHistory,
     setCanAbort,
     setReplyLoading,
@@ -78,6 +81,7 @@ const ToolsBar: React.FC<{
           handleChat(lastHuman?.context || '', {
             app_code: appInfo.app_code,
             ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
+            ...(paramKey.includes('max_new_tokens') && { max_new_tokens: maxNewTokensValue }),
             ...(paramKey.includes('resource') && {
               select_param:
                 typeof resourceValue === 'string'
@@ -170,6 +174,7 @@ const ToolsBar: React.FC<{
           <ModelSwitcher />
           <Resource fileList={fileList} setFileList={setFileList} setLoading={setLoading} fileName={fileName} />
           <Temperature temperatureValue={temperatureValue} setTemperatureValue={setTemperatureValue} />
+          <MaxNewTokens maxNewTokensValue={maxNewTokensValue} setMaxNewTokensValue={setMaxNewTokensValue} />
         </div>
         <div className='flex gap-1'>{returnTools(rightToolsConfig)}</div>
       </div>
