@@ -1,5 +1,6 @@
 """DBSchema retriever."""
 import logging
+import os
 from typing import List, Optional
 
 from dbgpt._private.config import Config
@@ -9,6 +10,7 @@ from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.summary.gdbms_db_summary import _parse_db_summary
 from dbgpt.serve.rag.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilter, MetadataFilters
 from dbgpt.util.chat_util import run_tasks
 from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
@@ -102,7 +104,17 @@ class DBSchemaRetriever(BaseRetriever):
         self._connector = connector
         self._query_rewrite = query_rewrite
         self._table_vector_store_connector = table_vector_store_connector
-        self._field_vector_store_connector = field_vector_store_connector
+        field_vector_store_config = VectorStoreConfig(
+            name=table_vector_store_connector.vector_store_config.name + "_field"
+        )
+        self._field_vector_store_connector = (
+            field_vector_store_connector
+            or VectorStoreConnector.from_default(
+                os.getenv("VECTOR_STORE_TYPE", "Chroma"),
+                self._table_vector_store_connector.current_embeddings,
+                vector_store_config=field_vector_store_config,
+            )
+        )
         self._need_embeddings = False
         if self._table_vector_store_connector:
             self._need_embeddings = True

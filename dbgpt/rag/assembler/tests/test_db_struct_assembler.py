@@ -17,6 +17,7 @@ def mock_db_connection():
 @pytest.fixture
 def mock_table_vector_store_connector():
     mock_connector = MagicMock()
+    mock_connector.vector_store_config.name = "table_name"
     chunk = Chunk(
         content="table_name: user\ncomment: user about dbgpt",
         metadata={

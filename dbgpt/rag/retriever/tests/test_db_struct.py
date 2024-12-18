@@ -17,6 +17,7 @@ def mock_db_connection():
 @pytest.fixture
 def mock_table_vector_store_connector():
     mock_connector = MagicMock()
+    mock_connector.vector_store_config.name = "table_name"
     mock_connector.similar_search_with_scores.return_value = [
         Chunk(content="Table summary")
     ] * 4
