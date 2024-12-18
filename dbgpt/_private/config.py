@@ -264,6 +264,9 @@ class Config(metaclass=Singleton):
 
         # EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
+        self.EMBEDDING_MODEL_MAX_SEQ_LEN = int(
+            os.getenv("MEMBEDDING_MODEL_MAX_SEQ_LEN", 512)
+        )
         # Rerank model configuration
         self.RERANK_MODEL = os.getenv("RERANK_MODEL")
         self.RERANK_MODEL_PATH = os.getenv("RERANK_MODEL_PATH")
