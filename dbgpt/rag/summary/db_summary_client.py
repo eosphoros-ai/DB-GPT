@@ -126,16 +126,26 @@ class DBSummaryClient:
     def delete_db_profile(self, dbname):
         """Delete db profile."""
         vector_store_name = dbname + "_profile"
+        table_vector_store_name = dbname + "_profile"
+        field_vector_store_name = dbname + "_profile_field"
         from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        vector_store_config = VectorStoreConfig(name=vector_store_name)
-        vector_connector = VectorStoreConnector.from_default(
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
+        field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
+        table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
             self.embeddings,
-            vector_store_config=vector_store_config,
+            vector_store_config=table_vector_store_config,
         )
-        vector_connector.delete_vector_name(vector_store_name)
+        field_vector_connector = VectorStoreConnector.from_default(
+            CFG.VECTOR_STORE_TYPE,
+            self.embeddings,
+            vector_store_config=field_vector_store_config,
+        )
+
+        table_vector_connector.delete_vector_name(table_vector_store_name)
+        field_vector_connector.delete_vector_name(field_vector_store_name)
         logger.info(f"delete db profile {dbname} success")
 
     @staticmethod
