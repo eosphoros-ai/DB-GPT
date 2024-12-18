@@ -109,8 +109,7 @@ class HOKnowledgeOperator(MapOperator[str, HOContextBody]):
         category=OperatorCategory.RAG,
         description=_(
             _(
-                "Knowledge Operator, retrieve your knowledge(documents) from knowledge"
-                " space"
+                "Knowledge Space Operator, retrieve your knowledge from knowledge space"
             )
         ),
         parameters=[
