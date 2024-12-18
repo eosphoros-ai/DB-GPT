@@ -17,5 +17,6 @@ export const ChatEn = {
   assistant: 'Platform Assistant', // DataFun Assistant
   model_tip: 'Model selection is not supported for the current application',
   temperature_tip: 'The current application does not support temperature configuration',
+  max_new_tokens_tip: 'The current application does not support max_new_tokens configuration',
   extend_tip: 'Extended configuration is not supported for the current application',
 };
