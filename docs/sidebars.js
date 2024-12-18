@@ -186,6 +186,24 @@ const sidebars = {
                   id: "awel/awel_tutorial/advanced_guide/4.1_lifecycle"
                 }
               ]
+            },,
+            {
+              type: "category",
+              label: "5. AWEL Template",
+              collapsed: false,
+              collapsible: false,
+              items: [
+                {
+                  type: "doc",
+                  id: "awel/awel_tutorial/templates/Embedding"
+                },{
+                  type: "doc",
+                  id: "awel/awel_tutorial/templates/Knowledge_Graph"
+                },{
+                  type: "doc",
+                  id: "awel/awel_tutorial/templates/Hybrid_Workflow"
+                }
+              ]
             },
           ],
           link: {
