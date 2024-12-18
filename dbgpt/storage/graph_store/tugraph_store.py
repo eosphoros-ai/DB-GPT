@@ -143,8 +143,7 @@ class TuGraphStore(GraphStoreBase):
                 except ImportError:
                     logger.error(
                         "dbgpt-tugraph-plugins is not installed, "
-                        "pip install dbgpt-tugraph-plugins==0.1.0rc1 -U -i "
-                        "https://pypi.org/simple"
+                        "pip install dbgpt-tugraph-plugins==0.1.1"
                     )
                 plugin_path = get_plugin_binary_path("leiden")  # type: ignore
                 with open(plugin_path, "rb") as f:
