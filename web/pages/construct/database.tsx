@@ -7,7 +7,7 @@ import { DBOption, DBType, DbListResponse, DbSupportTypeResponse } from '@/types
 import { dbMapper } from '@/utils';
 import { DeleteFilled, EditFilled, PlusOutlined, RedoOutlined } from '@ant-design/icons';
 import { useAsyncEffect } from 'ahooks';
-import { Badge, Button, Card, Drawer, Empty, Modal, message, Spin } from 'antd';
+import { Badge, Button, Card, Drawer, Empty, Modal, Spin, message } from 'antd';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
