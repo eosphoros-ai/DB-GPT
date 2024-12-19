@@ -91,7 +91,7 @@ export const FlowTemplateModal: React.FC<Props> = ({ isFlowTemplateModalOpen, se
           // scroll={{ x: 'max-content' }}
           dataSource={dataSource}
           columns={columns}
-        />;
+        />
       </Modal>
     </>
   );

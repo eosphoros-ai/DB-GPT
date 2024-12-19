@@ -7,7 +7,7 @@ import { DBOption, DBType, DbListResponse, DbSupportTypeResponse } from '@/types
 import { dbMapper } from '@/utils';
 import { DeleteFilled, EditFilled, PlusOutlined, RedoOutlined } from '@ant-design/icons';
 import { useAsyncEffect } from 'ahooks';
-import { Badge, Button, Card, Drawer, Empty, Modal, message } from 'antd';
+import { Badge, Button, Card, Drawer, Empty, Modal, message, Spin } from 'antd';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -273,7 +273,7 @@ function Database() {
           open={draw.open}
         >
           {draw.type && dbListByType[draw.type] && dbListByType[draw.type].length ? (
-            <>
+            <Spin spinning={refreshLoading}>
               <Button
                 type='primary'
                 className='mb-4 flex items-center'
@@ -326,7 +326,7 @@ function Database() {
                   <p>remark: {item.comment}</p>
                 </Card>
               ))}
-            </>
+            </Spin>
           ) : (
             <Empty image={Empty.PRESENTED_IMAGE_DEFAULT}>
               <Button
