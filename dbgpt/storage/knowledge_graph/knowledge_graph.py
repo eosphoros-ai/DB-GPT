@@ -172,6 +172,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             return chunk.chunk_id
 
         # wait async tasks completed
+        if not self.vector_name_exists():
+            self._graph_store_apdater.create_graph(self.get_config().name)
         tasks = [process_chunk(chunk) for chunk in chunks]
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -187,6 +189,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         Return:
             List[str]: chunk ids.
         """
+        if not self.vector_name_exists():
+            self._graph_store_apdater.create_graph(self.get_config().name)
         for chunk in chunks:
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
@@ -279,3 +283,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         """Delete by ids."""
         self._graph_store_apdater.delete_document(chunk_id=ids)
         return []
+
+    def vector_name_exists(self) -> bool:
+        """Whether name exists."""
+        return self._graph_store_apdater.graph_store.is_exist(self._config.name)
