@@ -316,6 +316,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
+        if not self.vector_name_exists():
+            self._graph_store_apdater.create_graph(self.get_config().name)
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities(

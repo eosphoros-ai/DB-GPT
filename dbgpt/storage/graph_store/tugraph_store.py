@@ -102,6 +102,10 @@ class TuGraphStore(GraphStoreBase):
         """Get the TuGraph store config."""
         return self._config
 
+    def is_exist(self, name) -> bool:
+        """Check Graph Name is Exist."""
+        return self.conn.is_exist(name)
+
     def _add_vertex_index(self, field_name):
         """Add an index to the vertex table."""
         # TODO: Not used in the current implementation.
