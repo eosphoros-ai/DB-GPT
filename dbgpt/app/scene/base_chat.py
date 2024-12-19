@@ -230,11 +230,16 @@ class BaseChat(ABC):
             chat_mode=self.chat_mode.value(),
             span_id=root_tracer.get_current_span_id(),
         )
+        temperature = float(
+            self._chat_param.get("temperature", self.prompt_template.temperature)
+        )
+        max_new_tokens = int(
+            self._chat_param.get("max_new_tokens", self.prompt_template.max_new_tokens)
+        )
         node = AppChatComposerOperator(
             model=self.llm_model,
-            temperature=self._chat_param.get("temperature")
-            or float(self.prompt_template.temperature),
-            max_new_tokens=int(self.prompt_template.max_new_tokens),
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
             prompt=self.prompt_template.prompt,
             message_version=self._message_version,
             echo=self.llm_echo,
@@ -513,7 +518,7 @@ class BaseChat(ABC):
             },
             # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
             {
-                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
+                "response_scatter_chart": "Suitable for exploring relationships between variables, detecting outliers, etc."
             },
             {
                 "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
@@ -526,6 +531,9 @@ class BaseChat(ABC):
             },
             {
                 "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            },
+            {
+                "response_vector_chart": "Suitable for projecting high-dimensional vector data onto a two-dimensional plot through the PCA algorithm."
             },
         ]
 

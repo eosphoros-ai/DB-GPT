@@ -436,6 +436,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "app_code": dialogue.app_code,
         "ext_info": dialogue.ext_info,
         "temperature": dialogue.temperature,
+        "max_new_tokens": dialogue.max_new_tokens,
     }
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),

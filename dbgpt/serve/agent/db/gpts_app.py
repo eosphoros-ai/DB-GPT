@@ -1113,6 +1113,7 @@ class GptsAppDao(BaseDao):
                 },
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
+                {"type": AppParamType.MaxNewTokens.value, "value": None},
             ],
             user_code=user_code,
             published="true",
@@ -1134,6 +1135,7 @@ class GptsAppDao(BaseDao):
             param_need=[
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
+                {"type": AppParamType.MaxNewTokens.value, "value": None},
             ],
             user_code=user_code,
             published="true",
@@ -1156,6 +1158,7 @@ class GptsAppDao(BaseDao):
                 {"type": AppParamType.Resource.value, "value": ResourceType.DB.value},
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
+                {"type": AppParamType.MaxNewTokens.value, "value": None},
             ],
             user_code=user_code,
             published="true",
@@ -1178,6 +1181,7 @@ class GptsAppDao(BaseDao):
                 {"type": AppParamType.Resource.value, "value": ResourceType.DB.value},
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
+                {"type": AppParamType.MaxNewTokens.value, "value": None},
             ],
             user_code=user_code,
             published="true",
@@ -1199,6 +1203,7 @@ class GptsAppDao(BaseDao):
                 {"type": AppParamType.Resource.value, "value": ResourceType.DB.value},
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
+                {"type": AppParamType.MaxNewTokens.value, "value": None},
             ],
             team_context=chat_dashboard_ctx,
             user_code=user_code,
@@ -1225,6 +1230,7 @@ class GptsAppDao(BaseDao):
                 },
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
+                {"type": AppParamType.MaxNewTokens.value, "value": None},
             ],
             user_code=user_code,
             published="true",
@@ -1293,6 +1299,7 @@ def native_app_params():
             },
             {"type": AppParamType.Model.value, "value": None},
             {"type": AppParamType.Temperature.value, "value": None},
+            {"type": AppParamType.MaxNewTokens.value, "value": None},
         ],
     }
     chat_with_db_qa = {
@@ -1302,6 +1309,7 @@ def native_app_params():
             {"type": AppParamType.Resource.value, "value": ResourceType.DB.value},
             {"type": AppParamType.Model.value, "value": None},
             {"type": AppParamType.Temperature.value, "value": None},
+            {"type": AppParamType.MaxNewTokens.value, "value": None},
         ],
     }
     chat_with_db_execute = {
@@ -1311,6 +1319,7 @@ def native_app_params():
             {"type": AppParamType.Resource.value, "value": ResourceType.DB.value},
             {"type": AppParamType.Model.value, "value": None},
             {"type": AppParamType.Temperature.value, "value": None},
+            {"type": AppParamType.MaxNewTokens.value, "value": None},
         ],
     }
     chat_knowledge = {
@@ -1323,6 +1332,7 @@ def native_app_params():
             },
             {"type": AppParamType.Model.value, "value": None},
             {"type": AppParamType.Temperature.value, "value": None},
+            {"type": AppParamType.MaxNewTokens.value, "value": None},
         ],
     }
     chat_dashboard = {
@@ -1332,6 +1342,16 @@ def native_app_params():
             {"type": AppParamType.Resource.value, "value": ResourceType.DB.value},
             {"type": AppParamType.Model.value, "value": None},
             {"type": AppParamType.Temperature.value, "value": None},
+            {"type": AppParamType.MaxNewTokens.value, "value": None},
+        ],
+    }
+    chat_normal = {
+        "chat_scene": ChatScene.ChatNormal.value(),
+        "scene_name": ChatScene.ChatNormal.scene_name(),
+        "param_need": [
+            {"type": AppParamType.Model.value, "value": None},
+            {"type": AppParamType.Temperature.value, "value": None},
+            {"type": AppParamType.MaxNewTokens.value, "value": None},
         ],
     }
     return [
@@ -1340,6 +1360,7 @@ def native_app_params():
         chat_with_db_execute,
         chat_knowledge,
         chat_dashboard,
+        chat_normal,
     ]
 
 
@@ -1354,6 +1375,7 @@ def adapt_native_app_model(dialogue: ConversationVo):
             ChatScene.ChatWithDbQA.value(),
             ChatScene.ChatWithDbExecute.value(),
             ChatScene.ChatDashboard.value(),
+            ChatScene.ChatNormal.value,
         ]:
             return dialogue
         gpts_dao = GptsAppDao()
@@ -1406,3 +1428,4 @@ class AppParamType(Enum):
     Resource = "resource"
     Model = "model"
     Temperature = "temperature"
+    MaxNewTokens = "max_new_tokens"

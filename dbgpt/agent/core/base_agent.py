@@ -80,8 +80,8 @@ class ConversableAgent(Role, Agent):
                     or not self.resource.get_resource_by_type(action.resource_need)
                 ):
                     raise ValueError(
-                        f"{self.name}[{self.role}] Missing resources required for "
-                        "runtime！"
+                        f"{self.name}[{self.role}] Missing resources"
+                        f"[{action.resource_need}] required for runtime！"
                     )
         else:
             if not self.is_human and not self.is_team:

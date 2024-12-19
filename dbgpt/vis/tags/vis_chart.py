@@ -24,7 +24,7 @@ def default_chart_type_prompt() -> str:
             "non-numeric columns"
         },
         {
-            "response_scatter_plot": "Suitable for exploring relationships between "
+            "response_scatter_chart": "Suitable for exploring relationships between "
             "variables, detecting outliers, etc."
         },
         {

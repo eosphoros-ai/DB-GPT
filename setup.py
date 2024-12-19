@@ -430,7 +430,7 @@ def core_requires():
     # For DB-GPT python client SDK
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
         "httpx",
-        "fastapi>=0.100.0",
+        "fastapi>=0.100.0,<0.113.0",
         # For retry, chromadb need tenacity<=8.3.0
         "tenacity<=8.3.0",
     ]
@@ -547,7 +547,7 @@ def knowledge_requires():
 
     setup_spec.extras["graph_rag"] = setup_spec.extras["rag"] + [
         "neo4j",
-        "dbgpt-tugraph-plugins>=0.1.0rc1",
+        "dbgpt-tugraph-plugins>=0.1.1",
     ]
 
 

@@ -96,6 +96,8 @@ class ChunkServeResponse(BaseModel):
     content: Optional[str] = Field(None, description="chunk content")
     meta_info: Optional[str] = Field(None, description="chunk meta info")
     questions: Optional[str] = Field(None, description="chunk questions")
+    gmt_created: Optional[str] = Field(None, description="chunk create time")
+    gmt_modified: Optional[str] = Field(None, description="chunk modify time")
 
 
 class KnowledgeSyncRequest(BaseModel):
