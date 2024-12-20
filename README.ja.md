@@ -223,8 +223,10 @@ MITライセンス（MIT）
 
 ## 引用
 もし`DB-GPT`があなたの研究や開発に役立つと感じた場合、以下の論文を引用してください。
+
 DB-GPTの全体的なアーキテクチャについて知りたい場合は、<a href="https://arxiv.org/abs/2312.17449" target="_blank">論文</a>と<a href="https://arxiv.org/abs/2404.10209" target="_blank">論文</a>を引用してください。
-DB-GPTを使用してAgent開発に関する内容について知りたい場合は、<a href="https://arxiv.org/abs/2412.13520" target="_blank">論文</a>を引用してください。```bibtex
+
+DB-GPTを使用してAgent開発に関する内容について知りたい場合は、<a href="https://arxiv.org/abs/2412.13520" target="_blank">論文</a>を引用してください。 
 ```bibtex
 @article{xue2023dbgpt,
       title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
