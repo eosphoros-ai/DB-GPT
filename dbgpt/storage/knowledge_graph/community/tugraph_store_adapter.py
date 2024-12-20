@@ -617,7 +617,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 # Filter all the properties by with_list
                 graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
 
-                # The number of leaf chunks caompared to the `limit`
+                # The number of leaf chunks compared to the `limit`
                 if not limit or len(chunk_names) <= limit:
                     graph.upsert_graph(graph_of_leaf_chunks)
                 else:
@@ -661,21 +661,23 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph.
 
-        white_list: List[str] = kwargs.get("white_list", []), which contains the white
-        list of properties and filters the properties that are not in the white list.
+        white_list: List[str] = kwargs.get("white_list", []),
+        which contains the white list of properties that start with '_',
+        filters all the properties that start with '_' and are not in the white list.
+
+        white_list: List of properties to keep
+                    - If []: Keep default properties (those not starting with '_'
+                        and not in ['id', 'name'])
+                    - If list of strings: Keep default properties (those not starting with '_'
+                        and not in ['id', 'name']) and properties in white_list
         """
+        try:
+            query_result = self.graph_store.conn.run(query=query)
+        except Exception as e:
+            raise
+
         query_result = self.graph_store.conn.run(query=query)
-        white_list: List[str] = kwargs.get(
-            "white_list",
-            [
-                "id",
-                "name",
-                "description",
-                "_document_id",
-                "_chunk_id",
-                "_community_id",
-            ],
-        )
+        white_list: List[str] = kwargs.get("white_list", [])
         vertices, edges = self._get_nodes_edges_from_queried_data(
             query_result, white_list
         )
@@ -787,7 +789,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         from neo4j import graph
 
         def filter_properties(
-            properties: dict[str, Any], white_list: Optional[List[str]] = None
+            properties: dict[str, Any], white_list: Optional[List[str]] = []
         ) -> Dict[str, Any]:
             """Filter the properties.
 
@@ -799,20 +801,17 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             Args:
                 properties: Dictionary of properties to filter
                 white_list: List of properties to keep
-                    - If None: Keep default properties (those not starting with '_'
+                    - If [""]: Keep default properties (those not starting with '_'
                         and not in ['id', 'name'])
-                    - If [""]: Remove all properties (return empty dict)
                     - If list of strings: Keep only properties in white_list
             """
             return (
-                {}
-                if white_list == [""]
-                else {
+                {
                     key: value
                     for key, value in properties.items()
                     if (
                         (not key.startswith("_") and key not in ["id", "name"])
-                        or (white_list is not None and key in white_list)
+                        or (key in white_list)
                     )
                 }
             )

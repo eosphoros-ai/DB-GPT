@@ -1,0 +1,123 @@
+"""IntentInterpreter class."""
+import logging, re, json
+from typing import Dict, Optional
+
+from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
+from dbgpt.rag.transformer.llm_translator import LLMTranslator
+
+INTENT_INTERPRET_PT = (
+    "A question is provided below. Given the question, analyze and classify it into one of the following categories:\n"
+    "1. Single Entity Search: search for the detail of the given entity.\n"
+    "2. One Hop Entity Search: given one entity and one relation, "
+    "search for all entities that have the relation with the given entity.\n"
+    "3. One Hop Relation Search: given two entities, serach for the relation between them.\n"
+    "4. Two Hop Entity Search: given one entity and one relation, break that relation into two consecutive relation, "
+    "then search all entities that have the two hop relation with the given entity.\n"
+    "5. Freestyle Question: questions that are not in above four categories. "
+    "Search all related entities and two-hop subgraphs centered on them.\n"
+    "After classfied the given question, rewrite the question in a graph query language style, "
+    "return the category of the given question, the rewrited question in json format."
+    "Also return entities and relations that might be used for query generation in json format."
+    "Here are some examples to guide your classification:\n"
+    "---------------------\n"
+    "Example:\n"
+    "Question: Introduce TuGraph.\n"
+    "Return:\n{{\"category\": \"Single Entity Search\", \"rewrited_question\": \"Query the entity named TuGraph then return the entity.\", "
+    "\"entities\": [\"TuGraph\"], \"relations\": []}}\n"
+    "Question: Who commits code to TuGraph.\n"
+    "Return:\n{{\"category\": \"One Hop Entity Search\", \"rewrited_question\": \"Query all one hop paths that has a entity named TuGraph and a relation named commit, then return them.\", "
+    "\"entities\": [\"TuGraph\"], \"relations\": [\"commit\"]}}\n"
+    "Question: What is the relation between Alex and TuGraph?\n"
+    "Return:\n{{\"category\": \"One Hop Relation Search\", \"rewrited_question\": \"Query all one hop paths between the entity named Alex and the entity named TuGraph, then return them.\", "
+    "\"entities\": [\"Alex\", \"TuGraph\"], \"relations\": []}}\n"
+    "Question: Who is the colleague of Bob?\n"
+    "Return:\n{{\"category\": \"Two Hop Entity Search\", \"rewrited_question\": \"Query all entities that have a two hop path between them and the entity named Bob, both entities should have a work for relation with the middle entity.\", "
+    "\"entities\": [\"Bob\"], \"relations\": [\"work for\"]}}\n"
+    "Question: Introduce TuGraph and DBGPT seperately.\n"
+    "Return:\n{{\"category\": \"Freestyle Question\", \"rewrited_question\": \"Query the entity named TuGraph and the entity named DBGPT, then return two-hop subgraphs centered on them.\", "
+    "\"entities\": [\"TuGraph\", \"DBGPT\"], \"relations\": []}}\n"
+    "---------------------\n"
+    "Text: {text}\n"
+    "Keywords:\n"
+)
+
+logger = logging.getLogger(__name__)
+
+
+class IntentInterpreter(LLMTranslator):
+    """IntentInterpreter class."""
+
+    def __init__(self, llm_client: LLMClient, model_name: str):
+        """Initialize the IntentInterpreter."""
+        super().__init__(llm_client, model_name, INTENT_INTERPRET_PT)
+    
+    async def _translate(
+        self, text: str, history: str = None, limit: Optional[int] = None, type: Optional[str] = "PROMPT"
+    ) -> Dict:
+        """Inner translate by LLM."""
+
+        """
+        The returned diction should contain the following content.
+        {
+            "category": "Type of the given question.",
+            "original_question: "The original question provided by user.",
+            "rewrited_question": "Question that has been rewritten in graph query language style."
+            "entities": ["entities", "that", "might", "be", "used", "in", "query"],
+            "relations" ["relations", "that", "might", "be", "used", "in", "query"]
+        }
+        """
+
+        # interprete intent with single prompt only.
+        template = HumanPromptTemplate.from_template(self._prompt_template)
+
+        messages = (
+            template.format_messages(text=text, history=history)
+            if history is not None
+            else template.format_messages(text=text)
+        )
+
+        # use default model if needed
+        if not self._model_name:
+            models = await self._llm_client.models()
+            if not models:
+                raise Exception("No models available")
+            self._model_name = models[0].model
+            logger.info(f"Using model {self._model_name} to extract")
+
+        model_messages = ModelMessage.from_base_messages(messages)
+        request = ModelRequest(model=self._model_name, messages=model_messages)
+        response = await self._llm_client.generate(request=request)
+
+        if not response.success:
+            code = str(response.error_code)
+            reason = response.text
+            logger.error(f"request llm failed ({code}) {reason}")
+            return []
+
+        if limit and limit < 1:
+            ValueError("optional argument limit >= 1")
+        return self._parse_response(response.text, limit)
+    
+    def truncate(self):
+        """Do nothing by default."""
+
+    def drop(self):
+        """Do nothing by default."""
+
+    def _parse_response(self, text: str, limit: Optional[int] = None) -> Dict:
+        """Parse llm response."""
+        intention = text
+
+        code_block_pattern = re.compile(r'```json(.*?)```', re.S)
+        json_pattern = re.compile(r'{.*?}', re.S)
+
+        result = re.findall(code_block_pattern, intention)
+        if result:
+            intention = result[0]
+        result = re.findall(json_pattern, intention)
+        if result:
+            intention = result[0]
+        else: 
+            intention = ""
+
+        return json.loads(intention)

@@ -50,3 +50,7 @@ class ExtractorBase(TransformerBase, ABC):
 
 class TranslatorBase(TransformerBase, ABC):
     """Translator base class."""
+
+    @abstractmethod
+    async def translate(self, text: str, limit: Optional[int] = None) -> Dict: 
+        """Translate results from text."""
