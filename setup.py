@@ -523,9 +523,10 @@ def code_execution_requires():
         "msgpack",
         # for AWEL operator serialization
         "cloudpickle",
-        "lyric-py>=0.1.4",
-        "lyric-py-worker>=0.1.4",
-        "lyric-js-worker>=0.1.4",
+        "lyric-py>=0.1.6",
+        "lyric-py-worker>=0.1.6",
+        "lyric-js-worker>=0.1.6",
+        "lyric-component-ts-transpiling>=0.1.6",
     ]
 
 
