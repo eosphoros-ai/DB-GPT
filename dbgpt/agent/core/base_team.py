@@ -161,8 +161,9 @@ class ManagerAgent(ConversableAgent, Team):
         received_message: AgentMessage,
         sender: Agent,
         rely_messages: Optional[List[AgentMessage]] = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
-        is_retry_chat: Optional[bool] = False,
+        is_retry_chat: bool = False,
     ) -> Tuple[List[AgentMessage], Optional[Dict]]:
         """Load messages for thinking."""
         return [AgentMessage(content=received_message.content)], None

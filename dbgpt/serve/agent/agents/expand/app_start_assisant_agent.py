@@ -93,6 +93,8 @@ class StartAppAssistantAgent(ConversableAgent):
         is_recovery: Optional[bool] = False,
         is_retry_chat: bool = False,
         last_speaker_name: str = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
+        rely_messages: Optional[List[AgentMessage]] = None,
     ) -> None:
         await self._a_process_received_message(message, sender)
         if request_reply is False or request_reply is None:

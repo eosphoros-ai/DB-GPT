@@ -58,7 +58,7 @@ class GptsMessage:
     receiver: str
     role: str
     content: str
-    rounds: Optional[int]
+    rounds: int = 0
     is_success: bool = True
     app_code: Optional[str] = None
     app_name: Optional[str] = None

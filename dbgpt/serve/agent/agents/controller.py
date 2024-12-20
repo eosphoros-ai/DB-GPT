@@ -206,11 +206,44 @@ class MultiAgents(BaseComponent, ABC):
                 if not gpt_app:
                     raise ValueError(f"Not found app {gpts_name}!")
 
+        historical_dialogues: List[GptsMessage] = []
         if not is_retry_chat:
-            # 新建gpts对话记录
+            # Create a new gpts conversation record
             gpt_app: GptsApp = self.gpts_app.app_detail(gpts_name)
             if not gpt_app:
                 raise ValueError(f"Not found app {gpts_name}!")
+
+            ## When creating a new gpts conversation record, determine whether to include the history of previous topics according to the application definition.
+            ## TODO BEGIN
+            # Temporarily use system configuration management, and subsequently use application configuration management
+            if CFG.MESSAGES_KEEP_START_ROUNDS and CFG.MESSAGES_KEEP_START_ROUNDS > 0:
+                gpt_app.keep_start_rounds = CFG.MESSAGES_KEEP_START_ROUNDS
+            if CFG.MESSAGES_KEEP_END_ROUNDS and CFG.MESSAGES_KEEP_END_ROUNDS > 0:
+                gpt_app.keep_end_rounds = CFG.MESSAGES_KEEP_END_ROUNDS
+            ## TODO END
+
+            if gpt_app.keep_start_rounds > 0 or gpt_app.keep_end_rounds > 0:
+                if gpts_conversations and len(gpts_conversations) > 0:
+                    rely_conversations = []
+                    if gpt_app.keep_start_rounds + gpt_app.keep_end_rounds < len(
+                        gpts_conversations
+                    ):
+                        if gpt_app.keep_start_rounds > 0:
+                            front = gpts_conversations[gpt_app.keep_start_rounds :]
+                            rely_conversations.extend(front)
+                        if gpt_app.keep_end_rounds > 0:
+                            back = gpts_conversations[-gpt_app.keep_end_rounds :]
+                            rely_conversations.extend(back)
+                    else:
+                        rely_conversations = gpts_conversations
+                    for gpts_conversation in rely_conversations:
+                        temps: List[GptsMessage] = await self.memory.get_messages(
+                            gpts_conversation.conv_id
+                        )
+                        if temps and len(temps) > 1:
+                            historical_dialogues.append(temps[0])
+                            historical_dialogues.append(temps[-1])
+
             self.gpts_conversations.add(
                 GptsConversationsEntity(
                     conv_id=agent_conv_id,
@@ -277,6 +310,8 @@ class MultiAgents(BaseComponent, ABC):
                         is_retry_chat,
                         last_speaker_name=last_speaker_name,
                         init_message_rounds=message_round,
+                        enable_verbose=enable_verbose,
+                        historical_dialogues=historical_dialogues,
                         **ext_info,
                     )
                 )
@@ -418,6 +453,8 @@ class MultiAgents(BaseComponent, ABC):
         link_sender: ConversableAgent = None,
         app_link_start: bool = False,
         enable_verbose: bool = True,
+        historical_dialogues: Optional[List[GptsMessage]] = None,
+        rely_messages: Optional[List[GptsMessage]] = None,
         **ext_info,
     ):
         gpts_status = Status.COMPLETE.value
@@ -529,6 +566,10 @@ class MultiAgents(BaseComponent, ABC):
                     is_retry_chat=is_retry_chat,
                     last_speaker_name=last_speaker_name,
                     message_rounds=init_message_rounds,
+                    historical_dialogues=user_proxy.convert_to_agent_message(
+                        historical_dialogues
+                    ),
+                    rely_messages=rely_messages,
                     **ext_info,
                 )
 
