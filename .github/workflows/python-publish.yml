@@ -43,7 +43,14 @@ jobs:
         else
           make package
         fi
-    
+
+    - name: Upload wheel as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-packages
+        path: dist/*
+        retention-days: 7 
+
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       with:
