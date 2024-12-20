@@ -135,6 +135,10 @@ class GptsApp(BaseModel):
     recommend_questions: Optional[List[RecommendQuestion]] = []
     admins: List[str] = Field(default_factory=list)
 
+    # By default, keep the last two rounds of conversation records as the context
+    keep_start_rounds: int = 0
+    keep_end_rounds: int = 0
+
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}
 
@@ -170,6 +174,8 @@ class GptsApp(BaseModel):
             owner_avatar_url=d.get("owner_avatar_url", None),
             recommend_questions=d.get("recommend_questions", []),
             admins=d.get("admins", []),
+            keep_start_rounds=d.get("keep_start_rounds", 0),
+            keep_end_rounds=d.get("keep_end_rounds", 2),
         )
 
     @model_validator(mode="before")
@@ -547,6 +553,8 @@ class GptsAppDao(BaseDao):
                         "published": app_info.published,
                         "details": [],
                         "admins": [],
+                        # "keep_start_rounds": app_info.keep_start_rounds,
+                        # "keep_end_rounds": app_info.keep_end_rounds,
                     }
                 )
                 for app_info in app_entities
@@ -918,6 +926,8 @@ class GptsAppDao(BaseDao):
             app_entity.icon = gpts_app.icon
             app_entity.team_context = _parse_team_context(gpts_app.team_context)
             app_entity.param_need = json.dumps(gpts_app.param_need)
+            app_entity.keep_start_rounds = gpts_app.keep_start_rounds
+            app_entity.keep_end_rounds = gpts_app.keep_end_rounds
             session.merge(app_entity)
 
             old_details = session.query(GptsAppDetailEntity).filter(

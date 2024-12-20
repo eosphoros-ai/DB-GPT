@@ -361,6 +361,13 @@ class Config(metaclass=Singleton):
         )
         self.NOTE_BOOK_ROOT: str = os.getenv("NOTE_BOOK_ROOT", os.path.expanduser("~"))
 
+        self.MESSAGES_KEEP_START_ROUNDS: int = int(
+            os.getenv("MESSAGES_KEEP_START_ROUNDS", 0)
+        )
+        self.MESSAGES_KEEP_END_ROUNDS: int = int(
+            os.getenv("MESSAGES_KEEP_END_ROUNDS", 2)
+        )
+
     @property
     def local_db_manager(self) -> "ConnectorManager":
         from dbgpt.datasource.manages import ConnectorManager

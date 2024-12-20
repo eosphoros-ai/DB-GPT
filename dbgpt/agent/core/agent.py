@@ -27,6 +27,8 @@ class Agent(ABC):
         silent: Optional[bool] = False,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
+        rely_messages: Optional[List[AgentMessage]] = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
     ) -> None:
         """Send a message to recipient agent.
 
@@ -52,6 +54,8 @@ class Agent(ABC):
         is_recovery: Optional[bool] = False,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
+        rely_messages: Optional[List[AgentMessage]] = None,
     ) -> None:
         """Receive a message from another agent.
 
@@ -74,6 +78,7 @@ class Agent(ABC):
         sender: Agent,
         reviewer: Optional[Agent] = None,
         rely_messages: Optional[List[AgentMessage]] = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,
