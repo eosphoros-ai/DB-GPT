@@ -222,8 +222,9 @@ DB-GPTのアーキテクチャは以下の図に示されています：
 MITライセンス（MIT）
 
 ## 引用
-`DB-GPT`があなたの研究や開発に役立つと思われる場合は、次の<a href="https://arxiv.org/abs/2312.17449" target="_blank">論文</a>を引用してください：
-
+もし`DB-GPT`があなたの研究や開発に役立つと感じた場合、以下の論文を引用してください。
+DB-GPTの全体的なアーキテクチャについて知りたい場合は、<a href="https://arxiv.org/abs/2312.17449" target="_blank">論文</a>と<a href="https://arxiv.org/abs/2404.10209" target="_blank">論文</a>を引用してください。
+DB-GPTを使用してAgent開発に関する内容について知りたい場合は、<a href="https://arxiv.org/abs/2412.13520" target="_blank">論文</a>を引用してください。```bibtex
 ```bibtex
 @article{xue2023dbgpt,
       title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
@@ -240,6 +241,13 @@ MITライセンス（MIT）
       archivePrefix={arXiv},
       primaryClass={cs.AI},
       url={https://arxiv.org/abs/2412.13520}, 
+}
+@inproceedings{xue2024demonstration,
+      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models}, 
+      author={Siqiao Xue and Danrui Qi and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Hong Yi and Shaodong Liu and Hongjun Yang and Faqiang Chen},
+      year={2024},
+      booktitle = "Proceedings of the VLDB Endowment",
+      url={https://arxiv.org/abs/2404.10209}
 }
 ```
 

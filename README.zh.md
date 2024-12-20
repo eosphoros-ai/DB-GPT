@@ -263,7 +263,9 @@
 The MIT License (MIT)
 
 ## 引用
-如果您发现`DB-GPT`对您的研究或开发有用，请引用以下<a href="https://arxiv.org/abs/2312.17449" target="_blank">论文</a>：
+如果您发现`DB-GPT`对您的研究或开发有用，请引用以下论文，其中：
+如果您想了解DB-GPT整体架构，请引用<a href="https://arxiv.org/abs/2312.17449" target="_blank">论文</a>和<a href="https://arxiv.org/abs/2404.10209" target="_blank">论文</a>，
+如果您想了解使用DB-GPT进行Agent开发相关的内容，请引用<a href="https://arxiv.org/abs/2412.13520" target="_blank">论文</a>，
 
 ```bibtex
 @article{xue2023dbgpt,
@@ -281,6 +283,13 @@ The MIT License (MIT)
       archivePrefix={arXiv},
       primaryClass={cs.AI},
       url={https://arxiv.org/abs/2412.13520}, 
+}
+@inproceedings{xue2024demonstration,
+      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models}, 
+      author={Siqiao Xue and Danrui Qi and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Hong Yi and Shaodong Liu and Hongjun Yang and Faqiang Chen},
+      year={2024},
+      booktitle = "Proceedings of the VLDB Endowment",
+      url={https://arxiv.org/abs/2404.10209}
 }
 ```
 
