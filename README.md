@@ -236,8 +236,9 @@ At present, we have introduced several key features to showcase our current capa
 The MIT License (MIT)
 
 ## Citation
-If you find `DB-GPT` useful for your research or development, please cite the following <a href="https://arxiv.org/abs/2312.17449" target="_blank">paper</a>:
+If you want to understand the overall architecture of DB-GPT, please cite <a href="https://arxiv.org/abs/2312.17449" target="_blank">paper</a> and <a href="https:// arxiv.org/abs/2404.10209" target="_blank">Paper</a>
 
+If you want to learn about using DB-GPT for Agent development, please cite the <a href="https://arxiv.org/abs/2412.13520" target="_blank">paper</a>
 ```bibtex
 @article{xue2023dbgpt,
       title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
