@@ -246,7 +246,24 @@ If you find `DB-GPT` useful for your research or development, please cite the fo
       journal={arXiv preprint arXiv:2312.17449},
       url={https://arxiv.org/abs/2312.17449}
 }
+@misc{huang2024romasrolebasedmultiagentdatabase,
+      title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning}, 
+      author={Yi Huang and Fangyin Cheng and Fan Zhou and Jiahui Li and Jian Gong and Hongjun Yang and Zhidong Fan and Caigao Jiang and Siqiao Xue and Faqiang Chen},
+      year={2024},
+      eprint={2412.13520},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2412.13520}, 
+}
+@inproceedings{xue2024demonstration,
+      title={Demonstration of DB-GPT: Next Generation Data Interaction System Empowered by Large Language Models}, 
+      author={Siqiao Xue and Danrui Qi and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Hong Yi and Shaodong Liu and Hongjun Yang and Faqiang Chen},
+      year={2024},
+      booktitle = "Proceedings of the VLDB Endowment",
+      url={https://arxiv.org/abs/2404.10209}
+}
 ```
+
 
 ## Contact Information
 We are working on building a community, if you have any ideas for building the community, feel free to contact us.
