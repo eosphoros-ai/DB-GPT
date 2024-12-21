@@ -55,6 +55,7 @@ class StartAppAssistantAgent(ConversableAgent):
         received_message: Optional[AgentMessage],
         sender: Agent,
         rely_messages: Optional[List[AgentMessage]] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         return {
             "user_input": received_message.content,
