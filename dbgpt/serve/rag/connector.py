@@ -3,6 +3,7 @@
 import copy
 import logging
 import os
+import chromadb
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
@@ -224,6 +225,8 @@ class VectorStoreConnector:
         try:
             if self.vector_name_exists():
                 self.client.delete_vector_name(vector_name)
+                chromadb.api.client.SharedSystemClient.clear_system_cache()
+                del pools[self._vector_store_type][vector_name]
         except Exception as e:
             logger.error(f"delete vector name {vector_name} failed: {e}")
             raise Exception(f"delete name {vector_name} failed")
