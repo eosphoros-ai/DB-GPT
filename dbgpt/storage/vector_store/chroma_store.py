@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from chromadb import PersistentClient
 from chromadb.config import Settings
+from chromadb.api.client import SharedSystemClient
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.configs.model_config import PILOT_PATH
@@ -201,6 +202,7 @@ class ChromaStore(VectorStoreBase):
         logger.info(f"chroma vector_name:{vector_name} begin delete...")
         # self.vector_store_client.delete_collection()
         self._chroma_client.delete_collection(self._collection.name)
+        SharedSystemClient.clear_system_cache()
         self._clean_persist_folder()
         return True
 
