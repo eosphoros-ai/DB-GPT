@@ -4,6 +4,7 @@ import dataclasses
 import logging
 from typing import Dict, Optional, Type
 
+from dbgpt.configs.model_config import get_device
 from dbgpt.core import ModelOutput
 from dbgpt.model.adapter.base import ConversationAdapter, LLMModelAdapter
 from dbgpt.model.base import ModelType
@@ -46,8 +47,8 @@ class LlamaServerParameters(ServerConfig, ModelParameters):
         if self.model_path:
             self.model_hf_repo = None
             self.model_hf_file = None
-
-        if self.device and self.device == "cuda":
+        device = self.device or get_device()
+        if device and device == "cuda" and not self.n_gpu_layers:
             # Set n_gpu_layers to a large number to use all layers
             logger.info("Set n_gpu_layers to a large number to use all layers")
             self.n_gpu_layers = 1000000000
