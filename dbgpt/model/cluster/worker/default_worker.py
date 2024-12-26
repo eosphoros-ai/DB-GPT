@@ -85,7 +85,7 @@ class DefaultModelWorker(ModelWorker):
             model_path=self.model_path,
             model_type=model_type,
         )
-        if not model_params.device:
+        if hasattr(model_params, "device") and not model_params.device:
             model_params.device = get_device()
             logger.info(
                 f"[DefaultModelWorker] Parameters of device is None, use {model_params.device}"
