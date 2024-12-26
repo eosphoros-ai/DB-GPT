@@ -47,6 +47,11 @@ class LlamaServerParameters(ServerConfig, ModelParameters):
             self.model_hf_repo = None
             self.model_hf_file = None
 
+        if self.device and self.device == "cuda":
+            # Set n_gpu_layers to a large number to use all layers
+            logger.info("Set n_gpu_layers to a large number to use all layers")
+            self.n_gpu_layers = 1000000000
+
 
 class LLamaServerModelAdapter(LLMModelAdapter):
     def new_adapter(self, **kwargs) -> "LLamaServerModelAdapter":
