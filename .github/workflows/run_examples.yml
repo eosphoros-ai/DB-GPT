@@ -1,0 +1,38 @@
+name: Run Examples
+
+on:
+  push: 
+    branches:
+      - fix_examples
+    pull_request:
+      branches:
+      - fix_examples
+
+jobs:
+  run-examples:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python 
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+      
+    - name: Install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -e ".[default]" 
+
+    - name: Run Examples
+      run: |
+        source venv/bin/activate
+        python -m examples
+
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPEN_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+      

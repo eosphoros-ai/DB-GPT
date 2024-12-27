@@ -15,7 +15,6 @@
 """
 
 import asyncio
-import os
 
 from dbgpt.agent import (
     AgentContext,
@@ -36,10 +35,9 @@ async def main():
     from dbgpt.model.proxy import OpenAILLMClient
 
     agent_memory = AgentMemory()
-    from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
 
-    llm_client = TongyiLLMClient(
-        model_alias="qwen2-72b-instruct",
+    llm_client = OpenAILLMClient(
+        model_alias="gpt-4o",
     )
 
     context: AgentContext = AgentContext(
