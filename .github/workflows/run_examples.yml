@@ -33,6 +33,6 @@ jobs:
         python -m examples
 
       env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        OPEN_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+        SILICONFLOW_API_BASE: ${{ secrets.SILICONFLOW_API_BASE }}
+        SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
       
