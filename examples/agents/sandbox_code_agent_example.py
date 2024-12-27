@@ -10,9 +10,9 @@ You can limit the memory and file system resources available to the code executi
 environment. The code execution environment is isolated from the host system,
 preventing access to the internet and other external resources.
 """
-
 import asyncio
 import logging
+import os
 from typing import Optional, Tuple
 
 from dbgpt.agent import (
@@ -270,11 +270,28 @@ class SandboxCodeAssistantAgent(ConversableAgent):
 
 
 async def main():
-    from dbgpt.model.proxy import OpenAILLMClient
+    from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
 
-    llm_client = OpenAILLMClient(model_alias="gpt-4o-mini")
+    llm_client = SiliconFlowLLMClient(
+        model_alias=os.getenv(
+            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+        ),
+    )
     context: AgentContext = AgentContext(conv_id="test123")
-    agent_memory = AgentMemory(HybridMemory[AgentMemoryFragment].from_chroma())
+
+    # TODO Embedding and Rerank model refactor
+    from dbgpt.rag.embedding import OpenAPIEmbeddings
+
+    silicon_embeddings = OpenAPIEmbeddings(
+        api_url=os.getenv("SILICONFLOW_API_BASE") + "/embeddings",
+        api_key=os.getenv("SILICONFLOW_API_KEY"),
+        model_name="BAAI/bge-large-zh-v1.5",
+    )
+    agent_memory = AgentMemory(
+        HybridMemory[AgentMemoryFragment].from_chroma(
+            embeddings=silicon_embeddings,
+        )
+    )
     agent_memory.gpts_memory.init("test123")
 
     coder = (

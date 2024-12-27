@@ -5,9 +5,9 @@
         Execute the following command in the terminal:
         Set env params.
         .. code-block:: shell
-
-            export OPENAI_API_KEY=sk-xx
-            export OPENAI_API_BASE=https://xx:80/v1
+            
+            export SILICONFLOW_API_KEY=sk-xx
+            export SILICONFLOW_API_BASE=https://xx:80/v1
 
         run example.
         ..code-block:: shell
@@ -15,6 +15,7 @@
 """
 
 import asyncio
+import os
 
 from dbgpt.agent import (
     AgentContext,
@@ -32,12 +33,14 @@ initialize_tracer(
 
 
 async def main():
-    from dbgpt.model.proxy import OpenAILLMClient
+    from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
 
     agent_memory = AgentMemory()
 
-    llm_client = OpenAILLMClient(
-        model_alias="gpt-4o",
+    llm_client = SiliconFlowLLMClient(
+        model_alias=os.getenv(
+            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+        ),
     )
 
     context: AgentContext = AgentContext(
