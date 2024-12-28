@@ -10,6 +10,7 @@ from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
+from dbgpt.rag.transformer.text2vector import Text2Vector
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -66,7 +67,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=True,
         description="Enable the graph search for documents and chunks",
     )
-
+    similarity_search_enabled: bool = Field(
+        default=False,
+        description="Enable the similarity search",
+    )
     knowledge_graph_chunk_search_top_size: int = Field(
         default=5,
         description="Top size of knowledge graph chunk search",
@@ -79,9 +83,9 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=20,
         description="Batch size of parallel community building process",
     )
-    similar_search_enabled: bool = Field(
-        default=False,
-        description="Enable the similarity search",
+    knowledge_graph_embedding_batch_size: int = Field(
+        default=20,
+        description="Batch size of triplets embedding from the text",
     )
 
 
@@ -138,16 +142,22 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.knowledge_graph_extraction_batch_size,
             )
         )
+        self._triplet_embedding_batch_size = int(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE",
+                config.knowledge_graph_embedding_batch_size,
+            )
+        )
         self._community_summary_batch_size = int(
             os.getenv(
                 "COMMUNITY_SUMMARY_BATCH_SIZE",
                 config.community_summary_batch_size,
             )
         )
-        self._similar_search_enabled = (
-            os.environ["SIMILAR_SEARCH_ENABLED"].lower() == "true"
-            if "SIMILAR_SEARCH_ENABLED" in os.environ
-            else config.similar_search_enabled
+        self._similarity_search_enabled = (
+            os.environ["SIMILARITY_SEARCH_ENABLED"].lower() == "true"
+            if "SIMILARITY_SEARCH_ENABLED" in os.environ
+            else config.similarity_search_enabled
         )
 
         def extractor_configure(name: str, cfg: VectorStoreConfig):
@@ -170,7 +180,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             ),
         )
 
-        self._garph_embedder = GraphEmbedder()
+        self._graph_embedder = GraphEmbedder(self._config.embedding_fn)
+
+        self._text_embedder = Text2Vector(self._config.embedding_fn)
 
         def community_store_configure(name: str, cfg: VectorStoreConfig):
             cfg.name = name
@@ -256,7 +268,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         if not graphs_list:
             raise ValueError("No graphs extracted from the chunks")
 
-        graphs_list = await self._garph_embedder.batch_embed(graphs_list)
+        similarity_search_enabled = self._similarity_search_enabled
+
+        # If enable the similarity search, add the embedding to the graphs
+        if similarity_search_enabled:
+            graphs_list = await self._graph_embedder.batch_embed(
+                graphs_list,
+                batch_size=self._triplet_embedding_batch_size,
+            )
 
         # Upsert the graphs into the graph store
         for idx, graphs in enumerate(graphs_list):
@@ -348,15 +367,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         context = "\n".join(summaries) if summaries else ""
 
         # Vector similarity search
-        similar_search_enabled = self._similar_search_enabled
+        similarity_search_enabled = self._similarity_search_enabled
 
-        if similar_search_enabled:
-            keywords: List[List[float]] = []
-            vector = await self._garph_embedder.embed(text)
-            keywords.append(vector)
-        else:
-            keywords: List[str] = await self._keyword_extractor.extract(text)
-        
         subgraph = None
         subgraph_for_doc = None
 
@@ -364,40 +376,72 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         triplet_graph_enabled = self._triplet_graph_enabled
         document_graph_enabled = self._document_graph_enabled
 
-        if triplet_graph_enabled:
-            subgraph = self._graph_store_apdater.explore(
-                subs=keywords, limit=topk, search_scope="knowledge_graph"
-            )
+        keywords: List[str] = await self._keyword_extractor.extract(text)
+        # If enable similarity search, using vector to search
+        if similarity_search_enabled:
+            vectors: List[List[float]] = []
+            vector = await self._text_embedder.embed(text)
+            vectors.append(vector)
 
-            if document_graph_enabled:
-                keywords_for_document_graph = keywords
-                if similar_search_enabled:
-                    for vertex in subgraph.vertices():
-                        vector = await self._garph_embedder.embed(vertex.name)
-                        keywords_for_document_graph.append(vector)
-                else: 
+            if triplet_graph_enabled:
+                # Using similarity search to get entity.vid as keywords
+                subgraph = self._graph_store_apdater.explore(
+                    subs=vectors, limit=topk, search_scope="knowledge_graph"
+                )
+                # Append keywords
+                if document_graph_enabled:
+                    keywords_for_document_graph = keywords
                     for vertex in subgraph.vertices():
                         keywords_for_document_graph.append(vertex.name)
 
-                subgraph_for_doc = self._graph_store_apdater.explore(
-                    subs=keywords_for_document_graph,
-                    limit=self._knowledge_graph_chunk_search_top_size,
-                    search_scope="document_graph",
-                )
+                    # Using keywords to get chunk and doc
+                    subgraph_for_doc = self._graph_store_apdater.explore(
+                        subs=keywords_for_document_graph,
+                        limit=self._knowledge_graph_chunk_search_top_size,
+                        search_scope="document_graph",
+                    )
+            else:
+                if document_graph_enabled:
+                    # Using similarity search toget chunk and doc
+                    subgraph_for_doc = self._graph_store_apdater.explore(
+                        subs=vectors,
+                        limit=self._knowledge_graph_chunk_search_top_size,
+                        search_scope="document_graph",
+                    )
+            logger.info(f"Search subgraph from the following vectors:\n{len(vectors)}")
+
+        # Else using keywords
         else:
-            if document_graph_enabled:
-                subgraph_for_doc = self._graph_store_apdater.explore(
-                    subs=keywords,
-                    limit=self._knowledge_graph_chunk_search_top_size,
-                    search_scope="document_graph",
+            if triplet_graph_enabled:
+                subgraph = self._graph_store_apdater.explore(
+                    subs=keywords, limit=topk, search_scope="knowledge_graph"
                 )
+
+                if document_graph_enabled:
+                    keywords_for_document_graph = keywords
+                    for vertex in subgraph.vertices():
+                        keywords_for_document_graph.append(vertex.name)
+
+                    subgraph_for_doc = self._graph_store_apdater.explore(
+                        subs=keywords_for_document_graph,
+                        limit=self._knowledge_graph_chunk_search_top_size,
+                        search_scope="document_graph",
+                    )
+            else:
+                if document_graph_enabled:
+                    subgraph_for_doc = self._graph_store_apdater.explore(
+                        subs=keywords,
+                        limit=self._knowledge_graph_chunk_search_top_size,
+                        search_scope="document_graph",
+                    )
+            logger.info(
+                f"Search subgraph from the following keywords:\n{len(keywords)}"
+            )
 
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (
             subgraph_for_doc.format() if subgraph_for_doc else ""
         )
-
-        logger.info(f"Search subgraph from the following keywords:\n{len(keywords)}")
 
         if not (summaries or knowledge_graph_str or knowledge_graph_for_doc_str):
             return []
@@ -420,7 +464,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         logger.info("Truncate triplet extractor")
         self._graph_extractor.truncate()
         logger.info("Truncate graph embedder")
-        self._garph_embedder.truncate()
+        self._graph_embedder.truncate()
+        logger.info("Truncate text embedder")
+        self._text_embedder.truncate()
         return [self._config.name]
 
     def delete_vector_name(self, index_name: str):
@@ -435,7 +481,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._graph_extractor.drop()
 
         logger.info("Drop graph embedder")
-        self._garph_embedder.drop()
+        self._graph_embedder.drop()
+
+        logger.info("Drop text embedder")
+        self._text_embedder.drop()
 
 
 HYBRID_SEARCH_PT = """

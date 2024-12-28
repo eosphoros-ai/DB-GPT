@@ -360,7 +360,7 @@ DB-GPT社区与TuGraph社区的比较
   总体而言，DB-GPT社区和TuGraph社区在社区贡献、生态系统和开发者参与等方面各具特色。DB-GPT社区更侧重于AI应用的多样性和组织间的合作，而TuGraph社区则专注于图数据的高效管理和分析。两者的共同点在于都强调了开源和社区合作的重要性，推动了各自领域的技术进步和应用发展。
 ```
 
-### Latest Updates
+### Retrieval Of Document Structure
 
 In version 0.6.1 of DB-GPT, we have added a new feature:
 - Retrieval of triplets with the **retrieval of document structure**
@@ -390,3 +390,50 @@ We decompose standard format files (currently best support for Markdown files) i
 What is the next?
 
 We aim to construct a more complex Graph that covers more comprehensive information to support more sophisticated retrieval algorithms in our GraphRAG.
+
+
+### Similarity Search for GraphRAG:
+
+In new version of DB-GPT, we have added a new feature:
+- **Using similarity search** for etrieval of GraphRAG 
+
+#### How to use?
+
+Set variables below in `.env` file, let DB-GPT know you want to using similarity search.
+
+```
+SIMILARITY_SEARCH_ENABLED=True # enable the similarity search for entities and chunks
+KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE=20 # the batch size of embedding from the text
+KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE=5 # set the topk of the vector similarity search
+KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_RECALL_SCORE=0.3 # set the reacall score of the vector similarity search
+```
+
+And you also need to choose the embedding model in `.env` file
+
+```
+## Openai embedding model, See dbgpt/model/parameter.py
+# EMBEDDING_MODEL=proxy_openai
+# proxy_openai_proxy_server_url=https://api.openai.com/v1
+# proxy_openai_proxy_api_key={your-openai-sk}
+# proxy_openai_proxy_backend=text-embedding-ada-002
+
+
+## qwen embedding model, See dbgpt/model/parameter.py
+# EMBEDDING_MODEL=proxy_tongyi
+# proxy_tongyi_proxy_backend=text-embedding-v1
+# proxy_tongyi_proxy_api_key={your-api-key}
+
+## qianfan embedding model, See dbgpt/model/parameter.py
+#EMBEDDING_MODEL=proxy_qianfan
+#proxy_qianfan_proxy_backend=bge-large-zh
+#proxy_qianfan_proxy_api_key={your-api-key}
+#proxy_qianfan_proxy_api_secret={your-secret-key}
+```
+
+#### Why to use?
+
+TuGraph support vector store, vector index and vector similarity search now. Therefore, GraphRAG can make good use of this feature to obtain better retrieval ability than keyword retrieval.
+
+To take advantage of this feature, we add the _embedding field to entity and chunk to store the embedding data.
+
+The vector index is created for the _embedding field by using TuGraph's vector index and similarity search ability is used to get the most similar results of the problem.

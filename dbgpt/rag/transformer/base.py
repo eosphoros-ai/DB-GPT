@@ -29,8 +29,9 @@ class EmbedderBase(TransformerBase, ABC):
     @abstractmethod
     async def batch_embed(
         self,
-        texts: List[str],
-    ) -> List[List[float]]:
+        graphs_list: List[List],
+        batch_size: int = 1,
+    ) -> List[List]:
         """Batch embed vectors from texts."""
 
 
