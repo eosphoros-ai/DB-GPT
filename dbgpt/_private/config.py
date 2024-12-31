@@ -151,6 +151,15 @@ class Config(metaclass=Singleton):
             os.environ["siliconflow_proxyllm_api_base"] = os.getenv(
                 "SILICONFLOW_API_BASE", "https://api.siliconflow.cn/v1"
             )
+        self.gitee_proxy_api_key = os.getenv("GITEE_API_KEY")
+        if self.gitee_proxy_api_key:
+            os.environ["gitee_proxyllm_proxy_api_key"] = self.gitee_proxy_api_key
+            os.environ["gitee_proxyllm_proxyllm_backend"] = os.getenv(
+                "GITEE_MODEL_VERSION", "Qwen2.5-72B-Instruct"
+            )
+            os.environ["gitee_proxyllm_api_base"] = os.getenv(
+                "GITEE_API_BASE", "https://ai.gitee.com/v1"
+            )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
