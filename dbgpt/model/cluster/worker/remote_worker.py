@@ -89,6 +89,8 @@ class RemoteModelWorker(ModelWorker):
                 json=params,
                 timeout=self.timeout,
             )
+            if response.status_code not in [200, 201]:
+                raise Exception(f"Request to {url} failed, error: {response.text}")
             return ModelOutput(**response.json())
 
     def count_token(self, prompt: str) -> int:
@@ -106,6 +108,8 @@ class RemoteModelWorker(ModelWorker):
                 json={"prompt": prompt},
                 timeout=self.timeout,
             )
+            if response.status_code not in [200, 201]:
+                raise Exception(f"Request to {url} failed, error: {response.text}")
             return response.json()
 
     async def async_get_model_metadata(self, params: Dict) -> ModelMetadata:
@@ -123,6 +127,8 @@ class RemoteModelWorker(ModelWorker):
                 json=params,
                 timeout=self.timeout,
             )
+            if response.status_code not in [200, 201]:
+                raise Exception(f"Request to {url} failed, error: {response.text}")
             return ModelMetadata.from_dict(response.json())
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
@@ -141,6 +147,8 @@ class RemoteModelWorker(ModelWorker):
             json=params,
             timeout=self.timeout,
         )
+        if response.status_code not in [200, 201]:
+            raise Exception(f"Request to {url} failed, error: {response.text}")
         return response.json()
 
     async def async_embeddings(self, params: Dict) -> List[List[float]]:
@@ -156,6 +164,8 @@ class RemoteModelWorker(ModelWorker):
                 json=params,
                 timeout=self.timeout,
             )
+            if response.status_code not in [200, 201]:
+                raise Exception(f"Request to {url} failed, error: {response.text}")
             return response.json()
 
     def _get_trace_headers(self):
