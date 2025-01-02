@@ -1,6 +1,7 @@
 """
 Fork from text-generation-webui https://github.com/oobabooga/text-generation-webui/blob/main/modules/llamacpp_model.py
 """
+
 import logging
 import re
 from typing import Dict
@@ -62,11 +63,11 @@ class LlamaCppModel:
             self.model.__del__()
 
     @classmethod
-    def from_pretrained(self, model_path, model_params: LlamaCppModelParameters):
+    def from_pretrained(cls, model_path, model_params: LlamaCppModelParameters):
         Llama = llama_cpp_lib(prefer_cpu=model_params.prefer_cpu).Llama
         LlamaCache = llama_cpp_lib(prefer_cpu=model_params.prefer_cpu).LlamaCache
 
-        result = self()
+        result = cls()
         cache_capacity = 0
         cache_capacity_str = model_params.cache_capacity
         if cache_capacity_str is not None:

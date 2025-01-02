@@ -65,6 +65,14 @@ class APIChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = Field(0.0, description="Presence penalty")
 
 
+class UsageInfo(BaseModel):
+    """Usage info entity."""
+
+    prompt_tokens: int = Field(0, description="Prompt tokens")
+    total_tokens: int = Field(0, description="Total tokens")
+    completion_tokens: Optional[int] = Field(0, description="Completion tokens")
+
+
 class DeltaMessage(BaseModel):
     """Delta message entity for chat completion response."""
 
@@ -95,6 +103,7 @@ class ChatCompletionStreamResponse(BaseModel):
     choices: List[ChatCompletionResponseStreamChoice] = Field(
         ..., description="Chat completion response choices"
     )
+    usage: UsageInfo = Field(..., description="Usage info")
 
 
 class ChatMessage(BaseModel):
@@ -102,14 +111,6 @@ class ChatMessage(BaseModel):
 
     role: str = Field(..., description="Role of the message")
     content: str = Field(..., description="Content of the message")
-
-
-class UsageInfo(BaseModel):
-    """Usage info entity."""
-
-    prompt_tokens: int = Field(0, description="Prompt tokens")
-    total_tokens: int = Field(0, description="Total tokens")
-    completion_tokens: Optional[int] = Field(0, description="Completion tokens")
 
 
 class ChatCompletionResponseChoice(BaseModel):
@@ -256,3 +257,157 @@ class ErrorCode(IntEnum):
     GRADIO_STREAM_UNKNOWN_ERROR = 50004
     CONTROLLER_NO_WORKER = 50005
     CONTROLLER_WORKER_TIMEOUT = 50006
+
+
+class CompletionRequest(BaseModel):
+    """Completion request entity."""
+
+    model: str = Field(..., description="Model name")
+    prompt: Union[str, List[Any]] = Field(
+        ...,
+        description="Provide the prompt for this completion as a string or as an "
+        "array of strings or numbers representing tokens",
+    )
+    suffix: Optional[str] = Field(
+        None,
+        description="Suffix to append to the completion. If provided, the model will "
+        "stop generating upon reaching this suffix",
+    )
+    temperature: Optional[float] = Field(
+        0.8,
+        description="Adjust the randomness of the generated text. Default: `0.8`",
+    )
+    n: Optional[int] = Field(
+        1,
+        description="Number of completions to generate. Default: `1`",
+    )
+    max_tokens: Optional[int] = Field(
+        16,
+        description="The maximum number of tokens that can be generated in the "
+        "completion. Default: `16`",
+    )
+    stop: Optional[Union[str, List[str]]] = Field(
+        None,
+        description="Up to 4 sequences where the API will stop generating further "
+        "tokens. The returned text will not contain the stop sequence.",
+    )
+    stream: Optional[bool] = Field(
+        False,
+        description="Whether to stream back partial completions. Default: `False`",
+    )
+    top_p: Optional[float] = Field(
+        1.0,
+        description="Limit the next token selection to a subset of tokens with a "
+        "cumulative probability above a threshold P. Default: `1.0`",
+    )
+    top_k: Optional[int] = Field(
+        -1,
+        description="Limit the next token selection to the K most probable tokens. "
+        "Default: `-1`",
+    )
+    logprobs: Optional[int] = Field(
+        None,
+        description="Modify the likelihood of specified tokens appearing in the "
+        "completion.",
+    )
+    echo: Optional[bool] = Field(
+        False, description="Echo back the prompt in addition to the completion"
+    )
+    presence_penalty: Optional[float] = Field(
+        0.0,
+        description="Number between -2.0 and 2.0. Positive values penalize new tokens "
+        "based on whether they appear in the text so far, increasing the model's "
+        "likelihood to talk about new topics.",
+    )
+    frequency_penalty: Optional[float] = Field(
+        0.0,
+        description="Number between -2.0 and 2.0. Positive values penalize new tokens "
+        "based on their existing frequency in the text so far, decreasing the model's "
+        "likelihood to repeat the same line verbatim.",
+    )
+    user: Optional[str] = Field(
+        None,
+        description="A unique identifier representing your end-user, which can help "
+        "OpenAI to monitor and detect abuse.",
+    )
+    use_beam_search: Optional[bool] = False
+    best_of: Optional[int] = Field(
+        1,
+        description='Generates best_of completions server-side and returns the "best" '
+        "(the one with the highest log probability per token). Results cannot be "
+        "streamed. When used with n, best_of controls the number of candidate "
+        "completions and n specifies how many to return – best_of must be greater than "
+        "n.",
+    )
+
+
+class LogProbs(BaseModel):
+    """Logprobs entity."""
+
+    text_offset: List[int] = Field(default_factory=list, description="Text offset")
+    token_logprobs: List[Optional[float]] = Field(
+        default_factory=list, description="Token logprobs"
+    )
+    tokens: List[str] = Field(default_factory=list, description="Tokens")
+    top_logprobs: List[Optional[Dict[str, float]]] = Field(
+        default_factory=list, description="Top logprobs"
+    )
+
+
+class CompletionResponseChoice(BaseModel):
+    """Completion response choice entity."""
+
+    index: int = Field(..., description="Choice index")
+    text: str = Field(..., description="Text")
+    logprobs: Optional[LogProbs] = Field(None, description="Logprobs")
+    finish_reason: Optional[Literal["stop", "length"]] = Field(
+        None, description="The reason the model stopped generating tokens."
+    )
+
+
+class CompletionResponse(BaseModel):
+    """Completion response entity."""
+
+    id: str = Field(default_factory=lambda: f"cmpl-{str(uuid.uuid1())}")
+    object: str = Field(
+        "text_completion",
+        description="The object type, which is always 'text_completion'",
+    )
+    created: int = Field(
+        default_factory=lambda: int(time.time()), description="Created time"
+    )
+    model: str = Field(..., description="Model name")
+    choices: List[CompletionResponseChoice] = Field(
+        ...,
+        description="The list of completion choices the model generated for the input "
+        "prompt.",
+    )
+    usage: UsageInfo = Field(..., description="Usage info")
+
+
+class CompletionResponseStreamChoice(BaseModel):
+    """Completion response choice entity."""
+
+    index: int = Field(..., description="Choice index")
+    text: str = Field(..., description="Text")
+    logprobs: Optional[LogProbs] = Field(None, description="Logprobs")
+    finish_reason: Optional[Literal["stop", "length"]] = Field(
+        None, description="The reason the model stopped generating tokens."
+    )
+
+
+class CompletionStreamResponse(BaseModel):
+    """Completion stream response entity."""
+
+    id: str = Field(
+        default_factory=lambda: f"cmpl-{str(uuid.uuid1())}", description="Stream ID"
+    )
+    object: str = Field("text_completion", description="Object type")
+    created: int = Field(
+        default_factory=lambda: int(time.time()), description="Created time"
+    )
+    model: str = Field(..., description="Model name")
+    choices: List[CompletionResponseStreamChoice] = Field(
+        ..., description="Completion response choices"
+    )
+    usage: UsageInfo = Field(..., description="Usage info")

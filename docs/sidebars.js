@@ -273,6 +273,10 @@ const sidebars = {
             },
             {
               type: 'doc',
+              id: 'installation/advanced_usage/Llamacpp_server',
+            },
+            {
+              type: 'doc',
               id: 'installation/advanced_usage/OpenAI_SDK_call',
             },
           ],

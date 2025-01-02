@@ -556,7 +556,10 @@ def llama_cpp_requires():
     """
     pip install "dbgpt[llama_cpp]"
     """
-    setup_spec.extras["llama_cpp"] = ["llama-cpp-python"]
+    setup_spec.extras["llama_cpp_server"] = ["llama-cpp-server-py"]
+    setup_spec.extras["llama_cpp"] = setup_spec.extras["llama_cpp_server"] + [
+        "llama-cpp-python"
+    ]
     llama_cpp_python_cuda_requires()
 
 
