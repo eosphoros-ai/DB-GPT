@@ -36,12 +36,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
-      - name: Build and push
+      # Only run when there is a PR
+      - name: Build PR
+        if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docs/Dockerfile-deploy
           platforms: linux/amd64
-          # Only push when not in PR
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ github.event_name != 'pull_request' && 'eosphorosai/dbgpt-docs:${{ github.ref_name }},eosphorosai/dbgpt-docs:latest' || '' }}
+          push: false
+      # Only run when it is not a PR, build and push the image
+      - name: Build and push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docs/Dockerfile-deploy
+          platforms: linux/amd64
+          push: true
+          tags: eosphorosai/dbgpt-docs:${{ github.ref_name }},eosphorosai/dbgpt-docs:latest
