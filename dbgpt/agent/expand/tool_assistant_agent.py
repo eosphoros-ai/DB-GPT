@@ -1,9 +1,12 @@
 """Plugin Assistant Agent."""
 
 import logging
+from typing import List, Optional
 
+from .. import Resource, ResourceType
 from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
+from ..resource import BaseTool
 from .actions.tool_action import ToolAction
 
 logger = logging.getLogger(__name__)
@@ -37,7 +40,10 @@ class ToolAssistantAgent(ConversableAgent):
                 "goal.",
                 "Please output the selected tool name and specific parameter "
                 "information in json format according to the following required format."
-                " If there is an example, please refer to the sample format output.",
+                "If there is an example, please refer to the sample format output.",
+                "It is not necessarily required to select a tool for execution. "
+                "If the tool to be used or its parameters cannot be clearly "
+                "determined based on the user's input, you can choose not to execute.",
             ],
             category="agent",
             key="dbgpt_agent_expand_plugin_assistant_agent_constraints",
@@ -54,3 +60,30 @@ class ToolAssistantAgent(ConversableAgent):
         """Create a new instance of ToolAssistantAgent."""
         super().__init__(**kwargs)
         self._init_actions([ToolAction])
+
+    @property
+    def desc(self) -> Optional[str]:
+        tools = _get_tools_by_resource(self.resource)
+
+        if tools is None or len(tools) == 0:
+            return "Has no tools to use"
+
+        return (
+            "Can use the following tools to complete the task objectives, tool information: "
+            f"{' '.join([f'{i+1}. tool {tools[i].name}, can {tools[i].description}.' for i in range(len(tools))])}"
+        )
+
+
+def _get_tools_by_resource(resource: Resource) -> List[BaseTool]:
+    tools: List[BaseTool] = []
+
+    if resource is None:
+        return tools
+
+    if resource.type() == ResourceType.Tool and isinstance(resource, BaseTool):
+        tools.append(resource)
+    elif resource.type() == ResourceType.Pack:
+        for sub_res in resource.sub_resources:
+            tools.extend(_get_tools_by_resource(sub_res))
+
+    return tools
