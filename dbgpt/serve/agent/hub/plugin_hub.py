@@ -2,11 +2,11 @@ import glob
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
-from typing import Any
-import re
 from pathlib import Path
+from typing import Any
 
 from fastapi import UploadFile
 
@@ -169,23 +169,23 @@ class PluginHub:
 
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize the filename to prevent directory traversal attacks.
-        
+
         Args:
             filename: The original filename
-            
+
         Returns:
             str: Sanitized filename
         """
         # Only keep the basic filename, remove any path information
         filename = os.path.basename(filename)
-        
+
         # Remove any unsafe characters
-        filename = re.sub(r'[^a-zA-Z0-9._-]', '', filename)
-        
+        filename = re.sub(r"[^a-zA-Z0-9._-]", "", filename)
+
         # Ensure the filename is not empty and valid
-        if not filename or filename.startswith('.'):
+        if not filename or filename.startswith("."):
             raise ValueError("Invalid filename")
-            
+
         return filename
 
     async def upload_my_plugin(self, doc_file: UploadFile, user: Any = Default_User):
@@ -194,21 +194,25 @@ class PluginHub:
             safe_filename = self._sanitize_filename(doc_file.filename)
         except ValueError as e:
             raise ValueError(f"Invalid plugin file: {str(e)}")
-            
+
         # Structure a safe file path
         file_path = os.path.join(self.plugin_dir, safe_filename)
-        
+
         # Verify the final path is within the allowed directory
-        if not Path(file_path).resolve().is_relative_to(Path(self.plugin_dir).resolve()):
+        if (
+            not Path(file_path)
+            .resolve()
+            .is_relative_to(Path(self.plugin_dir).resolve())
+        ):
             raise ValueError("Invalid file path")
-            
+
         if os.path.exists(file_path):
             os.remove(file_path)
-            
+
         # Use a temporary file for secure file writing
         tmp_fd, tmp_path = tempfile.mkstemp(dir=self.plugin_dir)
         try:
-            with os.fdopen(tmp_fd, 'wb') as tmp:
+            with os.fdopen(tmp_fd, "wb") as tmp:
                 tmp.write(await doc_file.read())
             shutil.move(tmp_path, file_path)
         except Exception as e:
