@@ -43,8 +43,10 @@
 
 The purpose is to build infrastructure in the field of large models, through the development of multiple technical capabilities such as multi-model management (SMMF), Text2SQL effect optimization, RAG framework and optimization, Multi-Agents framework collaboration, AWEL (agent workflow orchestration), etc. Which makes large model applications with data simpler and more convenient.
 
-
 🚀 **In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.**
+
+### DISCKAIMER
+- [disckaimer](./DISCKAIMER.md)
 
 ### AI-Native Data App 
 ---

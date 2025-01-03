@@ -4,7 +4,7 @@
 
 2. This disclaimer applies to all users of this software. This software reserves the right to modify and update this statement at any time, and notify users in the form of Github Readme, software updates, etc. Please review regularly and abide by the latest disclaimer.
 
-3. The original design intention of this project is to provide a basic framework/tool ​​set, mainly focusing on [briefly describing the core functions of the project]. To keep the project simple and easy to use, we intentionally did not integrate any form of user login, authentication or authorization mechanism.
+3. The original design intention of this project is to provide a basic framework/tool ​​set, mainly focusing on RAGs,Agents, AWEL, etc. To keep the project simple and easy to use, we intentionally did not integrate any form of user login, authentication or authorization mechanism.
 
 4. If you plan to deploy this project into a production environment, it is strongly recommended to connect to existing third-party authentication services (such as OAuth, OpenID Connect, etc.) according to your specific needs, or to develop and maintain a complete set of user management and permissions yourself. control system.
 
