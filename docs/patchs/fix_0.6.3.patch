@@ -1,0 +1,13 @@
+diff --git a/docs/sidebars.js b/docs/sidebars.js
+index e95be6d2..561bc8f7 100755
+--- a/docs/sidebars.js
++++ b/docs/sidebars.js
+@@ -186,7 +186,7 @@ const sidebars = {
+                   id: "awel/awel_tutorial/advanced_guide/4.1_lifecycle"
+                 }
+               ]
+-            },,
++            },
+             {
+               type: "category",
+               label: "5. AWEL Template",
