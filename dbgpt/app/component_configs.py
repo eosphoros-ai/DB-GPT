@@ -111,12 +111,14 @@ def _initialize_resource_manager(system_app: SystemApp):
     from dbgpt.serve.agent.resource.datasource import DatasourceResource
     from dbgpt.serve.agent.resource.knowledge import KnowledgeSpaceRetrieverResource
     from dbgpt.serve.agent.resource.plugin import PluginToolPack
+    from dbgpt.agent.resource.app import AppResource
 
     initialize_resource(system_app)
     rm = get_resource_manager(system_app)
     rm.register_resource(DatasourceResource)
     rm.register_resource(KnowledgeSpaceRetrieverResource)
     rm.register_resource(PluginToolPack, resource_type=ResourceType.Tool)
+    rm.register_resource(AppResource)
     # Register a search tool
     rm.register_resource(resource_instance=baidu_search)
     rm.register_resource(resource_instance=list_dbgpt_support_models)
