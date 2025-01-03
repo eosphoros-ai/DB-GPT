@@ -186,7 +186,7 @@ const sidebars = {
                   id: "awel/awel_tutorial/advanced_guide/4.1_lifecycle"
                 }
               ]
-            },,
+            },
             {
               type: "category",
               label: "5. AWEL Template",
