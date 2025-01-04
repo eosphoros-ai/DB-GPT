@@ -176,18 +176,37 @@ class GraphStoreAdapter(ABC):
         """Check if the label exists in the graph."""
 
     @abstractmethod
-    def explore(
+    def explore_trigraph(
         self,
         subs: List[str],
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
         limit: Optional[int] = None,
-        search_scope: Optional[
-            Literal["knowledge_graph", "document_graph"]
-        ] = "knowledge_graph",
     ) -> MemoryGraph:
-        """Explore the graph from given subjects up to a depth."""
+        """Explore the triple graph from given subjects up to a depth."""
+
+    @abstractmethod
+    def explore_docgraph(
+        self,
+        subs: List[str],
+        direct: Direction = Direction.BOTH,
+        depth: int = 3,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> MemoryGraph:
+        """Explore the document graph only from given subjects up to a depth."""
+
+    @abstractmethod
+    def explore_docgraph_with_entities(
+        self,
+        subs: List[str],
+        direct: Direction = Direction.BOTH,
+        depth: int = 3,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> MemoryGraph:
+        """Explore the document graph after get entities from triple graph."""
 
     @abstractmethod
     def query(self, query: str, **kwargs) -> MemoryGraph:

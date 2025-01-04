@@ -23,60 +23,100 @@ class GraphEmbedder(EmbedderBase):
 
     async def embed(
         self,
-        text: str,
-    ) -> List[float]:
-        """Embed."""
-        return await self.embedding_fn.aembed_query(text)
+        graph: Graph,
+    ) -> Graph:
+        """Embed graph."""
+        texts = []
+        vectors = []
+
+        batch_size = 20
+
+        # Get the text from graph
+        for vertex in graph.vertices():
+            if vertex.get_prop("vertex_type") == GraphElemType.CHUNK.value:
+                texts.append(vertex.get_prop("content"))
+            elif vertex.get_prop("vertex_type") == GraphElemType.ENTITY.value:
+                texts.append(vertex.vid)
+            else:
+                texts.append(" ")
+
+        n_texts = len(texts)
+
+        # Batch embedding
+        for batch_idx in range(0, n_texts, batch_size):
+            start_idx = batch_idx
+            end_idx = min(start_idx + batch_size, n_texts)
+            batch_texts = texts[start_idx:end_idx]
+
+            # Create tasks
+            embedding_tasks = [(self._embed(text)) for text in batch_texts]
+
+            # Process embedding in parallel
+            batch_results = await asyncio.gather(
+                *(task for task in embedding_tasks), return_exceptions=True
+            )
+
+            # Place results in the correct positions
+            for idx, vector in enumerate(batch_results):
+                if isinstance(vector, Exception):
+                    raise RuntimeError(f"Failed to embed text{idx}")
+                else:
+                    vectors.append(vector)
+
+        # Push vectors back into Graph
+        for vertex, vector in zip(graph.vertices(), vectors):
+            vertex.set_prop("_embedding", vector)
+
+        return graph
 
     async def batch_embed(
         self,
-        graphs_list: List[List[Graph]],
+        graphs: List[Graph],
         batch_size: int = 1,
-    ) -> List[List[Graph]]:
-        """Embed graphs from graphs in batches."""
-        for graphs in graphs_list:
-            for graph in graphs:
+    ) -> List[Graph]:
+        """Embed graph from graphs in batches."""
+        for graph in graphs:
 
-                texts = []
-                vectors = []
+            texts = []
+            vectors = []
 
-                # Get the text from graph
-                for vertex in graph.vertices():
-                    if vertex.get_prop("vertex_type") == GraphElemType.CHUNK.value:
-                        texts.append(vertex.get_prop("content"))
-                    elif vertex.get_prop("vertex_type") == GraphElemType.ENTITY.value:
-                        texts.append(vertex.vid)
+            # Get the text from graph
+            for vertex in graph.vertices():
+                if vertex.get_prop("vertex_type") == GraphElemType.CHUNK.value:
+                    texts.append(vertex.get_prop("content"))
+                elif vertex.get_prop("vertex_type") == GraphElemType.ENTITY.value:
+                    texts.append(vertex.vid)
+                else:
+                    texts.append(" ")
+
+            n_texts = len(texts)
+
+            # Batch embedding
+            for batch_idx in range(0, n_texts, batch_size):
+                start_idx = batch_idx
+                end_idx = min(start_idx + batch_size, n_texts)
+                batch_texts = texts[start_idx:end_idx]
+
+                # Create tasks
+                embedding_tasks = [(self._embed(text)) for text in batch_texts]
+
+                # Process embedding in parallel
+                batch_results = await asyncio.gather(
+                    *(task for task in embedding_tasks), return_exceptions=True
+                )
+
+                # Place results in the correct positions
+                for idx, vector in enumerate(batch_results):
+                    if isinstance(vector, Exception):
+                        raise RuntimeError(f"Failed to embed text{idx}")
                     else:
-                        texts.append(" ")
+                        vectors.append(vector)
 
-                n_texts = len(texts)
+            # Push vectors back into Graph
+            for vertex, vector in zip(graph.vertices(), vectors):
+                vertex.set_prop("_embedding", vector)
 
-                # Batch embedding
-                for batch_idx in range(0, n_texts, batch_size):
-                    start_idx = batch_idx
-                    end_idx = min(start_idx + batch_size, n_texts)
-                    batch_texts = texts[start_idx:end_idx]
-
-                    # Create tasks
-                    embedding_tasks = [(self._embed(text)) for text in batch_texts]
-
-                    # Process embedding in parallel
-                    batch_results = await asyncio.gather(
-                        *(task for task in embedding_tasks), return_exceptions=True
-                    )
-
-                    # Place results in the correct positions
-                    for idx, vector in enumerate(batch_results):
-                        if isinstance(vector, Exception):
-                            raise RuntimeError(f"Failed to embed text{idx}")
-                        else:
-                            vectors.append(vector)
-
-                # Push vectors back into Graph
-                for vertex, vector in zip(graph.vertices(), vectors):
-                    vertex.set_prop("_embedding", vector)
-
-        return graphs_list
+        return graphs
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     async def _embed(self, text: str) -> List:

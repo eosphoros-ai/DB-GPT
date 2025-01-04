@@ -268,14 +268,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         if not graphs_list:
             raise ValueError("No graphs extracted from the chunks")
 
-        similarity_search_enabled = self._similarity_search_enabled
-
         # If enable the similarity search, add the embedding to the graphs
-        if similarity_search_enabled:
-            graphs_list = await self._graph_embedder.batch_embed(
-                graphs_list,
-                batch_size=self._triplet_embedding_batch_size,
-            )
+        if self._similarity_search_enabled:
+            for graphs in graphs_list:
+                new_graphs = self._graph_embedder.batch_embed(
+                    graphs,
+                    batch_size=self._triplet_embedding_batch_size,
+                )
+                graphs = new_graphs
 
         # Upsert the graphs into the graph store
         for idx, graphs in enumerate(graphs_list):
@@ -376,67 +376,61 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         triplet_graph_enabled = self._triplet_graph_enabled
         document_graph_enabled = self._document_graph_enabled
 
+        # Using subs to transfer keywords or embeddings
+        subs = []
+
+        # Using subs to transfer keywords
         keywords: List[str] = await self._keyword_extractor.extract(text)
-        # If enable similarity search, using vector to search
+        subs = keywords
+
+        # If enable similarity search, using subs to transfer embeddings
         if similarity_search_enabled:
-            vectors: List[List[float]] = []
+            # Embedding the question
             vector = await self._text_embedder.embed(text)
-            vectors.append(vector)
-
-            if triplet_graph_enabled:
-                # Using similarity search to get entity.vid as keywords
-                subgraph = self._graph_store_apdater.explore(
-                    subs=vectors, limit=topk, search_scope="knowledge_graph"
-                )
-                # Append keywords
-                if document_graph_enabled:
-                    keywords_for_document_graph = keywords
-                    for vertex in subgraph.vertices():
-                        keywords_for_document_graph.append(vertex.name)
-
-                    # Using keywords to get chunk and doc
-                    subgraph_for_doc = self._graph_store_apdater.explore(
-                        subs=keywords_for_document_graph,
-                        limit=self._knowledge_graph_chunk_search_top_size,
-                        search_scope="document_graph",
-                    )
-            else:
-                if document_graph_enabled:
-                    # Using similarity search toget chunk and doc
-                    subgraph_for_doc = self._graph_store_apdater.explore(
-                        subs=vectors,
-                        limit=self._knowledge_graph_chunk_search_top_size,
-                        search_scope="document_graph",
-                    )
-            logger.info(f"Search subgraph from the following vectors:\n{len(vectors)}")
-
-        # Else using keywords
-        else:
-            if triplet_graph_enabled:
-                subgraph = self._graph_store_apdater.explore(
-                    subs=keywords, limit=topk, search_scope="knowledge_graph"
-                )
-
-                if document_graph_enabled:
-                    keywords_for_document_graph = keywords
-                    for vertex in subgraph.vertices():
-                        keywords_for_document_graph.append(vertex.name)
-
-                    subgraph_for_doc = self._graph_store_apdater.explore(
-                        subs=keywords_for_document_graph,
-                        limit=self._knowledge_graph_chunk_search_top_size,
-                        search_scope="document_graph",
-                    )
-            else:
-                if document_graph_enabled:
-                    subgraph_for_doc = self._graph_store_apdater.explore(
-                        subs=keywords,
-                        limit=self._knowledge_graph_chunk_search_top_size,
-                        search_scope="document_graph",
-                    )
-            logger.info(
-                f"Search subgraph from the following keywords:\n{len(keywords)}"
+            # Embedding the keywords
+            vectors = await self._text_embedder.batch_embed(
+                keywords,
+                batch_size=self._triplet_embedding_batch_size,
             )
+            # Using the embeddings of keywords and question
+            vectors.append(vector)
+            subs = vectors
+
+        # If enable triplet graph, using subs to search enetities
+        # subs -> enetities
+        if triplet_graph_enabled:
+            subgraph = self._graph_store_apdater.explore_trigraph(
+                subs=subs, limit=topk
+            )
+
+        # If enabled document graph 
+        if document_graph_enabled:
+            # If not enable triplet graph or subgraph is null
+            # Using subs to search chunks
+            # subs -> chunks -> doc
+            if subgraph == None or subgraph.vertex_count == 0:
+                subgraph_for_doc = self._graph_store_apdater.explore_docgraph(
+                    subs=subs,
+                    limit=self._knowledge_graph_chunk_search_top_size,
+                )    
+            else:
+                # If there are searched entities
+                # Append the vids of entities
+                # VID is the KEYWORD which stores in entity
+                keywords_for_document_graph = keywords
+                for vertex in subgraph.vertices():
+                    keywords_for_document_graph.append(vertex.name)
+
+                # Using the vids to search chunks and doc
+                # entities -> chunks -> doc
+                subgraph_for_doc = self._graph_store_apdater.explore_docgraph_with_entities(
+                    subs=keywords_for_document_graph,
+                    limit=self._knowledge_graph_chunk_search_top_size,
+                )
+                
+        logger.info(
+            f"Search subgraph from the following keywords:\n{len(keywords)}"
+        )
 
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (

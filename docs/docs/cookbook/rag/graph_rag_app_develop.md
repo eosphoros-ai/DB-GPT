@@ -432,8 +432,6 @@ And you also need to choose the embedding model in `.env` file
 
 #### Why to use?
 
-TuGraph support vector store, vector index and vector similarity search now. Therefore, GraphRAG can make good use of this feature to obtain better retrieval ability than keyword retrieval.
-
-To take advantage of this feature, we add the _embedding field to entity and chunk to store the embedding data.
-
-The vector index is created for the _embedding field by using TuGraph's vector index and similarity search ability is used to get the most similar results of the problem.
+TuGraph now offers comprehensive vector capabilities, including vector storage, indexing, and similarity search functionality. These features enable GraphRAG to achieve superior retrieval performance compared to traditional keyword-based approaches.
+	
+To leverage these capabilities, we've introduced an `_embedding` field in both entity and chunk objects to store embedding data, which enables similarity search to identify the most relevant results for a given query.

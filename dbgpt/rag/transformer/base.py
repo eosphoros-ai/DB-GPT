@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +23,15 @@ class EmbedderBase(TransformerBase, ABC):
     """Embedder base class."""
 
     @abstractmethod
-    async def embed(self, text: str) -> List[float]:
+    async def embed(self, input: Any) -> Any:
         """Embed vector from text."""
 
     @abstractmethod
     async def batch_embed(
         self,
-        graphs_list: List[List],
+        inputs: List,
         batch_size: int = 1,
-    ) -> List[List]:
+    ) -> List:
         """Batch embed vectors from texts."""
 
 

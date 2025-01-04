@@ -163,10 +163,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         if self.graph_store._similarity_search_enabled:
             # Check wheather the vector index exist
             check_entity_vector_query = (
-                f"CALL db.showVertexVectorIndex() "
+                "CALL db.showVertexVectorIndex() "
                 "YIELD label_name, field_name "
                 f"WHERE label_name = '{GraphElemType.ENTITY.value}' "
-                f"AND field_name = '_embedding' "
+                "AND field_name = '_embedding' "
                 "RETURN label_name"
             )
             # If not exist, then create vector index
@@ -175,7 +175,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 dimension = len(entity_list[0].get("_embedding"))
                 # Then create index
                 create_vector_index_query = (
-                    f"CALL db.addVertexVectorIndex("
+                    "CALL db.addVertexVectorIndex("
                     f'"{GraphElemType.ENTITY.value}", "_embedding", '
                     "{dimension: "
                     f"{dimension}"
@@ -239,10 +239,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             if self.graph_store._similarity_search_enabled:
                 # Check wheather the vector index exist
                 check_chunk_vector_query = (
-                    f"CALL db.showVertexVectorIndex() "
+                    "CALL db.showVertexVectorIndex() "
                     "YIELD label_name, field_name "
                     f"WHERE label_name = '{GraphElemType.CHUNK.value}' "
-                    f"AND field_name = '_embedding' "
+                    "AND field_name = '_embedding' "
                     "RETURN label_name"
                 )
                 # If not exist, then create vector index
@@ -251,7 +251,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     dimension = len(chunk_list[0].get("_embedding"))
                     # Then create index
                     create_vector_index_query = (
-                        f"CALL db.addVertexVectorIndex("
+                        "CALL db.addVertexVectorIndex("
                         f'"{GraphElemType.CHUNK.value}", "_embedding", '
                         "{dimension: "
                         f"{dimension}"
@@ -592,16 +592,13 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         return graph_elem_type.value in tables
 
-    def explore(
+    def explore_trigraph(
         self,
         subs: Union[List[str], List[List[float]]],
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
         limit: Optional[int] = None,
-        search_scope: Optional[
-            Literal["knowledge_graph", "document_graph"]
-        ] = "knowledge_graph",
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
         if not subs:
@@ -616,43 +613,41 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         else:
             limit_string = f"LIMIT {limit}"
 
-        if search_scope == "knowledge_graph":
-            if direct.name == "OUT":
-                rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]->"
-            elif direct.name == "IN":
-                rel = f"<-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
-            else:
-                rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
+        if direct.name == "OUT":
+            rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]->"
+        elif direct.name == "IN":
+            rel = f"<-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
+        else:
+            rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
 
-            if not self.graph_store._similarity_search_enabled:
-                conditional_statement = (
-                    f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+        if not self.graph_store._similarity_search_enabled:
+            conditional_statement = (
+                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+            )
+        else:
+            # If enable similarity search, using knn-search to get the id
+            similar_entities = []
+            # Get the vector from vectors
+            # Then do knn-search for each vectors by using TuGraph
+            for vector in subs:
+                similarity_retrieval_query = (
+                    "CALL db.vertexVectorKnnSearch("
+                    f"'{GraphElemType.ENTITY.value}','_embedding', {vector}, "
+                    "{top_k:"
+                    f"{self.graph_store._similarity_search_topk}"
+                    "}) YIELD node "
+                    "WHERE node.distance < "
+                    f"{self.graph_store._similarity_search_score_threshold} "
+                    "RETURN node.id AS id;"
                 )
-            else:
-                # If enable similarity search, using knn-search to get the id
-                similar_entities = []
-                # Get the vector from vectors
-                # Then do knn-search for each vectors by using TuGraph
-                for sub in subs:
-                    vector = str(sub)
-                    similarity_retrieval_query = (
-                        f"CALL db.vertexVectorKnnSearch("
-                        f"'{GraphElemType.ENTITY.value}','_embedding', {vector}, "
-                        "{top_k:"
-                        f"{self.graph_store._similarity_search_topk}"
-                        "}) YIELD node "
-                        "WHERE node.distance < "
-                        f"{self.graph_store._similarity_search_score_threshold} "
-                        "RETURN node.id AS id;"
-                    )
-                    result_list = self.graph_store.conn.run(
-                        query=similarity_retrieval_query
-                    )
-                    # Merge the result for each knn-search result
-                    similar_entities.extend(result_list)
-                # Get the id from result
-                id_list = [(record["id"]) for record in similar_entities]
-                conditional_statement = f"WHERE n.id IN {id_list} "
+                result_list = self.graph_store.conn.run(
+                    query=similarity_retrieval_query
+                )
+                # Merge the result for each knn-search result
+                similar_entities.extend(result_list)
+            # Get the id from result
+            id_list = [(record["id"]) for record in similar_entities]
+            conditional_statement = f"WHERE n.id IN {id_list} "
 
             query = (
                 f"MATCH p=(n:{GraphElemType.ENTITY.value})"
@@ -660,128 +655,177 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 f"{conditional_statement}"
                 f"RETURN p {limit_string}"
             )
-            return self.query(query=query, white_list=["description"])
+            
+        return self.query(query=query, white_list=["description"])
+        
+    def explore_docgraph(
+        self,
+        subs: Union[List[str], List[List[float]]],
+        direct: Direction = Direction.BOTH,
+        depth: int = 3,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> MemoryGraph:
+        """Explore the graph from given subjects up to a depth."""
+        if not subs:
+            return MemoryGraph()
+
+        if depth <= 0:
+            depth = 3
+        depth_string = f"1..{depth}"
+
+        if limit is None:
+            limit_string = ""
         else:
-            # If there exists the entities in the graph, return the graph that
-            # includes the leaf chunks that connect to the entities, the chains from
-            # documents to the leaf chunks, and the chain from documents to chunks;
-            # document -> chunk -> chunk -> ... -> leaf chunk -> (entity)
-            #
-            # If not, return the graph that includes the chains from documents to chunks
-            # that contain the subs (keywords).
-            # document -> chunk -> chunk -> ... -> leaf chunk (that contains the subs)
-            #
-            # And only the leaf chunks contain the content, and the other chunks do not
-            # contain any properties except the id, name.
+            limit_string = f"LIMIT {limit}"
 
-            graph = MemoryGraph()
+        # If there exists the entities in the graph, return the graph that
+        # includes the leaf chunks that connect to the entities, the chains from
+        # documents to the leaf chunks, and the chain from documents to chunks;
+        # document -> chunk -> chunk -> ... -> leaf chunk -> (entity)
+        #
+        # If not, return the graph that includes the chains from documents to chunks
+        # that contain the subs (keywords).
+        # document -> chunk -> chunk -> ... -> leaf chunk (that contains the subs)
+        #
+        # And only the leaf chunks contain the content, and the other chunks do not
+        # contain any properties except the id, name.
 
-            # Check if the entities exist in the graph
+        graph = MemoryGraph()
 
-            conditional_statement = (
-                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+
+        # Query the leaf chunks in the chain from documents to chunks
+        conditional_statement = (
+            f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
+        )
+        leaf_chunk_query = (
+            f"MATCH p=(n:{GraphElemType.CHUNK.value})-"
+            f"[r:{GraphElemType.INCLUDE.value}]->"
+            f"(m:{GraphElemType.ENTITY.value})"
+            f"{conditional_statement} "
+            "RETURN n"
             )
-            check_entity_query = (
-                f"MATCH (n:{GraphElemType.ENTITY.value}) "
-                f"{conditional_statement}"
-                "RETURN n"
-            )
-            if self.query(check_entity_query).vertex_count != 0:
-                # Query the leaf chunks in the chain from documents to chunks
-                conditional_statement = (
-                    f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
-                )
-                leaf_chunk_query = (
-                    f"MATCH p=(n:{GraphElemType.CHUNK.value})-"
-                    f"[r:{GraphElemType.INCLUDE.value}]->"
-                    f"(m:{GraphElemType.ENTITY.value})"
-                    f"{conditional_statement} "
-                    f"RETURN n"
-                )
-                graph_of_leaf_chunks = self.query(
-                    query=leaf_chunk_query, white_list=["content"]
-                )
+        graph_of_leaf_chunks = self.query(
+            query=leaf_chunk_query, white_list=["content"]
+        )
 
-                # Query the chain from documents to chunks,
-                # document -> chunk -> ... ->  leaf_chunks
-                chunk_names = [
-                    self._escape_quotes(vertex.name)
-                    for vertex in graph_of_leaf_chunks.vertices()
+        # Query the chain from documents to chunks,
+        # document -> chunk -> ... ->  leaf_chunks
+        chunk_names = [
+            self._escape_quotes(vertex.name)
+            for vertex in graph_of_leaf_chunks.vertices()
+        ]
+        chain_query = (
+            f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+            f"[:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+            f"(m:{GraphElemType.CHUNK.value})"
+            f"WHERE m.name IN {chunk_names} "
+            "RETURN p"
+        )
+        # Filter all the properties by with_list
+        graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
+
+        # The number of leaf chunks caompared to the `limit`
+        if not limit or len(chunk_names) <= limit:
+            graph.upsert_graph(graph_of_leaf_chunks)
+        else:
+            limited_leaf_chunk_query = leaf_chunk_query + f" {limit_string}"
+            graph.upsert_graph(
+                self.query(
+                    query=limited_leaf_chunk_query, white_list=["content"]
+                )
+            )
+
+        return graph
+
+    def explore_docgraph_with_entities(
+        self,
+        subs: Union[List[str], List[List[float]]],
+        direct: Direction = Direction.BOTH,
+        depth: int = 3,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> MemoryGraph:
+        """Explore the graph from given subjects up to a depth."""
+        if not subs:
+            return MemoryGraph()
+
+        if depth <= 0:
+            depth = 3
+        depth_string = f"1..{depth}"
+
+        if limit is None:
+            limit_string = ""
+        else:
+            limit_string = f"LIMIT {limit}"
+
+        # If there exists the entities in the graph, return the graph that
+        # includes the leaf chunks that connect to the entities, the chains from
+        # documents to the leaf chunks, and the chain from documents to chunks;
+        # document -> chunk -> chunk -> ... -> leaf chunk -> (entity)
+        #
+        # If not, return the graph that includes the chains from documents to chunks
+        # that contain the subs (keywords).
+        # document -> chunk -> chunk -> ... -> leaf chunk (that contains the subs)
+        #
+        # And only the leaf chunks contain the content, and the other chunks do not
+        # contain any properties except the id, name.
+
+        graph = MemoryGraph()
+
+        if not self.graph_store._similarity_search_enabled:
+            _subs_condition = " OR ".join(
+                [
+                    f"m.content CONTAINS '{self._escape_quotes(sub)}'"
+                    for sub in subs
                 ]
-                chain_query = (
-                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
-                    f"[:{GraphElemType.INCLUDE.value}*{depth_string}]->"
-                    f"(m:{GraphElemType.CHUNK.value})"
-                    f"WHERE m.name IN {chunk_names} "
-                    "RETURN p"
+            )
+        else:
+            similar_chunks = []
+            for sub in subs:
+                vector = str(sub)
+                similarity_retrieval_query = (
+                    "CALL db.vertexVectorKnnSearch("
+                    f"'{GraphElemType.CHUNK.value}','_embedding', {vector}, "
+                    "{top_k:"
+                    f"{self.graph_store._similarity_search_topk}"
+                    "}) YIELD node "
+                    "WHERE node.distance < "
+                    f"{self.graph_store._similarity_search_score_threshold} "
+                    "RETURN node.name AS name"
                 )
-                # Filter all the properties by with_list
-                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
-
-                # The number of leaf chunks caompared to the `limit`
-                if not limit or len(chunk_names) <= limit:
-                    graph.upsert_graph(graph_of_leaf_chunks)
-                else:
-                    limited_leaf_chunk_query = leaf_chunk_query + f" {limit_string}"
-                    graph.upsert_graph(
-                        self.query(
-                            query=limited_leaf_chunk_query, white_list=["content"]
-                        )
-                    )
-            else:
-                if not self.graph_store._similarity_search_enabled:
-                    _subs_condition = " OR ".join(
-                        [
-                            f"m.content CONTAINS '{self._escape_quotes(sub)}'"
-                            for sub in subs
-                        ]
-                    )
-                else:
-                    similar_chunks = []
-                    for sub in subs:
-                        vector = str(sub)
-                        similarity_retrieval_query = (
-                            f"CALL db.vertexVectorKnnSearch("
-                            f"'{GraphElemType.CHUNK.value}','_embedding', {vector}, "
-                            "{top_k:"
-                            f"{self.graph_store._similarity_search_topk}"
-                            "}) YIELD node "
-                            "WHERE node.distance < "
-                            f"{self.graph_store._similarity_search_score_threshold} "
-                            "RETURN node.name AS name"
-                        )
-                        result_list = self.graph_store.conn.run(
-                            query=similarity_retrieval_query
-                        )
-                        similar_chunks.extend(result_list)
-                    name_list = [(record["name"]) for record in similar_chunks]
-                    _subs_condition = f"n.name IN {name_list} "
-
-                # Query the chain from documents to chunks,
-                # document -> chunk -> chunk -> chunk -> ... -> chunk
-                chain_query = (
-                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
-                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
-                    f"(m:{GraphElemType.CHUNK.value})"
-                    f"WHERE {_subs_condition}"
-                    "RETURN p"
+                result_list = self.graph_store.conn.run(
+                    query=similarity_retrieval_query
                 )
-                # Filter all the properties by with_list
-                graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
+                similar_chunks.extend(result_list)
+            name_list = [(record["name"]) for record in similar_chunks]
+            _subs_condition = f"n.name IN {name_list} "
 
-                # Query the leaf chunks in the chain from documents to chunks
-                leaf_chunk_query = (
-                    f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
-                    f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
-                    f"(m:{GraphElemType.CHUNK.value})"
-                    f"WHERE {_subs_condition}"
-                    f"RETURN m {limit_string}"
-                )
-                graph.upsert_graph(
-                    self.query(query=leaf_chunk_query, white_list=["content"])
-                )
+        # Query the chain from documents to chunks,
+        # document -> chunk -> chunk -> chunk -> ... -> chunk
+        chain_query = (
+            f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+            f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+            f"(m:{GraphElemType.CHUNK.value})"
+            f"WHERE {_subs_condition}"
+            "RETURN p"
+        )
+        # Filter all the properties by with_list
+        graph.upsert_graph(self.query(query=chain_query, white_list=[""]))
 
-            return graph
+        # Query the leaf chunks in the chain from documents to chunks
+        leaf_chunk_query = (
+            f"MATCH p=(n:{GraphElemType.DOCUMENT.value})-"
+            f"[r:{GraphElemType.INCLUDE.value}*{depth_string}]->"
+            f"(m:{GraphElemType.CHUNK.value})"
+            f"WHERE {_subs_condition}"
+            f"RETURN m {limit_string}"
+        )
+        graph.upsert_graph(
+            self.query(query=leaf_chunk_query, white_list=["content"])
+        )
+
+        return graph   
 
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph.
