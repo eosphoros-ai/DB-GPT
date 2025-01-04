@@ -47,6 +47,7 @@ class ConversableAgent(Role, Agent):
     stream_out: bool = True
     # 确认当前Agent是否需要进行参考资源展示
     show_reference: bool = False
+    name_prefix: str = None
 
     executor: Executor = Field(
         default_factory=lambda: ThreadPoolExecutor(max_workers=1),
@@ -57,6 +58,13 @@ class ConversableAgent(Role, Agent):
         """Create a new agent."""
         Role.__init__(self, **kwargs)
         Agent.__init__(self)
+
+    @property
+    def name(self) -> str:
+        """Return the name of the agent."""
+        if self.name_prefix is not None:
+            return f"{self.current_profile.get_name()}[{self.name_prefix}]"
+        return self.current_profile.get_name()
 
     def check_available(self) -> None:
         """Check if the agent is available.
