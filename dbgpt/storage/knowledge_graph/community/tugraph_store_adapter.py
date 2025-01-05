@@ -177,9 +177,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 create_vector_index_query = (
                     "CALL db.addVertexVectorIndex("
                     f'"{GraphElemType.ENTITY.value}", "_embedding", '
-                    "{dimension: "
-                    f"{dimension}"
-                    "})"
+                    f"{{dimension: {dimension}}})"
                 )
                 self.graph_store.conn.run(query=create_vector_index_query)
 
@@ -256,9 +254,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 create_vector_index_query = (
                     "CALL db.addVertexVectorIndex("
                     f'"{GraphElemType.CHUNK.value}", "_embedding", '
-                    "{dimension: "
-                    f"{dimension}"
-                    "})"
+                    f"{{dimension: {dimension}}})"
                 )
                 self.graph_store.conn.run(query=create_vector_index_query)
 
