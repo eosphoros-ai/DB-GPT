@@ -36,6 +36,7 @@ class GraphStoreBase(ABC):
         """Initialize graph store."""
         self._config = config
         self._conn = None
+        self.similarity_search_enabled = False
 
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:

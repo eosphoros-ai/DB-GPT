@@ -435,3 +435,21 @@ And you also need to choose the embedding model in `.env` file
 TuGraph now offers comprehensive vector capabilities, including vector storage, indexing, and similarity search functionality. These features enable GraphRAG to achieve superior retrieval performance compared to traditional keyword-based approaches.
 	
 To leverage these capabilities, we've introduced an `_embedding` field in both entity and chunk objects to store embedding data, which enables similarity search to identify the most relevant results for a given query.
+
+#### The comparison of similarity search
+
+Given the same documents and questions in the same environment, the results of keyword mode are as follows:
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/result_for_keywords.png'} width="1000px"/>
+</p>
+
+The results of similarity search mode are as follows:
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/result_for_similarity_search.png'} width="1000px"/>
+</p>
+
+Compared with the keyword search method, the similarity search method can cover more comprehensive information.  For instance, when dealing with the term 清北大学 in the keyword search mode, it is hard to extract useful keywords.  However, the similarity search mode can identify similar words, enabling it to retrieve relevant information related to Tsinghua University and thus include it in the search results.
+
+This implies that in scenarios where the query is imprecise, the similarity search approach is capable of retrieving more pertinent information compared to the keyword-based search pattern.

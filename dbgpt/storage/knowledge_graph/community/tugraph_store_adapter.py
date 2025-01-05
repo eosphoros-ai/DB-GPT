@@ -147,7 +147,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "_community_id": "0",
                 **(
                     {"_embedding": entity.get_prop("_embedding")}
-                    if self.graph_store._similarity_search_enabled
+                    if self.graph_store.similarity_search_enabled
                     else {}
                 ),
             }
@@ -160,7 +160,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         )
 
         # If similarity search enabled, then ready to create vector index
-        if self.graph_store._similarity_search_enabled:
+        if self.graph_store.similarity_search_enabled:
             # Check wheather the vector index exist
             check_entity_vector_query = (
                 "CALL db.showVertexVectorIndex() "
@@ -170,7 +170,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "RETURN label_name"
             )
             # If not exist, then create vector index
-            if not self.query(check_entity_vector_query).vertex_count:
+            if self.query(check_entity_vector_query).vertex_count == 0:
                 # Get the dimension
                 dimension = len(entity_list[0].get("_embedding"))
                 # Then create index
@@ -213,6 +213,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "id": self._escape_quotes(chunk.chunk_id),
                 "name": self._escape_quotes(chunk.chunk_name),
                 "content": self._escape_quotes(chunk.content),
+                **(
+                    {"_embedding": chunk.embedding}
+                    if self.graph_store.similarity_search_enabled
+                    else {}
+                ),
             }
             if isinstance(chunk, ParagraphChunk)
             else {
@@ -221,43 +226,41 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 "content": self._escape_quotes(chunk.get_prop("content")),
                 **(
                     {"_embedding": chunk.get_prop("_embedding")}
-                    if self.graph_store._similarity_search_enabled
+                    if self.graph_store.similarity_search_enabled
                     else {}
                 ),
             }
             for chunk in chunks
         ]
-
         chunk_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.CHUNK.value}", '
             f"[{self._convert_dict_to_str(chunk_list)}])"
         )
 
-        if not all(isinstance(chunk, ParagraphChunk) for chunk in chunks):
-            # If similarity search enabled, then ready to create vector index
-            if self.graph_store._similarity_search_enabled:
-                # Check wheather the vector index exist
-                check_chunk_vector_query = (
-                    "CALL db.showVertexVectorIndex() "
-                    "YIELD label_name, field_name "
-                    f"WHERE label_name = '{GraphElemType.CHUNK.value}' "
-                    "AND field_name = '_embedding' "
-                    "RETURN label_name"
+        # If similarity search enabled, then ready to create vector index
+        if self.graph_store.similarity_search_enabled:
+            # Check wheather the vector index exist
+            check_chunk_vector_query = (
+                "CALL db.showVertexVectorIndex() "
+                "YIELD label_name, field_name "
+                f"WHERE label_name = '{GraphElemType.CHUNK.value}' "
+                "AND field_name = '_embedding' "
+                "RETURN label_name"
+            )
+            # If not exist, then create vector index
+            if self.query(check_chunk_vector_query).vertex_count == 0:
+                # Get the dimension
+                dimension = len(chunk_list[0].get("_embedding"))
+                # Then create index
+                create_vector_index_query = (
+                    "CALL db.addVertexVectorIndex("
+                    f'"{GraphElemType.CHUNK.value}", "_embedding", '
+                    "{dimension: "
+                    f"{dimension}"
+                    "})"
                 )
-                # If not exist, then create vector index
-                if not self.query(check_chunk_vector_query).vertex_count:
-                    # Get the dimension
-                    dimension = len(chunk_list[0].get("_embedding"))
-                    # Then create index
-                    create_vector_index_query = (
-                        "CALL db.addVertexVectorIndex("
-                        f'"{GraphElemType.CHUNK.value}", "_embedding", '
-                        "{dimension: "
-                        f"{dimension}"
-                        "})"
-                    )
-                    self.graph_store.conn.run(query=create_vector_index_query)
+                self.graph_store.conn.run(query=create_vector_index_query)
 
         self.graph_store.conn.run(query=chunk_query)
 
@@ -595,6 +598,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def explore_trigraph(
         self,
         subs: Union[List[str], List[List[float]]],
+        topk_for_knnsearch: int,
+        score_threshold_for_knnsearch: float,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
@@ -620,11 +625,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         else:
             rel = f"-[r:{GraphElemType.RELATION.value}*{depth_string}]-"
 
-        if not self.graph_store._similarity_search_enabled:
-            conditional_statement = (
-                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
-            )
-        else:
+        if self.graph_store.similarity_search_enabled:
             # If enable similarity search, using knn-search to get the id
             similar_entities = []
             # Get the vector from vectors
@@ -633,41 +634,44 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 similarity_retrieval_query = (
                     "CALL db.vertexVectorKnnSearch("
                     f"'{GraphElemType.ENTITY.value}','_embedding', {vector}, "
-                    "{top_k:"
-                    f"{self.graph_store._similarity_search_topk}"
-                    "}) YIELD node "
-                    "WHERE node.distance < "
-                    f"{self.graph_store._similarity_search_score_threshold} "
+                    f"{{top_k:{topk_for_knnsearch}}}) YIELD node "
+                    f"WHERE node.distance < {score_threshold_for_knnsearch} "
                     "RETURN node.id AS id;"
                 )
-                result_list = self.graph_store.conn.run(
-                    query=similarity_retrieval_query
-                )
                 # Merge the result for each knn-search result
-                similar_entities.extend(result_list)
+                similar_entities.extend(
+                    self.graph_store.conn.run(query=similarity_retrieval_query)
+                )
             # Get the id from result
-            id_list = [(record["id"]) for record in similar_entities]
-            conditional_statement = f"WHERE n.id IN {id_list} "
-
-            query = (
-                f"MATCH p=(n:{GraphElemType.ENTITY.value})"
-                f"{rel}(m:{GraphElemType.ENTITY.value}) "
-                f"{conditional_statement}"
-                f"RETURN p {limit_string}"
+            ids = [(record["id"]) for record in similar_entities]
+            conditional_statement = f"WHERE n.id IN {ids} "
+        else:
+            conditional_statement = (
+                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
             )
-            
+
+        # Multi-hop search
+        query = (
+            f"MATCH p=(n:{GraphElemType.ENTITY.value})"
+            f"{rel}(m:{GraphElemType.ENTITY.value}) "
+            f"{conditional_statement}"
+            f"RETURN p {limit_string}"
+        )
+
         return self.query(query=query, white_list=["description"])
-        
-    def explore_docgraph(
+
+    def explore_docgraph_with_entities(
         self,
-        subs: Union[List[str], List[List[float]]],
+        subs: List[str],
+        topk_for_knnsearch: int,
+        score_threshold_for_knnsearch: float,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
-        if not subs:
+        if len(subs) == 0:
             return MemoryGraph()
 
         if depth <= 0:
@@ -693,7 +697,6 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         graph = MemoryGraph()
 
-
         # Query the leaf chunks in the chain from documents to chunks
         conditional_statement = (
             f"WHERE m.name IN {[self._escape_quotes(sub) for sub in subs]} "
@@ -704,7 +707,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             f"(m:{GraphElemType.ENTITY.value})"
             f"{conditional_statement} "
             "RETURN n"
-            )
+        )
         graph_of_leaf_chunks = self.query(
             query=leaf_chunk_query, white_list=["content"]
         )
@@ -731,23 +734,23 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         else:
             limited_leaf_chunk_query = leaf_chunk_query + f" {limit_string}"
             graph.upsert_graph(
-                self.query(
-                    query=limited_leaf_chunk_query, white_list=["content"]
-                )
+                self.query(query=limited_leaf_chunk_query, white_list=["content"])
             )
 
         return graph
 
-    def explore_docgraph_with_entities(
+    def explore_docgraph_without_entities(
         self,
         subs: Union[List[str], List[List[float]]],
+        topk_for_knnsearch: int,
+        score_threshold_for_knnsearch: float,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
         """Explore the graph from given subjects up to a depth."""
-        if not subs:
+        if len(subs) == 0:
             return MemoryGraph()
 
         if depth <= 0:
@@ -773,33 +776,27 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
         graph = MemoryGraph()
 
-        if not self.graph_store._similarity_search_enabled:
-            _subs_condition = " OR ".join(
-                [
-                    f"m.content CONTAINS '{self._escape_quotes(sub)}'"
-                    for sub in subs
-                ]
-            )
-        else:
+        if self.graph_store.similarity_search_enabled:
             similar_chunks = []
-            for sub in subs:
-                vector = str(sub)
+            for vector in subs:
                 similarity_retrieval_query = (
                     "CALL db.vertexVectorKnnSearch("
                     f"'{GraphElemType.CHUNK.value}','_embedding', {vector}, "
-                    "{top_k:"
-                    f"{self.graph_store._similarity_search_topk}"
-                    "}) YIELD node "
-                    "WHERE node.distance < "
-                    f"{self.graph_store._similarity_search_score_threshold} "
+                    f"{{top_k:{topk_for_knnsearch}}}) YIELD node "
+                    f"WHERE node.distance < {score_threshold_for_knnsearch} "
                     "RETURN node.name AS name"
                 )
-                result_list = self.graph_store.conn.run(
-                    query=similarity_retrieval_query
+                similar_chunks.extend(
+                    self.graph_store.conn.run(query=similarity_retrieval_query)
                 )
-                similar_chunks.extend(result_list)
-            name_list = [(record["name"]) for record in similar_chunks]
-            _subs_condition = f"n.name IN {name_list} "
+            names = [(record["name"]) for record in similar_chunks]
+            _subs_condition = " OR ".join(
+                [f"m.content CONTAINS '{self._escape_quotes(name)}'" for name in names]
+            )
+        else:
+            _subs_condition = " OR ".join(
+                [f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs]
+            )
 
         # Query the chain from documents to chunks,
         # document -> chunk -> chunk -> chunk -> ... -> chunk
@@ -821,11 +818,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             f"WHERE {_subs_condition}"
             f"RETURN m {limit_string}"
         )
-        graph.upsert_graph(
-            self.query(query=leaf_chunk_query, white_list=["content"])
-        )
+        graph.upsert_graph(self.query(query=leaf_chunk_query, white_list=["content"]))
 
-        return graph   
+        return graph
 
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph.

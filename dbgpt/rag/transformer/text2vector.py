@@ -29,7 +29,7 @@ class Text2Vector(EmbedderBase):
         texts: List[str],
         batch_size: int = 1,
     ) -> List[List[float]]:
-        """Embed texts from graphs in batches.""" 
+        """Embed texts from graphs in batches."""
         vectors = []
         n_texts = len(texts)
 
@@ -53,14 +53,14 @@ class Text2Vector(EmbedderBase):
                     raise RuntimeError(f"Failed to embed text{idx}")
                 else:
                     vectors.append(vector)
-        
+
         return vectors
-                
+
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     async def _embed(self, text: str) -> List:
         """Inner embed."""
         return await self.embedding_fn.aembed_query(text)
-    
+
     def truncate(self):
         """Do nothing by default."""
 

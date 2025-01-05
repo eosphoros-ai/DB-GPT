@@ -71,14 +71,6 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default=False,
         description="Enable the similarity search",
     )
-    similarity_search_topk: int = Field(
-        default=5,
-        description="Topk of knowledge graph extract",
-    )
-    similarity_search_score_threshold: float = Field(
-        default=0.3,
-        description="Recall score of knowledge graph extract",
-    )
 
 
 class TuGraphStore(GraphStoreBase):
@@ -95,7 +87,7 @@ class TuGraphStore(GraphStoreBase):
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
             or config.enable_summary
         )
-        self._similarity_search_enabled = (
+        self.similarity_search_enabled = (
             os.environ["SIMILARITY_SEARCH_ENABLED"].lower() == "true"
             if "SIMILARITY_SEARCH_ENABLED" in os.environ
             else config.similarity_search_enabled
@@ -113,19 +105,6 @@ class TuGraphStore(GraphStoreBase):
             user=self._username,
             pwd=self._password,
             db_name=config.name,
-        )
-
-        self._similarity_search_topk = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE",
-                config.similarity_search_topk,
-            )
-        )
-        self._similarity_search_score_threshold = float(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_RECALL_SCORE",
-                config.similarity_search_score_threshold,
-            )
         )
 
     def get_config(self) -> TuGraphStoreConfig:

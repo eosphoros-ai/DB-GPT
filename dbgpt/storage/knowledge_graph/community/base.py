@@ -178,7 +178,9 @@ class GraphStoreAdapter(ABC):
     @abstractmethod
     def explore_trigraph(
         self,
-        subs: List[str],
+        subs: Union[List[str], List[List[float]]],
+        topk_for_knnsearch: int,
+        score_threshold_for_knnsearch: float,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
@@ -187,9 +189,11 @@ class GraphStoreAdapter(ABC):
         """Explore the triple graph from given subjects up to a depth."""
 
     @abstractmethod
-    def explore_docgraph(
+    def explore_docgraph_with_entities(
         self,
         subs: List[str],
+        topk_for_knnsearch: int,
+        score_threshold_for_knnsearch: float,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
@@ -198,9 +202,11 @@ class GraphStoreAdapter(ABC):
         """Explore the document graph only from given subjects up to a depth."""
 
     @abstractmethod
-    def explore_docgraph_with_entities(
+    def explore_docgraph_without_entities(
         self,
-        subs: List[str],
+        subs: Union[List[str], List[List[float]]],
+        topk_for_knnsearch: int,
+        score_threshold_for_knnsearch: float,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
