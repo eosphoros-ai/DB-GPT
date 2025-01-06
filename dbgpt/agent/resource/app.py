@@ -29,7 +29,6 @@ class AppResourceParameters(ResourceParameters):
     """Application resource class."""
 
     app_code: str = dataclasses.field(
-        default=None,
         metadata={
             "help": "app code",
             "valid_values": _get_app_list(),
@@ -170,7 +169,7 @@ async def _start_app(
     app_code: str,
     user_input: str,
     sender: ConversableAgent,
-    conv_uid: str = None,
+    conv_uid: Optional[str] = None,
 ) -> AgentMessage:
     """Start App By AppResource."""
     conv_uid = str(uuid.uuid4()) if conv_uid is None else conv_uid
