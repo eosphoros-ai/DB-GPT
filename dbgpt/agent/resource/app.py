@@ -135,12 +135,10 @@ class AppResource(Resource[AppResourceParameters]):
         """Return whether the tool is asynchronous."""
         return True
 
-    async def execute(
-        self, *args, resource_name: Optional[str] = None, **kwargs
-    ) -> Any:
+    def execute(self, *args, resource_name: Optional[str] = None, **kwargs) -> Any:
         """Execute the resource."""
         if self.is_async:
-            raise RuntimeError("Async execution is not supported")
+            raise RuntimeError("Sync execution is not supported")
 
     async def async_execute(
         self,
@@ -156,20 +154,23 @@ class AppResource(Resource[AppResourceParameters]):
             specific tool).
             **kwargs: The keyword arguments.
         """
-        user_input = kwargs.get("user_input")
-        parent_agent = kwargs.get("parent_agent")
+        user_input: Optional[str] = kwargs.get("user_input")
+        parent_agent: Optional[ConversableAgent] = kwargs.get("parent_agent")
 
-        reply_message = await _start_app(
-            self._app_code, user_input=user_input, sender=parent_agent
-        )
+        if user_input is None:
+            raise RuntimeError("AppResource async execution user_input is None")
+        if parent_agent is None:
+            raise RuntimeError("AppResource async execution parent_agent is None")
+
+        reply_message = await _start_app(self._app_code, user_input, parent_agent)
         return reply_message.content
 
 
 async def _start_app(
     app_code: str,
     user_input: str,
+    sender: ConversableAgent,
     conv_uid: str = None,
-    sender: ConversableAgent = None,
 ) -> AgentMessage:
     """Start App By AppResource."""
     conv_uid = str(uuid.uuid4()) if conv_uid is None else conv_uid
