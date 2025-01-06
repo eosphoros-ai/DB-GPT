@@ -106,12 +106,12 @@ def _initialize_resource_manager(system_app: SystemApp):
         get_current_host_system_load,
     )
     from dbgpt.agent.expand.resources.search_tool import baidu_search
+    from dbgpt.agent.resource.app import AppResource
     from dbgpt.agent.resource.base import ResourceType
     from dbgpt.agent.resource.manage import get_resource_manager, initialize_resource
     from dbgpt.serve.agent.resource.datasource import DatasourceResource
     from dbgpt.serve.agent.resource.knowledge import KnowledgeSpaceRetrieverResource
     from dbgpt.serve.agent.resource.plugin import PluginToolPack
-    from dbgpt.agent.resource.app import AppResource
 
     initialize_resource(system_app)
     rm = get_resource_manager(system_app)

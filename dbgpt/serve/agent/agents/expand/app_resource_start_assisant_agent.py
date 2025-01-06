@@ -1,13 +1,17 @@
 import json
 import logging
-from typing import Any, Dict, List
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.agent import Action, ActionOutput, AgentResource, AgentMessage, ResourceType
 from dbgpt.agent import (
+    Action,
+    ActionOutput,
     Agent,
+    AgentMessage,
+    AgentResource,
     ConversableAgent,
+    Resource,
+    ResourceType,
     get_agent_manager,
 )
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
@@ -23,7 +27,7 @@ class AppResourceInput(BaseModel):
     app_name: str = Field(
         ...,
         description="The name of a application that can be used to answer the current question"
-                    " or solve the current task.",
+        " or solve the current task.",
     )
 
     app_query: str = Field(
@@ -60,7 +64,7 @@ class AppResourceAction(Action[AppResourceInput]):
         """Return the AI output schema."""
         out_put_schema = {
             "app_name": "the agent name you selected",
-            "app_query": "the query to the selected agent, must input a str, base on the natural language "
+            "app_query": "the query to the selected agent, must input a str, base on the natural language ",
         }
 
         return f"""Please response in the following json format:
@@ -69,12 +73,12 @@ class AppResourceAction(Action[AppResourceInput]):
         """
 
     async def run(
-            self,
-            ai_message: str,
-            resource: Optional[AgentResource] = None,
-            rely_action_out: Optional[ActionOutput] = None,
-            need_vis_render: bool = True,
-            **kwargs,
+        self,
+        ai_message: str,
+        resource: Optional[AgentResource] = None,
+        rely_action_out: Optional[ActionOutput] = None,
+        need_vis_render: bool = True,
+        **kwargs,
     ) -> ActionOutput:
         """Perform the plugin action.
 
@@ -92,7 +96,9 @@ class AppResourceAction(Action[AppResourceInput]):
             err_msg = None
             app_result = None
             try:
-                param: AppResourceInput = self._input_convert(ai_message, AppResourceInput)
+                param: AppResourceInput = self._input_convert(
+                    ai_message, AppResourceInput
+                )
             except Exception as e:
                 logger.exception((str(e)))
                 return ActionOutput(
@@ -126,7 +132,9 @@ class AppResourceAction(Action[AppResourceInput]):
                 is_exe_success=False, content=f"App action run failed!{str(e)}"
             )
 
-    async def __get_plugin_view(self, param: AppResourceInput, app_result: Any, err_msg: str):
+    async def __get_plugin_view(
+        self, param: AppResourceInput, app_result: Any, err_msg: str
+    ):
         if not self.render_protocol:
             return None
             # raise NotImplementedError("The render_protocol should be implemented.")
@@ -181,11 +189,8 @@ class AppStarterAgent(ConversableAgent):
         constraints=DynConfig(
             [
                 "请一步一步思考参为用户问题选择一个最匹配的应用来进行用户问题回答，可参考给出示例的应用选择逻辑.",
-                "请阅读用户问题，确定问题所属领域和问题意图，按领域和意图匹配应用,如果用户问题意图缺少操作类应用需要的参数，优先使用咨询类型应用，有明确操作目标才使用操作类应用.",
                 "必须从已知的应用中选出一个可用的应用来进行回答，不要瞎编应用的名称",
-                "仅选择可回答问题的应用即可，不要直接回答用户问题.",
-                "如果用户的问题和提供的所有应用全都不相关，则应用code和name都输出为空",
-                "注意应用意图定义中如果有槽位信息，再次阅读理解用户输入信息，将对应的内容填入对应槽位参数定义中.",
+                "如果选择出了合适的应用，传递给应用的请求和用户输入的请求中的信息必须完全对等，不能丢失或增加任何信息",
             ],
             category="agent",
             key="dbgpt_ant_agent_agents_app_resource_starter_assistant_agent_profile_constraints",
@@ -203,17 +208,34 @@ class AppStarterAgent(ConversableAgent):
         self._init_actions([AppResourceAction])
 
     def prepare_act_param(
-            self,
-            received_message: Optional[AgentMessage],
-            sender: Agent,
-            rely_messages: Optional[List[AgentMessage]] = None,
-            **kwargs,
+        self,
+        received_message: Optional[AgentMessage],
+        sender: Agent,
+        rely_messages: Optional[List[AgentMessage]] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         return {
             "user_input": received_message.content,
             "conv_id": self.agent_context.conv_id,
             "parent_agent": self,
         }
+
+    @property
+    def desc(self) -> Optional[str]:
+        resources: List[AppResource] = get_app_resource_list(self.resource)
+
+        return f"根据用户问题匹配合适的应用来进行回答. AppStart下的应用中可以解决下列问题：{[f' {res.app_desc}' for res in resources]}"
+
+
+def get_app_resource_list(resource: Resource) -> List[AppResource]:
+    app_resource_list: List[AppResource] = []
+    if resource.type() == ResourceType.Pack:
+        for sub_resource in resource.sub_resources:
+            if sub_resource.type() == ResourceType.App:
+                app_resource_list.extend(AppResource.from_resource(sub_resource))
+    if resource.type() == ResourceType.App:
+        app_resource_list.extend(AppResource.from_resource(resource))
+    return app_resource_list
 
 
 agent_manage = get_agent_manager()
