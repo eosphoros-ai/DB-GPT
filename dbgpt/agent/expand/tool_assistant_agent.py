@@ -63,14 +63,21 @@ class ToolAssistantAgent(ConversableAgent):
 
     @property
     def desc(self) -> Optional[str]:
+        """Return desc of this agent."""
         tools = _get_tools_by_resource(self.resource)
-
         if tools is None or len(tools) == 0:
             return "Has no tools to use"
 
+        tools_desc_list = []
+        for i in range(len(tools)):
+            tool = tools[i]
+            s = f"{i + 1}. tool {tool.name}, can {tool.description}."
+            tools_desc_list.append(s)
+
         return (
-            "Can use the following tools to complete the task objectives, tool information: "
-            f"{' '.join([f'{i+1}. tool {tools[i].name}, can {tools[i].description}.' for i in range(len(tools))])}"
+            "Can use the following tools to complete the task objectives, "
+            "tool information: "
+            f"{' '.join(tools_desc_list)}"
         )
 
 

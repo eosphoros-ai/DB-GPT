@@ -482,7 +482,8 @@ class ConversableAgent(Role, Agent):
                 question: str = received_message.content or ""
                 ai_message: str = llm_reply or ""
 
-                # force_retry means this reply do not complete, should reentry and do more things
+                # force_retry means this reply do not complete
+                # should reentry and do more things
                 force_retry = False
                 if act_out is not None and act_out.force_retry:
                     await self.write_memories(
