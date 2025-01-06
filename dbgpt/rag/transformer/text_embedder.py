@@ -1,10 +1,8 @@
-"""Text2Vector class."""
+"""TextEmbedder class."""
 
 import asyncio
 import logging
 from typing import List
-
-from tenacity import retry, stop_after_attempt, wait_fixed
 
 from dbgpt.core.interface.embeddings import Embeddings
 from dbgpt.rag.transformer.base import EmbedderBase
@@ -12,35 +10,34 @@ from dbgpt.rag.transformer.base import EmbedderBase
 logger = logging.getLogger(__name__)
 
 
-class Text2Vector(EmbedderBase):
-    """Text2Vector class."""
+class TextEmbedder(EmbedderBase):
+    """TextEmbedder class."""
 
     def __init__(self, embedding_fn: Embeddings):
         """Initialize the Embedder."""
-        self.embedding_fn = embedding_fn
-        super().__init__()
+        super().__init__(embedding_fn)
 
-    async def embed(self, text: str) -> List[float]:
+    async def embed(self, input: str) -> List[float]:
         """Embed vector from text."""
-        return await self._embed(text)
+        return await super().embed(input)
 
     async def batch_embed(
         self,
-        texts: List[str],
+        inputs: List[str],
         batch_size: int = 1,
     ) -> List[List[float]]:
         """Embed texts from graphs in batches."""
         vectors = []
-        n_texts = len(texts)
+        n_texts = len(inputs)
 
         # Batch embedding
         for batch_idx in range(0, n_texts, batch_size):
             start_idx = batch_idx
             end_idx = min(start_idx + batch_size, n_texts)
-            batch_texts = texts[start_idx:end_idx]
+            batch_texts = inputs[start_idx:end_idx]
 
             # Create tasks
-            embedding_tasks = [(self._embed(text)) for text in batch_texts]
+            embedding_tasks = [(self.embed(text)) for text in batch_texts]
 
             # Process embedding in parallel
             batch_results = await asyncio.gather(
@@ -55,11 +52,6 @@ class Text2Vector(EmbedderBase):
                     vectors.append(vector)
 
         return vectors
-
-    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-    async def _embed(self, text: str) -> List:
-        """Inner embed."""
-        return await self.embedding_fn.aembed_query(text)
 
     def truncate(self):
         """Do nothing by default."""

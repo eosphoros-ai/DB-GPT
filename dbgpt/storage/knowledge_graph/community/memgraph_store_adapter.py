@@ -30,7 +30,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
     def __init__(self, enable_summary: bool = False):
         """Initialize MemGraph Community Store Adapter."""
         self._graph_store = MemoryGraphStore(MemoryGraphStoreConfig())
-        self._enable_summary = enable_summary
+        self.enable_summary = enable_summary
 
         super().__init__(self._graph_store)
 

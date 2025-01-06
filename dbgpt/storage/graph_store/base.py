@@ -23,10 +23,6 @@ class GraphStoreConfig(BaseModel):
         default=None,
         description="The embedding function of graph store, optional.",
     )
-    enable_summary: bool = Field(
-        default=False,
-        description="Enable graph community summary or not.",
-    )
 
 
 class GraphStoreBase(ABC):
@@ -36,7 +32,8 @@ class GraphStoreBase(ABC):
         """Initialize graph store."""
         self._config = config
         self._conn = None
-        self.similarity_search_enabled = False
+        self.enable_summary = False
+        self.enable_similarity_search = True
 
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:

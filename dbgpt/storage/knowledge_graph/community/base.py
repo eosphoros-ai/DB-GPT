@@ -179,8 +179,8 @@ class GraphStoreAdapter(ABC):
     def explore_trigraph(
         self,
         subs: Union[List[str], List[List[float]]],
-        topk_for_knnsearch: int,
-        score_threshold_for_knnsearch: float,
+        topk: Optional[int] = None,
+        score_threshold: Optional[float] = None,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
@@ -192,27 +192,27 @@ class GraphStoreAdapter(ABC):
     def explore_docgraph_with_entities(
         self,
         subs: List[str],
-        topk_for_knnsearch: int,
-        score_threshold_for_knnsearch: float,
-        direct: Direction = Direction.BOTH,
-        depth: int = 3,
-        fan: Optional[int] = None,
-        limit: Optional[int] = None,
-    ) -> MemoryGraph:
-        """Explore the document graph only from given subjects up to a depth."""
-
-    @abstractmethod
-    def explore_docgraph_without_entities(
-        self,
-        subs: Union[List[str], List[List[float]]],
-        topk_for_knnsearch: int,
-        score_threshold_for_knnsearch: float,
+        topk: Optional[int] = None,
+        score_threshold: Optional[float] = None,
         direct: Direction = Direction.BOTH,
         depth: int = 3,
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
         """Explore the document graph after get entities from triple graph."""
+
+    @abstractmethod
+    def explore_docgraph_without_entities(
+        self,
+        subs: Union[List[str], List[List[float]]],
+        topk: Optional[int] = None,
+        score_threshold: Optional[float] = None,
+        direct: Direction = Direction.BOTH,
+        depth: int = 3,
+        fan: Optional[int] = None,
+        limit: Optional[int] = None,
+    ) -> MemoryGraph:
+        """Explore the document graph only from given subjects up to a depth."""
 
     @abstractmethod
     def query(self, query: str, **kwargs) -> MemoryGraph:

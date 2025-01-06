@@ -4,6 +4,10 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
+from tenacity import retry, stop_after_attempt, wait_fixed
+
+from dbgpt.core.interface.embeddings import Embeddings
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,9 +26,15 @@ class TransformerBase:
 class EmbedderBase(TransformerBase, ABC):
     """Embedder base class."""
 
+    def __init__(self, embedding_fn: Embeddings):
+        """Initialize the Embedder."""
+        self._embedding_fn = embedding_fn
+
     @abstractmethod
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     async def embed(self, input: Any) -> Any:
         """Embed vector from text."""
+        return await self._embedding_fn.aembed_query(input)
 
     @abstractmethod
     async def batch_embed(

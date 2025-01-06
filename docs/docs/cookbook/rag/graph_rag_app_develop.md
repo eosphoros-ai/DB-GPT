@@ -453,3 +453,11 @@ The results of similarity search mode are as follows:
 Compared with the keyword search method, the similarity search method can cover more comprehensive information.  For instance, when dealing with the term 清北大学 in the keyword search mode, it is hard to extract useful keywords.  However, the similarity search mode can identify similar words, enabling it to retrieve relevant information related to Tsinghua University and thus include it in the search results.
 
 This implies that in scenarios where the query is imprecise, the similarity search approach is capable of retrieving more pertinent information compared to the keyword-based search pattern.
+
+Furthermore, as shown in the following figure, compared with RAG, GraphRAG with similarity search can obtain more relevant information, ensuring the richness of the answers.
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/compare_with_rag.png'} width="1000px"/>
+</p>
+
+In conclusion, enabling similarity search in GraphRAG can significantly expand the scope and relevance of GraphRAG's responses.

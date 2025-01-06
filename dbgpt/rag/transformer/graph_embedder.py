@@ -4,8 +4,6 @@ import asyncio
 import logging
 from typing import List
 
-from tenacity import retry, stop_after_attempt, wait_fixed
-
 from dbgpt.core.interface.embeddings import Embeddings
 from dbgpt.rag.transformer.base import EmbedderBase
 from dbgpt.storage.graph_store.graph import Graph, GraphElemType
@@ -18,64 +16,19 @@ class GraphEmbedder(EmbedderBase):
 
     def __init__(self, embedding_fn: Embeddings):
         """Initialize the GraphEmbedder."""
-        self.embedding_fn = embedding_fn
-        super().__init__()
+        super().__init__(embedding_fn)
 
-    async def embed(
-        self,
-        graph: Graph,
-    ) -> Graph:
-        """Embed graph."""
-        texts = []
-        vectors = []
-
-        batch_size = 20
-
-        # Get the text from graph
-        for vertex in graph.vertices():
-            if vertex.get_prop("vertex_type") == GraphElemType.CHUNK.value:
-                texts.append(vertex.get_prop("content"))
-            elif vertex.get_prop("vertex_type") == GraphElemType.ENTITY.value:
-                texts.append(vertex.vid)
-            else:
-                texts.append(" ")
-
-        n_texts = len(texts)
-
-        # Batch embedding
-        for batch_idx in range(0, n_texts, batch_size):
-            start_idx = batch_idx
-            end_idx = min(start_idx + batch_size, n_texts)
-            batch_texts = texts[start_idx:end_idx]
-
-            # Create tasks
-            embedding_tasks = [(self._embed(text)) for text in batch_texts]
-
-            # Process embedding in parallel
-            batch_results = await asyncio.gather(
-                *(task for task in embedding_tasks), return_exceptions=True
-            )
-
-            # Place results in the correct positions
-            for idx, vector in enumerate(batch_results):
-                if isinstance(vector, Exception):
-                    raise RuntimeError(f"Failed to embed text{idx}")
-                else:
-                    vectors.append(vector)
-
-        # Push vectors back into Graph
-        for vertex, vector in zip(graph.vertices(), vectors):
-            vertex.set_prop("_embedding", vector)
-
-        return graph
+    async def embed(self, input: str) -> List[float]:
+        """Embed vector from text."""
+        return await super().embed(input)
 
     async def batch_embed(
         self,
-        graphs: List[Graph],
+        inputs: List[Graph],
         batch_size: int = 1,
     ) -> List[Graph]:
         """Embed graph from graphs in batches."""
-        for graph in graphs:
+        for graph in inputs:
 
             texts = []
             vectors = []
@@ -98,7 +51,7 @@ class GraphEmbedder(EmbedderBase):
                 batch_texts = texts[start_idx:end_idx]
 
                 # Create tasks
-                embedding_tasks = [(self._embed(text)) for text in batch_texts]
+                embedding_tasks = [(self.embed(text)) for text in batch_texts]
 
                 # Process embedding in parallel
                 batch_results = await asyncio.gather(
@@ -116,12 +69,7 @@ class GraphEmbedder(EmbedderBase):
             for vertex, vector in zip(graph.vertices(), vectors):
                 vertex.set_prop("_embedding", vector)
 
-        return graphs
-
-    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-    async def _embed(self, text: str) -> List:
-        """Inner embed."""
-        return await self.embedding_fn.aembed_query(text)
+        return inputs
 
     def truncate(self):
         """Do nothing by default."""

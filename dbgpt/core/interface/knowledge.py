@@ -63,7 +63,9 @@ class Chunk(Document):
         description="Separator between metadata fields when converting to string.",
     )
     retriever: Optional[str] = Field(default=None, description="retriever name")
-    embedding: Optional[List[float]] = Field(default=[], description="chunk embedding")
+    embedding: Optional[List[float]] = Field(
+        default=None, description="chunk embedding"
+    )
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         """Convert Chunk to dict."""

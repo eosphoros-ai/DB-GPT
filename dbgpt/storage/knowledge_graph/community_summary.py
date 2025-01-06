@@ -10,7 +10,7 @@ from dbgpt.core import Chunk
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.rag.transformer.text2vector import Text2Vector
+from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -85,11 +85,11 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     )
     similarity_search_topk: int = Field(
         default=5,
-        description="Topk of knowledge graph extract",
+        description="Topk of similarity search",
     )
     similarity_search_score_threshold: float = Field(
-        default=0.3,
-        description="Recall score of knowledge graph extract",
+        default=0.7,
+        description="Recall score of similarity search",
     )
 
 
@@ -193,7 +193,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         self._graph_embedder = GraphEmbedder(self._config.embedding_fn)
 
-        self._text_embedder = Text2Vector(self._config.embedding_fn)
+        self._text_embedder = TextEmbedder(self._config.embedding_fn)
 
         def community_store_configure(name: str, cfg: VectorStoreConfig):
             cfg.name = name
@@ -242,19 +242,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         documment_chunk, paragraph_chunks = self._load_chunks(_chunks)
 
-        # Add embeddings from chunk content
-        texts = []
+        if self._graph_store.enable_similarity_search:
+            # Add embeddings from chunk content
+            texts = []
 
-        for chunk in paragraph_chunks:
-            texts.append(chunk.content)
+            for chunk in paragraph_chunks:
+                texts.append(chunk.content)
 
-        embeddings = await self._text_embedder.batch_embed(
-            texts,
-            batch_size=self._triplet_embedding_batch_size,
-        )
+            embeddings = await self._text_embedder.batch_embed(
+                texts,
+                batch_size=self._triplet_embedding_batch_size,
+            )
 
-        for idx, chunk in enumerate(paragraph_chunks):
-            chunk.embedding = embeddings[idx]
+            for idx, chunk in enumerate(paragraph_chunks):
+                chunk.embedding = embeddings[idx]
 
         # upsert the document and chunks vertices
         self._graph_store_apdater.upsert_documents(iter([documment_chunk]))
@@ -294,7 +295,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             raise ValueError("No graphs extracted from the chunks")
 
         # If enable the similarity search, add the embedding to the graphs
-        if self._graph_store.similarity_search_enabled:
+        if self._graph_store.enable_similarity_search:
             for idx, graphs in enumerate(graphs_list):
                 embeded_graphs = await self._graph_embedder.batch_embed(
                     graphs,
@@ -392,7 +393,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         context = "\n".join(summaries) if summaries else ""
 
         # Vector similarity search
-        similarity_search_enabled = self._graph_store.similarity_search_enabled
+        enable_similarity_search = self._graph_store.enable_similarity_search
 
         subgraph = None
         subgraph_for_doc = None
@@ -402,14 +403,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         document_graph_enabled = self._document_graph_enabled
 
         # Using subs to transfer keywords or embeddings
-        subs = []
-
         # Using subs to transfer keywords
         keywords: List[str] = await self._keyword_extractor.extract(text)
-        subs = keywords
 
         # If enable similarity search, using subs to transfer embeddings
-        if similarity_search_enabled:
+        if enable_similarity_search:
             # Embedding the question
             vector = await self._text_embedder.embed(text)
             # Embedding the keywords
@@ -419,6 +417,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             # Using the embeddings of keywords and question
             vectors.append(vector)
             subs = vectors
+        else:
+            subs = keywords
 
         # If enable triplet graph, using subs to search enetities
         # subs -> enetities
@@ -426,8 +426,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             subgraph = self._graph_store_apdater.explore_trigraph(
                 subs=subs,
                 limit=topk,
-                topk_for_knnsearch=self._similarity_search_topk,
-                score_threshold_for_knnsearch=self._similarity_search_score_threshold,
+                topk=self._similarity_search_topk,
+                score_threshold=self._similarity_search_score_threshold,
             )
 
         # If enabled document graph
@@ -436,11 +436,13 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             # Using subs to search chunks
             # subs -> chunks -> doc
             if subgraph is None or subgraph.vertex_count == 0:
-                subgraph_for_doc = self._graph_store_apdater.explore_docgraph_without_entities(
-                    subs=subs,
-                    topk_for_knnsearch=self._similarity_search_topk,
-                    score_threshold_for_knnsearch=self._similarity_search_score_threshold,
-                    limit=self._knowledge_graph_chunk_search_top_size,
+                subgraph_for_doc = (
+                    self._graph_store_apdater.explore_docgraph_without_entities(
+                        subs=subs,
+                        topk=self._similarity_search_topk,
+                        score_threshold=self._similarity_search_score_threshold,
+                        limit=self._knowledge_graph_chunk_search_top_size,
+                    )
                 )
             else:
                 # If there are searched entities
@@ -452,19 +454,21 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
                 # Using the vids to search chunks and doc
                 # entities -> chunks -> doc
-                subgraph_for_doc = self._graph_store_apdater.explore_docgraph_with_entities(
-                    subs=keywords_for_document_graph,
-                    topk_for_knnsearch=self._similarity_search_topk,
-                    score_threshold_for_knnsearch=self._similarity_search_score_threshold,
-                    limit=self._knowledge_graph_chunk_search_top_size,
+                subgraph_for_doc = (
+                    self._graph_store_apdater.explore_docgraph_with_entities(
+                        subs=keywords_for_document_graph,
+                        topk=self._similarity_search_topk,
+                        score_threshold=self._similarity_search_score_threshold,
+                        limit=self._knowledge_graph_chunk_search_top_size,
+                    )
                 )
-
-        logger.info(f"Search subgraph from the following keywords:\n{len(keywords)}")
 
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (
             subgraph_for_doc.format() if subgraph_for_doc else ""
         )
+
+        logger.info(f"Search subgraph from the following keywords:\n{len(keywords)}")
 
         if not (summaries or knowledge_graph_str or knowledge_graph_for_doc_str):
             return []
