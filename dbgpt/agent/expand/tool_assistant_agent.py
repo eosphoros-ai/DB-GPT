@@ -81,7 +81,7 @@ class ToolAssistantAgent(ConversableAgent):
         )
 
 
-def _get_tools_by_resource(resource: Resource) -> List[BaseTool]:
+def _get_tools_by_resource(resource: Optional[Resource]) -> Optional[List[BaseTool]]:
     tools: List[BaseTool] = []
 
     if resource is None:
