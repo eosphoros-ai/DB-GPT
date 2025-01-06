@@ -6,11 +6,11 @@ on:
       - main
     paths:
       - 'docs/**'
-      - '.github/workflows/docker-image-publish.yml'
+      - '.github/workflows/doc-image-publish.yml'
   pull_request:
     paths:
       - 'docs/**'
-      - '.github/workflows/docker-image-publish.yml'
+      - '.github/workflows/doc-image-publish.yml'
   release:
     types: [published]
   workflow_dispatch:
