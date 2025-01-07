@@ -4,7 +4,6 @@ import asyncio
 import logging
 from typing import List
 
-from dbgpt.core.interface.embeddings import Embeddings
 from dbgpt.rag.transformer.base import EmbedderBase
 
 logger = logging.getLogger(__name__)
@@ -12,14 +11,6 @@ logger = logging.getLogger(__name__)
 
 class TextEmbedder(EmbedderBase):
     """TextEmbedder class."""
-
-    def __init__(self, embedding_fn: Embeddings):
-        """Initialize the Embedder."""
-        super().__init__(embedding_fn)
-
-    async def embed(self, input: str) -> List[float]:
-        """Embed vector from text."""
-        return await super().embed(input)
 
     async def batch_embed(
         self,
@@ -48,8 +39,7 @@ class TextEmbedder(EmbedderBase):
             for idx, vector in enumerate(batch_results):
                 if isinstance(vector, Exception):
                     raise RuntimeError(f"Failed to embed text{idx}")
-                else:
-                    vectors.append(vector)
+                vectors.append(vector)
 
         return vectors
 

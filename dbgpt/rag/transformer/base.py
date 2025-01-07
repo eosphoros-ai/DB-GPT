@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from tenacity import retry, stop_after_attempt, wait_fixed
 
@@ -30,11 +30,10 @@ class EmbedderBase(TransformerBase, ABC):
         """Initialize the Embedder."""
         self._embedding_fn = embedding_fn
 
-    @abstractmethod
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-    async def embed(self, input: Any) -> Any:
+    async def embed(self, text: str) -> List[float]:
         """Embed vector from text."""
-        return await self._embedding_fn.aembed_query(input)
+        return await self._embedding_fn.aembed_query(text=text)
 
     @abstractmethod
     async def batch_embed(

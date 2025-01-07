@@ -4,7 +4,6 @@ import asyncio
 import logging
 from typing import List
 
-from dbgpt.core.interface.embeddings import Embeddings
 from dbgpt.rag.transformer.base import EmbedderBase
 from dbgpt.storage.graph_store.graph import Graph, GraphElemType
 
@@ -14,14 +13,6 @@ logger = logging.getLogger(__name__)
 class GraphEmbedder(EmbedderBase):
     """GraphEmbedder class."""
 
-    def __init__(self, embedding_fn: Embeddings):
-        """Initialize the GraphEmbedder."""
-        super().__init__(embedding_fn)
-
-    async def embed(self, input: str) -> List[float]:
-        """Embed vector from text."""
-        return await super().embed(input)
-
     async def batch_embed(
         self,
         inputs: List[Graph],
@@ -29,7 +20,6 @@ class GraphEmbedder(EmbedderBase):
     ) -> List[Graph]:
         """Embed graph from graphs in batches."""
         for graph in inputs:
-
             texts = []
             vectors = []
 
@@ -62,8 +52,7 @@ class GraphEmbedder(EmbedderBase):
                 for idx, vector in enumerate(batch_results):
                     if isinstance(vector, Exception):
                         raise RuntimeError(f"Failed to embed text{idx}")
-                    else:
-                        vectors.append(vector)
+                    vectors.append(vector)
 
             # Push vectors back into Graph
             for vertex, vector in zip(graph.vertices(), vectors):

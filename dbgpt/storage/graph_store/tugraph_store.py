@@ -68,7 +68,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         ),
     )
     enable_summary: bool = Field(
-        default=False,
+        default=True,
         description="Enable graph community summary or not.",
     )
     enable_similarity_search: bool = Field(
@@ -89,7 +89,8 @@ class TuGraphStore(GraphStoreBase):
         self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
         self.enable_summary = (
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            or config.enable_summary
+            if "GRAPH_COMMUNITY_SUMMARY_ENABLED" in os.environ
+            else config.enable_summary
         )
         self.enable_similarity_search = (
             os.environ["SIMILARITY_SEARCH_ENABLED"].lower() == "true"

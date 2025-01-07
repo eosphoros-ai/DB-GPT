@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Dict, Iterator, List, Literal, Optional, Union
+from typing import AsyncGenerator, Dict, Iterator, List, Optional, Union
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
 from dbgpt.storage.graph_store.graph import (
@@ -186,7 +186,20 @@ class GraphStoreAdapter(ABC):
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
-        """Explore the triple graph from given subjects up to a depth."""
+        """Explore the graph from given subjects up to a depth.
+
+        Args:
+            subs (Union[List[str], List[List[float]]): The list of the subjects (keywords or embedding vectors).
+            topk (Optional[int]): The number of the top similar entities.
+            score_threshold (Optional[float]): The threshold of the similarity score.
+            direct (Direction): The direction of the graph that will be explored.
+            depth (int): The depth of the graph that will be explored.
+            fan (Optional[int]): Not used.
+            limit (Optional[int]): The limit number of the queried entities.
+
+        Returns:
+            MemoryGraph: The triplet graph that includes the entities and the relations.
+        """
 
     @abstractmethod
     def explore_docgraph_with_entities(
@@ -199,7 +212,22 @@ class GraphStoreAdapter(ABC):
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
-        """Explore the document graph after get entities from triple graph."""
+        """Explore the graph from given subjects up to a depth.
+
+        Args:
+            subs (List[str]): The list of the entities.
+            topk (Optional[int]): The number of the top similar chunks.
+            score_threshold (Optional[float]): The threshold of the similarity score.
+            direct (Direction): The direction of the graph that will be explored.
+            depth (int): The depth of the graph that will be explored.
+            fan (Optional[int]): Not used.
+            limit (Optional[int]): The limit number of the queried chunks.
+
+        Returns:
+            MemoryGraph: The document graph that includes the leaf chunks that connect to the
+                entities, the chains from documents to the leaf chunks, and the chain
+                from documents to chunks.
+        """
 
     @abstractmethod
     def explore_docgraph_without_entities(
@@ -212,7 +240,21 @@ class GraphStoreAdapter(ABC):
         fan: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> MemoryGraph:
-        """Explore the document graph only from given subjects up to a depth."""
+        """Explore the graph from given subjects up to a depth.
+
+        Args:
+            subs (Union[List[str], List[List[float]]): The list of the subjects (keywords or embedding vectors).
+            topk (Optional[int]): The number of the top similar chunks.
+            score_threshold (Optional[float]): The threshold of the similarity score.
+            direct (Direction): The direction of the graph that will be explored.
+            depth (int): The depth of the graph that will be explored.
+            fan (Optional[int]): Not used.
+            limit (Optional[int]): The limit number of the queried chunks.
+
+        Returns:
+            MemoryGraph: The document graph that includes the chains from documents to chunks
+                that contain the subs (keywords) or similar chunks (embedding vectors).
+        """
 
     @abstractmethod
     def query(self, query: str, **kwargs) -> MemoryGraph:

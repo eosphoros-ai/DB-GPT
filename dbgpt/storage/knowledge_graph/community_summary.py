@@ -3,7 +3,7 @@
 import logging
 import os
 import uuid
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk
@@ -192,7 +192,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         )
 
         self._graph_embedder = GraphEmbedder(self._config.embedding_fn)
-
         self._text_embedder = TextEmbedder(self._config.embedding_fn)
 
         def community_store_configure(name: str, cfg: VectorStoreConfig):
@@ -244,13 +243,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         if self._graph_store.enable_similarity_search:
             # Add embeddings from chunk content
-            texts = []
-
-            for chunk in paragraph_chunks:
-                texts.append(chunk.content)
+            texts: List[str] = [chunk.content for chunk in paragraph_chunks]
 
             embeddings = await self._text_embedder.batch_embed(
-                texts,
+                inputs=texts,
                 batch_size=self._triplet_embedding_batch_size,
             )
 
@@ -298,7 +294,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         if self._graph_store.enable_similarity_search:
             for idx, graphs in enumerate(graphs_list):
                 embeded_graphs = await self._graph_embedder.batch_embed(
-                    graphs,
+                    inputs=graphs,
                     batch_size=self._triplet_embedding_batch_size,
                 )
                 graphs_list[idx] = embeded_graphs
@@ -392,7 +388,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        # Vector similarity search
         enable_similarity_search = self._graph_store.enable_similarity_search
 
         subgraph = None
@@ -416,9 +411,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             )
             # Using the embeddings of keywords and question
             vectors.append(vector)
-            subs = vectors
+            subs: Union[List[str], List[List[float]]] = vectors
         else:
-            subs = keywords
+            subs: Union[List[str], List[List[float]]] = keywords
 
         # If enable triplet graph, using subs to search enetities
         # subs -> enetities
@@ -432,7 +427,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         # If enabled document graph
         if document_graph_enabled:
-            # If not enable triplet graph or subgraph is null
+            # If not enable triplet graph or subgraph is None
             # Using subs to search chunks
             # subs -> chunks -> doc
             if subgraph is None or subgraph.vertex_count == 0:

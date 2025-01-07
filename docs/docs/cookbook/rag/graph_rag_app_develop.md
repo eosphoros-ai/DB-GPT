@@ -392,14 +392,15 @@ What is the next?
 We aim to construct a more complex Graph that covers more comprehensive information to support more sophisticated retrieval algorithms in our GraphRAG.
 
 
-### Similarity Search for GraphRAG:
+### Similarity Search in GraphRAG:
 
-In new version of DB-GPT, we have added a new feature:
-- **Using similarity search** for etrieval of GraphRAG 
+In the latest version of DB-GPT, we have implemented a new feature:
+
+- **Similarity search** for GraphRAG retrieval
 
 #### How to use?
 
-Set variables below in `.env` file, let DB-GPT know you want to using similarity search.
+Set the variables below in the `.env` file to enable similarity search in DB-GPT.
 
 ```
 SIMILARITY_SEARCH_ENABLED=True # enable the similarity search for entities and chunks
@@ -408,7 +409,7 @@ KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE=5 # set the topk of the vector simila
 KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_RECALL_SCORE=0.3 # set the reacall score of the vector similarity search
 ```
 
-And you also need to choose the embedding model in `.env` file
+Additionally, you need to choose an embedding model in the `.env` file
 
 ```
 ## Openai embedding model, See dbgpt/model/parameter.py
@@ -432,32 +433,33 @@ And you also need to choose the embedding model in `.env` file
 
 #### Why to use?
 
-TuGraph now offers comprehensive vector capabilities, including vector storage, indexing, and similarity search functionality. These features enable GraphRAG to achieve superior retrieval performance compared to traditional keyword-based approaches.
+TuGraph now offers comprehensive vector capabilities, including vector storage, indexing, and similarity search functionalities. These features enable GraphRAG to achieve superior retrieval performance compared to traditional keyword-based approaches.
+
 	
-To leverage these capabilities, we've introduced an `_embedding` field in both entity and chunk objects to store embedding data, which enables similarity search to identify the most relevant results for a given query.
+To leverage these capabilities, we've introduced an `_embedding` field in both entity and chunk objects to store embedding data, enabling similarity search to identify the most relevant results for a given query.
 
-#### The comparison of similarity search
+#### Comparison of Similarity Search Results
 
-Given the same documents and questions in the same environment, the results of keyword mode are as follows:
+Given identical documents and questions in the same environment, the results of the keyword mode are as follows:
 
 <p align="left">
   <img src={'/img/chat_knowledge/graph_rag/result_for_keywords.png'} width="1000px"/>
 </p>
 
-The results of similarity search mode are as follows:
+The results of the similarity search mode are as follows:
 
 <p align="left">
   <img src={'/img/chat_knowledge/graph_rag/result_for_similarity_search.png'} width="1000px"/>
 </p>
 
-Compared with the keyword search method, the similarity search method can cover more comprehensive information.  For instance, when dealing with the term 清北大学 in the keyword search mode, it is hard to extract useful keywords.  However, the similarity search mode can identify similar words, enabling it to retrieve relevant information related to Tsinghua University and thus include it in the search results.
+Compared to the keyword search method, the similarity search method can cover more comprehensive information. For instance, when dealing with the term 清北大学 in the keyword search mode, it is hard to extract useful keywords. However, the similarity search mode can identify similar words, enabling it to retrieve relevant information related to Tsinghua University and thus include it in the search results.
 
-This implies that in scenarios where the query is imprecise, the similarity search approach is capable of retrieving more pertinent information compared to the keyword-based search pattern.
+This implies that in scenarios where queries are imprecise, the similarity search approach can retrieve more pertinent information compared to keyword-based search patterns.
 
-Furthermore, as shown in the following figure, compared with RAG, GraphRAG with similarity search can obtain more relevant information, ensuring the richness of the answers.
+Furthermore, as shown in the following figure, compared to RAG, GraphRAG with similarity search can obtain more relevant information, ensuring richer answers.
 
 <p align="left">
   <img src={'/img/chat_knowledge/graph_rag/compare_with_rag.png'} width="1000px"/>
 </p>
 
-In conclusion, enabling similarity search in GraphRAG can significantly expand the scope and relevance of GraphRAG's responses.
+In conclusion, enabling similarity search in GraphRAG significantly expands the scope and relevance of its responses.
