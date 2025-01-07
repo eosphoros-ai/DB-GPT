@@ -402,6 +402,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         keywords: List[str] = await self._keyword_extractor.extract(text)
 
         # If enable similarity search, using subs to transfer embeddings
+        subs: Union[List[str], List[List[float]]]
         if enable_similarity_search:
             # Embedding the question
             vector = await self._text_embedder.embed(text)
@@ -411,9 +412,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             )
             # Using the embeddings of keywords and question
             vectors.append(vector)
-            subs: Union[List[str], List[List[float]]] = vectors
+            subs = vectors
         else:
-            subs: Union[List[str], List[List[float]]] = keywords
+            subs = keywords
 
         # If enable triplet graph, using subs to search enetities
         # subs -> enetities

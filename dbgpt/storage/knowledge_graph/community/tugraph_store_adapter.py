@@ -2,16 +2,7 @@
 
 import json
 import logging
-from typing import (
-    Any,
-    AsyncGenerator,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Tuple, Union
 
 from dbgpt.storage.graph_store.graph import (
     Direction,
@@ -172,7 +163,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             # If not exist, then create vector index
             if self.query(check_entity_vector_query).vertex_count == 0:
                 # Get the dimension
-                dimension = len(entity_list[0].get("_embedding"))
+                dimension = len(entity_list[0].get("_embedding", []))
                 # Then create index
                 create_vector_index_query = (
                     "CALL db.addVertexVectorIndex("
@@ -246,12 +237,13 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             # If not exist, then create vector index
             if self.query(check_chunk_vector_query).vertex_count == 0:
                 # Get the dimension
-                dimension = len(chunk_list[0].get("_embedding"))
+                embedding = chunk_list[0].get("_embedding", [])
+                assert isinstance(embedding, list)
                 # Then create index
                 create_vector_index_query = (
                     "CALL db.addVertexVectorIndex("
                     f'"{GraphElemType.CHUNK.value}", "_embedding", '
-                    f"{{dimension: {dimension}}})"
+                    f"{{dimension: {len(embedding)}}})"
                 )
                 self.graph_store.conn.run(query=create_vector_index_query)
 
@@ -524,12 +516,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         (vertices) and edges in the graph.
         """
         if graph_elem_type.is_vertex():  # vertex
-            vertex_meta = json.dumps({
-                "label": graph_elem_type.value,
-                "type": "VERTEX",
-                "primary": "id",
-                "properties": graph_properties,
-            })
+            vertex_meta = json.dumps(
+                {
+                    "label": graph_elem_type.value,
+                    "type": "VERTEX",
+                    "primary": "id",
+                    "properties": graph_properties,
+                }
+            )
             gql = f"""CALL db.createVertexLabelByJson('{vertex_meta}')"""
         else:  # edge
 
@@ -555,12 +549,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                 else:
                     raise ValueError("Invalid graph element type.")
 
-            edge_meta = json.dumps({
-                "label": graph_elem_type.value,
-                "type": "EDGE",
-                "constraints": edge_direction(graph_elem_type),
-                "properties": graph_properties,
-            })
+            edge_meta = json.dumps(
+                {
+                    "label": graph_elem_type.value,
+                    "type": "EDGE",
+                    "constraints": edge_direction(graph_elem_type),
+                    "properties": graph_properties,
+                }
+            )
             gql = f"""CALL db.createEdgeLabelByJson('{edge_meta}')"""
 
         self.graph_store.conn.run(gql)
@@ -597,7 +593,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Explore the graph from given subjects up to a depth.
 
         Args:
-            subs (Union[List[str], List[List[float]]): The list of the subjects (keywords or embedding vectors).
+            subs (Union[List[str], List[List[float]]): The list of the subjects
+                (keywords or embedding vectors).
             topk (Optional[int]): The number of the top similar entities.
             score_threshold (Optional[float]): The threshold of the similarity score.
             direct (Direction): The direction of the graph that will be explored.
@@ -651,7 +648,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             conditional_statement = f"WHERE n.id IN {ids} "
         else:
             conditional_statement = (
-                f"WHERE n.id IN {[self._escape_quotes(sub) for sub in subs]} "
+                f"WHERE n.id IN {[self._escape_quotes(str(sub)) for sub in subs]} "
             )
 
         # Multi-hop search
@@ -686,9 +683,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             limit (Optional[int]): The limit number of the queried chunks.
 
         Returns:
-            MemoryGraph: The document graph that includes the leaf chunks that connect to the
-                entities, the chains from documents to the leaf chunks, and the chain
-                from documents to chunks.
+            MemoryGraph: The document graph that includes the leaf chunks that
+                connect to the entities, the chains from documents to the leaf chunks,
+                and the chain from documents to chunks.
         """
         if len(subs) == 0:
             return MemoryGraph()
@@ -771,7 +768,8 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """Explore the graph from given subjects up to a depth.
 
         Args:
-            subs (Union[List[str], List[List[float]]): The list of the subjects (keywords or embedding vectors).
+            subs (Union[List[str], List[List[float]]): The list of the subjects
+                (keywords or embedding vectors).
             topk (Optional[int]): The number of the top similar chunks.
             score_threshold (Optional[float]): The threshold of the similarity score.
             direct (Direction): The direction of the graph that will be explored.
@@ -780,8 +778,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             limit (Optional[int]): The limit number of the queried chunks.
 
         Returns:
-            MemoryGraph: The document graph that includes the chains from documents to chunks
-                that contain the subs (keywords) or similar chunks (embedding vectors).
+            MemoryGraph: The document graph that includes the chains from documents
+                to chunks that contain the subs (keywords) or similar chunks
+                (embedding vectors).
         """
         if len(subs) == 0:
             return MemoryGraph()
@@ -825,13 +824,16 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     self.graph_store.conn.run(query=similarity_retrieval_query)
                 )
             names = [(record["name"]) for record in similar_chunks]
-            _subs_condition = " OR ".join([
-                f"m.content CONTAINS '{name}'" for name in names
-            ])
+            _subs_condition = " OR ".join(
+                [f"m.content CONTAINS '{name}'" for name in names]
+            )
         else:
-            _subs_condition = " OR ".join([
-                f"m.content CONTAINS '{self._escape_quotes(sub)}'" for sub in subs
-            ])
+            _subs_condition = " OR ".join(
+                [
+                    f"m.content CONTAINS '{self._escape_quotes(str(sub))}'"
+                    for sub in subs
+                ]
+            )
 
         # Query the chain from documents to chunks,
         # document -> chunk -> chunk -> chunk -> ... -> chunk
@@ -921,15 +923,19 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                     rels = list(record["p"].relationships)
                     formatted_path = []
                     for i in range(len(nodes)):
-                        formatted_path.append({
-                            "id": nodes[i]._properties["id"],
-                            "description": nodes[i]._properties["description"],
-                        })
+                        formatted_path.append(
+                            {
+                                "id": nodes[i]._properties["id"],
+                                "description": nodes[i]._properties["description"],
+                            }
+                        )
                         if i < len(rels):
-                            formatted_path.append({
-                                "id": rels[i]._properties["id"],
-                                "description": rels[i]._properties["description"],
-                            })
+                            formatted_path.append(
+                                {
+                                    "id": rels[i]._properties["id"],
+                                    "description": rels[i]._properties["description"],
+                                }
+                            )
                     for i in range(0, len(formatted_path), 2):
                         mg.upsert_vertex(
                             Vertex(
@@ -1100,9 +1106,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to document include chunk."""
-        assert chunk.chunk_parent_id and chunk.chunk_parent_name, (
-            "Chunk parent ID and name are required (document_include_chunk)"
-        )
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (document_include_chunk)"
 
         edge = Edge(
             sid=chunk.chunk_parent_id,
@@ -1123,9 +1129,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         chunk: ParagraphChunk,
     ) -> None:
         """Convert chunk to chunk include chunk."""
-        assert chunk.chunk_parent_id and chunk.chunk_parent_name, (
-            "Chunk parent ID and name are required (chunk_include_chunk)"
-        )
+        assert (
+            chunk.chunk_parent_id and chunk.chunk_parent_name
+        ), "Chunk parent ID and name are required (chunk_include_chunk)"
 
         edge = Edge(
             sid=chunk.chunk_parent_id,

@@ -123,7 +123,9 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()
+        subgraph = self._graph_store_apdater.explore_trigraph(
+            keywords, limit=topk
+        ).format()
 
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 
@@ -134,7 +136,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             "The following entities and relationships provided after "
             "[Subgraph] are retrieved from the knowledge graph "
             "based on the keywords:\n"
-            f"\"{','.join(keywords)}\".\n"
+            f'"{",".join(keywords)}".\n'
             "---------------------\n"
             "The following examples after [Entities] and [Relationships] that "
             "can help you understand the data format of the knowledge graph, "

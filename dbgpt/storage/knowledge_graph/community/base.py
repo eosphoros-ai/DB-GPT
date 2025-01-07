@@ -189,7 +189,8 @@ class GraphStoreAdapter(ABC):
         """Explore the graph from given subjects up to a depth.
 
         Args:
-            subs (Union[List[str], List[List[float]]): The list of the subjects (keywords or embedding vectors).
+            subs (Union[List[str], List[List[float]]): The list of the subjects
+                (keywords or embedding vectors).
             topk (Optional[int]): The number of the top similar entities.
             score_threshold (Optional[float]): The threshold of the similarity score.
             direct (Direction): The direction of the graph that will be explored.
@@ -224,9 +225,9 @@ class GraphStoreAdapter(ABC):
             limit (Optional[int]): The limit number of the queried chunks.
 
         Returns:
-            MemoryGraph: The document graph that includes the leaf chunks that connect to the
-                entities, the chains from documents to the leaf chunks, and the chain
-                from documents to chunks.
+            MemoryGraph: The document graph that includes the leaf chunks that connect
+                to the entities, the chains from documents to the leaf chunks, and the
+                chain from documents to chunks.
         """
 
     @abstractmethod
@@ -243,7 +244,8 @@ class GraphStoreAdapter(ABC):
         """Explore the graph from given subjects up to a depth.
 
         Args:
-            subs (Union[List[str], List[List[float]]): The list of the subjects (keywords or embedding vectors).
+            subs (Union[List[str], List[List[float]]): The list of the subjects
+                (keywords or embedding vectors).
             topk (Optional[int]): The number of the top similar chunks.
             score_threshold (Optional[float]): The threshold of the similarity score.
             direct (Direction): The direction of the graph that will be explored.
@@ -252,8 +254,9 @@ class GraphStoreAdapter(ABC):
             limit (Optional[int]): The limit number of the queried chunks.
 
         Returns:
-            MemoryGraph: The document graph that includes the chains from documents to chunks
-                that contain the subs (keywords) or similar chunks (embedding vectors).
+            MemoryGraph: The document graph that includes the chains from documents
+                to chunks that contain the subs (keywords) or similar chunks
+                (embedding vectors).
         """
 
     @abstractmethod
