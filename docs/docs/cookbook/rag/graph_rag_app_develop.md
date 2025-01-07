@@ -443,13 +443,13 @@ To leverage these capabilities, we've introduced an `_embedding` field in both e
 Given identical documents and questions in the same environment, the results of the keyword mode are as follows:
 
 <p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/result_for_keywords.png'} width="1000px"/>
+  <img src={'/img/chat_knowledge/graph_rag/comparison_result_for_keywords.png'} width="1000px"/>
 </p>
 
 The results of the similarity search mode are as follows:
 
 <p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/result_for_similarity_search.png'} width="1000px"/>
+  <img src={'/img/chat_knowledge/graph_rag/comparison_result_for_similarity_search.png'} width="1000px"/>
 </p>
 
 Compared to the keyword search method, the similarity search method can cover more comprehensive information. For instance, when dealing with the term 清北大学 in the keyword search mode, it is hard to extract useful keywords. However, the similarity search mode can identify similar words, enabling it to retrieve relevant information related to Tsinghua University and thus include it in the search results.
@@ -459,7 +459,7 @@ This implies that in scenarios where queries are imprecise, the similarity searc
 Furthermore, as shown in the following figure, compared to RAG, GraphRAG with similarity search can obtain more relevant information, ensuring richer answers.
 
 <p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/compare_with_rag.png'} width="1000px"/>
+  <img src={'/img/chat_knowledge/graph_rag/comparison_with_rag.png'} width="1000px"/>
 </p>
 
 In conclusion, enabling similarity search in GraphRAG significantly expands the scope and relevance of its responses.
