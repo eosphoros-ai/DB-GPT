@@ -224,6 +224,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             f"[{self._convert_dict_to_str(chunk_list)}])"
         )
 
+        if len(chunk_list) == 0:
+            return
+
         # If similarity search enabled, then ready to create vector index
         if enable_similarity_search:
             # Check wheather the vector index exist
@@ -237,13 +240,12 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             # If not exist, then create vector index
             if self.query(check_chunk_vector_query).vertex_count == 0:
                 # Get the dimension
-                embedding = chunk_list[0].get("_embedding", [])
-                assert isinstance(embedding, list)
+                dimension = len(chunk_list[0].get("_embedding", []))
                 # Then create index
                 create_vector_index_query = (
                     "CALL db.addVertexVectorIndex("
                     f'"{GraphElemType.CHUNK.value}", "_embedding", '
-                    f"{{dimension: {len(embedding)}}})"
+                    f"{{dimension: {dimension}}})"
                 )
                 self.graph_store.conn.run(query=create_vector_index_query)
 
