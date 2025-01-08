@@ -218,14 +218,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             }
             for chunk in chunks
         ]
+        if len(chunk_list) == 0:
+            return
+
         chunk_query = (
             f"CALL db.upsertVertex("
             f'"{GraphElemType.CHUNK.value}", '
             f"[{self._convert_dict_to_str(chunk_list)}])"
         )
-
-        if len(chunk_list) == 0:
-            return
 
         # If similarity search enabled, then ready to create vector index
         if enable_similarity_search:
