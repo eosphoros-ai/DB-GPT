@@ -107,6 +107,18 @@ class MultiAgents(BaseComponent, ABC):
         super().__init__(system_app)
         self.system_app = system_app
 
+    def on_init(self):
+        """Called when init the application.
+
+        Import your own module here to ensure the module is loaded before the application starts
+        """
+        from ..db.gpts_app import (
+            GptsAppCollectionEntity,
+            GptsAppDetailEntity,
+            GptsAppEntity,
+            UserRecentAppsEntity,
+        )
+
     def get_dbgpts(self, user_code: str = None, sys_code: str = None):
         apps = self.gpts_app.app_list(
             GptsAppQuery(user_code=user_code, sys_code=sys_code)
