@@ -5,13 +5,15 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt.agent import AgentMessage, ConversableAgent
-from dbgpt.serve.agent.agents.app_agent_manage import get_app_manager
 from dbgpt.util import ParameterDescription
 
 from .base import Resource, ResourceParameters, ResourceType
 
 
 def _get_app_list():
+    # TODO: Don't import dbgpt.serve in dbgpt.agent module
+    from dbgpt.serve.agent.agents.app_agent_manage import get_app_manager
+
     # Only call this function when the system app is initialized
     apps = get_app_manager().get_dbgpts()
     results = [
@@ -79,6 +81,9 @@ class AppResource(Resource[ResourceParameters]):
 
     def __init__(self, name: str, app_code: str, **kwargs):
         """Initialize AppResource resource."""
+        # TODO: Don't import dbgpt.serve in dbgpt.agent module
+        from dbgpt.serve.agent.agents.app_agent_manage import get_app_manager
+
         self._resource_name = name
         self._app_code = app_code
 
@@ -180,6 +185,9 @@ async def _start_app(
     conv_uid: Optional[str] = None,
 ) -> AgentMessage:
     """Start App By AppResource."""
+    # TODO: Don't import dbgpt.serve in dbgpt.agent module
+    from dbgpt.serve.agent.agents.app_agent_manage import get_app_manager
+
     conv_uid = str(uuid.uuid4()) if conv_uid is None else conv_uid
     gpts_app = get_app_manager().get_app(app_code)
     app_agent = await get_app_manager().create_agent_by_app_code(
