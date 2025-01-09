@@ -55,6 +55,7 @@ where column = 'value'
     ("This is not a JSON string", [], "Test case with non-JSON input"),
 ]
 
+
 @pytest.mark.parametrize("text, expected, description", test_data)
 def test_find_json_objects(text, expected, description):
     result = find_json_objects(text)
