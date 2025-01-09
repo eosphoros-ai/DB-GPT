@@ -1,0 +1,61 @@
+[project]
+name = "dbgpt-mono"
+version = "0.7.0"
+description = "Add your description here"
+authors = [
+    { name = "aries_ckt", email = "ariesketing@gmail.com" }
+]
+dependencies = []
+readme = "README.md"
+requires-python = ">= 3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+virtual = true
+dev-dependencies = [
+    "pip",
+    "tomli>=2.0.2",
+    "tomli-w>=1.1.0",
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "twine",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.rye.workspace]
+members = ["dbgpt-*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.rye.scripts]
+fmt = { chain = [
+    "black dbgpt-core",
+    "black dbgpt-integration",
+    "isort dbgpt-core",
+    "isort dbgpt-integration",
+]}
+fmt-check = { chain = [
+    "black --check dbgpt-core",
+    "black --check dbgpt-integration",
+    "isort --check dbgpt-core",
+    "isort --check dbgpt-integration",
+]}
