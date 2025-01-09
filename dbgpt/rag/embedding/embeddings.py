@@ -803,9 +803,10 @@ class OllamaEmbeddings(BaseModel, Embeddings):
                 "Please install ollama by command `pip install ollama"
             ) from e
         try:
-            return (
-                Client(self.api_url).embeddings(model=self.model_name, prompt=text)
-            )["embedding"]
+            embedding = Client(self.api_url).embeddings(
+                model=self.model_name, prompt=text
+            )
+            return list(embedding["embedding"])
         except ollama.ResponseError as e:
             raise ValueError(f"**Ollama Response Error, Please CheckErrorInfo.**: {e}")
 
@@ -839,7 +840,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             embedding = await AsyncClient(host=self.api_url).embeddings(
                 model=self.model_name, prompt=text
             )
-            return embedding["embedding"]
+            return list(embedding["embedding"])
         except ollama.ResponseError as e:
             raise ValueError(f"**Ollama Response Error, Please CheckErrorInfo.**: {e}")
 

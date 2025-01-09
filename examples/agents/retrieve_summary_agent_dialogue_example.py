@@ -6,8 +6,8 @@
         Set env params.
         .. code-block:: shell
 
-            export OPENAI_API_KEY=sk-xx
-            export OPENAI_API_BASE=https://xx:80/v1
+            export SILICONFLOW_API_KEY=sk-xx
+            export SILICONFLOW_API_BASE=https://xx:80/v1
 
         run example.
         ..code-block:: shell
@@ -18,20 +18,27 @@ import asyncio
 import os
 
 from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
-from dbgpt.agent.expand.retrieve_summary_assistant_agent import (
-    RetrieveSummaryAssistantAgent,
-)
+from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
 from dbgpt.configs.model_config import ROOT_PATH
 
 
-async def summary_example_with_success():
-    from dbgpt.model.proxy import OpenAILLMClient
+async def main():
+    from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
 
-    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo-16k")
-    context: AgentContext = AgentContext(conv_id="retrieve_summarize")
+    llm_client = SiliconFlowLLMClient(
+        model_alias=os.getenv(
+            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+        ),
+    )
+    context: AgentContext = AgentContext(
+        conv_id="retrieve_summarize", gpts_app_name="Summary Assistant"
+    )
+
     agent_memory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="retrieve_summarize")
+
     summarizer = (
-        await RetrieveSummaryAssistantAgent()
+        await SummaryAssistantAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
         .bind(agent_memory)
@@ -47,6 +54,7 @@ async def summary_example_with_success():
         "https://en.wikipedia.org/wiki/Chernobyl_disaster",
     ]
 
+    # TODO add a tool to load the pdf and internet files
     await user_proxy.initiate_chat(
         recipient=summarizer,
         reviewer=user_proxy,
@@ -55,11 +63,8 @@ async def summary_example_with_success():
     )
 
     # dbgpt-vis message infos
-    print(await agent_memory.gpts_memory.one_chat_completions("retrieve_summarize"))
+    print(await agent_memory.gpts_memory.app_link_chat_message("retrieve_summarize"))
 
 
 if __name__ == "__main__":
-    asyncio.run(summary_example_with_success())
-    print(
-        "\033[92m=======================The Summary Assistant with Successful Results Ended==================\n\n\033[91m"
-    )
+    asyncio.run(main())
