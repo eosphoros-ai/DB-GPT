@@ -61,6 +61,15 @@ class TuGraphConnector(BaseConnector):
                 "neo4j package is not installed, please install it with "
                 "`pip install neo4j`"
             ) from err
+    
+    def get_system_info(self) -> Dict:
+        """Get system info from the TuGraph."""
+        with self._driver.session(database="default") as session:
+            system_info_list = session.run("CALL dbms.system.info()")
+            system_info = {}
+            for info in system_info_list:
+                system_info[info["name"]] = info["value"]
+            return system_info
 
     def get_table_names(self) -> Iterator[str]:
         """Get all table names from the TuGraph by Neo4j driver."""

@@ -400,6 +400,8 @@ In the latest version of DB-GPT, we have implemented a new feature:
 
 #### How to use?
 
+Use TuGraph 4.5.1 and above.
+
 Set the variables below in the `.env` file to enable similarity search in DB-GPT.
 
 ```
