@@ -361,6 +361,8 @@ class ConversableAgent(Role, Agent):
                 # - 重新生成消息，保留上一轮的Action，并增加Rounds
                 # - 将上一轮的Action的Content作为当前输入消息
                 if force_retry:
+                    if reply_message.action_report is None:
+                        raise ValueError("action output is None when force_retry")
                     received_message.content = reply_message.action_report.content
                     received_message.rounds = reply_message.rounds + 1
                     reply_message = self._init_reply_message(
