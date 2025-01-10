@@ -2,13 +2,15 @@
 
 import logging
 import traceback
-from typing import List
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
+from dbgpt.rag import ChunkParameters
 from dbgpt.rag.summary.gdbms_db_summary import GdbmsSummary
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
+from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
+from dbgpt.serve.rag.connector import VectorStoreConnector
 
 logger = logging.getLogger(__name__)
 
@@ -47,22 +49,26 @@ class DBSummaryClient:
 
         logger.info("db summary embedding success")
 
-    def get_db_summary(self, dbname, query, topk) -> List[str]:
+    def get_db_summary(self, dbname, query, topk):
         """Get user query related tables info."""
-        from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        vector_store_config = VectorStoreConfig(name=dbname + "_profile")
-        vector_connector = VectorStoreConnector.from_default(
+        vector_store_name = dbname + "_profile"
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
+        table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
-            embedding_fn=self.embeddings,
-            vector_store_config=vector_store_config,
+            self.embeddings,
+            vector_store_config=table_vector_store_config,
         )
+
         from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 
         retriever = DBSchemaRetriever(
-            top_k=topk, index_store=vector_connector.index_client
+            top_k=topk,
+            table_vector_store_connector=table_vector_connector,
+            separator="--table-field-separator--",
         )
+
         table_docs = retriever.retrieve(query)
         ans = [d.content for d in table_docs]
         return ans
@@ -92,18 +98,23 @@ class DBSummaryClient:
         from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        vector_store_config = VectorStoreConfig(name=vector_store_name)
-        vector_connector = VectorStoreConnector.from_default(
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
+        table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
             self.embeddings,
-            vector_store_config=vector_store_config,
+            vector_store_config=table_vector_store_config,
         )
-        if not vector_connector.vector_name_exists():
+        if not table_vector_connector.vector_name_exists():
             from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
 
+            chunk_parameters = ChunkParameters(
+                text_splitter=RDBTextSplitter(separator="--table-field-separator--")
+            )
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connector=db_summary_client.db,
-                index_store=vector_connector.index_client,
+                table_vector_store_connector=table_vector_connector,
+                chunk_parameters=chunk_parameters,
+                max_seq_length=CFG.EMBEDDING_MODEL_MAX_SEQ_LEN,
             )
 
             if len(db_assembler.get_chunks()) > 0:
@@ -115,16 +126,26 @@ class DBSummaryClient:
     def delete_db_profile(self, dbname):
         """Delete db profile."""
         vector_store_name = dbname + "_profile"
+        table_vector_store_name = dbname + "_profile"
+        field_vector_store_name = dbname + "_profile_field"
         from dbgpt.serve.rag.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        vector_store_config = VectorStoreConfig(name=vector_store_name)
-        vector_connector = VectorStoreConnector.from_default(
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
+        field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
+        table_vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
             self.embeddings,
-            vector_store_config=vector_store_config,
+            vector_store_config=table_vector_store_config,
         )
-        vector_connector.delete_vector_name(vector_store_name)
+        field_vector_connector = VectorStoreConnector.from_default(
+            CFG.VECTOR_STORE_TYPE,
+            self.embeddings,
+            vector_store_config=field_vector_store_config,
+        )
+
+        table_vector_connector.delete_vector_name(table_vector_store_name)
+        field_vector_connector.delete_vector_name(field_vector_store_name)
         logger.info(f"delete db profile {dbname} success")
 
     @staticmethod

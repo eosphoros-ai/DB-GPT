@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Coroutine, List
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Callable, Coroutine, List
 
 
 async def llm_chat_response_nostream(chat_scene: str, **chat_param):
@@ -47,13 +48,34 @@ async def run_async_tasks(
 
 
 def run_tasks(
-    tasks: List[Coroutine],
+    tasks: List[Callable],
+    concurrency_limit: int = None,
 ) -> List[Any]:
-    """Run a list of async tasks."""
-    tasks_to_execute: List[Any] = tasks
+    """
+    Run a list of tasks concurrently using a thread pool.
 
-    async def _gather() -> List[Any]:
-        return await asyncio.gather(*tasks_to_execute)
+    Args:
+        tasks: List of callable functions to execute
+        concurrency_limit: Maximum number of concurrent threads (optional)
 
-    outputs: List[Any] = asyncio.run(_gather())
-    return outputs
+    Returns:
+        List of results from all tasks in the order they were submitted
+    """
+    max_workers = concurrency_limit if concurrency_limit else None
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tasks and get futures
+        futures = [executor.submit(task) for task in tasks]
+
+        # Collect results in order, raising any exceptions
+        results = []
+        for future in futures:
+            try:
+                results.append(future.result())
+            except Exception as e:
+                # Cancel any pending futures
+                for f in futures:
+                    f.cancel()
+                raise e
+
+    return results

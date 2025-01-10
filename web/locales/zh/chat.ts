@@ -25,5 +25,6 @@ export const ChatZh: Resources['translation'] = {
   assistant: '平台小助手', // 灵数平台小助手
   model_tip: '当前应用暂不支持模型选择',
   temperature_tip: '当前应用暂不支持温度配置',
+  max_new_tokens_tip: '当前应用暂不支持max_new_tokens配置',
   extend_tip: '当前应用暂不支持拓展配置',
 } as const;

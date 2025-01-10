@@ -6,8 +6,8 @@
         Set env params.
         .. code-block:: shell
 
-            export OPENAI_API_KEY=sk-xx
-            export OPENAI_API_BASE=https://xx:80/v1
+            export SILICONFLOW_API_KEY=sk-xx
+            export SILICONFLOW_API_BASE=https://xx:80/v1
 
         run example.
         ..code-block:: shell
@@ -20,19 +20,24 @@ import os
 from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.agent.expand.tool_assistant_agent import ToolAssistantAgent
 from dbgpt.agent.resource import AutoGPTPluginToolPack
+from dbgpt.configs.model_config import ROOT_PATH
 
-current_dir = os.getcwd()
-parent_dir = os.path.dirname(current_dir)
-test_plugin_dir = os.path.join(parent_dir, "test_files/plugins")
+test_plugin_dir = os.path.join(ROOT_PATH, "examples/test_files/plugins")
 
 
 async def main():
-    from dbgpt.model.proxy import OpenAILLMClient
+    from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
 
-    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
-    context: AgentContext = AgentContext(conv_id="test456")
+    llm_client = SiliconFlowLLMClient(
+        model_alias=os.getenv(
+            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+        ),
+    )
 
     agent_memory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="test456")
+
+    context: AgentContext = AgentContext(conv_id="test456", gpts_app_name="插件对话助手")
 
     tools = AutoGPTPluginToolPack(test_plugin_dir)
 
@@ -54,7 +59,7 @@ async def main():
     )
 
     # dbgpt-vis message infos
-    print(await agent_memory.gpts_memory.one_chat_completions("test456"))
+    print(await agent_memory.gpts_memory.app_link_chat_message("test456"))
 
 
 if __name__ == "__main__":

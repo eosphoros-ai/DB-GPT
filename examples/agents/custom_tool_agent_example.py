@@ -44,12 +44,17 @@ def count_directory_files(path: Annotated[str, Doc("The directory path")]) -> in
 
 
 async def main():
-    from dbgpt.model.proxy import OpenAILLMClient
+    from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
 
-    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
-    context: AgentContext = AgentContext(conv_id="test456")
-
+    llm_client = SiliconFlowLLMClient(
+        model_alias=os.getenv(
+            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+        ),
+    )
     agent_memory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="test456")
+
+    context: AgentContext = AgentContext(conv_id="test456", gpts_app_name="工具助手")
 
     tools = ToolPack([simple_calculator, count_directory_files])
 
@@ -77,7 +82,7 @@ async def main():
     )
 
     # dbgpt-vis message infos
-    print(await agent_memory.gpts_memory.one_chat_completions("test456"))
+    print(await agent_memory.gpts_memory.app_link_chat_message("test456"))
 
 
 if __name__ == "__main__":

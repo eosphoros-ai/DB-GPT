@@ -1,5 +1,5 @@
 """A proxy agent for the user."""
-from typing import Optional
+from typing import List, Optional
 
 from .. import ActionOutput, Agent, AgentMessage
 from .base_agent import ConversableAgent
@@ -39,6 +39,8 @@ class UserProxyAgent(ConversableAgent):
         is_recovery: Optional[bool] = False,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
+        rely_messages: Optional[List[AgentMessage]] = None,
     ) -> None:
         """Receive a message from another agent."""
         if not silent:

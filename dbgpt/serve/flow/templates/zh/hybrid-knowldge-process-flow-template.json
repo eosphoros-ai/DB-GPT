@@ -1,0 +1,1464 @@
+{
+  "flow": {
+  "uid": "fa8f01ab-fc7b-4e35-9533-f8e4cf045cce",
+  "label": "Knowledge Process Workflow",
+  "name": "hybrid_knowledge_process_workflow_zh",
+  "flow_category": null,
+  "flow_data": {
+    "nodes": [
+      {
+        "width": 320,
+        "height": 275,
+        "id": "operator_knowledge_process_join_operator___$$___rag___$$___v1_0",
+        "position": {
+          "x": 604.5,
+          "y": 77,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "label": "Embedded & KG 结果聚合算子",
+          "custom_label": null,
+          "name": "knowledge_process_join_operator",
+          "description": "Join Branch the workflow based on the Knowledge Process Results.",
+          "category": "rag",
+          "category_label": "RAG",
+          "flow_type": "operator",
+          "icon": null,
+          "documentation_url": null,
+          "id": "operator_knowledge_process_join_operator___$$___rag___$$___v1_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [],
+          "operator_type": "join",
+          "inputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "Knowledge Graph Storage Results",
+              "custom_label": null,
+              "name": "input_value",
+              "description": "knowledge graph storage results.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            },
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "Knowledge Graph Storage Results",
+              "custom_label": null,
+              "name": "input_value",
+              "description": "knowledge graph storage results.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "outputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "Knowledge Process Results.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "version": "v1",
+          "type_name": "KnowledgeProcessJoinOperator",
+          "type_cls": "dbgpt.rag.operators.process_branch.KnowledgeProcessJoinOperator"
+        },
+        "position_absolute": {
+          "x": 604.5,
+          "y": 77,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 323,
+        "id": "operator_vector_storage_operator___$$___rag___$$___v1_0",
+        "position": {
+          "x": 174.16583729394188,
+          "y": -131.63401513480102,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "label": "向量抽取存储算子",
+          "custom_label": null,
+          "name": "vector_storage_operator",
+          "description": "Persist embeddings into vector storage.",
+          "category": "rag",
+          "category_label": "RAG",
+          "flow_type": "operator",
+          "icon": null,
+          "documentation_url": null,
+          "id": "operator_vector_storage_operator___$$___rag___$$___v1_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "VectorStoreBase",
+              "type_cls": "dbgpt.storage.vector_store.base.VectorStoreBase",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "向量存储连接器",
+              "name": "vector_store",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": false,
+              "default": null,
+              "placeholder": null,
+              "description": "The vector store.",
+              "options": null,
+              "value": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0",
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "operator_type": "map",
+          "inputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "The text split chunks by chunk manager.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "outputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "已组装的块，已持久化到向量存储中。",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "version": "v1",
+          "type_name": "VectorStorageOperator",
+          "type_cls": "dbgpt.rag.operators.vector_store.VectorStorageOperator"
+        },
+        "position_absolute": {
+          "x": 174.16583729394188,
+          "y": -131.63401513480102,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 323,
+        "id": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+        "position": {
+          "x": 180.89103763027083,
+          "y": 341.37174185366564,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "label": "知识图谱抽取算子",
+          "custom_label": null,
+          "name": "knowledge_graph_operator",
+          "description": "Extract Documents and persist into graph database.",
+          "category": "rag",
+          "category_label": "RAG",
+          "flow_type": "operator",
+          "icon": null,
+          "documentation_url": null,
+          "id": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "KnowledgeGraphBase",
+              "type_cls": "dbgpt.storage.knowledge_graph.base.KnowledgeGraphBase",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "Knowledge Graph Connector",
+              "name": "graph_store",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": false,
+              "default": null,
+              "placeholder": null,
+              "description": "The knowledge graph.",
+              "options": null,
+              "value": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "operator_type": "map",
+          "inputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "The text split chunks by chunk manager.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "outputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "已组装的块，已持久化到向量存储中。",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "version": "v1",
+          "type_name": "KnowledgeGraphOperator",
+          "type_cls": "dbgpt.rag.operators.knowledge_graph.KnowledgeGraphOperator"
+        },
+        "position_absolute": {
+          "x": 180.89103763027083,
+          "y": 341.37174185366564,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 321,
+        "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+        "position": {
+          "x": -1056.545824254249,
+          "y": -163.01828337100258,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "label": "文档Chunk切片算子",
+          "custom_label": null,
+          "name": "chunk_manager_operator",
+          "description": " Split Knowledge Documents into chunks.",
+          "category": "rag",
+          "category_label": "RAG",
+          "flow_type": "operator",
+          "icon": null,
+          "documentation_url": null,
+          "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "ChunkParameters",
+              "type_cls": "dbgpt.rag.chunk_manager.ChunkParameters",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "Chunk Split Parameters",
+              "name": "chunk_parameters",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "Chunk Split Parameters.",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "operator_type": "map",
+          "inputs": [
+            {
+              "type_name": "Knowledge",
+              "type_cls": "dbgpt.rag.knowledge.base.Knowledge",
+              "label": "知识",
+              "custom_label": null,
+              "name": "knowledge",
+              "description": "The knowledge to be loaded.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": false,
+              "mappers": null
+            }
+          ],
+          "outputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "The split chunks by chunk manager.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "version": "v1",
+          "type_name": "ChunkManagerOperator",
+          "type_cls": "dbgpt.rag.operators.chunk_manager.ChunkManagerOperator"
+        },
+        "position_absolute": {
+          "x": -1056.545824254249,
+          "y": -163.01828337100258,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 234,
+        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+        "position": {
+          "x": -306.391788536534,
+          "y": 491.0961943850906,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "type_name": "BuiltinKnowledgeGraph",
+          "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
+          "label": "Builtin Knowledge Graph",
+          "custom_label": null,
+          "name": "builtin_knowledge_graph",
+          "description": "Builtin Knowledge Graph.",
+          "category": "knowledge_graph",
+          "category_label": "Knowledge Graph",
+          "flow_type": "resource",
+          "icon": null,
+          "documentation_url": null,
+          "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "BuiltinKnowledgeGraphConfig",
+              "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "Builtin Knowledge Graph Config.",
+              "name": "config",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "Builtin Knowledge Graph Config.",
+              "options": null,
+              "value": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "resource_type": "instance",
+          "parent_cls": [
+            "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
+            "dbgpt.storage.knowledge_graph.base.KnowledgeGraphBase",
+            "dbgpt.rag.index.base.IndexStoreBase"
+          ]
+        },
+        "position_absolute": {
+          "x": -306.391788536534,
+          "y": 491.0961943850906,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 645,
+        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+        "position": {
+          "x": -813.7432345424928,
+          "y": 328.2957752754239,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "type_name": "BuiltinKnowledgeGraphConfig",
+          "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+          "label": "Builtin Graph Config",
+          "custom_label": null,
+          "name": "knowledge_graph_config",
+          "description": "knowledge graph config.",
+          "category": "knowledge_graph",
+          "category_label": "Knowledge Graph",
+          "flow_type": "resource",
+          "icon": null,
+          "documentation_url": null,
+          "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "Graph Name",
+              "name": "name",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": "dbgpt_collection",
+              "placeholder": null,
+              "description": "The name of Graph, if not set, will use the default name.",
+              "options": null,
+              "value": "dbgpt_collection_V1",
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "Embeddings",
+              "type_cls": "dbgpt.core.interface.embeddings.Embeddings",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "嵌入函数",
+              "name": "embedding_fn",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "向量存储的嵌入函数，如果未设置，将使用默认的嵌入函数。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "int",
+              "type_cls": "builtins.int",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "一次加载的最大块数",
+              "name": "max_chunks_once_load",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": 10,
+              "placeholder": null,
+              "description": "一次加载的最大块数。如果您的文档很大，可以将此值设置为较大的数字，以加快加载过程。默认值为 10。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "int",
+              "type_cls": "builtins.int",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "最大线程数",
+              "name": "max_threads",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": 1,
+              "placeholder": null,
+              "description": "要使用的最大线程数。默认值为 1。如果您将此值设置为大于 1，请确保您的向量存储是线程安全的。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "Knowledge Graph Type",
+              "name": "graph_store_type",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "graph store type.",
+              "options": null,
+              "value": "TuGraph",
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "LLMClient",
+              "type_cls": "dbgpt.core.interface.llm.LLMClient",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "LLM Client",
+              "name": "llm_client",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": false,
+              "default": null,
+              "placeholder": null,
+              "description": "llm client for extract graph triplets.",
+              "options": null,
+              "value": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "LLM Model Name",
+              "name": "model_name",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "llm model name.",
+              "options": null,
+              "value": "zhipu_proxyllm",
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "resource_type": "instance",
+          "parent_cls": [
+            "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+            "dbgpt.storage.knowledge_graph.base.KnowledgeGraphConfig",
+            "dbgpt.rag.index.base.IndexStoreConfig",
+            "pydantic.main.BaseModel"
+          ]
+        },
+        "position_absolute": {
+          "x": -813.7432345424928,
+          "y": 328.2957752754239,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 234,
+        "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0",
+        "position": {
+          "x": -251.7635173402225,
+          "y": -367.01602690631285,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "type_name": "ChromaStore",
+          "type_cls": "dbgpt.storage.vector_store.chroma_store.ChromaStore",
+          "label": "Chroma Vector Store",
+          "custom_label": null,
+          "name": "chroma_vector_store",
+          "description": "Chroma 向量存储。",
+          "category": "vector_store",
+          "category_label": "Vector Store",
+          "flow_type": "resource",
+          "icon": null,
+          "documentation_url": null,
+          "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "ChromaVectorConfig",
+              "type_cls": "dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "Chroma Config",
+              "name": "vector_store_config",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "the chroma config of vector store.",
+              "options": null,
+              "value": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0",
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "resource_type": "instance",
+          "parent_cls": [
+            "dbgpt.storage.vector_store.chroma_store.ChromaStore",
+            "dbgpt.storage.vector_store.base.VectorStoreBase",
+            "dbgpt.rag.index.base.IndexStoreBase"
+          ]
+        },
+        "position_absolute": {
+          "x": -251.7635173402225,
+          "y": -367.01602690631285,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 674,
+        "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0",
+        "position": {
+          "x": -684.4180723107158,
+          "y": -934.1745886033843,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "type_name": "ChromaVectorConfig",
+          "type_cls": "dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig",
+          "label": "Chroma Config",
+          "custom_label": null,
+          "name": "chroma_vector_config",
+          "description": "Chroma vector store config.",
+          "category": "vector_store",
+          "category_label": "Vector Store",
+          "flow_type": "resource",
+          "icon": null,
+          "documentation_url": null,
+          "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "集合名称",
+              "name": "name",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": "dbgpt_collection",
+              "placeholder": null,
+              "description": "向量存储的名称，如果未设置，将使用默认名称。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "用户",
+              "name": "user",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "向量存储的用户，如果未设置，将使用默认用户。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "密码",
+              "name": "password",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "向量存储的密码，如果未设置，将使用默认密码。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "Embeddings",
+              "type_cls": "dbgpt.core.interface.embeddings.Embeddings",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "嵌入函数",
+              "name": "embedding_fn",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "向量存储的嵌入函数，如果未设置，将使用默认的嵌入函数。",
+              "options": null,
+              "value": "resource_dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings_0",
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "int",
+              "type_cls": "builtins.int",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "一次加载的最大块数",
+              "name": "max_chunks_once_load",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": 10,
+              "placeholder": null,
+              "description": "一次加载的最大块数。如果您的文档很大，可以将此值设置为较大的数字，以加快加载过程。默认值为 10。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "int",
+              "type_cls": "builtins.int",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "最大线程数",
+              "name": "max_threads",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": 1,
+              "placeholder": null,
+              "description": "要使用的最大线程数。默认值为 1。如果您将此值设置为大于 1，请确保您的向量存储是线程安全的。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "Persist Path",
+              "name": "persist_path",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "向量存储的持久化路径。",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "resource_type": "instance",
+          "parent_cls": [
+            "dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig",
+            "dbgpt.storage.vector_store.base.VectorStoreConfig",
+            "dbgpt.rag.index.base.IndexStoreConfig",
+            "pydantic.main.BaseModel"
+          ]
+        },
+        "position_absolute": {
+          "x": -684.4180723107158,
+          "y": -934.1745886033843,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 431,
+        "id": "operator_knowledge_operator___$$___rag___$$___v1_0",
+        "position": {
+          "x": -1558.679801266548,
+          "y": -149.61064934406164,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "label": "文档知识加载算子",
+          "custom_label": null,
+          "name": "knowledge_operator",
+          "description": "知识算子，可以从数据源创建知识。",
+          "category": "rag",
+          "category_label": "RAG",
+          "flow_type": "operator",
+          "icon": null,
+          "documentation_url": "https://github.com/openai/openai-python",
+          "id": "operator_knowledge_operator___$$___rag___$$___v1_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "默认数据源",
+              "name": "datasource",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "默认数据源。",
+              "options": null,
+              "value": "../../docs/docs/awel/awel.md",
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "知识类型",
+              "name": "knowledge_type",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": "DOCUMENT",
+              "placeholder": null,
+              "description": "知识类型。",
+              "options": [
+                {
+                  "label": "DOCUMENT",
+                  "name": "DOCUMENT",
+                  "value": "DOCUMENT",
+                  "children": null
+                },
+                {
+                  "label": "URL",
+                  "name": "URL",
+                  "value": "URL",
+                  "children": null
+                },
+                {
+                  "label": "TEXT",
+                  "name": "TEXT",
+                  "value": "TEXT",
+                  "children": null
+                }
+              ],
+              "value": null,
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "operator_type": "map",
+          "inputs": [
+            {
+              "type_name": "dict",
+              "type_cls": "builtins.dict",
+              "label": "知识数据源",
+              "custom_label": null,
+              "name": "knowledge datasource",
+              "description": "知识数据源，可以是文档、网址或文本。",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": false,
+              "mappers": null
+            }
+          ],
+          "outputs": [
+            {
+              "type_name": "Knowledge",
+              "type_cls": "dbgpt.rag.knowledge.base.Knowledge",
+              "label": "知识",
+              "custom_label": null,
+              "name": "Knowledge",
+              "description": "知识对象。",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": false,
+              "mappers": null
+            }
+          ],
+          "version": "v1",
+          "type_name": "KnowledgeOperator",
+          "type_cls": "dbgpt.rag.operators.knowledge.KnowledgeOperator"
+        },
+        "position_absolute": {
+          "x": -1558.679801266548,
+          "y": -149.61064934406164,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 602,
+        "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
+        "position": {
+          "x": -2015.3280350941911,
+          "y": -603.9181210010445,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "label": "字典 HTTP 触发器",
+          "custom_label": null,
+          "name": "dict_http_trigger",
+          "description": "通过 HTTP 请求触发您的工作流，并将请求主体解析为字典",
+          "category": "trigger",
+          "category_label": "Trigger",
+          "flow_type": "operator",
+          "icon": null,
+          "documentation_url": null,
+          "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "API 端点",
+              "name": "endpoint",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": false,
+              "default": null,
+              "placeholder": null,
+              "description": "API 端点",
+              "options": null,
+              "value": "/rag/knowledge/hybrid/process",
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "HTTP 方法",
+              "name": "methods",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": "POST",
+              "placeholder": null,
+              "description": "API 端点的方法",
+              "options": [
+                {
+                  "label": "HTTP PUT 方法",
+                  "name": "http_put",
+                  "value": "PUT",
+                  "children": null
+                },
+                {
+                  "label": "HTTP POST 方法",
+                  "name": "http_post",
+                  "value": "POST",
+                  "children": null
+                }
+              ],
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "bool",
+              "type_cls": "builtins.bool",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "流式响应",
+              "name": "streaming_response",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": false,
+              "placeholder": null,
+              "description": "响应是否为流式传输",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "BaseHttpBody",
+              "type_cls": "dbgpt.core.awel.trigger.http_trigger.BaseHttpBody",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "HTTP 响应主体",
+              "name": "http_response_body",
+              "is_list": false,
+              "category": "resource",
+              "resource_type": "class",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "API 端点的响应主体",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "str",
+              "type_cls": "builtins.str",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "响应媒体类型",
+              "name": "response_media_type",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": null,
+              "placeholder": null,
+              "description": "响应的媒体类型",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            },
+            {
+              "type_name": "int",
+              "type_cls": "builtins.int",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "HTTP 状态码",
+              "name": "status_code",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": 200,
+              "placeholder": null,
+              "description": "HTTP 状态码",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "operator_type": "input",
+          "inputs": [],
+          "outputs": [
+            {
+              "type_name": "dict",
+              "type_cls": "builtins.dict",
+              "label": "请求体",
+              "custom_label": null,
+              "name": "request_body",
+              "description": "API 端点的请求主体",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": false,
+              "mappers": null
+            }
+          ],
+          "version": "v1",
+          "type_name": "DictHttpTrigger",
+          "type_cls": "dbgpt.core.awel.trigger.http_trigger.DictHttpTrigger"
+        },
+        "position_absolute": {
+          "x": -2015.3280350941911,
+          "y": -603.9181210010445,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 148,
+        "id": "resource_dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings_0",
+        "position": {
+          "x": -1112.4932879687394,
+          "y": -753.8648984316667,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "type_name": "DefaultEmbeddings",
+          "type_cls": "dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings",
+          "label": "默认Embedding转换",
+          "custom_label": null,
+          "name": "default_embeddings",
+          "description": "默认嵌入式（使用当前系统的默认嵌入式模型）",
+          "category": "embeddings",
+          "category_label": "Embeddings",
+          "flow_type": "resource",
+          "icon": null,
+          "documentation_url": null,
+          "id": "resource_dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [],
+          "resource_type": "instance",
+          "parent_cls": [
+            "dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings",
+            "dbgpt.core.interface.embeddings.Embeddings"
+          ]
+        },
+        "position_absolute": {
+          "x": -1112.4932879687394,
+          "y": -753.8648984316667,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 272,
+        "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+        "position": {
+          "x": -1350.535131696419,
+          "y": 435.2340305150391,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "type_name": "DefaultLLMClient",
+          "type_cls": "dbgpt.model.cluster.client.DefaultLLMClient",
+          "label": "默认 LLM 客户端",
+          "custom_label": null,
+          "name": "default_llm_client",
+          "description": "默认 LLM 客户端（连接到您的 DB-GPT 模型服务）",
+          "category": "llm_client",
+          "category_label": "LLM Client",
+          "flow_type": "resource",
+          "icon": null,
+          "documentation_url": null,
+          "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [
+            {
+              "type_name": "bool",
+              "type_cls": "builtins.bool",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "label": "自动转换消息",
+              "name": "auto_convert_message",
+              "is_list": false,
+              "category": "common",
+              "resource_type": "instance",
+              "optional": true,
+              "default": true,
+              "placeholder": null,
+              "description": "是否将 LLM 不支持的消息自动转换为兼容格式",
+              "options": null,
+              "value": null,
+              "alias": null,
+              "ui": null
+            }
+          ],
+          "resource_type": "instance",
+          "parent_cls": [
+            "dbgpt.model.cluster.client.DefaultLLMClient",
+            "dbgpt.core.interface.llm.LLMClient"
+          ]
+        },
+        "position_absolute": {
+          "x": -1350.535131696419,
+          "y": 435.2340305150391,
+          "zoom": 0
+        }
+      },
+      {
+        "width": 320,
+        "height": 295,
+        "id": "operator_knowledge_process_operator___$$___rag___$$___v1_0",
+        "position": {
+          "x": -614.4846931519926,
+          "y": -92.5163519851338,
+          "zoom": 0
+        },
+        "type": "customNode",
+        "data": {
+          "label": "知识加工处理分支算子",
+          "custom_label": null,
+          "name": "knowledge_process_operator",
+          "description": "Branch the workflow based on the stream flag of the request.",
+          "category": "rag",
+          "category_label": "RAG",
+          "flow_type": "operator",
+          "icon": null,
+          "documentation_url": null,
+          "id": "operator_knowledge_process_operator___$$___rag___$$___v1_0",
+          "tags": {
+            "ui_version": "flow2.0"
+          },
+          "parameters": [],
+          "operator_type": "branch",
+          "inputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "Document Chunks",
+              "custom_label": null,
+              "name": "input_value",
+              "description": "The input value of the operator.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "outputs": [
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "Chunks for Vector Storage Connector.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            },
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "Chunks for Knowledge Graph Connector.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            },
+            {
+              "type_name": "List",
+              "type_cls": "typing.List",
+              "label": "块",
+              "custom_label": null,
+              "name": "chunks",
+              "description": "Chunks for Full Text Connector.",
+              "dynamic": false,
+              "dynamic_minimum": 0,
+              "is_list": true,
+              "mappers": null
+            }
+          ],
+          "version": "v1",
+          "type_name": "KnowledgeProcessBranchOperator",
+          "type_cls": "dbgpt.rag.operators.process_branch.KnowledgeProcessBranchOperator"
+        },
+        "position_absolute": {
+          "x": -614.4846931519926,
+          "y": -92.5163519851338,
+          "zoom": 0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "operator_vector_storage_operator___$$___rag___$$___v1_0",
+        "source_order": 0,
+        "target": "operator_knowledge_process_join_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "operator_vector_storage_operator___$$___rag___$$___v1_0|operator_knowledge_process_join_operator___$$___rag___$$___v1_0",
+        "source_handle": "operator_vector_storage_operator___$$___rag___$$___v1_0|outputs|0",
+        "target_handle": "operator_knowledge_process_join_operator___$$___rag___$$___v1_0|inputs|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+        "source_order": 0,
+        "target": "operator_knowledge_process_join_operator___$$___rag___$$___v1_0",
+        "target_order": 1,
+        "id": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|operator_knowledge_process_join_operator___$$___rag___$$___v1_0",
+        "source_handle": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|outputs|0",
+        "target_handle": "operator_knowledge_process_join_operator___$$___rag___$$___v1_0|inputs|1",
+        "type": "buttonedge"
+      },
+      {
+        "source": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+        "source_order": 0,
+        "target": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+        "source_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|outputs|0",
+        "target_handle": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|parameters|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+        "source_order": 0,
+        "target": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+        "target_order": 0,
+        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+        "source_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|outputs|0",
+        "target_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|parameters|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0",
+        "source_order": 0,
+        "target": "operator_vector_storage_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0|operator_vector_storage_operator___$$___rag___$$___v1_0",
+        "source_handle": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0|outputs|0",
+        "target_handle": "operator_vector_storage_operator___$$___rag___$$___v1_0|parameters|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0",
+        "source_order": 0,
+        "target": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0",
+        "target_order": 0,
+        "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0|resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0",
+        "source_handle": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0|outputs|0",
+        "target_handle": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0|parameters|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "operator_knowledge_operator___$$___rag___$$___v1_0",
+        "source_order": 0,
+        "target": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "operator_knowledge_operator___$$___rag___$$___v1_0|operator_chunk_manager_operator___$$___rag___$$___v1_0",
+        "source_handle": "operator_knowledge_operator___$$___rag___$$___v1_0|outputs|0",
+        "target_handle": "operator_chunk_manager_operator___$$___rag___$$___v1_0|inputs|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
+        "source_order": 0,
+        "target": "operator_knowledge_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0|operator_knowledge_operator___$$___rag___$$___v1_0",
+        "source_handle": "operator_dict_http_trigger___$$___trigger___$$___v1_0|outputs|0",
+        "target_handle": "operator_knowledge_operator___$$___rag___$$___v1_0|inputs|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "resource_dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings_0",
+        "source_order": 0,
+        "target": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0",
+        "target_order": 3,
+        "id": "resource_dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings_0|resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0",
+        "source_handle": "resource_dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings_0|outputs|0",
+        "target_handle": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0|parameters|3",
+        "type": "buttonedge"
+      },
+      {
+        "source": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+        "source_order": 0,
+        "target": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+        "target_order": 5,
+        "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0|resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+        "source_handle": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0|outputs|0",
+        "target_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|parameters|5",
+        "type": "buttonedge"
+      },
+      {
+        "source": "operator_knowledge_process_operator___$$___rag___$$___v1_0",
+        "source_order": 0,
+        "target": "operator_vector_storage_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "operator_knowledge_process_operator___$$___rag___$$___v1_0|operator_vector_storage_operator___$$___rag___$$___v1_0",
+        "source_handle": "operator_knowledge_process_operator___$$___rag___$$___v1_0|outputs|0",
+        "target_handle": "operator_vector_storage_operator___$$___rag___$$___v1_0|inputs|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "operator_knowledge_process_operator___$$___rag___$$___v1_0",
+        "source_order": 1,
+        "target": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "operator_knowledge_process_operator___$$___rag___$$___v1_0|operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+        "source_handle": "operator_knowledge_process_operator___$$___rag___$$___v1_0|outputs|1",
+        "target_handle": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|inputs|0",
+        "type": "buttonedge"
+      },
+      {
+        "source": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+        "source_order": 0,
+        "target": "operator_knowledge_process_operator___$$___rag___$$___v1_0",
+        "target_order": 0,
+        "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0|operator_knowledge_process_operator___$$___rag___$$___v1_0",
+        "source_handle": "operator_chunk_manager_operator___$$___rag___$$___v1_0|outputs|0",
+        "target_handle": "operator_knowledge_process_operator___$$___rag___$$___v1_0|inputs|0",
+        "type": "buttonedge"
+      }
+    ],
+    "viewport": {
+      "x": 862.7562630728534,
+      "y": 416.4952851718194,
+      "zoom": 0.3836649890553727
+    }
+  },
+  "description": "结合Embedding和知识图谱抽取的混合知识加工工作流",
+  "state": "running",
+  "error_message": "",
+  "source": "DBGPT-WEB",
+  "source_url": null,
+  "version": "0.1.1",
+  "define_type": "json",
+  "editable": true,
+  "user_name": null,
+  "sys_code": null,
+  "dag_id": "flow_dag_knowledge_factory_workflow_fa8f01ab-fc7b-4e35-9533-f8e4cf045cce",
+  "gmt_created": "2024-12-14 15:57:44",
+  "gmt_modified": "2024-12-14 15:57:44",
+  "metadata": {
+    "sse_output": false,
+    "streaming_output": false,
+    "tags": {},
+    "triggers": [
+      {
+        "trigger_type": "http",
+        "path": "/api/v1/awel/trigger/rag/knowledge/process",
+        "methods": [
+          "POST"
+        ],
+        "trigger_mode": "command"
+      }
+    ]
+  },
+  "variables": null,
+  "authors": null
+}
+}

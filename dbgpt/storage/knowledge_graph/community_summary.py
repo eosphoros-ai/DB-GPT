@@ -6,7 +6,8 @@ import uuid
 from typing import List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import ConfigDict, Field
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, LLMClient
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
@@ -14,16 +15,129 @@ from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
+    GRAPH_PARAMETERS,
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
 )
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.factory import VectorStoreFactory
 from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
 
+@register_resource(
+    _("Community Summary KG Config"),
+    "community_summary_kg_config",
+    category=ResourceCategory.KNOWLEDGE_GRAPH,
+    description=_("community Summary kg Config."),
+    parameters=[
+        *GRAPH_PARAMETERS,
+        Parameter.build_from(
+            _("Knowledge Graph Type"),
+            "graph_store_type",
+            str,
+            description=_("graph store type."),
+            optional=True,
+            default="TuGraph",
+        ),
+        Parameter.build_from(
+            _("LLM Client"),
+            "llm_client",
+            LLMClient,
+            description=_("llm client for extract graph triplets."),
+        ),
+        Parameter.build_from(
+            _("LLM Model Name"),
+            "model_name",
+            str,
+            description=_("llm model name."),
+            optional=True,
+            default=None,
+        ),
+        Parameter.build_from(
+            _("Vector Store Type"),
+            "vector_store_type",
+            str,
+            description=_("vector store type."),
+            optional=True,
+            default="Chroma",
+        ),
+        Parameter.build_from(
+            _("Topk of Knowledge Graph Extract"),
+            "extract_topk",
+            int,
+            description=_("Topk of knowledge graph extract"),
+            optional=True,
+            default=5,
+        ),
+        Parameter.build_from(
+            _("Recall Score of Knowledge Graph Extract"),
+            "extract_score_threshold",
+            float,
+            description=_("Recall score of knowledge graph extract"),
+            optional=True,
+            default=0.3,
+        ),
+        Parameter.build_from(
+            _("Recall Score of Community Search in Knowledge Graph"),
+            "community_topk",
+            int,
+            description=_("Recall score of community search in knowledge graph"),
+            optional=True,
+            default=50,
+        ),
+        Parameter.build_from(
+            _("Recall Score of Community Search in Knowledge Graph"),
+            "community_score_threshold",
+            float,
+            description=_("Recall score of community search in knowledge graph"),
+            optional=True,
+            default=0.0,
+        ),
+        Parameter.build_from(
+            _("Enable the graph search for documents and chunks"),
+            "triplet_graph_enabled",
+            bool,
+            description=_("Enable the graph search for triplets"),
+            optional=True,
+            default=True,
+        ),
+        Parameter.build_from(
+            _("Enable the graph search for documents and chunks"),
+            "document_graph_enabled",
+            bool,
+            description=_("Enable the graph search for documents and chunks"),
+            optional=True,
+            default=True,
+        ),
+        Parameter.build_from(
+            _("Top size of knowledge graph chunk search"),
+            "knowledge_graph_chunk_search_top_size",
+            int,
+            description=_("Top size of knowledge graph chunk search"),
+            optional=True,
+            default=5,
+        ),
+        Parameter.build_from(
+            _("Batch size of triplets extraction from the text"),
+            "knowledge_graph_extraction_batch_size",
+            int,
+            description=_("Batch size of triplets extraction from the text"),
+            optional=True,
+            default=20,
+        ),
+        Parameter.build_from(
+            _("Batch size of parallel community building process"),
+            "community_summary_batch_size",
+            int,
+            description=_("TBatch size of parallel community building process"),
+            optional=True,
+            default=20,
+        ),
+    ],
+)
 class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     """Community summary knowledge graph config."""
 
@@ -93,6 +207,22 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     )
 
 
+@register_resource(
+    _("Community Summary Knowledge Graph"),
+    "community_summary_knowledge_graph",
+    category=ResourceCategory.KNOWLEDGE_GRAPH,
+    description=_("Community Summary Knowledge Graph."),
+    parameters=[
+        Parameter.build_from(
+            _("Community Summary Knowledge Graph Config."),
+            "config",
+            BuiltinKnowledgeGraphConfig,
+            description=_("Community Summary Knowledge Graph Config."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     """Community summary knowledge graph class."""
 
@@ -220,6 +350,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
+        if not self.vector_name_exists():
+            self._graph_store_apdater.create_graph(self.get_config().name)
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities(

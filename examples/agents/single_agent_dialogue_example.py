@@ -17,28 +17,21 @@
 import asyncio
 import os
 
-from dbgpt.agent import (
-    AgentContext,
-    AgentMemory,
-    AgentMemoryFragment,
-    HybridMemory,
-    LLMConfig,
-    UserProxyAgent,
-)
+from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.agent.expand.code_assistant_agent import CodeAssistantAgent
 
 
 async def main():
-    from dbgpt.model.proxy import OpenAILLMClient
+    from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
 
-    # llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
-    from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
-
-    llm_client = TongyiLLMClient(
-        model_alias="qwen2-72b-instruct",
+    llm_client = SiliconFlowLLMClient(
+        model_alias=os.getenv(
+            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+        ),
     )
 
-    context: AgentContext = AgentContext(conv_id="test123")
+    context: AgentContext = AgentContext(conv_id="test123", gpts_app_name="代码助手")
+
     agent_memory = AgentMemory()
     agent_memory.gpts_memory.init(conv_id="test123")
     try:

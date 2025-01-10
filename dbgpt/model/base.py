@@ -10,10 +10,11 @@ from dbgpt.util.parameter_utils import ParameterDescription
 
 
 class ModelType:
-    """ "Type of model"""
+    """Type of model."""
 
     HF = "huggingface"
     LLAMA_CPP = "llama.cpp"
+    LLAMA_CPP_SERVER = "llama_cpp_server"
     PROXY = "proxy"
     VLLM = "vllm"
     # TODO, support more model type

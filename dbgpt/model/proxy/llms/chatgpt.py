@@ -112,6 +112,11 @@ class OpenAILLMClient(ProxyLLMClient):
 
             _initialize_openai(self._init_params)
 
+        if not self._openai_less_then_v1:
+            # Prepare openai client and cache default headers
+            # It will block the main thread in some cases
+            _ = self.client.default_headers
+
     @classmethod
     def new_client(
         cls,

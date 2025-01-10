@@ -4,7 +4,8 @@ from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.assembler import DBSchemaAssembler
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+from dbgpt.serve.rag.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 
 """DB struct rag example.
     pre-requirements:
@@ -12,7 +13,7 @@ from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorCon
     ```
     embedding_model_path = "{your_embedding_model_path}"
     ```
-    
+
     Examples:
         ..code-block:: shell
             python examples/rag/db_schema_rag_example.py
@@ -45,27 +46,26 @@ def _create_temporary_connection():
 
 def _create_vector_connector():
     """Create vector connector."""
-    config = ChromaVectorConfig(
-        persist_path=PILOT_PATH,
-        name="dbschema_rag_test",
+    return VectorStoreConnector.from_default(
+        "Chroma",
+        vector_store_config=ChromaVectorConfig(
+            name="db_schema_vector_store_name",
+            persist_path=os.path.join(PILOT_PATH, "data"),
+        ),
         embedding_fn=DefaultEmbeddingFactory(
             default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
     )
 
-    return ChromaStore(config)
-
 
 if __name__ == "__main__":
     connection = _create_temporary_connection()
-    index_store = _create_vector_connector()
+    vector_connector = _create_vector_connector()
     assembler = DBSchemaAssembler.load_from_connection(
-        connector=connection,
-        index_store=index_store,
+        connector=connection, table_vector_store_connector=vector_connector
     )
     assembler.persist()
     # get db schema retriever
     retriever = assembler.as_retriever(top_k=1)
     chunks = retriever.retrieve("show columns from user")
     print(f"db schema rag example results:{[chunk.content for chunk in chunks]}")
-    index_store.delete_vector_name("dbschema_rag_test")

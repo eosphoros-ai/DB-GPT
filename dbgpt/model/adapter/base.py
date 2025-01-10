@@ -145,12 +145,28 @@ class LLMModelAdapter(ABC):
         """Whether the loaded model supports asynchronous calls"""
         return False
 
+    def support_generate_function(self) -> bool:
+        """Whether support generate function, if it is False, we will use
+        generate_stream function.
+
+        Sometimes, we need to use generate function to get the result of the model.
+        """
+        return False
+
     def get_generate_stream_function(self, model, model_path: str):
         """Get the generate stream function of the model"""
         raise NotImplementedError
 
     def get_async_generate_stream_function(self, model, model_path: str):
         """Get the asynchronous generate stream function of the model"""
+        raise NotImplementedError
+
+    def get_generate_function(self, model, model_path: str):
+        """Get the generate function of the model"""
+        raise NotImplementedError
+
+    def get_async_generate_function(self, model, model_path: str):
+        """Get the asynchronous generate function of the model"""
         raise NotImplementedError
 
     def get_default_conv_template(

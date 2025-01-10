@@ -1,4 +1,5 @@
 """Embedding Assembler."""
+
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Optional
 
@@ -130,7 +131,11 @@ class EmbeddingAssembler(BaseAssembler):
         Returns:
             List[str]: List of chunk ids.
         """
-        return self._index_store.load_document(self._chunks)
+        max_chunks_once_load = kwargs.get("max_chunks_once_load", 10)
+        max_threads = kwargs.get("max_threads", 1)
+        return self._index_store.load_document_with_limit(
+            self._chunks, max_chunks_once_load, max_threads
+        )
 
     async def apersist(self, **kwargs) -> List[str]:
         """Persist chunks into store.
@@ -139,7 +144,11 @@ class EmbeddingAssembler(BaseAssembler):
             List[str]: List of chunk ids.
         """
         # persist chunks into vector store
-        return await self._index_store.aload_document(self._chunks)
+        max_chunks_once_load = kwargs.get("max_chunks_once_load", 10)
+        max_threads = kwargs.get("max_threads", 1)
+        return await self._index_store.aload_document_with_limit(
+            self._chunks, max_chunks_once_load, max_threads
+        )
 
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""

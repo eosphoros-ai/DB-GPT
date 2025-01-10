@@ -21,6 +21,7 @@ interface FormProps {
   bind_value?: string;
   model?: string;
   temperature?: number;
+  max_new_tokens?: number;
 }
 
 const NativeApp: React.FC<{
@@ -34,6 +35,7 @@ const NativeApp: React.FC<{
   const bindValue = Form.useWatch('bind_value', form);
   const model = Form.useWatch('model', form);
   const temperature = Form.useWatch('temperature', form);
+  const max_new_tokens = Form.useWatch('max_new_tokens', form);
 
   const { team_context, param_need } = initValue || {};
 
@@ -47,6 +49,7 @@ const NativeApp: React.FC<{
     form.setFieldValue('chat_scene', team_context?.chat_scene);
     form.setFieldValue('model', param_need?.find(param => param.type === 'model')?.value);
     form.setFieldValue('temperature', param_need?.find(param => param.type === 'temperature')?.value);
+    form.setFieldValue('max_new_tokens', param_need?.find(param => param.type === 'max_new_tokens')?.value);
     await run(param_need?.find(param => param.type === 'resource')?.value || '');
     return [types, models] ?? [];
   });
@@ -112,6 +115,7 @@ const NativeApp: React.FC<{
         [
           { type: 'model', value: rawVal.model },
           { type: 'temperature', value: rawVal.temperature },
+          { type: 'max_new_tokens', value: rawVal.max_new_tokens },
           {
             type: 'resource',
             value: appTypeOptions
@@ -122,7 +126,7 @@ const NativeApp: React.FC<{
         ],
       ],
     ]);
-  }, [form, chatScene, bindValue, model, temperature, updateData, appTypeOptions, loading]);
+  }, [form, chatScene, bindValue, model, temperature, max_new_tokens, updateData, appTypeOptions, loading]);
 
   useEffect(() => {
     const type = (data?.[0]?.[1]?.find((type: any) => type.chat_scene === chatScene) as any)?.param_need?.find(
@@ -172,6 +176,9 @@ const NativeApp: React.FC<{
         </Form.Item>
         <Form.Item label={t('temperature')} tooltip name='temperature'>
           <InputNumber className='w-1/5 h-8' max={1} min={0} step={0.1} placeholder={t('please_input_temperature')} />
+        </Form.Item>
+        <Form.Item label={t('max_new_tokens')} tooltip name='max_new_tokens'>
+          <InputNumber className='w-1/5 h-8' min={1} placeholder={t('please_input_max_new_tokens')} />
         </Form.Item>
       </Form>
     </div>

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
-from dbgpt._private.pydantic import BaseModel
+from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.interface.message import ModelMessage
 from dbgpt.model.base import WorkerApplyType
 from dbgpt.model.parameter import WorkerType
@@ -10,10 +10,14 @@ WORKER_MANAGER_SERVICE_NAME = "WorkerManager"
 
 
 class PromptRequest(BaseModel):
-    messages: List[ModelMessage]
     model: str
+    messages: List[ModelMessage] = Field(
+        default_factory=list, description="List of ModelMessage objects"
+    )
     prompt: str = None
     temperature: float = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
     max_new_tokens: int = None
     stop: Optional[Union[str, List[str]]] = None
     stop_token_ids: List[int] = []
@@ -26,6 +30,10 @@ class PromptRequest(BaseModel):
     """Message version, default to v2"""
     context: Dict[str, Any] = None
     """Context information for the model"""
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
+    chat_model: Optional[bool] = True
+    """Whether to use chat model"""
 
 
 class EmbeddingsRequest(BaseModel):

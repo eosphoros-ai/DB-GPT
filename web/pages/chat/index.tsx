@@ -31,10 +31,12 @@ interface ChatContentProps {
   currentDialogue: IChatDialogueSchema; // 当前选择的会话
   appInfo: IApp;
   temperatureValue: any;
+  maxNewTokensValue: any;
   resourceValue: any;
   modelValue: string;
   setModelValue: React.Dispatch<React.SetStateAction<string>>;
   setTemperatureValue: React.Dispatch<React.SetStateAction<any>>;
+  setMaxNewTokensValue: React.Dispatch<React.SetStateAction<any>>;
   setResourceValue: React.Dispatch<React.SetStateAction<any>>;
   setAppInfo: React.Dispatch<React.SetStateAction<IApp>>;
   setAgent: React.Dispatch<React.SetStateAction<string>>;
@@ -56,11 +58,13 @@ export const ChatContentContext = createContext<ChatContentProps>({
   currentDialogue: {} as any,
   appInfo: {} as any,
   temperatureValue: 0.5,
+  maxNewTokensValue: 1024,
   resourceValue: {},
   modelValue: '',
   setModelValue: () => {},
   setResourceValue: () => {},
   setTemperatureValue: () => {},
+  setMaxNewTokensValue: () => {},
   setAppInfo: () => {},
   setAgent: () => {},
   setCanAbort: () => {},
@@ -95,11 +99,13 @@ const Chat: React.FC = () => {
   const [agent, setAgent] = useState<string>('');
   const [appInfo, setAppInfo] = useState<IApp>({} as IApp);
   const [temperatureValue, setTemperatureValue] = useState();
+  const [maxNewTokensValue, setMaxNewTokensValue] = useState();
   const [resourceValue, setResourceValue] = useState<any>();
   const [modelValue, setModelValue] = useState<string>('');
 
   useEffect(() => {
     setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.5);
+    setMaxNewTokensValue(appInfo?.param_need?.filter(item => item.type === 'max_new_tokens')[0]?.value || 2048);
     setModelValue(appInfo?.param_need?.filter(item => item.type === 'model')[0]?.value || model);
     setResourceValue(
       knowledgeId || dbName || appInfo?.param_need?.filter(item => item.type === 'resource')[0]?.bind_value,
@@ -302,11 +308,13 @@ const Chat: React.FC = () => {
         currentDialogue,
         appInfo,
         temperatureValue,
+        maxNewTokensValue,
         resourceValue,
         modelValue,
         setModelValue,
         setResourceValue,
         setTemperatureValue,
+        setMaxNewTokensValue,
         setAppInfo,
         setAgent,
         setCanAbort,

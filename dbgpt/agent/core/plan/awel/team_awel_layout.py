@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import (
@@ -114,6 +114,8 @@ class AWELBaseManager(ManagerAgent, ABC):
         is_recovery: Optional[bool] = False,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
+        historical_dialogues: Optional[List[AgentMessage]] = None,
+        rely_messages: Optional[List[AgentMessage]] = None,
     ) -> None:
         """Recive message by base team."""
         if request_reply is False or request_reply is None:

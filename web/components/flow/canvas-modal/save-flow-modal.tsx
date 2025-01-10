@@ -27,8 +27,13 @@ export const SaveFlowModal: React.FC<Props> = ({
   const [form] = Form.useForm<IFlowUpdateParam>();
   const [messageApi, contextHolder] = message.useMessage();
 
-  const [deploy, setDeploy] = useState(false);
+  const isDeployed = flowInfo?.state === 'deployed' || flowInfo?.state === 'running';
+  const [deploy, setDeploy] = useState(isDeployed);
   const [id, setId] = useState(router.query.id || '');
+
+  useEffect(() => {
+    setDeploy(flowInfo?.state === 'deployed' || flowInfo?.state === 'running');
+  }, [flowInfo?.state]);
 
   useEffect(() => {
     setId(router.query.id || '');
@@ -157,7 +162,6 @@ export const SaveFlowModal: React.FC<Props> = ({
 
           <Form.Item label='Deploy'>
             <Checkbox
-              defaultChecked={flowInfo?.state === 'deployed' || flowInfo?.state === 'running'}
               checked={deploy}
               onChange={e => {
                 const val = e.target.checked;

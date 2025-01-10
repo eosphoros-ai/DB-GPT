@@ -28,6 +28,7 @@ class ResourceType(str, Enum):
     ExcelFile = "excel_file"
     ImageFile = "image_file"
     AWELFlow = "awel_flow"
+    App = "app"
     # Resource type for resource pack
     Pack = "pack"
 

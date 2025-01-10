@@ -35,6 +35,19 @@ class TuGraphConnector(BaseConnector):
 
         return not exists
 
+    def is_exist(self, graph_name: str) -> bool:
+        """Check a new graph in the database if it doesn't already exist."""
+        try:
+            with self._driver.session(database="default") as session:
+                graph_list = session.run("CALL dbms.graph.listGraphs()").data()
+                exists = any(item["graph_name"] == graph_name for item in graph_list)
+        except Exception as e:
+            raise Exception(
+                f"Failed to check graph exist'{graph_name}': {str(e)}"
+            ) from e
+
+        return exists
+
     def delete_graph(self, graph_name: str) -> None:
         """Delete a graph in the database if it exists."""
         with self._driver.session(database="default") as session:

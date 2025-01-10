@@ -65,6 +65,7 @@ class ConversationVo(BaseModel):
     app_code: Optional[str] = ""
 
     temperature: Optional[float] = 0.5
+    max_new_tokens: Optional[int] = 2048
     """
     chat scene select param 
     """

@@ -187,6 +187,24 @@ const sidebars = {
                 }
               ]
             },
+            {
+              type: "category",
+              label: "5. AWEL Template",
+              collapsed: false,
+              collapsible: false,
+              items: [
+                {
+                  type: "doc",
+                  id: "awel/awel_tutorial/templates/Embedding"
+                },{
+                  type: "doc",
+                  id: "awel/awel_tutorial/templates/Knowledge_Graph"
+                },{
+                  type: "doc",
+                  id: "awel/awel_tutorial/templates/Hybrid_Workflow"
+                }
+              ]
+            },
           ],
           link: {
             type: 'generated-index',
@@ -252,6 +270,10 @@ const sidebars = {
             {
               type: 'doc',
               id: 'installation/advanced_usage/vLLM_inference',
+            },
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/Llamacpp_server',
             },
             {
               type: 'doc',
