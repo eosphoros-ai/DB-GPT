@@ -93,6 +93,7 @@ def _get_tools_by_resource(resource: Optional[Resource]) -> Optional[List[BaseTo
         for sub_res in resource.sub_resources:
             res_list: List[BaseTool] = _get_tools_by_resource(sub_res)
             if res_list is not None and len(res_list) > 0:
-                tools.extend(res_list)
+                for res in res_list:
+                    tools.append(res)
 
     return tools
