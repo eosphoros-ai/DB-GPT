@@ -47,7 +47,7 @@ class ConversableAgent(Role, Agent):
     stream_out: bool = True
     # 确认当前Agent是否需要进行参考资源展示
     show_reference: bool = False
-    name_prefix: str = None
+    name_prefix: Optional[str] = None
 
     executor: Executor = Field(
         default_factory=lambda: ThreadPoolExecutor(max_workers=1),
