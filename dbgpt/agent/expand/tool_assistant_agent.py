@@ -91,6 +91,8 @@ def _get_tools_by_resource(resource: Optional[Resource]) -> Optional[List[BaseTo
         tools.append(resource)
     elif resource.type() == ResourceType.Pack:
         for sub_res in resource.sub_resources:
-            tools.extend(_get_tools_by_resource(sub_res))
+            res_list = _get_tools_by_resource(sub_res)
+            if res_list is not None and len(res_list) > 0:
+                tools.extend(_get_tools_by_resource(sub_res))
 
     return tools
