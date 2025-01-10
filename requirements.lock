@@ -305,7 +305,7 @@ protobuf==5.29.2
     # via pymilvus
 psutil==5.9.4
     # via dbgpt
-psycopg2==2.9.10
+psycopg2-binary==2.9.10
     # via dbgpt-integration
 pure-sasl==0.6.2
     # via thrift-sasl

@@ -24,7 +24,10 @@ from dbgpt.storage.graph_store.graph import (
 )
 from dbgpt_integration.storage.graph_store.tugraph_store import TuGraphStore
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
-from dbgpt_integration.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
+from dbgpt_integration.storage.knowledge_graph.community.base import (
+    Community,
+    GraphStoreAdapter,
+)
 
 logger = logging.getLogger(__name__)
 

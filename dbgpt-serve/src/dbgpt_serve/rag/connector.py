@@ -102,7 +102,9 @@ class VectorStoreConnector:
         vector_store_type = vector_store_type or os.getenv(
             "VECTOR_STORE_TYPE", "Chroma"
         )
-        from dbgpt_integration.storage.vector_store.chroma_store import ChromaVectorConfig
+        from dbgpt_integration.storage.vector_store.chroma_store import (
+            ChromaVectorConfig,
+        )
 
         vector_store_config = vector_store_config or ChromaVectorConfig()
         vector_store_config.embedding_fn = embedding_fn

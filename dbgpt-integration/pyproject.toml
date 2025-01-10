@@ -10,9 +10,8 @@ dependencies = [
     "pytest>=8.3.4",
     "pymysql",
     "pyspark",
-    # install psycopg2-binary when you are in a virtual environment
-    # pip install psycopg2-binary
-    "psycopg2",
+    # "psycopg2", # In production, you can install psycopg2 instead of psycopg2-binary
+    "psycopg2-binary",
     # mysqlclient 2.2.x have pkg-config issue on 3.10+
     "mysqlclient==2.1.0",
     # pydoris is too old, we should find a new package to replace it.

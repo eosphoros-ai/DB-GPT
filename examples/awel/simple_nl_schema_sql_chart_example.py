@@ -1,8 +1,6 @@
 import os
 from typing import Any, Dict, Optional
 
-from pandas import DataFrame
-
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
@@ -14,6 +12,7 @@ from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators.schema_linking import SchemaLinkingOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 from dbgpt.util.chat_util import run_async_tasks
+from pandas import DataFrame
 
 """AWEL: Simple nl-schemalinking-sql-chart operator example
 

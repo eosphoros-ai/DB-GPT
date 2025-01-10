@@ -321,7 +321,7 @@ def _parse_args(
         else:
             param_default = _MISSING
             param_required = True
-        param_type = type_to_string(real_type, "unknown")
+        param_type, _ = type_to_string(real_type, "unknown")
         param_description = parse_param_description(param_name, real_type)
         parsed_args[param_name] = ToolParameter(
             name=param_name,

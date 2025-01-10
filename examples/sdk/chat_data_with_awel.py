@@ -3,7 +3,6 @@ import json
 import shutil
 
 import pandas as pd
-
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import (
     ChatPromptTemplate,

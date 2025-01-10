@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.core import Chunk, HumanPromptTemplate, ModelMessage, ModelRequest
 from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient

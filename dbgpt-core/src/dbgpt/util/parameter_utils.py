@@ -13,6 +13,7 @@ MISSING_DEFAULT_VALUE = "__MISSING_DEFAULT_VALUE__"
 @dataclass
 class ParameterDescription:
     required: bool = False
+    is_array: bool = False
     param_class: Optional[str] = None
     param_name: Optional[str] = None
     param_type: Optional[str] = None
@@ -507,7 +508,9 @@ class EnvArgumentParser:
         parser.add_argument(*names, **argument_kwargs)
 
     @staticmethod
-    def _get_argparse_type(field_type: Type) -> Type:
+    def _get_argparse_type(
+        field_type: Type, only_support_base_type: bool = True
+    ) -> Type:
         # Return the appropriate type for argparse to use based on the field type
         if field_type is int or field_type == Optional[int]:
             return int
@@ -519,12 +522,20 @@ class EnvArgumentParser:
             return str
         elif field_type is dict or field_type == Optional[dict]:
             return dict
-        else:
+        elif only_support_base_type:
             raise ValueError(f"Unsupported parameter type {field_type}")
+        else:
+            return field_type
 
     @staticmethod
-    def _get_argparse_type_str(field_type: Type) -> str:
-        argparse_type = EnvArgumentParser._get_argparse_type(field_type)
+    def _get_argparse_type_str(field_type: Type, only_support_base_type: bool) -> str:
+        from .function_utils import type_to_string
+
+        argparse_type = EnvArgumentParser._get_argparse_type(
+            field_type, only_support_base_type
+        )
+        str_type, sub_types = type_to_string(field_type)
+
         if argparse_type is int:
             return "int"
         elif argparse_type is float:
@@ -533,8 +544,13 @@ class EnvArgumentParser:
             return "bool"
         elif argparse_type is dict:
             return "dict"
-        else:
+        elif argparse_type is str:
             return "str"
+        elif only_support_base_type:
+            raise ValueError(f"Unsupported parameter type {field_type}")
+        else:
+            str_type, sub_types = type_to_string(field_type)
+            return field_type.__name__
 
     @staticmethod
     def _is_require_type(field_type: Type) -> bool:
@@ -590,6 +606,8 @@ def _type_str_to_python_type(type_str: str) -> Type:
 def _get_parameter_descriptions(
     dataclass_type: Type, **kwargs
 ) -> List[ParameterDescription]:
+    from .function_utils import type_to_string
+
     descriptions = []
     for field in fields(dataclass_type):
         ext_metadata = {
@@ -598,13 +616,29 @@ def _get_parameter_descriptions(
         default_value = field.default if field.default != MISSING else None
         if field.name in kwargs:
             default_value = kwargs[field.name]
+
+        is_array = False
+        type_name, sub_types = type_to_string(field.type)
+        real_type_name = type_name
+        if type_name == "array" and sub_types:
+            is_array = True
+            real_type_name = sub_types[0]
+
+        if real_type_name == "unknown":
+            real_type_name = field.type.__name__
+
+        required = True
+        if field.default != MISSING or field.default_factory:
+            required = False
+
         descriptions.append(
             ParameterDescription(
+                is_array=is_array,
                 param_class=f"{dataclass_type.__module__}.{dataclass_type.__name__}",
                 param_name=field.name,
-                param_type=EnvArgumentParser._get_argparse_type_str(field.type),
+                param_type=real_type_name,
                 description=field.metadata.get("help", None),
-                required=field.default is MISSING,
+                required=required,
                 default_value=default_value,
                 valid_values=field.metadata.get("valid_values", None),
                 ext_metadata=ext_metadata,

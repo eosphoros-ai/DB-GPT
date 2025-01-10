@@ -1,8 +1,14 @@
 import argparse
 
 import pytest
+from dataclasses import dataclass, fields, field
+from typing import List, Dict, Optional
 
-from dbgpt.util.parameter_utils import _extract_parameter_details
+from ..parameter_utils import (
+    EnvArgumentParser,
+    _get_parameter_descriptions,
+    _extract_parameter_details,
+)
 
 
 def create_parser():
@@ -13,8 +19,8 @@ def create_parser():
 @pytest.mark.parametrize(
     "argument, expected_param_name, default_value, param_type, expected_param_type, description",
     [
-        ("--option", "option", "value", str, "str", "An option argument"),
-        ("-option", "option", "value", str, "str", "An option argument"),
+        ("--option", "option", "value", str, "string", "An option argument"),
+        ("-option", "option", "value", str, "string", "An option argument"),
         ("--num-gpu", "num_gpu", 1, int, "int", "Number of GPUS"),
         ("--num_gpu", "num_gpu", 1, int, "int", "Number of GPUS"),
     ],
@@ -81,3 +87,235 @@ def test_extract_parameter_details_required_argument():
 
     assert desc.param_name == "required"
     assert desc.required == True
+
+
+def test_extract_field_type():
+    from ..parameter_utils import EnvArgumentParser, _get_parameter_descriptions
+
+    @dataclass
+    class TestBaseType:
+        p1: str = field(metadata={"help": "p1 help"})
+        p2: int = field(metadata={"help": "p2 help"})
+        p3: float = field(metadata={"help": "p3 help"})
+        p4: bool = field(metadata={"help": "p4 help"})
+
+    field_dict = {}
+    for f in fields(TestBaseType):
+        field_dict[f.name] = f
+
+    desc_list = _get_parameter_descriptions(TestBaseType)
+    assert desc_list[0].param_name == "p1"
+    assert desc_list[0].param_type == "string"
+    assert desc_list[0].required == True
+    assert desc_list[0].description == "p1 help"
+    assert desc_list[1].param_name == "p2"
+    assert desc_list[1].param_type == "int"
+    assert desc_list[1].required == True
+    assert desc_list[1].description == "p2 help"
+    assert desc_list[2].param_name == "p3"
+    assert desc_list[2].param_type == "float"
+    assert desc_list[2].required == True
+    assert desc_list[2].description == "p3 help"
+    assert desc_list[3].param_name == "p4"
+    assert desc_list[3].param_type == "bool"
+    assert desc_list[3].required == True
+    assert desc_list[3].description == "p4 help"
+
+
+def test_extract_complex_field_type():
+    from typing import List, Optional, Union
+    from enum import Enum
+    from dataclasses import dataclass, field
+
+    class Color(Enum):
+        RED = "red"
+        BLUE = "blue"
+
+    @dataclass
+    class NestedConfig:
+        nested_str: str = field(metadata={"help": "nested string help"})
+        nested_int: int = 42
+
+    @dataclass
+    class ComplexConfig:
+        # Test field with default value
+        str_with_default: str = field(
+            default="default", metadata={"help": "string with default"}
+        )
+
+        # Test list type
+        str_list: List[str] = field(
+            default_factory=list, metadata={"help": "string list help"}
+        )
+
+        # Test optional type with typing.Optional
+        optional_int: Optional[int] = field(
+            default=None, metadata={"help": "optional integer"}
+        )
+
+        # Test enum type
+        color: Color = field(default=Color.RED, metadata={"help": "color choice"})
+
+        # Test Union type with typing.Union
+        union_field: Union[str, int] = field(
+            default="union", metadata={"help": "union of string and int"}
+        )
+
+        # Test nested dataclass
+        nested: NestedConfig = field(
+            default_factory=lambda: NestedConfig(nested_str="nested"),
+            metadata={"help": "nested config"},
+        )
+
+    desc_list = _get_parameter_descriptions(ComplexConfig)
+
+    # Test field with default value
+    assert desc_list[0].param_name == "str_with_default"
+    assert desc_list[0].param_type == "string"
+    assert desc_list[0].required == False
+    assert desc_list[0].description == "string with default"
+
+    # Test list type
+    assert desc_list[1].param_name == "str_list"
+    assert desc_list[1].param_type == "string"
+    assert desc_list[1].is_array == True
+    assert desc_list[1].required == False
+
+    # Test optional type
+    assert desc_list[2].param_name == "optional_int"
+    assert desc_list[2].param_type == "integer"
+    assert desc_list[2].required == False
+
+    # Test enum type
+    assert desc_list[3].param_name == "color"
+    assert desc_list[3].param_type == "Color"
+    assert desc_list[3].required == False
+
+    # Test union type
+    assert desc_list[4].param_name == "union_field"
+    assert desc_list[4].param_type == "Union[str, int]"
+    assert desc_list[4].required == False
+
+    # Test nested dataclass field
+    assert desc_list[5].param_name == "nested"
+    assert desc_list[5].param_type == "NestedConfig"
+    assert desc_list[5].required == False
+
+
+def test_python_type_hint_variations():
+    """Test different Python syntax versions for type hints"""
+    from typing import Optional, Union
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class TypeHintConfig:
+        # Test typing.Optional syntax
+        typing_optional: Optional[int] = field(
+            default=None, metadata={"help": "using typing.Optional"}
+        )
+
+        # Test Python 3.10+ union syntax with |
+        pipe_optional: int | None = field(
+            default=None, metadata={"help": "using | None syntax"}
+        )
+
+        # Test typing.Union syntax
+        typing_union: Union[str, int] = field(
+            default="test", metadata={"help": "using typing.Union"}
+        )
+
+        # Test Python 3.10+ union syntax for multiple types
+        pipe_union: str | int = field(
+            default="test", metadata={"help": "using | for union"}
+        )
+
+        # Test nested Optional with Union
+        nested_optional: Optional[Union[str, int]] = field(
+            default=None, metadata={"help": "nested optional with union"}
+        )
+
+        # Test nested | syntax
+        nested_pipe: (str | int) | None = field(
+            default=None, metadata={"help": "nested | syntax"}
+        )
+
+    desc_list = _get_parameter_descriptions(TypeHintConfig)
+
+    # Test typing.Optional handling
+    assert desc_list[0].param_name == "typing_optional"
+    assert desc_list[0].param_type == "Optional[int]"
+    assert desc_list[0].required == False
+
+    # Test | None syntax handling
+    assert desc_list[1].param_name == "pipe_optional"
+    assert (
+        desc_list[1].param_type == "Optional[int]"
+    )  # Should normalize to Optional[int]
+    assert desc_list[1].required == False
+
+    # Test typing.Union handling
+    assert desc_list[2].param_name == "typing_union"
+    assert desc_list[2].param_type == "Union[str, int]"
+    assert desc_list[2].required == False
+
+    # Test | union syntax handling
+    assert desc_list[3].param_name == "pipe_union"
+    assert (
+        desc_list[3].param_type == "Union[str, int]"
+    )  # Should normalize to Union[str, int]
+    assert desc_list[3].required == False
+
+    # Test nested Optional with Union
+    assert desc_list[4].param_name == "nested_optional"
+    assert desc_list[4].param_type == "Optional[Union[str, int]]"
+    assert desc_list[4].required == False
+
+    # Test nested | syntax
+    assert desc_list[5].param_name == "nested_pipe"
+    assert (
+        desc_list[5].param_type == "Optional[Union[str, int]]"
+    )  # Should normalize to Optional[Union]
+    assert desc_list[5].required == False
+
+
+def test_nested_dataclass_fields():
+    """Test nested dataclass fields with different type hints"""
+
+    @dataclass
+    class Inner:
+        required_field: str = field(metadata={"help": "required inner field"})
+        optional_field_typing: Optional[int] = field(
+            default=None, metadata={"help": "optional inner field with typing.Optional"}
+        )
+        optional_field_pipe: int | None = field(
+            default=None, metadata={"help": "optional inner field with | syntax"}
+        )
+
+    @dataclass
+    class Outer:
+        outer_str: str = field(metadata={"help": "outer string"})
+        inner_typing: Optional[Inner] = field(
+            default=None, metadata={"help": "inner config with typing.Optional"}
+        )
+        inner_pipe: Inner | None = field(
+            default=None, metadata={"help": "inner config with | syntax"}
+        )
+
+    desc_list = _get_parameter_descriptions(Outer)
+
+    # Test outer required field
+    assert desc_list[0].param_name == "outer_str"
+    assert desc_list[0].param_type == "string"
+    assert desc_list[0].required == True
+
+    # Test nested Optional[Inner] field
+    assert desc_list[1].param_name == "inner_typing"
+    assert desc_list[1].param_type == "Optional[Inner]"
+    assert desc_list[1].required == False
+
+    # Test nested Inner | None field
+    assert desc_list[2].param_name == "inner_pipe"
+    assert (
+        desc_list[2].param_type == "Optional[Inner]"
+    )  # Should normalize to Optional[Inner]
+    assert desc_list[2].required == False

@@ -4,7 +4,10 @@ from typing import List, Optional
 
 from dbgpt.core import Chunk
 from dbgpt.datasource.rdbms.base import RDBMSConnector
-from dbgpt_integration.storage.knowledge_graph.community.base import Community, CommunityMetastore
+from dbgpt_integration.storage.knowledge_graph.community.base import (
+    Community,
+    CommunityMetastore,
+)
 from dbgpt.storage.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)

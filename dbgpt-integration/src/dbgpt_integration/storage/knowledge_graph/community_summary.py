@@ -11,7 +11,9 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
-from dbgpt_integration.storage.knowledge_graph.community.community_store import CommunityStore
+from dbgpt_integration.storage.knowledge_graph.community.community_store import (
+    CommunityStore,
+)
 from dbgpt_integration.storage.knowledge_graph.knowledge_graph import (
     GRAPH_PARAMETERS,
     BuiltinKnowledgeGraph,

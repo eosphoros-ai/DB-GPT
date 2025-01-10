@@ -7,7 +7,9 @@ from typing import List, Optional
 from dbgpt.core import Chunk
 from dbgpt.rag.index.base import IndexStoreConfig, logger
 from dbgpt.storage.full_text.base import FullTextStoreBase
-from dbgpt_integration.storage.vector_store.elastic_store import ElasticsearchVectorConfig
+from dbgpt_integration.storage.vector_store.elastic_store import (
+    ElasticsearchVectorConfig,
+)
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util import string_utils
 from dbgpt.util.executor_utils import blocking_func_to_async

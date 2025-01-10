@@ -6,6 +6,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
     Union,
     _UnionGenericAlias,
     get_args,
@@ -15,6 +16,32 @@ from typing import (
 
 from typeguard import check_type
 from typing_extensions import Annotated, Doc, _AnnotatedAlias
+
+TYPE_TO_STRING = {
+    int: "integer",
+    str: "string",
+    float: "number",
+    bool: "boolean",
+    Any: "any",
+    List: "array",
+    list: "array",
+    dict: "object",
+    Dict: "object",
+}
+
+TYPE_STRING_TO_TYPE = {
+    "integer": int,
+    "int": int,
+    "string": str,
+    "str": str,
+    "float": float,
+    "boolean": bool,
+    "bool": bool,
+    "any": Any,
+    "array": list,
+    "list": list,
+    "object": dict,
+}
 
 
 def _is_typing(obj):
@@ -132,51 +159,57 @@ def rearrange_args_by_type(func):
     return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
 
-def type_to_string(obj: Any, default_type: str = "unknown") -> str:
+def type_to_string(obj: Any, default_type: str = "unknown") -> Tuple[str, List[str]]:
     """Convert a type to a string representation."""
-    type_map = {
-        int: "integer",
-        str: "string",
-        float: "float",
-        bool: "boolean",
-        Any: "any",
-        List: "array",
-        dict: "object",
-    }
     # Check NoneType
-    if obj is type(None):
-        return "null"
+    if obj is type(None) or obj is None:
+        return "null", []
 
     # Get the origin of the type
     origin = getattr(obj, "__origin__", None)
     if origin:
+
         if _is_typing(origin) and not isinstance(obj, _UnionGenericAlias):
             obj = origin
             origin = origin.__origin__
+        elif _is_typing(origin) and isinstance(obj, _UnionGenericAlias):
+            # Remove NoneType from Union
+            return type_to_string(obj.__args__[0])
         # Handle special cases like List[int]
         if origin is Union and hasattr(obj, "__args__"):
             subtypes = ", ".join(
-                type_to_string(t) for t in obj.__args__ if t is not type(None)
+                type_to_string(t)[0] for t in obj.__args__ if t is not type(None)
             )
             # return f"Optional[{subtypes}]"
-            return subtypes
+            return subtypes, []
         elif origin is list or origin is List:
-            subtypes = ", ".join(type_to_string(t) for t in obj.__args__)
+            subtypes = list(type_to_string(t)[0] for t in obj.__args__)
             # return f"List[{subtypes}]"
-            return "array"
+            return "array", subtypes
         elif origin in [dict, Dict]:
-            key_type, value_type = (type_to_string(t) for t in obj.__args__)
+            # key_type, value_type = (type_to_string(t) for t in obj.__args__)
+            # subtypes = ", ".join(type_to_string(t) for t in obj.__args__)
             # return f"Dict[{key_type}, {value_type}]"
-            return "object"
-        return type_map.get(origin, default_type)
+            return "object", []
+        # Handle tuple
+        elif origin is tuple:
+            subtypes = list(type_to_string(t)[0] for t in obj.__args__)
+            return "array", subtypes
+        elif origin is Annotated:
+            subtypes = list(type_to_string(t)[0] for t in obj.__args__)
+            return subtypes[0], []
+        elif origin is _UnionGenericAlias:
+            subtypes = list(type_to_string(t)[0] for t in obj.__args__)
+            return subtypes, []
+        return TYPE_TO_STRING.get(origin, default_type), []
     else:
         if hasattr(obj, "__args__"):
             subtypes = ", ".join(
-                type_to_string(t) for t in obj.__args__ if t is not type(None)
+                type_to_string(t)[0] for t in obj.__args__ if t is not type(None)
             )
-            return subtypes
+            return subtypes, []
 
-    return type_map.get(obj, default_type)
+    return TYPE_TO_STRING.get(obj, default_type), []
 
 
 def parse_param_description(name: str, obj: Any) -> str:

@@ -15,7 +15,9 @@ from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
 from dbgpt_integration.storage.knowledge_graph.community.base import GraphStoreAdapter
-from dbgpt_integration.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
+from dbgpt_integration.storage.knowledge_graph.community.factory import (
+    GraphStoreAdapterFactory,
+)
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 
