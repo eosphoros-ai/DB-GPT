@@ -17,15 +17,23 @@ pip install "dbgpt[graph_rag]>=0.6.1"
 
 To store the knowledge in graph, we need an graph database, [TuGraph](https://github.com/TuGraph-family/tugraph-db) is the first graph database supported by DB-GPT.
 
-Visit github repository of TuGraph to view [Quick Start](https://tugraph-db.readthedocs.io/zh-cn/latest/3.quick-start/1.preparation.html#id5) document, follow the instructions to pull the TuGraph database docker image (latest / version >= 4.3.2) and launch it.
+Visit github repository of TuGraph to view [Quick Start](https://tugraph-db.readthedocs.io/zh-cn/latest/3.quick-start/1.preparation.html#id5) document, follow the instructions to pull the TuGraph database docker image (latest / version >= 4.5.0) and launch it.
 
 ```
-docker pull tugraph/tugraph-runtime-centos7:latest
+docker pull tugraph/tugraph-runtime-centos7:4.5.1
 docker run -d -p 7070:7070  -p 7687:7687 -p 9090:9090 --name tugraph_demo tugraph/tugraph-runtime-centos7:latest lgraph_server -d run --enable_plugin true
 ```
 
 The default port for the bolt protocol is `7687`.
 
+> **Download Tips:**
+> 
+> There is also a corresponding version of the TuGraph Docker image package on OSS. You can also directly download and import it.
+> 
+> ```
+> wget 'https://tugraph-web.oss-cn-beijing.aliyuncs.com/tugraph/tugraph-4.5.1/tugraph-runtime-centos7-4.5.1.tar' -O tugraph-runtime-centos7-4.5.1.tar
+> docker load -i tugraph-runtime-centos7-4.5.1.tar
+> ```
 
 
 ### Prepare LLM

@@ -48,6 +48,7 @@ def find_json_objects(text):
     escape_character = False
     stack = []
     start_index = -1
+    modified_text = list(text)  # Convert text to a list for easy modification
 
     for i, char in enumerate(text):
         # Handle escape characters
@@ -59,12 +60,12 @@ def find_json_objects(text):
         if char == '"' and not escape_character:
             inside_string = not inside_string
 
-        if not inside_string and char == "\n":
-            continue
-        if inside_string and char == "\n":
-            char = "\\n"
-        if inside_string and char == "\t":
-            char = "\\t"
+        # Replace newline and tab characters inside strings
+        if inside_string:
+            if char == "\n":
+                modified_text[i] = "\\n"
+            elif char == "\t":
+                modified_text[i] = "\\t"
 
         # Handle opening brackets
         if char in "{[" and not inside_string:
@@ -78,7 +79,8 @@ def find_json_objects(text):
                 if not stack:
                     end_index = i + 1
                     try:
-                        json_obj = json.loads(text[start_index:end_index])
+                        json_str = "".join(modified_text[start_index:end_index])
+                        json_obj = json.loads(json_str)
                         json_objects.append(json_obj)
                     except json.JSONDecodeError:
                         pass

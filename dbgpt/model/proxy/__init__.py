@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.claude import ClaudeLLMClient
     from dbgpt.model.proxy.llms.deepseek import DeepseekLLMClient
     from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
+    from dbgpt.model.proxy.llms.gitee import GiteeLLMClient
     from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
     from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
     from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
@@ -31,6 +32,7 @@ def __lazy_import(name):
         "MoonshotLLMClient": "dbgpt.model.proxy.llms.moonshot",
         "OllamaLLMClient": "dbgpt.model.proxy.llms.ollama",
         "DeepseekLLMClient": "dbgpt.model.proxy.llms.deepseek",
+        "GiteeLLMClient": "dbgpt.model.proxy.llms.gitee",
     }
 
     if name in module_path:
@@ -57,4 +59,5 @@ __all__ = [
     "MoonshotLLMClient",
     "OllamaLLMClient",
     "DeepseekLLMClient",
+    "GiteeLLMClient",
 ]

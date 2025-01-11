@@ -213,6 +213,9 @@ _RESOURCE_CATEGORY_DETAIL = {
     "embeddings": _CategoryDetail("Embeddings", "The embeddings resource"),
     "rag": _CategoryDetail("RAG", "The  resource"),
     "vector_store": _CategoryDetail("Vector Store", "The vector store resource"),
+    "knowledge_graph": _CategoryDetail(
+        "Knowledge Graph", "The knowledge graph resource"
+    ),
     "database": _CategoryDetail("Database", "Interact with the database"),
     "example": _CategoryDetail("Example", "The example resource"),
 }
@@ -231,6 +234,8 @@ class ResourceCategory(str, Enum):
     EMBEDDINGS = "embeddings"
     RAG = "rag"
     VECTOR_STORE = "vector_store"
+    KNOWLEDGE_GRAPH = "knowledge_graph"
+    FULL_TEXT = "full_text"
     DATABASE = "database"
     EXAMPLE = "example"
 

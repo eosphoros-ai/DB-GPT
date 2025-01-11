@@ -6,9 +6,14 @@ on:
       - main
     paths:
       - 'docs/**'
+      - '.github/workflows/doc-image-publish.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/doc-image-publish.yml'
   release:
     types: [published]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,20 +21,35 @@ permissions:
 jobs:
   build-image:
     runs-on: ubuntu-latest
-    # run unless event type is pull_request
-    if: github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@v3
+      
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
+        
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+        
+      # Only login to Docker Hub when not in PR
       - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      # Only run when there is a PR
+      - name: Build PR
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docs/Dockerfile-deploy
+          platforms: linux/amd64
+          push: false
+      # Only run when it is not a PR, build and push the image
       - name: Build and push
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v4
         with:
           context: .

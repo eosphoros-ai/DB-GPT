@@ -912,3 +912,42 @@ class PageTextSplitter(TextSplitter):
             new_doc = Chunk(content=text, metadata=copy.deepcopy(_metadatas[i]))
             chunks.append(new_doc)
         return chunks
+
+
+class RDBTextSplitter(TextSplitter):
+    """Split relational database tables and fields."""
+
+    def __init__(self, **kwargs):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+
+    def split_text(self, text: str, **kwargs):
+        """Split text into a couple of parts."""
+        pass
+
+    def split_documents(self, documents: Iterable[Document], **kwargs) -> List[Chunk]:
+        """Split document into chunks."""
+        chunks = []
+        for doc in documents:
+            metadata = doc.metadata
+            content = doc.content
+            if metadata.get("separated"):
+                # separate table and field
+                parts = content.split(self._separator)
+                table_part, field_part = parts[0], parts[1]
+                table_metadata, field_metadata = copy.deepcopy(metadata), copy.deepcopy(
+                    metadata
+                )
+                table_metadata["part"] = "table"  # identify of table_chunk
+                field_metadata["part"] = "field"  # identify of field_chunk
+                table_chunk = Chunk(content=table_part, metadata=table_metadata)
+                chunks.append(table_chunk)
+                field_parts = field_part.split("\n")
+                for i, sub_part in enumerate(field_parts):
+                    sub_metadata = copy.deepcopy(field_metadata)
+                    sub_metadata["part_index"] = i
+                    field_chunk = Chunk(content=sub_part, metadata=sub_metadata)
+                    chunks.append(field_chunk)
+            else:
+                chunks.append(Chunk(content=content, metadata=metadata))
+        return chunks

@@ -127,8 +127,11 @@ class GptsMemory:
         await self.push_message(conv_id)
 
     async def get_messages(self, conv_id: str) -> List[GptsMessage]:
-        """Get conversation message."""
-        return self.messages_cache[conv_id]
+        """Get message by conv_id."""
+        messages = self.messages_cache[conv_id]
+        if not messages:
+            messages = self.message_memory.get_by_conv_id(conv_id)
+        return messages
 
     async def get_agent_messages(
         self, conv_id: str, agent_role: str

@@ -48,6 +48,7 @@ class OpenAIParameters:
     api_azure_deployment: Optional[str] = None
     full_url: Optional[str] = None
     proxies: Optional["ProxiesTypes"] = None
+    proxy: Optional["ProxyTypes"] = None
 
 
 def _initialize_openai_v1(init_params: OpenAIParameters):
@@ -142,19 +143,28 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
     if api_type == "azure":
         from openai import AsyncAzureOpenAI
 
-        return api_type, AsyncAzureOpenAI(
+        async_client = AsyncAzureOpenAI(
             api_key=openai_params["api_key"],
             api_version=api_version,
             azure_deployment=api_azure_deployment,
             azure_endpoint=openai_params["base_url"],
-            http_client=httpx.AsyncClient(proxies=init_params.proxies),
         )
     else:
         from openai import AsyncOpenAI
 
-        return api_type, AsyncOpenAI(
-            **openai_params, http_client=httpx.AsyncClient(proxies=init_params.proxies)
-        )
+        # Remove proxies for httpx AsyncClient when httpx version >= 0.28.0
+        httpx_version = metadata.version("httpx")
+        if httpx_version >= "0.28.0":
+            if init_params.proxy:
+                http_client = httpx.AsyncClient(proxy=init_params.proxy)
+            else:
+                http_client = httpx.AsyncClient()
+        elif init_params.proxies:
+            http_client = httpx.AsyncClient(proxies=init_params.proxies)
+        else:
+            http_client = httpx.AsyncClient()
+        async_client = AsyncOpenAI(**openai_params, http_client=http_client)
+    return api_type, async_client
 
 
 class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):

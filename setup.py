@@ -20,7 +20,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.6.2")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.6.3")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -430,7 +430,7 @@ def core_requires():
     # For DB-GPT python client SDK
     setup_spec.extras["client"] = setup_spec.extras["core"] + [
         "httpx",
-        "fastapi>=0.100.0",
+        "fastapi>=0.100.0,<0.113.0",
         # For retry, chromadb need tenacity<=8.3.0
         "tenacity<=8.3.0",
     ]
@@ -523,9 +523,10 @@ def code_execution_requires():
         "msgpack",
         # for AWEL operator serialization
         "cloudpickle",
-        "lyric-py>=0.1.4",
-        "lyric-py-worker>=0.1.4",
-        "lyric-js-worker>=0.1.4",
+        "lyric-py>=0.1.6",
+        "lyric-py-worker>=0.1.6",
+        "lyric-js-worker>=0.1.6",
+        "lyric-component-ts-transpiling>=0.1.6",
     ]
 
 
@@ -547,7 +548,7 @@ def knowledge_requires():
 
     setup_spec.extras["graph_rag"] = setup_spec.extras["rag"] + [
         "neo4j",
-        "dbgpt-tugraph-plugins>=0.1.0rc1",
+        "dbgpt-tugraph-plugins>=0.1.1",
     ]
 
 
@@ -555,7 +556,10 @@ def llama_cpp_requires():
     """
     pip install "dbgpt[llama_cpp]"
     """
-    setup_spec.extras["llama_cpp"] = ["llama-cpp-python"]
+    setup_spec.extras["llama_cpp_server"] = ["llama-cpp-server-py"]
+    setup_spec.extras["llama_cpp"] = setup_spec.extras["llama_cpp_server"] + [
+        "llama-cpp-python"
+    ]
     llama_cpp_python_cuda_requires()
 
 

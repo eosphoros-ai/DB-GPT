@@ -55,9 +55,6 @@ class ChatWithDbQA(BaseChat):
         if self.db_name:
             client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
             try:
-                # table_infos = client.get_db_summary(
-                #     dbname=self.db_name, query=self.current_user_input, topk=self.top_k
-                # )
                 table_infos = await blocking_func_to_async(
                     self._executor,
                     client.get_db_summary,

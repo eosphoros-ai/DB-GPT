@@ -12,10 +12,10 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 
-_SILICON_FLOW_DEFAULT_MODEL = "Qwen/Qwen2.5-Coder-32B-Instruct"
+_SILICONFLOW_DEFAULT_MODEL = "Qwen/Qwen2.5-Coder-32B-Instruct"
 
 
-async def silicon_flow_generate_stream(
+async def siliconflow_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
     client: SiliconFlowLLMClient = model.proxy_llm_client
@@ -39,7 +39,7 @@ class SiliconFlowLLMClient(OpenAILLMClient):
         model: Optional[str] = None,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "silicon_flow_proxyllm",
+        model_alias: Optional[str] = "siliconflow_proxyllm",
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -47,11 +47,11 @@ class SiliconFlowLLMClient(OpenAILLMClient):
     ):
         api_base = (
             api_base
-            or os.getenv("SILICON_FLOW_API_BASE")
+            or os.getenv("SILICONFLOW_API_BASE")
             or "https://api.siliconflow.cn/v1"
         )
-        api_key = api_key or os.getenv("SILICON_FLOW_API_KEY")
-        model = model or _SILICON_FLOW_DEFAULT_MODEL
+        api_key = api_key or os.getenv("SILICONFLOW_API_KEY")
+        model = model or _SILICONFLOW_DEFAULT_MODEL
         if not context_length:
             if "200k" in model:
                 context_length = 200 * 1024
@@ -60,7 +60,7 @@ class SiliconFlowLLMClient(OpenAILLMClient):
 
         if not api_key:
             raise ValueError(
-                "SiliconFlow API key is required, please set 'SILICON_FLOW_API_KEY' in environment "
+                "SiliconFlow API key is required, please set 'SILICONFLOW_API_KEY' in environment "
                 "or pass it as an argument."
             )
 
@@ -83,5 +83,5 @@ class SiliconFlowLLMClient(OpenAILLMClient):
     def default_model(self) -> str:
         model = self._model
         if not model:
-            model = _SILICON_FLOW_DEFAULT_MODEL
+            model = _SILICONFLOW_DEFAULT_MODEL
         return model

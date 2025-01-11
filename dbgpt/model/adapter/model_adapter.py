@@ -42,6 +42,13 @@ def get_llm_model_adapter(
         from dbgpt.model.adapter.vllm_adapter import VLLMModelAdapterWrapper
 
         return VLLMModelAdapterWrapper(conv_factory)
+    if model_type == ModelType.LLAMA_CPP_SERVER:
+        logger.info(
+            "Current model type is llama_cpp_server, return LLamaServerModelAdapter"
+        )
+        from dbgpt.model.adapter.llama_cpp_adapter import LLamaServerModelAdapter
+
+        return LLamaServerModelAdapter()
 
     # Import NewHFChatModelAdapter for it can be registered
     from dbgpt.model.adapter.hf_adapter import NewHFChatModelAdapter

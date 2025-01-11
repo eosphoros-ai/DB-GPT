@@ -130,6 +130,8 @@ class ModelLoader:
             return llm_adapter.load_from_params(model_params)
         elif model_type == ModelType.VLLM:
             return llm_adapter.load_from_params(model_params)
+        elif model_type == ModelType.LLAMA_CPP_SERVER:
+            return llm_adapter.load_from_params(model_params)
         else:
             raise Exception(f"Unkown model type {model_type}")
 

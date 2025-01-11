@@ -169,6 +169,7 @@ assistants:[
         received_message: Optional[AgentMessage],
         sender: Agent,
         rely_messages: Optional[List[AgentMessage]] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         """Prepare the parameters for the act method."""
         return {

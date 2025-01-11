@@ -18,7 +18,7 @@ on:
 
 concurrency:
   group: ${{ github.event.number || github.run_id }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 #permissions:
 #  contents: read

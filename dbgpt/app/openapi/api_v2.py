@@ -185,6 +185,8 @@ async def get_chat_instance(dialogue: ChatCompletionRequestBody = Body()) -> Bas
         "current_user_input": dialogue.messages,
         "select_param": dialogue.chat_param,
         "model_name": dialogue.model,
+        "temperature": dialogue.temperature,
+        "max_new_tokens": dialogue.max_new_tokens,
     }
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),

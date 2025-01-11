@@ -46,3 +46,7 @@ class GraphStoreBase(ABC):
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:
         """Get the graph store config."""
+
+    def is_exist(self, name) -> bool:
+        """Check Graph Name is Exist."""
+        raise NotImplementedError

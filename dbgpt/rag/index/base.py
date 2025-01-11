@@ -176,13 +176,29 @@ class IndexStoreBase(ABC):
         Return:
             List[str]: Chunk ids.
         """
-        return await blocking_func_to_async(
-            self._executor,
-            self.load_document_with_limit,
-            chunks,
-            max_chunks_once_load,
-            max_threads,
+        chunk_groups = [
+            chunks[i: i + max_chunks_once_load]
+            for i in range(0, len(chunks), max_chunks_once_load)
+        ]
+        logger.info(
+            f"Loading {len(chunks)} chunks in {len(chunk_groups)} groups with "
+            f"{max_threads} threads."
         )
+        tasks = []
+        for chunk_group in chunk_groups:
+            tasks.append(self.aload_document(chunk_group))
+
+        import asyncio
+        results = await asyncio.gather(*tasks)
+
+        ids = []
+        loaded_cnt = 0
+        for success_ids in results:
+            ids.extend(success_ids)
+            loaded_cnt += len(success_ids)
+            logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
+
+        return ids
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

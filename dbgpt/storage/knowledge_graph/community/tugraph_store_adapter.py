@@ -404,20 +404,18 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
 
     def create_graph(self, graph_name: str):
         """Create a graph."""
+        if not self.graph_store.conn.create_graph(graph_name=graph_name):
+            return
+
         # Compatibility check
         enable_similarity_search = self.graph_store.enable_similarity_search
 
         dbms_system_info = self.graph_store.conn.get_system_info()
-        print(dbms_system_info)
         lgraph_version = dbms_system_info["lgraph_version"]
         similarity_search_compatible = Version(lgraph_version) >= Version("4.5.1")
         
         if enable_similarity_search and not similarity_search_compatible:
             raise Exception("TuGraph 4.5.0 and below does not support similarity search.")
-
-        # Create the graph
-        if not self.graph_store.conn.create_graph(graph_name=graph_name):
-            return
 
         # Create the graph schema
         def _format_graph_property_schema(
