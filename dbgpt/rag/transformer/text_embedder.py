@@ -18,7 +18,7 @@ class TextEmbedder(EmbedderBase):
         batch_size: int = 1,
     ) -> List[List[float]]:
         """Embed texts from graphs in batches."""
-        vectors = []
+        vectors: List[List[float]] = []
         n_texts = len(inputs)
 
         # Batch embedding
@@ -32,7 +32,7 @@ class TextEmbedder(EmbedderBase):
 
             # Process embedding in parallel
             batch_results = await asyncio.gather(
-                *(task for task in embedding_tasks), return_exceptions=True
+                *(task for task in embedding_tasks), return_exceptions=False
             )
 
             # Place results in the correct positions

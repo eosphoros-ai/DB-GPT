@@ -200,12 +200,16 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def upsert_chunks(self, chunks: Iterator[Union[Vertex, ParagraphChunk]]) -> None:
         """Upsert chunks."""
         enable_similarity_search = self.graph_store.enable_similarity_search
-        chunk_list = [
+        chunk_list: List[Dict[str, Union[str, List[float]]]] = [
             {
                 "id": self._escape_quotes(chunk.chunk_id),
                 "name": self._escape_quotes(chunk.chunk_name),
                 "content": self._escape_quotes(chunk.content),
-                **({"_embedding": chunk.embedding} if enable_similarity_search else {}),
+                **(
+                    {"_embedding": chunk.embedding}
+                    if enable_similarity_search and chunk.embedding
+                    else {}
+                ),
             }
             if isinstance(chunk, ParagraphChunk)
             else {

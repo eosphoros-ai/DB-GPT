@@ -26,8 +26,10 @@ class TransformerBase:
 class EmbedderBase(TransformerBase, ABC):
     """Embedder base class."""
 
-    def __init__(self, embedding_fn: Embeddings):
+    def __init__(self, embedding_fn: Optional[Embeddings]):
         """Initialize the Embedder."""
+        if not embedding_fn:
+            raise ValueError("Embedding sevice is required.")
         self._embedding_fn = embedding_fn
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
