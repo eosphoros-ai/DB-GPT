@@ -16,7 +16,7 @@ from typing import Dict, List
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
+from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge import KnowledgeType

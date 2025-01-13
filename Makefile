@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 SHELL=/bin/bash
-VENV = venv
+VENV = .venv.make
 
 # Detect the operating system and set the virtualenv bin directory
 ifeq ($(OS),Windows_NT)
@@ -14,12 +14,11 @@ setup: $(VENV)/bin/activate
 
 $(VENV)/bin/activate: $(VENV)/.venv-timestamp
 
-$(VENV)/.venv-timestamp: setup.py requirements
+$(VENV)/.venv-timestamp: uv.lock
 	# Create new virtual environment if setup.py has changed
-	python3 -m venv $(VENV)
-	$(VENV_BIN)/pip install --upgrade pip
-	$(VENV_BIN)/pip install -r requirements/dev-requirements.txt
-	$(VENV_BIN)/pip install -r requirements/lint-requirements.txt
+	#python3 -m venv $(VENV)
+	uv venv --python 3.10 $(VENV)
+	uv pip install --prefix $(VENV) ruff
 	touch $(VENV)/.venv-timestamp
 
 testenv: $(VENV)/.testenv
@@ -33,30 +32,40 @@ $(VENV)/.testenv: $(VENV)/bin/activate
 
 .PHONY: fmt
 fmt: setup ## Format Python code
-	# TODO: Use isort to sort Python imports.
-	# https://github.com/PyCQA/isort
-	# $(VENV_BIN)/isort .
-	$(VENV_BIN)/isort dbgpt/
-	$(VENV_BIN)/isort --extend-skip="examples/notebook" examples
-	# https://github.com/psf/black
-	$(VENV_BIN)/black --extend-exclude="examples/notebook" .
-	# TODO: Use blackdoc to format Python doctests.
-	# https://blackdoc.readthedocs.io/en/latest/
-	# $(VENV_BIN)/blackdoc .
-	$(VENV_BIN)/blackdoc dbgpt
-	$(VENV_BIN)/blackdoc examples
-	# TODO: Use flake8 to enforce Python style guide.
-	# https://flake8.pycqa.org/en/latest/
-	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/ dbgpt/client/ dbgpt/agent/ dbgpt/vis/ dbgpt/experimental/
-	# TODO: More package checks with flake8.
+	# Format code
+	$(VENV_BIN)/ruff format packages
+	$(VENV_BIN)/ruff format --exclude="examples/notebook" examples
+	# Sort imports
+	$(VENV_BIN)/ruff check --select I --fix packages
+	$(VENV_BIN)/ruff check --select I --fix --exclude="examples/notebook" examples
+
+	$(VENV_BIN)/ruff check --fix packages \
+		--exclude="packages/dbgpt-core/src/dbgpt/model/**" \
+		--exclude="packages/dbgpt-core/src/dbgpt/_private/**" \
+		--exclude="packages/dbgpt-core/src/dbgpt/configs/**" \
+		--exclude="packages/dbgpt-core/src/dbgpt/util/**" \
+		--exclude="packages/dbgpt-serve/src/**"
+
+	$(VENV_BIN)/ruff check --fix packages/dbgpt-serve --ignore F811,F841
+
+	# Not need to check examples/notebook
+	#$(VENV_BIN)/ruff check --fix --exclude="examples/notebook" examples
 
 .PHONY: fmt-check
 fmt-check: setup ## Check Python code formatting and style without making changes
-	$(VENV_BIN)/isort --check-only dbgpt/
-	$(VENV_BIN)/isort --check-only --extend-skip="examples/notebook" examples
-	$(VENV_BIN)/black --check --extend-exclude="examples/notebook" .
-	$(VENV_BIN)/blackdoc --check dbgpt examples
-	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/ dbgpt/client/ dbgpt/agent/ dbgpt/vis/ dbgpt/experimental/
+	$(VENV_BIN)/ruff format --check packages
+	$(VENV_BIN)/ruff format --check --exclude="examples/notebook" examples
+	$(VENV_BIN)/ruff check --select I packages
+	$(VENV_BIN)/ruff check --select I --exclude="examples/notebook" examples
+	$(VENV_BIN)/ruff check --fix packages \
+		--exclude="packages/dbgpt-core/src/dbgpt/model/**" \
+		--exclude="packages/dbgpt-core/src/dbgpt/_private/**" \
+		--exclude="packages/dbgpt-core/src/dbgpt/configs/**" \
+		--exclude="packages/dbgpt-core/src/dbgpt/util/**" \
+		--exclude="packages/dbgpt-serve/src/**"
+
+	$(VENV_BIN)/ruff check --fix packages/dbgpt-serve --ignore F811,F841
+
 
 .PHONY: pre-commit
 pre-commit: fmt-check test test-doc mypy ## Run formatting and unit tests before committing

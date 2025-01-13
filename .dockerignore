@@ -7,6 +7,8 @@ pilot/data
 pilot/message
 logs/
 venv/
+.venv/
+.venv.make/
 web/node_modules/
 web/.next/
 web/.env

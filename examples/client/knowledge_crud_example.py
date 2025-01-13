@@ -62,6 +62,7 @@ Example:
         # 10. Delete a document
         res = await delete_document(client, "150")
 """
+
 import asyncio
 
 from dbgpt.client import Client

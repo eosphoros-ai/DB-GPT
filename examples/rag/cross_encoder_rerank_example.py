@@ -8,6 +8,7 @@ Download pretrained cross-encoder models can be found at https://huggingface.co/
 Example:
     python examples/rag/cross_encoder_rerank_example.py
 """
+
 import asyncio
 import os
 
@@ -53,14 +54,14 @@ async def main():
 
     print("before rerank results:\n")
     for i, chunk in enumerate(chunks):
-        print(f"----{i+1}.chunk content:{chunk.content}\n score:{chunk.score}")
+        print(f"----{i + 1}.chunk content:{chunk.content}\n score:{chunk.score}")
     # cross-encoder rerankpython
     cross_encoder_model = os.path.join(MODEL_PATH, "bge-reranker-base")
     rerank = CrossEncoderRanker(topk=3, model=cross_encoder_model)
     new_chunks = rerank.rank(chunks, query=query)
     print("after cross-encoder rerank results:\n")
     for i, chunk in enumerate(new_chunks):
-        print(f"----{i+1}.chunk content:{chunk.content}\n score:{chunk.score}")
+        print(f"----{i + 1}.chunk content:{chunk.content}\n score:{chunk.score}")
 
 
 if __name__ == "__main__":

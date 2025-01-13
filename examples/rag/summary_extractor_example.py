@@ -1,25 +1,24 @@
 """Summary extractor example.
-    pre-requirements:
-        1. install openai python sdk
-        ```
-            pip install openai
-        ```
-        2. set openai key and base
-        ```
-            export OPENAI_API_KEY={your_openai_key}
-            export OPENAI_API_BASE={your_openai_base}
-        ```
-        or
-        ```
-            import os
-            os.environ["OPENAI_API_KEY"] = {your_openai_key}
-            os.environ["OPENAI_API_BASE"] = {your_openai_base}
-        ```
-    Examples:
-        ..code-block:: shell
-            python examples/rag/summary_extractor_example.py
+pre-requirements:
+    1. install openai python sdk
+    ```
+        pip install openai
+    ```
+    2. set openai key and base
+    ```
+        export OPENAI_API_KEY={your_openai_key}
+        export OPENAI_API_BASE={your_openai_base}
+    ```
+    or
+    ```
+        import os
+        os.environ["OPENAI_API_KEY"] = {your_openai_key}
+        os.environ["OPENAI_API_BASE"] = {your_openai_base}
+    ```
+Examples:
+    ..code-block:: shell
+        python examples/rag/summary_extractor_example.py
 """
-
 
 import asyncio
 import os

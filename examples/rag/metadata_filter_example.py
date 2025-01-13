@@ -1,11 +1,12 @@
 """Rag Metadata Properties filter example.
-    pre-requirements:
-    make sure you have set your embedding model path in your example code.
+pre-requirements:
+make sure you have set your embedding model path in your example code.
 
-    Examples:
-        ..code-block:: shell
-            python examples/rag/metadata_filter_example.py
+Examples:
+    ..code-block:: shell
+        python examples/rag/metadata_filter_example.py
 """
+
 import asyncio
 import os
 
