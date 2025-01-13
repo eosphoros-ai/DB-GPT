@@ -74,7 +74,7 @@ class TuGraphConnector(BaseConnector):
                 "neo4j package is not installed, please install it with "
                 "`pip install neo4j`"
             ) from err
-    
+
     def get_system_info(self) -> Dict:
         """Get system info from the TuGraph."""
         with self._driver.session(database="default") as session:

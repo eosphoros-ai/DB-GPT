@@ -3,6 +3,7 @@
 import json
 import logging
 from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Tuple, Union
+
 from packaging.version import Version
 
 from dbgpt.storage.graph_store.graph import (
@@ -199,12 +200,16 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
     def upsert_chunks(self, chunks: Iterator[Union[Vertex, ParagraphChunk]]) -> None:
         """Upsert chunks."""
         enable_similarity_search = self.graph_store.enable_similarity_search
-        chunk_list = [
+        chunk_list: List[Dict[str, Union[str, List[float]]]] = [
             {
                 "id": self._escape_quotes(chunk.chunk_id),
                 "name": self._escape_quotes(chunk.chunk_name),
                 "content": self._escape_quotes(chunk.content),
-                **({"_embedding": chunk.embedding} if enable_similarity_search else {}),
+                **(
+                    {"_embedding": chunk.embedding}
+                    if enable_similarity_search and chunk.embedding
+                    else {}
+                ),
             }
             if isinstance(chunk, ParagraphChunk)
             else {
@@ -413,9 +418,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         dbms_system_info = self.graph_store.conn.get_system_info()
         lgraph_version = dbms_system_info["lgraph_version"]
         similarity_search_compatible = Version(lgraph_version) >= Version("4.5.1")
-        
+
         if enable_similarity_search and not similarity_search_compatible:
-            raise Exception("TuGraph 4.5.0 and below does not support similarity search.")
+            raise Exception(
+                "TuGraph 4.5.0 and below does not support similarity search."
+            )
 
         # Create the graph schema
         def _format_graph_property_schema(
@@ -468,7 +475,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_property_schema("content", "STRING", True, True),
         ]
         if enable_similarity_search:
-            chunk_proerties.append(_format_graph_property_schema("_embedding", "FLOAT_VECTOR", True, False))
+            chunk_proerties.append(
+                _format_graph_property_schema("_embedding", "FLOAT_VECTOR", True, False)
+            )
         self.create_graph_label(
             graph_elem_type=GraphElemType.CHUNK, graph_properties=chunk_proerties
         )
@@ -481,7 +490,11 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             _format_graph_property_schema("description", "STRING", True, True),
         ]
         if enable_similarity_search:
-            vertex_proerties.append(_format_graph_property_schema("_embedding", "FLOAT_VECTOR", True, False),)
+            vertex_proerties.append(
+                _format_graph_property_schema(
+                    "_embedding", "FLOAT_VECTOR", True, False
+                ),
+            )
         self.create_graph_label(
             graph_elem_type=GraphElemType.ENTITY, graph_properties=vertex_proerties
         )
