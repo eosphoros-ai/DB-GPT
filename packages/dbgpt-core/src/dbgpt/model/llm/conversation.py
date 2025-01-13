@@ -5,7 +5,7 @@ https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
 Conversation prompt templates.
 
 
-This code file will be deprecated in the future. 
+This code file will be deprecated in the future.
 We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 """
 
@@ -147,7 +147,7 @@ class Conversation:
 
             for i, (role, message) in enumerate(self.messages):
                 if i % 2 == 0:
-                    ret += f"[Round {i//2 + round_add_n}]{self.sep}"
+                    ret += f"[Round {i // 2 + round_add_n}]{self.sep}"
 
                 if message:
                     ret += f"{role}：{message}{self.sep}"
@@ -277,9 +277,9 @@ conv_templates: Dict[str, Conversation] = {}
 def register_conv_template(template: Conversation, override: bool = False):
     """Register a new conversation template."""
     if not override:
-        assert (
-            template.name not in conv_templates
-        ), f"{template.name} has been registered."
+        assert template.name not in conv_templates, (
+            f"{template.name} has been registered."
+        )
 
     conv_templates[template.name] = template
 

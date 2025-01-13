@@ -1,3 +1,3 @@
 """
-    a tool to discovery sensitive data
+a tool to discovery sensitive data
 """

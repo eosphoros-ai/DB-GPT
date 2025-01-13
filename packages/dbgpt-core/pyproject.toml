@@ -65,14 +65,8 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 managed = true
-dev-dependencies = [
-    "pytest>=8.3.4",
-    "pytest_asyncio",
-    "jupyter>=1.1.1",
-    "sqlalchemy",
-    "tqdm",
-    "tiktoken",
-]
+dev-dependencies = []
+default-groups = ["dev"]
 
 # [tool.hatch.metadata]
 # allow-direct-references = true

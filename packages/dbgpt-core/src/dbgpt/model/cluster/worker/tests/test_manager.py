@@ -316,7 +316,7 @@ async def test_get_model_instances(is_async):
 async def test__simple_select(
     manager_with_2_workers: Tuple[
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
-    ]
+    ],
 ):
     manager, workers = manager_with_2_workers
     for _, worker_params, _ in workers:
@@ -462,7 +462,7 @@ async def test_embeddings(
 async def test_parameter_descriptions(
     manager_with_2_workers: Tuple[
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
-    ]
+    ],
 ):
     manager, workers = manager_with_2_workers
     for _, worker_params, _ in workers:

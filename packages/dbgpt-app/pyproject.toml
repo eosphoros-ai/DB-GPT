@@ -6,13 +6,14 @@ authors = [
     { name = "aries_ckt", email = "ariesketing@gmail.com" }
 ]
 dependencies = [
+    "dbgpt-accelerator",
     "dbgpt-ext",
     "dbgpt-serve",
     "dbgpt-client",
     "aiofiles",
     "sentence-transformers",
     "pyparsing",
-    "torch<2.3.0",
+    "dbgpt[openai]",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"

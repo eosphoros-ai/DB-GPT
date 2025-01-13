@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">= 3.10"
 
 [tool.uv.sources]
+dbgpt-accelerator = { workspace = true }
 dbgpt = { workspace = true }
 dbgpt-client = { workspace = true }
 dbgpt-ext = { workspace = true }
@@ -28,6 +29,7 @@ dev-dependencies = [
     "tomli>=2.0.2",
     "tomli-w>=1.1.0",
     "pytest>=7.0.0",
+    "pytest_asyncio",
     "twine",
 ]
 
@@ -39,9 +41,7 @@ python_files = ["test_*.py", "*_test.py"]
 [tool.ruff]
 line-length = 88
 target-version = "py310"
-exclude = [
-    "packages/dbgpt-core/src/dbgpt/model/**",
-]
+
 [tool.ruff.format]
 # Format docstrings
 docstring-code-format = true

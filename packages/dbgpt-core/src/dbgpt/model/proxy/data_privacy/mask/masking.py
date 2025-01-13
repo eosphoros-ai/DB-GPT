@@ -1,3 +1,3 @@
 """
-    mask the sensitive data before upload LLM inference service
+mask the sensitive data before upload LLM inference service
 """

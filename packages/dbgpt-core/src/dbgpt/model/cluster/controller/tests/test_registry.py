@@ -106,10 +106,8 @@ async def test_heartbeat_timeout(model_registry, model_instance):
     """
     model_registry = EmbeddedModelRegistry(1, 1)
     await model_registry.register_instance(model_instance)
-    model_registry.registry[model_instance.model_name][
-        0
-    ].last_heartbeat = datetime.now() - timedelta(
-        seconds=model_registry.heartbeat_timeout_secs + 1
+    model_registry.registry[model_instance.model_name][0].last_heartbeat = (
+        datetime.now() - timedelta(seconds=model_registry.heartbeat_timeout_secs + 1)
     )
     await asyncio.sleep(model_registry.heartbeat_interval_secs + 1)
     assert not model_registry.registry[model_instance.model_name][0].healthy

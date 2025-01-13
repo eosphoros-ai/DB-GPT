@@ -179,7 +179,7 @@ async def _start_worker_manager(**kwargs):
 
 
 async def _create_model_registry(
-    workers: List[Tuple[ModelWorker, ModelWorkerParameters, ModelInstance]]
+    workers: List[Tuple[ModelWorker, ModelWorkerParameters, ModelInstance]],
 ) -> ModelRegistry:
     registry = EmbeddedModelRegistry()
     for _, _, inst in workers:
