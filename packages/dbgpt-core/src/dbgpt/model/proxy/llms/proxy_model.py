@@ -35,7 +35,8 @@ class ProxyModel:
         """Count token of given messages
 
         Args:
-            messages (Union[str, BaseMessage, ModelMessage, List[ModelMessage]]): messages to count token
+            messages (Union[str, BaseMessage, ModelMessage, List[ModelMessage]]):
+                messages to count token
             model_name (Optional[int], optional): model name. Defaults to None.
 
         Returns:

@@ -76,14 +76,16 @@ def forward(
 
     if attn_weights.size() != (bsz, self.num_heads, q_len, kv_seq_len):
         raise ValueError(
-            f"Attention weights should be of size {(bsz * self.num_heads, q_len, kv_seq_len)}, but is"
+            f"Attention weights should be of size "
+            f"{(bsz * self.num_heads, q_len, kv_seq_len)}, but is"
             f" {attn_weights.size()}"
         )
 
     if attention_mask is not None:
         if attention_mask.size() != (bsz, 1, q_len, kv_seq_len):
             raise ValueError(
-                f"Attention mask should be of size {(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"
+                f"Attention mask should be of size "
+                f"{(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"
             )
         attn_weights = attn_weights + attention_mask
         attn_weights = torch.max(
@@ -98,7 +100,8 @@ def forward(
 
     if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
         raise ValueError(
-            f"`attn_output` should be of size {(bsz, self.num_heads, q_len, self.head_dim)}, but is"
+            "`attn_output` should be of size "
+            f"{(bsz, self.num_heads, q_len, self.head_dim)}, but is"
             f" {attn_output.size()}"
         )
 
@@ -111,11 +114,6 @@ def forward(
         attn_weights = None
 
     return attn_output, attn_weights, past_key_value
-
-
-def replace_llama_attn_with_non_inplace_operations():
-    """Avoid bugs in mps backend by not using in-place operations."""
-    transformers.models.llama.modeling_llama.LlamaAttention.forward = forward
 
 
 def replace_llama_attn_with_non_inplace_operations():

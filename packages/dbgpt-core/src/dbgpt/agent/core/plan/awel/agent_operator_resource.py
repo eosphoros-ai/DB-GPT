@@ -95,8 +95,8 @@ class AWELAgentResource(AgentResource):
 def _agent_resource_knowledge_values(
     user_id: Optional[str] = None,
 ) -> List[OptionValue]:
-    from dbgpt.app.knowledge.api import knowledge_space_service
-    from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+    from dbgpt_app.knowledge.api import knowledge_space_service
+    from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 
     knowledge_spaces = knowledge_space_service.get_knowledge_space(
         KnowledgeSpaceRequest(user_id=user_id)

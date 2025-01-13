@@ -4,6 +4,7 @@ Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/
 This code file will be deprecated in the future. 
 We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 """
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import gc
@@ -25,7 +26,8 @@ def prepare_logits_processor(
     temperature: float, repetition_penalty: float, top_p: float, top_k: int
 ) -> LogitsProcessorList:
     processor_list = LogitsProcessorList()
-    # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two cases.
+    # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two
+    # cases.
     if temperature >= 1e-5 and temperature != 1.0:
         processor_list.append(TemperatureLogitsWarper(temperature))
     if repetition_penalty > 1.0:
@@ -87,6 +89,7 @@ def generate_stream(
 
     past_key_values = out = None
     sent_interrupt = False
+    token = -1
     for i in range(max_new_tokens):
         if i == 0:  # prefill
             if model.config.is_encoder_decoder:
@@ -168,7 +171,8 @@ def generate_stream(
                 spaces_between_special_tokens=False,
                 clean_up_tokenization_spaces=True,
             )
-            # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
+            # TODO: For the issue of incomplete sentences interrupting output, apply a
+            #  patch and others can also modify it to a more elegant way
             if judge_sent_end and stopped and not is_sentence_complete(output):
                 if len(tokens) > 1:
                     token = tokens[1]
@@ -219,11 +223,11 @@ def generate_stream(
 
     # Finish stream event, which contains finish reason
     if i == max_new_tokens - 1:
-        finish_reason = "length"
+        finish_reason = "length"  # noqa: F841
     elif stopped:
-        finish_reason = "stop"
+        finish_reason = "stop"  # noqa: F841
     else:
-        finish_reason = None
+        finish_reason = None  # noqa: F841
     yield output
     # yield {
     #     "text": output,

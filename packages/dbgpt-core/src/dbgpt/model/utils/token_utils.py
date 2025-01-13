@@ -22,7 +22,8 @@ class ProxyTokenizerWrapper:
         """Count token of given messages
 
         Args:
-            messages (Union[str, BaseMessage, ModelMessage, List[ModelMessage]]): messages to count token
+            messages (Union[str, BaseMessage, ModelMessage, List[ModelMessage]]):
+                messages to count token
             model_name (Optional[str], optional): model name. Defaults to None.
 
         Returns:
@@ -61,8 +62,9 @@ class ProxyTokenizerWrapper:
             import tiktoken
 
             logger.info(
-                "tiktoken installed, using it to count tokens, tiktoken will download tokenizer from network, "
-                "also you can download it and put it in the directory of environment variable TIKTOKEN_CACHE_DIR"
+                "tiktoken installed, using it to count tokens, tiktoken will download "
+                "tokenizer from network, also you can download it and put it in the "
+                "directory of environment variable TIKTOKEN_CACHE_DIR"
             )
         except ImportError:
             self._support_encoding = False

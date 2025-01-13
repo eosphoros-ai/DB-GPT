@@ -59,12 +59,13 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     def check_transformer_version(self, current_version: str) -> None:
         if not current_version >= "4.34.0":
             raise ValueError(
-                "Current model (Load by NewHFChatModelAdapter) require transformers.__version__>=4.34.0"
+                "Current model (Load by NewHFChatModelAdapter) require "
+                "transformers.__version__>=4.34.0"
             )
 
     def load(self, model_path: str, from_pretrained_kwargs: dict):
         try:
-            import transformers
+            import transformers  # noqa: F401
             from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
         except ImportError as exc:
             raise ValueError(
@@ -74,7 +75,8 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         self.check_dependencies()
 
         logger.info(
-            f"Load model from {model_path}, from_pretrained_kwargs: {from_pretrained_kwargs}"
+            f"Load model from {model_path}, from_pretrained_kwargs: "
+            f"{from_pretrained_kwargs}"
         )
 
         revision = from_pretrained_kwargs.get("revision", "main")
@@ -238,7 +240,8 @@ class GemmaAdapter(NewHFChatModelAdapter):
     def check_transformer_version(self, current_version: str) -> None:
         if not current_version >= "4.38.0":
             raise ValueError(
-                "Gemma require transformers.__version__>=4.38.0, please upgrade your transformers package."
+                "Gemma require transformers.__version__>=4.38.0, please upgrade your "
+                "transformers package."
             )
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
@@ -265,7 +268,8 @@ class Gemma2Adapter(NewHFChatModelAdapter):
     def check_transformer_version(self, current_version: str) -> None:
         if not current_version >= "4.42.1":
             raise ValueError(
-                "Gemma2 require transformers.__version__>=4.42.1, please upgrade your transformers package."
+                "Gemma2 require transformers.__version__>=4.42.1, please upgrade your "
+                "transformers package."
             )
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
@@ -327,14 +331,16 @@ class StarlingLMAdapter(NewHFChatModelAdapter):
             "chat_excel",
         ]:
             # Coding conversation, use code prompt
-            # This is a temporary solution, we should use a better way to distinguish the conversation type
+            # This is a temporary solution, we should use a better way to distinguish
+            # the conversation type
             # https://huggingface.co/Nexusflow/Starling-LM-7B-beta#code-examples
             str_prompt = str_prompt.replace("GPT4 Correct User:", "Code User:").replace(
                 "GPT4 Correct Assistant:", "Code Assistant:"
             )
             logger.info(
-                f"Use code prompt for chat_mode: {chat_mode}, transform 'GPT4 Correct User:' to 'Code User:' "
-                "and 'GPT4 Correct Assistant:' to 'Code Assistant:'"
+                f"Use code prompt for chat_mode: {chat_mode}, transform 'GPT4 Correct "
+                "User:' to 'Code User:' and 'GPT4 Correct Assistant:' to "
+                "'Code Assistant:'"
             )
         return str_prompt
 
@@ -352,7 +358,8 @@ class QwenAdapter(NewHFChatModelAdapter):
     def check_transformer_version(self, current_version: str) -> None:
         if not current_version >= "4.37.0":
             raise ValueError(
-                "Qwen 1.5 require transformers.__version__>=4.37.0, please upgrade your transformers package."
+                "Qwen 1.5 require transformers.__version__>=4.37.0, please upgrade your"
+                " transformers package."
             )
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
@@ -396,7 +403,8 @@ class QwenMoeAdapter(NewHFChatModelAdapter):
         print(f"Checking version: Current version {current_version}")
         if not current_version >= "4.40.0":
             raise ValueError(
-                "Qwen 1.5 Moe require transformers.__version__>=4.40.0, please upgrade your transformers package."
+                "Qwen 1.5 Moe require transformers.__version__>=4.40.0, please upgrade"
+                " your transformers package."
             )
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
@@ -456,7 +464,8 @@ class Llama31Adapter(Llama3Adapter):
         logger.info(f"Checking transformers version: Current version {current_version}")
         if not current_version >= "4.43.0":
             raise ValueError(
-                "Llama-3.1 require transformers.__version__>=4.43.0, please upgrade your transformers package."
+                "Llama-3.1 require transformers.__version__>=4.43.0, please upgrade "
+                "your transformers package."
             )
 
     def do_match(self, lower_model_name_or_path: Optional[str] = None):

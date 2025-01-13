@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import Future
 from dataclasses import dataclass
 from datetime import datetime
-from typing import AsyncIterator, Callable, Dict, Iterator, List, Optional
+from typing import AsyncIterator, Callable, Dict, List, Optional
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import ModelMetadata, ModelOutput
@@ -76,7 +76,8 @@ class WorkerManager(ABC):
 
         Args:
             worker_type (str): worker type
-            healthy_only (bool, optional): only return healthy instances. Defaults to True.
+            healthy_only (bool, optional): only return healthy instances.
+                Defaults to True.
 
         Returns:
             List[WorkerRunData]: worker run data list
@@ -139,7 +140,8 @@ class WorkerManager(ABC):
         """Count token of prompt
 
         Args:
-            params (Dict): parameters, eg. {"prompt": "hello", "model": "vicuna-13b-v1.5"}
+            params (Dict): parameters, eg.
+                {"prompt": "hello", "model": "vicuna-13b-v1.5"}
 
         Returns:
             int: token count

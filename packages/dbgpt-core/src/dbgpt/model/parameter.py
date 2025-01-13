@@ -23,7 +23,8 @@ class WorkerType(str, Enum):
 
         Args:
             worker_name (str): Worker name(eg., chatglm2-6b)
-            worker_type (Union[str, "WorkerType"]): Worker type(eg., 'llm', or [`WorkerType.LLM`])
+            worker_type (Union[str, "WorkerType"]):
+                Worker type(eg., 'llm', or [`WorkerType.LLM`])
 
         Returns:
             str: Generated worker key
@@ -284,7 +285,8 @@ class EmbeddingModelParameters(BaseEmbeddingModelParameters):
     device: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Device to run model. If None, the device is automatically determined"
+            "help": "Device to run model. If None, the device is automatically "
+            "determined"
         },
     )
 
@@ -332,7 +334,8 @@ class ModelParameters(BaseModelParameters):
     device: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Device to run model. If None, the device is automatically determined"
+            "help": "Device to run model. If None, the device is automatically "
+            "determined"
         },
     )
     model_type: Optional[str] = field(
@@ -345,8 +348,8 @@ class ModelParameters(BaseModelParameters):
     prompt_template: Optional[str] = field(
         default=None,
         metadata={
-            "help": f"Prompt template. If None, the prompt template is automatically "
-            f"determined from model path"
+            "help": "Prompt template. If None, the prompt template is automatically "
+            "determined from model path"
         },
     )
     max_context_size: Optional[int] = field(
@@ -356,13 +359,15 @@ class ModelParameters(BaseModelParameters):
     num_gpus: Optional[int] = field(
         default=None,
         metadata={
-            "help": "The number of gpus you expect to use, if it is empty, use all of them as much as possible"
+            "help": "The number of gpus you expect to use, if it is empty, use all of "
+            "them as much as possible"
         },
     )
     max_gpu_memory: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The maximum memory limit of each GPU, only valid in multi-GPU configuration"
+            "help": "The maximum memory limit of each GPU, only valid in multi-GPU "
+            "configuration"
         },
     )
     cpu_offloading: Optional[bool] = field(
@@ -378,7 +383,8 @@ class ModelParameters(BaseModelParameters):
         default="nf4",
         metadata={
             "valid_values": ["nf4", "fp4"],
-            "help": "Quantization datatypes, `fp4` (four bit float) and `nf4` (normal four bit float), only valid when load_4bit=True",
+            "help": "Quantization datatypes, `fp4` (four bit float) and `nf4` "
+            "(normal four bit float), only valid when load_4bit=True",
         },
     )
     use_double_quant: Optional[bool] = field(
@@ -408,19 +414,22 @@ class LlamaCppModelParameters(ModelParameters):
     n_threads: Optional[int] = field(
         default=None,
         metadata={
-            "help": "Number of threads to use. If None, the number of threads is automatically determined"
+            "help": "Number of threads to use. If None, the number of threads is "
+            "automatically determined"
         },
     )
     n_batch: Optional[int] = field(
         default=512,
         metadata={
-            "help": "Maximum number of prompt tokens to batch together when calling llama_eval"
+            "help": "Maximum number of prompt tokens to batch together when calling "
+            "llama_eval"
         },
     )
     n_gpu_layers: Optional[int] = field(
         default=1000000000,
         metadata={
-            "help": "Number of layers to offload to the GPU, Set this to 1000000000 to offload all layers to the GPU."
+            "help": "Number of layers to offload to the GPU, Set this to 1000000000 to "
+            "offload all layers to the GPU."
         },
     )
     n_gqa: Optional[int] = field(
@@ -433,13 +442,15 @@ class LlamaCppModelParameters(ModelParameters):
     cache_capacity: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed. "
+            "help": "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided "
+            "without units, bytes will be assumed. "
         },
     )
     prefer_cpu: Optional[bool] = field(
         default=False,
         metadata={
-            "help": "If a GPU is available, it will be preferred by default, unless prefer_cpu=False is configured."
+            "help": "If a GPU is available, it will be preferred by default, unless "
+            "prefer_cpu=False is configured."
         },
     )
 
@@ -448,7 +459,8 @@ class LlamaCppModelParameters(ModelParameters):
 class ProxyModelParameters(BaseModelParameters):
     proxy_server_url: str = field(
         metadata={
-            "help": "Proxy server url, such as: https://api.openai.com/v1/chat/completions"
+            "help": "Proxy server url, such as: "
+            "https://api.openai.com/v1/chat/completions"
         },
     )
 
@@ -459,7 +471,8 @@ class ProxyModelParameters(BaseModelParameters):
     proxy_api_base: str = field(
         default=None,
         metadata={
-            "help": "The base api address, such as: https://api.openai.com/v1. If None, we will use proxy_api_base first"
+            "help": "The base api address, such as: https://api.openai.com/v1. If None,"
+            " we will use proxy_api_base first"
         },
     )
 
@@ -473,14 +486,16 @@ class ProxyModelParameters(BaseModelParameters):
     proxy_api_secret: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The app secret for current proxy LLM(Just for spark proxy LLM now)."
+            "help": "The app secret for current proxy LLM"
+            "(Just for spark proxy LLM now)."
         },
     )
 
     proxy_api_type: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The api type of current proxy the current proxy model, if you use Azure, it can be: azure"
+            "help": "The api type of current proxy the current proxy model, if you use"
+            " Azure, it can be: azure"
         },
     )
 
@@ -518,8 +533,8 @@ class ProxyModelParameters(BaseModelParameters):
     prompt_template: Optional[str] = field(
         default=None,
         metadata={
-            "help": f"Prompt template. If None, the prompt template is automatically "
-            f"determined from model path"
+            "help": "Prompt template. If None, the prompt template is automatically "
+            "determined from model path"
         },
     )
     max_context_size: Optional[int] = field(
@@ -558,7 +573,8 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
     proxy_api_type: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The api type of current proxy the current embedding model(OPENAI_API_TYPE), if you use Azure, it can be: azure"
+            "help": "The api type of current proxy the current embedding "
+            "model(OPENAI_API_TYPE), if you use Azure, it can be: azure"
         },
     )
     proxy_api_secret: str = field(
@@ -571,13 +587,15 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
     proxy_api_version: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The api version of current proxy the current embedding model(OPENAI_API_VERSION)"
+            "help": "The api version of current proxy the current embedding "
+            "model(OPENAI_API_VERSION)"
         },
     )
     proxy_backend: Optional[str] = field(
         default="text-embedding-ada-002",
         metadata={
-            "help": "The model name actually pass to current proxy server url, such as text-embedding-ada-002"
+            "help": "The model name actually pass to current proxy server url, such as "
+            "text-embedding-ada-002"
         },
     )
 

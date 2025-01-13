@@ -42,7 +42,8 @@ class DefaultLLMClient(LLMClient):
 
     Args:
         worker_manager (WorkerManager): worker manager instance.
-        auto_convert_message (bool, optional): auto convert the message to ModelRequest. Defaults to True.
+        auto_convert_message (bool, optional): auto convert the message to ModelRequest.
+         Defaults to True.
     """
 
     def __init__(
@@ -139,7 +140,8 @@ class DefaultLLMClient(LLMClient):
 class RemoteLLMClient(DefaultLLMClient):
     """Remote LLM client implementation.
 
-    Connect to the remote worker manager and send the request to the remote worker manager.
+    Connect to the remote worker manager and send the request to the remote worker
+    manager.
 
     Args:
         controller_address (str): model controller address

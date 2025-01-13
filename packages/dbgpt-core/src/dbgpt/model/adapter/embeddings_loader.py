@@ -148,6 +148,7 @@ def _parse_embedding_params(
     if not model_params.device:
         model_params.device = get_device()
         logger.info(
-            f"[EmbeddingsModelWorker] Parameters of device is None, use {model_params.device}"
+            "[EmbeddingsModelWorker] Parameters of device is None, use "
+            f"{model_params.device}"
         )
     return model_params

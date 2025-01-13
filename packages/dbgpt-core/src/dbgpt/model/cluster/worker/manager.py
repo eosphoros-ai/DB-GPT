@@ -9,7 +9,7 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -18,7 +18,17 @@ from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import LOGDIR
 from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
-from dbgpt.model.cluster.base import *
+from dbgpt.model.cluster.base import (
+    WORKER_MANAGER_SERVICE_NAME,
+    WORKER_MANAGER_SERVICE_TYPE,
+    CountTokenRequest,
+    EmbeddingsRequest,
+    ModelMetadataRequest,
+    PromptRequest,
+    WorkerApplyRequest,
+    WorkerApplyType,
+    WorkerStartupRequest,
+)
 from dbgpt.model.cluster.manager_base import (
     WorkerManager,
     WorkerManagerFactory,
@@ -130,7 +140,8 @@ class LocalWorkerManager(WorkerManager):
                 self._stop_all_worker(apply_req=None, ignore_exception=ignore_exception)
             )
             if self.deregister_func:
-                # If ignore_exception is True, use exception handling to ignore any exceptions raised from self.deregister_func
+                # If ignore_exception is True, use exception handling to ignore any
+                # exceptions raised from self.deregister_func
                 if ignore_exception:
 
                     async def safe_deregister_func(run_data):
@@ -138,7 +149,8 @@ class LocalWorkerManager(WorkerManager):
                             await self.deregister_func(run_data)
                         except Exception as e:
                             logger.warning(
-                                f"Stop worker, ignored exception from deregister_func: {e}"
+                                "Stop worker, ignored exception from deregister_func: "
+                                f"{e}"
                             )
 
                     stop_tasks.append(safe_deregister_func(self.run_data))
@@ -211,7 +223,8 @@ class LocalWorkerManager(WorkerManager):
         worker_type = startup_req.worker_type
         params = startup_req.params
         logger.debug(
-            f"start model, model name {model_name}, worker type {worker_type},  params: {params}"
+            f"start model, model name {model_name}, worker type {worker_type},  params:"
+            f" {params}"
         )
         worker_params: ModelWorkerParameters = ModelWorkerParameters.from_dict(
             params, ignore_extra_fields=True
@@ -232,7 +245,8 @@ class LocalWorkerManager(WorkerManager):
         if worker_type not in supported_types:
             self._remove_worker(worker_params)
             raise ValueError(
-                f"Unsupported worker type: {worker_type}, now supported worker type: {supported_types}"
+                f"Unsupported worker type: {worker_type}, now supported worker type: "
+                f"{supported_types}"
             )
         start_apply_req = WorkerApplyRequest(
             model=worker_params.model_name,
@@ -292,7 +306,8 @@ class LocalWorkerManager(WorkerManager):
     ) -> WorkerRunData:
         if not worker_instances:
             raise Exception(
-                f"Cound not found worker instances for model name {model_name} and worker type {worker_type}"
+                f"Cound not found worker instances for model name {model_name} and "
+                f"worker type {worker_type}"
             )
         worker_run_data = random.choice(worker_instances)
         return worker_run_data
@@ -457,7 +472,8 @@ class LocalWorkerManager(WorkerManager):
         worker_instances = await self.get_model_instances(worker_type, model_name)
         if not worker_instances:
             raise Exception(
-                f"Not worker instances for model name {model_name} worker type {worker_type}"
+                f"Not worker instances for model name {model_name} worker type "
+                f"{worker_type}"
             )
         worker_run_data = worker_instances[0]
         return worker_run_data.worker.parameter_descriptions()
@@ -469,7 +485,8 @@ class LocalWorkerManager(WorkerManager):
 
         Args:
             apply_req (WorkerApplyRequest): Worker apply request
-            apply_func (ApplyFunction): Function to apply to worker instances, now function is async function
+            apply_func (ApplyFunction): Function to apply to worker instances, now
+                function is async function
         """
         logger.info(f"Apply req: {apply_req}, apply_func: {apply_func}")
         if apply_req:
@@ -480,12 +497,13 @@ class LocalWorkerManager(WorkerManager):
             )
             if not worker_instances:
                 raise Exception(
-                    f"No worker instance found for the model {model_name} worker type {worker_type}"
+                    f"No worker instance found for the model {model_name} worker type "
+                    f"{worker_type}"
                 )
         else:
             # Apply to all workers
             worker_instances = list(itertools.chain(*self.workers.values()))
-            logger.info(f"Apply to all workers")
+            logger.info("Apply to all workers")
         return await asyncio.gather(
             *(apply_func(worker) for worker in worker_instances)
         )
@@ -525,14 +543,14 @@ class LocalWorkerManager(WorkerManager):
                             )
                         )
                 out.message = f"{info} start successfully"
-            except TimeoutException as e:
+            except TimeoutException:
                 out.success = False
                 out.message = (
                     f"{info} start failed for network timeout, please make "
                     f"sure your port is available, if you are using global network "
                     f"proxy, please close it"
                 )
-            except TransportError as e:
+            except TransportError:
                 out.success = False
                 out.message = (
                     f"{info} start failed for network error, please make "
@@ -582,7 +600,8 @@ class LocalWorkerManager(WorkerManager):
                                 await self.deregister_func(run_data)
                             except Exception as e:
                                 logger.warning(
-                                    f"Stop worker, ignored exception from deregister_func: {e}"
+                                    "Stop worker, ignored exception from "
+                                    f"deregister_func: {e}"
                                 )
 
                         _deregister_func = safe_deregister_func
@@ -625,13 +644,13 @@ class LocalWorkerManager(WorkerManager):
                 need_restart = True
 
         await self._apply_worker(apply_req, update_params)
-        message = f"Update worker params successfully"
+        message = "Update worker params successfully"
         timecost = time.time() - start_time
         if need_restart:
             logger.info("Model params update successfully, begin restart worker")
             await self._restart_all_worker(apply_req)
             timecost = time.time() - start_time
-            message = f"Update worker params and restart successfully"
+            message = "Update worker params and restart successfully"
         return WorkerApplyOutput(message=message, timecost=timecost)
 
 
@@ -809,9 +828,11 @@ async def api_worker_parameter_descs(
 async def api_supported_models():
     """Get all supported models.
 
-    This method reads all models from the configuration file and tries to perform some basic checks on the model (like if the path exists).
+    This method reads all models from the configuration file and tries to perform some
+     basic checks on the model (like if the path exists).
 
-    If it's a RemoteWorkerManager, this method returns the list of models supported by the entire cluster.
+    If it's a RemoteWorkerManager, this method returns the list of models supported by
+     the entire cluster.
     """
     return await worker_manager.supported_models()
 
@@ -854,7 +875,8 @@ def _setup_fastapi(
             os.environ["https_proxy"] = ""
             worker_params.controller_addr = f"http://127.0.0.1:{worker_params.port}"
         logger.info(
-            f"Run WorkerManager with standalone mode, controller_addr: {worker_params.controller_addr}"
+            "Run WorkerManager with standalone mode, controller_addr: "
+            f"{worker_params.controller_addr}"
         )
         initialize_controller(app=app, system_app=system_app)
         app.include_router(controller_router, prefix="/api")
@@ -925,7 +947,8 @@ def _create_local_model_manager(
     port = worker_params.port
     if not worker_params.register or not worker_params.controller_addr:
         logger.info(
-            f"Not register current to controller, register: {worker_params.register}, controller_addr: {worker_params.controller_addr}"
+            f"Not register current to controller, register: {worker_params.register}, "
+            f"controller_addr: {worker_params.controller_addr}"
         )
         return LocalWorkerManager(host=host, port=port)
     else:
@@ -1021,14 +1044,16 @@ def _start_local_embedding_worker(
 ):
     if not embedding_model_name or not embedding_model_path:
         return
+    worker_class = "dbgpt.model.cluster.worker.embedding_worker.EmbeddingsModelWorker"
     embedding_worker_params = ModelWorkerParameters(
         model_name=embedding_model_name,
         model_path=embedding_model_path,
         worker_type=WorkerType.TEXT2VEC,
-        worker_class="dbgpt.model.cluster.worker.embedding_worker.EmbeddingsModelWorker",
+        worker_class=worker_class,
     )
     logger.info(
-        f"Start local embedding worker with embedding parameters\n{embedding_worker_params}"
+        "Start local embedding worker with embedding parameters\n"
+        f"{embedding_worker_params}"
     )
     _start_local_worker(
         worker_manager, embedding_worker_params, ext_worker_kwargs=ext_worker_kwargs

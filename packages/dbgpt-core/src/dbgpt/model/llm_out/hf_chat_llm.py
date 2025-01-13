@@ -31,7 +31,7 @@ def huggingface_chat_generate_stream(
     else:  # truncate
         max_src_len = context_len - max_new_tokens - 1
     input_ids = input_ids[-max_src_len:]
-    input_echo_len = len(input_ids)
+    # input_echo_len = len(input_ids)
     input_ids = torch.as_tensor([input_ids], device=device)
 
     streamer = TextIteratorStreamer(
@@ -51,7 +51,8 @@ def huggingface_chat_generate_stream(
         base_kwargs["do_sample"] = do_sample
 
     logger.info(
-        f"Predict with parameters: {base_kwargs}\ncustom_stop_words: {custom_stop_words}"
+        f"Predict with parameters: {base_kwargs}\ncustom_stop_words: "
+        f"{custom_stop_words}"
     )
 
     generate_kwargs = {"input_ids": input_ids, **base_kwargs}

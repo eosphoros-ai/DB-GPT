@@ -42,7 +42,7 @@ class ClaudeLLMClient(ProxyLLMClient):
         proxy_tokenizer: Optional[ProxyTokenizer] = None,
     ):
         try:
-            import anthropic
+            import anthropic  # noqa: F401
         except ImportError as exc:
             raise ValueError(
                 "Could not import python package: anthropic "
@@ -73,7 +73,7 @@ class ClaudeLLMClient(ProxyLLMClient):
         cls,
         model_params: ProxyModelParameters,
         default_executor: Optional[Executor] = None,
-    ) -> "ClaudeProxyLLMClient":
+    ) -> "ClaudeLLMClient":
         return cls(
             api_key=model_params.proxy_api_key,
             api_base=model_params.proxy_api_base,
@@ -210,9 +210,10 @@ class ClaudeLLMClient(ProxyLLMClient):
             ) as stream:
                 async for text in stream.text_stream:
                     full_text += text
+                    raw_usage = stream.current_message_snapshot.usage
                     usage = {
-                        "prompt_tokens": stream.current_message_snapshot.usage.input_tokens,
-                        "completion_tokens": stream.current_message_snapshot.usage.output_tokens,
+                        "prompt_tokens": raw_usage.input_tokens,
+                        "completion_tokens": raw_usage.output_tokens,
                     }
                     yield ModelOutput(text=full_text, error_code=0, usage=usage)
         except Exception as e:
@@ -233,7 +234,8 @@ class ClaudeLLMClient(ProxyLLMClient):
 
         Returns:
             int: The context length.
-        # TODO: This is a temporary solution. We should have a better way to get the context length.
+        # TODO: This is a temporary solution. We should have a better way to get the
+            context length.
             eg. get real context length from the openai api.
         """
         return self.context_length

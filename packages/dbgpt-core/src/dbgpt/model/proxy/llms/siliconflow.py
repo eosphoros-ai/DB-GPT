@@ -27,7 +27,8 @@ async def siliconflow_generate_stream(
 class SiliconFlowLLMClient(OpenAILLMClient):
     """SiliconFlow LLM Client.
 
-    SiliconFlow's API is compatible with OpenAI's API, so we inherit from OpenAILLMClient.
+    SiliconFlow's API is compatible with OpenAI's API, so we inherit from
+    OpenAILLMClient.
     """
 
     def __init__(
@@ -60,8 +61,8 @@ class SiliconFlowLLMClient(OpenAILLMClient):
 
         if not api_key:
             raise ValueError(
-                "SiliconFlow API key is required, please set 'SILICONFLOW_API_KEY' in environment "
-                "or pass it as an argument."
+                "SiliconFlow API key is required, please set 'SILICONFLOW_API_KEY' in "
+                "environment or pass it as an argument."
             )
 
         super().__init__(

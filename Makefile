@@ -40,7 +40,6 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/ruff check --select I --fix --exclude="examples/notebook" examples
 
 	$(VENV_BIN)/ruff check --fix packages \
-		--exclude="packages/dbgpt-core/src/dbgpt/model/**" \
 		--exclude="packages/dbgpt-core/src/dbgpt/_private/**" \
 		--exclude="packages/dbgpt-core/src/dbgpt/configs/**" \
 		--exclude="packages/dbgpt-core/src/dbgpt/util/**" \
@@ -58,7 +57,6 @@ fmt-check: setup ## Check Python code formatting and style without making change
 	$(VENV_BIN)/ruff check --select I packages
 	$(VENV_BIN)/ruff check --select I --exclude="examples/notebook" examples
 	$(VENV_BIN)/ruff check --fix packages \
-		--exclude="packages/dbgpt-core/src/dbgpt/model/**" \
 		--exclude="packages/dbgpt-core/src/dbgpt/_private/**" \
 		--exclude="packages/dbgpt-core/src/dbgpt/configs/**" \
 		--exclude="packages/dbgpt-core/src/dbgpt/util/**" \

@@ -69,7 +69,8 @@ class ProxyLLMModelAdapter(LLMModelAdapter):
         if not dynamic_llm_client_class:
             dynamic_llm_client_class = self.get_llm_client_class(params)
         logger.info(
-            f"Load model from params: {params}, llm client class: {dynamic_llm_client_class}"
+            f"Load model from params: {params}, llm client class: "
+            f"{dynamic_llm_client_class}"
         )
         proxy_llm_client = dynamic_llm_client_class.new_client(params)
         model = ProxyModel(params, proxy_llm_client)
@@ -233,7 +234,8 @@ class BardProxyLLMModelAdapter(ProxyLLMModelAdapter):
         self, params: ProxyModelParameters
     ) -> Type[ProxyLLMClient]:
         """Get llm client class"""
-        # TODO: Bard proxy LLM not support ProxyLLMClient now, we just return OpenAILLMClient
+        # TODO: Bard proxy LLM not support ProxyLLMClient now, we just return
+        #  OpenAILLMClient
         from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
         return OpenAILLMClient
@@ -252,7 +254,8 @@ class BaichuanProxyLLMModelAdapter(ProxyLLMModelAdapter):
         self, params: ProxyModelParameters
     ) -> Type[ProxyLLMClient]:
         """Get llm client class"""
-        # TODO: Baichuan proxy LLM not support ProxyLLMClient now, we just return OpenAILLMClient
+        # TODO: Baichuan proxy LLM not support ProxyLLMClient now, we just return
+        #  OpenAILLMClient
         from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
         return OpenAILLMClient

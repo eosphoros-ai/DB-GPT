@@ -17,7 +17,8 @@ def zhipu_generate_stream(
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
 
-    # TODO: Support convert_to_compatible_format config, zhipu not support system message
+    # TODO: Support convert_to_compatible_format config, zhipu not support system
+    #  message
     # convert_to_compatible_format = params.get("convert_to_compatible_format", False)
     # history, systems = __convert_2_zhipu_messages(messages)
     client: ZhipuLLMClient = model.proxy_llm_client
@@ -52,7 +53,8 @@ class ZhipuLLMClient(ProxyLLMClient):
                 raise ValueError(
                     "Could not import python package: zhipuai "
                     "This may be due to a version that is too low. "
-                    "Please upgrade the zhipuai package by running `pip install --upgrade zhipuai`."
+                    "Please upgrade the zhipuai package by running "
+                    "`pip install --upgrade zhipuai`."
                 ) from exc
         if not model:
             model = CHATGLM_DEFAULT_MODEL

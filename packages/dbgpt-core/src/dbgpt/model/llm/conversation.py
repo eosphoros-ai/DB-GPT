@@ -1,5 +1,6 @@
 """
-Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
+Fork from fastchat:
+https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
 
 Conversation prompt templates.
 
@@ -136,8 +137,8 @@ class Conversation:
                     ret += role
             return ret
         elif self.sep_style == SeparatorStyle.CHATGLM:
-            # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308
-            # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
+            # source: https://huggingface.co/THUDM/chatglm-6b/blob/1d240ba371910e9282298d4592532d7f0f3e9f3e/modeling_chatglm.py#L1302-L1308 # noqa
+            # source2: https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926 # noqa
             round_add_n = 1 if self.name == "chatglm2" else 0
             if self.system:
                 ret = self.system + self.sep
@@ -162,7 +163,7 @@ class Conversation:
                     ret += role + "\n"
             return ret
         elif self.sep_style == SeparatorStyle.CHATINTERN:
-            # source: https://huggingface.co/internlm/internlm-chat-7b-8k/blob/bd546fa984b4b0b86958f56bf37f94aa75ab8831/modeling_internlm.py#L771
+            # source: https://huggingface.co/internlm/internlm-chat-7b-8k/blob/bd546fa984b4b0b86958f56bf37f94aa75ab8831/modeling_internlm.py#L771 # noqa
             seps = [self.sep, self.sep2]
             ret = self.system
             for i, (role, message) in enumerate(self.messages):
@@ -292,8 +293,9 @@ def get_conv_template(name: str) -> Conversation:
 register_conv_template(
     Conversation(
         name="zero_shot",
-        system="A chat between a curious human and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        system="A chat between a curious human and an artificial intelligence "
+        "assistant. The assistant gives helpful, detailed, and polite answers to the "
+        "human's questions.",
         roles=("Human", "Assistant"),
         messages=(),
         offset=0,
@@ -307,8 +309,9 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="vicuna_v1.1",
-        system="A chat between a curious user and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        system="A chat between a curious user and an artificial intelligence "
+        "assistant. The assistant gives helpful, detailed, and polite answers to the "
+        "user's questions.",
         roles=("USER", "ASSISTANT"),
         messages=(),
         offset=0,
@@ -319,15 +322,18 @@ register_conv_template(
 )
 
 # llama2 template
-# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212 # noqa
 register_conv_template(
     Conversation(
         name="llama-2",
-        system="<s>[INST] <<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. "
-        "Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. "
-        "Please ensure that your responses are socially unbiased and positive in nature.\n\n"
-        "If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. "
-        "If you don't know the answer to a question, please don't share false information.\n<</SYS>>\n\n",
+        system="<s>[INST] <<SYS>>\nYou are a helpful, respectful and honest assistant."
+        " Always answer as helpfully as possible, while being safe. "
+        "Your answers should not include any harmful, unethical, racist, sexist, toxic,"
+        " dangerous, or illegal content. Please ensure that your responses are socially"
+        " unbiased and positive in nature.\n\n"
+        "If a question does not make any sense, or is not factually coherent, explain "
+        "why instead of answering something not correct. If you don't know the answer "
+        "to a question, please don't share false information.\n<</SYS>>\n\n",
         roles=("[INST]", "[/INST]"),
         messages=(),
         offset=0,
@@ -341,13 +347,16 @@ register_conv_template(
 
 
 # codellama template
-# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212 # noqa
 # reference2 : https://github.com/eosphoros-ai/DB-GPT-Hub/blob/main/README.zh.md
 register_conv_template(
     Conversation(
         name="codellama",
-        system="<s>[INST] <<SYS>>\nI want you to act as a SQL terminal in front of an example database, you need only to return the sql command to me.Below is an instruction that describes a task, Write a response that appropriately completes the request."
-        "If you don't know the answer to the request, please don't share false information.\n<</SYS>>\n\n",
+        system="<s>[INST] <<SYS>>\nI want you to act as a SQL terminal in front of an "
+        "example database, you need only to return the sql command to me.Below is an "
+        "instruction that describes a task, Write a response that appropriately "
+        "completes the request. If you don't know the answer to the request, please "
+        "don't share false information.\n<</SYS>>\n\n",
         roles=("[INST]", "[/INST]"),
         messages=(),
         offset=0,
@@ -364,7 +373,8 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="alpaca",
-        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+        system="Below is an instruction that describes a task. Write a response that "
+        "appropriately completes the request.",
         roles=("### Instruction", "### Response"),
         messages=(),
         offset=0,
@@ -376,8 +386,8 @@ register_conv_template(
 
 # Baichuan-13B-Chat template
 register_conv_template(
-    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/f5f47be2adbbdceb784f334d6fa1ca2c73e65097/modeling_baichuan.py#L507
-    # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json
+    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/f5f47be2adbbdceb784f334d6fa1ca2c73e65097/modeling_baichuan.py#L507 # noqa
+    # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json # noqa
     Conversation(
         name="baichuan-chat",
         system="",
@@ -395,7 +405,8 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="internlm-chat",
-        system="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
+        system="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives "
+        "helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
         roles=("<|User|>", "<|Bot|>"),
         messages=(),
         offset=0,

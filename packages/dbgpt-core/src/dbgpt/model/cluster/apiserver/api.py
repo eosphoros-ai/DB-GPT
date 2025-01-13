@@ -5,7 +5,6 @@ Adapted from https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/openai_
 """
 
 import asyncio
-import json
 import logging
 from typing import Any, Dict, Generator, List, Optional
 
@@ -16,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
-from dbgpt._private.pydantic import BaseModel, model_to_dict, model_to_json
+from dbgpt._private.pydantic import BaseModel, model_to_dict
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import ModelOutput
 from dbgpt.core.interface.message import ModelMessage
@@ -48,6 +47,7 @@ from dbgpt.model.base import ModelInstance
 from dbgpt.model.cluster.manager_base import WorkerManager, WorkerManagerFactory
 from dbgpt.model.cluster.registry import ModelRegistry
 from dbgpt.model.parameter import ModelAPIServerParameters, WorkerType
+from dbgpt.util.chat_util import transform_to_sse
 from dbgpt.util.fastapi import create_app
 from dbgpt.util.parameter_utils import EnvArgumentParser
 from dbgpt.util.tracer import initialize_tracer, root_tracer
@@ -157,7 +157,9 @@ def check_requests(request) -> Optional[JSONResponse]:
         if not api_settings.ignore_stop_exceeds_error:
             return create_error_response(
                 ErrorCode.PARAM_OUT_OF_RANGE,
-                f"Invalid 'stop': array too long. Expected an array with maximum length 4, but got an array with length {len(request.stop)} instead.",
+                f"Invalid 'stop': array too long. Expected an array with "
+                f"maximum length 4, but got an array with length {len(request.stop)}"
+                " instead.",
             )
         else:
             request.stop = request.stop[:4]
@@ -183,7 +185,8 @@ class APIServer(BaseComponent):
         if not worker_manager:
             raise APIServerException(
                 ErrorCode.INTERNAL_ERROR,
-                f"Could not get component {ComponentType.WORKER_MANAGER_FACTORY} from system_app",
+                f"Could not get component "
+                f"{ComponentType.WORKER_MANAGER_FACTORY} from system_app",
             )
         return worker_manager
 
@@ -200,7 +203,8 @@ class APIServer(BaseComponent):
         if not controller:
             raise APIServerException(
                 ErrorCode.INTERNAL_ERROR,
-                f"Could not get component {ComponentType.MODEL_REGISTRY} from system_app",
+                f"Could not get component {ComponentType.MODEL_REGISTRY} from"
+                " system_app",
             )
         return controller
 
@@ -214,7 +218,8 @@ class APIServer(BaseComponent):
             worker_type (str, optional): Worker type. Defaults to "llm".
 
         Raises:
-            APIServerException: If can't get healthy model instances with request model name
+            APIServerException: If can't get healthy model instances with request model
+             name
         """
         registry = self.get_model_registry()
         suffix = f"@{worker_type}"
@@ -296,15 +301,14 @@ class APIServer(BaseComponent):
                 model=model_name,
                 usage=last_usage,
             )
-            json_data = model_to_json(chunk, exclude_unset=True, ensure_ascii=False)
-            yield f"data: {json_data}\n\n"
+            yield transform_to_sse(chunk)
 
             previous_text = ""
             async for model_output in worker_manager.generate_stream(params):
                 model_output: ModelOutput = model_output
                 if model_output.error_code != 0:
-                    yield f"data: {json.dumps(model_output.to_dict(), ensure_ascii=False)}\n\n"
-                    yield "data: [DONE]\n\n"
+                    yield transform_to_sse(model_output.to_dict())
+                    yield transform_to_sse("[DONE]")
                     return
                 decoded_unicode = model_output.text.replace("\ufffd", "")
                 delta_text = decoded_unicode[len(previous_text) :]
@@ -343,16 +347,13 @@ class APIServer(BaseComponent):
                         finish_stream_events.append(chunk)
                     if not has_usage:
                         continue
-                json_data = model_to_json(chunk, exclude_unset=True, ensure_ascii=False)
-                yield f"data: {json_data}\n\n"
+                yield transform_to_sse(chunk)
 
-        # There is not "content" field in the last delta message, so exclude_none to exclude field "content".
+        # There is not "content" field in the last delta message, so exclude_none to
+        # exclude field "content".
         for finish_chunk in finish_stream_events:
-            json_data = model_to_json(
-                finish_chunk, exclude_unset=True, ensure_ascii=False
-            )
-            yield f"data: {json_data}\n\n"
-        yield "data: [DONE]\n\n"
+            yield transform_to_sse(finish_chunk)
+        yield transform_to_sse("[DONE]")
 
     async def chat_completion_generate(
         self, model_name: str, params: Dict[str, Any], n: int
@@ -412,8 +413,8 @@ class APIServer(BaseComponent):
                 async for model_output in worker_manager.generate_stream(params):
                     model_output: ModelOutput = model_output
                     if model_output.error_code != 0:
-                        yield f"data: {json.dumps(model_output.to_dict(), ensure_ascii=False)}\n\n"
-                        yield "data: [DONE]\n\n"
+                        yield transform_to_sse(model_output.to_dict())
+                        yield transform_to_sse("[DONE]")
                         return
                     decoded_unicode = model_output.text.replace("\ufffd", "")
                     delta_text = decoded_unicode[len(previous_text) :]
@@ -456,18 +457,13 @@ class APIServer(BaseComponent):
                         if model_output.finish_reason is not None:
                             finish_stream_events.append(chunk)
                         continue
-                    json_data = model_to_json(
-                        chunk, exclude_unset=True, ensure_ascii=False
-                    )
-                    yield f"data: {json_data}\n\n"
+                    yield transform_to_sse(chunk)
                 last_usage = curr_usage
-        # There is not "content" field in the last delta message, so exclude_none to exclude field "content".
+        # There is not "content" field in the last delta message, so exclude_none to
+        # exclude field "content".
         for finish_chunk in finish_stream_events:
-            json_data = model_to_json(
-                finish_chunk, exclude_unset=True, ensure_ascii=False
-            )
-            yield f"data: {json_data}\n\n"
-        yield "data: [DONE]\n\n"
+            yield transform_to_sse(finish_chunk)
+        yield transform_to_sse("[DONE]")
 
     async def completion_generate(
         self, request: CompletionRequest, params: Dict[str, Any]

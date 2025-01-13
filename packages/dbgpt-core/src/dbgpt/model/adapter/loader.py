@@ -89,7 +89,8 @@ class ModelLoader:
         param_cls = llm_adapter.model_param_class(model_type)
 
         args_parser = EnvArgumentParser()
-        # Read the parameters of the model from the environment variable according to the model name prefix, which currently has the highest priority
+        # Read the parameters of the model from the environment variable according to
+        # the model name prefix, which currently has the highest priority
         # vicuna_13b_max_gpu_memory=13Gib or VICUNA_13B_MAX_GPU_MEMORY=13Gib
         env_prefix = self.model_name + "_"
         env_prefix = env_prefix.replace("-", "_")
@@ -160,7 +161,8 @@ def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParamete
             kwargs["device_map"] = "auto"
             if model_params.max_gpu_memory:
                 logger.info(
-                    f"There has max_gpu_memory from config: {model_params.max_gpu_memory}"
+                    "There has max_gpu_memory from config: "
+                    f"{model_params.max_gpu_memory}"
                 )
                 max_memory = {i: model_params.max_gpu_memory for i in range(num_gpus)}
                 kwargs["max_memory"] = max_memory
@@ -244,7 +246,8 @@ def _try_load_default_quantization_model(
         return None, None
     except Exception as e:
         logger.warning(
-            f"Load default quantization model {model_params.model_name} failed, error: {str(e)}"
+            f"Load default quantization model {model_params.model_name} failed, error: "
+            f"{str(e)}"
         )
         return None, None
 
@@ -378,7 +381,8 @@ def load_huggingface_quantization_model(
     # Loading the tokenizer
     if type(model) is LlamaForCausalLM:
         logger.info(
-            f"Current model is type of: LlamaForCausalLM, load tokenizer by LlamaTokenizer"
+            "Current model is type of: LlamaForCausalLM, load tokenizer by "
+            "LlamaTokenizer"
         )
         tokenizer = LlamaTokenizer.from_pretrained(
             model_params.model_path, clean_up_tokenization_spaces=True
@@ -393,7 +397,8 @@ def load_huggingface_quantization_model(
             logger.warn(f"{str(e)}")
     else:
         logger.info(
-            f"Current model type is not LlamaForCausalLM, load tokenizer by AutoTokenizer"
+            "Current model type is not LlamaForCausalLM, load tokenizer by "
+            "AutoTokenizer"
         )
         tokenizer = AutoTokenizer.from_pretrained(
             model_params.model_path,
@@ -412,7 +417,8 @@ def llamacpp_loader(
     except ImportError as exc:
         raise ValueError(
             "Could not import python package: llama-cpp-python "
-            "Please install db-gpt llama support with `cd $DB-GPT-DIR && pip install .[llama_cpp]` "
+            "Please install db-gpt llama support with "
+            "`cd $DB-GPT-DIR && pip install .[llama_cpp]` "
             "or install llama-cpp-python with `pip install llama-cpp-python`"
         ) from exc
     model_path = model_params.model_path

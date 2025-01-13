@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 if torch.cuda.is_available() and not torch.version.hip:
     try:
         import llama_cpp_cuda
-    except:
+    except ImportError:
         llama_cpp_cuda = None
 else:
     llama_cpp_cuda = None
@@ -24,7 +24,7 @@ else:
 
 def llama_cpp_lib(prefer_cpu: bool = False):
     if prefer_cpu or llama_cpp_cuda is None:
-        logger.info(f"Llama.cpp use cpu")
+        logger.info("Llama.cpp use cpu")
         return llama_cpp
     else:
         return llama_cpp_cuda
@@ -91,7 +91,8 @@ class LlamaCppModel:
         if cache_capacity > 0:
             result.model.set_cache(LlamaCache(capacity_bytes=cache_capacity))
 
-        # This is ugly, but the model and the tokenizer are the same object in this library.
+        # This is ugly, but the model and the tokenizer are the same object in this
+        # library.
         return result, result
 
     def encode(self, string):
@@ -124,7 +125,8 @@ class LlamaCppModel:
         prompt = prompt[-max_src_len:]
         prompt = self.decode(prompt).decode("utf-8")
 
-        # TODO Compared with the original llama model, the Chinese effect of llama.cpp is very general, and it needs to be debugged
+        # TODO Compared with the original llama model, the Chinese effect of llama.cpp
+        #  is very general, and it needs to be debugged
         completion_chunks = self.model.create_completion(
             prompt=prompt,
             max_tokens=max_new_tokens,

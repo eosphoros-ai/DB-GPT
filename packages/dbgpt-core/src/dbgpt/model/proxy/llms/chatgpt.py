@@ -78,7 +78,7 @@ class OpenAILLMClient(ProxyLLMClient):
         **kwargs,
     ):
         try:
-            import openai
+            import openai  # noqa: F401
         except ImportError as exc:
             raise ValueError(
                 "Could not import python package: openai "
@@ -147,7 +147,8 @@ class OpenAILLMClient(ProxyLLMClient):
     def client(self) -> ClientType:
         if self._openai_less_then_v1:
             raise ValueError(
-                "Current model (Load by OpenAILLMClient) require openai.__version__>=1.0.0"
+                "Current model (Load by OpenAILLMClient) require "
+                "openai.__version__>=1.0.0"
             )
         if self._client is None:
             from dbgpt.model.utils.chatgpt_utils import _build_openai_client
@@ -195,7 +196,8 @@ class OpenAILLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
         payload = self._build_request(request)
         logger.info(
-            f"Send request to openai({self._openai_version}), payload: {payload}\n\n messages:\n{messages}"
+            f"Send request to openai({self._openai_version}), payload: {payload}\n\n "
+            f"messages:\n{messages}"
         )
         try:
             if self._openai_less_then_v1:
@@ -217,7 +219,8 @@ class OpenAILLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
         payload = self._build_request(request, stream=True)
         logger.info(
-            f"Send request to openai({self._openai_version}), payload: {payload}\n\n messages:\n{messages}"
+            f"Send request to openai({self._openai_version}), payload: {payload}\n\n "
+            f"messages:\n{messages}"
         )
         if self._openai_less_then_v1:
             async for r in self.generate_stream_less_then_v1(messages, payload):
@@ -293,7 +296,8 @@ class OpenAILLMClient(ProxyLLMClient):
 
         Returns:
             int: The context length.
-        # TODO: This is a temporary solution. We should have a better way to get the context length.
+        TODO: This is a temporary solution. We should have a better way to get the
+        context length.
             eg. get real context length from the openai api.
         """
         return self._context_length

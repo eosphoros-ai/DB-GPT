@@ -182,7 +182,7 @@ async def test_chat_completions_with_openai_lib_async_stream(
     #     chunk = ChatCompletionStreamResponse(
     #         id=0, choices=[choice_data], model=model_name
     #     )
-    #     mock_message = f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+    #     mock_message = f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n" # noqa
     #     mocked.post(
     #         "http://test/api/v1/chat/completions",
     #         status=200,

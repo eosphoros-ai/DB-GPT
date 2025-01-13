@@ -8,7 +8,8 @@ from dbgpt.util.parameter_utils import ParameterDescription, _get_parameter_desc
 
 class ModelWorker(ABC):
     """
-    Abstract representation of a Model Worker responsible for model interaction, startup, and shutdown. Supports 'llm' and 'text2vec' models.
+    Abstract representation of a Model Worker responsible for model interaction,
+    startup, and shutdown. Supports 'llm' and 'text2vec' models.
     """
 
     def worker_type(self) -> WorkerType:
@@ -20,7 +21,8 @@ class ModelWorker(ABC):
         return ModelParameters
 
     def support_async(self) -> bool:
-        """Whether support async, if True, invoke async_generate_stream, async_generate and async_embeddings instead of generate_stream, generate and embeddings"""
+        """Whether support async, if True, invoke async_generate_stream, async_generate
+        and async_embeddings instead of generate_stream, generate and embeddings"""
         return False
 
     @abstractmethod
@@ -28,7 +30,8 @@ class ModelWorker(ABC):
         """Parse the parameters using the provided command arguments.
 
         Args:
-            command_args (List[str]): The command-line arguments. Default is sys.argv[1:].
+            command_args (List[str]): The command-line arguments. Default is
+                sys.argv[1:].
         """
 
     @abstractmethod
@@ -62,13 +65,16 @@ class ModelWorker(ABC):
         """Generate a stream based on provided parameters.
 
         Args:
-            params (Dict): Parameters matching the PromptRequest data class format. Example:
+            params (Dict): Parameters matching the PromptRequest data class format.
+                Example:
                 {
-                    "messages": [{"role": "user", "content": "Hello world"}],  # List of ModelMessage objects
+                    # List of ModelMessage objects
+                    "messages": [{"role": "user", "content": "Hello world"}],
                     "model": "vicuna-13b-v1.5",
                     "prompt": "Hello world",
                     "temperature": 0.7,  # Optional; float value between 0 and 1
-                    "max_new_tokens": 2048,  # Optional; max number of new tokens for the output
+                    # Optional; max number of new tokens for the output
+                    "max_new_tokens": 2048,
                     "stop": "#",  # Optional; stopping condition for the output
                     "echo": True  # Optional; whether to echo the input in the output
                 }
@@ -131,7 +137,8 @@ class ModelWorker(ABC):
         Return embeddings for the given input parameters.
 
         Args:
-            params (Dict): Parameters matching the EmbeddingsRequest data class format. Example:
+            params (Dict): Parameters matching the EmbeddingsRequest data class format.
+             Example:
                 {
                     "model": "text2vec-large-chinese",
                     "input": ["Hello world", "DB-GPT is amazing"]

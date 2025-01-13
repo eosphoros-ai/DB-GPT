@@ -75,8 +75,9 @@ class TiktokenProxyTokenizer(ProxyTokenizer):
             import tiktoken
 
             logger.info(
-                "tiktoken installed, using it to count tokens, tiktoken will download tokenizer from network, "
-                "also you can download it and put it in the directory of environment variable TIKTOKEN_CACHE_DIR"
+                "tiktoken installed, using it to count tokens, tiktoken will download "
+                "tokenizer from network, also you can download it and put it in the "
+                "directory of environment variable TIKTOKEN_CACHE_DIR"
             )
         except ImportError:
             self._support_encoding = False
@@ -157,11 +158,13 @@ class ProxyLLMClient(LLMClient):
     ) -> ModelOutput:
         """Generate model output from model request.
 
-        We strongly recommend you to implement this method instead of sync_generate for high performance.
+        We strongly recommend you to implement this method instead of sync_generate for
+         high performance.
 
         Args:
             request (ModelRequest): model request
-            message_converter (Optional[MessageConverter], optional): message converter. Defaults to None.
+            message_converter (Optional[MessageConverter], optional): message
+                converter. Defaults to None.
 
         Returns:
             ModelOutput: model output
@@ -179,7 +182,8 @@ class ProxyLLMClient(LLMClient):
 
         Args:
             request (ModelRequest): model request
-            message_converter (Optional[MessageConverter], optional): message converter. Defaults to None.
+            message_converter (Optional[MessageConverter], optional): message
+                converter. Defaults to None.
 
         Returns:
             ModelOutput: model output
@@ -196,11 +200,13 @@ class ProxyLLMClient(LLMClient):
     ) -> AsyncIterator[ModelOutput]:
         """Generate model output stream from model request.
 
-        We strongly recommend you to implement this method instead of sync_generate_stream for high performance.
+        We strongly recommend you to implement this method instead of
+        sync_generate_stream for high performance.
 
         Args:
             request (ModelRequest): model request
-            message_converter (Optional[MessageConverter], optional): message converter. Defaults to None.
+            message_converter (Optional[MessageConverter], optional): message
+                converter. Defaults to None.
 
         Returns:
             AsyncIterator[ModelOutput]: model output stream
@@ -221,7 +227,8 @@ class ProxyLLMClient(LLMClient):
 
         Args:
             request (ModelRequest): model request
-            message_converter (Optional[MessageConverter], optional): message converter. Defaults to None.
+            message_converter (Optional[MessageConverter], optional): message
+                converter. Defaults to None.
 
         Returns:
             Iterator[ModelOutput]: model output stream
@@ -264,7 +271,8 @@ class ProxyLLMClient(LLMClient):
 
         Args:
             request (ModelRequest): model request
-            message_converter (Optional[MessageConverter], optional): message converter. Defaults to None.
+            message_converter (Optional[MessageConverter], optional): message
+                converter. Defaults to None.
 
         Returns:
             ModelRequest: converted model request

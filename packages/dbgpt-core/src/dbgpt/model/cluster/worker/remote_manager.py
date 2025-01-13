@@ -1,11 +1,17 @@
 import asyncio
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
-from dbgpt.model.cluster.base import *
+from dbgpt.model.cluster.base import (
+    WORKER_MANAGER_SERVICE_NAME,
+    WORKER_MANAGER_SERVICE_TYPE,
+    WorkerApplyRequest,
+    WorkerStartupRequest,
+)
 from dbgpt.model.cluster.registry import ModelRegistry
 from dbgpt.model.cluster.worker.manager import LocalWorkerManager, WorkerRunData, logger
 from dbgpt.model.cluster.worker.remote_worker import RemoteModelWorker
+from dbgpt.model.parameter import WorkerType
 
 
 class RemoteWorkerManager(LocalWorkerManager):
@@ -91,7 +97,7 @@ class RemoteWorkerManager(LocalWorkerManager):
         worker_instances = await self.get_model_instances(
             WORKER_MANAGER_SERVICE_TYPE, WORKER_MANAGER_SERVICE_NAME
         )
-        error_msg = f"Cound not found worker instances"
+        error_msg = "Cound not found worker instances"
         if host and port:
             worker_instances = [
                 ins for ins in worker_instances if ins.host == host and ins.port == port
@@ -168,9 +174,9 @@ class RemoteWorkerManager(LocalWorkerManager):
     async def get_all_model_instances(
         self, worker_type: str, healthy_only: bool = True
     ) -> List[WorkerRunData]:
-        instances: List[
-            ModelInstance
-        ] = await self.model_registry.get_all_model_instances(healthy_only=healthy_only)
+        instances: List[ModelInstance] = (
+            await self.model_registry.get_all_model_instances(healthy_only=healthy_only)
+        )
         result = []
         for instance in instances:
             name, wt = WorkerType.parse_worker_key(instance.model_name)

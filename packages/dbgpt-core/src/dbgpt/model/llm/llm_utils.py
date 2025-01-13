@@ -17,13 +17,13 @@ def retry_stream_api(
         backoff_base float: Base for exponential backoff. Defaults to 2.
         warn_user bool: Whether to warn the user. Defaults to True.
     """
-    retry_limit_msg = f"Error: Reached rate limit, passing..."
-    backoff_msg = f"Error: API Bad gateway. Waiting {{backoff}} seconds..."
+    # retry_limit_msg = "Error: Reached rate limit, passing..."
+    # backoff_msg = "Error: API Bad gateway. Waiting {backoff} seconds..."
 
     def _wrapper(func):
         @functools.wraps(func)
         def _wrapped(*args, **kwargs):
-            user_warned = not warn_user
+            # user_warned = not warn_user
             num_attempts = num_retries + 1  # +1 for the first attempt
             for attempt in range(1, num_attempts + 1):
                 try:

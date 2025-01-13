@@ -38,11 +38,15 @@ class BaseModelController(BaseComponent, ABC):
     async def get_all_instances(
         self, model_name: str = None, healthy_only: bool = False
     ) -> List[ModelInstance]:
-        """Fetch all instances of a given model. Optionally, fetch only the healthy instances."""
+        """Fetch all instances of a given model.
+
+        Optionally, fetch only the healthy instances.
+        """
 
     @abstractmethod
     async def send_heartbeat(self, instance: ModelInstance) -> bool:
-        """Send a heartbeat for a given model instance. This can be used to verify if the instance is still alive and functioning."""
+        """Send a heartbeat for a given model instance. This can be used to verify if
+        the instance is still alive and functioning."""
 
     async def model_apply(self) -> bool:
         raise NotImplementedError

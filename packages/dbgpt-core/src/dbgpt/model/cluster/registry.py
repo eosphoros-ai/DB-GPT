@@ -6,7 +6,7 @@ import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.model.base import ModelInstance
@@ -61,12 +61,13 @@ class ModelRegistry(BaseComponent, ABC):
         self, model_name: str, healthy_only: bool = False
     ) -> List[ModelInstance]:
         """
-        Fetch all instances of a given model. Optionally, fetch only the healthy instances.
+        Fetch all instances of a given model. Optionally, fetch only the healthy
+        instances.
 
         Args:
         - model_name (str): Name of the model to fetch instances for.
-        - healthy_only (bool, optional): If set to True, fetches only the healthy instances.
-                                         Defaults to False.
+        - healthy_only (bool, optional): If set to True, fetches only the healthy
+            instances. Defaults to False.
 
         Returns:
         - List[ModelInstance]: A list of instances for the given model.
@@ -76,7 +77,10 @@ class ModelRegistry(BaseComponent, ABC):
     def sync_get_all_instances(
         self, model_name: str, healthy_only: bool = False
     ) -> List[ModelInstance]:
-        """Fetch all instances of a given model. Optionally, fetch only the healthy instances."""
+        """Fetch all instances of a given model.
+
+        Optionally, fetch only the healthy instances.
+        """
 
     @abstractmethod
     async def get_all_model_instances(
@@ -97,7 +101,8 @@ class ModelRegistry(BaseComponent, ABC):
         - model_name (str): Name of the model.
 
         Returns:
-        - ModelInstance: One randomly selected healthy and enabled instance, or None if no such instance exists.
+        - ModelInstance: One randomly selected healthy and enabled instance, or None
+            if no such instance exists.
         """
         instances = await self.get_all_instances(model_name, healthy_only=True)
         instances = [i for i in instances if i.enabled]
@@ -139,7 +144,7 @@ class EmbeddedModelRegistry(ModelRegistry):
     ) -> Tuple[List[ModelInstance], List[ModelInstance]]:
         instances = self.registry[model_name]
         if healthy_only:
-            instances = [ins for ins in instances if ins.healthy == True]
+            instances = [ins for ins in instances if ins.healthy is True]
         exist_ins = [ins for ins in instances if ins.host == host and ins.port == port]
         return instances, exist_ins
 
@@ -197,7 +202,7 @@ class EmbeddedModelRegistry(ModelRegistry):
     ) -> List[ModelInstance]:
         instances = self.registry[model_name]
         if healthy_only:
-            instances = [ins for ins in instances if ins.healthy == True]
+            instances = [ins for ins in instances if ins.healthy is True]
         return instances
 
     async def get_all_model_instances(
@@ -206,7 +211,7 @@ class EmbeddedModelRegistry(ModelRegistry):
         logger.debug("Current registry metadata:\n{self.registry}")
         instances = list(itertools.chain(*self.registry.values()))
         if healthy_only:
-            instances = [ins for ins in instances if ins.healthy == True]
+            instances = [ins for ins in instances if ins.healthy is True]
         return instances
 
     async def send_heartbeat(self, instance: ModelInstance) -> bool:

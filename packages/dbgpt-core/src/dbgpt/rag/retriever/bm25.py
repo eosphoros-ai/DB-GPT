@@ -4,7 +4,8 @@ import json
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import Any, List, Optional
 
-from dbgpt.app.base import logger
+from dbgpt_app.base import logger
+
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker

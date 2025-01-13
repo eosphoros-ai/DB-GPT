@@ -143,11 +143,15 @@ class WenxinLLMClient(ProxyLLMClient):
 
             headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
-            proxy_server_url = f"https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/{self._model_version}?access_token={access_token}"
+            proxy_server_url = (
+                f"https://aip.baidubce.com/rpc/2.0/ai_custom/v1/"
+                f"wenxinworkshop/chat/{self._model_version}?access_token={access_token}"
+            )
 
             if not access_token:
                 raise RuntimeError(
-                    "Failed to get access token. please set the correct api_key and secret key."
+                    "Failed to get access token. please set the correct api_key and "
+                    "secret key."
                 )
 
             history, system_message = _to_wenxin_messages(request)
@@ -163,7 +167,8 @@ class WenxinLLMClient(ProxyLLMClient):
                 proxy_server_url, headers=headers, json=payload, stream=True
             )
             logger.info(
-                f"Send request to {proxy_server_url} with real model {self._model}, model version {self._model_version}"
+                f"Send request to {proxy_server_url} with real model {self._model}, "
+                f"model version {self._model_version}"
             )
             for line in res.iter_lines():
                 if line:

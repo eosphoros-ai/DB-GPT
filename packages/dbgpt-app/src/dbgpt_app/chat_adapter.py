@@ -121,86 +121,6 @@ def get_llm_chat_adapter(model_name: str, model_path: str) -> BaseChatAdpter:
     )
 
 
-class VicunaChatAdapter(BaseChatAdpter):
-    """Model chat Adapter for vicuna"""
-
-    def _is_llama2_based(self, model_path: str):
-        # see https://huggingface.co/lmsys/vicuna-13b-v1.5
-        return "v1.5" in model_path.lower()
-
-    def match(self, model_path: str):
-        return "vicuna" in model_path.lower()
-
-    def get_conv_template(self, model_path: str) -> Conversation:
-        if self._is_llama2_based(model_path):
-            return get_conv_template("vicuna_v1.1")
-        return None
-
-    def get_generate_stream_func(self, model_path: str):
-        from dbgpt.model.llm_out.vicuna_base_llm import generate_stream
-
-        if self._is_llama2_based(model_path):
-            return super().get_generate_stream_func(model_path)
-        return generate_stream
-
-
-class ChatGLMChatAdapter(BaseChatAdpter):
-    """Model chat Adapter for ChatGLM"""
-
-    def match(self, model_path: str):
-        return "chatglm" in model_path
-
-    def get_generate_stream_func(self, model_path: str):
-        from dbgpt.model.llm_out.chatglm_llm import chatglm_generate_stream
-
-        return chatglm_generate_stream
-
-
-class GuanacoChatAdapter(BaseChatAdpter):
-    """Model chat adapter for Guanaco"""
-
-    def match(self, model_path: str):
-        return "guanaco" in model_path
-
-    def get_generate_stream_func(self, model_path: str):
-        from dbgpt.model.llm_out.guanaco_llm import guanaco_generate_stream
-
-        return guanaco_generate_stream
-
-
-class FalconChatAdapter(BaseChatAdpter):
-    """Model chat adapter for Guanaco"""
-
-    def match(self, model_path: str):
-        return "falcon" in model_path
-
-    def get_generate_stream_func(self, model_path: str):
-        from dbgpt.model.llm_out.falcon_llm import falcon_generate_output
-
-        return falcon_generate_output
-
-
-#
-# class ProxyllmChatAdapter(BaseChatAdpter):
-#     def match(self, model_path: str):
-#         return "proxyllm" in model_path
-#
-#     def get_generate_stream_func(self, model_path: str):
-#         from dbgpt.model.llm_out.proxy_llm import proxyllm_generate_stream
-#
-#         return proxyllm_generate_stream
-
-
-class GorillaChatAdapter(BaseChatAdpter):
-    def match(self, model_path: str):
-        return "gorilla" in model_path
-
-    def get_generate_stream_func(self, model_path: str):
-        from dbgpt.model.llm_out.gorilla_llm import generate_stream
-
-        return generate_stream
-
-
 class GPT4AllChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
         return "gptj-6b" in model_path
@@ -211,14 +131,6 @@ class GPT4AllChatAdapter(BaseChatAdpter):
         return gpt4all_generate_stream
 
 
-class Llama2ChatAdapter(BaseChatAdpter):
-    def match(self, model_path: str):
-        return "llama-2" in model_path.lower()
-
-    def get_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("llama-2")
-
-
 class CodeLlamaChatAdapter(BaseChatAdpter):
     """The model ChatAdapter for codellama ."""
 
@@ -227,24 +139,6 @@ class CodeLlamaChatAdapter(BaseChatAdpter):
 
     def get_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("codellama")
-
-
-class BaichuanChatAdapter(BaseChatAdpter):
-    def match(self, model_path: str):
-        return "baichuan" in model_path.lower()
-
-    def get_conv_template(self, model_path: str) -> Conversation:
-        if "chat" in model_path.lower():
-            return get_conv_template("baichuan-chat")
-        return get_conv_template("zero_shot")
-
-
-class WizardLMChatAdapter(BaseChatAdpter):
-    def match(self, model_path: str):
-        return "wizardlm" in model_path.lower()
-
-    def get_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("vicuna_v1.1")
 
 
 class LlamaCppChatAdapter(BaseChatAdpter):
@@ -265,30 +159,8 @@ class LlamaCppChatAdapter(BaseChatAdpter):
         return generate_stream
 
 
-class InternLMChatAdapter(BaseChatAdpter):
-    """The model adapter for internlm/internlm-chat-7b"""
-
-    def match(self, model_path: str):
-        return "internlm" in model_path.lower()
-
-    def get_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("internlm-chat")
-
-
-register_llm_model_chat_adapter(VicunaChatAdapter)
-register_llm_model_chat_adapter(ChatGLMChatAdapter)
-register_llm_model_chat_adapter(GuanacoChatAdapter)
-register_llm_model_chat_adapter(FalconChatAdapter)
-register_llm_model_chat_adapter(GorillaChatAdapter)
 register_llm_model_chat_adapter(GPT4AllChatAdapter)
-register_llm_model_chat_adapter(Llama2ChatAdapter)
 register_llm_model_chat_adapter(CodeLlamaChatAdapter)
-register_llm_model_chat_adapter(BaichuanChatAdapter)
-register_llm_model_chat_adapter(WizardLMChatAdapter)
 register_llm_model_chat_adapter(LlamaCppChatAdapter)
-register_llm_model_chat_adapter(InternLMChatAdapter)
-
-# Proxy model for test and develop, it's cheap for us now.
-# register_llm_model_chat_adapter(ProxyllmChatAdapter)
-
+# just for test_py, remove this later
 register_llm_model_chat_adapter(BaseChatAdpter)

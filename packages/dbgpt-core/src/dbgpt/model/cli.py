@@ -49,7 +49,8 @@ def _get_worker_manager(address: str):
     show_default=True,
     help=(
         "Address of the Model Controller to connect to. "
-        "Just support light deploy model, If the environment variable CONTROLLER_ADDRESS is configured, read from the environment variable"
+        "Just support light deploy model, If the environment variable "
+        "CONTROLLER_ADDRESS is configured, read from the environment variable"
     ),
 )
 def model_cli_group(address: str):

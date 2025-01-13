@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager
 from typing import Dict, Iterator, List, Tuple
 
 import pytest
@@ -8,11 +8,7 @@ from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.model.base import ModelInstance
 from dbgpt.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
 from dbgpt.model.cluster.worker.manager import (
-    ApplyFunction,
-    DeregisterFunc,
     LocalWorkerManager,
-    RegisterFunc,
-    SendHeartbeatFunc,
     WorkerManager,
 )
 from dbgpt.model.cluster.worker_base import ModelWorker
@@ -187,7 +183,7 @@ async def _create_model_registry(
 ) -> ModelRegistry:
     registry = EmbeddedModelRegistry()
     for _, _, inst in workers:
-        assert await registry.register_instance(inst) == True
+        assert await registry.register_instance(inst) is True
     return registry
 
 

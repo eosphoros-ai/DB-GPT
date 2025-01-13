@@ -3,7 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
-    from fastchat.conversation import Conversation
+    pass
 
 
 class PromptType(str, Enum):
@@ -92,7 +92,8 @@ class ConversationAdapterFactory(ABC):
 
         Args:
             template_name (str): The name of the template.
-            prompt_template_type (Optional[PromptType]): The type of the prompt template, default to be FSCHAT.
+            prompt_template_type (Optional[PromptType]): The type of the prompt
+             template, default to be FSCHAT.
 
         Returns:
             ConversationAdapter: The conversation adapter.

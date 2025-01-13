@@ -27,7 +27,7 @@ async def test_register_instance(model_registry, model_instance):
     """
     Test if an instance can be registered correctly
     """
-    assert await model_registry.register_instance(model_instance) == True
+    assert await model_registry.register_instance(model_instance) is True
     assert len(model_registry.registry[model_instance.model_name]) == 1
 
 
@@ -37,7 +37,7 @@ async def test_deregister_instance(model_registry, model_instance):
     Test if an instance can be deregistered correctly
     """
     await model_registry.register_instance(model_instance)
-    assert await model_registry.deregister_instance(model_instance) == True
+    assert await model_registry.deregister_instance(model_instance) is True
     assert not model_registry.registry[model_instance.model_name][0].healthy
 
 
@@ -84,23 +84,25 @@ async def test_select_one_health_instance(model_registry, model_instance):
 @pytest.mark.asyncio
 async def test_send_heartbeat(model_registry, model_instance):
     """
-    Test if a heartbeat can be sent and that it correctly updates the last_heartbeat timestamp
+    Test if a heartbeat can be sent and that it correctly updates the last_heartbeat
+    timestamp
     """
     await model_registry.register_instance(model_instance)
     last_heartbeat = datetime.now() - timedelta(seconds=10)
     model_instance.last_heartbeat = last_heartbeat
-    assert await model_registry.send_heartbeat(model_instance) == True
+    assert await model_registry.send_heartbeat(model_instance) is True
     assert (
         model_registry.registry[model_instance.model_name][0].last_heartbeat
         > last_heartbeat
     )
-    assert model_registry.registry[model_instance.model_name][0].healthy == True
+    assert model_registry.registry[model_instance.model_name][0].healthy is True
 
 
 @pytest.mark.asyncio
 async def test_heartbeat_timeout(model_registry, model_instance):
     """
-    Test if an instance is marked as unhealthy when the heartbeat is not sent within the timeout
+    Test if an instance is marked as unhealthy when the heartbeat is not sent within
+    the timeout
     """
     model_registry = EmbeddedModelRegistry(1, 1)
     await model_registry.register_instance(model_instance)
@@ -131,7 +133,8 @@ async def test_multiple_instances(model_registry, model_instance):
 @pytest.mark.asyncio
 async def test_same_model_name_different_ip_port(model_registry):
     """
-    Test if instances with the same model name but different IP and port are handled correctly
+    Test if instances with the same model name but different IP and port are handled
+    correctly
     """
     instance1 = ModelInstance(model_name="test_model", host="192.168.1.1", port=5000)
     instance2 = ModelInstance(model_name="test_model", host="192.168.1.2", port=6000)

@@ -1,6 +1,6 @@
 try:
     from dbgpt.model.cluster.client import DefaultLLMClient, RemoteLLMClient
-except ImportError as exc:
+except ImportError:
     DefaultLLMClient = None
     RemoteLLMClient = None
 

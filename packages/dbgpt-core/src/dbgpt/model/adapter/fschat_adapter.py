@@ -1,7 +1,9 @@
 """Adapter for fastchat
 
-You can import fastchat only in this file, so that the user does not need to install fastchat if he does not use it.
+You can import fastchat only in this file, so that the user does not need to install
+fastchat if he does not use it.
 """
+
 import logging
 import os
 import threading
@@ -33,7 +35,8 @@ logger = logging.getLogger(__name__)
 thread_local = threading.local()
 _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
-# If some model is not in the blacklist, but it still affects the loading of DB-GPT, you can add it to the blacklist.
+# If some model is not in the blacklist, but it still affects the loading of DB-GPT,
+# you can add it to the blacklist.
 __BLACK_LIST_MODEL_PROMPT = []
 
 
@@ -178,7 +181,8 @@ def _fastchat_get_adapter_monkey_patch(model_path: str, model_name: str = None):
     for adapter in model_adapters:
         if model_path_basename and adapter.match(model_path_basename):
             logger.info(
-                f"Found llm model adapter with model path: {model_path} and base name: {model_path_basename}, {adapter}"
+                f"Found llm model adapter with model path: {model_path} and base name: "
+                f"{model_path_basename}, {adapter}"
             )
             return adapter
 
@@ -212,15 +216,17 @@ def _remove_black_list_model_of_fastchat():
         model_adapters.remove(adapter)
 
 
-# Covering the configuration of fastcaht, we will regularly feedback the code here to fastchat.
+# Covering the configuration of fastcaht, we will regularly feedback the code here to
+# fastchat.
 # We also recommend that you modify it directly in the fastchat repository.
 
-# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L212
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L212 # noqa
 register_conv_template(
     Conversation(
         name="aquila-legacy",
-        system_message="A chat between a curious human and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        system_message="A chat between a curious human and an artificial intelligence "
+        "assistant. The assistant gives helpful, detailed, and polite answers to the "
+        "human's questions.\n\n",
         roles=("### Human: ", "### Assistant: ", "System"),
         messages=(),
         offset=0,
@@ -231,12 +237,13 @@ register_conv_template(
     ),
     override=True,
 )
-# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L227
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L227 # noqa
 register_conv_template(
     Conversation(
         name="aquila",
-        system_message="A chat between a curious human and an artificial intelligence assistant. "
-        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        system_message="A chat between a curious human and an artificial intelligence "
+        "assistant. The assistant gives helpful, detailed, and polite answers to the "
+        "human's questions.",
         roles=("Human", "Assistant", "System"),
         messages=(),
         offset=0,
@@ -247,7 +254,7 @@ register_conv_template(
     ),
     override=True,
 )
-# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L242
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L242 # noqa
 register_conv_template(
     Conversation(
         name="aquila-v1",

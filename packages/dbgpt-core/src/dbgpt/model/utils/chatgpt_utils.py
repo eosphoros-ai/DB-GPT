@@ -14,7 +14,6 @@ from typing import (
     Union,
 )
 
-from dbgpt._private.pydantic import model_to_json
 from dbgpt.core.awel import TransformStreamAbsOperator
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
@@ -25,11 +24,11 @@ from dbgpt.core.awel.flow import (
 )
 from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.core.operators import BaseLLM
+from dbgpt.util.chat_util import transform_to_sse
 from dbgpt.util.i18n_utils import _
 
 if TYPE_CHECKING:
-    import httpx
-    from httpx._types import ProxiesTypes
+    from httpx._types import ProxiesTypes, ProxyTypes
     from openai import AsyncAzureOpenAI, AsyncOpenAI
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
@@ -53,7 +52,7 @@ class OpenAIParameters:
 
 def _initialize_openai_v1(init_params: OpenAIParameters):
     try:
-        from openai import OpenAI
+        from openai import OpenAI  # noqa: F401
     except ImportError as exc:
         raise ValueError(
             "Could not import python package: openai "
@@ -207,7 +206,8 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
         async def model_caller() -> str:
             """Read model name from share data.
             In streaming mode, this transform_stream function will be executed
-            before parent operator(Streaming Operator is trigger by downstream Operator).
+            before parent operator(Streaming Operator is trigger by downstream
+            Operator).
             """
             return await self.current_dag_context.get_from_share_data(
                 BaseLLM.SHARE_DATA_KEY_MODEL_NAME
@@ -227,10 +227,10 @@ async def _to_openai_stream(
     Args:
         output_iter (AsyncIterator[ModelOutput]): The output iterator.
         model (Optional[str], optional): The model name. Defaults to None.
-        model_caller (Callable[[None], Union[Awaitable[str], str]], optional): The model caller. Defaults to None.
+        model_caller (Callable[[None], Union[Awaitable[str], str]], optional): The
+            model caller. Defaults to None.
     """
     import asyncio
-    import json
 
     import shortuuid
 
@@ -250,7 +250,7 @@ async def _to_openai_stream(
     chunk = ChatCompletionStreamResponse(
         id=id, choices=[choice_data], model=model or ""
     )
-    yield f"data: {model_to_json(chunk, exclude_unset=True, ensure_ascii=False)}\n\n"
+    yield transform_to_sse(chunk)
 
     previous_text = ""
     finish_stream_events = []
@@ -262,8 +262,8 @@ async def _to_openai_stream(
                 model = model_caller()
         model_output: ModelOutput = model_output
         if model_output.error_code != 0:
-            yield f"data: {json.dumps(model_output.to_dict(), ensure_ascii=False)}\n\n"
-            yield "data: [DONE]\n\n"
+            yield transform_to_sse(model_output.to_dict())
+            yield transform_to_sse("[DONE]")
             return
         decoded_unicode = model_output.text.replace("\ufffd", "")
         delta_text = decoded_unicode[len(previous_text) :]
@@ -285,7 +285,7 @@ async def _to_openai_stream(
             if model_output.finish_reason is not None:
                 finish_stream_events.append(chunk)
             continue
-        yield f"data: {model_to_json(chunk, exclude_unset=True, ensure_ascii=False)}\n\n"
+        yield transform_to_sse(chunk)
     for finish_chunk in finish_stream_events:
-        yield f"data: {model_to_json(finish_chunk, exclude_none=True, ensure_ascii=False)}\n\n"
-    yield "data: [DONE]\n\n"
+        yield transform_to_sse(finish_chunk)
+    yield transform_to_sse("[DONE]")

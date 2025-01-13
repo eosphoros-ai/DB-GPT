@@ -1,11 +1,10 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock
+from datetime import datetime
 
 import pytest
 
-from dbgpt.core.interface.storage import InMemoryStorage, QuerySpec
+from dbgpt.core.interface.storage import InMemoryStorage
 from dbgpt.util.serialization.json_serialization import JsonSerializer
 
 from ...registry_impl.storage import (

@@ -46,7 +46,8 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
             "--prompt_template",
             type=str,
             default=None,
-            help="Prompt template. If None, the prompt template is automatically determined from model path",
+            help="Prompt template. If None, the prompt template is automatically "
+            "determined from model path",
         )
 
         descs = _extract_parameter_details(

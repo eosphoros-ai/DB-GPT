@@ -26,16 +26,17 @@ logger = logging.getLogger(__name__)
 try:
     from llama_cpp_server_py_core import (
         ChatCompletionRequest,
-        ChatCompletionStreamResponse,
+        ChatCompletionStreamResponse,  # noqa: F401
         CompletionRequest,
-        CompletionResponse,
+        CompletionResponse,  # noqa: F401
         LlamaCppServer,
         ServerConfig,
         ServerProcess,
     )
 except ImportError:
     logger.error(
-        "Failed to import llama_cpp_server_py_core, please install it first by `pip install llama-cpp-server-py-core`"
+        "Failed to import llama_cpp_server_py_core, please install it first by "
+        "`pip install llama-cpp-server-py-core`"
     )
     raise
 

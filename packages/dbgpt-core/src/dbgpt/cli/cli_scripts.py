@@ -135,7 +135,7 @@ except ImportError as e:
     logging.warning(f"Integrating dbgpt model command line tool failed: {e}")
 
 try:
-    from dbgpt.app._cli import (
+    from dbgpt_app._cli import (
         _stop_all_dbgpt_server,
         migration,
         start_webserver,
@@ -152,7 +152,7 @@ except ImportError as e:
     logging.warning(f"Integrating dbgpt webserver command line tool failed: {e}")
 
 try:
-    from dbgpt.app.knowledge._cli.knowledge_cli import knowledge_cli_group
+    from dbgpt_app.knowledge._cli.knowledge_cli import knowledge_cli_group
 
     add_command_alias(knowledge_cli_group, name="knowledge", parent_group=cli)
 except ImportError as e:

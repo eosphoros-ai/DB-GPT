@@ -7,7 +7,6 @@ from dbgpt.model.cluster.base import (
     WorkerStartupRequest,
 )
 from dbgpt.model.cluster.controller.controller import (
-    BaseModelController,
     ModelRegistryClient,
     run_model_controller,
 )
@@ -28,6 +27,7 @@ __all__ = [
     "WorkerApplyRequest",
     "WorkerParameterRequest",
     "WorkerStartupRequest",
+    "WorkerManager",
     "WorkerManagerFactory",
     "ModelWorker",
     "DefaultModelWorker",

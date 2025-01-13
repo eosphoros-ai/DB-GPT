@@ -31,7 +31,10 @@ class LLMModelAdapter(ABC):
     support_system_message: bool = True
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} model_name={self.model_name} model_path={self.model_path}>"
+        return (
+            f"<{self.__class__.__name__} model_name={self.model_name} model_path="
+            f"{self.model_path}>"
+        )
 
     def __str__(self):
         return self.__repr__()
@@ -48,7 +51,8 @@ class LLMModelAdapter(ABC):
         """
 
     def use_fast_tokenizer(self) -> bool:
-        """Whether use a [fast Rust-based tokenizer](https://huggingface.co/docs/tokenizers/index) if it is supported
+        """Whether use a [fast Rust-based tokenizer]
+        (https://huggingface.co/docs/tokenizers/index) if it is supported
         for a given model.
         """
         return False
@@ -218,7 +222,8 @@ class LLMModelAdapter(ABC):
                     {"role": "assistant", "content": "Hi"},
                 ]
 
-        But some model may need to transform the messages to other format(e.g. There is no system message), such as:
+        But some model may need to transform the messages to other format(e.g. There is
+         no system message), such as:
             .. code-block:: python
 
                 return_messages = [
@@ -227,7 +232,8 @@ class LLMModelAdapter(ABC):
                 ]
         Args:
             messages (List[ModelMessage]): The model messages
-            convert_to_compatible_format (bool, optional): Whether to convert to compatible format. Defaults to False.
+            convert_to_compatible_format (bool, optional): Whether to convert to
+                compatible format. Defaults to False.
 
         Returns:
             List[Dict[str, str]]: The transformed model messages
@@ -246,7 +252,8 @@ class LLMModelAdapter(ABC):
     ) -> List[Dict[str, str]]:
         """Transform the model messages to no system messages
 
-        Some opensource chat model no system messages, so wo should transform the messages to no system messages.
+        Some opensource chat model no system messages, so wo should transform the
+        messages to no system messages.
 
         Merge the system messages to the last user message, example:
             .. code-block:: python
@@ -298,14 +305,17 @@ class LLMModelAdapter(ABC):
     ) -> Optional[str]:
         """Get the string prompt from the given parameters and messages
 
-        If the value of return is not None, we will skip :meth:`~LLMModelAdapter.get_prompt_with_template` and use the value of return.
+        If the value of return is not None, we will skip
+        :meth:`~LLMModelAdapter.get_prompt_with_template` and use the value of return.
 
         Args:
             params (Dict): The parameters
             messages (List[ModelMessage]): The model messages
-            tokenizer (Any): The tokenizer of model, in huggingface chat model, we can create the prompt by tokenizer
+            tokenizer (Any): The tokenizer of model, in huggingface chat model, we can
+                create the prompt by tokenizer
             prompt_template (str, optional): The prompt template. Defaults to None.
-            convert_to_compatible_format (bool, optional): Whether to convert to compatible format. Defaults to False.
+            convert_to_compatible_format (bool, optional): Whether to convert to
+                compatible format. Defaults to False.
 
         Returns:
             Optional[str]: The string prompt
@@ -430,7 +440,8 @@ class LLMModelAdapter(ABC):
         can_use_systems: [] = []
         if system_messages:
             if len(system_messages) > 1:
-                # Compatible with dbgpt complex scenarios, the last system will protect more complete information
+                # Compatible with dbgpt complex scenarios, the last system will protect
+                # more complete information
                 # entered by the current user
                 user_messages[-1] = system_messages[-1]
                 can_use_systems = system_messages[:-1]
@@ -542,7 +553,8 @@ def register_model_adapter(
 
     Args:
         model_adapter_cls (Type[LLMModelAdapter]): The model adapter class.
-        match_funcs (List[Callable[[str, str, str], bool]], optional): The match functions. Defaults to None.
+        match_funcs (List[Callable[[str, str, str], bool]], optional): The match
+            functions. Defaults to None.
     """
     model_adapters.append(AdapterEntry(model_adapter_cls(), match_funcs))
 
@@ -559,7 +571,8 @@ def get_model_adapter(
         model_type (str): The type of the model.
         model_name (str): The name of the model.
         model_path (str): The path of the model.
-        conv_factory (Optional[ConversationAdapterFactory], optional): The conversation factory. Defaults to None.
+        conv_factory (Optional[ConversationAdapterFactory], optional): The conversation
+         factory. Defaults to None.
     Returns:
         Optional[LLMModelAdapter]: The model adapter.
     """

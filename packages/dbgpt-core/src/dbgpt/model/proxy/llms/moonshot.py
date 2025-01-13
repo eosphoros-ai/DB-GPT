@@ -1,7 +1,6 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
-from dbgpt.core import ModelRequestContext
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 
 from .chatgpt import OpenAILLMClient

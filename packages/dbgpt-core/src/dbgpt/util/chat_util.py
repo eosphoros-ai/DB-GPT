@@ -1,11 +1,17 @@
 import asyncio
+import json
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Coroutine, List
+from dataclasses import asdict, is_dataclass
+from typing import Any, Callable, Coroutine, List, Union
+
+from dbgpt._private.pydantic import BaseModel, model_to_json
+
+SSE_DATA_TYPE = Union[str, BaseModel, dict]
 
 
 async def llm_chat_response_nostream(chat_scene: str, **chat_param):
     """llm_chat_response_nostream"""
-    from dbgpt.app.scene import BaseChat, ChatFactory
+    from dbgpt_app.scene import BaseChat, ChatFactory
 
     chat_factory = ChatFactory()
     chat: BaseChat = chat_factory.get_implementation(chat_scene, **chat_param)
@@ -14,7 +20,7 @@ async def llm_chat_response_nostream(chat_scene: str, **chat_param):
 
 
 async def llm_chat_response(chat_scene: str, **chat_param):
-    from dbgpt.app.scene import BaseChat, ChatFactory
+    from dbgpt_app.scene import BaseChat, ChatFactory
 
     chat_factory = ChatFactory()
     chat: BaseChat = chat_factory.get_implementation(chat_scene, **chat_param)
@@ -79,3 +85,29 @@ def run_tasks(
                 raise e
 
     return results
+
+
+def transform_to_sse(data: SSE_DATA_TYPE) -> str:
+    """Transform data to Server-Sent Events format.
+
+    Args:
+        data: Data to transform to SSE format
+
+    Returns:
+        str: Data in SSE format
+
+    Raises:
+        ValueError: If data type is not supported
+    """
+    if isinstance(data, BaseModel):
+        return (
+            f"data: {model_to_json(data, exclude_unset=True, ensure_ascii=False)}\n\n"
+        )
+    elif isinstance(data, dict):
+        return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+    elif isinstance(data, str):
+        return f"data: {data}\n\n"
+    elif is_dataclass(data):
+        return f"data: {json.dumps(asdict(data), ensure_ascii=False)}\n\n"
+    else:
+        raise ValueError(f"Unsupported data type: {type(data)}")

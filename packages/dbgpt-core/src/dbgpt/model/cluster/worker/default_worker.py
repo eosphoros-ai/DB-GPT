@@ -58,7 +58,8 @@ class DefaultModelWorker(ModelWorker):
         self._support_generate_func = self.llm_adapter.support_generate_function()
 
         logger.info(
-            f"model_name: {self.model_name}, model_path: {self.model_path}, model_param_class: {self.param_cls}"
+            f"model_name: {self.model_name}, model_path: {self.model_path}, "
+            f"model_param_class: {self.param_cls}"
         )
 
         self.ml: ModelLoader = ModelLoader(
@@ -89,7 +90,8 @@ class DefaultModelWorker(ModelWorker):
         if hasattr(model_params, "device") and not model_params.device:
             model_params.device = get_device()
             logger.info(
-                f"[DefaultModelWorker] Parameters of device is None, use {model_params.device}"
+                "[DefaultModelWorker] Parameters of device is None, use "
+                f"{model_params.device}"
             )
         return model_params
 
@@ -122,7 +124,8 @@ class DefaultModelWorker(ModelWorker):
             )
             if model_max_length:
                 logger.info(
-                    f"Parse model max length {model_max_length} from model {self.model_name}."
+                    f"Parse model max length {model_max_length} from model "
+                    f"{self.model_name}."
                 )
                 self.context_len = model_max_length
             elif hasattr(model_params, "max_context_size"):
@@ -178,8 +181,9 @@ class DefaultModelWorker(ModelWorker):
                 previous_response = output_str
                 last_metrics = current_metrics
                 yield model_output
-            print(
-                f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
+            logger.info(
+                f"\n\nfull stream output:\n{previous_response}\n\nmodel "
+                f"generate_stream params:\n{params}"
             )
             model_span.end(metadata={"output": previous_response})
             span.end()
@@ -298,8 +302,9 @@ class DefaultModelWorker(ModelWorker):
                 previous_response = output_str
                 last_metrics = current_metrics
                 yield model_output
-            print(
-                f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
+            logger.info(
+                f"\n\nfull stream output:\n{previous_response}\n\nmodel "
+                f"generate_stream params:\n{params}"
             )
             model_span.end(metadata={"output": previous_response})
             span.end()
@@ -370,7 +375,8 @@ class DefaultModelWorker(ModelWorker):
                 )
                 func_type = "async generate stream"
                 logger.info(
-                    "current generate stream function is asynchronous generate stream function"
+                    "current generate stream function is asynchronous generate stream"
+                    " function"
                 )
         else:
             if not is_stream and self.llm_adapter.support_generate_function():
@@ -387,13 +393,15 @@ class DefaultModelWorker(ModelWorker):
                 )
                 func_type = "generate stream"
                 logger.info(
-                    "current generate stream function is synchronous generate stream function"
+                    "current generate stream function is synchronous generate stream "
+                    "function"
                 )
         str_prompt = params.get("prompt")
         if not str_prompt:
             str_prompt = params.get("string_prompt")
-        print(
-            f"llm_adapter: {str(self.llm_adapter)}\n\nmodel prompt: \n\n{str_prompt}\n\n{func_type} output:\n"
+        logger.info(
+            f"llm_adapter: {str(self.llm_adapter)}\n\nmodel prompt: \n\n"
+            f"{str_prompt}\n\n{func_type} output:\n"
         )
 
         generate_func_str_name = "{}.{}".format(func.__module__, func.__name__)

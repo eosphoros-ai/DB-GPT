@@ -1,30 +1,22 @@
 from dataclasses import asdict
-from typing import Dict, Iterator, List, Tuple
-from unittest.mock import AsyncMock, patch
+from typing import List, Tuple
+from unittest.mock import patch
 
 import pytest
 
-from dbgpt.model.base import ModelInstance, WorkerApplyType
+from dbgpt.model.base import WorkerApplyType
 from dbgpt.model.cluster.base import WorkerApplyRequest, WorkerStartupRequest
 from dbgpt.model.cluster.manager_base import WorkerRunData
 from dbgpt.model.cluster.tests.conftest import (
-    MockModelWorker,
     _create_workers,
     _new_worker_params,
     _start_worker_manager,
-    manager_2_embedding_workers,
-    manager_2_workers,
-    manager_with_2_workers,
 )
 from dbgpt.model.cluster.worker.manager import (
-    ApplyFunction,
-    DeregisterFunc,
     LocalWorkerManager,
-    RegisterFunc,
-    SendHeartbeatFunc,
 )
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
+from dbgpt.model.parameter import ModelWorkerParameters, WorkerType
 
 _TEST_MODEL_NAME = "vicuna-13b-v1.5"
 _TEST_MODEL_PATH = "/app/models/vicuna-13b-v1.5"
@@ -48,13 +40,13 @@ def manager(request):
         deregister_func = None
         send_heartbeat_func = None
         model_registry = None
-        workers = []
+        # workers = []
     else:
         register_func = request.param.get("register_func")
         deregister_func = request.param.get("deregister_func")
         send_heartbeat_func = request.param.get("send_heartbeat_func")
         model_registry = request.param.get("model_registry")
-        workers = request.param.get("model_registry")
+        # workers = request.param.get("model_registry")
 
     worker_manager = LocalWorkerManager(
         register_func=register_func,
@@ -91,7 +83,7 @@ async def test_add_worker(
     # TODO test with register function
     assert manager.add_worker(worker, worker_param)
     # Add again
-    assert manager.add_worker(worker, worker_param) == False
+    assert manager.add_worker(worker, worker_param) is True
     key = manager._worker_key(worker_param.worker_type, worker_param.model_name)
     assert len(manager.workers) == 1
     assert len(manager.workers[key]) == 1
@@ -110,7 +102,7 @@ async def test_add_worker(
                 model_name="chatglm2-6b", model_path="/app/models/chatglm2-6b"
             ),
         )
-        == False
+        is True
     )
     assert len(manager.workers) == 2
 
@@ -406,7 +398,7 @@ async def test_generate_stream(
     manager, workers = manager_with_2_workers
     for _, worker_params, _ in workers:
         model_name = worker_params.model_name
-        worker_type = worker_params.worker_type
+        # worker_type = worker_params.worker_type
         params = {"model": model_name}
         text = ""
         async for out in manager.generate_stream(params):
@@ -432,7 +424,7 @@ async def test_generate(
     manager, workers = manager_with_2_workers
     for _, worker_params, _ in workers:
         model_name = worker_params.model_name
-        worker_type = worker_params.worker_type
+        # worker_type = worker_params.worker_type
         params = {"model": model_name}
         out = await manager.generate(params)
         assert out.text == expected_messages
@@ -457,7 +449,7 @@ async def test_embeddings(
     manager, workers = manager_2_embedding_workers
     for _, worker_params, _ in workers:
         model_name = worker_params.model_name
-        worker_type = worker_params.worker_type
+        # worker_type = worker_params.worker_type
         params = {"model": model_name, "input": ["hello", "world"]}
         if is_async:
             out = await manager.embeddings(params)

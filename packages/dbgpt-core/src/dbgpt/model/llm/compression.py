@@ -41,7 +41,7 @@ class CLinear(nn.Module):
 def compress_module(module, target_device):
     for attr_str in dir(module):
         target_attr = getattr(module, attr_str)
-        if type(target_attr) == torch.nn.Linear:
+        if type(target_attr) is torch.nn.Linear:
             setattr(
                 module,
                 attr_str,
@@ -109,7 +109,7 @@ def decompress(packed_data, config):
     if not config.enabled:
         return packed_data
 
-    group_size, num_bits, group_dim, symmetric = (
+    group_size, num_bits, group_dim, symmetric = (  # noqa: F841
         config.group_size,
         config.num_bits,
         config.group_dim,

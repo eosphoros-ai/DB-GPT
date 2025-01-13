@@ -19,7 +19,6 @@ _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 _OLD_MODELS = [
     "llama-cpp",
-    # "proxyllm",
     "gptj-6b",
     "codellama-13b-sql-sft",
     "codellama-7b",
@@ -81,7 +80,8 @@ def get_llm_model_adapter(
             result_adapter = FastChatLLMModelAdapterWrapper(adapter)
 
     else:
-        from dbgpt.app.chat_adapter import get_llm_chat_adapter
+        from dbgpt_app.chat_adapter import get_llm_chat_adapter
+
         from dbgpt.model.adapter.old_adapter import OldLLMModelAdapterWrapper
         from dbgpt.model.adapter.old_adapter import (
             get_llm_model_adapter as _old_get_llm_model_adapter,

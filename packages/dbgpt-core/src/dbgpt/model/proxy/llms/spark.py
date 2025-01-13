@@ -155,14 +155,15 @@ class SparkLLMClient(ProxyLLMClient):
             "stream": True,
         }
         header = {
-            "Authorization": f"Bearer {self._api_password}"  # 注意此处替换自己的APIPassword
+            # Please replace the APIPassword with your own
+            "Authorization": f"Bearer {self._api_password}"
         }
         response = requests.post(self._api_base, headers=header, json=data, stream=True)
         # 流式响应解析示例
         response.encoding = "utf-8"
         try:
             content = ""
-            # data: {"code":0,"message":"Success","sid":"cha000bf865@dx19307263c06b894532","id":"cha000bf865@dx19307263c06b894532","created":1730991766,"choices":[{"delta":{"role":"assistant","content":"你好"},"index":0}]}
+            # data: {"code":0,"message":"Success","sid":"cha000bf865@dx19307263c06b894532","id":"cha000bf865@dx19307263c06b894532","created":1730991766,"choices":[{"delta":{"role":"assistant","content":"你好"},"index":0}]} #noqa
             # data: [DONE]
             for line in response.iter_lines(decode_unicode=True):
                 print("llm out:", line)
