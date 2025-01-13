@@ -177,7 +177,7 @@ class IndexStoreBase(ABC):
             List[str]: Chunk ids.
         """
         chunk_groups = [
-            chunks[i: i + max_chunks_once_load]
+            chunks[i : i + max_chunks_once_load]
             for i in range(0, len(chunks), max_chunks_once_load)
         ]
         logger.info(
@@ -189,6 +189,7 @@ class IndexStoreBase(ABC):
             tasks.append(self.aload_document(chunk_group))
 
         import asyncio
+
         results = await asyncio.gather(*tasks)
 
         ids = []
