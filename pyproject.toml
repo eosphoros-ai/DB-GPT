@@ -28,8 +28,6 @@ dev-dependencies = [
     "tomli>=2.0.2",
     "tomli-w>=1.1.0",
     "pytest>=7.0.0",
-    "black==22.8.0",
-    "isort>=5.0.0",
     "twine",
 ]
 
