@@ -122,6 +122,8 @@ def _initialize_db(
             f"{str(CFG.LOCAL_DB_PORT)}/"
             f"{db_name}?charset=utf8mb4"
         )
+        if CFG.LOCAL_DB_SSL_VERIFY:
+            db_url += "&ssl_verify_cert=true&ssl_verify_identity=true"
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)
     elif CFG.LOCAL_DB_TYPE == DBType.OceanBase.value():

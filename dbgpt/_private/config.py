@@ -215,6 +215,7 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
         self.LOCAL_DB_POOL_SIZE = int(os.getenv("LOCAL_DB_POOL_SIZE", 10))
         self.LOCAL_DB_POOL_OVERFLOW = int(os.getenv("LOCAL_DB_POOL_OVERFLOW", 20))
+        self.LOCAL_DB_SSL_VERIFY = bool(os.getenv("LOCAL_DB_SSL_VERIFY", False))
 
         self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "db")
 
