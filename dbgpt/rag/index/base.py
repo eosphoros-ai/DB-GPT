@@ -8,10 +8,7 @@ from typing import Any, Dict, List, Optional
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt.util.executor_utils import (
-    blocking_func_to_async,
-    blocking_func_to_async_no_executor,
-)
+from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 
 logger = logging.getLogger(__name__)
 
