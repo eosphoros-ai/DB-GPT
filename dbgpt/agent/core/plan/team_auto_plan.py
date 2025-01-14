@@ -3,6 +3,8 @@
 import logging
 from typing import Dict, List, Optional, Tuple
 
+from pydantic import Field
+
 from dbgpt.core.interface.message import ModelMessageRoleType
 
 from ..action.base import ActionOutput
@@ -21,6 +23,11 @@ logger = logging.getLogger(__name__)
 class AutoPlanChatManager(ManagerAgent):
     """A chat manager agent that can manage a team chat of multiple agents."""
 
+    planner_agent_class: PlannerAgent = Field(
+        default=PlannerAgent,
+        description="The class to use for creating the planner agent. "
+        "Defaults to PlannerAgent.",
+    )
     profile: ProfileConfig = ProfileConfig(
         name=DynConfig(
             "AutoPlanChatManager",
@@ -46,9 +53,12 @@ class AutoPlanChatManager(ManagerAgent):
         ),
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, planner_agent_class=None, **kwargs):
         """Create a new AutoPlanChatManager instance."""
         super().__init__(**kwargs)
+        self.planner_agent_class = (
+            planner_agent_class or PlannerAgent
+        )  # use PlannerAgent by default
 
     async def process_rely_message(
         self, conv_id: str, now_plan: GptsPlan, speaker: Agent
@@ -187,7 +197,7 @@ class AutoPlanChatManager(ManagerAgent):
                         "resources still fails to build a valid plan！",
                     )
                 planner: ConversableAgent = (
-                    await PlannerAgent()
+                    await self.planner_agent_class()
                     .bind(self.memory)
                     .bind(self.agent_context)
                     .bind(self.llm_config)
