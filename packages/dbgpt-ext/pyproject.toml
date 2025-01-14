@@ -28,6 +28,8 @@ rag = [
     "sentence-transformers",
 ]
 graph_rag = [
+    # For visualization in code
+    "networkx",
     "dbgpt-tugraph-plugins>=0.1.1"
 ]
 datasource_mysql = [

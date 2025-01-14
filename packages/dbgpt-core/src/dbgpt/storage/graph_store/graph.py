@@ -9,8 +9,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Tuple
 
-import networkx as nx
-
 logger = logging.getLogger(__name__)
 
 
@@ -558,6 +556,14 @@ class MemoryGraph(Graph):
 
     def graphviz(self, name="g"):
         """View graphviz graph: https://dreampuf.github.io/GraphvizOnline."""
+        try:
+            import networkx as nx
+        except ImportError:
+            raise ImportError(
+                "networkx is required for graph visualization, please install it by "
+                "running `pip install networkx`"
+            )
+
         g = nx.MultiDiGraph()
         for vertex in self.vertices():
             g.add_node(vertex.vid)
