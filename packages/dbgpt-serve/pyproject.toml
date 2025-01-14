@@ -19,8 +19,10 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = []
 
-# [tool.hatch.metadata]
-# allow-direct-references = true
+[project.optional-dependencies]
+libro = ["libro>=0.1.25"]
+dbgpts = ["poetry"]
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt_serve"]

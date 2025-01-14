@@ -17,47 +17,89 @@ dependencies = [
     # Snowflake no additional dependencies.
     "snowflake-id",
     "typing_inspect",
+]
+readme = "README.md"
+requires-python = ">= 3.10"
+
+[project.optional-dependencies]
+client = [
+    "httpx",
+    "fastapi>=0.100.0,<0.113.0",
+    "tenacity<=8.3.0"
+]
+cli = [
     "prettytable",
     "click",
     "psutil==5.9.4",
     "colorama==0.4.6",
     "tomlkit",
     "rich",
-    "sqlalchemy>=2.0.25, <2.0.29",
-    "msgpack",
-    "cryptography",
-    "shortuuid",
-    "sqlparse",
-    "markdown",
-    "bs4",
-    "python-pptx",
-    "python-docx",
-    "pypdf",
-    "pdfplumber",
-    "python-multipart",
-    "httpx",
-    "fastapi>=0.100.0,<0.113.0",
-    # For retry, chromadb need tenacity<=8.3.0
-    "tenacity<=8.3.0",
-    "pympler",
-    "pandas",
-    "schedule",
-    "numpy>=1.21.0,<2.0.0",
-    "lyric-py>=0.1.6",
-    "alembic==1.12.0",
-    "zhipuai",
 ]
-readme = "README.md"
-requires-python = ">= 3.10"
-
-[project.optional-dependencies]
 agent = [
+    "termcolor",
+    "pandas==2.0.3",
+    # numpy should less than 2.0.0
+    "numpy>=1.21.0,<2.0.0",
     "auto-gpt-plugin-template>=0.0.3",
 ]
-openai = [
-    "openai>=1.59.6",
-    "tiktoken>=0.8.0",
+simple_framework = [
+    "jinja2",
+    "uvicorn",
+    "shortuuid",
+    # 2.0.29 not support duckdb now
+    "SQLAlchemy>=2.0.25, <2.0.29",
+    # for cache
+    "msgpack",
+    # for AWEL operator serialization
+    "cloudpickle",
+    # for cache
+    # TODO: pympler has not been updated for a long time and needs to
+    #  find a new toolkit.
+    "pympler",
+    "duckdb",
+    "duckdb-engine==0.9.1",
+    # lightweight python library for scheduling jobs
+    "schedule",
+    # For datasource subpackage
+    "sqlparse==0.4.4",
+    "python-multipart",
 ]
+framework = [
+    "coloredlogs",
+    "seaborn",
+    "auto-gpt-plugin-template",
+    "gTTS==2.3.1",
+    "pymysql",
+    "jsonschema",
+    # TODO move transformers to default
+    "tokenizers>=0.14",
+    "transformers>=4.34.0",
+    "sentencepiece",
+    "alembic==1.12.0",
+    # for excel
+    "openpyxl==3.1.2",
+    "chardet==5.1.0",
+    "xlrd==2.0.1",
+    "aiofiles",
+    # for agent
+    "GitPython",
+    # For AWEL dag visualization, graphviz is a small package, also we can move it to default.
+    "graphviz",
+    # For security
+    "cryptography",
+    # For high performance RPC communication in code execution
+    "pyzmq",
+]
+code = [
+    "msgpack",
+    # for AWEL operator serialization
+    "cloudpickle",
+    "lyric-py>=0.1.6",
+    "lyric-py-worker>=0.1.6",
+    "lyric-js-worker>=0.1.6",
+    "lyric-component-ts-transpiling>=0.1.6",
+]
+
 
 [build-system]
 requires = ["hatchling"]
@@ -67,9 +109,6 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = []
 default-groups = ["dev"]
-
-# [tool.hatch.metadata]
-# allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt"]

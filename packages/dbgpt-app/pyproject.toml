@@ -7,13 +7,13 @@ authors = [
 ]
 dependencies = [
     "dbgpt-accelerator",
+    "dbgpt",
     "dbgpt-ext",
     "dbgpt-serve",
     "dbgpt-client",
     "aiofiles",
     "sentence-transformers",
     "pyparsing",
-    "dbgpt[openai]",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
@@ -22,12 +22,25 @@ requires-python = ">= 3.10"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.optional-dependencies]
+cache = [
+    "rocksdict",
+]
+
+observability = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp",
+]
+
+proxy_openai = [
+    "dbgpt[client,cli,agent,simple_framework,framework,code]",
+    "dbgpt-ext[proxy_openai]"
+]
+
 [tool.uv]
 managed = true
 dev-dependencies = []
-
-# [tool.hatch.metadata]
-# allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt_app"]

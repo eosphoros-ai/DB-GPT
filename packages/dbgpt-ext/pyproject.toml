@@ -7,25 +7,7 @@ authors = [
 ]
 dependencies = [
     "dbgpt>=0.7.0",
-    "pytest>=8.3.4",
     "pymysql",
-    "pyspark",
-    # "psycopg2", # In production, you can install psycopg2 instead of psycopg2-binary
-    "psycopg2-binary",
-    # mysqlclient 2.2.x have pkg-config issue on 3.10+
-    "mysqlclient==2.1.0",
-    # pydoris is too old, we should find a new package to replace it.
-    "clickhouse-connect",
-    "pyhive",
-    "thrift",
-    "thrift_sasl",
-    "vertica_python",
-    "chromadb>=0.4.22",
-    "pymilvus",
-    "weaviate-client",
-    "duckdb",
-    "duckdb-engine==0.9.1",
-    "sqlalchemy>=2.0.25, <2.0.29",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
@@ -34,14 +16,63 @@ requires-python = ">= 3.10"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.optional-dependencies]
+rag = [
+    "spacy==3.7",
+    "markdown",
+    "bs4",
+    "python-pptx",
+    "python-docx",
+    "pypdf",
+    "pdfplumber",
+    "sentence-transformers",
+]
+graph_rag = [
+    "dbgpt-tugraph-plugins>=0.1.1"
+]
+datasource_mysql = [
+    # mysqlclient 2.2.x have pkg-config issue on 3.10+
+    # If you want to install psycopg2 and mysqlclient in ubuntu, you should install
+    # libpq-dev and libmysqlclient-dev first.
+    "mysqlclient==2.1.0",
+]
+datasource_postgres = [
+    # "psycopg2", # In production, you can install psycopg2 instead of psycopg2-binary
+    "psycopg2-binary",
+]
+datasource_clickhouse = [
+    "clickhouse-connect",
+]
+datasource_spark = ["pyspark"]
+datasource_hive = [
+    "pyhive",
+    "thrift",
+    "thrift_sasl",
+]
+datasource_vertica = ["vertica-python"]
+datasource_duckdb = [
+    "duckdb",
+    "duckdb-engine==0.9.1",
+]
+storage_milvus = ["pymilvus"]
+storage_weaviate = ["weaviate-client"]
+storage_chromadb = ["chromadb>=0.4.22"]
+storage_neo4j = ["neo4j"]
+proxy_ollama = ["ollama"]
+proxy_zhipuai = ["zhipuai"]
+proxy_tongyi = ["dashscope"]
+proxy_qianfan = ["qianfan"]
+proxy_openai = [
+    "openai>=1.59.6",
+    "tiktoken>=0.8.0",
+]
+proxy_anthropic = ["anthropic"]
+
 [tool.uv]
 managed = true
 dev-dependencies = [
     "pytest>=8.3.4",
 ]
-
-# [tool.hatch.metadata]
-# allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt_ext"]

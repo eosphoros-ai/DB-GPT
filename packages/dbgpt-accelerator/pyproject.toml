@@ -60,6 +60,12 @@ cuda124 = [
 #    "torchaudio>=2.3.0,<2.4.0;sys_platform == 'linux'",
 #]
 
+quantization = [
+    # Accessible large language models via k-bit quantization for PyTorch.
+    "bitsandbytes>=0.45.0; sys_platform == 'win32' or sys_platform == 'linux'",
+    # "autoawq"
+]
+
 [dependency-groups]
 auto = [
     # Starting from PyTorch 2.3.0, the minimum requirement for macOS is macOS 11.0+ ARM64.
