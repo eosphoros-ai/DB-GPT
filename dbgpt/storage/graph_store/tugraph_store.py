@@ -75,6 +75,10 @@ class TuGraphStoreConfig(GraphStoreConfig):
         default=True,
         description="Enable the similarity search or not",
     )
+    enable_text2gql_search: bool = Field(
+        default=False,
+        description="Enable text2gql search or not.",
+    )
 
 
 class TuGraphStore(GraphStoreBase):
@@ -96,6 +100,11 @@ class TuGraphStore(GraphStoreBase):
             os.environ["SIMILARITY_SEARCH_ENABLED"].lower() == "true"
             if "SIMILARITY_SEARCH_ENABLED" in os.environ
             else config.enable_similarity_search
+        )
+        self.enable_text2gql_search = (
+            os.environ["TEXT2GQL_SEARCH_ENABLED"].lower() == "true"
+            if "TEXT2GQL_SEARCH_ENABLED" in os.environ
+            else config.enable_text2gql_search
         )
         self._plugin_names = (
             os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")

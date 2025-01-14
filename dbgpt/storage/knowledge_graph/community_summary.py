@@ -269,11 +269,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             if "TRIPLET_GRAPH_ENABLED" in os.environ
             else config.triplet_graph_enabled
         )
-        self._text2gql_search_enabled = (
-            os.environ["TEXT2SQL_SEARCH_ENABLED"].lower() == "true"
-            if "TEXT2SQL_SEARCH_ENABLED" in os.environ
-            else config.text2gql_search_enabled
-        )
         self._knowledge_graph_chunk_search_top_size = int(
             os.getenv(
                 "KNOWLEDGE_GRAPH_CHUNK_SEARCH_TOP_SIZE",
@@ -537,7 +532,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        enable_text2gql_search = self.enable_text2gql_search
+        enable_text2gql_search = self._graph_store.enable_text2gql_search
 
         text2gql_query = ""
         subgraph = None
