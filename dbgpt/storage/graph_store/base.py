@@ -27,6 +27,10 @@ class GraphStoreConfig(BaseModel):
         default=False,
         description="Enable graph community summary or not.",
     )
+    enable_similarity_search: bool = Field(
+        default=False,
+        description="Enable similarity search or not.",
+    )
 
 
 class GraphStoreBase(ABC):
@@ -36,6 +40,8 @@ class GraphStoreBase(ABC):
         """Initialize graph store."""
         self._config = config
         self._conn = None
+        self.enable_summary = config.enable_summary
+        self.enable_similarity_search = config.enable_similarity_search
 
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:
