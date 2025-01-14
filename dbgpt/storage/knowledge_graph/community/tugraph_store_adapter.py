@@ -1034,16 +1034,14 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         and not in ['id', 'name'])
                     - If list of strings: Keep only properties in white_list
             """
-            return (
-                {
-                    key: value
-                    for key, value in properties.items()
-                    if (
-                        (not key.startswith("_") and key not in ["id", "name"])
-                        or (key in white_list)
-                    )
-                }
-            )
+            return {
+                key: value
+                for key, value in properties.items()
+                if (
+                    (not key.startswith("_") and key not in ["id", "name"])
+                    or (key in white_list)
+                )
+            }
 
         # Parse the data to nodes and relationships
         for record in data:

@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from tenacity import retry, stop_after_attempt, wait_fixed
 
@@ -75,5 +75,5 @@ class TranslatorBase(TransformerBase, ABC):
     """Translator base class."""
 
     @abstractmethod
-    async def translate(self, text: str, limit: Optional[int] = None) -> Dict: 
+    async def translate(self, text: str, limit: Optional[int] = None) -> Dict:
         """Translate results from text."""

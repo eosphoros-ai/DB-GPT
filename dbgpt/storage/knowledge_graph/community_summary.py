@@ -11,8 +11,8 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.rag.transformer.text2cypher import Text2Cypher
+from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
@@ -350,9 +350,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         )
 
         self._text2cypher = Text2Cypher(
-            self._llm_client,
-            self._model_name,
-            self._graph_store_apdater.get_schema()
+            self._llm_client, self._model_name, self._graph_store_apdater.get_schema()
         )
 
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
@@ -368,7 +366,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         await self._community_store.build_communities(
             batch_size=self._community_summary_batch_size
         )
-        
 
         return [chunk.chunk_id for chunk in chunks]
 
@@ -550,11 +547,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             except Exception as e:
                 text2gql_query = ""
                 subgraph = None
-        
+
         # if not enable text2gql search or tex2gql search failed to retrieve subgraph
         if not subgraph:
             enable_similarity_search = self._graph_store.enable_similarity_search
- 
+
             # Local search: extract keywords and explore subgraph
             triplet_graph_enabled = self._triplet_graph_enabled
             document_graph_enabled = self._document_graph_enabled

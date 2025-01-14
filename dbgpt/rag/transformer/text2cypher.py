@@ -1,10 +1,12 @@
 """Text2Cypher class."""
-import logging, re, json
+import json
+import logging
+import re
 from typing import Dict, Optional
 
 from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
-from dbgpt.rag.transformer.llm_translator import LLMTranslator
 from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
+from dbgpt.rag.transformer.llm_translator import LLMTranslator
 
 TEXT_TO_CYPHER_PT = (
     "A question written in graph query language style is provided below. "
@@ -19,29 +21,29 @@ TEXT_TO_CYPHER_PT = (
     "Example:\n"
     "Question: Query the entity named TuGraph then return the entity.\n"
     "Category: Single Entity Search\n"
-    "entities: [\"TuGraph\"]\n"
+    'entities: ["TuGraph"]\n'
     "relations: []\n"
-    "Query:\nMatch (n) WHERE n.id=\"TuGraph\" RETURN n\n"
+    'Query:\nMatch (n) WHERE n.id="TuGraph" RETURN n\n'
     "Question: Query all one hop paths between the entity named Alex and the entity named TuGraph, then return them.\n"
     "Category: One Hop Entity Search\n"
-    "entities: [\"Alex\", \"TuGraph\"]\n"
+    'entities: ["Alex", "TuGraph"]\n'
     "relations: []\n"
-    "Query:\nMATCH p=(n)-[r]-(m) WHERE n.id=\"Alex\" AND m.id=\"TuGraph\" RETURN p \n"
+    'Query:\nMATCH p=(n)-[r]-(m) WHERE n.id="Alex" AND m.id="TuGraph" RETURN p \n'
     "Question: Query all one hop paths that has a entity named TuGraph and a relation named commit, then return them.\n"
     "Category: One Hop Relation Search\n"
-    "entities: [\"TuGraph\"]\n"
-    "relations: [\"commit\"]\n"
-    "Query:\nMATCH p=(n)-[r]-(m) WHERE n.id=\"TuGraph\" AND r.id=\"commit\" RETURN p \n"
+    'entities: ["TuGraph"]\n'
+    'relations: ["commit"]\n'
+    'Query:\nMATCH p=(n)-[r]-(m) WHERE n.id="TuGraph" AND r.id="commit" RETURN p \n'
     "Question: Query all entities that have a two hop path between them and the entity named Bob, both entities should have a work for relation with the middle entity.\n"
     "Category: Two Hop Entity Search\n"
-    "entities: [\"Bob\"]\n"
-    "relations: [\"work for\"]\n"
-    "Query:\nMATCH p=(n)-[r1]-(m)-[r2]-(l) WHERE n.id=\"Bob\" AND r1.id=\"work for\" AND r2.id=\"work for\" RETURN p \n"
+    'entities: ["Bob"]\n'
+    'relations: ["work for"]\n'
+    'Query:\nMATCH p=(n)-[r1]-(m)-[r2]-(l) WHERE n.id="Bob" AND r1.id="work for" AND r2.id="work for" RETURN p \n'
     "Question: Introduce TuGraph and DBGPT seperately.\n"
     "Category: Freestyle Question\n"
-    "entities: [\"TuGraph\", \"DBGPT\"]\n"
+    'entities: ["TuGraph", "DBGPT"]\n'
     "relations: []\n"
-    "Query:\nMATCH p=(n)-[r:relation*2]-(m) WHERE n.id IN [\"TuGraph\", \"DB-GPT\"] RETURN p\n"
+    'Query:\nMATCH p=(n)-[r:relation*2]-(m) WHERE n.id IN ["TuGraph", "DB-GPT"] RETURN p\n'
     "---------------------\n"
     "Question: {question}\n"
     "Category: {category}\n"
@@ -62,13 +64,9 @@ class Text2Cypher(LLMTranslator):
         self._schema = json.dumps(json.loads(schema), indent=4)
         self._intent_interpreter = IntentInterpreter(llm_client, model_name)
 
-    async def _translate(
-        self, text: str, history: str = None, limit: Optional[int] = None
-    ) -> Dict:
-        """Inner translate by LLM."""
-
+    def _format_messages(self, text: str, history: str = None) -> str:
         """Interprete the intent of the question."""
-        intention = await self._intent_interpreter.translate(text)
+        intention = json.loads(text)
         question = intention["rewrited_question"]
         category = intention["category"]
         entities = intention["entities"]
@@ -84,54 +82,33 @@ class Text2Cypher(LLMTranslator):
                 category=category,
                 entities=entities,
                 relations=relations,
-                history=history
+                history=history,
             )
             if history is not None
             else template.format_messages(
-                    schema=self._schema,
-                    question=question,
-                    category=category,
-                    entities=entities,
-                    relations=relations
-                )
+                schema=self._schema,
+                question=question,
+                category=category,
+                entities=entities,
+                relations=relations,
+            )
         )
 
-        # use default model if needed
-        if not self._model_name:
-            models = await self._llm_client.models()
-            if not models:
-                raise Exception("No models available")
-            self._model_name = models[0].model
-            logger.info(f"Using model {self._model_name} to extract")
+        return messages
 
-        model_messages = ModelMessage.from_base_messages(messages)
-        request = ModelRequest(model=self._model_name, messages=model_messages)
-        response = await self._llm_client.generate(request=request)
-
-        if not response.success:
-            code = str(response.error_code)
-            reason = response.text
-            logger.error(f"request llm failed ({code}) {reason}")
-            return []
-
-        if limit and limit < 1:
-            ValueError("optional argument limit >= 1")
-        return self._parse_response(response.text, limit)
-    
-    
     def _parse_response(self, text: str, limit: Optional[int] = None) -> Dict:
         """Parse llm response."""
         interaction = {}
         query = ""
 
-        code_block_pattern = re.compile(r'```cypher(.*?)```', re.S)
+        code_block_pattern = re.compile(r"```cypher(.*?)```", re.S)
 
         result = re.findall(code_block_pattern, text)
         if result:
             query = result[0]
         else:
             query = text
-        
+
         interaction["query"] = query.strip()
 
         return interaction

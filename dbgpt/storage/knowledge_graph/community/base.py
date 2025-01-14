@@ -295,6 +295,7 @@ class CommunityMetastore(ABC):
     def drop(self):
         """Drop community metastore."""
 
+
 class GraphSyntaxValidator(ABC):
     """Community Syntax Validator."""
 

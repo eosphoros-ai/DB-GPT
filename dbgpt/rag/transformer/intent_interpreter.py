@@ -1,5 +1,7 @@
 """IntentInterpreter class."""
-import logging, re, json
+import json
+import logging
+import re
 from typing import Dict, Optional
 
 from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
@@ -22,20 +24,20 @@ INTENT_INTERPRET_PT = (
     "---------------------\n"
     "Example:\n"
     "Question: Introduce TuGraph.\n"
-    "Return:\n{{\"category\": \"Single Entity Search\", \"rewrited_question\": \"Query the entity named TuGraph then return the entity.\", "
-    "\"entities\": [\"TuGraph\"], \"relations\": []}}\n"
+    'Return:\n{{"category": "Single Entity Search", "rewrited_question": "Query the entity named TuGraph then return the entity.", '
+    '"entities": ["TuGraph"], "relations": []}}\n'
     "Question: Who commits code to TuGraph.\n"
-    "Return:\n{{\"category\": \"One Hop Entity Search\", \"rewrited_question\": \"Query all one hop paths that has a entity named TuGraph and a relation named commit, then return them.\", "
-    "\"entities\": [\"TuGraph\"], \"relations\": [\"commit\"]}}\n"
+    'Return:\n{{"category": "One Hop Entity Search", "rewrited_question": "Query all one hop paths that has a entity named TuGraph and a relation named commit, then return them.", '
+    '"entities": ["TuGraph"], "relations": ["commit"]}}\n'
     "Question: What is the relation between Alex and TuGraph?\n"
-    "Return:\n{{\"category\": \"One Hop Relation Search\", \"rewrited_question\": \"Query all one hop paths between the entity named Alex and the entity named TuGraph, then return them.\", "
-    "\"entities\": [\"Alex\", \"TuGraph\"], \"relations\": []}}\n"
+    'Return:\n{{"category": "One Hop Relation Search", "rewrited_question": "Query all one hop paths between the entity named Alex and the entity named TuGraph, then return them.", '
+    '"entities": ["Alex", "TuGraph"], "relations": []}}\n'
     "Question: Who is the colleague of Bob?\n"
-    "Return:\n{{\"category\": \"Two Hop Entity Search\", \"rewrited_question\": \"Query all entities that have a two hop path between them and the entity named Bob, both entities should have a work for relation with the middle entity.\", "
-    "\"entities\": [\"Bob\"], \"relations\": [\"work for\"]}}\n"
+    'Return:\n{{"category": "Two Hop Entity Search", "rewrited_question": "Query all entities that have a two hop path between them and the entity named Bob, both entities should have a work for relation with the middle entity.", '
+    '"entities": ["Bob"], "relations": ["work for"]}}\n'
     "Question: Introduce TuGraph and DBGPT seperately.\n"
-    "Return:\n{{\"category\": \"Freestyle Question\", \"rewrited_question\": \"Query the entity named TuGraph and the entity named DBGPT, then return two-hop subgraphs centered on them.\", "
-    "\"entities\": [\"TuGraph\", \"DBGPT\"], \"relations\": []}}\n"
+    'Return:\n{{"category": "Freestyle Question", "rewrited_question": "Query the entity named TuGraph and the entity named DBGPT, then return two-hop subgraphs centered on them.", '
+    '"entities": ["TuGraph", "DBGPT"], "relations": []}}\n'
     "---------------------\n"
     "Text: {text}\n"
     "Keywords:\n"
@@ -50,12 +52,25 @@ class IntentInterpreter(LLMTranslator):
     def __init__(self, llm_client: LLMClient, model_name: str):
         """Initialize the IntentInterpreter."""
         super().__init__(llm_client, model_name, INTENT_INTERPRET_PT)
-    
-    async def _translate(
-        self, text: str, history: str = None, limit: Optional[int] = None, type: Optional[str] = "PROMPT"
-    ) -> Dict:
-        """Inner translate by LLM."""
 
+    def _format_messages(self, text: str, history: str = None) -> str:
+        # interprete intent with single prompt only.
+        template = HumanPromptTemplate.from_template(self._prompt_template)
+
+        messages = (
+            template.format_messages(text=text, history=history)
+            if history is not None
+            else template.format_messages(text=text)
+        )
+
+    def truncate(self):
+        """Do nothing by default."""
+
+    def drop(self):
+        """Do nothing by default."""
+
+    def _parse_response(self, text: str, limit: Optional[int] = None) -> Dict:
+        """Parse llm response."""
         """
         The returned diction should contain the following content.
         {
@@ -66,50 +81,10 @@ class IntentInterpreter(LLMTranslator):
             "relations" ["relations", "that", "might", "be", "used", "in", "query"]
         }
         """
-
-        # interprete intent with single prompt only.
-        template = HumanPromptTemplate.from_template(self._prompt_template)
-
-        messages = (
-            template.format_messages(text=text, history=history)
-            if history is not None
-            else template.format_messages(text=text)
-        )
-
-        # use default model if needed
-        if not self._model_name:
-            models = await self._llm_client.models()
-            if not models:
-                raise Exception("No models available")
-            self._model_name = models[0].model
-            logger.info(f"Using model {self._model_name} to extract")
-
-        model_messages = ModelMessage.from_base_messages(messages)
-        request = ModelRequest(model=self._model_name, messages=model_messages)
-        response = await self._llm_client.generate(request=request)
-
-        if not response.success:
-            code = str(response.error_code)
-            reason = response.text
-            logger.error(f"request llm failed ({code}) {reason}")
-            return []
-
-        if limit and limit < 1:
-            ValueError("optional argument limit >= 1")
-        return self._parse_response(response.text, limit)
-    
-    def truncate(self):
-        """Do nothing by default."""
-
-    def drop(self):
-        """Do nothing by default."""
-
-    def _parse_response(self, text: str, limit: Optional[int] = None) -> Dict:
-        """Parse llm response."""
         intention = text
 
-        code_block_pattern = re.compile(r'```json(.*?)```', re.S)
-        json_pattern = re.compile(r'{.*?}', re.S)
+        code_block_pattern = re.compile(r"```json(.*?)```", re.S)
+        json_pattern = re.compile(r"{.*?}", re.S)
 
         result = re.findall(code_block_pattern, intention)
         if result:
@@ -117,7 +92,7 @@ class IntentInterpreter(LLMTranslator):
         result = re.findall(json_pattern, intention)
         if result:
             intention = result[0]
-        else: 
+        else:
             intention = ""
 
         return json.loads(intention)
