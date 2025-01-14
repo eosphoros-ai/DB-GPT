@@ -11,7 +11,10 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
+<<<<<<< HEAD
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
+=======
+>>>>>>> d4113a384fd1b73a7071b298035a03e2aaa042e8
 from dbgpt.rag.transformer.text2cypher import Text2Cypher
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
@@ -182,7 +185,11 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=True,
         description="Enable the graph search for documents and chunks",
     )
+<<<<<<< HEAD
     enable_text2gql_search: bool = Field(
+=======
+    text2gql_search_enabled: bool = Field(
+>>>>>>> d4113a384fd1b73a7071b298035a03e2aaa042e8
         default=False,
         description="Enable text2gql translation to serach knowledge graph",
     )
@@ -537,14 +544,23 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
+<<<<<<< HEAD
         enable_text2gql_search = self.enable_text2gql_search
 
+=======
+>>>>>>> d4113a384fd1b73a7071b298035a03e2aaa042e8
         text2gql_query = ""
         subgraph = None
         subgraph_for_doc = None
 
+<<<<<<< HEAD
         # if enable text2gql search, use translated query to retrieve subgraph
         if enable_text2gql_search:
+=======
+        text2gql_search_enabled = self._text2gql_search_enabled
+        # if text2gql search enabled, use translated query to retrieve subgraph
+        if text2gql_enabled:
+>>>>>>> d4113a384fd1b73a7071b298035a03e2aaa042e8
             interaction = await self._text2cypher.translate(text)
             try:
                 query = interaction["query"]
