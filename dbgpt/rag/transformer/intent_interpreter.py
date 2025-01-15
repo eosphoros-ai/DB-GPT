@@ -29,19 +29,29 @@ INTENT_INTERPRET_PT = (
     "---------------------\n"
     "Example:\n"
     "Question: Introduce TuGraph.\n"
-    'Return:\n{{"category": "Single Entity Search", "rewrited_question": "Query the entity named TuGraph then return the entity.", '
+    'Return:\n{{"category": "Single Entity Search", '
+    '"rewritten_question": "Query the entity named TuGraph then return the entity.", '
     '"entities": ["TuGraph"], "relations": []}}\n'
     "Question: Who commits code to TuGraph.\n"
-    'Return:\n{{"category": "One Hop Entity Search", "rewrited_question": "Query all one hop paths that has a entity named TuGraph and a relation named commit, then return them.", '
+    'Return:\n{{"category": "One Hop Entity Search", '
+    '"rewritten_question": "Query all one hop paths that has a entity named TuGraph '
+    'and a relation named commit, then return them.", '
     '"entities": ["TuGraph"], "relations": ["commit"]}}\n'
     "Question: What is the relation between Alex and TuGraph?\n"
-    'Return:\n{{"category": "One Hop Relation Search", "rewrited_question": "Query all one hop paths between the entity named Alex and the entity named TuGraph, then return them.", '
+    'Return:\n{{"category": "One Hop Relation Search", '
+    '"rewritten_question": "Query all one hop paths between the entity named Alex '
+    'and the entity named TuGraph, then return them.", '
     '"entities": ["Alex", "TuGraph"], "relations": []}}\n'
     "Question: Who is the colleague of Bob?\n"
-    'Return:\n{{"category": "Two Hop Entity Search", "rewrited_question": "Query all entities that have a two hop path between them and the entity named Bob, both entities should have a work for relation with the middle entity.", '
+    'Return:\n{{"category": "Two Hop Entity Search", '
+    '"rewritten_question": "Query all entities that have a two hop path between them '
+    "and the entity named Bob, "
+    'both entities should have a work for relation with the middle entity.", '
     '"entities": ["Bob"], "relations": ["work for"]}}\n'
     "Question: Introduce TuGraph and DBGPT seperately.\n"
-    'Return:\n{{"category": "Freestyle Question", "rewrited_question": "Query the entity named TuGraph and the entity named DBGPT, then return two-hop subgraphs centered on them.", '
+    'Return:\n{{"category": "Freestyle Question", '
+    '"rewritten_question": "Query the entity named TuGraph and the entity named DBGPT, '
+    'then return two-hop subgraphs centered on them.", '
     '"entities": ["TuGraph", "DBGPT"], "relations": []}}\n'
     "---------------------\n"
     "Text: {text}\n"
@@ -83,7 +93,7 @@ class IntentInterpreter(LLMTranslator):
         {
             "category": "Type of the given question.",
             "original_question: "The original question provided by user.",
-            "rewrited_question": "Question that has been rewritten in graph query language style."
+            "rewritten_question": "Rewritten question in graph query language style."
             "entities": ["entities", "that", "might", "be", "used", "in", "query"],
             "relations" ["relations", "that", "might", "be", "used", "in", "query"]
         }
@@ -101,13 +111,13 @@ class IntentInterpreter(LLMTranslator):
             text = ""
         result = json.loads(text)
 
-        intention = {}
+        intention = dict()
         intention["category"] = result["category"] if "category" in result else ""
         intention["original_question"] = (
             result["original_question"] if "original_question" in result else ""
         )
-        intention["rewrited_question"] = (
-            result["rewrited_question"] if "rewrited_question" in result else ""
+        intention["rewritten_question"] = (
+            result["rewritten_question"] if "rewritten_question" in result else ""
         )
         intention["entities"] = result["entities"] if "entities" in result else []
         intention["relations"] = result["relations"] if "relations" in result else []

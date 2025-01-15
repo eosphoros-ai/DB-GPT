@@ -1,11 +1,10 @@
 """LLMTranslator class."""
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 
-from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
+from dbgpt.core import LLMClient, ModelMessage, ModelRequest
 from dbgpt.rag.transformer.base import TranslatorBase
 
 logger = logging.getLogger(__name__)

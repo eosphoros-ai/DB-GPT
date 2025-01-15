@@ -5,7 +5,6 @@ import re
 from typing import Dict, Optional
 
 from dbgpt.core import HumanPromptTemplate, LLMClient
-from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
 from dbgpt.rag.transformer.llm_translator import LLMTranslator
 
 TEXT_TO_CYPHER_PT = (
@@ -24,26 +23,32 @@ TEXT_TO_CYPHER_PT = (
     'entities: ["TuGraph"]\n'
     "relations: []\n"
     'Query:\nMatch (n) WHERE n.id="TuGraph" RETURN n\n'
-    "Question: Query all one hop paths between the entity named Alex and the entity named TuGraph, then return them.\n"
+    "Question: Query all one hop paths between the entity named Alex "
+    "and the entity named TuGraph, then return them.\n"
     "Category: One Hop Entity Search\n"
     'entities: ["Alex", "TuGraph"]\n'
     "relations: []\n"
     'Query:\nMATCH p=(n)-[r]-(m) WHERE n.id="Alex" AND m.id="TuGraph" RETURN p \n'
-    "Question: Query all one hop paths that has a entity named TuGraph and a relation named commit, then return them.\n"
+    "Question: Query all one hop paths that has a entity named TuGraph "
+    "and a relation named commit, then return them.\n"
     "Category: One Hop Relation Search\n"
     'entities: ["TuGraph"]\n'
     'relations: ["commit"]\n'
     'Query:\nMATCH p=(n)-[r]-(m) WHERE n.id="TuGraph" AND r.id="commit" RETURN p \n'
-    "Question: Query all entities that have a two hop path between them and the entity named Bob, both entities should have a work for relation with the middle entity.\n"
+    "Question: Query all entities that have a two hop path between them "
+    "and the entity named Bob, "
+    "both entities should have a work for relation with the middle entity.\n"
     "Category: Two Hop Entity Search\n"
     'entities: ["Bob"]\n'
     'relations: ["work for"]\n'
-    'Query:\nMATCH p=(n)-[r1]-(m)-[r2]-(l) WHERE n.id="Bob" AND r1.id="work for" AND r2.id="work for" RETURN p \n'
+    'Query:\nMATCH p=(n)-[r1]-(m)-[r2]-(l) WHERE n.id="Bob" '
+    'AND r1.id="work for" AND r2.id="work for" RETURN p \n'
     "Question: Introduce TuGraph and DBGPT seperately.\n"
     "Category: Freestyle Question\n"
     'entities: ["TuGraph", "DBGPT"]\n'
     "relations: []\n"
-    'Query:\nMATCH p=(n)-[r:relation*2]-(m) WHERE n.id IN ["TuGraph", "DB-GPT"] RETURN p\n'
+    "Query:\nMATCH p=(n)-[r:relation*2]-(m) "
+    'WHERE n.id IN ["TuGraph", "DB-GPT"] RETURN p\n'
     "---------------------\n"
     "Question: {question}\n"
     "Category: {category}\n"
@@ -67,7 +72,7 @@ class Text2Cypher(LLMTranslator):
         """Interprete the intent of the question."""
         print(text)
         intention = json.loads(text)
-        question = intention["rewrited_question"]
+        question = intention["rewritten_question"]
         category = intention["category"]
         entities = intention["entities"]
         relations = intention["relations"]

@@ -551,6 +551,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             except Exception as e:
                 text2gql_query = ""
                 subgraph = None
+                logger.error(f"Failed to execute query: {e}")
 
         # if not enable text2gql search or tex2gql search failed to retrieve subgraph
         if not subgraph:

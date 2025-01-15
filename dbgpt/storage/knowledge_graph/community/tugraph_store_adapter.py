@@ -897,14 +897,10 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         white_list: List of properties to keep
                     - If []: Keep default properties (those not starting with '_'
                         and not in ['id', 'name'])
-                    - If list of strings: Keep default properties (those not starting with '_'
-                        and not in ['id', 'name']) and properties in white_list
+                    - If list of strings: Keep default properties
+                        (those not starting with '_' and not in ['id', 'name'])
+                        and properties in white_list
         """
-        try:
-            query_result = self.graph_store.conn.run(query=query)
-        except Exception as e:
-            raise
-
         query_result = self.graph_store.conn.run(query=query)
         white_list: List[str] = kwargs.get("white_list", [])
         vertices, edges = self._get_nodes_edges_from_queried_data(
@@ -1018,7 +1014,7 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         from neo4j import graph
 
         def filter_properties(
-            properties: dict[str, Any], white_list: Optional[List[str]] = []
+            properties: dict[str, Any], white_list: List[str]
         ) -> Dict[str, Any]:
             """Filter the properties.
 
