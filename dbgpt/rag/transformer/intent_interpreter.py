@@ -2,9 +2,9 @@
 import json
 import logging
 import re
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
-from dbgpt.core import HumanPromptTemplate, LLMClient
+from dbgpt.core import BaseMessage, HumanPromptTemplate, LLMClient
 from dbgpt.rag.transformer.llm_translator import LLMTranslator
 
 INTENT_INTERPRET_PT = (
@@ -68,7 +68,7 @@ class IntentInterpreter(LLMTranslator):
         """Initialize the IntentInterpreter."""
         super().__init__(llm_client, model_name, INTENT_INTERPRET_PT)
 
-    def _format_messages(self, text: str, history: str = None) -> str:
+    def _format_messages(self, text: str, history: str = None) -> List[BaseMessage]:
         # interprete intent with single prompt only.
         template = HumanPromptTemplate.from_template(self._prompt_template)
 
@@ -101,25 +101,26 @@ class IntentInterpreter(LLMTranslator):
         code_block_pattern = re.compile(r"```json(.*?)```", re.S)
         json_pattern = re.compile(r"{.*?}", re.S)
 
-        result = re.findall(code_block_pattern, text)
-        if result:
-            text = result[0]
-        result = re.findall(json_pattern, text)
-        if result:
-            text = result[0]
+        match_result = re.findall(code_block_pattern, text)
+        if match_result:
+            text = match_result[0]
+        match_result = re.findall(json_pattern, text)
+        if match_result:
+            text = match_result[0]
         else:
             text = ""
-        result = json.loads(text)
 
         intention = dict()
-        intention["category"] = result["category"] if "category" in result else ""
-        intention["original_question"] = (
-            result["original_question"] if "original_question" in result else ""
-        )
-        intention["rewritten_question"] = (
-            result["rewritten_question"] if "rewritten_question" in result else ""
-        )
-        intention["entities"] = result["entities"] if "entities" in result else []
-        intention["relations"] = result["relations"] if "relations" in result else []
+        intention = json.loads(text)
+        if "category" not in intention:
+            intention["category"] = ""
+        if "original_question" not in intention:
+            intention["original_question"] = ""
+        if "rewritten_question" not in intention:
+            intention["rewritten_question"] = ""
+        if "entities" not in intention:
+            intention["entities"] = []
+        if "relations" not in intention:
+            intention["relations"] = []
 
         return intention

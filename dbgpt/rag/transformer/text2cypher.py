@@ -2,9 +2,9 @@
 import json
 import logging
 import re
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
-from dbgpt.core import HumanPromptTemplate, LLMClient
+from dbgpt.core import BaseMessage, HumanPromptTemplate, LLMClient
 from dbgpt.rag.transformer.llm_translator import LLMTranslator
 
 TEXT_TO_CYPHER_PT = (
@@ -68,7 +68,7 @@ class Text2Cypher(LLMTranslator):
         super().__init__(llm_client, model_name, TEXT_TO_CYPHER_PT)
         self._schema = json.dumps(json.loads(schema), indent=4)
 
-    def _format_messages(self, text: str, history: str = None) -> str:
+    def _format_messages(self, text: str, history: str = None) -> List[BaseMessage]:
         """Interprete the intent of the question."""
         print(text)
         intention = json.loads(text)
