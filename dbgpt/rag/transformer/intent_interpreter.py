@@ -4,22 +4,27 @@ import logging
 import re
 from typing import Dict, Optional
 
-from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
+from dbgpt.core import HumanPromptTemplate, LLMClient
 from dbgpt.rag.transformer.llm_translator import LLMTranslator
 
 INTENT_INTERPRET_PT = (
-    "A question is provided below. Given the question, analyze and classify it into one of the following categories:\n"
+    "A question is provided below. Given the question, "
+    "analyze and classify it into one of the following categories:\n"
     "1. Single Entity Search: search for the detail of the given entity.\n"
     "2. One Hop Entity Search: given one entity and one relation, "
     "search for all entities that have the relation with the given entity.\n"
-    "3. One Hop Relation Search: given two entities, serach for the relation between them.\n"
-    "4. Two Hop Entity Search: given one entity and one relation, break that relation into two consecutive relation, "
+    "3. One Hop Relation Search: given two entities, "
+    "serach for the relation between them.\n"
+    "4. Two Hop Entity Search: given one entity and one relation, "
+    "break that relation into two consecutive relation, "
     "then search all entities that have the two hop relation with the given entity.\n"
     "5. Freestyle Question: questions that are not in above four categories. "
     "Search all related entities and two-hop subgraphs centered on them.\n"
-    "After classfied the given question, rewrite the question in a graph query language style, "
+    "After classfied the given question, "
+    "rewrite the question in a graph query language style, "
     "return the category of the given question, the rewrited question in json format."
-    "Also return entities and relations that might be used for query generation in json format."
+    "Also return entities and relations that might be used for "
+    "query generation in json format."
     "Here are some examples to guide your classification:\n"
     "---------------------\n"
     "Example:\n"
@@ -63,6 +68,8 @@ class IntentInterpreter(LLMTranslator):
             else template.format_messages(text=text)
         )
 
+        return messages
+
     def truncate(self):
         """Do nothing by default."""
 
@@ -81,18 +88,28 @@ class IntentInterpreter(LLMTranslator):
             "relations" ["relations", "that", "might", "be", "used", "in", "query"]
         }
         """
-        intention = text
-
         code_block_pattern = re.compile(r"```json(.*?)```", re.S)
         json_pattern = re.compile(r"{.*?}", re.S)
 
-        result = re.findall(code_block_pattern, intention)
+        result = re.findall(code_block_pattern, text)
         if result:
-            intention = result[0]
-        result = re.findall(json_pattern, intention)
+            text = result[0]
+        result = re.findall(json_pattern, text)
         if result:
-            intention = result[0]
+            text = result[0]
         else:
-            intention = ""
+            text = ""
+        result = json.loads(text)
 
-        return json.loads(intention)
+        intention = {}
+        intention["category"] = result["category"] if "category" in result else ""
+        intention["original_question"] = (
+            result["original_question"] if "original_question" in result else ""
+        )
+        intention["rewrited_question"] = (
+            result["rewrited_question"] if "rewrited_question" in result else ""
+        )
+        intention["entities"] = result["entities"] if "entities" in result else []
+        intention["relations"] = result["relations"] if "relations" in result else []
+
+        return intention

@@ -1,5 +1,6 @@
 """Define the CommunitySummaryKnowledgeGraph."""
 
+import json
 import logging
 import os
 import uuid
@@ -11,6 +12,7 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
+from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
 from dbgpt.rag.transformer.text2cypher import Text2Cypher
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
@@ -349,6 +351,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             ),
         )
 
+        self._intent_interpreter = IntentInterpreter(self._llm_client, self._model_name)
         self._text2cypher = Text2Cypher(
             self._llm_client, self._model_name, self._graph_store_apdater.get_schema()
         )
@@ -537,7 +540,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         # if enable text2gql search, use translated query to retrieve subgraph
         if enable_text2gql_search:
-            interaction = await self._text2cypher.translate(text)
+            intention = await self._intent_interpreter.translate(text)
+            interaction = await self._text2cypher.translate(json.dumps(intention))
             try:
                 query = interaction["query"]
                 if "LIMIT" not in query:
