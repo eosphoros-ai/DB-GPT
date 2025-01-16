@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import uuid
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
@@ -542,12 +542,16 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         # if enable text2gql search, use translated query to retrieve subgraph
         if self._graph_store.enable_text_search:
-            intention = await self._intent_interpreter.translate(text)
+            intention: Dict[
+                str, Union[str, List[str]]
+            ] = await self._intent_interpreter.translate(text)
             schema = json.dumps(
                 json.loads(self._graph_store_apdater.get_schema()), indent=4
             )
             intention["schema"] = schema
-            translation = await self._text2gql.translate(json.dumps(intention))
+            translation: Dict[str, str] = await self._text2gql.translate(
+                json.dumps(intention)
+            )
             try:
                 query = translation["query"]
                 if "LIMIT" not in query:

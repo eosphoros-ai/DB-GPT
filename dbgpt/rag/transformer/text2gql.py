@@ -101,7 +101,7 @@ class Text2GQL(LLMTranslator):
 
     def _parse_response(self, text: str) -> Dict:
         """Parse llm response."""
-        translation = {}
+        translation: Dict[str, str] = {}
         query = ""
 
         code_block_pattern = re.compile(r"```cypher(.*?)```", re.S)

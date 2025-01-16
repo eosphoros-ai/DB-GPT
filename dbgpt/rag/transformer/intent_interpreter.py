@@ -2,7 +2,7 @@
 import json
 import logging
 import re
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from dbgpt.core import BaseMessage, HumanPromptTemplate, LLMClient
 from dbgpt.rag.transformer.llm_translator import LLMTranslator
@@ -110,7 +110,7 @@ class IntentInterpreter(LLMTranslator):
         else:
             text = ""
 
-        intention = dict()
+        intention: Dict[str, Union[str, List[str]]] = dict()
         intention = json.loads(text)
         if "category" not in intention:
             intention["category"] = ""
