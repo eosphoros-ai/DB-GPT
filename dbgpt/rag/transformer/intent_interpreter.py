@@ -87,8 +87,8 @@ class IntentInterpreter(LLMTranslator):
         """Do nothing by default."""
 
     def _parse_response(self, text: str) -> Dict:
-        """Parse llm response."""
         """
+        Parse llm response.
         The returned diction should contain the following content.
         {
             "category": "Type of the given question.",

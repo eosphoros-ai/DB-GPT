@@ -2,7 +2,7 @@
 import json
 import logging
 import re
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from dbgpt.core import BaseMessage, HumanPromptTemplate, LLMClient
 from dbgpt.rag.transformer.llm_translator import LLMTranslator
@@ -69,12 +69,12 @@ class Text2GQL(LLMTranslator):
 
     def _format_messages(self, text: str, history: str = None) -> List[BaseMessage]:
         # translate intention to gql with single prompt only.
-        intention = json.loads(text)
-        question = intention["rewritten_question"]
-        category = intention["category"]
-        entities = intention["entities"]
-        relations = intention["relations"]
-        schema = intention["schema"]
+        intention: Dict[str, Union[str, List[str]]] = json.loads(text)
+        question = intention.get("rewritten_question")
+        category = intention.get("category")
+        entities = intention.get("entities")
+        relations = intention.get("relations")
+        schema = intention.get("schema")
 
         template = HumanPromptTemplate.from_template(self._prompt_template)
 

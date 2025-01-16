@@ -553,7 +553,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 json.dumps(intention)
             )
             try:
-                query = translation["query"]
+                query = translation.get("query")
                 if "LIMIT" not in query:
                     query += f" LIMIT {self._text_search_topk}"
                 subgraph = self._graph_store_apdater.query(query=query)
