@@ -1,10 +1,9 @@
 """Base class for RDBMS connectors."""
 
-from __future__ import annotations
-
 import logging
 import re
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, cast
+from dataclasses import dataclass, field
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
@@ -18,6 +17,9 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.schema import CreateTable
 
 from dbgpt.datasource.base import BaseConnector
+from dbgpt.util.i18n_utils import _
+
+from ..parameter import BaseDatasourceParameters
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,56 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
         f"Name: {index['name']}, Unique: {index['unique']},"
         f" Columns: {str(index['column_names'])}"
     )
+
+
+@dataclass
+class RDBMSDatasourceParameters(BaseDatasourceParameters):
+    """RDBMS datasource parameters."""
+
+    host: str = field(metadata={"help": _("Database host, e.g., localhost")})
+    port: int = field(metadata={"help": _("Database port, e.g., 3306")})
+    user: str = field(metadata={"help": _("Database user to connect")})
+    database: str = field(metadata={"help": _("Database name")})
+    password: str = field(
+        default="${env:DBGPT_DB_PASSWORD}",
+        metadata={
+            "help": _(
+                "Database password, you can write your password directly, of course, "
+                "you can also use environment variables, such as "
+                "${env:DBGPT_DB_PASSWORD}"
+            )
+        },
+    )
+
+    pool_size: int = field(
+        default=5, metadata={"help": _("Connection pool size, default 5")}
+    )
+    max_overflow: int = field(
+        default=10, metadata={"help": _("Max overflow connections, default 10")}
+    )
+    pool_timeout: int = field(
+        default=30, metadata={"help": _("Connection pool timeout, default 30")}
+    )
+    pool_recycle: int = field(
+        default=3600, metadata={"help": _("Connection pool recycle, default 3600")}
+    )
+    pool_pre_ping: bool = field(
+        default=True, metadata={"help": _("Connection pool pre ping, default True")}
+    )
+
+    def engine_args(self) -> Optional[Dict[str, Any]]:
+        """Return engine arguments."""
+        return {
+            "pool_size": self.pool_size,
+            "max_overflow": self.max_overflow,
+            "pool_timeout": self.pool_timeout,
+            "pool_recycle": self.pool_recycle,
+            "pool_pre_ping": self.pool_pre_ping,
+        }
+
+    def create_connector(self) -> "BaseConnector":
+        """Create connector"""
+        return RDBMSConnector.from_parameters(self)
 
 
 class RDBMSConnector(BaseConnector):
@@ -85,6 +137,23 @@ class RDBMSConnector(BaseConnector):
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
 
     @classmethod
+    def param_class(cls) -> Type[RDBMSDatasourceParameters]:
+        """Return parameter class."""
+        return RDBMSDatasourceParameters
+
+    @classmethod
+    def from_parameters(cls, parameters: RDBMSDatasourceParameters) -> "RDBMSConnector":
+        """Create a new connector from parameters."""
+        return cls.from_uri_db(
+            parameters.host,
+            parameters.port,
+            parameters.user,
+            parameters.password,
+            parameters.database,
+            engine_args=parameters.engine_args(),
+        )
+
+    @classmethod
     def from_uri_db(
         cls,
         host: str,
@@ -94,7 +163,7 @@ class RDBMSConnector(BaseConnector):
         db_name: str,
         engine_args: Optional[dict] = None,
         **kwargs: Any,
-    ) -> RDBMSConnector:
+    ) -> "RDBMSConnector":
         """Construct a SQLAlchemy engine from uri database.
 
         Args:
@@ -113,7 +182,7 @@ class RDBMSConnector(BaseConnector):
     @classmethod
     def from_uri(
         cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
-    ) -> RDBMSConnector:
+    ) -> "RDBMSConnector":
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
         return cls(create_engine(database_uri, **_engine_args), **kwargs)

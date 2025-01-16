@@ -1,13 +1,37 @@
 """Ocean base connect."""
 
 import logging
+from dataclasses import dataclass
+from typing import Type
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
 
-class OceanBaseConnect(RDBMSConnector):
+@auto_register_resource(
+    label=_("OceanBase datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("An Ultra-Fast & Cost-Effective Distributed SQL Database."),
+)
+@dataclass
+class OceanBaseParameters(RDBMSDatasourceParameters):
+    """Oceanbase connection parameters."""
+
+    __type__ = "oceanbase"
+
+    def create_connector(self) -> "OceanBaseConnector":
+        return OceanBaseConnector.from_parameters(self)
+
+
+class OceanBaseConnector(RDBMSConnector):
     """Connect Oceanbase Database fetch MetaData.
 
     Args:
@@ -19,6 +43,11 @@ class OceanBaseConnect(RDBMSConnector):
     driver: str = "mysql+ob"
 
     default_db = ["information_schema", "performance_schema", "sys", "mysql"]
+
+    @classmethod
+    def param_class(cls) -> Type[OceanBaseParameters]:
+        """Return the parameter class."""
+        return OceanBaseParameters
 
     def get_users(self):
         """Get_users."""

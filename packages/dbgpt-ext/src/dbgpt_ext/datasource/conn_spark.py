@@ -1,14 +1,43 @@
 """Spark Connector."""
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Optional, Type
 
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.datasource.base import BaseConnector
+from dbgpt.datasource.parameter import BaseDatasourceParameters
+from dbgpt.util.i18n_utils import _
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
-
 logger = logging.getLogger(__name__)
+
+
+@auto_register_resource(
+    label=_("Apache Spark datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Unified engine for large-scale data analytics."),
+)
+@dataclass
+class SparkParameters(BaseDatasourceParameters):
+    """Spark connection parameters."""
+
+    __type__ = "spark"
+    path: str = field(
+        metadata={
+            "help": _("The file path of the data source."),
+        },
+    )
+
+    def create_connector(self) -> "SparkConnector":
+        """Create Spark connector."""
+        return SparkConnector.from_parameters(self)
 
 
 class SparkConnector(BaseConnector):
@@ -29,6 +58,16 @@ class SparkConnector(BaseConnector):
     driver: str = "spark"
     """db dialect"""
     dialect: str = "sparksql"
+
+    @classmethod
+    def param_class(cls) -> Type[SparkParameters]:
+        """Return the parameter class."""
+        return SparkParameters
+
+    @classmethod
+    def from_parameters(cls, parameters: SparkParameters) -> "SparkConnector":
+        """Create a new SparkConnector from parameters."""
+        return cls(file_path=parameters.path)
 
     def __init__(
         self,

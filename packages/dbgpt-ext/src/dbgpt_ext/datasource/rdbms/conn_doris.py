@@ -1,11 +1,35 @@
 """Doris connector."""
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import text
+
+
+@auto_register_resource(
+    label=_("Apache Doris datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("A new-generation open-source real-time data warehouse."),
+)
+@dataclass
+class DorisParameters(RDBMSDatasourceParameters):
+    """Doris connection parameters."""
+
+    __type__ = "doris"
+
+    def create_connector(self) -> "DorisConnector":
+        """Create doris connector"""
+        return DorisConnector.from_parameters(self)
 
 
 class DorisConnector(RDBMSConnector):
@@ -14,6 +38,11 @@ class DorisConnector(RDBMSConnector):
     driver = "doris"
     db_type = "doris"
     db_dialect = "doris"
+
+    @classmethod
+    def param_class(cls) -> Type[DorisParameters]:
+        """Return the parameter class."""
+        return DorisParameters
 
     @classmethod
     def from_uri_db(

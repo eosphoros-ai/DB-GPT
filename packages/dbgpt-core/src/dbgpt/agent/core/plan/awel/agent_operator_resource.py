@@ -20,7 +20,7 @@ from ...agent_manage import get_agent_manager
 
 
 def _agent_resource_prompt_values() -> List[OptionValue]:
-    from dbgpt.serve.prompt.api.endpoints import get_service
+    from dbgpt_serve.prompt.api.endpoints import get_service
 
     prompt_service = get_service()
     prompts = prompt_service.get_target_prompt()

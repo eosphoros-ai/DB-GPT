@@ -1,20 +1,47 @@
 """Vertica connector."""
 
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import text
 from sqlalchemy.dialects import registry
 
 logger = logging.getLogger(__name__)
 registry.register(
     "vertica.vertica_python",
-    "dbgpt.datasource.rdbms.dialect.vertica.dialect_vertica_python",
+    "dbgpt_ext.datasource.rdbms.dialect.vertica.dialect_vertica_python",
     "VerticaDialect",
 )
+
+
+@auto_register_resource(
+    label=_("Vertica datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_(
+        "Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built "
+        "for the scale and complexity of today`s data-driven world."
+    ),
+)
+@dataclass
+class VerticaParameters(RDBMSDatasourceParameters):
+    """Vertica connection parameters."""
+
+    __type__ = "vertica"
+
+    def create_connector(self) -> "VerticaConnector":
+        """Create vertica connector"""
+        return VerticaConnector.from_parameters(self)
 
 
 class VerticaConnector(RDBMSConnector):

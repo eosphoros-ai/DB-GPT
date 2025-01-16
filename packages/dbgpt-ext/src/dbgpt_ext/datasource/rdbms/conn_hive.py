@@ -1,10 +1,87 @@
 """Hive Connector."""
 
-from typing import Any, Optional, cast
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.util.i18n_utils import _
+from sqlalchemy import create_engine
+
+
+@auto_register_resource(
+    label=_("Apache Hive datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("A distributed fault-tolerant data warehouse system."),
+)
+@dataclass
+class HiveParameters(BaseDatasourceParameters):
+    """Hive connection parameters."""
+
+    __type__ = "hive"
+
+    # Basic connection parameters
+    host: str = field(metadata={"help": _("Hive server host")})
+    port: int = field(
+        default=10000, metadata={"help": _("Hive server port, default 10000")}
+    )
+    database: str = field(
+        default="default", metadata={"help": _("Database name, default 'default'")}
+    )
+
+    # Authentication parameters
+    auth: str = field(
+        default="NONE",
+        metadata={
+            "help": _("Authentication mode: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"),
+            "valid_values": ["NONE", "NOSASL", "LDAP", "KERBEROS", "CUSTOM"],
+        },
+    )
+    username: str = field(
+        default="", metadata={"help": _("Username for authentication")}
+    )
+    password: str = field(
+        default="", metadata={"help": _("Password for LDAP or CUSTOM auth")}
+    )
+
+    # Kerberos parameters
+    kerberos_service_name: str = field(
+        default="hive", metadata={"help": _("Kerberos service name")}
+    )
+
+    # Transport parameters
+    transport_mode: str = field(
+        default="binary", metadata={"help": _("Transport mode: binary or http")}
+    )
+    # http_path: str = field(
+    #     default="", metadata={"help": _("HTTP path for HTTP transport mode")}
+    # )
+
+    def engine_args(self) -> Optional[Dict[str, Any]]:
+        """Get engine args."""
+        connect_args = {"auth": self.auth}
+        # username and password are not required for NONE and NOSASL
+        if self.username:
+            connect_args["username"] = self.username
+        if self.password and self.auth in ("LDAP", "CUSTOM"):
+            connect_args["password"] = self.password
+        if self.auth == "KERBEROS":
+            connect_args["kerberos_service_name"] = self.kerberos_service_name
+        return {
+            "connect_args": {k: v for k, v in connect_args.items() if v},
+        }
+
+    def create_connector(self) -> "HiveConnector":
+        """Create Hive connector."""
+        return HiveConnector.from_parameters(self)
 
 
 class HiveConnector(RDBMSConnector):
@@ -15,6 +92,34 @@ class HiveConnector(RDBMSConnector):
     driver: str = "hive"
     """db dialect"""
     dialect: str = "hive"
+
+    @classmethod
+    def param_class(cls) -> Type[HiveParameters]:
+        """Return the parameter class."""
+        return HiveParameters
+
+    @classmethod
+    def from_parameters(cls, parameters: HiveParameters) -> "HiveConnector":
+        """Create connector from parameters.
+
+        More details:
+        https://github.com/apache/kyuubi/blob/master/python/pyhive/hive.py
+        """
+        if parameters.transport_mode == "http":
+            scheme = "hive+http"
+        else:
+            scheme = "hive"
+
+        if parameters.username and parameters.password:
+            auth_str = f"{quote(parameters.username)}:{urlquote(parameters.password)}@"
+        else:
+            auth_str = ""
+        host = parameters.host
+        port = parameters.port
+        database = parameters.database
+        db_url = f"{scheme}://{auth_str}{host}:{str(port)}/{database}"
+        engine_args = parameters.engine_args() or {}
+        return cls(create_engine(db_url, **engine_args))
 
     @classmethod
     def from_uri_db(

@@ -6,7 +6,7 @@ from dbgpt.util import PaginationResult
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
-from dbgpt_serve.core import Result
+from dbgpt_serve.core import ResourceTypes, Result
 from dbgpt_serve.datasource.api.schemas import (
     DatasourceServeRequest,
     DatasourceServeResponse,
@@ -184,6 +184,18 @@ async def query_page(
         ServerResponse: The response
     """
     return Result.succ(service.list())
+
+
+@router.get(
+    "/datasource-types",
+    dependencies=[Depends(check_api_key)],
+    response_model=Result[ResourceTypes],
+)
+async def get_datasource_types(
+    service: Service = Depends(get_service),
+) -> Result[ResourceTypes]:
+    """Get the datasource types."""
+    return Result.succ(service.datasource_types())
 
 
 def init_endpoints(system_app: SystemApp) -> None:

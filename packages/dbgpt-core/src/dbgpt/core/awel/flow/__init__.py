@@ -20,6 +20,7 @@ from .base import (  # noqa: F401
     ResourceType,
     ViewMetadata,
     ViewMixin,
+    auto_register_resource,
     register_resource,
 )
 
@@ -29,7 +30,6 @@ __ALL__ = [
     "ViewMetadata",
     "OptionValue",
     "ResourceMetadata",
-    "register_resource",
     "OperatorCategory",
     "ResourceCategory",
     "ResourceType",
@@ -39,4 +39,6 @@ __ALL__ = [
     "BaseDynamicOptions",
     "FunctionDynamicOptions",
     "VariablesDynamicOptions",
+    "register_resource",
+    "auto_register_resource",
 ]

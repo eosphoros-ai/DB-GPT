@@ -1,9 +1,35 @@
 """DuckDB connector."""
 
-from typing import Any, Iterable, Optional
+from dataclasses import dataclass, field
+from typing import Any, Iterable, Optional, Type
 
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import create_engine, text
+
+
+@auto_register_resource(
+    label=_("DuckDB datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("In-memory analytical database with efficient query processing."),
+)
+@dataclass
+class DuckDbConnectorParameters(BaseDatasourceParameters):
+    """DuckDB connection parameters."""
+
+    __type__ = "duckdb"
+    path: str = field(metadata={"description": _("Path to the DuckDB file.")})
+
+    def create_connector(self) -> "DuckDbConnector":
+        """Create DuckDB connector."""
+        return DuckDbConnector.from_parameters(self)
 
 
 class DuckDbConnector(RDBMSConnector):
@@ -11,6 +37,18 @@ class DuckDbConnector(RDBMSConnector):
 
     db_type: str = "duckdb"
     db_dialect: str = "duckdb"
+
+    @classmethod
+    def param_class(cls) -> Type[DuckDbConnectorParameters]:
+        """Return the parameter class."""
+        return DuckDbConnectorParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: DuckDbConnectorParameters
+    ) -> "DuckDbConnector":
+        """Create a new DuckDBConnector from parameters."""
+        return cls.from_uri(parameters.path)
 
     @classmethod
     def from_file_path(

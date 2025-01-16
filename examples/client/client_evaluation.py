@@ -57,7 +57,7 @@ import asyncio
 
 from dbgpt.client import Client
 from dbgpt.client.evaluation import run_evaluation
-from dbgpt.serve.evaluate.api.schemas import EvaluateServeRequest
+from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest
 
 
 async def main():

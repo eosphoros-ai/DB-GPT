@@ -1,8 +1,10 @@
 import logging
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
+from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.schema.api import Result
+from dbgpt.util.parameter_utils import ParameterDescription
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -64,3 +66,29 @@ def add_exception_handler(app: "FastAPI"):
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(Exception, common_exception_handler)
+
+
+class ResourceParameters(BaseModel):
+    """Resource parameters model.
+
+    It describes the parameters of a resource type.
+    """
+
+    name: str = Field(..., description="Resource type name.")
+    label: str = Field(..., description="Resource type label.")
+    description: str = Field(..., description="Resource type description.")
+    parameters: List[ParameterDescription] = Field(
+        default_factory=list, description="Resource parameters."
+    )
+
+
+class ResourceTypes(BaseModel):
+    """Resource types model.
+
+    It can be a collection of resource types, such as datasource types, model types,
+    etc.
+    """
+
+    types: List[ResourceParameters] = Field(
+        default_factory=list, description="Resource types."
+    )

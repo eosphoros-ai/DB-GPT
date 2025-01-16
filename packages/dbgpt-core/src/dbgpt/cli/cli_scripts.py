@@ -167,7 +167,7 @@ except ImportError as e:
     logging.warning(f"Integrating dbgpt trace command line tool failed: {e}")
 
 try:
-    from dbgpt.serve.utils.cli import serve
+    from dbgpt_serve.utils.cli import serve
 
     add_command_alias(serve, name="serve", parent_group=new)
 except ImportError as e:

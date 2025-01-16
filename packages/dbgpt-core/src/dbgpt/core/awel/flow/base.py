@@ -1031,6 +1031,7 @@ def register_resource(
     description: Optional[str] = None,
     resource_type: ResourceType = ResourceType.INSTANCE,
     alias: Optional[List[str]] = None,
+    tags: Optional[Dict[str, str]] = None,
     **kwargs,
 ):
     """Register the resource.
@@ -1046,7 +1047,7 @@ def register_resource(
         resource_type (ResourceType, optional): The type of the resource.
         alias (Optional[List[str]], optional): The alias of the resource. Defaults to
             None. For compatibility, we can use the alias to register the resource.
-
+        tags (Optional[Dict[str, str]]): The tags of the resource
     """
     if resource_type == ResourceType.CLASS and parameters:
         raise ValueError("Class resource can't have parameters.")
@@ -1074,6 +1075,7 @@ def register_resource(
             parameters=parameters or [],
             parent_cls=parent_cls,
             resource_type=resource_type,
+            tags=tags,
             **kwargs,
         )
         alias_ids = resource_metadata.new_alias(alias)
@@ -1081,6 +1083,112 @@ def register_resource(
         _register_resource(cls, resource_metadata, alias_ids)
         # Attach the metadata to the class
         cls._resource_metadata = resource_metadata
+        return cls
+
+    return decorator
+
+
+def auto_register_resource(
+    label: Optional[str] = None,
+    name: Optional[str] = None,
+    category: ResourceCategory = ResourceCategory.COMMON,
+    description: Optional[str] = None,
+    alias: Optional[List[str]] = None,
+    tags: Optional[Dict[str, str]] = None,
+    **decorator_kwargs,
+):
+    """Auto register the resource.
+
+    It will auto create the parameters from the dataclass fields.
+
+    Args:
+        label (str): The label of the resource.
+        name (Optional[str], optional): The name of the resource. Defaults to None.
+        category (str, optional): The category of the resource. Defaults to "common".
+        description (Optional[str], optional): The description of the resource.
+            Defaults to None.
+        alias (Optional[List[str]], optional): The alias of the resource. Defaults to
+            None. For compatibility, we can use the alias to register the resource.
+        tags (Optional[Dict[str, str]]): The tags of the resource
+    """
+    from dataclasses import fields, is_dataclass
+
+    from dbgpt.util.function_utils import TYPE_STRING_TO_TYPE
+    from dbgpt.util.parameter_utils import _get_parameter_descriptions
+
+    def decorator(cls):
+        if not is_dataclass(cls):
+            raise ValueError("auto_register_resource only works with dataclasses")
+
+        if not hasattr(cls, "_resource_metadata"):
+            # Create parameters from dataclass fields
+            fields_desc_list = _get_parameter_descriptions(cls)
+            parameters: List[Parameter] = []
+            raw_fields = fields(cls)
+            for i, fd in enumerate(fields_desc_list):
+                param_type = fd.param_type
+                if param_type in TYPE_STRING_TO_TYPE:
+                    # Basic type
+                    param_type = TYPE_STRING_TO_TYPE[param_type]
+                    type_name = param_type.__qualname__
+                    type_cls = _get_type_name(param_type)
+                    p_category = ParameterCategory.get_category(param_type)
+                else:
+                    # Custom type
+                    # We not register the custom type now.
+                    type_name = param_type
+                    type_cls = fd.param_class
+                    p_category = ParameterCategory.get_category(raw_fields[i].type)
+                options = []
+                if fd.valid_values:
+                    for value in fd.valid_values:
+                        options.append(
+                            OptionValue(label=str(value), name=str(value), value=value)
+                        )
+                # Create parameter
+                param = Parameter(
+                    label=fd.label or fd.param_name,
+                    name=fd.param_name,
+                    is_list=fd.is_array,
+                    type_name=type_name,
+                    type_cls=type_cls,
+                    category=p_category.value,
+                    optional=not fd.required,
+                    default=fd.default_value,
+                    description=fd.description,
+                    options=options or None,
+                )
+                parameters.append(param)
+
+            type_name = cls.__qualname__
+            type_cls = _get_type_name(cls)
+            mro = inspect.getmro(cls)
+            parent_cls = [
+                _get_type_name(parent_cls)
+                for parent_cls in mro
+                if parent_cls is not object and parent_cls != abc.ABC
+            ]
+
+            resource_metadata = ResourceMetadata(
+                label=label or type_name,
+                name=name or type_name,
+                category=category,
+                description=description or cls.__doc__ or label or type_name,
+                type_name=type_name,
+                type_cls=type_cls,
+                parameters=parameters,
+                parent_cls=parent_cls,
+                tags=tags,
+                **decorator_kwargs,
+            )
+
+            # Register alias
+            alias_ids = resource_metadata.new_alias(alias)
+            _register_alias_types(cls, alias_ids)
+            _register_resource(cls, resource_metadata, alias_ids)
+
+            # Attach the metadata to the class
+            cls._resource_metadata = resource_metadata
         return cls
 
     return decorator

@@ -1,14 +1,60 @@
 """SQLite connector."""
 
+import dataclasses
 import logging
 import os
 import tempfile
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple, Type
 
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import create_engine, text
 
 logger = logging.getLogger(__name__)
+
+
+@auto_register_resource(
+    label=_("SQLite datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_(
+        "Lightweight embedded relational database with simplicity and portability."
+    ),
+)
+@dataclasses.dataclass
+class SQLiteConnectorParameters(BaseDatasourceParameters):
+    """SQLite connector parameters.
+
+    This class defines the configuration parameters for SQLite database connections.
+    It provides various options to customize the connection behavior and database
+    settings.
+    """
+
+    __type__ = "sqlite"
+
+    path: str = dataclasses.field(
+        metadata={
+            "help": "SQLite database file path. Use ':memory:' for in-memory database",
+            "required": True,
+        }
+    )
+    check_same_thread: bool = dataclasses.field(
+        default=False,
+        metadata={
+            "help": "Check same thread or not, default is False. Set False to allow "
+            "sharing connection across threads"
+        },
+    )
+
+    def create_connector(self) -> "SQLiteConnector":
+        """Create SQLite connector."""
+        return SQLiteConnector.from_parameters(self)
 
 
 class SQLiteConnector(RDBMSConnector):
@@ -16,6 +62,21 @@ class SQLiteConnector(RDBMSConnector):
 
     db_type: str = "sqlite"
     db_dialect: str = "sqlite"
+
+    @classmethod
+    def param_class(cls) -> Type[SQLiteConnectorParameters]:
+        """Return parameter class."""
+        return SQLiteConnectorParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: SQLiteConnectorParameters
+    ) -> "SQLiteConnector":
+        """Create a new SQLiteConnector from parameters."""
+        _engine_args = {
+            "connect_args": {"check_same_thread": parameters.check_same_thread}
+        }
+        return cls(create_engine(f"sqlite:///{parameters.path}", **_engine_args))
 
     @classmethod
     def from_file_path(

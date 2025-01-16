@@ -50,7 +50,7 @@ class DBSchemaRetriever(BaseRetriever):
             .. code-block:: python
 
                 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
-                from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
+                from dbgpt_serve.rag.assembler.db_schema import DBSchemaAssembler
                 from dbgpt.storage.vector_store.connector import VectorStoreConnector
                 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
                 from dbgpt.rag.retriever.embedding import EmbeddingRetriever

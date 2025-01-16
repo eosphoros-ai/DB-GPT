@@ -2,15 +2,69 @@
 
 import logging
 import re
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlparse
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import MetaData, text
 
 from dbgpt_ext.datasource.schema import DBType
 
 logger = logging.getLogger(__name__)
+
+
+@auto_register_resource(
+    label=_("Clickhouse datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_(
+        "Columnar database for high-performance analytics and real-time queries."
+    ),
+)
+@dataclass
+class ClickhouseParameters(BaseDatasourceParameters):
+    """Clickhouse connection parameters."""
+
+    __type__ = "clickhouse"
+
+    host: str = field(metadata={"help": _("Database host, e.g., localhost")})
+    port: int = field(metadata={"help": _("Database port, e.g., 3306")})
+    user: str = field(metadata={"help": _("Database user to connect")})
+    database: str = field(metadata={"help": _("Database name")})
+    password: str = field(
+        default="${env:DBGPT_DB_PASSWORD}",
+        metadata={
+            "help": _(
+                "Database password, you can write your password directly, of course, "
+                "you can also use environment variables, such as "
+                "${env:DBGPT_DB_PASSWORD}"
+            )
+        },
+    )
+    http_pool_maxsize: int = field(
+        default=16, metadata={"help": _("http pool maxsize")}
+    )
+    http_pool_num_pools: int = field(
+        default=12, metadata={"help": _("http pool num_pools")}
+    )
+    connect_timeout: int = field(
+        default=15, metadata={"help": _("Database connect timeout, default 15s")}
+    )
+    distributed_ddl_task_timeout: int = field(
+        default=300, metadata={"help": _("Distributed ddl task timeout, default 300s")}
+    )
+
+    def create_connector(self) -> "ClickhouseConnector":
+        """Create clickhouse connector."""
+        return ClickhouseConnector.from_parameters(self)
 
 
 class ClickhouseConnector(RDBMSConnector):
@@ -25,7 +79,7 @@ class ClickhouseConnector(RDBMSConnector):
 
     client: Any = None
 
-    def __init__(self, client, **kwargs):
+    def __init__(self, client, engine, **kwargs):
         """Create a new ClickhouseConnector from client."""
         self.client = client
 
@@ -43,6 +97,26 @@ class ClickhouseConnector(RDBMSConnector):
         self._metadata = MetaData()
 
     @classmethod
+    def param_class(cls) -> Type[ClickhouseParameters]:
+        """Return the parameter class."""
+        return ClickhouseParameters
+
+    @classmethod
+    def from_parameters(cls, parameters: ClickhouseParameters) -> "ClickhouseConnector":
+        """Create a new ClickhouseConnector from parameters."""
+        return cls.from_uri_db(
+            parameters.host,
+            parameters.port,
+            parameters.user,
+            parameters.password,
+            parameters.database,
+            parameters.http_pool_maxsize,
+            parameters.http_pool_num_pools,
+            parameters.connect_timeout,
+            parameters.distributed_ddl_task_timeout,
+        )
+
+    @classmethod
     def from_uri_db(
         cls,
         host: str,
@@ -50,6 +124,10 @@ class ClickhouseConnector(RDBMSConnector):
         user: str,
         pwd: str,
         db_name: str,
+        http_pool_maxsize: int = 16,
+        http_pool_num_pools: int = 12,
+        connect_timeout: int = 15,
+        distributed_ddl_task_timeout: int = 300,
         engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> "ClickhouseConnector":
@@ -59,15 +137,17 @@ class ClickhouseConnector(RDBMSConnector):
 
         # Lazy import
 
-        big_pool_mgr = httputil.get_pool_manager(maxsize=16, num_pools=12)
+        big_pool_mgr = httputil.get_pool_manager(
+            maxsize=http_pool_maxsize, num_pools=http_pool_num_pools
+        )
         client = clickhouse_connect.get_client(
             host=host,
             user=user,
             password=pwd,
             port=port,
-            connect_timeout=15,
+            connect_timeout=connect_timeout,
             database=db_name,
-            settings={"distributed_ddl_task_timeout": 300},
+            settings={"distributed_ddl_task_timeout": distributed_ddl_task_timeout},
             pool_mgr=big_pool_mgr,
         )
 

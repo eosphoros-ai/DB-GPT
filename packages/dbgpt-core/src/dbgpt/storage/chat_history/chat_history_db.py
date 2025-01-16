@@ -151,7 +151,7 @@ class ChatHistoryDao(BaseDao):
         group by app_code order by sz desc
         LIMIT (skip_page * top_k), (top_k)
         """
-        from dbgpt.serve.agent.db.gpts_app import GptsAppDao
+        from dbgpt_serve.agent.db.gpts_app import GptsAppDao
 
         gpts_app_dao = GptsAppDao()
         apps = gpts_app_dao.list_all()

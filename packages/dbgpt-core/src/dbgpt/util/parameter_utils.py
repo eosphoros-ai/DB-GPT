@@ -14,9 +14,10 @@ MISSING_DEFAULT_VALUE = "__MISSING_DEFAULT_VALUE__"
 class ParameterDescription:
     required: bool = False
     is_array: bool = False
-    param_class: Optional[str] = None
     param_name: Optional[str] = None
+    param_class: Optional[str] = None
     param_type: Optional[str] = None
+    label: Optional[str] = None
     description: Optional[str] = None
     default_value: Optional[Any] = None
     valid_values: Optional[List[Any]] = None
@@ -573,7 +574,7 @@ class EnvArgumentParser:
                 if value.lower() in ["true", "1"]:
                     # Flag args
                     env_args.append(arg_key)
-                elif value.lower() not in ["false", "0"]:
+                elif not value.lower() in ["false", "0"]:
                     env_args.extend([arg_key, value])
         return env_args
 
@@ -628,7 +629,7 @@ def _get_parameter_descriptions(
             real_type_name = field.type.__name__
 
         required = True
-        if field.default != MISSING or field.default_factory:
+        if field.default != MISSING or field.default_factory != MISSING:
             required = False
 
         descriptions.append(
@@ -638,6 +639,7 @@ def _get_parameter_descriptions(
                 param_name=field.name,
                 param_type=real_type_name,
                 description=field.metadata.get("help", None),
+                label=field.metadata.get("label", field.name),
                 required=required,
                 default_value=default_value,
                 valid_values=field.metadata.get("valid_values", None),
@@ -697,6 +699,8 @@ def _extract_parameter_details(
     skip_names: Optional[List[str]] = None,
     overwrite_default_values: Optional[Dict[str, Any]] = None,
 ) -> List[ParameterDescription]:
+    from .function_utils import format_type_string
+
     if overwrite_default_values is None:
         overwrite_default_values = {}
     descriptions = []
@@ -731,6 +735,7 @@ def _extract_parameter_details(
         arg_type = (
             action.type if not callable(action.type) else str(action.type.__name__)  # type: ignore
         )
+        arg_type = format_type_string(arg_type)
         description = action.help
 
         # determine if the argument is required

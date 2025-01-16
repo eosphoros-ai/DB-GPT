@@ -1,9 +1,56 @@
 """TuGraph Connector."""
 
 import json
-from typing import Dict, Generator, Iterator, List, cast
+from dataclasses import dataclass, field
+from typing import Dict, Generator, Iterator, List, Type, cast
 
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.datasource.base import BaseConnector
+from dbgpt.datasource.parameter import BaseDatasourceParameters
+from dbgpt.util.i18n_utils import _
+
+
+@auto_register_resource(
+    label=_("TuGraph datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_(
+        "TuGraph is a high-performance graph database jointly developed by Ant Group "
+        "and Tsinghua University."
+    ),
+)
+@dataclass
+class TuGraphParameters(BaseDatasourceParameters):
+    """TuGraph connection parameters."""
+
+    __type__ = "tugraph"
+
+    host: str = field(metadata={"help": _("TuGraph server host")})
+    user: str = field(metadata={"help": _("TuGraph server user")})
+    password: str = field(
+        default="${env:DBGPT_DB_PASSWORD}",
+        metadata={
+            "help": _(
+                "Database password, you can write your password directly, of course, "
+                "you can also use environment variables, such as "
+                "${env:DBGPT_DB_PASSWORD}"
+            )
+        },
+    )
+    port: int = field(
+        default=7687, metadata={"help": _("TuGraph server port, default 7687")}
+    )
+    database: str = field(
+        default="default", metadata={"help": _("Database name, default 'default'")}
+    )
+
+    def create_connector(self) -> "BaseConnector":
+        """Create TuGraph connector."""
+        return TuGraphConnector.from_parameters(self)
 
 
 class TuGraphConnector(BaseConnector):
@@ -55,6 +102,22 @@ class TuGraphConnector(BaseConnector):
             exists = any(item["graph_name"] == graph_name for item in graph_list)
             if exists:
                 session.run(f"Call dbms.graph.deleteGraph('{graph_name}')")
+
+    @classmethod
+    def param_class(cls) -> Type[TuGraphParameters]:
+        """Return the parameter class."""
+        return TuGraphParameters
+
+    @classmethod
+    def from_parameters(cls, parameters: TuGraphParameters) -> "TuGraphConnector":
+        """Create a new TuGraphConnector from parameters."""
+        return cls.from_uri_db(
+            parameters.host,
+            parameters.port,
+            parameters.user,
+            parameters.password,
+            parameters.database,
+        )
 
     @classmethod
     def from_uri_db(

@@ -4,9 +4,13 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Type
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
+from dbgpt.core.awel.flow import ResourceMetadata
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.util.executor_utils import ExecutorFactory
+from dbgpt.util.parameter_utils import _get_parameter_descriptions
 from dbgpt_ext.datasource.schema import DBType
+
+from dbgpt_serve.core import ResourceParameters, ResourceTypes
 
 from .connect_config_db import ConnectConfigDao
 from .db_conn_info import DBConfig
@@ -51,7 +55,7 @@ class ConnectorManager(BaseComponent):
         from dbgpt_ext.datasource.rdbms.conn_mssql import MSSQLConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_mysql import MySQLConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_oceanbase import (  # noqa: F401
-            OceanBaseConnect,
+            OceanBaseConnector,
         )
         from dbgpt_ext.datasource.rdbms.conn_postgresql import (  # noqa: F401
             PostgreSQLConnector,
@@ -101,6 +105,34 @@ class ConnectorManager(BaseComponent):
                 if db_type:
                     support_types.append(db_type)
         return support_types
+
+    def get_supported_types(self) -> ResourceTypes:
+        """Get supported types."""
+
+        chat_classes = self._get_all_subclasses(BaseConnector)  # type: ignore
+        support_type_params = []
+        for cls in chat_classes:
+            if cls.db_type and cls.is_normal_type():
+                db_type = DBType.of_db_type(cls.db_type)
+                if not db_type:
+                    continue
+                param_cls = cls.param_class()
+                parameters = _get_parameter_descriptions(param_cls)
+                label = db_type.value()
+                description = label
+                if hasattr(param_cls, "_resource_metadata"):
+                    flow_metadata: ResourceMetadata = param_cls._resource_metadata  # type: ignore
+                    label = flow_metadata.label
+                    description = flow_metadata.description
+                support_type_params.append(
+                    ResourceParameters(
+                        name=db_type.value(),
+                        label=label,
+                        description=description,
+                        parameters=parameters,
+                    )
+                )
+        return ResourceTypes(types=support_type_params)
 
     def get_cls_by_dbtype(self, db_type) -> Type[BaseConnector]:
         """Get class by db type."""

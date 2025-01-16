@@ -1,13 +1,37 @@
 """StarRocks connector."""
 
+from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import text
 
 from .dialect.starrocks.sqlalchemy import *  # noqa
+
+
+@auto_register_resource(
+    label=_("StarRocks datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("An Open-Source, High-Performance Analytical Database."),
+)
+@dataclass
+class StarRocksParameters(RDBMSDatasourceParameters):
+    """StarRocks connection parameters."""
+
+    __type__ = "starrocks"
+
+    def create_connector(self) -> "StarRocksConnector":
+        """Create StarRocks connector."""
+        return StarRocksConnector.from_parameters(self)
 
 
 class StarRocksConnector(RDBMSConnector):
@@ -16,6 +40,11 @@ class StarRocksConnector(RDBMSConnector):
     driver = "starrocks"
     db_type = "starrocks"
     db_dialect = "starrocks"
+
+    @classmethod
+    def param_class(cls) -> Type[StarRocksParameters]:
+        """Return the parameter class."""
+        return StarRocksParameters
 
     @classmethod
     def from_uri_db(

@@ -1,14 +1,40 @@
 """PostgreSQL connector."""
 
 import logging
-from typing import Any, Iterable, List, Optional, Tuple, cast
+from dataclasses import dataclass
+from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
+
+
+@auto_register_resource(
+    label=_("PostreSQL datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_(
+        "Powerful open-source relational database with extensibility and SQL standards."
+    ),
+)
+@dataclass
+class PostgreSQLParameters(RDBMSDatasourceParameters):
+    """PostgreSQL connection parameters."""
+
+    __type__ = "postgresql"
+
+    def create_connector(self) -> "PostgreSQLConnector":
+        """Create PostgreSQL connector."""
+        return PostgreSQLConnector.from_parameters(self)
 
 
 class PostgreSQLConnector(RDBMSConnector):
@@ -17,6 +43,11 @@ class PostgreSQLConnector(RDBMSConnector):
     driver = "postgresql+psycopg2"
     db_type = "postgresql"
     db_dialect = "postgresql"
+
+    @classmethod
+    def param_class(cls) -> Type[PostgreSQLParameters]:
+        """Return the parameter class."""
+        return PostgreSQLParameters
 
     @classmethod
     def from_uri_db(

@@ -1068,6 +1068,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "snowflake-id" },
+    { name = "tomli" },
     { name = "typeguard" },
     { name = "typing-inspect" },
 ]
@@ -1189,6 +1190,7 @@ requires-dist = [
     { name = "tenacity", marker = "extra == 'client'", specifier = "<=8.3.0" },
     { name = "termcolor", marker = "extra == 'agent'" },
     { name = "tokenizers", marker = "extra == 'framework'", specifier = ">=0.14" },
+    { name = "tomli", specifier = ">=2.2.1" },
     { name = "tomlkit", marker = "extra == 'cli'" },
     { name = "transformers", marker = "extra == 'framework'", specifier = ">=4.34.0" },
     { name = "typeguard" },
@@ -1427,6 +1429,7 @@ datasource-vertica = [
 ]
 graph-rag = [
     { name = "dbgpt-tugraph-plugins" },
+    { name = "networkx" },
 ]
 proxy-anthropic = [
     { name = "anthropic" },
@@ -1489,6 +1492,7 @@ requires-dist = [
     { name = "markdown", marker = "extra == 'rag'" },
     { name = "mysqlclient", marker = "extra == 'datasource-mysql'", specifier = "==2.1.0" },
     { name = "neo4j", marker = "extra == 'storage-neo4j'" },
+    { name = "networkx", marker = "extra == 'graph-rag'" },
     { name = "ollama", marker = "extra == 'proxy-ollama'" },
     { name = "openai", marker = "extra == 'proxy-openai'", specifier = ">=1.59.6" },
     { name = "pdfplumber", marker = "extra == 'rag'" },

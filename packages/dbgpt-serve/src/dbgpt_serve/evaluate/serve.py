@@ -25,7 +25,7 @@ class Serve(BaseServe):
             from fastapi import FastAPI
             from dbgpt import SystemApp
             from dbgpt.core import PromptTemplate
-            from dbgpt.serve.prompt.serve import Serve, SERVE_APP_NAME
+            from dbgpt_serve.prompt.serve import Serve, SERVE_APP_NAME
 
             app = FastAPI()
             system_app = SystemApp(app)
@@ -50,7 +50,7 @@ class Serve(BaseServe):
             from fastapi import FastAPI
             from dbgpt import SystemApp
             from dbgpt.core import PromptTemplate
-            from dbgpt.serve.prompt.serve import Serve, SERVE_APP_NAME
+            from dbgpt_serve.prompt.serve import Serve, SERVE_APP_NAME
 
             app = FastAPI()
             system_app = SystemApp(app)

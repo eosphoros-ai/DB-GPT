@@ -1,9 +1,35 @@
 """MSSQL connector."""
 
-from typing import Iterable
+from dataclasses import dataclass
+from typing import Iterable, Type
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
+from dbgpt.util.i18n_utils import _
 from sqlalchemy import text
+
+
+@auto_register_resource(
+    label=_("MSSQL datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_(
+        "Powerful, scalable, secure relational database system by Microsoft."
+    ),
+)
+@dataclass
+class MSSQLParameters(RDBMSDatasourceParameters):
+    """MSSQL connection parameters."""
+
+    __type__ = "mssql"
+
+    def create_connector(self) -> "MSSQLConnector":
+        """Create MS SQL connector."""
+        return MSSQLConnector.from_parameters(self)
 
 
 class MSSQLConnector(RDBMSConnector):
@@ -14,6 +40,11 @@ class MSSQLConnector(RDBMSConnector):
     driver: str = "mssql+pymssql"
 
     default_db = ["master", "model", "msdb", "tempdb", "modeldb", "resource", "sys"]
+
+    @classmethod
+    def param_class(cls) -> Type[MSSQLParameters]:
+        """Return the parameter class."""
+        return MSSQLParameters
 
     def table_simple_info(self) -> Iterable[str]:
         """Get table simple info."""

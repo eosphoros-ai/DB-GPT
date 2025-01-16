@@ -11,7 +11,8 @@ from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt_ext.datasource.schema import DBType
 from fastapi import HTTPException
 
-from dbgpt_serve.core import BaseService
+from dbgpt_serve.core import BaseService, ResourceTypes
+from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.datasource.manages.connect_config_db import (
     ConnectConfigDao,
     ConnectConfigEntity,
@@ -19,7 +20,10 @@ from dbgpt_serve.datasource.manages.connect_config_db import (
 from dbgpt_serve.datasource.manages.db_conn_info import DBConfig
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
-from ..api.schemas import DatasourceServeRequest, DatasourceServeResponse
+from ..api.schemas import (
+    DatasourceServeRequest,
+    DatasourceServeResponse,
+)
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 
 logger = logging.getLogger(__name__)
@@ -82,6 +86,12 @@ class Service(
         """Returns the internal ServeConfig."""
         return self._serve_config
 
+    @property
+    def datasource_manager(self) -> ConnectorManager:
+        if not self._system_app:
+            raise ValueError("SYSTEM_APP is not set")
+        return ConnectorManager.get_instance(self._system_app)
+
     def create(self, request: DatasourceServeRequest) -> DatasourceServeResponse:
         """Create a new Datasource entity
 
@@ -134,7 +144,7 @@ class Service(
                 detail=f"there is no datasource name:{request.db_name} exists",
             )
         db_config = DBConfig(**model_to_dict(request))
-        if CFG.local_db_manager.edit_db(db_config):
+        if self.datasource_manager.edit_db(db_config):
             return DatasourceServeResponse(**model_to_dict(db_config))
         else:
             raise HTTPException(
@@ -181,5 +191,13 @@ class Service(
             List[DatasourceServeResponse]: The list of responses
         """
 
-        db_list = CFG.local_db_manager.get_db_list()
+        db_list = self.datasource_manager.get_db_list()
         return [DatasourceServeResponse(**db) for db in db_list]
+
+    def datasource_types(self) -> ResourceTypes:
+        """List the datasource types.
+
+        Returns:
+            List[str]: The list of datasource types
+        """
+        return self.datasource_manager.get_supported_types()

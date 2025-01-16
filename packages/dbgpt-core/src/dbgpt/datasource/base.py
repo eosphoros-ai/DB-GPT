@@ -1,7 +1,12 @@
 """Base class for all connectors."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+
+from .parameter import BaseDatasourceParameters  # noqa: F401
+
+C = TypeVar("C", bound="BaseDatasourceParameters")
+T = TypeVar("T", bound="BaseConnector")
 
 
 class BaseConnector(ABC):
@@ -9,6 +14,28 @@ class BaseConnector(ABC):
 
     db_type: str = "__abstract__db_type__"
     driver: str = ""
+
+    @classmethod
+    def param_class(cls) -> Type[C]:
+        """Return parameter class.
+
+        You should implement this method in your subclass.
+
+        Returns:
+            Type[C]: parameter class
+        """
+
+    @classmethod
+    def from_parameters(cls, parameters: C) -> T:
+        """Create a new connector from parameters.
+
+        Args:
+            parameters (C): parameters to create a new connector
+
+        Returns:
+            T: connector instance
+        """
+        raise NotImplementedError("Current connector does not support from_parameters")
 
     def get_table_names(self) -> Iterable[str]:
         """Get all table names."""

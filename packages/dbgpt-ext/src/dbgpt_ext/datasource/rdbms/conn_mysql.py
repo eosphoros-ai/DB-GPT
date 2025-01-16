@@ -1,6 +1,33 @@
 """MySQL connector."""
 
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dataclasses import dataclass
+from typing import Type
+
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
+from dbgpt.util.i18n_utils import _
+
+
+@auto_register_resource(
+    label=_("MySQL datasource"),
+    category=ResourceCategory.DATABASE,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_(
+        "Fast, reliable, scalable open-source relational database management system."
+    ),
+)
+@dataclass
+class MySQLParameters(RDBMSDatasourceParameters):
+    """MySQL connection parameters."""
+
+    __type__ = "mysql"
+
+    def create_connector(self) -> "MySQLConnector":
+        return MySQLConnector.from_parameters(self)
 
 
 class MySQLConnector(RDBMSConnector):
@@ -11,3 +38,8 @@ class MySQLConnector(RDBMSConnector):
     driver: str = "mysql+pymysql"
 
     default_db = ["information_schema", "performance_schema", "sys", "mysql"]
+
+    @classmethod
+    def param_class(cls) -> Type[RDBMSDatasourceParameters]:
+        """Return the parameter class."""
+        return MySQLParameters
