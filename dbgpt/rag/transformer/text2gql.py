@@ -70,11 +70,11 @@ class Text2GQL(LLMTranslator):
     def _format_messages(self, text: str, history: str = None) -> List[BaseMessage]:
         # translate intention to gql with single prompt only.
         intention: Dict[str, Union[str, List[str]]] = json.loads(text)
-        question = intention.get("rewritten_question")
-        category = intention.get("category")
-        entities = intention.get("entities")
-        relations = intention.get("relations")
-        schema = intention.get("schema")
+        question = intention.get("rewritten_question", "")
+        category = intention.get("category", "")
+        entities = intention.get("entities", "")
+        relations = intention.get("relations", "")
+        schema = intention.get("schema", "")
 
         template = HumanPromptTemplate.from_template(self._prompt_template)
 

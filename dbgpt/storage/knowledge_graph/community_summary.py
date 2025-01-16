@@ -540,8 +540,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         subgraph = None
         subgraph_for_doc = None
 
+        enable_text_search = self._graph_store.enable_text_search
+
         # if enable text2gql search, use translated query to retrieve subgraph
-        if self._graph_store.enable_text_search:
+        if enable_text_search:
             intention: Dict[
                 str, Union[str, List[str]]
             ] = await self._intent_interpreter.translate(text)
@@ -552,16 +554,16 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             translation: Dict[str, str] = await self._text2gql.translate(
                 json.dumps(intention)
             )
-            try:
-                query = translation.get("query")
-                if "LIMIT" not in query:
-                    query += f" LIMIT {self._text_search_topk}"
-                subgraph = self._graph_store_apdater.query(query=query)
-                text2gql_query = query
-            except Exception as e:
+            text2gql_query = translation.get("query", "")
+            if "LIMIT" not in text2gql_query:
+                text2gql_query += f" LIMIT {self._text_search_topk}"
+            subgraph = self._graph_store_apdater.query(query=text2gql_query)
+            if subgraph.vertex_count == 0 and subgraph.edge_count == 0:
+                logger.error(f"Failed to execute query: {text2gql_query}")
                 text2gql_query = ""
                 subgraph = None
-                logger.error(f"Failed to execute query: {e}")
+            else:
+                logger.info(f"Query executed successfully: {text2gql_query}")
 
         # if not enable text2gql search or tex2gql search failed to retrieve subgraph
         if not subgraph:
@@ -587,9 +589,19 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 # Using the embeddings of keywords and question
                 vectors.append(vector)
                 subs = vectors
+                if enable_text_search:
+                    logger.info(
+                        "Search subgraph with the following keywords and question's "
+                        f"embedding vector:\n[KEYWORDS]:{keywords}\n[QUESTION]:{text}"
+                    )
             else:
                 # If not enable similarity search, using subs to transfer keywords
                 subs = keywords
+                if enable_text_search:
+                    logger.info(
+                        "Search subgraph with the following keywords:\n"
+                        f"[KEYWORDS]:{keywords}"
+                    )
 
             # If enable triplet graph, using subs to search enetities
             # subs -> enetities
