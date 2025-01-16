@@ -2,7 +2,7 @@
 import json
 import logging
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from dbgpt.core import BaseMessage, HumanPromptTemplate, LLMClient
 from dbgpt.rag.transformer.llm_translator import LLMTranslator
@@ -69,10 +69,10 @@ class IntentInterpreter(LLMTranslator):
         super().__init__(llm_client, model_name, INTENT_INTERPRET_PT)
 
     def _format_messages(self, text: str, history: str = None) -> List[BaseMessage]:
-        # interprete intent with single prompt only.
+        # interprete intention with single prompt only.
         template = HumanPromptTemplate.from_template(self._prompt_template)
 
-        messages = (
+        messages: List[BaseMessage] = (
             template.format_messages(text=text, history=history)
             if history is not None
             else template.format_messages(text=text)
@@ -86,7 +86,7 @@ class IntentInterpreter(LLMTranslator):
     def drop(self):
         """Do nothing by default."""
 
-    def _parse_response(self, text: str, limit: Optional[int] = None) -> Dict:
+    def _parse_response(self, text: str) -> Dict:
         """Parse llm response."""
         """
         The returned diction should contain the following content.

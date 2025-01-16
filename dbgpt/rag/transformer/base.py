@@ -75,5 +75,5 @@ class TranslatorBase(TransformerBase, ABC):
     """Translator base class."""
 
     @abstractmethod
-    async def translate(self, text: str, limit: Optional[int] = None) -> Dict:
+    async def translate(self, text: str) -> Dict:
         """Translate results from text."""

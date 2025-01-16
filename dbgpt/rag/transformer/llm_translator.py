@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from dbgpt.core import BaseMessage, LLMClient, ModelMessage, ModelRequest
 from dbgpt.rag.transformer.base import TranslatorBase
@@ -19,14 +19,12 @@ class LLMTranslator(TranslatorBase, ABC):
         self._model_name = model_name
         self._prompt_template = prompt_template
 
-    async def translate(self, text: str, limit: Optional[int] = None) -> Dict:
+    async def translate(self, text: str) -> Dict:
         """Translate by LLM."""
         messages = self._format_messages(text)
-        return await self._translate(messages, limit)
+        return await self._translate(messages)
 
-    async def _translate(
-        self, messages: List[BaseMessage], limit: Optional[int] = None
-    ) -> Dict:
+    async def _translate(self, messages: List[BaseMessage]) -> Dict:
         """Inner translate by LLM."""
         # use default model if needed
         if not self._model_name:
@@ -46,9 +44,7 @@ class LLMTranslator(TranslatorBase, ABC):
             logger.error(f"request llm failed ({code}) {reason}")
             return {}
 
-        if limit and limit < 1:
-            ValueError("optional argument limit >= 1")
-        return self._parse_response(response.text, limit)
+        return self._parse_response(response.text)
 
     def truncate(self):
         """Do nothing by default."""
@@ -61,5 +57,5 @@ class LLMTranslator(TranslatorBase, ABC):
         """Parse llm response."""
 
     @abstractmethod
-    def _parse_response(self, text: str, limit: Optional[int] = None) -> Dict:
+    def _parse_response(self, text: str) -> Dict:
         """Parse llm response."""

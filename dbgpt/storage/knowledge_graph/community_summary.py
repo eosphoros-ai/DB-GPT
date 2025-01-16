@@ -13,7 +13,7 @@ from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
-from dbgpt.rag.transformer.text2cypher import Text2Cypher
+from dbgpt.rag.transformer.text2gql import Text2GQL
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
@@ -184,10 +184,6 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=True,
         description="Enable the graph search for documents and chunks",
     )
-    enable_text2gql_search: bool = Field(
-        default=False,
-        description="Enable text2gql translation to serach knowledge graph",
-    )
     knowledge_graph_chunk_search_top_size: int = Field(
         default=5,
         description="Top size of knowledge graph chunk search",
@@ -211,6 +207,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
     similarity_search_score_threshold: float = Field(
         default=0.7,
         description="Recall score of similarity search",
+    )
+    text_search_topk: int = Field(
+        default=5,
+        description="Topk of text search",
     )
 
 
@@ -307,6 +307,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 config.similarity_search_score_threshold,
             )
         )
+        self._text_search_topk = int(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_TEXT_SEARCH_TOP_SIZE",
+                config.text_search_topk,
+            )
+        )
 
         def extractor_configure(name: str, cfg: VectorStoreConfig):
             cfg.name = name
@@ -352,9 +358,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         )
 
         self._intent_interpreter = IntentInterpreter(self._llm_client, self._model_name)
-        self._text2cypher = Text2Cypher(
-            self._llm_client, self._model_name, self._graph_store_apdater.get_schema()
-        )
+        self._text2gql = Text2GQL(self._llm_client, self._model_name)
 
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
         """Get the knowledge graph config."""
@@ -532,20 +536,22 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        enable_text2gql_search = self._graph_store.enable_text2gql_search
-
         text2gql_query = ""
         subgraph = None
         subgraph_for_doc = None
 
         # if enable text2gql search, use translated query to retrieve subgraph
-        if enable_text2gql_search:
+        if self._graph_store.enable_text_search:
             intention = await self._intent_interpreter.translate(text)
-            interaction = await self._text2cypher.translate(json.dumps(intention))
+            schema = json.dumps(
+                json.loads(self._graph_store_apdater.get_schema()), indent=4
+            )
+            intention["schema"] = schema
+            translation = await self._text2gql.translate(json.dumps(intention))
             try:
-                query = interaction["query"]
+                query = translation["query"]
                 if "LIMIT" not in query:
-                    query += " LIMIT 10"
+                    query += f" LIMIT {self._text_search_topk}"
                 subgraph = self._graph_store_apdater.query(query=query)
                 text2gql_query = query
             except Exception as e:
