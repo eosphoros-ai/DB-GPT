@@ -901,23 +901,18 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
                         (those not starting with '_' and not in ['id', 'name'])
                         and properties in white_list
         """
-        try:
-            query_result = self.graph_store.conn.run(query=query)
-        except Exception as e:
-            logger.error(f"Failed to execute query: {e}")
-            query_result = []
-        finally:
-            white_list: List[str] = kwargs.get("white_list", [])
-            vertices, edges = self._get_nodes_edges_from_queried_data(
-                query_result, white_list
-            )
+        query_result = self.graph_store.conn.run(query=query)
+        white_list: List[str] = kwargs.get("white_list", [])
+        vertices, edges = self._get_nodes_edges_from_queried_data(
+            query_result, white_list
+        )
 
-            mg = MemoryGraph()
-            for vertex in vertices:
-                mg.upsert_vertex(vertex)
-            for edge in edges:
-                mg.append_edge(edge)
-            return mg
+        mg = MemoryGraph()
+        for vertex in vertices:
+            mg.upsert_vertex(vertex)
+        for edge in edges:
+            mg.append_edge(edge)
+        return mg
 
     # type: ignore[override]
     # mypy: ignore-errors

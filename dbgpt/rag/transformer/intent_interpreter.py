@@ -92,7 +92,7 @@ class IntentInterpreter(LLMTranslator):
         else:
             text = ""
 
-        intention: Dict[str, Union[str, List[str]]] = dict()
+        intention: Dict[str, Union[str, List[str]]] = {}
         intention = json.loads(text)
         if "category" not in intention:
             intention["category"] = ""

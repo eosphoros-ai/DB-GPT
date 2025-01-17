@@ -17,6 +17,7 @@ from dbgpt.rag.transformer.text2gql import Text2GQL
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
+from dbgpt.storage.knowledge_graph.graph_retriever.graph_retriever import GraphRetriever
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     GRAPH_PARAMETERS,
     BuiltinKnowledgeGraph,
@@ -360,6 +361,25 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._intent_interpreter = IntentInterpreter(self._llm_client, self._model_name)
         self._text2gql = Text2GQL(self._llm_client, self._model_name)
 
+        self._knowledge_graph_triplet_search_top_size = 5
+        self._knowledge_graph_document_search_top_size = 5
+        self._graph_retriever = GraphRetriever(
+            self._triplet_graph_enabled,
+            self._document_graph_enabled,
+            self._knowledge_graph_triplet_search_top_size,
+            self._knowledge_graph_document_search_top_size,
+            self._keyword_extractor,
+            self._graph_store.enable_similarity_search,
+            self._config.embedding_fn,
+            self._triplet_embedding_batch_size,
+            self._similarity_search_topk,
+            self._similarity_search_score_threshold,
+            self._graph_store.enable_text_search,
+            self._llm_client,
+            self._model_name,
+            self._graph_store_apdater,
+        )
+
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
         """Get the knowledge graph config."""
         return self._config
@@ -536,115 +556,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        text2gql_query = ""
-        subgraph = None
-        subgraph_for_doc = None
-
-        enable_text_search = self._graph_store.enable_text_search
-
-        # if enable text2gql search, use translated query to retrieve subgraph
-        if enable_text_search:
-            intention: Dict[
-                str, Union[str, List[str]]
-            ] = await self._intent_interpreter.translate(text)
-            schema = json.dumps(
-                json.loads(self._graph_store_apdater.get_schema()), indent=4
-            )
-            intention["schema"] = schema
-            translation: Dict[str, str] = await self._text2gql.translate(
-                json.dumps(intention)
-            )
-            text2gql_query = translation.get("query", "")
-            if "LIMIT" not in text2gql_query:
-                text2gql_query += f" LIMIT {self._text_search_topk}"
-            subgraph = self._graph_store_apdater.query(query=text2gql_query)
-            if subgraph.vertex_count == 0 and subgraph.edge_count == 0:
-                logger.error(f"Failed to execute query: {text2gql_query}")
-                text2gql_query = ""
-                subgraph = None
-            else:
-                logger.info(f"Query executed successfully: {text2gql_query}")
-
-        # if not enable text2gql search or tex2gql search failed to retrieve subgraph
-        if not subgraph:
-            enable_similarity_search = self._graph_store.enable_similarity_search
-
-            # Local search: extract keywords and explore subgraph
-            triplet_graph_enabled = self._triplet_graph_enabled
-            document_graph_enabled = self._document_graph_enabled
-
-            # Extract keywords from original question
-            keywords: List[str] = await self._keyword_extractor.extract(text)
-
-            # Using subs to transfer keywords or embeddings
-            subs: Union[List[str], List[List[float]]]
-            if enable_similarity_search:
-                # If enable similarity search, using subs to transfer embeddings
-                # Embedding the question
-                vector = await self._text_embedder.embed(text)
-                # Embedding the keywords
-                vectors = await self._text_embedder.batch_embed(
-                    keywords, batch_size=self._triplet_embedding_batch_size
-                )
-                # Using the embeddings of keywords and question
-                vectors.append(vector)
-                subs = vectors
-                if enable_text_search:
-                    logger.info(
-                        "Search subgraph with the following keywords and question's "
-                        f"embedding vector:\n[KEYWORDS]:{keywords}\n[QUESTION]:{text}"
-                    )
-            else:
-                # If not enable similarity search, using subs to transfer keywords
-                subs = keywords
-                if enable_text_search:
-                    logger.info(
-                        "Search subgraph with the following keywords:\n"
-                        f"[KEYWORDS]:{keywords}"
-                    )
-
-            # If enable triplet graph, using subs to search enetities
-            # subs -> enetities
-            if triplet_graph_enabled:
-                subgraph = self._graph_store_apdater.explore_trigraph(
-                    subs=subs,
-                    limit=topk,
-                    topk=self._similarity_search_topk,
-                    score_threshold=self._similarity_search_score_threshold,
-                )
-
-            # If enable document graph
-            if document_graph_enabled:
-                # If not enable triplet graph or subgraph is None
-                # Using subs to search chunks
-                # subs -> chunks -> doc
-                if subgraph is None or subgraph.vertex_count == 0:
-                    subgraph_for_doc = (
-                        self._graph_store_apdater.explore_docgraph_without_entities(
-                            subs=subs,
-                            topk=self._similarity_search_topk,
-                            score_threshold=self._similarity_search_score_threshold,
-                            limit=self._knowledge_graph_chunk_search_top_size,
-                        )
-                    )
-                else:
-                    # If there are searched entities
-                    # Append the vids of entities
-                    # VID is the KEYWORD which stores in entity
-                    keywords_for_document_graph = keywords
-                    for vertex in subgraph.vertices():
-                        keywords_for_document_graph.append(vertex.name)
-
-                    # Using the vids to search chunks and doc
-                    # entities -> chunks -> doc
-                    subgraph_for_doc = (
-                        self._graph_store_apdater.explore_docgraph_with_entities(
-                            subs=keywords_for_document_graph,
-                            topk=self._similarity_search_topk,
-                            score_threshold=self._similarity_search_score_threshold,
-                            limit=self._knowledge_graph_chunk_search_top_size,
-                        )
-                    )
+        subgraph, subgraph_for_doc, text2gql_query = await self._graph_retriever.retrieve(text)
 
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (
