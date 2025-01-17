@@ -111,10 +111,18 @@ class GraphRetriever(GraphRetrieverBase):
                 # Using the embeddings of keywords and question
                 vectors.append(vector)
                 subs = vectors
+                logger.info(
+                    "Search subgraph with the following keywords and question's "
+                    f"embedding vector:\n[KEYWORDS]:{keywords}\n[QUESTION]:{text}"
+                )
             else:
                 # Extract keywords from original question
                 keywords: List[str] = await self._keyword_extractor.extract(text)
                 subs = keywords
+                logger.info(
+                    "Search subgraph with the following keywords:\n"
+                    f"[KEYWORDS]:{keywords}"
+                )
 
             if self._triplet_graph_enabled:
                 # Retrieve from triplet graph
