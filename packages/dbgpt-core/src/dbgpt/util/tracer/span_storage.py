@@ -67,7 +67,8 @@ class SpanStorageContainer(SpanStorage):
             try:
                 self.flush_signal_queue.put_nowait(True)
             except queue.Full:
-                pass  # If the signal queue is full, it's okay. The flush thread will handle it.
+                pass  # If the signal queue is full, it's okay. The flush thread will
+                # handle it.
 
     def _flush_to_storages(self):
         while not self._stop_event.is_set():
@@ -93,7 +94,8 @@ class SpanStorageContainer(SpanStorage):
                         storage.append_span_batch(spans_to_write)
                     except Exception as e:
                         logger.warning(
-                            f"Append spans to storage {str(storage)} failed: {str(e)}, span_data: {spans_to_write}"
+                            f"Append spans to storage {str(storage)} failed: {str(e)},"
+                            f" span_data: {spans_to_write}"
                         )
 
                 try:
@@ -142,7 +144,8 @@ class FileSpanStorage(SpanStorage):
         return f"{self.filename_prefix}_{date_str}{self.filename_suffix}"
 
     def _roll_over_if_needed(self):
-        """Checks if a day has changed since the last write, and if so, renames the current file."""
+        """Checks if a day has changed since the last write, and if so, renames the
+        current file."""
         current_date = datetime.datetime.now().date()
         if current_date != self.last_date:
             if os.path.exists(self.filename):

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from dbgpt.util.configure import RegisterParameters
 from dbgpt.util.parameter_utils import BaseParameters
 
 if TYPE_CHECKING:
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class BaseDatasourceParameters(BaseParameters):
+class BaseDatasourceParameters(BaseParameters, RegisterParameters):
     """Base class for datasource parameters."""
 
     def engine_args(self) -> Optional[Dict[str, Any]]:

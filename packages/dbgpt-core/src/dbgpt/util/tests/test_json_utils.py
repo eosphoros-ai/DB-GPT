@@ -24,7 +24,8 @@ where column = 'value'
             {
                 "serial_number": "1",
                 "agent": "CodeOptimizer",
-                "content": "```json\nselect * \nfrom table\nwhere column = 'value'\n``` optimize the code above.",
+                "content": "```json\nselect * \nfrom table\nwhere column = 'value'\n```"
+                " optimize the code above.",
                 "rely": "",
             }
         ],

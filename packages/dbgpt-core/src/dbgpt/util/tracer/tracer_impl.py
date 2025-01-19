@@ -129,7 +129,8 @@ class TracerManager:
         metadata: Dict = None,
     ) -> Span:
         """Start a new span with operation_name
-        This method must not throw an exception under any case and try not to block as much as possible
+        This method must not throw an exception under any case and try not to block as
+         much as possible
         """
         tracer = self._get_tracer()
         if not tracer:

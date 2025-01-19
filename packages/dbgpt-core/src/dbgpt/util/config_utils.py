@@ -12,7 +12,8 @@ class AppConfig:
         Args:
             key (str): The key of config
             value (Any): The value of config
-            overwrite (bool, optional): Whether to overwrite the value if key exists. Defaults to False.
+            overwrite (bool, optional): Whether to overwrite the value if key exists.
+                Defaults to False.
         """
         if key in self.configs and not overwrite:
             raise KeyError(f"Config key {key} already exists")
@@ -23,7 +24,8 @@ class AppConfig:
 
         Args:
             key (str): The key of config
-            default (Optional[Any], optional): The default value if key not found. Defaults to None.
+            default (Optional[Any], optional): The default value if key not found.
+                Defaults to None.
         """
         return self.configs.get(key, default)
 
@@ -39,7 +41,8 @@ class AppConfig:
         """Get current language
 
         Args:
-            default (Optional[str], optional): The default language if not found. Defaults to None.
+            default (Optional[str], optional): The default language if not found.
+                Defaults to None.
 
         Returns:
             str: The language of user running environment

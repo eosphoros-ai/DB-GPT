@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 def _clear_model_cache(device="cuda"):
     try:
         # clear torch cache
-        import torch
+        import torch  # noqa: F401
 
         _clear_torch_cache(device)
     except ImportError:

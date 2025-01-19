@@ -6,7 +6,6 @@ from typing import List, Optional, Union
 import pytest
 
 from ..parameter_utils import (
-    EnvArgumentParser,
     _extract_parameter_details,
     _get_parameter_descriptions,
 )
@@ -18,7 +17,8 @@ def create_parser():
 
 
 @pytest.mark.parametrize(
-    "argument, expected_param_name, default_value, param_type, expected_param_type, description",
+    "argument, expected_param_name, default_value, param_type, expected_param_type, "
+    "description",
     [
         ("--option", "option", "value", str, "string", "An option argument"),
         ("-option", "option", "value", str, "string", "An option argument"),
@@ -91,7 +91,7 @@ def test_extract_parameter_details_required_argument():
 
 
 def test_extract_field_type():
-    from ..parameter_utils import EnvArgumentParser, _get_parameter_descriptions
+    from ..parameter_utils import _get_parameter_descriptions
 
     @dataclass
     class TestBaseType:

@@ -103,6 +103,6 @@ def test_tracer_span_storage_type_and_with(
     span.end()
     assert len(storage.spans) == expected_count
 
-    with tracer.start_span("with_span") as ws:
+    with tracer.start_span("with_span") as _ws:
         assert len(storage.spans) == expected_count + after_create_inc_count
     assert len(storage.spans) == expected_count + expected_count

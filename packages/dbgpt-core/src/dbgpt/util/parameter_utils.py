@@ -34,11 +34,12 @@ class BaseParameters:
 
         Args:
             data: A dictionary containing values for the dataclass fields.
-            ignore_extra_fields: If True, any extra fields in the data dictionary that are
-                not part of the dataclass will be ignored.
+            ignore_extra_fields: If True, any extra fields in the data dictionary that
+                are not part of the dataclass will be ignored.
                 If False, extra fields will raise an error. Defaults to False.
         Returns:
-            An instance of the dataclass with values populated from the given dictionary.
+            An instance of the dataclass with values populated from the given
+                dictionary.
 
         Raises:
             TypeError: If `ignore_extra_fields` is False and there are fields in the
@@ -55,11 +56,14 @@ class BaseParameters:
 
     def update_from(self, source: Union["BaseParameters", dict]) -> bool:
         """
-        Update the attributes of this object using the values from another object (of the same or parent type) or a dictionary.
-        Only update if the new value is different from the current value and the field is not marked as "fixed" in metadata.
+        Update the attributes of this object using the values from another object
+        (of the same or parent type) or a dictionary.
+        Only update if the new value is different from the current value and the field
+        is not marked as "fixed" in metadata.
 
         Args:
-            source (Union[BaseParameters, dict]): The source to update from. Can be another object of the same type or a dictionary.
+            source (Union[BaseParameters, dict]): The source to update from. Can be
+                another object of the same type or a dictionary.
 
         Returns:
             bool: True if at least one field was updated, otherwise False.
@@ -72,14 +76,16 @@ class BaseParameters:
                 tags = [] if not tags else tags.split(",")
                 if tags and "fixed" in tags:
                     continue  # skip this field
-                # Get the new value from source (either another BaseParameters object or a dict)
+                # Get the new value from source (either another BaseParameters object
+                # or a dict)
                 new_value = (
                     getattr(source, field_info.name)
                     if isinstance(source, BaseParameters)
                     else source.get(field_info.name, None)
                 )
 
-                # If the new value is not None and different from the current value, update the field and set the flag
+                # If the new value is not None and different from the current value,
+                # update the field and set the flag
                 if new_value is not None and new_value != getattr(
                     self, field_info.name
                 ):
@@ -87,7 +93,8 @@ class BaseParameters:
                     updated = True
         else:
             raise ValueError(
-                "Source must be an instance of BaseParameters (or its derived class) or a dictionary."
+                "Source must be an instance of BaseParameters (or its derived class) "
+                "or a dictionary."
             )
 
         return updated
@@ -236,7 +243,8 @@ def _dict_to_command_args(obj: Dict, args_prefix: str = "--") -> List[str]:
 
 
 def _get_simple_privacy_field_value(obj, field_info):
-    """Retrieve the value of a field from a dataclass instance, applying privacy rules if necessary.
+    """Retrieve the value of a field from a dataclass instance, applying privacy rules
+    if necessary.
 
     This function reads the metadata of a field to check if it's tagged with 'privacy'.
     If the 'privacy' tag is present, then it modifies the value based on its type
@@ -323,79 +331,79 @@ class EnvArgumentParser:
         command_args: Optional[List[str]] = None,
         **kwargs,
     ) -> Any:
-        """Parse parameters from environment variables and command lines and populate them into data class"""
+        """Parse parameters from environment variables and command lines and populate
+        them into data class.
+        """
         parser = argparse.ArgumentParser(allow_abbrev=False)
-        for field in fields(dataclass_type):
+        for fd in fields(dataclass_type):
             env_var_value: Any = _genenv_ignoring_key_case_with_prefixes(
-                field.name, env_prefixes
+                fd.name, env_prefixes
             )
             if env_var_value:
                 env_var_value = env_var_value.strip()
-                if field.type is int or field.type == Optional[int]:
+                if fd.type is int or fd.type == Optional[int]:
                     env_var_value = int(env_var_value)
-                elif field.type is float or field.type == Optional[float]:
+                elif fd.type is float or fd.type == Optional[float]:
                     env_var_value = float(env_var_value)
-                elif field.type is bool or field.type == Optional[bool]:
+                elif fd.type is bool or fd.type == Optional[bool]:
                     env_var_value = env_var_value.lower() == "true"
-                elif field.type is str or field.type == Optional[str]:
+                elif fd.type is str or fd.type == Optional[str]:
                     pass
                 else:
-                    raise ValueError(f"Unsupported parameter type {field.type}")
+                    raise ValueError(f"Unsupported parameter type {fd.type}")
             if not env_var_value:
-                env_var_value = kwargs.get(field.name)
+                env_var_value = kwargs.get(fd.name)
 
             # print(f"env_var_value: {env_var_value} for {field.name}")
             # Add a command-line argument for this field
-            EnvArgumentParser._build_single_argparse_option(
-                parser, field, env_var_value
-            )
+            EnvArgumentParser._build_single_argparse_option(parser, fd, env_var_value)
 
         # Parse the command-line arguments
         cmd_args, cmd_argv = parser.parse_known_args(args=command_args)
         # cmd_args = parser.parse_args(args=command_args)
         # print(f"cmd_args: {cmd_args}")
-        for field in fields(dataclass_type):
+        for fd in fields(dataclass_type):
             # cmd_line_value = getattr(cmd_args, field.name)
-            if field.name in cmd_args:
-                cmd_line_value = getattr(cmd_args, field.name)
+            if fd.name in cmd_args:
+                cmd_line_value = getattr(cmd_args, fd.name)
                 if cmd_line_value is not None:
-                    kwargs[field.name] = cmd_line_value
+                    kwargs[fd.name] = cmd_line_value
 
         return dataclass_type(**kwargs)
 
     @staticmethod
     def _create_arg_parser(dataclass_type: Type) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description=dataclass_type.__doc__)
-        for field in fields(dataclass_type):
-            help_text = field.metadata.get("help", "")
-            valid_values = field.metadata.get("valid_values", None)
+        for fd in fields(dataclass_type):
+            help_text = fd.metadata.get("help", "")
+            valid_values = fd.metadata.get("valid_values", None)
             argument_kwargs = {
-                "type": EnvArgumentParser._get_argparse_type(field.type),
+                "type": EnvArgumentParser._get_argparse_type(fd.type),
                 "help": help_text,
                 "choices": valid_values,
-                "required": EnvArgumentParser._is_require_type(field.type),
+                "required": EnvArgumentParser._is_require_type(fd.type),
             }
-            if field.default != MISSING:
-                argument_kwargs["default"] = field.default
+            if fd.default != MISSING:
+                argument_kwargs["default"] = fd.default
                 argument_kwargs["required"] = False
-            parser.add_argument(f"--{field.name}", **argument_kwargs)
+            parser.add_argument(f"--{fd.name}", **argument_kwargs)
         return parser
 
     @staticmethod
-    def _create_click_option_from_field(field_name: str, field: Type, is_func=True):
+    def _create_click_option_from_field(field_name: str, fd: Type, is_func=True):
         import click
 
-        help_text = field.metadata.get("help", "")
-        valid_values = field.metadata.get("valid_values", None)
+        help_text = fd.metadata.get("help", "")
+        valid_values = fd.metadata.get("valid_values", None)
         cli_params = {
-            "default": None if field.default is MISSING else field.default,
+            "default": None if fd.default is MISSING else fd.default,
             "help": help_text,
             "show_default": True,
-            "required": field.default is MISSING,
+            "required": fd.default is MISSING,
         }
         if valid_values:
             cli_params["type"] = click.Choice(valid_values)
-        real_type = EnvArgumentParser._get_argparse_type(field.type)
+        real_type = EnvArgumentParser._get_argparse_type(fd.type)
         if real_type is int:
             cli_params["type"] = click.INT
         elif real_type is float:
@@ -428,14 +436,14 @@ class EnvArgumentParser:
                 dataclass_types = list(_types)  # type: ignore
         for dataclass_type in dataclass_types:
             # type: ignore
-            for field in fields(dataclass_type):
-                if field.name not in combined_fields:
-                    combined_fields[field.name] = field
+            for fd in fields(dataclass_type):
+                if fd.name not in combined_fields:
+                    combined_fields[fd.name] = fd
 
         def decorator(func):
-            for field_name, field in reversed(combined_fields.items()):
+            for field_name, fd in reversed(combined_fields.items()):
                 option_decorator = EnvArgumentParser._create_click_option_from_field(
-                    field_name, field
+                    field_name, fd
                 )
                 func = option_decorator(func)
 
@@ -457,10 +465,10 @@ class EnvArgumentParser:
         )
         options = []
 
-        for field_name, field in reversed(combined_fields.items()):
+        for field_name, fd in reversed(combined_fields.items()):
             options.append(
                 EnvArgumentParser._create_click_option_from_field(
-                    field_name, field, is_func=False
+                    field_name, fd, is_func=False
                 )
             )
         return options
@@ -474,8 +482,8 @@ class EnvArgumentParser:
             *dataclass_types, _dynamic_factory=_dynamic_factory
         )
         parser = argparse.ArgumentParser()
-        for _, field in reversed(combined_fields.items()):
-            EnvArgumentParser._build_single_argparse_option(parser, field)
+        for _, fd in reversed(combined_fields.items()):
+            EnvArgumentParser._build_single_argparse_option(parser, fd)
         return parser
 
     @staticmethod
@@ -574,7 +582,7 @@ class EnvArgumentParser:
                 if value.lower() in ["true", "1"]:
                     # Flag args
                     env_args.append(arg_key)
-                elif not value.lower() in ["false", "0"]:
+                elif value.lower() not in ["false", "0"]:
                     env_args.extend([arg_key, value])
         return env_args
 
@@ -588,9 +596,9 @@ def _merge_dataclass_types(
         if _types:
             dataclass_types = list(_types)  # type: ignore
     for dataclass_type in dataclass_types:
-        for field in fields(dataclass_type):
-            if field.name not in combined_fields:
-                combined_fields[field.name] = field
+        for fd in fields(dataclass_type):
+            if fd.name not in combined_fields:
+                combined_fields[fd.name] = fd
     return combined_fields
 
 
@@ -610,39 +618,39 @@ def _get_parameter_descriptions(
     from .function_utils import type_to_string
 
     descriptions = []
-    for field in fields(dataclass_type):
+    for fd in fields(dataclass_type):
         ext_metadata = {
-            k: v for k, v in field.metadata.items() if k not in ["help", "valid_values"]
+            k: v for k, v in fd.metadata.items() if k not in ["help", "valid_values"]
         }
-        default_value = field.default if field.default != MISSING else None
-        if field.name in kwargs:
-            default_value = kwargs[field.name]
+        default_value = fd.default if fd.default != MISSING else None
+        if fd.name in kwargs:
+            default_value = kwargs[fd.name]
 
         is_array = False
-        type_name, sub_types = type_to_string(field.type)
+        type_name, sub_types = type_to_string(fd.type)
         real_type_name = type_name
         if type_name == "array" and sub_types:
             is_array = True
             real_type_name = sub_types[0]
 
         if real_type_name == "unknown":
-            real_type_name = field.type.__name__
+            real_type_name = fd.type.__name__
 
         required = True
-        if field.default != MISSING or field.default_factory != MISSING:
+        if fd.default != MISSING or fd.default_factory != MISSING:
             required = False
 
         descriptions.append(
             ParameterDescription(
                 is_array=is_array,
                 param_class=f"{dataclass_type.__module__}.{dataclass_type.__name__}",
-                param_name=field.name,
+                param_name=fd.name,
                 param_type=real_type_name,
-                description=field.metadata.get("help", None),
-                label=field.metadata.get("label", field.name),
+                description=fd.metadata.get("help", None),
+                label=fd.metadata.get("label", fd.name),
                 required=required,
                 default_value=default_value,
-                valid_values=field.metadata.get("valid_values", None),
+                valid_values=fd.metadata.get("valid_values", None),
                 ext_metadata=ext_metadata,
             )
         )
@@ -712,9 +720,9 @@ def _extract_parameter_details(
             continue
 
         # determine parameter class (store_true/store_false are flags)
-        flag_or_option = (
-            "flag" if isinstance(action, argparse._StoreConstAction) else "option"
-        )
+        # flag_or_option = (
+        #     "flag" if isinstance(action, argparse._StoreConstAction) else "option"
+        # )
 
         # extract parameter name (use the first option string, typically the long form)
         param_name = action.option_strings[0] if action.option_strings else action.dest

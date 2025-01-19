@@ -151,9 +151,12 @@ class APIMixin(ABC):
 
 
 def _extract_dataclass_from_generic(type_hint: Type[T]) -> Union[Type[T], None]:
+    """Extract actual dataclass from generic type hints like List[dataclass],
+    Optional[dataclass], etc.
+    """
+
     import typing_inspect
 
-    """Extract actual dataclass from generic type hints like List[dataclass], Optional[dataclass], etc."""
     if typing_inspect.is_generic_type(type_hint) and typing_inspect.get_args(type_hint):
         return typing_inspect.get_args(type_hint)[0]
     return None
@@ -226,7 +229,10 @@ def _api_remote(path: str, method: str = "GET", max_wait_health_timeout_secs: in
                         response.json(), return_type, actual_dataclass
                     )
                 else:
-                    error_msg = f"Remote request error, error code: {response.status_code}, error msg: {response.text}"
+                    error_msg = (
+                        "Remote request error, error code: "
+                        f"{response.status_code}, error msg: {response.text}"
+                    )
                     raise Exception(error_msg)
 
         return wrapper
@@ -259,7 +265,10 @@ def _sync_api_remote(
             if response.status_code == 200:
                 return _parse_response(response.json(), return_type, actual_dataclass)
             else:
-                error_msg = f"Remote request error, error code: {response.status_code}, error msg: {response.text}"
+                error_msg = (
+                    f"Remote request error, error code: {response.status_code},"
+                    f" error msg: {response.text}"
+                )
                 raise Exception(error_msg)
 
         return wrapper
@@ -268,7 +277,6 @@ def _sync_api_remote(
 
 
 def _parse_response(json_response, return_type, actual_dataclass):
-    # print(f'return_type.__origin__: {return_type.__origin__}, actual_dataclass: {actual_dataclass}, json_response: {json_response}')
     if is_dataclass(actual_dataclass):
         if return_type.__origin__ is list:  # for List[dataclass]
             if isinstance(json_response, list):

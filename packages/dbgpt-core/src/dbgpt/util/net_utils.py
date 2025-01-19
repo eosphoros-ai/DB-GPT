@@ -13,7 +13,6 @@ def _get_ip_address(address: str = "10.254.254.254:1") -> str:
         s.connect((ip, int(port)))
         curr_address = s.getsockname()[0]
     except OSError as e:
-        IP = "127.0.0.1"
         if e.errno == errno.ENETUNREACH:
             try:
                 hostname = socket.getfqdn(socket.gethostname())

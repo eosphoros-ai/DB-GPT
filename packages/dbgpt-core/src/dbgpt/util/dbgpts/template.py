@@ -413,7 +413,8 @@ def _write_resource_init_file(working_directory: str, name: str, mod_name: str):
     """Write the resource __init__.py file"""
 
     init_file = Path(working_directory) / name / mod_name / "__init__.py"
-    content = """\"\"\"A custom resource module that provides a simple tool to send GET requests.\"\"\"
+    content = """\"\"\"A custom resource module that provides a simple tool to send \
+    GET requests.\"\"\"
 
 from dbgpt.agent.resource import tool
 

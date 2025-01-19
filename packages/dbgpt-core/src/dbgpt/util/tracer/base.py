@@ -138,7 +138,8 @@ class SpanStorageType(str, Enum):
 class SpanStorage(BaseComponent, ABC):
     """Abstract base class for storing spans.
 
-    This allows different storage mechanisms (e.g., in-memory, database) to be implemented.
+    This allows different storage mechanisms (e.g., in-memory, database) to be
+    implemented.
     """
 
     name = ComponentType.TRACER_SPAN_STORAGE.value
@@ -174,7 +175,10 @@ class Tracer(BaseComponent, ABC):
 
     @abstractmethod
     def append_span(self, span: Span):
-        """Append the given span to storage. This needs to be implemented by subclasses."""
+        """Append the given span to storage.
+
+        This needs to be implemented by subclasses.
+        """
 
     @abstractmethod
     def start_span(

@@ -1,5 +1,6 @@
 """
-Adapted from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py.
+Adapted from fastchat:
+https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py.
 For benchmarks.
 
 """
@@ -22,7 +23,8 @@ def prepare_logits_processor(
     temperature: float, repetition_penalty: float, top_p: float, top_k: int
 ) -> LogitsProcessorList:
     processor_list = LogitsProcessorList()
-    # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two cases.
+    # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two
+    # cases.
     if temperature >= 1e-5 and temperature != 1.0:
         processor_list.append(TemperatureLogitsWarper(temperature))
     if repetition_penalty > 1.0:
@@ -125,7 +127,7 @@ def generate_stream(
             if model.config.is_encoder_decoder:
                 out = model.decoder(
                     input_ids=torch.as_tensor(
-                        [[token] if not sent_interrupt else output_ids],
+                        [[token] if not sent_interrupt else output_ids],  # noqa
                         device=device,
                     ),
                     encoder_hidden_states=encoder_output,
@@ -138,7 +140,7 @@ def generate_stream(
             else:
                 out = model(
                     input_ids=torch.as_tensor(
-                        [[token] if not sent_interrupt else output_ids],
+                        [[token] if not sent_interrupt else output_ids],  # noqa
                         device=device,
                     ),
                     use_cache=True,
@@ -218,7 +220,8 @@ def generate_stream(
                     ret_logprobs["text_offset"].append(curr_pos)
                     curr_pos += len(text)
 
-            # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
+            # TODO: For the issue of incomplete sentences interrupting output, apply a
+            #  patch and others can also modify it to a more elegant way
             if judge_sent_end and stopped and not is_sentence_complete(output):
                 if len(tokens) > 1:
                     token = tokens[1]

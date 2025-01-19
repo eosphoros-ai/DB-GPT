@@ -51,9 +51,9 @@ def _run_current_with_daemon(name: str, log_file: str):
     print(f"Started {name} in background with pid: {process.pid}")
 
 
-def _run_current_with_gunicorn(app: str, config_path: str, kwargs: Dict):
+def _run_current_with_gunicorn(app: str, _config_path: str, kwargs: Dict):
     try:
-        import gunicorn
+        import gunicorn  # noqa: F401
     except ImportError as e:
         raise ValueError(
             "Could not import python package: gunicorn"
@@ -94,7 +94,8 @@ def _stop_service(
                         ):
                             psutil.Process(process.info["pid"]).terminate()
                             print(
-                                f"Terminated the {fullname} with PID: {process.info['pid']} listening on port: {port}"
+                                f"Terminated the {fullname} with PID: "
+                                f"{process.info['pid']} listening on port: {port}"
                             )
                             not_found = False
                 else:
@@ -110,13 +111,16 @@ def _stop_service(
 
 def _get_ports_by_cmdline_part(service_keys: List[str]) -> List[int]:
     """
-    Return a list of ports that are associated with processes that have all the service_keys in their cmdline.
+    Return a list of ports that are associated with processes that have all the
+    service_keys in their cmdline.
 
     Args:
-        service_keys (List[str]): List of strings that should all be present in the process's cmdline.
+        service_keys (List[str]): List of strings that should all be present in the
+            process's cmdline.
 
     Returns:
-        List[int]: List of ports sorted with preference for 8000 and 5000, and then in ascending order.
+        List[int]: List of ports sorted with preference for 8000 and 5000, and then in
+            ascending order.
     """
     ports = []
 
