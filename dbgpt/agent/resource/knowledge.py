@@ -39,6 +39,16 @@ class RetrieverResource(Resource[ResourceParameters]):
         return self._name
 
     @property
+    def retriever_name(self) -> str:
+        """Return the resource name."""
+        return ""
+
+    @property
+    def retriever_desc(self) -> str:
+        """Return the retriever desc."""
+        return ""
+
+    @property
     def retriever(self) -> "BaseRetriever":
         """Return the retriever."""
         return self._retriever
