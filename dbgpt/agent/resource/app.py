@@ -43,10 +43,10 @@ def _create_app_resource_parameters() -> Type[ResourceParameters]:
 
         @classmethod
         def to_configurations(
-                cls,
-                parameters: Type["ResourceParameters"],
-                version: Optional[str] = None,
-                **kwargs,
+            cls,
+            parameters: Type["ResourceParameters"],
+            version: Optional[str] = None,
+            **kwargs,
         ) -> Any:
             """Convert the parameters to configurations."""
             conf: List[ParameterDescription] = cast(
@@ -63,7 +63,7 @@ def _create_app_resource_parameters() -> Type[ResourceParameters]:
 
         @classmethod
         def from_dict(
-                cls, data: dict, ignore_extra_fields: bool = True
+            cls, data: dict, ignore_extra_fields: bool = True
         ) -> ResourceParameters:
             """Create a new instance from a dictionary."""
             copied_data = data.copy()
@@ -97,10 +97,10 @@ class AppResource(Resource[ResourceParameters]):
 
     @abstractmethod
     async def _start_app(
-            self,
-            user_input: str,
-            sender: ConversableAgent,
-            conv_uid: Optional[str] = None,
+        self,
+        user_input: str,
+        sender: ConversableAgent,
+        conv_uid: Optional[str] = None,
     ) -> AgentMessage:
         """start the app"""
 
@@ -120,13 +120,13 @@ class AppResource(Resource[ResourceParameters]):
         return _create_app_resource_parameters()
 
     async def get_prompt(
-            self,
-            *,
-            lang: str = "en",
-            prompt_type: str = "default",
-            question: Optional[str] = None,
-            resource_name: Optional[str] = None,
-            **kwargs,
+        self,
+        *,
+        lang: str = "en",
+        prompt_type: str = "default",
+        question: Optional[str] = None,
+        resource_name: Optional[str] = None,
+        **kwargs,
     ) -> Tuple[str, Optional[Dict]]:
         """Get the prompt."""
         prompt_template_zh = (
@@ -156,10 +156,10 @@ class AppResource(Resource[ResourceParameters]):
             raise RuntimeError("Sync execution is not supported")
 
     async def async_execute(
-            self,
-            *args,
-            resource_name: Optional[str] = None,
-            **kwargs,
+        self,
+        *args,
+        resource_name: Optional[str] = None,
+        **kwargs,
     ) -> Any:
         """Execute the tool asynchronously.
 
