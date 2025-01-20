@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Dict, List, Union, Tuple
 
-from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
+from dbgpt.rag.transformer.simple_intent_translator import SimpleIntentTranslator
 from dbgpt.rag.transformer.text2gql import Text2GQL
 from dbgpt.storage.graph_store.graph import MemoryGraph, Graph
 from dbgpt.storage.knowledge_graph.graph_retriever.base import GraphRetrieverBase
@@ -20,7 +20,7 @@ class TextBasedGraphRetriever(GraphRetrieverBase):
 
         self._graph_store_apdater = graph_store_apdater
         self._triplet_topk = triplet_topk
-        self._intent_interpreter = IntentInterpreter(llm_client, model_name)
+        self._intent_interpreter = SimpleIntentTranslator(llm_client, model_name)
         self._text2gql = Text2GQL(llm_client, model_name)
 
     async def retrieve(self, text: str) -> Tuple[Graph, str]:

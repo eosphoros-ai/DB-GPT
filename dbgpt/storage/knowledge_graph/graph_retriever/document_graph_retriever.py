@@ -27,15 +27,15 @@ class DocumentGraphRetriever(GraphRetrieverBase):
         self._similarity_search_score_threshold = similarity_search_score_threshold
     
     async def retrieve(
-        self, subs: Optional[Union[List[str], List[List[float]]]], triplet_graph: Optional[Graph]
+        self, input: Union[Graph, List[str], List[List[float]]]
     ) -> Tuple[Graph, None]:
         """Retrieve from document graph."""
 
-        if triplet_graph:
+        if isinstance(input, Graph):
             # If retrieve subgraph from triplet graph successfully
             # Using the vids to search chunks and doc
             keywords_for_document_graph = []
-            for vertex in triplet_graph.vertices():
+            for vertex in input.vertices():
                 keywords_for_document_graph.append(vertex.name)
             # Using the vids to search chunks and doc
             # entities -> chunks -> doc
@@ -49,7 +49,7 @@ class DocumentGraphRetriever(GraphRetrieverBase):
             # Using subs to search chunks
             # subs -> chunks -> doc
             subgraph_for_doc = self._graph_store_apdater.explore_docgraph_without_entities(
-                subs=subs,
+                subs=input,
                 topk=self._similarity_search_topk,
                 score_threshold=self._similarity_search_score_threshold,
                 limit=self._document_topk,

@@ -1,4 +1,4 @@
-"""IntentInterpreter class."""
+"""SimpleIntentTranslator class."""
 import json
 import logging
 import re
@@ -42,11 +42,11 @@ Return:
 logger = logging.getLogger(__name__)
 
 
-class IntentInterpreter(LLMTranslator):
-    """IntentInterpreter class."""
+class SimpleIntentTranslator(LLMTranslator):
+    """SimpleIntentTranslator class."""
 
     def __init__(self, llm_client: LLMClient, model_name: str):
-        """Initialize the IntentInterpreter."""
+        """Initialize the SimpleIntentTranslator."""
         super().__init__(llm_client, model_name, INTENT_INTERPRET_PT)
 
     def _format_messages(self, text: str, history: str = None) -> List[BaseMessage]:

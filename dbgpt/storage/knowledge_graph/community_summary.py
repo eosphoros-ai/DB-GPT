@@ -12,12 +12,11 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
 from dbgpt.rag.transformer.text2gql import Text2GQL
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
-from dbgpt.storage.knowledge_graph.graph_retriever.graph_retriever_router import GraphRetrieverRouter
+from dbgpt.storage.knowledge_graph.graph_retriever.graph_retriever import GraphRetriever
 from dbgpt.storage.knowledge_graph.knowledge_graph import (
     GRAPH_PARAMETERS,
     BuiltinKnowledgeGraph,
@@ -362,12 +361,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             ),
         )
 
-        self._intent_interpreter = IntentInterpreter(self._llm_client, self._model_name)
-        self._text2gql = Text2GQL(self._llm_client, self._model_name)
-
         self._knowledge_graph_triplet_search_top_size = 5
         self._knowledge_graph_document_search_top_size = 5
-        self._graph_retriever_router = GraphRetrieverRouter(
+        self._graph_retriever = GraphRetriever(
             config,
             self._graph_store_apdater,
         )
@@ -548,7 +544,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        subgraph, subgraph_for_doc, text2gql_query = await self._graph_retriever_router.retrieve(text)
+        subgraph, (subgraph_for_doc, text2gql_query) = await self._graph_retriever.retrieve(text)
 
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (

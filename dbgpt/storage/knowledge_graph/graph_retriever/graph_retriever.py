@@ -37,8 +37,8 @@ from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 logger = logging.getLogger(__name__)
 
 
-class GraphRetrieverRouter:
-    """Graph Retriever Router class."""
+class GraphRetriever(GraphRetrieverBase):
+    """Graph Retriever class."""
 
     def __init__(
         self,
@@ -113,7 +113,7 @@ class GraphRetrieverRouter:
             similarity_search_score_threshold,
         )
 
-    async def retrieve(self, text: str) -> Tuple[Graph, Graph, str]:
+    async def retrieve(self, text: str) -> Tuple[Graph, Tuple[Graph, str]]:
         """Retrieve subgraph from triplet graph and document graph."""
 
         subgraph = MemoryGraph()
@@ -124,6 +124,9 @@ class GraphRetrieverRouter:
         if self._enable_text_search:
             # Retrieve from knowledge graph with text.
             subgraph, text2gql_query = await self._text_based_graph_retriever.retrieve(text)
+        
+        # Extract keywords from original question
+        keywords: List[str] = await self._keyword_extractor.extract(text)
 
         if subgraph.vertex_count == 0 and subgraph.edge_count == 0:
             # if not enable text search or text search failed to retrieve subgraph
@@ -135,7 +138,7 @@ class GraphRetrieverRouter:
                 vector = await self._text_embedder.embed(text)
                 # Embedding the keywords
                 vectors = await self._text_embedder.batch_embed(
-                    keywords, batch_size=self._triplet_embedding_batch_size
+                    keywords, batch_size=self._embedding_batch_size
                 )
                 # Using the embeddings of keywords and question
                 vectors.append(vector)
@@ -145,8 +148,6 @@ class GraphRetrieverRouter:
                     f"embedding vector:\n[KEYWORDS]:{keywords}\n[QUESTION]:{text}"
                 )
             else:
-                # Extract keywords from original question
-                keywords: List[str] = await self._keyword_extractor.extract(text)
                 subs = keywords
                 logger.info(
                     "Search subgraph with the following keywords:\n"
@@ -166,13 +167,10 @@ class GraphRetrieverRouter:
                 if subgraph.vertex_count == 0 and subgraph.edge_count == 0:
                     # If not enable triplet graph or failed to retrieve subgraph
                     # Using subs to retrieve from document graph
-                    subgraph_for_doc = await self._document_graph_retriever.retrieve(subs=subs)
+                    subgraph_for_doc = await self._document_graph_retriever.retrieve(subs)
                 else:
                     # If retrieve subgraph from triplet graph successfully
                     # Using entities in subgraph to search chunks and doc
-                    subgraph_for_doc = await self._document_graph_retriever.retrieve(
-                        subs=subs,
-                        triplet_graph=subgraph
-                    )
+                    subgraph_for_doc = await self._document_graph_retriever.retrieve(triplet_graph=subgraph)
 
-        return subgraph, subgraph_for_doc, text2gql_query
+        return subgraph, (subgraph_for_doc, text2gql_query)
