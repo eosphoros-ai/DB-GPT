@@ -31,10 +31,10 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
 
     @classmethod
     def to_configurations(
-            cls,
-            parameters: Type["KnowledgeSpaceLoadResourceParameters"],
-            version: Optional[str] = None,
-            **kwargs,
+        cls,
+        parameters: Type["KnowledgeSpaceLoadResourceParameters"],
+        version: Optional[str] = None,
+        **kwargs,
     ) -> Any:
         """Convert the parameters to configurations."""
         conf: List[ParameterDescription] = cast(
@@ -51,7 +51,7 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
 
     @classmethod
     def from_dict(
-            cls, data: dict, ignore_extra_fields: bool = True
+        cls, data: dict, ignore_extra_fields: bool = True
     ) -> "KnowledgeSpaceLoadResourceParameters":
         """Create a new instance from a dictionary."""
         copied_data = data.copy()
