@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 
 from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
 from dbgpt.rag.transformer.text2gql import Text2GQL
@@ -23,7 +23,7 @@ class TextBasedGraphRetriever(GraphRetrieverBase):
         self._intent_interpreter = IntentInterpreter(llm_client, model_name)
         self._text2gql = Text2GQL(llm_client, model_name)
 
-    async def retrieve(self, text: str) -> tuple[Graph, str]:
+    async def retrieve(self, text: str) -> Tuple[Graph, str]:
         """Retrieve from triplets graph with text2gql."""
 
         intention: Dict[

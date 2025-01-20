@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from pydantic import Field
 
@@ -29,7 +29,7 @@ class KeywordBasedGraphRetriever(GraphRetrieverBase):
         self._graph_store_apdater = graph_store_apdater
         self._triplet_topk = triplet_topk
 
-    async def retrieve(self, keywords: List[str]) -> tuple[Graph, str]:
+    async def retrieve(self, keywords: List[str]) -> Tuple[Graph, str]:
         """Retrieve from triplets graph with keywords."""
 
         subgraph = self._graph_store_apdater.explore_trigraph(

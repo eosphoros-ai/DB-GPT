@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from pydantic import Field
 
@@ -40,7 +40,7 @@ class VectorBasedGraphRetriever(GraphRetrieverBase):
 
     async def retrieve(
         self, vectors: List[List[float]]
-    ) -> tuple[Graph, None]:
+    ) -> Tuple[Graph, None]:
         """Retrieve from triplet graph with vectors."""
 
         subgraph = self._graph_store_apdater.explore_trigraph(

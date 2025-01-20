@@ -3,7 +3,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 
 from pydantic import Field
 
@@ -113,7 +113,7 @@ class GraphRetrieverRouter:
             similarity_search_score_threshold,
         )
 
-    async def retrieve(self, text: str) -> tuple[Graph, Graph, str]:
+    async def retrieve(self, text: str) -> Tuple[Graph, Graph, str]:
         """Retrieve subgraph from triplet graph and document graph."""
 
         subgraph = MemoryGraph()

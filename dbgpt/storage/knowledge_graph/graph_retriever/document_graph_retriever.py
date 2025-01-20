@@ -1,7 +1,7 @@
 """Dcoument Based Graph Retriever."""
 
 import logging
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Tuple
 
 from pydantic import Field
 
@@ -28,7 +28,7 @@ class DocumentGraphRetriever(GraphRetrieverBase):
     
     async def retrieve(
         self, subs: Optional[Union[List[str], List[List[float]]]], triplet_graph: Optional[Graph]
-    ) -> tuple[Graph, None]:
+    ) -> Tuple[Graph, None]:
         """Retrieve from document graph."""
 
         if triplet_graph:
