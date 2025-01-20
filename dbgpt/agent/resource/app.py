@@ -102,7 +102,7 @@ class AppResource(Resource[ResourceParameters]):
         sender: ConversableAgent,
         conv_uid: Optional[str] = None,
     ) -> AgentMessage:
-        """Start the app"""
+        """Start the app."""
 
     @classmethod
     def type(cls) -> ResourceType:
