@@ -1,11 +1,9 @@
 """Dcoument Based Graph Retriever."""
 
 import logging
-from typing import List, Union, Optional, Tuple
+from typing import List, Tuple, Union
 
-from pydantic import Field
-
-from dbgpt.storage.graph_store.graph import MemoryGraph, Graph
+from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.graph_retriever.base import GraphRetrieverBase
 
 logger = logging.getLogger(__name__)
@@ -21,16 +19,16 @@ class DocumentGraphRetriever(GraphRetrieverBase):
         similarity_search_topk,
         similarity_search_score_threshold,
     ):
+        """Initialize Document Graph Retriever."""
         self._graph_store_apdater = graph_store_apdater
         self._document_topk = document_topk
         self._similarity_search_topk = similarity_search_topk
         self._similarity_search_score_threshold = similarity_search_score_threshold
-    
+
     async def retrieve(
         self, input: Union[Graph, List[str], List[List[float]]]
     ) -> Tuple[Graph, None]:
         """Retrieve from document graph."""
-
         if isinstance(input, Graph):
             # If retrieve subgraph from triplet graph successfully
             # Using the vids to search chunks and doc
@@ -48,11 +46,13 @@ class DocumentGraphRetriever(GraphRetrieverBase):
         else:
             # Using subs to search chunks
             # subs -> chunks -> doc
-            subgraph_for_doc = self._graph_store_apdater.explore_docgraph_without_entities(
-                subs=input,
-                topk=self._similarity_search_topk,
-                score_threshold=self._similarity_search_score_threshold,
-                limit=self._document_topk,
+            subgraph_for_doc = (
+                self._graph_store_apdater.explore_docgraph_without_entities(
+                    subs=input,
+                    topk=self._similarity_search_topk,
+                    score_threshold=self._similarity_search_score_threshold,
+                    limit=self._document_topk,
+                )
             )
-        
+
         return subgraph_for_doc

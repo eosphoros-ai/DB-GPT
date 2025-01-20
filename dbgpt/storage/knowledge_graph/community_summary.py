@@ -1,10 +1,9 @@
 """Define the CommunitySummaryKnowledgeGraph."""
 
-import json
 import logging
 import os
 import uuid
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
@@ -12,7 +11,6 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt.rag.transformer.text2gql import Text2GQL
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.knowledge_graph.community.community_store import CommunityStore
@@ -544,7 +542,10 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        subgraph, (subgraph_for_doc, text2gql_query) = await self._graph_retriever.retrieve(text)
+        subgraph, (
+            subgraph_for_doc,
+            text2gql_query,
+        ) = await self._graph_retriever.retrieve(text)
 
         knowledge_graph_str = subgraph.format() if subgraph else ""
         knowledge_graph_for_doc_str = (

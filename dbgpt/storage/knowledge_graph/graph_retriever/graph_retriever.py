@@ -2,23 +2,11 @@
 
 import logging
 import os
-from abc import ABC, abstractmethod
-from typing import List, Optional, Union, Tuple
+from typing import List, Tuple, Union
 
-from pydantic import Field
-
-from dbgpt._private.pydantic import ConfigDict
-from dbgpt.core import Chunk
-from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
+from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
-from dbgpt.storage.graph_store.graph import (
-    Direction,
-    Edge,
-    Graph,
-    GraphElemType,
-    MemoryGraph,
-    Vertex,
-)
+from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 from dbgpt.storage.knowledge_graph.graph_retriever.base import GraphRetrieverBase
 from dbgpt.storage.knowledge_graph.graph_retriever.document_graph_retriever import (
     DocumentGraphRetriever,
@@ -32,7 +20,6 @@ from dbgpt.storage.knowledge_graph.graph_retriever.text_based_graph_retriever im
 from dbgpt.storage.knowledge_graph.graph_retriever.vector_based_graph_retriever import (
     VectorBasedGraphRetriever,
 )
-from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +32,7 @@ class GraphRetriever(GraphRetrieverBase):
         config,
         graph_store_apdater,
     ):
+        """Initialize Graph Retriever."""
         self._triplet_graph_enabled = (
             os.environ["TRIPLET_GRAPH_ENABLED"].lower() == "true"
             if "TRIPLET_GRAPH_ENABLED" in os.environ
@@ -66,7 +54,9 @@ class GraphRetriever(GraphRetrieverBase):
         )
         llm_client = config.llm_client
         model_name = config.model_name
-        self._enable_similarity_search = graph_store_apdater.graph_store.enable_similarity_search
+        self._enable_similarity_search = (
+            graph_store_apdater.graph_store.enable_similarity_search
+        )
         self._embedding_batch_size = int(
             os.getenv(
                 "KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE",
@@ -115,7 +105,6 @@ class GraphRetriever(GraphRetrieverBase):
 
     async def retrieve(self, text: str) -> Tuple[Graph, Tuple[Graph, str]]:
         """Retrieve subgraph from triplet graph and document graph."""
-
         subgraph = MemoryGraph()
         subgraph_for_doc = MemoryGraph()
         text2gql_query = ""
@@ -123,8 +112,10 @@ class GraphRetriever(GraphRetrieverBase):
         # Retrieve from triplet graph and document graph
         if self._enable_text_search:
             # Retrieve from knowledge graph with text.
-            subgraph, text2gql_query = await self._text_based_graph_retriever.retrieve(text)
-        
+            subgraph, text2gql_query = await self._text_based_graph_retriever.retrieve(
+                text
+            )
+
         # Extract keywords from original question
         keywords: List[str] = await self._keyword_extractor.extract(text)
 
@@ -167,10 +158,14 @@ class GraphRetriever(GraphRetrieverBase):
                 if subgraph.vertex_count == 0 and subgraph.edge_count == 0:
                     # If not enable triplet graph or failed to retrieve subgraph
                     # Using subs to retrieve from document graph
-                    subgraph_for_doc = await self._document_graph_retriever.retrieve(subs)
+                    subgraph_for_doc = await self._document_graph_retriever.retrieve(
+                        subs
+                    )
                 else:
                     # If retrieve subgraph from triplet graph successfully
                     # Using entities in subgraph to search chunks and doc
-                    subgraph_for_doc = await self._document_graph_retriever.retrieve(triplet_graph=subgraph)
+                    subgraph_for_doc = await self._document_graph_retriever.retrieve(
+                        triplet_graph=subgraph
+                    )
 
         return subgraph, (subgraph_for_doc, text2gql_query)

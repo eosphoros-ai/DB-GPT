@@ -2,11 +2,11 @@
 
 import json
 import logging
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Tuple, Union
 
 from dbgpt.rag.transformer.simple_intent_translator import SimpleIntentTranslator
 from dbgpt.rag.transformer.text2gql import Text2GQL
-from dbgpt.storage.graph_store.graph import MemoryGraph, Graph
+from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 from dbgpt.storage.knowledge_graph.graph_retriever.base import GraphRetrieverBase
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,6 @@ class TextBasedGraphRetriever(GraphRetrieverBase):
 
     def __init__(self, graph_store_apdater, triplet_topk, llm_client, model_name):
         """Initialize Text Based Graph Retriever."""
-
         self._graph_store_apdater = graph_store_apdater
         self._triplet_topk = triplet_topk
         self._intent_interpreter = SimpleIntentTranslator(llm_client, model_name)
@@ -25,7 +24,6 @@ class TextBasedGraphRetriever(GraphRetrieverBase):
 
     async def retrieve(self, text: str) -> Tuple[Graph, str]:
         """Retrieve from triplets graph with text2gql."""
-
         intention: Dict[
             str, Union[str, List[str]]
         ] = await self._intent_interpreter.translate(text)
