@@ -210,10 +210,6 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=False,
         description="Enable text2gql search or not.",
     )
-    text_search_topk: int = Field(
-        default=5,
-        description="Topk of text search",
-    )
 
 
 @register_resource(
