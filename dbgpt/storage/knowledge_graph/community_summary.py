@@ -273,12 +273,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             if "TRIPLET_GRAPH_ENABLED" in os.environ
             else config.triplet_graph_enabled
         )
-        self._knowledge_graph_chunk_search_top_size = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_CHUNK_SEARCH_TOP_SIZE",
-                config.knowledge_graph_chunk_search_top_size,
-            )
-        )
         self._triplet_extraction_batch_size = int(
             os.getenv(
                 "KNOWLEDGE_GRAPH_EXTRACTION_BATCH_SIZE",
@@ -295,24 +289,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             os.getenv(
                 "COMMUNITY_SUMMARY_BATCH_SIZE",
                 config.community_summary_batch_size,
-            )
-        )
-        self._similarity_search_topk = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE",
-                config.similarity_search_topk,
-            )
-        )
-        self._similarity_search_score_threshold = float(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_RECALL_SCORE",
-                config.similarity_search_score_threshold,
-            )
-        )
-        self._text_search_topk = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_TEXT_SEARCH_TOP_SIZE",
-                config.text_search_topk,
             )
         )
 
