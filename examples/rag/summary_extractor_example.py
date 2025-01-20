@@ -25,7 +25,7 @@ import os
 
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag import ChunkParameters
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.assembler import SummaryAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 

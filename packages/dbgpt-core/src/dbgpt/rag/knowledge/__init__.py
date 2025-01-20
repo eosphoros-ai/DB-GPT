@@ -2,7 +2,6 @@
 
 from typing import Any, Dict
 
-from dbgpt.rag.knowledge.factory import KnowledgeFactory
 
 _MODULE_CACHE: Dict[str, Any] = {}
 
@@ -15,21 +14,9 @@ def __getattr__(name: str):
         return _MODULE_CACHE[name]
 
     _LIBS = {
-        "KnowledgeFactory": "factory",
         "Knowledge": "base",
         "KnowledgeType": "base",
         "ChunkStrategy": "base",
-        "CSVKnowledge": "csv",
-        "DatasourceKnowledge": "datasource",
-        "DocxKnowledge": "docx",
-        "HTMLKnowledge": "html",
-        "MarkdownKnowledge": "markdown",
-        "PDFKnowledge": "pdf",
-        "PPTXKnowledge": "pptx",
-        "StringKnowledge": "string",
-        "TXTKnowledge": "txt",
-        "URLKnowledge": "url",
-        "ExcelKnowledge": "xlsx",
     }
 
     if name in _LIBS:
@@ -42,19 +29,7 @@ def __getattr__(name: str):
 
 
 __all__ = [
-    "KnowledgeFactory",
     "Knowledge",
     "KnowledgeType",
     "ChunkStrategy",
-    "CSVKnowledge",
-    "DatasourceKnowledge",
-    "DocxKnowledge",
-    "HTMLKnowledge",
-    "MarkdownKnowledge",
-    "PDFKnowledge",
-    "PPTXKnowledge",
-    "StringKnowledge",
-    "TXTKnowledge",
-    "URLKnowledge",
-    "ExcelKnowledge",
 ]

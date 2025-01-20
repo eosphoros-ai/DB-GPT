@@ -6,8 +6,8 @@ import traceback
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
-from dbgpt.rag import ChunkParameters
-from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.summary.rdbms_db_summary import RdbmsSummary
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
 from dbgpt_ext.rag.summary.gdbms_db_summary import GdbmsSummary
 

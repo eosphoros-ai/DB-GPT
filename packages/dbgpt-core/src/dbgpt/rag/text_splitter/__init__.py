@@ -1,6 +1,5 @@
 """Text splitter module."""
 
-from .pre_text_splitter import PreTextSplitter  # noqa: F401
 from .text_splitter import (  # noqa: F401
     CharacterTextSplitter,
     MarkdownHeaderTextSplitter,
@@ -12,7 +11,6 @@ from .text_splitter import (  # noqa: F401
 )
 
 __ALL__ = [
-    "PreTextSplitter",
     "CharacterTextSplitter",
     "MarkdownHeaderTextSplitter",
     "PageTextSplitter",

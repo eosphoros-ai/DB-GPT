@@ -222,7 +222,9 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store_apdater.explore(keywords, limit=topk).format()
+        subgraph = self._graph_store_apdater.explore_trigraph(
+            keywords, limit=topk
+        ).format()
 
         logger.info(f"Search subgraph from {len(keywords)} keywords")
 

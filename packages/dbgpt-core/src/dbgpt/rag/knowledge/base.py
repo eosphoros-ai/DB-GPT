@@ -35,8 +35,6 @@ class KnowledgeType(Enum):
     DOCUMENT = "DOCUMENT"
     URL = "URL"
     TEXT = "TEXT"
-    # TODO: Remove this type
-    FIN_REPORT = "FIN_REPORT"
 
     @property
     def type(self):
@@ -195,13 +193,7 @@ class Knowledge(ABC):
     @classmethod
     def support_chunk_strategy(cls) -> List[ChunkStrategy]:
         """Return supported chunk strategy."""
-        return [
-            ChunkStrategy.CHUNK_BY_SIZE,
-            ChunkStrategy.CHUNK_BY_PAGE,
-            ChunkStrategy.CHUNK_BY_PARAGRAPH,
-            ChunkStrategy.CHUNK_BY_MARKDOWN_HEADER,
-            ChunkStrategy.CHUNK_BY_SEPARATOR,
-        ]
+        return ChunkStrategy.CHUNK_BY_SIZE
 
     @classmethod
     def default_chunk_strategy(cls) -> ChunkStrategy:

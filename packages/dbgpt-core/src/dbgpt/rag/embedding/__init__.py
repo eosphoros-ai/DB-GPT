@@ -11,11 +11,7 @@ from .embeddings import (  # noqa: F401
     HuggingFaceEmbeddings,
     HuggingFaceInferenceAPIEmbeddings,
     HuggingFaceInstructEmbeddings,
-    JinaEmbeddings,
-    OllamaEmbeddings,
     OpenAPIEmbeddings,
-    QianFanEmbeddings,
-    TongYiEmbeddings,
 )
 from .rerank import (  # noqa: F401
     CrossEncoderRerankEmbeddings,
@@ -32,12 +28,8 @@ __ALL__ = [
     "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "HuggingFaceInstructEmbeddings",
-    "JinaEmbeddings",
-    "OllamaEmbeddings",
     "OpenAPIEmbeddings",
     "OpenAPIRerankEmbeddings",
     "SiliconFlowRerankEmbeddings",
-    "QianFanEmbeddings",
-    "TongYiEmbeddings",
     "WrappedEmbeddingFactory",
 ]

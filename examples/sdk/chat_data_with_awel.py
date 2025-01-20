@@ -24,7 +24,7 @@ from dbgpt.datasource.operators import DatasourceOperator
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.model.operators import LLMOperator
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag import ChunkParameters
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig

@@ -28,7 +28,7 @@ import os
 from typing import Optional
 
 from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
-from dbgpt.rag import ChunkParameters
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import OpenAPIEmbeddings
 from dbgpt.rag.knowledge import KnowledgeFactory

@@ -6,7 +6,7 @@ from concurrent.futures import Executor
 from typing import List, Optional
 
 from dbgpt.core import Chunk
-from dbgpt.rag.index.base import IndexStoreBase
+from dbgpt.storage.base import IndexStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import blocking_func_to_async
 

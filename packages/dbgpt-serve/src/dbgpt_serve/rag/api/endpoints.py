@@ -2,7 +2,7 @@ from functools import cache
 from typing import List, Optional, Union
 
 from dbgpt.component import SystemApp
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt.util import PaginationResult
 from fastapi import (
     APIRouter,

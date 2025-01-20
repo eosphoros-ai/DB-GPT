@@ -181,7 +181,7 @@ class RDBMSConnectorResource(DBResource[DBParameters]):
         self, db: str, question: Optional[str] = None
     ) -> Union[str, List[str]]:
         """Return the schema link of the database."""
-        from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
+        from dbgpt_ext.rag.summary.rdbms_db_summary import _parse_db_summary
 
         return _parse_db_summary(self.connector)
 

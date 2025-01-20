@@ -5,8 +5,8 @@ from typing import List, Optional
 from dbgpt.core import Chunk
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
-from dbgpt.rag import ChunkParameters
-from dbgpt.rag.chunk_manager import ChunkManager
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.chunk_manager import ChunkManager
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.util.i18n_utils import _
 

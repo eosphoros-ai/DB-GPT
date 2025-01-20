@@ -9,7 +9,7 @@ from typing import Any, List, Optional
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter
-from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
+from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.i18n_utils import _

@@ -4,7 +4,7 @@ from functools import reduce
 from typing import Any, Dict, List, Optional, cast
 
 from dbgpt.core import Chunk
-from dbgpt.rag.index.base import IndexStoreBase
+from dbgpt.storage.base import IndexStoreBase
 from dbgpt.rag.retriever.base import BaseRetriever, RetrieverStrategy
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite

@@ -18,10 +18,11 @@ from dbgpt.configs.model_config import (
 from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.rag.assembler import EmbeddingAssembler
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
-from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeFactory, KnowledgeType
+from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeType
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.storage.vector_store.base import VectorStoreConfig

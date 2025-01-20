@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt.core import Chunk, Embeddings
-from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
+from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt_app.component_configs import CFG

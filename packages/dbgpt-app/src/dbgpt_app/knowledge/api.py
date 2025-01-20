@@ -11,10 +11,10 @@ from dbgpt.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.rag import ChunkParameters
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.knowledge.base import ChunkStrategy
-from dbgpt.rag.knowledge.factory import KnowledgeFactory
+from dbgpt_ext.rag.chunk_manager import ChunkStrategy
+from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever import BaseRetriever
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.storage.vector_store.base import VectorStoreConfig

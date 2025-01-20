@@ -6,8 +6,4 @@ from .db_summary import (  # noqa: F401
     IndexSummary,
     TableSummary,
 )
-from .rdbms_db_summary import RdbmsSummary  # noqa: F401
-
-__all__ = [
-    "RdbmsSummary",
-]
+__all__ = ["DBSummary", "FieldSummary", "IndexSummary", "TableSummary"]

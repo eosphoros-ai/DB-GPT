@@ -8,7 +8,7 @@ from pydantic import Field
 
 from dbgpt._private.pydantic import ConfigDict
 from dbgpt.core import Chunk
-from dbgpt.rag.index.base import IndexStoreBase, IndexStoreConfig
+from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.graph_store.graph import Graph
 
 logger = logging.getLogger(__name__)

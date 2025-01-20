@@ -60,7 +60,9 @@ class CommunityStore:
             return None
 
         graph = community.data.format()
-        community.summary = await self._community_summarizer.summarize(graph=graph)
+        community.summary = (
+            await self._community_summarizer.summarize(graph=graph) or ""
+        )
         logger.info(f"Summarize community {community_id}: {community.summary[:50]}...")
         return community
 

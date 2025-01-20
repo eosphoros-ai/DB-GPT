@@ -7,7 +7,7 @@ from dbgpt.core import Chunk
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.operators.assembler import AssemblerOperator
 from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 from dbgpt.storage.vector_store.base import VectorStoreConfig

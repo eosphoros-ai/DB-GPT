@@ -68,6 +68,14 @@ class TuGraphStoreConfig(GraphStoreConfig):
             "/dbgpt-tugraph-plugins/tree/master/cpp"
         ),
     )
+    enable_summary: bool = Field(
+        default=True,
+        description="Enable graph community summary or not.",
+    )
+    enable_similarity_search: bool = Field(
+        default=True,
+        description="Enable the similarity search or not",
+    )
 
 
 class TuGraphStore(GraphStoreBase):
@@ -80,9 +88,15 @@ class TuGraphStore(GraphStoreBase):
         self._port = int(os.getenv("TUGRAPH_PORT", config.port))
         self._username = os.getenv("TUGRAPH_USERNAME", config.username)
         self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
-        self._enable_summary = (
+        self.enable_summary = (
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            or config.enable_summary
+            if "GRAPH_COMMUNITY_SUMMARY_ENABLED" in os.environ
+            else config.enable_summary
+        )
+        self.enable_similarity_search = (
+            os.environ["SIMILARITY_SEARCH_ENABLED"].lower() == "true"
+            if "SIMILARITY_SEARCH_ENABLED" in os.environ
+            else config.enable_similarity_search
         )
         self._plugin_names = (
             os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")

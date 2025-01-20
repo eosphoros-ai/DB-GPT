@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from dbgpt.configs.model_config import ROOT_PATH
-from dbgpt.rag import ChunkParameters
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.assembler.bm25 import BM25Assembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.storage.vector_store.elastic_store import ElasticsearchVectorConfig

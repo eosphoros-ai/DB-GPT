@@ -12,11 +12,11 @@ from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.rag.assembler.summary import SummaryAssembler
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.assembler.summary import SummaryAssembler
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
-from dbgpt.rag.knowledge.factory import KnowledgeFactory
+from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
