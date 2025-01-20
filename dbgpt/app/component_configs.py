@@ -106,7 +106,7 @@ def _initialize_resource_manager(system_app: SystemApp):
         get_current_host_system_load,
     )
     from dbgpt.agent.expand.resources.search_tool import baidu_search
-    from dbgpt.agent.resource.app import AppResource
+    from dbgpt.serve.agent.resource.app import GptAppResource
     from dbgpt.agent.resource.base import ResourceType
     from dbgpt.agent.resource.manage import get_resource_manager, initialize_resource
     from dbgpt.serve.agent.resource.datasource import DatasourceResource
@@ -118,7 +118,7 @@ def _initialize_resource_manager(system_app: SystemApp):
     rm.register_resource(DatasourceResource)
     rm.register_resource(KnowledgeSpaceRetrieverResource)
     rm.register_resource(PluginToolPack, resource_type=ResourceType.Tool)
-    rm.register_resource(AppResource)
+    rm.register_resource(GptAppResource)
     # Register a search tool
     rm.register_resource(resource_instance=baidu_search)
     rm.register_resource(resource_instance=list_dbgpt_support_models)
