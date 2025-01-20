@@ -31,10 +31,6 @@ class GraphStoreConfig(BaseModel):
         default=False,
         description="Enable similarity search or not.",
     )
-    enable_text_search: bool = Field(
-        default=False,
-        description="Enable text search or not.",
-    )
 
 
 class GraphStoreBase(ABC):
@@ -46,7 +42,6 @@ class GraphStoreBase(ABC):
         self._conn = None
         self.enable_summary = config.enable_summary
         self.enable_similarity_search = config.enable_similarity_search
-        self.enable_text_search = config.enable_text_search
 
     @abstractmethod
     def get_config(self) -> GraphStoreConfig:

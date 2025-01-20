@@ -29,7 +29,7 @@ class KeywordBasedGraphRetriever(GraphRetrieverBase):
         self._graph_store_apdater = graph_store_apdater
         self._triplet_topk = triplet_topk
 
-    async def retrieve(self, keywords: List[str]) -> tuple[MemoryGraph, List[str]]:
+    async def retrieve(self, keywords: List[str]) -> MemoryGraph:
         """Retrieve from triplets graph with keywords."""
 
         subgraph = self._graph_store_apdater.explore_trigraph(

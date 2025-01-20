@@ -40,7 +40,7 @@ class VectorBasedGraphRetriever(GraphRetrieverBase):
 
     async def retrieve(
         self, vectors: List[List[float]]
-    ) -> tuple[MemoryGraph, List[List[float]]]:
+    ) -> MemoryGraph:
         """Retrieve from triplet graph with vectors."""
 
         subgraph = self._graph_store_apdater.explore_trigraph(

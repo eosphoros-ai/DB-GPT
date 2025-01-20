@@ -97,11 +97,6 @@ class TuGraphStore(GraphStoreBase):
             if "SIMILARITY_SEARCH_ENABLED" in os.environ
             else config.enable_similarity_search
         )
-        self.enable_text_search = (
-            os.environ["TEXT_SEARCH_ENABLED"].lower() == "true"
-            if "TEXT_SEARCH_ENABLED" in os.environ
-            else config.enable_text_search
-        )
         self._plugin_names = (
             os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")
             or config.plugin_names

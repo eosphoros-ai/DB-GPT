@@ -1,6 +1,7 @@
 """Graph Retriever."""
 
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 
@@ -31,39 +32,68 @@ from dbgpt.storage.knowledge_graph.graph_retriever.text_based_graph_retriever im
 from dbgpt.storage.knowledge_graph.graph_retriever.vector_based_graph_retriever import (
     VectorBasedGraphRetriever,
 )
+from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 
 logger = logging.getLogger(__name__)
 
 
-class GraphRetriever(GraphRetrieverBase):
-    """Graph retriever class."""
+class GraphRetrieverRouter:
+    """Graph Retriever Router class."""
 
     def __init__(
         self,
-        triplet_graph_enabled,
-        document_graph_enabled,
-        triplet_topk,
-        document_topk,
-        keyword_extractor,
+        config,
         enable_similarity_search,
-        embedding_fn,
-        embedding_batch_size,
-        similarity_search_topk,
-        similarity_search_score_threshold,
-        enable_text_search,
-        llm_client,
-        model_name,
         graph_store_apdater,
     ):
-        self._triplet_graph_enabled = triplet_graph_enabled
-        self._document_graph_enabled = document_graph_enabled
-        self._keyword_extractor = keyword_extractor
-
+        self._triplet_graph_enabled = (
+            os.environ["TRIPLET_GRAPH_ENABLED"].lower() == "true"
+            if "TRIPLET_GRAPH_ENABLED" in os.environ
+            else config.triplet_graph_enabled
+        )
+        self._document_graph_enabled = (
+            os.environ["DOCUMENT_GRAPH_ENABLED"].lower() == "true"
+            if "DOCUMENT_GRAPH_ENABLED" in os.environ
+            else config.document_graph_enabled
+        )
+        triplet_topk = int(
+            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk)
+        )
+        document_topk = int(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_CHUNK_SEARCH_TOP_SIZE",
+                config.knowledge_graph_chunk_search_top_size,
+            )
+        )
+        llm_client = config.llm_client
+        model_name = config.model_name
         self._enable_similarity_search = enable_similarity_search
-        self._text_embedder = TextEmbedder(embedding_fn)
-        self._embedding_batch_size = embedding_batch_size
+        self._embedding_batch_size = int(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE",
+                config.knowledge_graph_embedding_batch_size,
+            )
+        )
+        similarity_search_topk = int(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE",
+                config.similarity_search_topk,
+            )
+        )
+        similarity_search_score_threshold = float(
+            os.getenv(
+                "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
+                config.extract_score_threshold,
+            )
+        )
+        self._enable_text_search = (
+            os.environ["TEXT_SEARCH_ENABLED"].lower() == "true"
+            if "TEXT_SEARCH_ENABLED" in os.environ
+            else config.enable_text_search
+        )
 
-        self._enable_text_search = enable_text_search
+        self._keyword_extractor = KeywordExtractor(llm_client, model_name)
+        self._text_embedder = TextEmbedder(config.embedding_fn)
 
         self._keyword_based_graph_retriever = KeywordBasedGraphRetriever(
             graph_store_apdater, triplet_topk
