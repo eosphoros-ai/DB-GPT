@@ -331,8 +331,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             ),
         )
 
-        self._knowledge_graph_triplet_search_top_size = 5
-        self._knowledge_graph_document_search_top_size = 5
         self._graph_retriever = GraphRetriever(
             config,
             self._graph_store_apdater,
