@@ -17,7 +17,7 @@ pip install "dbgpt[graph_rag]>=0.6.1"
 
 To store the knowledge in graph, we need an graph database, [TuGraph](https://github.com/TuGraph-family/tugraph-db) is the first graph database supported by DB-GPT.
 
-Visit github repository of TuGraph to view [Quick Start](https://tugraph-db.readthedocs.io/zh-cn/latest/3.quick-start/1.preparation.html#id5) document, follow the instructions to pull the TuGraph database docker image (latest / version >= 4.5.0) and launch it.
+Visit github repository of TuGraph to view [Quick Start](https://tugraph-db.readthedocs.io/zh-cn/latest/3.quick-start/1.preparation.html#id5) document, follow the instructions to pull the TuGraph database docker image (latest / version >= 4.5.1) and launch it.
 
 ```
 docker pull tugraph/tugraph-runtime-centos7:4.5.1
@@ -368,7 +368,7 @@ DB-GPT社区与TuGraph社区的比较
   总体而言，DB-GPT社区和TuGraph社区在社区贡献、生态系统和开发者参与等方面各具特色。DB-GPT社区更侧重于AI应用的多样性和组织间的合作，而TuGraph社区则专注于图数据的高效管理和分析。两者的共同点在于都强调了开源和社区合作的重要性，推动了各自领域的技术进步和应用发展。
 ```
 
-### Latest Updates
+### Retrieval Of Document Structure
 
 In version 0.6.1 of DB-GPT, we have added a new feature:
 - Retrieval of triplets with the **retrieval of document structure**
@@ -398,3 +398,78 @@ We decompose standard format files (currently best support for Markdown files) i
 What is the next?
 
 We aim to construct a more complex Graph that covers more comprehensive information to support more sophisticated retrieval algorithms in our GraphRAG.
+
+
+### Similarity Search in GraphRAG:
+
+In the latest version of DB-GPT, we have implemented a new feature:
+
+- **Similarity search** for GraphRAG retrieval
+
+#### How to use?
+
+Use TuGraph 4.5.1 and above.
+
+Set the variables below in the `.env` file to enable similarity search in DB-GPT.
+
+```
+SIMILARITY_SEARCH_ENABLED=True # enable the similarity search for entities and chunks
+KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE=20 # the batch size of embedding from the text
+KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE=5 # set the topk of the vector similarity search
+KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_RECALL_SCORE=0.3 # set the reacall score of the vector similarity search
+```
+
+Additionally, you need to choose an embedding model in the `.env` file
+
+```
+## Openai embedding model, See dbgpt/model/parameter.py
+# EMBEDDING_MODEL=proxy_openai
+# proxy_openai_proxy_server_url=https://api.openai.com/v1
+# proxy_openai_proxy_api_key={your-openai-sk}
+# proxy_openai_proxy_backend=text-embedding-ada-002
+
+
+## qwen embedding model, See dbgpt/model/parameter.py
+# EMBEDDING_MODEL=proxy_tongyi
+# proxy_tongyi_proxy_backend=text-embedding-v1
+# proxy_tongyi_proxy_api_key={your-api-key}
+
+## qianfan embedding model, See dbgpt/model/parameter.py
+#EMBEDDING_MODEL=proxy_qianfan
+#proxy_qianfan_proxy_backend=bge-large-zh
+#proxy_qianfan_proxy_api_key={your-api-key}
+#proxy_qianfan_proxy_api_secret={your-secret-key}
+```
+
+#### Why to use?
+
+TuGraph now offers comprehensive vector capabilities, including vector storage, indexing, and similarity search functionalities. These features enable GraphRAG to achieve superior retrieval performance compared to traditional keyword-based approaches.
+
+	
+To leverage these capabilities, we've introduced an `_embedding` field in both entity and chunk objects to store embedding data, enabling similarity search to identify the most relevant results for a given query.
+
+#### Comparison of Similarity Search Results
+
+Given identical documents and questions in the same environment, the results of the keyword mode are as follows:
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/comparison_result_for_keywords.png'} width="1000px"/>
+</p>
+
+The results of the similarity search mode are as follows:
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/comparison_result_for_similarity_search.png'} width="1000px"/>
+</p>
+
+Compared to the keyword search method, the similarity search method can cover more comprehensive information. For instance, when dealing with the term 清北大学 in the keyword search mode, it is hard to extract useful keywords. However, the similarity search mode can identify similar words, enabling it to retrieve relevant information related to Tsinghua University and thus include it in the search results.
+
+This implies that in scenarios where queries are imprecise, the similarity search approach can retrieve more pertinent information compared to keyword-based search patterns.
+
+Furthermore, as shown in the following figure, compared to RAG, GraphRAG with similarity search can obtain more relevant information, ensuring richer answers.
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/comparison_with_rag.png'} width="1000px"/>
+</p>
+
+In conclusion, enabling similarity search in GraphRAG significantly expands the scope and relevance of its responses.

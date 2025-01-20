@@ -29,8 +29,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def __init__(self, enable_summary: bool = False):
         """Initialize MemGraph Community Store Adapter."""
-        self._graph_store = MemoryGraphStore(MemoryGraphStoreConfig())
-        self._enable_summary = enable_summary
+        self._graph_store: MemoryGraphStore = MemoryGraphStore(MemoryGraphStoreConfig())
 
         super().__init__(self._graph_store)
 
@@ -39,7 +38,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     async def discover_communities(self, **kwargs) -> List[str]:
         """Run community discovery with leiden."""
-        []
+        return []
 
     async def get_community(self, community_id: str) -> Community:
         """Get community."""
@@ -197,7 +196,7 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
             True if the label exists in the specified graph element type, otherwise
             False.
         """
-        pass
+        raise NotImplementedError("Memory graph store does not have label")
 
     def explore(
         self,
@@ -215,8 +214,8 @@ class MemGraphStoreAdapter(GraphStoreAdapter):
 
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a query on graph."""
-        pass
+        raise NotImplementedError("Memory graph store does not support query")
 
     async def stream_query(self, query: str, **kwargs) -> AsyncGenerator[Graph, None]:
         """Execute a stream query."""
-        pass
+        raise NotImplementedError("Memory graph store does not support stream query")
