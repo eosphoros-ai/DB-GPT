@@ -28,7 +28,7 @@ class DocumentGraphRetriever(GraphRetrieverBase):
     
     async def retrieve(
         self, subs: Optional[Union[List[str], List[List[float]]]], triplet_graph: Optional[Graph]
-    ) -> MemoryGraph:
+    ) -> tuple[Graph, None]:
         """Retrieve from document graph."""
 
         if triplet_graph:
