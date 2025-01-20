@@ -1,105 +1,47 @@
 """Application Resources for the agent."""
 
 import dataclasses
-import uuid
+from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
+from dbgpt._private.pydantic import BaseModel
 from dbgpt.agent import AgentMessage, ConversableAgent
 from dbgpt.util import ParameterDescription
 
 from .base import Resource, ResourceParameters, ResourceType
 
 
-def _get_app_list():
-    # TODO: Don't import dbgpt.serve in dbgpt.agent module
-    from dbgpt_serve.agent.agents.app_agent_manage import get_app_manager
-
-    # Only call this function when the system app is initialized
-    apps = get_app_manager().get_dbgpts()
-    results = [
-        {
-            "label": f"{app.app_name}({app.app_code})",
-            "key": app.app_code,
-            "description": app.app_describe,
-        }
-        for app in apps
-    ]
-    return results
-
-
-def _create_app_resource_parameters() -> Type[ResourceParameters]:
-    """Create AppResourceParameters."""
-
-    @dataclasses.dataclass
-    class _DynAppResourceParameters(ResourceParameters):
-        """Application resource class."""
-
-        app_code: str = dataclasses.field(
-            metadata={
-                "help": "app code",
-                "valid_values": _get_app_list(),
-            },
-        )
-
-        @classmethod
-        def to_configurations(
-            cls,
-            parameters: Type["ResourceParameters"],
-            version: Optional[str] = None,
-            **kwargs,
-        ) -> Any:
-            """Convert the parameters to configurations."""
-            conf: List[ParameterDescription] = cast(
-                List[ParameterDescription], super().to_configurations(parameters)
-            )
-            version = version or cls._resource_version()
-            if version != "v1":
-                return conf
-            # Compatible with old version
-            for param in conf:
-                if param.param_name == "app_code":
-                    return param.valid_values or []
-            return []
-
-        @classmethod
-        def from_dict(
-            cls, data: dict, ignore_extra_fields: bool = True
-        ) -> ResourceParameters:
-            """Create a new instance from a dictionary."""
-            copied_data = data.copy()
-            if "app_code" not in copied_data and "value" in copied_data:
-                copied_data["app_code"] = copied_data.pop("value")
-            return super().from_dict(
-                copied_data, ignore_extra_fields=ignore_extra_fields
-            )
-
-    return _DynAppResourceParameters
+class AppInfo(BaseModel):
+    code: str
+    name: str
+    desc: str
 
 
 class AppResource(Resource[ResourceParameters]):
     """AppResource resource class."""
 
-    def __init__(self, name: str, app_code: str, **kwargs):
+    def __init__(self, name: str, **kwargs):
         """Initialize AppResource resource."""
-        # TODO: Don't import dbgpt.serve in dbgpt.agent module
-        from dbgpt_serve.agent.agents.app_agent_manage import get_app_manager
-
         self._resource_name = name
-        self._app_code = app_code
-
-        app = get_app_manager().get_app(self._app_code)
-        self._app_name = app.app_name
-        self._app_desc = app.app_describe
 
     @property
+    @abstractmethod
     def app_desc(self):
         """Return the app description."""
-        return self._app_desc
 
     @property
+    @abstractmethod
     def app_name(self):
         """Return the app name."""
-        return self._app_name
+
+    @abstractmethod
+    async def _start_app(
+        self,
+        user_input: str,
+        sender: ConversableAgent,
+        conv_uid: Optional[str] = None,
+    ) -> AgentMessage:
+        """start the app"""
 
     @classmethod
     def type(cls) -> ResourceType:
@@ -112,9 +54,76 @@ class AppResource(Resource[ResourceParameters]):
         return self._resource_name
 
     @classmethod
+    def _get_app_list(cls) -> List[AppInfo]:
+        """Get the current app list"""
+
+    @classmethod
     def resource_parameters_class(cls, **kwargs) -> Type[ResourceParameters]:
-        """Return the resource parameters class."""
-        return _create_app_resource_parameters()
+        @dataclasses.dataclass
+        class _DynAppResourceParameters(ResourceParameters):
+            """Application resource class."""
+
+            valid_values = []
+
+            apps = cls._get_app_list()
+            for app in apps:
+                valid_values.append(
+                    {
+                        "label": f"{app.name}({app.code})",
+                        "key": app.code,
+                        "description": app.desc,
+                    }
+                )
+
+            valid_values = [
+                {
+                    "label": f"{app.name}({app.code})",
+                    "key": app.code,
+                    "description": app.desc,
+                }
+                for app in apps
+            ]
+
+            app_code: str = dataclasses.field(
+                metadata={
+                    "help": "app code",
+                    "valid_values": valid_values,
+                },
+            )
+
+            @classmethod
+            def to_configurations(
+                cls,
+                parameters: Type["ResourceParameters"],
+                version: Optional[str] = None,
+                **kwargs,
+            ) -> Any:
+                """Convert the parameters to configurations."""
+                conf: List[ParameterDescription] = cast(
+                    List[ParameterDescription], super().to_configurations(parameters)
+                )
+                version = version or cls._resource_version()
+                if version != "v1":
+                    return conf
+                # Compatible with old version
+                for param in conf:
+                    if param.param_name == "app_code":
+                        return param.valid_values or []
+                return []
+
+            @classmethod
+            def from_dict(
+                cls, data: dict, ignore_extra_fields: bool = True
+            ) -> ResourceParameters:
+                """Create a new instance from a dictionary."""
+                copied_data = data.copy()
+                if "app_code" not in copied_data and "value" in copied_data:
+                    copied_data["app_code"] = copied_data.pop("value")
+                return super().from_dict(
+                    copied_data, ignore_extra_fields=ignore_extra_fields
+                )
+
+        return _DynAppResourceParameters
 
     async def get_prompt(
         self,
@@ -138,7 +147,7 @@ class AppResource(Resource[ResourceParameters]):
 
         return (
             template.format(
-                name=self.name, app_name=self._app_name, description=self._app_desc
+                name=self.name, app_name=self.app_name, description=self.app_desc
             ),
             None,
         )
@@ -175,36 +184,5 @@ class AppResource(Resource[ResourceParameters]):
         if parent_agent is None:
             raise RuntimeError("AppResource async execution parent_agent is None")
 
-        reply_message = await _start_app(self._app_code, user_input, parent_agent)
+        reply_message = await self._start_app(user_input, parent_agent)
         return reply_message.content
-
-
-async def _start_app(
-    app_code: str,
-    user_input: str,
-    sender: ConversableAgent,
-    conv_uid: Optional[str] = None,
-) -> AgentMessage:
-    """Start App By AppResource."""
-    # TODO: Don't import dbgpt.serve in dbgpt.agent module
-    from dbgpt_serve.agent.agents.app_agent_manage import get_app_manager
-
-    conv_uid = str(uuid.uuid4()) if conv_uid is None else conv_uid
-    gpts_app = get_app_manager().get_app(app_code)
-    app_agent = await get_app_manager().create_agent_by_app_code(
-        gpts_app, conv_uid=conv_uid
-    )
-
-    agent_message = AgentMessage(
-        content=user_input,
-        current_goal=user_input,
-        context={
-            "conv_uid": conv_uid,
-        },
-        rounds=0,
-    )
-    reply_message: AgentMessage = await app_agent.generate_reply(
-        received_message=agent_message, sender=sender
-    )
-
-    return reply_message
