@@ -369,7 +369,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._knowledge_graph_document_search_top_size = 5
         self._graph_retriever_router = GraphRetrieverRouter(
             config,
-            self._graph_store.enable_similarity_search,
             self._graph_store_apdater,
         )
 

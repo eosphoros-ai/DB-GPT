@@ -43,7 +43,6 @@ class GraphRetrieverRouter:
     def __init__(
         self,
         config,
-        enable_similarity_search,
         graph_store_apdater,
     ):
         self._triplet_graph_enabled = (
@@ -67,7 +66,7 @@ class GraphRetrieverRouter:
         )
         llm_client = config.llm_client
         model_name = config.model_name
-        self._enable_similarity_search = enable_similarity_search
+        self._enable_similarity_search = graph_store_apdater.graph_store.enable_similarity_search
         self._embedding_batch_size = int(
             os.getenv(
                 "KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE",
@@ -114,7 +113,7 @@ class GraphRetrieverRouter:
             similarity_search_score_threshold,
         )
 
-    async def retrieve(self, text: str) -> tuple[MemoryGraph, MemoryGraph, str]:
+    async def retrieve(self, text: str) -> tuple[Graph, Graph, str]:
         """Retrieve subgraph from triplet graph and document graph."""
 
         subgraph = MemoryGraph()
@@ -170,12 +169,10 @@ class GraphRetrieverRouter:
                     subgraph_for_doc = await self._document_graph_retriever.retrieve(subs=subs)
                 else:
                     # If retrieve subgraph from triplet graph successfully
-                    # Using the vids to search chunks and doc
-                    keywords_for_document_graph = []
-                    for vertex in subgraph.vertices():
-                        keywords_for_document_graph.append(vertex.name)
+                    # Using entities in subgraph to search chunks and doc
                     subgraph_for_doc = await self._document_graph_retriever.retrieve(
-                        keywords_for_document_graph=keywords_for_document_graph
+                        subs=subs,
+                        triplet_graph=subgraph
                     )
 
         return subgraph, subgraph_for_doc, text2gql_query

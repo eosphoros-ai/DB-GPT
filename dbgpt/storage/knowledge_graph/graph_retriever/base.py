@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Tuple
 
 from pydantic import Field
 
@@ -25,5 +25,5 @@ class GraphRetrieverBase(ABC):
     """Graph retriever base class."""
 
     @abstractmethod
-    async def retrieve(self, text: str) -> Any:
+    async def retrieve(self, input: Any) -> Tuple[Graph, Any]:
         """Retrieve from graph database."""

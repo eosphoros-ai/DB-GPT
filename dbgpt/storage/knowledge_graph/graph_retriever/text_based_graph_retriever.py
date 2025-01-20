@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 
 from dbgpt.rag.transformer.intent_interpreter import IntentInterpreter
 from dbgpt.rag.transformer.text2gql import Text2GQL
-from dbgpt.storage.graph_store.graph import MemoryGraph
+from dbgpt.storage.graph_store.graph import MemoryGraph, Graph
 from dbgpt.storage.knowledge_graph.graph_retriever.base import GraphRetrieverBase
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class TextBasedGraphRetriever(GraphRetrieverBase):
         self._intent_interpreter = IntentInterpreter(llm_client, model_name)
         self._text2gql = Text2GQL(llm_client, model_name)
 
-    async def retrieve(self, text: str) -> tuple[MemoryGraph, str]:
+    async def retrieve(self, text: str) -> tuple[Graph, str]:
         """Retrieve from triplets graph with text2gql."""
 
         intention: Dict[
