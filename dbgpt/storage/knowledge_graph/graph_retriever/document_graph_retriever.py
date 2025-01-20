@@ -29,9 +29,9 @@ class DocumentGraphRetriever(GraphRetrieverBase):
         self, input: Union[Graph, List[str], List[List[float]]]
     ) -> Tuple[Graph, None]:
         """Retrieve from document graph."""
+        # If retrieve subgraph from triplet graph successfully
         if isinstance(input, Graph):
-            # If retrieve subgraph from triplet graph successfully
-            # Using the vids to search chunks and doc
+            # Get entities' vids from triplet subgraph
             keywords_for_document_graph = []
             for vertex in input.vertices():
                 keywords_for_document_graph.append(vertex.name)

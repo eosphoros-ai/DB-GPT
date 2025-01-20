@@ -124,6 +124,7 @@ class GraphRetriever(GraphRetrieverBase):
 
             # Using subs to transfer keywords or embeddings
             subs: Union[List[str], List[List[float]]]
+
             if self._enable_similarity_search:
                 # Embedding the question
                 vector = await self._text_embedder.embed(text)
@@ -133,18 +134,21 @@ class GraphRetriever(GraphRetrieverBase):
                 )
                 # Using the embeddings of keywords and question
                 vectors.append(vector)
+                # Using vectors as subs
                 subs = vectors
                 logger.info(
                     "Search subgraph with the following keywords and question's "
                     f"embedding vector:\n[KEYWORDS]:{keywords}\n[QUESTION]:{text}"
                 )
             else:
+                # Using keywords as subs
                 subs = keywords
                 logger.info(
                     "Search subgraph with the following keywords:\n"
                     f"[KEYWORDS]:{keywords}"
                 )
 
+            # If enable triplet graph
             if self._triplet_graph_enabled:
                 # Retrieve from triplet graph
                 if self._enable_similarity_search:
@@ -153,10 +157,12 @@ class GraphRetriever(GraphRetrieverBase):
                 else:
                     # Retrieve from triplet graph with keywords
                     subgraph = await self._keyword_based_graph_retriever.retrieve(subs)
+
+            # If enable document graph
             if self._document_graph_enabled:
                 # Retrieve from document graph
+                # If not enable triplet graph or failed to retrieve subgraph
                 if subgraph.vertex_count == 0 and subgraph.edge_count == 0:
-                    # If not enable triplet graph or failed to retrieve subgraph
                     # Using subs to retrieve from document graph
                     subgraph_for_doc = await self._document_graph_retriever.retrieve(
                         subs
@@ -165,7 +171,7 @@ class GraphRetriever(GraphRetrieverBase):
                     # If retrieve subgraph from triplet graph successfully
                     # Using entities in subgraph to search chunks and doc
                     subgraph_for_doc = await self._document_graph_retriever.retrieve(
-                        triplet_graph=subgraph
+                        subgraph
                     )
 
         return subgraph, (subgraph_for_doc, text2gql_query)
