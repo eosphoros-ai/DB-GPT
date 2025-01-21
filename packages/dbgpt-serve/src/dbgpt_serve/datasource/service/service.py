@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import model_to_dict
@@ -21,6 +21,7 @@ from dbgpt_serve.datasource.manages.db_conn_info import DBConfig
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
 from ..api.schemas import (
+    DatasourceCreateRequest,
     DatasourceServeRequest,
     DatasourceServeResponse,
 )
@@ -92,11 +93,15 @@ class Service(
             raise ValueError("SYSTEM_APP is not set")
         return ConnectorManager.get_instance(self._system_app)
 
-    def create(self, request: DatasourceServeRequest) -> DatasourceServeResponse:
+    def create(
+        self, request: Union[DatasourceCreateRequest, DatasourceServeRequest]
+    ) -> DatasourceServeResponse:
         """Create a new Datasource entity
 
         Args:
-            request (DatasourceServeRequest): The request
+            request (Union[DatasourceCreateRequest, DatasourceServeRequest]): The
+                request to create a new Datasource entity. DatasourceServeRequest is
+                deprecated.
 
         Returns:
             DatasourceServeResponse: The response
@@ -201,3 +206,14 @@ class Service(
             List[str]: The list of datasource types
         """
         return self.datasource_manager.get_supported_types()
+
+    def test_connection(self, request: DatasourceCreateRequest) -> bool:
+        """Test the connection of the datasource.
+
+        Args:
+            request (DatasourceServeRequest): The request
+
+        Returns:
+            bool: The test result
+        """
+        return self.datasource_manager.test_connection(request)

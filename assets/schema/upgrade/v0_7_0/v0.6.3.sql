@@ -1,5 +1,5 @@
--- You can change `dbgpt` to your actual metadata database name in your `.env` file
--- eg. `LOCAL_DB_NAME=dbgpt`
+-- Full SQL of v0.6.3, please not modify this file(It must be same as the file in the release package)
+
 
 CREATE
 DATABASE IF NOT EXISTS dbgpt;
@@ -78,9 +78,7 @@ CREATE TABLE IF NOT EXISTS `connect_config`
     `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
     `user_name`  varchar(255) DEFAULT NULL COMMENT 'user name',
     `user_id`  varchar(255) DEFAULT NULL COMMENT 'user id',
-    `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
-    `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record update time',
-    `ext_config` text COMMENT 'Extended configuration, json format',
+
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_db` (`db_name`),
     KEY        `idx_q_db_type` (`db_type`)

@@ -1,17 +1,18 @@
 """Connection manager."""
 
 import logging
-from typing import TYPE_CHECKING, List, Optional, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata
-from dbgpt.datasource.base import BaseConnector
+from dbgpt.datasource.base import BaseConnector, BaseDatasourceParameters
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 from dbgpt_ext.datasource.schema import DBType
 
 from dbgpt_serve.core import ResourceParameters, ResourceTypes
 
+from ..api.schemas import DatasourceCreateRequest
 from .connect_config_db import ConnectConfigDao
 from .db_conn_info import DBConfig
 
@@ -134,6 +135,17 @@ class ConnectorManager(BaseComponent):
                 )
         return ResourceTypes(types=support_type_params)
 
+    def _supported_types(self) -> Dict[str, Type[BaseConnector]]:
+        """Get supported types."""
+        chat_classes = self._get_all_subclasses(BaseConnector)
+        support_types = {}
+        for cls in chat_classes:
+            if cls.db_type and cls.is_normal_type():
+                db_type = DBType.of_db_type(cls.db_type)
+                if db_type:
+                    support_types[db_type.value()] = cls
+        return support_types
+
     def get_cls_by_dbtype(self, db_type) -> Type[BaseConnector]:
         """Get class by db type."""
         chat_classes = self._get_all_subclasses(BaseConnector)  # type: ignore
@@ -168,8 +180,28 @@ class ConnectorManager(BaseComponent):
                 host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
             )
 
+    def _create_parameters(
+        self, request: DatasourceCreateRequest
+    ) -> BaseDatasourceParameters:
+        """Create parameters."""
+        db_type = DBType.of_db_type(request.type)
+        if not db_type:
+            raise ValueError("Unsupported Db Type！" + request.type)
+        support_types = self._supported_types()
+        if db_type.value() not in support_types:
+            raise ValueError("Unsupported Db Type！" + request.type)
+        cls = support_types[db_type.value()]
+        param_cls = cls.param_class()
+        return param_cls(**request.params)
+
+    def create_connector(self, param: BaseDatasourceParameters) -> BaseConnector:
+        """Create a new connector instance."""
+        return param.create_connector()
+
     def test_connect(self, db_info: DBConfig) -> BaseConnector:
         """Test connectivity.
+
+        (Deprecated) Use test_connection instead.
 
         Args:
             db_info (DBConfig): db connect info.
@@ -204,6 +236,23 @@ class ConnectorManager(BaseComponent):
         except Exception as e:
             logger.error(f"{db_info.db_name} Test connect Failure!{str(e)}")
             raise ValueError(f"{db_info.db_name} Test connect Failure!{str(e)}")
+
+    def test_connection(self, request: DatasourceCreateRequest) -> bool:
+        """Test connection.
+
+        Args:
+            request (DatasourceCreateRequest): The request.
+
+        Returns:
+            bool: True if connection is successful.
+        """
+        try:
+            param = self._create_parameters(request)
+            _connector = self.create_connector(param)
+            return True
+        except Exception as e:
+            logger.error(f"Test connection Failure!{str(e)}")
+            raise ValueError(f"Test connection Failure!{str(e)}")
 
     def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
         """Get db list."""

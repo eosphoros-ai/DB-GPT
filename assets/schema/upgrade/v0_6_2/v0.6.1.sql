@@ -1,5 +1,4 @@
--- You can change `dbgpt` to your actual metadata database name in your `.env` file
--- eg. `LOCAL_DB_NAME=dbgpt`
+-- Full SQL of v0.6.1, please not modify this file(It must be same as the file in the release package)
 
 CREATE
 DATABASE IF NOT EXISTS dbgpt;
@@ -78,9 +77,7 @@ CREATE TABLE IF NOT EXISTS `connect_config`
     `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
     `user_name`  varchar(255) DEFAULT NULL COMMENT 'user name',
     `user_id`  varchar(255) DEFAULT NULL COMMENT 'user id',
-    `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
-    `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record update time',
-    `ext_config` text COMMENT 'Extended configuration, json format',
+
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_db` (`db_name`),
     KEY        `idx_q_db_type` (`db_type`)
@@ -390,7 +387,7 @@ CREATE TABLE `gpts_app_collection` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
   `user_code` int(11) NOT NULL COMMENT 'user code',
-  `sys_code` varchar(255) NULL COMMENT 'system app code',
+  `sys_code` varchar(255) NOT NULL COMMENT 'system app code',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
   PRIMARY KEY (`id`),
@@ -441,10 +438,10 @@ CREATE TABLE `recommend_question` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   `gmt_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
-  `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
+  `app_code` varchar(255) DEFAULT NULL COMMENT 'Current AI assistant code',
   `question` text DEFAULT NULL COMMENT 'question',
   `user_code` int(11) NOT NULL COMMENT 'user code',
-  `sys_code` varchar(255) NULL COMMENT 'system app code',
+  `sys_code` varchar(255) NOT NULL COMMENT 'system app code',
   `valid` varchar(10) DEFAULT 'true' COMMENT 'is it effective，true/false',
   `chat_mode` varchar(255) DEFAULT NULL COMMENT 'Conversation scene mode，chat_knowledge...',
   `params` text DEFAULT NULL COMMENT 'question param',
@@ -458,7 +455,7 @@ CREATE TABLE `user_recent_apps` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   `gmt_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
-  `app_code` varchar(255) NOT NULL COMMENT 'AI assistant code',
+  `app_code` varchar(255) DEFAULT NULL COMMENT 'AI assistant code',
   `last_accessed` timestamp NULL DEFAULT NULL COMMENT 'User recent usage time',
   `user_code` varchar(255) DEFAULT NULL COMMENT 'user code',
   `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app code',
