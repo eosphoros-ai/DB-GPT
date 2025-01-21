@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 class TextBasedGraphRetriever(GraphRetrieverBase):
     """Text Based Graph Retriever class."""
 
-    def __init__(self, graph_store_apdater, triplet_topk, llm_client, model_name):
+    def __init__(self, graph_store_adapter, triplet_topk, llm_client, model_name):
         """Initialize Text Based Graph Retriever."""
-        self._graph_store_apdater = graph_store_apdater
+        self._graph_store_adapter = graph_store_adapter
         self._triplet_topk = triplet_topk
         self._intent_interpreter = SimpleIntentTranslator(llm_client, model_name)
         self._text2gql = Text2GQL(llm_client, model_name)
@@ -28,7 +28,7 @@ class TextBasedGraphRetriever(GraphRetrieverBase):
             str, Union[str, List[str]]
         ] = await self._intent_interpreter.translate(text)
         schema = json.dumps(
-            json.loads(self._graph_store_apdater.get_schema()), indent=4
+            json.loads(self._graph_store_adapter.get_schema()), indent=4
         )
         intention["schema"] = schema
         translation: Dict[str, str] = await self._text2gql.translate(
@@ -38,7 +38,7 @@ class TextBasedGraphRetriever(GraphRetrieverBase):
         if "LIMIT" not in text2gql_query:
             text2gql_query += f" LIMIT {self._triplet_topk}"
         try:
-            subgraph = self._graph_store_apdater.query(query=text2gql_query)
+            subgraph = self._graph_store_adapter.query(query=text2gql_query)
             logger.info(f"Query executed successfully: {text2gql_query}")
         except Exception as e:
             text2gql_query = ""

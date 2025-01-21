@@ -30,7 +30,7 @@ class GraphRetriever(GraphRetrieverBase):
     def __init__(
         self,
         config,
-        graph_store_apdater,
+        graph_store_adapter,
     ):
         """Initialize Graph Retriever."""
         self._triplet_graph_enabled = (
@@ -55,7 +55,7 @@ class GraphRetriever(GraphRetrieverBase):
         llm_client = config.llm_client
         model_name = config.model_name
         self._enable_similarity_search = (
-            graph_store_apdater.graph_store.enable_similarity_search
+            graph_store_adapter.graph_store.enable_similarity_search
         )
         self._embedding_batch_size = int(
             os.getenv(
@@ -85,19 +85,19 @@ class GraphRetriever(GraphRetrieverBase):
         self._text_embedder = TextEmbedder(config.embedding_fn)
 
         self._keyword_based_graph_retriever = KeywordBasedGraphRetriever(
-            graph_store_apdater, triplet_topk
+            graph_store_adapter, triplet_topk
         )
         self._vector_based_graph_retriever = VectorBasedGraphRetriever(
-            graph_store_apdater,
+            graph_store_adapter,
             triplet_topk,
             similarity_search_topk,
             similarity_search_score_threshold,
         )
         self._text_based_graph_retriever = TextBasedGraphRetriever(
-            graph_store_apdater, triplet_topk, llm_client, model_name
+            graph_store_adapter, triplet_topk, llm_client, model_name
         )
         self._document_graph_retriever = DocumentGraphRetriever(
-            graph_store_apdater,
+            graph_store_adapter,
             document_topk,
             similarity_search_topk,
             similarity_search_score_threshold,

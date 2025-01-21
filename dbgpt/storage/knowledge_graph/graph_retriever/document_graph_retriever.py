@@ -14,13 +14,13 @@ class DocumentGraphRetriever(GraphRetrieverBase):
 
     def __init__(
         self,
-        graph_store_apdater,
+        graph_store_adapter,
         document_topk,
         similarity_search_topk,
         similarity_search_score_threshold,
     ):
         """Initialize Document Graph Retriever."""
-        self._graph_store_apdater = graph_store_apdater
+        self._graph_store_adapter = graph_store_adapter
         self._document_topk = document_topk
         self._similarity_search_topk = similarity_search_topk
         self._similarity_search_score_threshold = similarity_search_score_threshold
@@ -37,7 +37,7 @@ class DocumentGraphRetriever(GraphRetrieverBase):
                 keywords_for_document_graph.append(vertex.name)
             # Using the vids to search chunks and doc
             # entities -> chunks -> doc
-            subgraph_for_doc = self._graph_store_apdater.explore_docgraph_with_entities(
+            subgraph_for_doc = self._graph_store_adapter.explore_docgraph_with_entities(
                 subs=keywords_for_document_graph,
                 topk=self._similarity_search_topk,
                 score_threshold=self._similarity_search_score_threshold,
@@ -47,7 +47,7 @@ class DocumentGraphRetriever(GraphRetrieverBase):
             # Using subs to search chunks
             # subs -> chunks -> doc
             subgraph_for_doc = (
-                self._graph_store_apdater.explore_docgraph_without_entities(
+                self._graph_store_adapter.explore_docgraph_without_entities(
                     subs=input,
                     topk=self._similarity_search_topk,
                     score_threshold=self._similarity_search_score_threshold,

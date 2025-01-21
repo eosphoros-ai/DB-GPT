@@ -14,20 +14,20 @@ class VectorBasedGraphRetriever(GraphRetrieverBase):
 
     def __init__(
         self,
-        graph_store_apdater,
+        graph_store_adapter,
         triplet_topk,
         similarity_search_topk,
         similarity_search_score_threshold,
     ):
         """Initialize Vector Based Graph Retriever."""
-        self._graph_store_apdater = graph_store_apdater
+        self._graph_store_adapter = graph_store_adapter
         self._triplet_topk = triplet_topk
         self._similarity_search_topk = similarity_search_topk
         self._similarity_search_score_threshold = similarity_search_score_threshold
 
     async def retrieve(self, vectors: List[List[float]]) -> Tuple[Graph, None]:
         """Retrieve from triplet graph with vectors."""
-        subgraph = self._graph_store_apdater.explore_trigraph(
+        subgraph = self._graph_store_adapter.explore_trigraph(
             subs=vectors,
             topk=self._similarity_search_topk,
             limit=self._triplet_topk,

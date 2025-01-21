@@ -322,7 +322,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             cfg.score_threshold = self._community_score_threshold
 
         self._community_store = CommunityStore(
-            self._graph_store_apdater,
+            self._graph_store_adapter,
             CommunitySummarizer(self._llm_client, self._model_name),
             VectorStoreFactory.create(
                 self._vector_store_type,
@@ -333,7 +333,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
 
         self._graph_retriever = GraphRetriever(
             config,
-            self._graph_store_apdater,
+            self._graph_store_adapter,
         )
 
     def get_config(self) -> BuiltinKnowledgeGraphConfig:
@@ -343,7 +343,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
         if not self.vector_name_exists():
-            self._graph_store_apdater.create_graph(self.get_config().name)
+            self._graph_store_adapter.create_graph(self.get_config().name)
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities(
@@ -378,20 +378,20 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                 chunk.embedding = embeddings[idx]
 
         # upsert the document and chunks vertices
-        self._graph_store_apdater.upsert_documents(iter([documment_chunk]))
-        self._graph_store_apdater.upsert_chunks(iter(paragraph_chunks))
+        self._graph_store_adapter.upsert_documents(iter([documment_chunk]))
+        self._graph_store_adapter.upsert_chunks(iter(paragraph_chunks))
 
         # upsert the document structure
         for chunk_index, chunk in enumerate(paragraph_chunks):
             # document -> include -> chunk
             if chunk.parent_is_document:
-                self._graph_store_apdater.upsert_doc_include_chunk(chunk=chunk)
+                self._graph_store_adapter.upsert_doc_include_chunk(chunk=chunk)
             else:  # chunk -> include -> chunk
-                self._graph_store_apdater.upsert_chunk_include_chunk(chunk=chunk)
+                self._graph_store_adapter.upsert_chunk_include_chunk(chunk=chunk)
 
             # chunk -> next -> chunk
             if chunk_index >= 1:
-                self._graph_store_apdater.upsert_chunk_next_chunk(
+                self._graph_store_adapter.upsert_chunk_next_chunk(
                     chunk=paragraph_chunks[chunk_index - 1], next_chunk=chunk
                 )
 
@@ -433,12 +433,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                         graph.append_edge(edge=edge)
 
                 # Upsert the graph
-                self._graph_store_apdater.upsert_graph(graph)
+                self._graph_store_adapter.upsert_graph(graph)
 
                 # chunk -> include -> entity
                 if document_graph_enabled:
                     for vertex in graph.vertices():
-                        self._graph_store_apdater.upsert_chunk_include_entity(
+                        self._graph_store_adapter.upsert_chunk_include_entity(
                             chunk=chunks[idx], entity=vertex
                         )
 

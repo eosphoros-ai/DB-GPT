@@ -144,7 +144,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
         self._graph_store: GraphStoreBase = self.__init_graph_store(config)
-        self._graph_store_apdater: GraphStoreAdapter = self.__init_graph_store_adapter()
+        self._graph_store_adapter: GraphStoreAdapter = self.__init_graph_store_adapter()
 
     def __init_graph_store(self, config: BuiltinKnowledgeGraphConfig) -> GraphStoreBase:
         def configure(cfg: GraphStoreConfig):
@@ -167,13 +167,13 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         async def process_chunk(chunk: Chunk):
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
-                self._graph_store_apdater.insert_triplet(*triplet)
+                self._graph_store_adapter.insert_triplet(*triplet)
             logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
             return chunk.chunk_id
 
         # wait async tasks completed
         if not self.vector_name_exists():
-            self._graph_store_apdater.create_graph(self.get_config().name)
+            self._graph_store_adapter.create_graph(self.get_config().name)
         tasks = [process_chunk(chunk) for chunk in chunks]
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -190,11 +190,11 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             List[str]: chunk ids.
         """
         if not self.vector_name_exists():
-            self._graph_store_apdater.create_graph(self.get_config().name)
+            self._graph_store_adapter.create_graph(self.get_config().name)
         for chunk in chunks:
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
-                self._graph_store_apdater.insert_triplet(*triplet)
+                self._graph_store_adapter.insert_triplet(*triplet)
             logger.info(f"load {len(triplets)} triplets from chunk {chunk.chunk_id}")
         return [chunk.chunk_id for chunk in chunks]
 
@@ -221,7 +221,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         # extract keywords and explore graph store
         keywords = await self._keyword_extractor.extract(text)
-        subgraph = self._graph_store_apdater.explore_trigraph(
+        subgraph = self._graph_store_adapter.explore_trigraph(
             keywords, limit=topk
         ).format()
 
@@ -255,12 +255,12 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def query_graph(self, limit: Optional[int] = None) -> Graph:
         """Query graph."""
-        return self._graph_store_apdater.get_full_graph(limit)
+        return self._graph_store_adapter.get_full_graph(limit)
 
     def truncate(self) -> List[str]:
         """Truncate knowledge graph."""
         logger.info(f"Truncate graph {self._config.name}")
-        self._graph_store_apdater.truncate()
+        self._graph_store_adapter.truncate()
 
         logger.info("Truncate keyword extractor")
         self._keyword_extractor.truncate()
@@ -273,7 +273,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
     def delete_vector_name(self, index_name: str):
         """Delete vector name."""
         logger.info(f"Drop graph {index_name}")
-        self._graph_store_apdater.drop()
+        self._graph_store_adapter.drop()
 
         logger.info("Drop keyword extractor")
         self._keyword_extractor.drop()
@@ -283,9 +283,9 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def delete_by_ids(self, ids: str) -> List[str]:
         """Delete by ids."""
-        self._graph_store_apdater.delete_document(chunk_id=ids)
+        self._graph_store_adapter.delete_document(chunk_id=ids)
         return []
 
     def vector_name_exists(self) -> bool:
         """Whether name exists."""
-        return self._graph_store_apdater.graph_store.is_exist(self._config.name)
+        return self._graph_store_adapter.graph_store.is_exist(self._config.name)
