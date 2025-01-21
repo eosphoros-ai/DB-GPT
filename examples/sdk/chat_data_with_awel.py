@@ -3,6 +3,11 @@ import json
 import shutil
 
 import pandas as pd
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import (
     ChatPromptTemplate,
@@ -21,13 +26,9 @@ from dbgpt.core.awel import (
 )
 from dbgpt.core.operators import PromptBuilderOperator, RequestBuilderOperator
 from dbgpt.datasource.operators import DatasourceOperator
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.model.operators import LLMOperator
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 # Delete old vector store directory(/tmp/awel_with_data_vector_store)
 shutil.rmtree("/tmp/awel_with_data_vector_store", ignore_errors=True)

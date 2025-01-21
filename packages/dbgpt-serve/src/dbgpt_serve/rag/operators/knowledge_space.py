@@ -1,6 +1,10 @@
 from functools import reduce
 from typing import List, Optional
 
+from dbgpt_app.knowledge.api import knowledge_space_service
+from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt_app.knowledge.service import KnowledgeService
+
 from dbgpt.core import (
     BaseMessage,
     ChatPromptTemplate,
@@ -22,10 +26,6 @@ from dbgpt.core.interface.operators.prompt_operator import BasePromptBuilderOper
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
 from dbgpt.util.function_utils import rearrange_args_by_type
 from dbgpt.util.i18n_utils import _
-from dbgpt_app.knowledge.api import knowledge_space_service
-from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
-from dbgpt_app.knowledge.service import KnowledgeService
-
 from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 
 

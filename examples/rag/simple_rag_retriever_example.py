@@ -29,6 +29,13 @@
 import os
 from typing import Dict, List
 
+from dbgpt_ext.rag.operators import (
+    EmbeddingRetrieverOperator,
+    QueryRewriteOperator,
+    RerankOperator,
+)
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
@@ -36,12 +43,6 @@ from dbgpt.core import Chunk
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.rag.operators import (
-    EmbeddingRetrieverOperator,
-    QueryRewriteOperator,
-    RerankOperator,
-)
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 CFG = Config()
 

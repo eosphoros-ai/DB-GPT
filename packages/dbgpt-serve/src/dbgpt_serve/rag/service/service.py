@@ -8,6 +8,12 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional, cast
 
+from dbgpt_app.knowledge.request.request import BusinessFieldType
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from fastapi import HTTPException
+
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
@@ -15,28 +21,19 @@ from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
-from dbgpt.core import LLMClient
+from dbgpt.core import Chunk, LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt_ext.rag.assembler import EmbeddingAssembler
-from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
+from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeType
-from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.string_utils import remove_trailing_punctuation
 from dbgpt.util.tracer import root_tracer, trace
-from dbgpt_app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
-from dbgpt_app.knowledge.document_db import (
-    KnowledgeDocumentDao,
-    KnowledgeDocumentEntity,
-)
-from dbgpt_app.knowledge.request.request import BusinessFieldType
-from fastapi import HTTPException
-
 from dbgpt_serve.core import BaseService
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
@@ -44,12 +41,19 @@ from ..api.schemas import (
     ChunkServeRequest,
     DocumentServeRequest,
     DocumentServeResponse,
+    KnowledgeRetrieveRequest,
     KnowledgeSyncRequest,
     SpaceServeRequest,
     SpaceServeResponse,
 )
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..models.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from ..models.document_db import (
+    KnowledgeDocumentDao,
+    KnowledgeDocumentEntity,
+)
 from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from ..retriever.knowledge_space import KnowledgeSpaceRetriever
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -153,9 +157,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         update_obj = self._dao.update_knowledge_space(self._dao.from_request(request))
         return update_obj
 
-    async def create_document(
-        self, request: DocumentServeRequest
-    ) -> SpaceServeResponse:
+    async def create_document(self, request: DocumentServeRequest) -> str:
         """Create a new document entity
 
         Args:
@@ -200,7 +202,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         doc_id = self._document_dao.create_knowledge_document(document)
         if doc_id is None:
             raise Exception(f"create document failed, {request.doc_name}")
-        return doc_id
+        return str(doc_id)
 
     async def sync_document(self, requests: List[KnowledgeSyncRequest]) -> List:
         """Create a new document entity
@@ -622,3 +624,29 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         if space.context is not None:
             return json.loads(space.context)
         return None
+
+    async def retrieve(
+        self, request: KnowledgeRetrieveRequest, space: SpaceServeResponse
+    ) -> List[Chunk]:
+        """Retrieve the service."""
+        reranker: Optional[RerankEmbeddingsRanker] = None
+        top_k = request.top_k
+        if CFG.RERANK_MODEL:
+            reranker_top_k = CFG.RERANK_TOP_K
+            rerank_embeddings = RerankEmbeddingFactory.get_instance(
+                CFG.SYSTEM_APP
+            ).create()
+            reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=reranker_top_k)
+            if top_k < reranker_top_k or self._top_k < 20:
+                # We use reranker, so if the top_k is less than 20,
+                # we need to set it to 20
+                top_k = max(reranker_top_k, 20)
+
+        space_retriever = KnowledgeSpaceRetriever(
+            space_id=space.id,
+            top_k=top_k,
+            rerank=reranker,
+        )
+        return await space_retriever.aretrieve_with_scores(
+            request.query, request.score_threshold
+        )

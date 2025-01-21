@@ -4,22 +4,9 @@ import shutil
 import tempfile
 from typing import List
 
-from dbgpt._private.config import Config
-from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-    KNOWLEDGE_UPLOAD_ROOT_PATH,
-)
-from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt_ext.rag import ChunkParameters
-from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt_ext.rag.chunk_manager import ChunkStrategy
 from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
-from dbgpt.rag.retriever import BaseRetriever
-from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt.util.i18n_utils import _
-from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt_serve.rag.api.schemas import (
     ChunkServeRequest,
     DocumentServeRequest,
@@ -32,6 +19,19 @@ from dbgpt_serve.rag.connector import VectorStoreConnector
 from dbgpt_serve.rag.service.service import Service
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from dbgpt._private.config import Config
+from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
+from dbgpt.configs.model_config import (
+    EMBEDDING_MODEL_CONFIG,
+    KNOWLEDGE_UPLOAD_ROOT_PATH,
+)
+from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
+from dbgpt.rag.retriever import BaseRetriever
+from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.util.i18n_utils import _
+from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt_app.knowledge.request.request import (
     ChunkEditRequest,
     ChunkQueryRequest,
@@ -226,7 +226,7 @@ def document_edit(
 @router.get("/knowledge/document/chunkstrategies")
 def chunk_strategies():
     """Get chunk strategies"""
-    print("/document/chunkstrategies:")
+    logger.info("/document/chunkstrategies:")
     try:
         return Result.succ(
             [

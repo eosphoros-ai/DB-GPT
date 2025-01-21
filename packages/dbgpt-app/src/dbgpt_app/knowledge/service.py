@@ -5,6 +5,19 @@ import timeit
 from datetime import datetime
 from typing import List
 
+from dbgpt_ext.rag.assembler.summary import SummaryAssembler
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
+from dbgpt_serve.rag.connector import VectorStoreConnector
+from dbgpt_serve.rag.models.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from dbgpt_serve.rag.models.document_db import (
+    KnowledgeDocumentDao,
+    KnowledgeDocumentEntity,
+)
+from dbgpt_serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
+from dbgpt_serve.rag.service.service import SyncStatus
+
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.configs import DOMAIN_TYPE_FINANCIAL_REPORT
@@ -12,25 +25,12 @@ from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt_ext.rag.assembler.summary import SummaryAssembler
-from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
-from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
-from dbgpt_serve.rag.connector import VectorStoreConnector
-from dbgpt_serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
-from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
-from dbgpt_serve.rag.service.service import SyncStatus
-
-from dbgpt_app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
-from dbgpt_app.knowledge.document_db import (
-    KnowledgeDocumentDao,
-    KnowledgeDocumentEntity,
-)
 from dbgpt_app.knowledge.request.request import (
     ChunkQueryRequest,
     DocumentQueryRequest,
@@ -478,7 +478,7 @@ class KnowledgeService:
         # delete chunks
         document_chunk_dao.raw_delete(documents[0].id)
         # delete document
-        return knowledge_document_dao.raw_delete(document_query)
+        return str(knowledge_document_dao.raw_delete(document_query))
 
     def get_document_chunks(self, request: ChunkQueryRequest):
         """get document chunks

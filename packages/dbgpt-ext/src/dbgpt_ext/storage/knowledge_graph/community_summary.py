@@ -8,15 +8,14 @@ from typing import List, Optional, Tuple, Union
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
-from dbgpt_ext.rag.transformer.community_summarizer import CommunitySummarizer
-from dbgpt_ext.rag.transformer.graph_embedder import GraphEmbedder
-from dbgpt_ext.rag.transformer.graph_extractor import GraphExtractor
-from dbgpt_ext.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
-
+from dbgpt_ext.rag.transformer.community_summarizer import CommunitySummarizer
+from dbgpt_ext.rag.transformer.graph_embedder import GraphEmbedder
+from dbgpt_ext.rag.transformer.graph_extractor import GraphExtractor
+from dbgpt_ext.rag.transformer.text_embedder import TextEmbedder
 from dbgpt_ext.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     GRAPH_PARAMETERS,

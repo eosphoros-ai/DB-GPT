@@ -11,7 +11,6 @@ from dbgpt.rag.retriever import EmbeddingRetriever, QueryRewrite, Ranker
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
-
 from dbgpt_serve.rag.connector import VectorStoreConnector
 from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
 from dbgpt_serve.rag.retriever.qa_retriever import QARetriever

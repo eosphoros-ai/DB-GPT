@@ -9,14 +9,13 @@ from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, Embeddings, LLMClient
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
-from dbgpt.rag.transformer.triplet_extractor import TripletExtractor
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
-from dbgpt.storage.graph_store.factory import GraphStoreFactory
 from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
-
+from dbgpt_ext.rag.transformer.triplet_extractor import TripletExtractor
+from dbgpt_ext.storage.graph_store.factory import GraphStoreFactory
 from dbgpt_ext.storage.knowledge_graph.community.base import GraphStoreAdapter
 from dbgpt_ext.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 

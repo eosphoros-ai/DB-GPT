@@ -2,6 +2,8 @@ import asyncio
 import json
 from typing import Dict, List
 
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
+
 from dbgpt.core import SQLOutputParser
 from dbgpt.core.awel import (
     DAG,
@@ -16,7 +18,6 @@ from dbgpt.core.operators import (
     RequestBuilderOperator,
 )
 from dbgpt.datasource.operators.datasource_operator import DatasourceOperator
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.operators.datasource import DatasourceRetrieverOperator
 

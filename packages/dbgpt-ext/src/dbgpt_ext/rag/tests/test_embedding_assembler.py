@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
+from dbgpt_ext.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt_ext.rag.chunk_manager import ChunkParameters, SplitterType
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter

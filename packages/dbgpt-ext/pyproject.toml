@@ -30,7 +30,8 @@ rag = [
 graph_rag = [
     # For visualization in code
     "networkx",
-    "dbgpt-tugraph-plugins>=0.1.1"
+    "dbgpt-tugraph-plugins>=0.1.1",
+    "neo4j"
 ]
 datasource_mysql = [
     # mysqlclient 2.2.x have pkg-config issue on 3.10+
@@ -59,7 +60,6 @@ datasource_duckdb = [
 storage_milvus = ["pymilvus"]
 storage_weaviate = ["weaviate-client"]
 storage_chromadb = ["chromadb>=0.4.22"]
-storage_neo4j = ["neo4j"]
 proxy_ollama = ["ollama"]
 proxy_zhipuai = ["zhipuai"]
 proxy_tongyi = ["dashscope"]

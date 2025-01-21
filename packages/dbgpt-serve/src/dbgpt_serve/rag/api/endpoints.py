@@ -215,11 +215,13 @@ async def space_retrieve(
         ServerResponse: The response
     """
     request.space_id = space_id
-    space_request = service.build_space_request(token, space_id)
-    spaces = service.get_list(space_request)
-    if not spaces:
+    space_request = {
+        "id": space_id,
+    }
+    space = service.get(space_request)
+    if not space:
         raise HTTPException(status_code=404, detail="Space not found")
-    return Result.succ(await service.retrieve(request))
+    return Result.succ(await service.retrieve(request, space))
 
 
 @router.post("/documents")

@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Union
 
+from sqlalchemy import Column, DateTime, Integer, String, Text, func
+
 from dbgpt._private.config import Config
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC, RES
@@ -10,7 +12,6 @@ from dbgpt_serve.rag.api.schemas import (
     DocumentServeRequest,
     DocumentServeResponse,
 )
-from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 CFG = Config()
 

@@ -11,10 +11,10 @@ from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.similarity_util import calculate_cosine_similarity
 from dbgpt.util.string_utils import remove_trailing_punctuation
-from dbgpt_app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
-from dbgpt_app.knowledge.document_db import KnowledgeDocumentDao
-
 from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
+
+from ..models.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from ..models.document_db import KnowledgeDocumentDao
 
 CFG = Config()
 CHUNK_PAGE_SIZE = 1000

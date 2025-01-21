@@ -3,7 +3,6 @@
 import logging
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
-
 from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStore
 from dbgpt_ext.storage.knowledge_graph.community.base import GraphStoreAdapter
 from dbgpt_ext.storage.knowledge_graph.community.tugraph_store_adapter import (

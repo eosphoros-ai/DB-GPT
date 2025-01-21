@@ -6,8 +6,7 @@ from dbgpt_serve.rag.api.schemas import (
     ChunkServeResponse,
     DocumentServeResponse,
 )
-
-from dbgpt_app.knowledge.document_db import KnowledgeDocumentEntity
+from dbgpt_serve.rag.models.document_db import KnowledgeDocumentEntity
 
 
 class ChunkQueryResponse(BaseModel):

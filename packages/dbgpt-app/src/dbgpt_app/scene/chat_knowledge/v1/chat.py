@@ -3,6 +3,13 @@ import os
 from functools import reduce
 from typing import Dict, List
 
+from dbgpt_serve.rag.models.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from dbgpt_serve.rag.models.document_db import (
+    KnowledgeDocumentDao,
+    KnowledgeDocumentEntity,
+)
+from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
+
 from dbgpt._private.config import Config
 from dbgpt.core import (
     ChatPromptTemplate,
@@ -13,13 +20,6 @@ from dbgpt.core import (
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.tracer import root_tracer, trace
-from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
-
-from dbgpt_app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
-from dbgpt_app.knowledge.document_db import (
-    KnowledgeDocumentDao,
-    KnowledgeDocumentEntity,
-)
 from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_app.knowledge.service import KnowledgeService
 from dbgpt_app.scene import BaseChat, ChatScene

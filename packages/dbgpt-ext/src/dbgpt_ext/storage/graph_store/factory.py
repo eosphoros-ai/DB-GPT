@@ -3,8 +3,8 @@
 import logging
 from typing import Tuple, Type
 
-from dbgpt.storage import graph_store
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
+from dbgpt_ext.storage import graph_store
 
 logger = logging.getLogger(__name__)
 

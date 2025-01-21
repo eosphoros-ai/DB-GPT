@@ -15,7 +15,6 @@ from dbgpt.storage.graph_store.graph import (
     Vertex,
 )
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
-
 from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStore
 from dbgpt_ext.storage.knowledge_graph.community.base import (
     Community,

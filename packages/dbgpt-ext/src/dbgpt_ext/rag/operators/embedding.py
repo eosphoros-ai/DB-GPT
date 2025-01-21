@@ -6,15 +6,15 @@ from typing import List, Optional, Union
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.util.i18n_utils import _
-
-from ..assembler.embedding import EmbeddingAssembler
-from dbgpt_ext.rag.chunk_manager import ChunkParameters
-from dbgpt.storage.base import IndexStoreBase
-from ..knowledge import Knowledge
-from ..retriever.embedding import EmbeddingRetriever
+from dbgpt.rag.knowledge import Knowledge
+from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.rag.retriever.rerank import Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
+from dbgpt.storage.base import IndexStoreBase
+from dbgpt.util.i18n_utils import _
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
+
+from ..assembler.embedding import EmbeddingAssembler
 from .assembler import AssemblerOperator
 
 

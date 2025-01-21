@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import dbgpt
 import pytest
 from dbgpt.core import Chunk
-from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
+from dbgpt_ext.rag.retriever.db_schema import DBSchemaRetriever
 
 
 @pytest.fixture

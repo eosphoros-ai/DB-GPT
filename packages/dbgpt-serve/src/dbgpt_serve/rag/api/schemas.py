@@ -1,8 +1,9 @@
 from typing import List, Optional, Union
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from fastapi import File, UploadFile
+
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 from ..config import SERVE_APP_NAME_HUMP
 

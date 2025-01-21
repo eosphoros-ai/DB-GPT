@@ -13,13 +13,16 @@ def _import_memgraph() -> Tuple[Type, Type]:
 
 
 def _import_tugraph() -> Tuple[Type, Type]:
-    from dbgpt.storage.graph_store.tugraph_store import TuGraphStore, TuGraphStoreConfig
+    from dbgpt_ext.storage.graph_store.tugraph_store import (
+        TuGraphStore,
+        TuGraphStoreConfig,
+    )
 
     return TuGraphStore, TuGraphStoreConfig
 
 
 def _import_neo4j() -> Tuple[Type, Type]:
-    from dbgpt.storage.graph_store.neo4j_store import Neo4jStore, Neo4jStoreConfig
+    from dbgpt_ext.storage.graph_store.neo4j_store import Neo4jStore, Neo4jStoreConfig
 
     return Neo4jStore, Neo4jStoreConfig
 

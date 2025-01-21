@@ -1,11 +1,12 @@
 import asyncio
 import os
 
-from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt_ext.rag import ChunkParameters
-from dbgpt.rag.assembler.bm25 import BM25Assembler
+from dbgpt_ext.rag.assembler.bm25 import BM25Assembler
+from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
+
+from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.storage.vector_store.elastic_store import ElasticsearchVectorConfig
 
 """Embedding rag example.
     pre-requirements:
