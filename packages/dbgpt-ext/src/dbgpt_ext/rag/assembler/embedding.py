@@ -20,7 +20,7 @@ class EmbeddingAssembler(BaseAssembler):
     Example:
     .. code-block:: python
 
-        from dbgpt.rag.assembler import EmbeddingAssembler
+        from dbgpt_ext.rag.assembler import EmbeddingAssembler
 
         pdf_path = "path/to/document.pdf"
         knowledge = KnowledgeFactory.from_file_path(pdf_path)

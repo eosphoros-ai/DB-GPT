@@ -26,7 +26,7 @@ class BM25Assembler(BaseAssembler):
     Example:
     .. code-block:: python
 
-        from dbgpt.rag.assembler import BM25Assembler
+        from dbgpt_ext.rag.assembler import BM25Assembler
 
         pdf_path = "path/to/document.pdf"
         knowledge = KnowledgeFactory.from_file_path(pdf_path)

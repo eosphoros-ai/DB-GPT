@@ -62,7 +62,7 @@ class DBSummaryClient:
             vector_store_config=table_vector_store_config,
         )
 
-        from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
+        from dbgpt_ext.rag.retriever.db_schema import DBSchemaRetriever
 
         retriever = DBSchemaRetriever(
             top_k=topk,
@@ -107,7 +107,7 @@ class DBSummaryClient:
             vector_store_config=table_vector_store_config,
         )
         if not table_vector_connector.vector_name_exists():
-            from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
+            from dbgpt_ext.rag.assembler.db_schema import DBSchemaAssembler
 
             chunk_parameters = ChunkParameters(
                 text_splitter=RDBTextSplitter(separator="--table-field-separator--")

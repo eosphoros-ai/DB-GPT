@@ -170,7 +170,7 @@ import os
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.core import Chunk, HumanPromptTemplate, ModelMessage, ModelRequest
 from dbgpt_ext.rag import ChunkParameters
-from dbgpt.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
 

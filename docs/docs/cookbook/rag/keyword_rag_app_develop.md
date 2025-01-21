@@ -65,7 +65,7 @@ When using a `Elaticsearch` full text engine as the underlying knowledge storage
 
 The following code demonstrates how to create a connection to the Elasticsearch search engine.
 ```python
-from dbgpt.storage.full_text.elasticsearch import ElasticDocumentConfig, \
+from dbgpt_ext.storage.full_text.elasticsearch import ElasticDocumentConfig, \
     ElasticDocumentStore
 def _create_es_connector():
     """Create es connector."""
@@ -90,7 +90,7 @@ import os
 
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt_ext.rag import ChunkParameters
-from dbgpt.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
 
 async def main():

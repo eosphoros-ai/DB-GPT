@@ -5,7 +5,7 @@ import pytest
 
 import dbgpt
 from dbgpt.core import Chunk
-from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
+from dbgpt_ext.rag.retriever.db_schema import DBSchemaRetriever
 
 
 @pytest.fixture
