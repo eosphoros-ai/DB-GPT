@@ -8,10 +8,10 @@ from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.text_embedder import TextEmbedder
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 from dbgpt.storage.knowledge_graph.graph_retriever.base import GraphRetrieverBase
-from dbgpt.storage.knowledge_graph.graph_retriever.document_graph_retriever import(
+from dbgpt.storage.knowledge_graph.graph_retriever.document_graph_retriever import (
     DocumentGraphRetriever,
 )
-from dbgpt.storage.knowledge_graph.graph_retriever.keyword_based_graph_retriever import (
+from dbgpt.storage.knowledge_graph.graph_retriever.keyword_based_graph_retriever import (  # noqa: E501
     KeywordBasedGraphRetriever,
 )
 from dbgpt.storage.knowledge_graph.graph_retriever.text_based_graph_retriever import (
