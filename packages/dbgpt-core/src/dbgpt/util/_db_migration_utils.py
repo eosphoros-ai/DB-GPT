@@ -62,8 +62,10 @@ def create_migration_script(
         alembic_cfg: alembic config
         engine: sqlalchemy engine
         message: migration message
-        create_new_revision_if_noting_to_update: Whether to create a new revision if there is nothing to update,
-            pass False to avoid creating a new revision if there is nothing to update, default is True
+        create_new_revision_if_noting_to_update: Whether to create a new revision if
+        there is nothing to update,
+            pass False to avoid creating a new revision if there is nothing to update,
+            default is True
     Returns:
         The path of the generated migration script.
     """
@@ -78,7 +80,8 @@ def create_migration_script(
         head_rev = script_dir.get_current_head()
 
     logger.info(
-        f"alembic migration current revision: {current_rev}, latest revision: {head_rev}"
+        f"alembic migration current revision: {current_rev}, latest revision: "
+        f"{head_rev}"
     )
     should_create_revision = (
         (current_rev is None and head_rev is None)
@@ -212,7 +215,8 @@ dbgpt db migration clean -y
 **Solution 3:**
 
 If you have already run the above command, but the error still exists, 
-you can try the following command to clean the migration script, migration history and your data.
+you can try the following command to clean the migration script, migration history and \
+your data.
 warning: This command will delete all your data!!! Please use it with caution.
 
 ```commandline
@@ -224,9 +228,10 @@ rm -rf pilot/meta_data/alembic/versions/*
 rm -rf pilot/meta_data/alembic/dbgpt.db
 ```
 
-If your database is a shared database, and you run DB-GPT in multiple instances, 
-you should make sure that all migration scripts are same in all instances, in this case,
-wo strongly recommend you close migration feature by setting `--disable_alembic_upgrade`.
+If your database is a shared database, and you run DB-GPT in multiple instances, you \
+should make sure that all migration scripts are same in all instances, in this case,
+wo strongly recommend you close migration feature by setting \
+`--disable_alembic_upgrade`.
 and use `dbgpt db migration` command to manage migration scripts.
 """
 
@@ -235,8 +240,10 @@ def _check_database_migration_status(alembic_cfg: AlembicConfig, engine: Engine)
     """Check if the database is at the latest migration revision.
 
     If your database is a shared database, and you run DB-GPT in multiple instances,
-    you should make sure that all migration scripts are same in all instances, in this case,
-    wo strongly recommend you close migration feature by setting `disable_alembic_upgrade` to True.
+    you should make sure that all migration scripts are same in all instances, in this
+    case,
+    wo strongly recommend you close migration feature by setting
+    `disable_alembic_upgrade` to True.
     and use `dbgpt db migration` command to manage migration scripts.
 
     Args:
@@ -263,7 +270,10 @@ def _check_database_migration_status(alembic_cfg: AlembicConfig, engine: Engine)
     for revision in script.walk_revisions(base="base"):
         current_marker = "(current)" if revision.revision == current_rev else ""
         script_path = script.get_revision(revision.revision).path
-        script_info_msg += f"\n{revision.revision} {current_marker}: {revision.doc} (Path: {script_path})"
+        script_info_msg += (
+            f"\n{revision.revision} {current_marker}: {revision.doc} "
+            f"(Path: {script_path})"
+        )
     script_info_msg += f"\n{'=' * 90}"
 
     logger.info(script_info_msg)
@@ -277,7 +287,8 @@ def _check_database_migration_status(alembic_cfg: AlembicConfig, engine: Engine)
             f"Also you can try the following solutions:\n{_MIGRATION_SOLUTION}\n"
         )
         raise Exception(
-            "Check database migration status failed, you can see the error and solutions above"
+            "Check database migration status failed, you can see the error and "
+            "solutions above"
         )
 
 
@@ -321,22 +332,27 @@ def _ddl_init_and_upgrade(
 
     Args:
         default_meta_data_path (str): default meta data path
-        disable_alembic_upgrade (bool): Whether to enable alembic to initialize and upgrade database metadata
+        disable_alembic_upgrade (bool): Whether to enable alembic to initialize and
+            upgrade database metadata
         alembic_ini_path (Optional[str]): alembic ini path
         script_location (Optional[str]): alembic script location
     """
     if disable_alembic_upgrade:
         logger.info(
-            "disable_alembic_upgrade is true, not to initialize and upgrade database metadata with alembic"
+            "disable_alembic_upgrade is true, not to initialize and upgrade database "
+            "metadata with alembic"
         )
         return
     else:
         warn_msg = (
             "Initialize and upgrade database metadata with alembic, "
-            "just run this in your development environment, if you deploy this in production environment, "
-            "please run webserver with --disable_alembic_upgrade(`python dbgpt/app/dbgpt_server.py "
+            "just run this in your development environment, if you deploy this in "
+            "production environment, "
+            "please run webserver with --disable_alembic_upgrade"
+            "(`python dbgpt/app/dbgpt_server.py "
             "--disable_alembic_upgrade`).\n"
-            "we suggest you to use `dbgpt db migration` to initialize and upgrade database metadata with alembic, "
+            "we suggest you to use `dbgpt db migration` to initialize and upgrade "
+            "database metadata with alembic, "
             "your can run `dbgpt db migration --help` to get more information."
         )
         logger.warning(warn_msg)
@@ -359,7 +375,8 @@ def _ddl_init_and_upgrade(
     new_script_path = None
     try:
         latest_revision_before = _get_latest_revision(alembic_cfg, db.engine)
-        # create_new_revision_if_noting_to_update=False avoid creating a lot of empty migration scripts
+        # create_new_revision_if_noting_to_update=False avoid creating a lot of empty
+        # migration scripts
         # TODO Set create_new_revision_if_noting_to_update=False, not working now.
         new_script_path = create_migration_script(
             alembic_cfg, db.engine, create_new_revision_if_noting_to_update=True
@@ -368,7 +385,8 @@ def _ddl_init_and_upgrade(
     except CommandError as e:
         if "Target database is not up to date" in str(e):
             logger.error(
-                f"Initialize and upgrade database metadata with alembic failed, error detail: {str(e)} "
+                f"Initialize and upgrade database metadata with alembic failed, error "
+                f"detail: {str(e)} "
                 f"you can try the following solutions:\n{_MIGRATION_SOLUTION}\n"
             )
             raise Exception(
@@ -379,7 +397,7 @@ def _ddl_init_and_upgrade(
             latest_revision_after = _get_latest_revision(alembic_cfg, db.engine)
             if latest_revision_before != latest_revision_after:
                 logger.error(
-                    f"Upgrade database failed. Please review the migration script manually. "
-                    f"Failed script path: {new_script_path}\nError: {e}"
+                    f"Upgrade database failed. Please review the migration script "
+                    f"manually. Failed script path: {new_script_path}\nError: {e}"
                 )
             raise e

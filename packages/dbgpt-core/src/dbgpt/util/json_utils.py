@@ -104,7 +104,7 @@ def _format_json_str(jstr):
     2. this function also handles JSON escape sequences inside quotes,
         Ex 1:
         '{"args": "a\na\na\ta"}' -> '{"args": "a\\na\\na\\ta"}'
-    """
+    """  # noqa
     result = []
     inside_quotes = False
     last_char = " "

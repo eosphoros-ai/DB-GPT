@@ -40,8 +40,9 @@ async def blocking_func_to_async(
 
     Args:
         executor (Executor): The concurrent.futures.Executor to run the function within.
-        func (ApplyFunction): The callable function, which should be a synchronous function.
-            It should accept any number and type of arguments and return an asynchronous coroutine.
+        func (ApplyFunction): The callable function, which should be a synchronous
+            function. It should accept any number and type of arguments and return an
+            asynchronous coroutine.
         *args (Any): Any additional arguments to pass to the function.
         **kwargs (Any): Other arguments to pass to the function
 
@@ -49,10 +50,12 @@ async def blocking_func_to_async(
         Any: The result of the function's execution.
 
     Raises:
-        ValueError: If the provided function 'func' is an asynchronous coroutine function.
+        ValueError: If the provided function 'func' is an asynchronous coroutine
+            function.
 
-    This function allows you to execute a potentially blocking function within an executor.
-    It expects 'func' to be a synchronous function and will raise an error if 'func' is an asynchronous coroutine.
+    This function allows you to execute a potentially blocking function within an
+    executor. It expects 'func' to be a synchronous function and will raise an error
+    if 'func' is an asynchronous coroutine.
     """
     if asyncio.iscoroutinefunction(func):
         raise ValueError(f"The function {func} is not blocking function")

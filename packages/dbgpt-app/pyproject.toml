@@ -45,6 +45,11 @@ quick_start = [
     "dbgpt-ext[storage_chromadb]",
 ]
 
+default = [
+    "dbgpt[client,cli,agent,simple_framework,framework,code]",
+    "dbgpt-ext[rag]"
+]
+
 [tool.uv]
 managed = true
 dev-dependencies = []

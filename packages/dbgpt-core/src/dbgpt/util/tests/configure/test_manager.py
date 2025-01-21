@@ -1,11 +1,15 @@
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 
-from ...configure.manager import ConfigurationManager
+from ...configure.manager import (
+    ConfigurationManager,
+    RegisterParameters,
+)
 
 
 @dataclass
@@ -654,3 +658,642 @@ def test_disable_env_vars():
     system_config = config_manager.parse_config(SystemConfig, "system")
 
     assert system_config.language == "${env:TEST_VAR}"
+
+
+# Datasource configuration classes
+@dataclass
+class DataSourceConfig(RegisterParameters):
+    __type_field__ = "driver"
+
+
+@dataclass
+class TestStorageConfig(RegisterParameters):
+    pass
+
+
+@dataclass
+class MySQLDataSource(DataSourceConfig):
+    """Test MySQL DataSource Configuration"""
+
+    __type__ = "mysql"
+    host: str
+    port: int
+    database: str
+    user: str
+    password: str
+    charset: str = "utf8mb4"
+    pool_size: int = 5
+    connection_timeout: int = 30
+
+
+@dataclass
+class SameTestStorageConfig(TestStorageConfig):
+    __type__ = "mysql"
+    some_host: str
+
+
+@dataclass
+class PostgresDataSource(DataSourceConfig):
+    """Test PostgreSQL DataSource Configuration"""
+
+    __type__ = "postgresql"
+    host: str
+    port: int
+    database: str
+    user: str
+    password: str
+    schema: str = "public"
+    driver = "postgresql"
+    ssl_mode: Optional[str] = None
+
+
+@dataclass
+class ClickHouseDataSource(DataSourceConfig):
+    """ClickHouse datasource configuration"""
+
+    __type__ = "clickhouse"
+    hosts: List[str]
+    database: str
+    user: str
+    password: str
+    driver = "clickhouse"
+    secure: bool = False
+    settings: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class MongoDataSourceConfig(DataSourceConfig):
+    """MongoDB datasource configuration"""
+
+    uri: str  # mongodb://user:password@host:port
+    database: str
+    replica_set: Optional[str] = None
+    auth_source: Optional[str] = None
+
+
+@dataclass
+class ElasticDataSource(DataSourceConfig):
+    """Elasticsearch datasource configuration"""
+
+    __type__ = "elasticsearch"
+    hosts: List[str]
+    username: Optional[str] = None
+    password: Optional[str] = None
+    verify_certs: bool = True
+    ca_certs: Optional[str] = None
+    driver = "elasticsearch"
+
+
+@dataclass
+class DataSourcesConfig:
+    """Include multiple data sources"""
+
+    default: str
+    sources: Dict[str, DataSourceConfig]
+
+
+def test_mysql_datasource():
+    config_dict = {
+        "driver": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "database": "testdb",
+        "user": "root",
+        "password": "secret",
+        "pool_size": 10,
+        "charset": "utf8",
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    ds_config = config_manager.parse_config(DataSourceConfig)
+
+    assert isinstance(ds_config, MySQLDataSource)
+    assert ds_config.host == "localhost"
+    assert ds_config.pool_size == 10
+    assert ds_config.charset == "utf8"
+    assert ds_config.connection_timeout == 30
+
+
+def test_clickhouse_datasource():
+    config_dict = {
+        "driver": "clickhouse",
+        "hosts": ["ch1:9000", "ch2:9000"],
+        "database": "metrics",
+        "user": "default",
+        "password": "",
+        "secure": True,
+        "settings": {"insert_quorum": 2, "insert_quorum_timeout": 120},
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    ds_config = config_manager.parse_config(DataSourceConfig)
+
+    assert isinstance(ds_config, ClickHouseDataSource)
+    assert len(ds_config.hosts) == 2
+    assert ds_config.secure is True
+    assert ds_config.settings["insert_quorum"] == 2
+
+
+def test_mongodb_datasource():
+    """Test MongoDB datasource (using class name transformed type value)"""
+    config_dict = {
+        "driver": "mongo",
+        "uri": "mongodb://user:pass@localhost:27017",
+        "database": "appdb",
+        "replica_set": "rs0",
+        "auth_source": "admin",
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    ds_config = config_manager.parse_config(DataSourceConfig)
+
+    assert isinstance(ds_config, MongoDataSourceConfig)
+    assert ds_config.uri == "mongodb://user:pass@localhost:27017"
+    assert ds_config.replica_set == "rs0"
+
+
+def test_multiple_datasources():
+    """Test multiple data sources configuration"""
+    config_dict = {
+        "default": "app_db",
+        "sources": {
+            "app_db": {
+                "driver": "postgresql",
+                "host": "postgres.example.com",
+                "port": 5432,
+                "database": "app",
+                "user": "app_user",
+                "password": "pass123",
+                "schema": "app_schema",
+            },
+            "metrics_db": {
+                "driver": "clickhouse",
+                "hosts": ["ch1:9000"],
+                "database": "metrics",
+                "user": "default",
+                "password": "",
+                "secure": False,
+            },
+            "search": {
+                "driver": "elasticsearch",
+                "hosts": ["es1:9200", "es2:9200"],
+                "username": "elastic",
+                "password": "secret",
+                "verify_certs": False,
+            },
+        },
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    ds_config = config_manager.parse_config(DataSourcesConfig)
+
+    assert ds_config.default == "app_db"
+    assert isinstance(ds_config.sources["app_db"], PostgresDataSource)
+    assert isinstance(ds_config.sources["metrics_db"], ClickHouseDataSource)
+    assert isinstance(ds_config.sources["search"], ElasticDataSource)
+
+    # Verify specific configurations
+    pg_config = ds_config.sources["app_db"]
+    assert pg_config.schema == "app_schema"
+    assert pg_config.driver == "postgresql"
+
+    ch_config = ds_config.sources["metrics_db"]
+    assert len(ch_config.hosts) == 1
+    assert ch_config.driver == "clickhouse"
+
+    es_config = ds_config.sources["search"]
+    assert len(es_config.hosts) == 2
+    assert es_config.verify_certs is False
+    assert es_config.driver == "elasticsearch"
+
+
+def test_env_var_datasource():
+    import os
+
+    os.environ["DB_HOST"] = "prod.example.com"
+    os.environ["DB_PASSWORD"] = "prod_password"
+
+    config_dict = {
+        "driver": "postgresql",
+        "host": "${env:DB_HOST}",
+        "port": 5432,
+        "database": "app",
+        "user": "app_user",
+        "password": "${env:DB_PASSWORD}",
+        "schema": "prod_schema",
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    ds_config = config_manager.parse_config(DataSourceConfig)
+
+    assert isinstance(ds_config, PostgresDataSource)
+    assert ds_config.host == "prod.example.com"
+    assert ds_config.password == "prod_password"
+
+
+def test_invalid_driver():
+    """Test invalid driver type"""
+    config_dict = {"driver": "invalid_db", "host": "localhost", "port": 1234}
+
+    config_manager = ConfigurationManager(config_dict)
+    with pytest.raises(ValueError):
+        config_manager.parse_config(DataSourceConfig)
+
+
+def test_optional_datasource_fields():
+    """Test optional fields in datasource configuration"""
+    config_dict = {
+        "driver": "elasticsearch",
+        "hosts": ["es1:9200"],
+        # not providing username and password
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    ds_config = config_manager.parse_config(DataSourceConfig)
+
+    assert isinstance(ds_config, ElasticDataSource)
+    assert ds_config.username is None
+    assert ds_config.verify_certs is True
+
+
+def test_independent_type_registries():
+    """Test that different base classes maintain independent type registries"""
+    # Get subclasses from different base classes using same type value
+    mysql_ds = DataSourceConfig.get_subclass("mysql")
+    mysql_storage = TestStorageConfig.get_subclass("mysql")
+
+    # Verify they are different classes
+    assert mysql_ds is not mysql_storage
+    assert mysql_ds is MySQLDataSource
+    assert mysql_storage is SameTestStorageConfig
+
+    # Verify each base class has its own registry
+    assert hasattr(DataSourceConfig, "_type_registry")
+    assert hasattr(TestStorageConfig, "_type_registry")
+    assert DataSourceConfig._type_registry is not TestStorageConfig._type_registry
+
+
+def test_datasource_registry_isolation():
+    """Test that DataSourceConfig registry contains only its subclasses"""
+    registry = getattr(DataSourceConfig, "_type_registry", {})
+
+    # Check for expected classes
+    assert "mysql" in registry
+    assert "postgresql" in registry
+    assert "clickhouse" in registry
+    assert "elasticsearch" in registry
+
+    # Verify it doesn't contain classes from TestStorageConfig
+    all_values = list(registry.values())
+    assert SameTestStorageConfig not in all_values
+
+
+def test_storage_registry_isolation():
+    """Test that TestStorageConfig registry contains only its subclasses"""
+    registry = getattr(TestStorageConfig, "_type_registry", {})
+
+    # Check for expected classes
+    assert "mysql" in registry
+    assert SameTestStorageConfig in registry.values()
+
+    # Verify it doesn't contain classes from DataSourceConfig
+    all_values = list(registry.values())
+    assert MySQLDataSource not in all_values
+    assert PostgresDataSource not in all_values
+
+
+def test_independent_configs():
+    """Test that configurations can be parsed independently for different base
+    classes
+    """
+    # Test DataSourceConfig parsing
+    ds_config_dict = {
+        "driver": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "database": "testdb",
+        "user": "root",
+        "password": "secret",
+    }
+
+    ds_config_manager = ConfigurationManager(ds_config_dict)
+    ds_config = ds_config_manager.parse_config(DataSourceConfig)
+    assert isinstance(ds_config, MySQLDataSource)
+
+    # Test TestStorageConfig parsing
+    storage_config_dict = {"type": "mysql", "some_host": "storage.example.com"}
+
+    storage_config_manager = ConfigurationManager(storage_config_dict)
+    storage_config = storage_config_manager.parse_config(TestStorageConfig)
+    assert isinstance(storage_config, SameTestStorageConfig)
+    assert storage_config.some_host == "storage.example.com"
+
+
+def test_type_field_customization():
+    """Test that different base classes can use different type field names"""
+    # DataSourceConfig uses "driver" as type field
+    ds_config_dict = {
+        "driver": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "database": "testdb",
+        "user": "root",
+        "password": "secret",
+    }
+
+    ds_config_manager = ConfigurationManager(ds_config_dict)
+    ds_config = ds_config_manager.parse_config(DataSourceConfig)
+    assert isinstance(ds_config, MySQLDataSource)
+
+    # TestStorageConfig uses default "type" field
+    storage_config_dict = {"type": "mysql", "some_host": "storage.example.com"}
+
+    storage_config_manager = ConfigurationManager(storage_config_dict)
+    storage_config = storage_config_manager.parse_config(TestStorageConfig)
+    assert isinstance(storage_config, SameTestStorageConfig)
+
+
+def test_register_subclass_method():
+    """Test manual registration of subclasses to different registries"""
+
+    @dataclass
+    class NewDataSource(DataSourceConfig):
+        host: str
+        port: int
+
+    @dataclass
+    class NewStorage(TestStorageConfig):
+        path: str
+
+    # Register to different base classes
+    DataSourceConfig.register_subclass("new", NewDataSource)
+    TestStorageConfig.register_subclass("new", NewStorage)
+
+    # Verify they are registered in correct registries
+    assert DataSourceConfig.get_subclass("new") is NewDataSource
+    assert TestStorageConfig.get_subclass("new") is NewStorage
+    assert DataSourceConfig.get_subclass("new") is not TestStorageConfig.get_subclass(
+        "new"
+    )
+
+
+def test_invalid_type_values():
+    """Test error handling for invalid type values in different registries"""
+    # Test invalid DataSourceConfig type
+    ds_config_dict = {"driver": "invalid_type", "host": "localhost"}
+
+    ds_config_manager = ConfigurationManager(ds_config_dict)
+    with pytest.raises(ValueError, match="Unknown type value: invalid_type"):
+        ds_config_manager.parse_config(DataSourceConfig)
+
+    # Test invalid TestStorageConfig type
+    storage_config_dict = {"type": "invalid_type", "some_host": "example.com"}
+
+    storage_config_manager = ConfigurationManager(storage_config_dict)
+    with pytest.raises(ValueError, match="Unknown type value: invalid_type"):
+        storage_config_manager.parse_config(TestStorageConfig)
+
+
+@dataclass
+class TestDbConfig:
+    host: str
+    port: int
+    username: str
+    password: str
+    max_connections: int = 10
+
+
+@dataclass
+class TestAppConfig:
+    name: str
+    database: TestDbConfig
+    debug: bool = False
+    allowed_origins: List[str] = None
+
+
+class EnvVarSetHook:
+    """A hook that sets environment variables based on initialization parameters"""
+
+    def __init__(self, env_vars: Dict[str, str] = None):
+        """
+        Args:
+            env_vars: Dictionary of environment variables to set.
+                     Key is the environment variable name, value is its value.
+        """
+        self.env_vars = env_vars or {}
+        self._original_env = {}
+
+    def __call__(self, config: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+        """Set environment variables and return the config unchanged"""
+        # Save original environment variables that we're going to override
+        self._original_env = {
+            key: os.environ.get(key) for key in self.env_vars if key in os.environ
+        }
+
+        # Set new environment variables
+        for key, value in self.env_vars.items():
+            os.environ[key] = str(value)
+
+        return config
+
+    def cleanup(self):
+        """Restore original environment variables"""
+        # Remove variables that weren't present before
+        for key in self.env_vars:
+            if key not in self._original_env:
+                os.environ.pop(key, None)
+
+        # Restore original values
+        for key, value in self._original_env.items():
+            if value is not None:
+                os.environ[key] = value
+
+
+class ConfigValidationHook:
+    """A hook that validates configuration values against rules"""
+
+    def __init__(self, rules: Dict[str, Dict[str, Any]] = None):
+        """
+        Args:
+            rules: Dictionary of validation rules.
+                  Key is the field path, value is a dict with validation rules:
+                  - max: maximum value for numbers
+                  - min: minimum value for numbers
+                  - length_max: maximum length for strings
+                  - prefix: required prefix for strings
+        """
+        self.rules = rules or {}
+
+    def _convert_value(self, value: Any, rule: Dict[str, Any]) -> Any:
+        """Convert value to appropriate type based on rule"""
+        if any(key in rule for key in ["max", "min"]):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return value
+        return value
+
+    def __call__(self, config: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+        """Validate configuration values against rules"""
+
+        def validate_value(path: str, value: Any, rule: Dict[str, Any]):
+            # Convert value if necessary
+            value = self._convert_value(value, rule)
+
+            for rule_name, rule_value in rule.items():
+                if not isinstance(value, (int, float)) and rule_name in ["min", "max"]:
+                    continue  # Skip numeric validation for non-numeric values
+
+                if rule_name == "max" and value > rule_value:
+                    raise ValueError(
+                        f"Value {value} at {path} exceeds maximum {rule_value}"
+                    )
+                elif rule_name == "min" and value < rule_value:
+                    raise ValueError(
+                        f"Value {value} at {path} below minimum {rule_value}"
+                    )
+                elif rule_name == "length_max" and len(str(value)) > rule_value:
+                    raise ValueError(
+                        f"Value at {path} exceeds maximum length {rule_value}"
+                    )
+                elif rule_name == "prefix" and not str(value).startswith(rule_value):
+                    raise ValueError(
+                        f"Value at {path} must start with '{rule_value}', found {value}"
+                    )
+
+        for path, rule in self.rules.items():
+            keys = path.split(".")
+            current = config
+            for key in keys[:-1]:
+                current = current.get(key, {})
+            if keys[-1] in current:
+                validate_value(path, current[keys[-1]], rule)
+
+        return config
+
+
+def get_hook_path(cls: type) -> str:
+    """Get the full module path for a class"""
+    module = sys.modules[cls.__module__]
+    return f"{module.__name__}.{cls.__name__}"
+
+
+def test_env_var_set_hook():
+    """Test basic environment variable setting functionality"""
+    config_dict = {
+        "app": {
+            "name": "test-app",
+            "database": {
+                "host": "${env:TEST_DB_HOST}",
+                "port": "${env:TEST_DB_PORT}",
+                "username": "test-user",
+                "password": "${env:TEST_DB_PASSWORD}",
+                "max_connections": 20,
+            },
+            "hooks": [
+                {
+                    "path": get_hook_path(EnvVarSetHook),
+                    "enabled": True,
+                    "init_params": {
+                        "env_vars": {
+                            "TEST_DB_HOST": "test-host",
+                            "TEST_DB_PORT": "5432",
+                            "TEST_DB_PASSWORD": "test-password",
+                        }
+                    },
+                }
+            ],
+        }
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    service_config = config_manager.parse_config(TestAppConfig, "app", "hooks")
+
+    assert service_config.database.host == "test-host"
+    assert service_config.database.port == 5432
+    assert service_config.database.password == "test-password"
+
+
+def test_config_validation_failure():
+    """Test ConfigValidationHook with invalid values"""
+    config_dict = {
+        "app": {
+            "name": "invalid-name",
+            "database": {
+                "host": "localhost",
+                "port": 80,  # Invalid port number
+                "username": "test-user",
+                "password": "secret",
+            },
+            "hooks": [
+                {
+                    "path": get_hook_path(ConfigValidationHook),
+                    "enabled": True,
+                    "init_params": {
+                        "rules": {"database.port": {"min": 1024, "max": 65535}}
+                    },
+                }
+            ],
+        }
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    with pytest.raises(ValueError, match="Value .* below minimum 1024"):
+        config_manager.parse_config(TestAppConfig, "app", "hooks")
+
+
+def test_env_var_set_hook_disabled():
+    """Test that disabled EnvVarSetHook doesn't set environment variables"""
+    if "TEST_APP_NAME" in os.environ:
+        del os.environ["TEST_APP_NAME"]
+
+    config_dict = {
+        "app": {
+            "name": "${env:TEST_APP_NAME:-default-name}",  # Provide default value
+            "database": {
+                "host": "localhost",
+                "port": 5432,
+                "username": "test-user",
+                "password": "secret",
+            },
+            "hooks": [
+                {
+                    "path": get_hook_path(EnvVarSetHook),
+                    "enabled": False,
+                    "init_params": {"env_vars": {"TEST_APP_NAME": "test-app"}},
+                }
+            ],
+        }
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    service_config = config_manager.parse_config(TestAppConfig, "app", "hooks")
+
+    # Since hook is disabled, environment variable shouldn't be set
+    assert "TEST_APP_NAME" not in os.environ
+    assert service_config.name == "default-name"  # Use default value
+
+
+@pytest.fixture(autouse=True)
+def cleanup_env_vars():
+    """Automatically cleanup environment variables after each test"""
+    test_vars = [
+        "TEST_DB_HOST",
+        "TEST_DB_PORT",
+        "TEST_DB_PASSWORD",
+        "TEST_APP_NAME",
+        "TEST_EXISTING_VAR",
+    ]
+
+    # Keep original values for existing variables
+    original_values = {
+        var: os.environ.get(var) for var in test_vars if var in os.environ
+    }
+
+    yield
+
+    for var in test_vars:
+        if var not in original_values:
+            os.environ.pop(var, None)
+        else:
+            os.environ[var] = original_values[var]

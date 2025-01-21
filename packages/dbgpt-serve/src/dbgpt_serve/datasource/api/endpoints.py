@@ -1,13 +1,14 @@
 from functools import cache
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from dbgpt.component import SystemApp
 from dbgpt.util import PaginationResult
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
-from dbgpt_serve.core import ResourceTypes, Result
+from dbgpt_serve.core import ResourceTypes, Result, blocking_func_to_async
 from dbgpt_serve.datasource.api.schemas import (
+    DatasourceCreateRequest,
     DatasourceServeRequest,
     DatasourceServeResponse,
 )
@@ -98,12 +99,14 @@ async def test_auth():
 
 @router.post("/datasources", dependencies=[Depends(check_api_key)])
 async def create(
-    request: DatasourceServeRequest, service: Service = Depends(get_service)
+    request: Union[DatasourceCreateRequest, DatasourceServeRequest],
+    service: Service = Depends(get_service),
 ) -> Result:
     """Create a new Space entity
 
     Args:
-        request (DatasourceServeRequest): The request
+        request (Union[DatasourceCreateRequest, DatasourceServeRequest]): The request
+            to create a datasource. DatasourceServeRequest is deprecated.
         service (Service): The service
     Returns:
         ServerResponse: The response
@@ -196,6 +199,32 @@ async def get_datasource_types(
 ) -> Result[ResourceTypes]:
     """Get the datasource types."""
     return Result.succ(service.datasource_types())
+
+
+@router.post(
+    "/datasources/test-connection",
+    dependencies=[Depends(check_api_key)],
+    response_model=Result[bool],
+)
+async def test_connection(
+    request: DatasourceCreateRequest, service: Service = Depends(get_service)
+) -> Result[bool]:
+    """Test the connection using datasource configuration before creating it
+
+    Args:
+        request (DatasourceServeRequest): The datasource configuration to test
+        service (Service): The service instance
+
+    Returns:
+        Result[bool]: The test result, True if connection is successful
+
+    Raises:
+        HTTPException: When the connection test fails
+    """
+    res = await blocking_func_to_async(
+        global_system_app, service.test_connection, request
+    )
+    return Result.succ(res)
 
 
 def init_endpoints(system_app: SystemApp) -> None:

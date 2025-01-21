@@ -121,7 +121,8 @@ def test_parent_child_span_relation():
 
 
 # This test checks if unique UUIDs are being generated.
-# Note: This is a simple test and doesn't guarantee uniqueness for large numbers of UUIDs.
+# Note: This is a simple test and doesn't guarantee uniqueness for large numbers of
+# UUIDs.
 
 
 def test_new_uuid_unique():

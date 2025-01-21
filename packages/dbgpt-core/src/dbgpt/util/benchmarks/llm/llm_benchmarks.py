@@ -57,7 +57,8 @@ METRICS_HEADERS = [
     # Merge parallel result
     "test_time_cost_ms",
     "test_total_tokens",
-    # avg_test_speed_per_second: (tokens / s), test_total_tokens / (test_time_cost_ms / 1000.0)
+    # avg_test_speed_per_second:
+    # (tokens / s), test_total_tokens / (test_time_cost_ms / 1000.0)
     "avg_test_speed_per_second(tokens/s)",
     # avg_first_token_latency_ms: sum(first_token_time_ms) / parallel_nums
     "avg_first_token_latency_ms",
@@ -133,7 +134,9 @@ async def run_batch(
         params = build_param(input_len, output_len, prompt, system_prompt="")
         tasks.append(wh.generate(params))
     print(
-        f"Begin run benchmarks, model name: {model_name}, input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, save result to {output_file}"
+        f"Begin run benchmarks, model name: {model_name}, input_len: {input_len}, "
+        f"output_len: {output_len}, parallel_num: {parallel_num}, save result to "
+        f"{output_file}"
     )
     start_time_ms = time.time_ns() // 1_000_000
     results: List[ModelOutput] = await asyncio.gather(*tasks)
@@ -188,7 +191,8 @@ async def run_batch(
             row["gpu_mem(GiB)"] = avg_gpu_mem
             writer.writerow(row)
     print(
-        f"input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, save result to {output_file}"
+        f"input_len: {input_len}, output_len: {output_len}, parallel_num: "
+        f"{parallel_num}, save result to {output_file}"
     )
 
 
@@ -209,7 +213,8 @@ async def run_model(wh: WorkerManager) -> None:
             except Exception:
                 msg = traceback.format_exc()
                 logging.error(
-                    f"Run benchmarks error, input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, error message: {msg}"
+                    f"Run benchmarks error, input_len: {input_len}, output_len: "
+                    f"{output_len}, parallel_num: {parallel_num}, error message: {msg}"
                 )
                 if "torch.cuda.OutOfMemoryError" in msg:
                     return

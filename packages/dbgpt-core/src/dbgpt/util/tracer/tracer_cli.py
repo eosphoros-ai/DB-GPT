@@ -61,7 +61,8 @@ def trace_cli_group():
     type=str,
     default=None,
     show_default=True,
-    help="Search trace_id, span_id, parent_span_id, operation_name or content in metadata.",
+    help="Search trace_id, span_id, parent_span_id, operation_name or content in "
+    "metadata.",
 )
 @click.option(
     "-l",
@@ -517,8 +518,10 @@ def _print_trace_hierarchy(hierarchy, indent=0):
     """Print link hierarchy"""
     for entry in hierarchy:
         print(
-            "  " * indent
-            + f"Operation: {entry['operation_name']} (Start: {entry['start_time']}, End: {entry['end_time']})"
+            "  "
+            * indent
+            + f"Operation: {entry['operation_name']} (Start: {entry['start_time']}, "
+            f"End: {entry['end_time']})"
         )
         _print_trace_hierarchy(entry["children"], indent + 1)
 

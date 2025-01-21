@@ -1,10 +1,20 @@
 """DB Model for connect_config."""
 
 import logging
+from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
 from dbgpt.storage.metadata import BaseDao, Model
-from sqlalchemy import Column, Index, Integer, String, Text, UniqueConstraint, text
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 
 from dbgpt_serve.datasource.api.schemas import (
     DatasourceServeRequest,
@@ -33,7 +43,11 @@ class ConnectConfigEntity(Model):
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     user_id = Column(String(128), index=True, nullable=True, comment="User id")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
-
+    gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
+    gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
+    ext_config = Column(
+        Text, nullable=True, comment="Extended configuration, json format"
+    )
     __table_args__ = (
         UniqueConstraint("db_name", name="uk_db"),
         Index("idx_q_db_type", "db_type"),

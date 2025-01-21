@@ -131,7 +131,8 @@ async def get_code_server(
     Args:
         system_app (Optional[SystemApp]): The system app. Defaults to None.
         wait_ready (bool): Whether to wait for server to be ready. Defaults to True.
-        timeout (Optional[float]): Maximum time to wait in seconds. None means wait forever.
+        timeout (Optional[float]): Maximum time to wait in seconds. None means wait
+            forever.
 
     Returns:
         CodeServer: The code server.

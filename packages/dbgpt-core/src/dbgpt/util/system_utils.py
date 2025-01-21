@@ -137,7 +137,7 @@ def get_device_info() -> Tuple[str, str, str, int, str]:
                 ]
             )
             device_other = output.decode("utf-8")
-        except:
+        except:  # noqa
             pass
     return torch_version, device, device_version, device_count, device_other
 
@@ -149,7 +149,7 @@ def get_cuda_version_from_nvcc():
             line for line in output.decode("utf-8").split("\n") if "release" in line
         ][0]
         return version_line.split("release")[-1].strip().split(",")[0]
-    except:
+    except:  # noqa
         return None
 
 
@@ -161,7 +161,7 @@ def get_cuda_version_from_nvidia_smi():
             return match.group(1)
         else:
             return None
-    except:
+    except:  # noqa
         return None
 
 
@@ -192,7 +192,7 @@ def get_cpu_info():
             match = re.search(r".*型号名称：\s*(.+)", output)
             if match:
                 cpu_info = match.group(1).strip()
-        except:
+        except:  # noqa
             pass
     elif os_type == OSType.DARWIN:
         try:
@@ -202,7 +202,7 @@ def get_cpu_info():
             match = re.search(r"machdep.cpu.brand_string:\s*(.+)", output)
             if match:
                 cpu_info = match.group(1).strip()
-        except:
+        except:  # noqa
             pass
     elif os_type == OSType.WINDOWS:
         try:
@@ -211,7 +211,7 @@ def get_cpu_info():
             )
             lines = output.splitlines()
             cpu_info = lines[2].split(":")[-1].strip()
-        except:
+        except:  # noqa
             pass
 
     return os_type, avx_type, cpu_info, distribution
@@ -233,7 +233,7 @@ def get_memory_info(os_type: OSType) -> str:
                 if "MemTotal" in line:
                     memory = line.split(":")[1].strip()
                     break
-        except:
+        except:  # noqa
             pass
     return memory
 

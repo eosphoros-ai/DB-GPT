@@ -1,9 +1,12 @@
+import abc
+import logging
 import os
 import re
-from dataclasses import MISSING, dataclass, fields, is_dataclass
+from dataclasses import MISSING, dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import (
     Any,
+    ClassVar,
     Dict,
     List,
     Optional,
@@ -22,6 +25,105 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 T = TypeVar("T")
+
+logger = logging.getLogger(__name__)
+
+
+class PolymorphicMeta(abc.ABCMeta):
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        """Metaclass that allows dataclasses to be used as type hints in other
+        dataclasses.
+        """
+        cls = super().__new__(mcs, name, bases, namespace)
+        # Only process if this is a concrete class (not an ABC)
+        if abc.ABC not in bases:
+            # Find the immediate parent class that uses this metaclass
+            base_cls = next(
+                (base for base in bases if isinstance(base, PolymorphicMeta)),
+                None,
+            )
+
+            if base_cls is not None:
+                # Get the type value
+                type_value = getattr(cls, "__type__", None)
+                type_field = getattr(base_cls, "__type_field__", "type")
+
+                if type_value is None and type_field and hasattr(cls, type_field):
+                    type_value = getattr(cls, type_field)
+                if type_value is None:
+                    # Remove base class name suffix and convert to lowercase
+                    base_suffix = base_cls.__name__.lower()
+                    type_value = name.lower()
+                    if type_value.endswith(base_suffix):
+                        type_value = type_value[: -len(base_suffix)]
+
+                # Create a new registry for each direct subclass of RegisterParameters
+                # This ensures each base class has its own registry
+                if RegisterParameters in bases:
+                    cls._type_registry = {}
+
+                # Get the registry from the immediate parent
+                registry = getattr(base_cls, "_type_registry", {})
+
+                if type_value in registry:
+                    raise ValueError(
+                        f"Type value '{type_value}' already registered for "
+                        f"{registry[type_value].__name__} in {base_cls.__name__}"
+                    )
+                # Register the subclass with its immediate parent class
+                registry[type_value] = cls
+
+        return cls
+
+
+@dataclass
+class HookConfig:
+    """Hook configuration.
+
+    You can define a hook configuration with a path and optional parameters.
+    It will be used to dynamically load and execute a hook function or a callable
+    object.
+    """
+
+    path: str = field(
+        metadata={
+            "help": "Hook path, it can be a class path or a function path. "
+            "eg: 'dbgpt.config.hooks.env_var_hook'"
+        }
+    )
+    init_params: Dict[str, Any] = field(
+        default_factory=dict,
+        metadata={
+            "help": "Hook init params to pass to the hook constructor(Just for class "
+            "hook), must be key-value pairs"
+        },
+    )
+    params: Dict[str, Any] = field(
+        default_factory=dict,
+        metadata={"help": "Hook params to pass to the hook, must be key-value pairs"},
+    )
+    enabled: bool = field(
+        default=True, metadata={"help": "Whether the hook is enabled, default is True"}
+    )
+
+
+class RegisterParameters(abc.ABC, metaclass=PolymorphicMeta):
+    """Register a subclass with a base class using a type field."""
+
+    __type_field__: ClassVar[str] = "type"  # Default type field name
+
+    @classmethod
+    def get_subclass(cls, type_value: str) -> Optional[Type["RegisterParameters"]]:
+        """Get the subclass for a specified type value from this class's registry."""
+        registry = getattr(cls, "_type_registry", {})
+        return registry.get(type_value)
+
+    @classmethod
+    def register_subclass(cls, type_value: str, subclass: Type["RegisterParameters"]):
+        """Register a subclass with this base class using a type value."""
+        if not hasattr(cls, "_type_registry"):
+            cls._type_registry = {}
+        cls._type_registry[type_value] = subclass
 
 
 class ConfigurationManager:
@@ -62,12 +164,13 @@ class ConfigurationManager:
             resolve_env_vars: Whether to resolve environment variables in string values.
                             Defaults to True.
         """
-        self.config: Dict = config_dict or {}
+        self.config: Dict[str, Any] = config_dict or {}
         self.resolve_env_vars = resolve_env_vars
 
     @classmethod
     def from_file(cls, file_path: str | Path) -> "ConfigurationManager":
-        """Create a ConfigurationManager instance by loading configuration from a TOML file.
+        """Create a ConfigurationManager instance by loading configuration from a TOML
+        file.
 
         Args:
             file_path: Path to the TOML configuration file
@@ -120,7 +223,8 @@ class ConfigurationManager:
             String with environment variables replaced with their values
 
         Raises:
-            ValueError: If an environment variable is not found and no default is specified
+            ValueError: If an environment variable is not found and no default is
+                specified
 
         Examples:
             >>> # Assuming DB_HOST="localhost" is set in environment
@@ -175,7 +279,7 @@ class ConfigurationManager:
         if value is None:
             if get_origin(field_type) is Union and type(None) in get_args(field_type):
                 return None
-            raise ValueError(f"Non-optional field received None value")
+            raise ValueError("Non-optional field received None value")
 
         # Handle environment variable substitution for string values
         if isinstance(value, str) and self.resolve_env_vars:
@@ -267,30 +371,53 @@ class ConfigurationManager:
         if not is_dataclass(cls):
             raise ValueError(f"{cls.__name__} is not a dataclass")
 
+        concrete_cls = self._get_concrete_class(cls, data)
+
         field_values = {}
-        type_hints = get_type_hints(cls)
+        type_hints = get_type_hints(concrete_cls)
 
-        for field in fields(cls):
-            field_type = type_hints[field.name]
-            field_value = data.get(field.name, MISSING)
+        for fd in fields(concrete_cls):
+            field_type = type_hints[fd.name]
+            field_value = data.get(fd.name, MISSING)
 
-            if field_value is MISSING and field.default is not MISSING:
-                field_values[field.name] = field.default
-            elif field_value is MISSING and field.default_factory is not MISSING:
-                field_values[field.name] = field.default_factory()
+            if field_value is MISSING and fd.default is not MISSING:
+                field_values[fd.name] = fd.default
+            elif field_value is MISSING and fd.default_factory is not MISSING:
+                field_values[fd.name] = fd.default_factory()
             elif field_value is MISSING:
-                raise ValueError(f"Missing required field: {field.name}")
+                raise ValueError(f"Missing required field: {fd.name}")
             else:
-                field_values[field.name] = self._convert_value(field_value, field_type)
+                field_values[fd.name] = self._convert_value(field_value, field_type)
 
-        return cls(**field_values)
+        return concrete_cls(**field_values)
 
-    def parse_config(self, cls: Type[T], prefix: str = "") -> T:
+    def _get_concrete_class(self, base_class: Type[T], data: Dict[str, Any]) -> Type[T]:
+        """Get the concrete subclass of a polymorphic dataclass.
+
+        It checks all the registered subclasses of the base class and returns the
+        appropriate subclass based on the type field value in the data.
+        """
+        if not isinstance(base_class, PolymorphicMeta):
+            return base_class
+
+        type_field = getattr(base_class, "__type_field__", "type")
+        type_value = data.get(type_field)
+        if not type_value:
+            return base_class
+        real_cls = base_class.get_subclass(type_value)
+        if not real_cls:
+            raise ValueError(f"Unknown type value: {type_value}")
+        return real_cls
+
+    def parse_config(
+        self, cls: Type[T], prefix: str = "", hook_section: Optional[str] = None
+    ) -> T:
         """Parse configuration data into a specified dataclass type.
 
         Args:
             cls: The target dataclass type to parse into
             prefix: Optional dot-notation prefix to select a configuration section
+            hook_section: Optional configuration section to use as the hook
 
         Returns:
             An instance of the specified dataclass
@@ -310,10 +437,52 @@ class ConfigurationManager:
             >>> print(db_config.host)
             'localhost'
         """
-        if not prefix:
-            return self._convert_to_dataclass(cls, self.config)
-
-        config_section = self.get(prefix)
+        config_section = self.config
+        if prefix:
+            config_section = self.get(prefix)
+        if hook_section:
+            hook_configs = config_section.get(hook_section, [])
+            if not isinstance(hook_configs, list):
+                raise ValueError(f"Invalid hook section: {hook_section}")
+            if hook_configs:
+                # Apply hooks to the configuration section
+                config_section = _load_hook(hook_configs, config_section)
         if config_section is None:
             raise ValueError(f"Configuration section not found: {prefix}")
         return self._convert_to_dataclass(cls, config_section)
+
+
+def _load_hook(
+    hook_config: List[Dict[str, Any]], config_section: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Load a hook function or class from a configuration dictionary.
+
+    Args:
+        hook_config: Dictionary containing hook configuration data
+
+    Returns:
+        A new dictionary with the hook function or class loaded
+    """
+    import inspect
+
+    from ..module_utils import import_from_string
+
+    hooks = []
+    for hook in hook_config:
+        hook_cfg = HookConfig(**hook)
+        if hook_cfg.enabled:
+            hook_path = hook_cfg.path
+            hook_cls = import_from_string(hook_path)
+            if inspect.isclass(hook_cls):
+                hook = hook_cls(**hook_cfg.init_params)
+                hooks.append((hook, hook_cfg))
+            elif callable(hook_cls):
+                # callable object or function
+                hooks.append((hook_cls, hook_cfg))
+            else:
+                raise ValueError(f"Invalid hook: {hook_path}")
+    logger.debug(f"Loaded hooks: {hooks}")
+    for hook, hook_cfg in hooks:
+        params = hook_cfg.params or {}
+        config_section = hook(config_section, **params)
+    return config_section

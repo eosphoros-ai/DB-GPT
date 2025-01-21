@@ -17,7 +17,8 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 #   The \r?\n makes sure there is a linebreak after ```.
 #   The (.*?) matches the code itself (non-greedy).
 #   The \r?\n makes sure there is a linebreak before ```.
-#   The [ \t]* matches the potential spaces before closing ``` (the spec allows indentation).
+#   The [ \t]* matches the potential spaces before closing ```
+#   (the spec allows indentation).
 CODE_BLOCK_PATTERN = r"```[ \t]*(\w+)?[ \t]*\r?\n(.*?)\r?\n[ \t]*```"
 WORKING_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extensions")
 UNKNOWN = "unknown"
@@ -86,7 +87,8 @@ def extract_code(
     Returns:
         list: A list of tuples, each containing the language and the code.
           If there is no code block in the input text, the language would be "unknown".
-          If there is code block but the language is not specified, the language would be "".
+          If there is code block but the language is not specified, the language would
+          be "".
     """
     text = content_str(text)
     if not detect_single_line_code:
@@ -112,13 +114,14 @@ def extract_code(
 if __name__ == "__main__":
     print(
         extract_code(
-            """```python import requests from bs4 import BeautifulSoup from datetime import datetime, timedelta  # Define the search query query = "LLM application"  # Define the time range (last week) end_date = datetime.now().strftime("%Y-%m-%d") start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")  # Create the search URL url = f"https://arxiv.org/search/advanced?advanced=&terms-0-operator=AND&terms-0-term={query}&terms-0-field=title&classification-physics_archives=all&classification-include_cross_list=include&date-filter_by=specific_date&date-year=&date-from_date={start_date}&date-to_date={end_date}&date-date_type=submitted_date&abstracts=show&size=200&order=-announced_date_first"  # Send a GET request to the search URL response = requests.get(url)  # Parse the HTML content soup = BeautifulSoup(response.content, "html.parser")  # Find all the paper titles and authors titles = soup.find_all("p", class_="title is-5 mathjax") authors = soup.find_all("p", class_="authors")  # Print the results for i in range(len(titles)):     print(f"Title: {titles[i].text.strip()}")     print(f"Authors: {authors[i].text.strip()}")     print("-------------------------") ```  This code uses the `requests` library to send a GET request to the advanced search page of arXiv. It searches for papers with the specified query ("LLM application") that were submitted in the last week. The code then uses `BeautifulSoup` to parse the HTML content of the search results page and extracts the paper titles and authors. Finally, it prints the titles and authors of the found papers."""
+            """```python import requests from bs4 import BeautifulSoup from datetime import datetime, timedelta  # Define the search query query = "LLM application"  # Define the time range (last week) end_date = datetime.now().strftime("%Y-%m-%d") start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")  # Create the search URL url = f"https://arxiv.org/search/advanced?advanced=&terms-0-operator=AND&terms-0-term={query}&terms-0-field=title&classification-physics_archives=all&classification-include_cross_list=include&date-filter_by=specific_date&date-year=&date-from_date={start_date}&date-to_date={end_date}&date-date_type=submitted_date&abstracts=show&size=200&order=-announced_date_first"  # Send a GET request to the search URL response = requests.get(url)  # Parse the HTML content soup = BeautifulSoup(response.content, "html.parser")  # Find all the paper titles and authors titles = soup.find_all("p", class_="title is-5 mathjax") authors = soup.find_all("p", class_="authors")  # Print the results for i in range(len(titles)):     print(f"Title: {titles[i].text.strip()}")     print(f"Authors: {authors[i].text.strip()}")     print("-------------------------") ```  This code uses the `requests` library to send a GET request to the advanced search page of arXiv. It searches for papers with the specified query ("LLM application") that were submitted in the last week. The code then uses `BeautifulSoup` to parse the HTML content of the search results page and extracts the paper titles and authors. Finally, it prints the titles and authors of the found papers."""  # noqa
         )
     )
 
 
 _IMPROVE_FUNCTION_CONFIG = {
-    "prompt": """Improve the function '{func_name}' to achieve the objective '{objective}'.
+    "prompt": """Improve the function '{func_name}' to achieve the objective \
+    '{objective}'.
 The current implementation of the function is as follows:
 {file_string}""",
     "model": "DEFAULT_MODEL",
@@ -127,7 +130,8 @@ The current implementation of the function is as follows:
 
 
 _IMPROVE_CODE_CONFIG = {
-    "prompt": """Analyze the code in the following files and return a list of suggestions for improvement{followup}, to achieve the objective of '{objective}'.
+    "prompt": """Analyze the code in the following files and return a list of \
+    suggestions for improvement{followup}, to achieve the objective of '{objective}'.
 {code}
 """,
     "model": "DEFAULT_MODEL",
@@ -165,24 +169,32 @@ def execute_code(
             If None, the code from the file specified by filename will be executed.
             Either code or filename must be provided.
         timeout (Optional, int): The maximum execution time in seconds.
-            If None, a default timeout will be used. The default timeout is 600 seconds. On Windows, the timeout is not enforced when use_docker=False.
-        filename (Optional, str): The file name to save the code or where the code is stored when `code` is None.
-            If None, a file with a randomly generated name will be created.
-            The randomly generated file will be deleted after execution.
-            The file name must be a relative path. Relative paths are relative to the working directory.
+            If None, a default timeout will be used. The default timeout is 600
+            seconds. On Windows, the timeout is not enforced when use_docker=False.
+        filename (Optional, str): The file name to save the code or where the code is
+            stored when `code` is None. If None, a file with a randomly generated name
+            will be created. The randomly generated file will be deleted after
+            execution. The file name must be a relative path. Relative paths are
+            relative to the working directory.
         work_dir (Optional, str): The working directory for the code execution.
             If None, a default working directory will be used.
             The default working directory is the "extensions" directory under
             "path_to_autogen".
-        use_docker (Optional, list, str or bool): The docker image to use for code execution.
-            If a list or a str of image name(s) is provided, the code will be executed in a docker container
-            with the first image successfully pulled.
-            If None, False or empty, the code will be executed in the current environment.
-            Default is None, which will be converted into an empty list when docker package is available.
+        use_docker (Optional, list, str or bool): The docker image to use for code
+            execution. If a list or a str of image name(s) is provided, the code will
+            be executed in a docker container with the first image successfully pulled.
+            If None, False or empty, the code will be executed in the current
+            environment.
+            Default is None, which will be converted into an empty list when docker
+            package is available.
             Expected behaviour:
-                - If `use_docker` is explicitly set to True and the docker package is available, the code will run in a Docker container.
-                - If `use_docker` is explicitly set to True but the Docker package is missing, an error will be raised.
-                - If `use_docker` is not set (i.e., left default to None) and the Docker package is not available, a warning will be displayed, but the code will run natively.
+                - If `use_docker` is explicitly set to True and the docker package is
+                    available, the code will run in a Docker container.
+                - If `use_docker` is explicitly set to True but the Docker package is
+                    missing, an error will be raised.
+                - If `use_docker` is not set (i.e., left default to None) and the
+                    Docker package is not available, a warning will be displayed, but
+                    the code will run natively.
             If the code is executed in the current environment,
             the code must be trusted.
         lang (Optional, str): The language of the code. Default is "python".
@@ -197,9 +209,10 @@ def execute_code(
         logger.error(error_msg)
         raise AssertionError(error_msg)
 
-    # Warn if use_docker was unspecified (or None), and cannot be provided (the default).
-    # In this case the current behavior is to fall back to run natively, but this behavior
-    # is subject to change.
+    # Warn if use_docker was unspecified (or None), and cannot be provided
+    # (the default).
+    # In this case the current behavior is to fall back to run natively, but this
+    # behavior is subject to change.
 
     try:
         import docker
@@ -215,7 +228,9 @@ def execute_code(
         if docker is None:
             use_docker = False
             logger.warning(
-                "execute_code was called without specifying a value for use_docker. Since the python docker package is not available, code will be run natively. Note: this fallback behavior is subject to change"
+                "execute_code was called without specifying a value for use_docker. "
+                "Since the python docker package is not available, code will be run "
+                "natively. Note: this fallback behavior is subject to change"
             )
         else:
             # Default to true
@@ -312,7 +327,8 @@ def execute_code(
     cmd = [
         "sh",
         "-c",
-        f"{_cmd(lang)} {filename}; exit_code=$?; echo -n {exit_code_str}; echo -n $exit_code; echo {exit_code_str}",
+        f"{_cmd(lang)} {filename}; exit_code=$?; echo -n {exit_code_str}; echo -n "
+        f"$exit_code; echo {exit_code_str}",
     ]
     # create a docker container
     container = client.containers.run(
@@ -361,7 +377,9 @@ def execute_code(
 
 
 _GENERATE_ASSERTIONS_CONFIG = {
-    "prompt": """Given the signature and docstring, write the exactly same number of assertion(s) for the provided example(s) in the docstring, without assertion messages.
+    "prompt": """Given the signature and docstring, write the exactly same number of \
+    assertion(s) for the provided example(s) in the docstring, without assertion \
+    messages.
 
 func signature:
 {definition}
@@ -390,15 +408,19 @@ def eval_function_completions(
     timeout: Optional[float] = 3,
     use_docker: Optional[bool] = True,
 ) -> Dict:
-    """(openai<1) Select a response from a list of responses for the function completion task (using generated assertions), and/or evaluate if the task is successful using a gold test.
+    """(openai<1) Select a response from a list of responses for the function
+    completion task (using generated assertions), and/or evaluate if the task is
+    successful using a gold test.
 
     Args:
         responses (list): The list of responses.
         definition (str): The input definition.
         test (Optional, str): The test code.
         entry_point (Optional, str): The name of the function.
-        assertions (Optional, str or Callable): The assertion code which serves as a filter of the responses, or an assertion generator.
-            When provided, only the responses that pass the assertions will be considered for the actual test (if provided).
+        assertions (Optional, str or Callable): The assertion code which serves as a
+            filter of the responses, or an assertion generator. When provided, only the
+             responses that pass the assertions will be considered for the actual test
+            (if provided).
         timeout (Optional, float): The timeout for executing the code.
 
     Returns:

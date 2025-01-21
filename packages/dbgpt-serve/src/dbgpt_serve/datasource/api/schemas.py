@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
@@ -37,3 +37,38 @@ class DatasourceServeResponse(BaseModel):
     db_user: str = Field("", description="Database user.")
     db_pwd: str = Field("", description="Database password.")
     comment: str = Field("", description="Comment for the database.")
+
+
+class DatasourceCreateRequest(BaseModel):
+    """Request model for datasource connection
+
+    Attributes:
+        type (str): The type of datasource (e.g., "mysql", "tugraph")
+        params (Dict[str, Any]): Dynamic parameters for the datasource connection.
+            The keys should match the param_name defined in the datasource type
+            configuration.
+    """
+
+    type: str = Field(
+        ..., description="The type of datasource (e.g., 'mysql', 'tugraph')"
+    )
+    params: Dict[str, Any] = Field(
+        ..., description="Dynamic parameters for the datasource connection."
+    )
+    description: Optional[str] = Field(
+        None, description="Optional description of the datasource."
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "type": "tugraph",
+                "params": {
+                    "host": "localhost",
+                    "user": "test_user",
+                    "password": "test_password",
+                    "port": 7687,
+                    "database": "default",
+                },
+            }
+        }

@@ -6,10 +6,10 @@ def PublicAPI(*args, **kwargs):
 
     Args:
         stability: The stability of the API. Can be "alpha", "beta" or "stable".
-            If "alpha", the API is in alpha may come breaking changes before becoming beta.
-            If "beta", the API is in beta and may change before becoming stable.
-            If "stable", the API will remain backwards compatible with the current major version.
-            Defaults to "stable".
+            If "alpha", the API is in alpha may come breaking changes before becoming
+            beta. If "beta", the API is in beta and may change before becoming stable.
+            If "stable", the API will remain backwards compatible with the current
+            major version. Defaults to "stable".
     Examples:
         >>> from dbgpt.util.annotations import PublicAPI
         >>> @PublicAPI
@@ -34,7 +34,8 @@ def PublicAPI(*args, **kwargs):
         if stability in ["alpha", "beta"]:
             _modify_docstring(
                 obj,
-                f"**PublicAPI ({stability}):** This API is in {stability} and may change before becoming stable.",
+                f"**PublicAPI ({stability}):** This API is in {stability} and "
+                "may change before becoming stable.",
             )
             _modify_annotation(obj, stability)
         return obj
@@ -45,7 +46,8 @@ def PublicAPI(*args, **kwargs):
 def DeveloperAPI(*args, **kwargs):
     """Decorator to mark a function or class as a developer API.
 
-    Developer APIs are low-level APIs for advanced users and may change cross major versions.
+    Developer APIs are low-level APIs for advanced users and may change cross major
+    versions.
 
     Examples:
         >>> from dbgpt.util.annotations import DeveloperAPI
@@ -60,7 +62,8 @@ def DeveloperAPI(*args, **kwargs):
     def decorator(obj):
         _modify_docstring(
             obj,
-            "**DeveloperAPI:** This API is for advanced users and may change cross major versions.",
+            "**DeveloperAPI:** This API is for advanced users and may change "
+            "cross major versions.",
         )
         return obj
 
