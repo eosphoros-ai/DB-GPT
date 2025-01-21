@@ -38,16 +38,10 @@ proxy_openai = [
     "dbgpt-ext[proxy_openai]"
 ]
 
-quick_start = [
-    "dbgpt[client,cli,agent,simple_framework,framework,code]",
-    "dbgpt-ext[proxy_openai]",
-    "dbgpt-ext[rag]",
-    "dbgpt-ext[storage_chromadb]",
-]
-
 default = [
     "dbgpt[client,cli,agent,simple_framework,framework,code]",
-    "dbgpt-ext[rag]"
+    "dbgpt-ext[rag]",
+    "dbgpt-ext[storage_chromadb]",
 ]
 
 [tool.uv]
