@@ -73,6 +73,24 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
         )
         super().__init__(name, retriever=retriever)
 
+        knowledge_spaces = get_knowledge_spaces_info(id=space_name)
+        if knowledge_spaces is not None and len(knowledge_spaces) > 0:
+            self._retriever_name = knowledge_spaces[0].name
+            self._retriever_desc = knowledge_spaces[0].desc
+        else:
+            self._retriever_name = None
+            self._retriever_desc = None
+
+    @property
+    def retriever_name(self) -> str:
+        """Return the resource name."""
+        return self._retriever_name
+
+    @property
+    def retriever_desc(self) -> str:
+        """Return the retriever desc."""
+        return self._retriever_desc
+
     @classmethod
     def resource_parameters_class(
         cls, **kwargs
@@ -102,3 +120,15 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
             )
 
         return _DynamicKnowledgeSpaceLoadResourceParameters
+
+
+def get_knowledge_spaces_info(**kwargs):
+    from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+    from dbgpt.app.knowledge.service import KnowledgeService
+
+    knowledge_space_service = KnowledgeService()
+    knowledge_spaces = knowledge_space_service.get_knowledge_space(
+        KnowledgeSpaceRequest(**kwargs)
+    )
+
+    return knowledge_spaces
