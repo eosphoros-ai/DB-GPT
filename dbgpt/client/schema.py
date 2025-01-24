@@ -207,9 +207,7 @@ class AppModel(BaseModel):
     app_describe: Optional[str] = Field(None, title="app describe")
     team_mode: Optional[str] = Field(None, title="team mode")
     language: Optional[str] = Field("en", title="language")
-    team_context: Optional[Union[str, AWELTeamModel]] = Field(
-        None, title="team context"
-    )
+    team_context: Optional[Union[str, dict]] = Field(None, title="team context")
     user_code: Optional[str] = Field(None, title="user code")
     sys_code: Optional[str] = Field(None, title="sys code")
     is_collected: Optional[str] = Field(None, title="is collected")
