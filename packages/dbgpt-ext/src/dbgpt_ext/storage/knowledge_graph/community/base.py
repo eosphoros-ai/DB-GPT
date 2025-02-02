@@ -294,3 +294,11 @@ class CommunityMetastore(ABC):
     @abstractmethod
     def drop(self):
         """Drop community metastore."""
+
+
+class GraphSyntaxValidator(ABC):
+    """Community Syntax Validator."""
+
+    @abstractmethod
+    def validate(self, query: str) -> bool:
+        """Validate query syntax."""
