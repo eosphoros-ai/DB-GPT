@@ -233,12 +233,13 @@ class Role(ABC, BaseModel):
             raise ValueError("Action output is required to save to memory.")
 
         mem_thoughts = action_output.thoughts or ai_message
-        observation = action_output.observations
+        observation = check_fail_reason or action_output.observations
+        action = action_output.action
 
         memory_map = {
             "question": question,
             "thought": mem_thoughts,
-            "action": check_fail_reason,
+            "action": action,
             "observation": observation,
         }
         write_memory_template = self.write_memory_template

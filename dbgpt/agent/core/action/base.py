@@ -53,6 +53,8 @@ class ActionOutput(BaseModel):
     ask_user: Optional[bool] = False
     # 如果当前agent能确定下个发言者，需要在这里指定
     next_speakers: Optional[List[str]] = None
+    # 强制重试，不受重试次数影响限制
+    force_retry: Optional[bool] = False
 
     @model_validator(mode="before")
     @classmethod

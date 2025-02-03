@@ -21,12 +21,14 @@ class ToolInput(BaseModel):
     tool_name: str = Field(
         ...,
         description="The name of a tool that can be used to answer the current question"
-        " or solve the current task.",
+        " or solve the current task. "
+        "If no suitable tool is selected, leave this blank.",
     )
     args: dict = Field(
         default={"arg name1": "", "arg name2": ""},
         description="The tool selected for the current target, the parameter "
-        "information required for execution",
+        "information required for execution, "
+        "If no suitable tool is selected, leave this blank.",
     )
     thought: str = Field(..., description="Summary of thoughts to the user")
 
@@ -68,9 +70,9 @@ class ToolAction(Action[ToolInput]):
         }
 
         return f"""Please response in the following json format:
-        {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
-        Make sure the response is correct json and can be parsed by Python json.loads.
-        """
+{json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
+Make sure the response is correct json and can be parsed by Python json.loads.
+and do not write the comment in json，only write the json content."""
 
     async def run(
         self,
@@ -91,6 +93,15 @@ class ToolAction(Action[ToolInput]):
             need_vis_render (bool, optional): Whether need visualization rendering.
                 Defaults to True.
         """
+        success, error = parse_json_safe(ai_message)
+        if not success:
+            return ActionOutput(
+                is_exe_success=False,
+                content=f"Tool Action execute failed! llm reply {ai_message} "
+                f"is not a valid json format, json error: {error}. "
+                f"You need to strictly return the raw JSON format. ",
+            )
+
         try:
             param: ToolInput = self._input_convert(ai_message, ToolInput)
         except Exception as e:
@@ -98,6 +109,16 @@ class ToolAction(Action[ToolInput]):
             return ActionOutput(
                 is_exe_success=False,
                 content="The requested correctly structured answer could not be found.",
+            )
+
+        if param.tool_name is None or param.tool_name == "":
+            # can not choice tools， it must be some reason
+            return ActionOutput(
+                is_exe_success=False,
+                # content= param.thought,
+                content=f"There are no suitable tools available "
+                f"to achieve the user's goal: '{param.thought}'",
+                have_retry=False,
             )
 
         try:
@@ -137,10 +158,25 @@ class ToolAction(Action[ToolInput]):
                 is_exe_success=response_success,
                 content=str(tool_result),
                 view=view,
+                thoughts=param.thought,
+                action=str({"tool_name": param.tool_name, "args": param.args}),
                 observations=str(tool_result),
             )
         except Exception as e:
             logger.exception("Tool Action Run Failed！")
             return ActionOutput(
-                is_exe_success=False, content=f"Tool action run failed!{str(e)}"
+                is_exe_success=False,
+                content=f"Tool action run failed!{str(e)}",
+                action=str({"tool_name": param.tool_name, "args": param.args}),
             )
+
+
+def parse_json_safe(json_str):
+    """Try to parse json."""
+    try:
+        # try to parse json
+        data = json.loads(json_str)
+        return True, data
+    except json.JSONDecodeError as e:
+        # 捕捉JSON解析错误并返回详细信息
+        return False, e.msg
