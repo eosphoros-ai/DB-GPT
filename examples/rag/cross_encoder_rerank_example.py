@@ -18,7 +18,7 @@ from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVecto
 
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH, ROOT_PATH
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever.rerank import CrossEncoderRanker
 
 

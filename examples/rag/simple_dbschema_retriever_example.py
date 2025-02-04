@@ -26,7 +26,7 @@ import os
 from typing import Dict, List
 
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
-from dbgpt_ext.rag.operators import DBSchemaAssemblerOperator, DBSchemaRetrieverOperator
+from dbgpt_ext.rag.operators.db_schema import DBSchemaRetrieverOperator
 from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 from dbgpt._private.config import Config
@@ -35,6 +35,7 @@ from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import Chunk
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
+from dbgpt_ext.rag.operators import DBSchemaAssemblerOperator
 
 CFG = Config()
 

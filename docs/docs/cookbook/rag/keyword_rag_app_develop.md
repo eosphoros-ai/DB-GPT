@@ -91,7 +91,7 @@ import os
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.assembler import EmbeddingAssembler
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 async def main():
     file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")

@@ -65,9 +65,9 @@ Example:
 
 import asyncio
 
-from dbgpt_client.client import Client
-from dbgpt_client.client.knowledge import create_space
-from dbgpt_client.client.schema import SpaceModel
+from dbgpt_client import Client
+from dbgpt_client.knowledge import create_space
+from dbgpt_client.schema import SpaceModel
 
 
 async def main():

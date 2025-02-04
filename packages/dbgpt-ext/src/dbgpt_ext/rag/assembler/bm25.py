@@ -6,12 +6,12 @@ from typing import Any, List, Optional
 
 from dbgpt.core import Chunk
 
-from ...storage.vector_store.elastic_store import ElasticsearchVectorConfig
-from ...util.executor_utils import blocking_func_to_async
-from ..assembler.base import BaseAssembler
-from ..chunk_manager import ChunkParameters
-from ..knowledge.base import Knowledge
-from ..retriever.bm25 import BM25Retriever
+from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
+from dbgpt.util.executor_utils import blocking_func_to_async
+from dbgpt_ext.rag.assembler.base import BaseAssembler
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
+from dbgpt.rag.knowledge.base import Knowledge
+from dbgpt_ext.rag.retriever.bm25 import BM25Retriever
 
 
 class BM25Assembler(BaseAssembler):

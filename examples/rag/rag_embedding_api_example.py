@@ -33,7 +33,7 @@ from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVecto
 
 from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
 from dbgpt.rag.embedding import OpenAPIEmbeddings
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 
 def _create_embeddings(

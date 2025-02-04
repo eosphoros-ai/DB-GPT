@@ -42,7 +42,7 @@ import TabItem from '@theme/TabItem';
 <TabItem value="python">
 
 ```python
-from dbgpt.client import Client
+from dbgpt_client import Client
 
 DBGPT_API_KEY = "dbgpt"
 APP_ID="{YOUR_APP_ID}"
@@ -95,8 +95,8 @@ curl -X GET "http://localhost:5670/api/v2/serve/apps/$APP_ID" -H "Authorization:
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.app import get_app
+from dbgpt_client import Client
+from dbgpt_client.app import get_app
 
 DBGPT_API_KEY = "dbgpt"
 app_id = "{your_app_id}"
@@ -147,8 +147,8 @@ curl -X GET 'http://localhost:5670/api/v2/serve/apps' -H "Authorization: Bearer 
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.app import list_app
+from dbgpt_client import Client
+from dbgpt_client.app import list_app
 
 DBGPT_API_KEY = "dbgpt"
 app_id = "{your_app_id}"

@@ -9,7 +9,7 @@ from dbgpt_ext.storage.full_text.elasticsearch import (
 )
 
 from dbgpt.configs.model_config import ROOT_PATH
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 """Keyword rag example.
     pre-requirements:

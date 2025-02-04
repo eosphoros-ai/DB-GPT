@@ -16,7 +16,7 @@ from dbgpt.rag.evaluation.retriever import (
     RetrieverMRRMetric,
     RetrieverSimilarityMetric,
 )
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 
 def _create_embeddings(
