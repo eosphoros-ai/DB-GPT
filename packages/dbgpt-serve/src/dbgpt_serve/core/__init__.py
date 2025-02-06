@@ -2,7 +2,6 @@ from typing import Any
 
 from dbgpt.util.executor_utils import BlockingFunction, DefaultExecutorFactory
 from dbgpt.util.executor_utils import blocking_func_to_async as _blocking_func_to_async
-
 from dbgpt_serve.core.config import BaseServeConfig as BaseServeConfig
 from dbgpt_serve.core.schemas import (  # noqa: F401
     ResourceParameters,

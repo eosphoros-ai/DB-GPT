@@ -5,7 +5,6 @@ from dbgpt.core.interface.message import AIMessage, ViewMessage
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.json_utils import EnhancedJSONEncoder
 from dbgpt.util.tracer import trace
-
 from dbgpt_app.scene import BaseChat, ChatScene
 
 

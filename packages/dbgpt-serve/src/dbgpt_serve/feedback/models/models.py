@@ -5,8 +5,9 @@ You can define your own models and DAOs here
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from dbgpt.storage.metadata import BaseDao, Model
 from sqlalchemy import Column, DateTime, Index, Integer, String, Text
+
+from dbgpt.storage.metadata import BaseDao, Model
 
 from ..api.schemas import ConvFeedbackReasonType, ServeRequest, ServerResponse
 from ..config import ServeConfig

@@ -1,14 +1,14 @@
 import logging
 from typing import List, Optional, Union
 
+from sqlalchemy import URL
+
 from dbgpt.component import SystemApp
 from dbgpt.core.interface.variables import (
     FernetEncryption,
     StorageVariablesProvider,
 )
 from dbgpt.storage.metadata import DatabaseManager
-from sqlalchemy import URL
-
 from dbgpt_serve.core import BaseServe
 
 from .api.endpoints import init_endpoints, router

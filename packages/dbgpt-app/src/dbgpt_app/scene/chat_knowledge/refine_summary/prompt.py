@@ -1,6 +1,5 @@
 from dbgpt._private.config import Config
 from dbgpt.core import ChatPromptTemplate, HumanPromptTemplate
-
 from dbgpt_app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt_app.scene.chat_knowledge.refine_summary.out_parser import (
     ExtractRefineSummaryParser,

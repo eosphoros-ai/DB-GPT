@@ -6,9 +6,9 @@ import zipfile
 
 import aiofiles
 import tomlkit
-from dbgpt.component import SystemApp
 from fastapi import UploadFile
 
+from dbgpt.component import SystemApp
 from dbgpt_serve.core import blocking_func_to_async
 
 from ..api.schemas import ServeRequest

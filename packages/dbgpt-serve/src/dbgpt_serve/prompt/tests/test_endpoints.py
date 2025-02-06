@@ -1,10 +1,10 @@
 import pytest
-from dbgpt.component import SystemApp
-from dbgpt.storage.metadata import db
-from dbgpt.util import PaginationResult
 from fastapi import FastAPI
 from httpx import AsyncClient
 
+from dbgpt.component import SystemApp
+from dbgpt.storage.metadata import db
+from dbgpt.util import PaginationResult
 from dbgpt_serve.core.tests.conftest import asystem_app, client  # noqa: F401
 
 from ..api.endpoints import init_endpoints, router

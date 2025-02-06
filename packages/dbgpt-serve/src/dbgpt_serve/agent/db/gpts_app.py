@@ -6,6 +6,17 @@ from enum import Enum
 from itertools import groupby
 from typing import Any, Dict, List, Optional, Union
 
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    or_,
+)
+
 from dbgpt._private.pydantic import (
     BaseModel,
     ConfigDict,
@@ -18,17 +29,6 @@ from dbgpt.agent.resource.base import AgentResource, ResourceType
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt_app.openapi.api_view_model import ConversationVo
 from dbgpt_app.scene import ChatScene
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Index,
-    Integer,
-    String,
-    Text,
-    UniqueConstraint,
-    or_,
-)
-
 from dbgpt_serve.agent.app.recommend_question.recommend_question import (
     RecommendQuestion,
     RecommendQuestionDao,

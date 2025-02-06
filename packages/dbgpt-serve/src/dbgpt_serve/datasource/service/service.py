@@ -1,6 +1,8 @@
 import logging
 from typing import List, Optional, Union
 
+from fastapi import HTTPException
+
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import model_to_dict
 from dbgpt.component import ComponentType, SystemApp
@@ -9,8 +11,6 @@ from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt_ext.datasource.schema import DBType
-from fastapi import HTTPException
-
 from dbgpt_serve.core import BaseService, ResourceTypes
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.datasource.manages.connect_config_db import (

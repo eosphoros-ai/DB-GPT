@@ -5,7 +5,6 @@ from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util.pagination_utils import PaginationResult
-
 from dbgpt_serve.core import BaseService
 
 from ..api.schemas import ServeRequest, ServerResponse

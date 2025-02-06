@@ -3,7 +3,6 @@ import logging
 from typing import List
 
 from dbgpt._private.config import Config
-
 from dbgpt_app.scene.chat_dashboard.data_preparation.report_schma import ValueItem
 
 CFG = Config()

@@ -48,7 +48,6 @@ Example:
 import asyncio
 
 from dbgpt_client import Client
-
 from dbgpt_client.datasource import list_datasource
 
 

@@ -1,8 +1,9 @@
 import logging
 from typing import Optional
 
-from dbgpt._private.pydantic import BaseModel
 from fastapi import Header
+
+from dbgpt._private.pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

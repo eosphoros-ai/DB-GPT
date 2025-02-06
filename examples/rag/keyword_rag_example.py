@@ -1,15 +1,14 @@
 import asyncio
 import os
 
+from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt_ext.storage.full_text.elasticsearch import (
     ElasticDocumentConfig,
     ElasticDocumentStore,
 )
-
-from dbgpt.configs.model_config import ROOT_PATH
-from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 """Keyword rag example.
     pre-requirements:

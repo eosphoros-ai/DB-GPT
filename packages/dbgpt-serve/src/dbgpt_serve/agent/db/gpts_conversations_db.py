@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from dbgpt.storage.metadata import BaseDao, Model
 from sqlalchemy import (
     Column,
     DateTime,
@@ -12,6 +11,8 @@ from sqlalchemy import (
     desc,
 )
 from sqlalchemy.orm import Query
+
+from dbgpt.storage.metadata import BaseDao, Model
 
 
 class GptsConversationsEntity(Model):

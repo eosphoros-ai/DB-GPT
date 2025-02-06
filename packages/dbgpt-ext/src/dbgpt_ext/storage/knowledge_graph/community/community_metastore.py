@@ -6,7 +6,6 @@ from typing import List, Optional
 from dbgpt.core import Chunk
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.storage.vector_store.base import VectorStoreBase
-
 from dbgpt_ext.storage.knowledge_graph.community.base import (
     Community,
     CommunityMetastore,

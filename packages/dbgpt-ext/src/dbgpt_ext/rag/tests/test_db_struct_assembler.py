@@ -1,8 +1,9 @@
 from typing import List
 from unittest.mock import MagicMock, patch
 
-import dbgpt
 import pytest
+
+import dbgpt
 from dbgpt.core import Chunk
 from dbgpt_ext.rag.retriever.db_schema import DBSchemaRetriever
 

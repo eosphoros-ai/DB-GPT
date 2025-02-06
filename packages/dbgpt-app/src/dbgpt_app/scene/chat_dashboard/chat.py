@@ -6,7 +6,6 @@ from typing import Dict, List
 from dbgpt._private.config import Config
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
-
 from dbgpt_app.scene import BaseChat, ChatScene
 from dbgpt_app.scene.chat_dashboard.data_loader import DashboardDataLoader
 from dbgpt_app.scene.chat_dashboard.data_preparation.report_schma import (

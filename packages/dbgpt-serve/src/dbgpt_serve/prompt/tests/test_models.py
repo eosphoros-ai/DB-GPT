@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+
 from dbgpt.storage.metadata import db
 
 from ..api.schemas import ServeRequest, ServerResponse

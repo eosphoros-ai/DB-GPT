@@ -4,11 +4,10 @@ import re
 import time
 from typing import Dict, List
 
-from dbgpt._private.config import Config
-from dbgpt.core.interface.message import OnceConversation
-from dbgpt_serve.conversation.serve import Serve as ConversationServe
 from fastapi import APIRouter, Body, Depends
 
+from dbgpt._private.config import Config
+from dbgpt.core.interface.message import OnceConversation
 from dbgpt_app.openapi.api_v1.editor._chat_history.chat_hisotry_factory import (
     ChatHistory,
 )
@@ -28,6 +27,7 @@ from dbgpt_app.openapi.editor_view_model import (
 )
 from dbgpt_app.scene import ChatFactory
 from dbgpt_app.scene.chat_dashboard.data_loader import DashboardDataLoader
+from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
 router = APIRouter()
 CFG = Config()

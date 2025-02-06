@@ -4,7 +4,6 @@ from typing import Generic, Optional
 from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.storage.metadata._base_dao import REQ, RES, BaseDao, T
-
 from dbgpt_serve.core.config import BaseServeConfig
 
 

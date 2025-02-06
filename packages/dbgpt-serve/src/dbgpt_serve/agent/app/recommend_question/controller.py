@@ -1,8 +1,8 @@
 import logging
 
-from dbgpt_app.openapi.api_view_model import Result
 from fastapi import APIRouter, Depends
 
+from dbgpt_app.openapi.api_view_model import Result
 from dbgpt_serve.agent.app.recommend_question.recommend_question import (
     RecommendQuestion,
     RecommendQuestionDao,

@@ -4,12 +4,12 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk
+from dbgpt.rag.knowledge.base import Knowledge
+from dbgpt.rag.retriever.base import BaseRetriever
+from dbgpt.rag.transformer.base import ExtractorBase
 from dbgpt.util.tracer import root_tracer
 
 from ..chunk_manager import ChunkManager, ChunkParameters
-from dbgpt.rag.transformer.base import ExtractorBase
-from dbgpt.rag.knowledge.base import Knowledge
-from dbgpt.rag.retriever.base import BaseRetriever
 
 
 class BaseAssembler(ABC):

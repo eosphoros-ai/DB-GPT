@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import List
 
 import pytz
-from dbgpt.storage.metadata import BaseDao, Model
 from sqlalchemy import (
     DDL,
     Column,
@@ -14,6 +13,7 @@ from sqlalchemy import (
     func,
 )
 
+from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt_serve.agent.hub.model.model import PluginHubVO
 
 # TODO We should consider that the production environment does not have permission to

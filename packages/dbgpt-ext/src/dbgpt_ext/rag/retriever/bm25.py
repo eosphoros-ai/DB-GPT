@@ -4,14 +4,13 @@ import json
 from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import Any, List, Optional
 
-from dbgpt_app.base import logger
-
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import blocking_func_to_async
+from dbgpt_app.base import logger
 
 
 class BM25Retriever(BaseRetriever):

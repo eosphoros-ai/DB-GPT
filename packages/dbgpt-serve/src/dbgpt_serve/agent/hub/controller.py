@@ -2,13 +2,13 @@ import logging
 from abc import ABC
 from typing import List
 
+from fastapi import APIRouter, Body, File, UploadFile
+
 from dbgpt.agent.resource.tool.autogpt.plugins_util import scan_plugins
 from dbgpt.agent.resource.tool.pack import AutoGPTPluginToolPack
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.configs.model_config import PLUGINS_DIR
 from dbgpt_app.openapi.api_view_model import Result
-from fastapi import APIRouter, Body, File, UploadFile
-
 from dbgpt_serve.agent.hub.plugin_hub import plugin_hub
 from dbgpt_serve.agent.model import (
     PagenationFilter,

@@ -6,8 +6,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from dbgpt.storage.metadata import BaseDao, Model
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
+
+from dbgpt.storage.metadata import BaseDao, Model
 
 from ..api.schemas import ServeRequest, ServerResponse
 from ..config import ServeConfig

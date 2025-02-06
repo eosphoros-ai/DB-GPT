@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from sqlalchemy import Column, DateTime, Integer, String, Text
 
 from dbgpt._private.pydantic import model_to_dict
 from dbgpt.storage.metadata import BaseDao, Model
+from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_serve.rag.api.schemas import SpaceServeRequest, SpaceServeResponse
 
 

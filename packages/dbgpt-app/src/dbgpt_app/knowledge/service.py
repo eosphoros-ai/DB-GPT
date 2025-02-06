@@ -5,19 +5,6 @@ import timeit
 from datetime import datetime
 from typing import List
 
-from dbgpt_ext.rag.assembler.summary import SummaryAssembler
-from dbgpt_ext.rag.chunk_manager import ChunkParameters
-from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
-from dbgpt_serve.rag.connector import VectorStoreConnector
-from dbgpt_serve.rag.models.chunk_db import DocumentChunkDao, DocumentChunkEntity
-from dbgpt_serve.rag.models.document_db import (
-    KnowledgeDocumentDao,
-    KnowledgeDocumentEntity,
-)
-from dbgpt_serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
-from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
-from dbgpt_serve.rag.service.service import SyncStatus
-
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.configs import DOMAIN_TYPE_FINANCIAL_REPORT
@@ -46,6 +33,18 @@ from dbgpt_app.knowledge.request.response import (
     DocumentResponse,
     SpaceQueryResponse,
 )
+from dbgpt_ext.rag.assembler.summary import SummaryAssembler
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
+from dbgpt_serve.rag.connector import VectorStoreConnector
+from dbgpt_serve.rag.models.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from dbgpt_serve.rag.models.document_db import (
+    KnowledgeDocumentDao,
+    KnowledgeDocumentEntity,
+)
+from dbgpt_serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
+from dbgpt_serve.rag.service.service import SyncStatus
 
 knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()

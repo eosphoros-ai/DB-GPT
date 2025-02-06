@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 from chromadb import PersistentClient
 from chromadb.api.client import SharedSystemClient
 from chromadb.config import Settings
+
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import Chunk

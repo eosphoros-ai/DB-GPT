@@ -6,12 +6,13 @@ import json
 from datetime import datetime
 from typing import Any, Dict, Union
 
+from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
+
 from dbgpt._private.pydantic import model_to_dict
 from dbgpt.core.awel.flow.flow_factory import State
 from dbgpt.core.interface.variables import StorageVariablesProvider
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
-from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
 from ..api.schemas import (
     ServeRequest,

@@ -4,19 +4,6 @@ import shutil
 import tempfile
 from typing import List
 
-from dbgpt_ext.rag import ChunkParameters
-from dbgpt_ext.rag.chunk_manager import ChunkStrategy
-from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
-from dbgpt_serve.rag.api.schemas import (
-    ChunkServeRequest,
-    DocumentServeRequest,
-    KnowledgeConfigResponse,
-    KnowledgeDomainType,
-    KnowledgeStorageType,
-    KnowledgeSyncRequest,
-)
-from dbgpt_serve.rag.connector import VectorStoreConnector
-from dbgpt_serve.rag.service.service import Service
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from dbgpt._private.config import Config
@@ -52,6 +39,19 @@ from dbgpt_app.knowledge.request.response import (
 from dbgpt_app.knowledge.service import KnowledgeService
 from dbgpt_app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
 from dbgpt_app.openapi.api_view_model import Result
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.chunk_manager import ChunkStrategy
+from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
+from dbgpt_serve.rag.api.schemas import (
+    ChunkServeRequest,
+    DocumentServeRequest,
+    KnowledgeConfigResponse,
+    KnowledgeDomainType,
+    KnowledgeStorageType,
+    KnowledgeSyncRequest,
+)
+from dbgpt_serve.rag.connector import VectorStoreConnector
+from dbgpt_serve.rag.service.service import Service
 
 logger = logging.getLogger(__name__)
 

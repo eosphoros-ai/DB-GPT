@@ -22,7 +22,6 @@ from dbgpt.core import LLMClient, PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt_app.component_configs import CFG
-
 from dbgpt_serve.prompt.api.endpoints import get_service
 
 from ..db import GptsMessagesDao

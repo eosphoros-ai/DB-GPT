@@ -5,7 +5,6 @@ import json
 
 from dbgpt._private.config import Config
 from dbgpt.core.interface.prompt import PromptTemplate
-
 from dbgpt_app.scene import ChatScene
 from dbgpt_app.scene.chat_db.auto_execute.out_parser import DbChatOutputParser
 

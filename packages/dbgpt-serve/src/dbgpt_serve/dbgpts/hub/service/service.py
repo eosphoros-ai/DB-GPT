@@ -5,7 +5,6 @@ from typing import List, Optional, Tuple
 from dbgpt.component import SystemApp
 from dbgpt.util.dbgpts.repo import _install_default_repos_if_no_repos, list_dbgpts
 from dbgpt.util.pagination_utils import PaginationResult
-
 from dbgpt_serve.core import BaseService
 
 from ..api.schemas import ServeRequest, ServerResponse

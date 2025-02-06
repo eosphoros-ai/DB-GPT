@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from pydantic import field_validator
+
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
 T = TypeVar("T")
 

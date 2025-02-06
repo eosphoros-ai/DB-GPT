@@ -23,11 +23,10 @@ Examples:
 import asyncio
 import os
 
-from dbgpt_ext.rag import ChunkParameters
-from dbgpt_ext.rag.assembler import SummaryAssembler
-
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.model.proxy import OpenAILLMClient
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.assembler import SummaryAssembler
 from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 

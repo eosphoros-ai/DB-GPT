@@ -9,7 +9,6 @@ from dbgpt.datasource.base import BaseConnector, BaseDatasourceParameters
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 from dbgpt_ext.datasource.schema import DBType
-
 from dbgpt_serve.core import ResourceParameters, ResourceTypes
 
 from ..api.schemas import DatasourceCreateRequest

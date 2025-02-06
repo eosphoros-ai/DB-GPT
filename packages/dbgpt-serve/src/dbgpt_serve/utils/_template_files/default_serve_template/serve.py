@@ -1,10 +1,11 @@
 import logging
 from typing import List, Optional, Union
 
+from sqlalchemy import URL
+
 from dbgpt.component import SystemApp
 from dbgpt.storage.metadata import DatabaseManager
 from dbgpt_serve.core import BaseServe
-from sqlalchemy import URL
 
 from .api.endpoints import init_endpoints, router
 from .config import (  # noqa: F401

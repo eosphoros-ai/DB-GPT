@@ -8,11 +8,12 @@ from dbgpt.core import Chunk
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
-from ..summary.rdbms_db_summary import _parse_db_summary
 from dbgpt.storage.vector_store.base import VectorStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilter, MetadataFilters
 from dbgpt.util.chat_util import run_tasks
 from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
+
+from ..summary.rdbms_db_summary import _parse_db_summary
 
 logger = logging.getLogger(__name__)
 

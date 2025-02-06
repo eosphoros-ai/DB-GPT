@@ -1,6 +1,5 @@
 from dbgpt.util.singleton import Singleton
 from dbgpt.util.tracer import root_tracer
-
 from dbgpt_app.scene.base_chat import BaseChat
 
 

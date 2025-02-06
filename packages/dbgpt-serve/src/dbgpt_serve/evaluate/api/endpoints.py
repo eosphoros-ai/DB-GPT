@@ -2,11 +2,11 @@ import logging
 from functools import cache
 from typing import List, Optional
 
-from dbgpt.component import ComponentType, SystemApp
-from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
+from dbgpt.component import ComponentType, SystemApp
+from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt_serve.core import Result
 from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest
 from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME

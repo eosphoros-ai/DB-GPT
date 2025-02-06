@@ -8,10 +8,6 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional, cast
 
-from dbgpt_app.knowledge.request.request import BusinessFieldType
-from dbgpt_ext.rag.assembler import EmbeddingAssembler
-from dbgpt_ext.rag.chunk_manager import ChunkParameters
-from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from fastapi import HTTPException
 
 from dbgpt._private.config import Config
@@ -34,6 +30,10 @@ from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.string_utils import remove_trailing_punctuation
 from dbgpt.util.tracer import root_tracer, trace
+from dbgpt_app.knowledge.request.request import BusinessFieldType
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt_serve.core import BaseService
 from dbgpt_serve.rag.connector import VectorStoreConnector
 

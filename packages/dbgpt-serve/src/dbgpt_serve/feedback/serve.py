@@ -1,10 +1,10 @@
 import logging
 from typing import List, Optional, Union
 
-from dbgpt.component import SystemApp
-from dbgpt.storage.metadata import DatabaseManager
 from sqlalchemy import URL
 
+from dbgpt.component import SystemApp
+from dbgpt.storage.metadata import DatabaseManager
 from dbgpt_serve.core import BaseServe
 
 from .api.endpoints import init_endpoints, router

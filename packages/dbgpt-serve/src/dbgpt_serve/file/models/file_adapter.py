@@ -1,9 +1,10 @@
 import json
 from typing import Type
 
+from sqlalchemy.orm import Session
+
 from dbgpt.core.interface.file import FileMetadata, FileMetadataIdentifier
 from dbgpt.core.interface.storage import StorageItemAdapter
-from sqlalchemy.orm import Session
 
 from .models import ServeEntity
 

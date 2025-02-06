@@ -3,6 +3,7 @@ import threading
 import time
 
 import schedule
+
 from dbgpt.component import BaseComponent, SystemApp
 
 logger = logging.getLogger(__name__)

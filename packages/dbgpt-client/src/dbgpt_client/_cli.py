@@ -8,6 +8,7 @@ import uuid
 from typing import Any, AsyncIterator, Callable, Dict, Tuple, cast
 
 import click
+
 from dbgpt.component import SystemApp
 from dbgpt.core.awel import DAG, BaseOperator, DAGVar
 from dbgpt.core.awel.dag.dag_manager import DAGMetadata, _parse_metadata

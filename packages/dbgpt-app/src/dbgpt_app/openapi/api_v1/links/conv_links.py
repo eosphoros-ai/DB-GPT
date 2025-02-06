@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
-from dbgpt.storage.metadata import BaseDao, Model
 from pydantic import BaseModel, Field
 from sqlalchemy import BigInteger, Column, DateTime, String
+
+from dbgpt.storage.metadata import BaseDao, Model
 
 
 class ConvLinksEntity(Model):

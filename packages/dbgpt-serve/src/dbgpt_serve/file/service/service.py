@@ -1,12 +1,12 @@
 import logging
 from typing import BinaryIO, List, Optional, Tuple
 
+from fastapi import HTTPException, UploadFile
+
 from dbgpt.component import SystemApp
 from dbgpt.core.interface.file import FileMetadata, FileStorageClient, FileStorageURI
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util.tracer import trace
-from fastapi import HTTPException, UploadFile
-
 from dbgpt_serve.core import BaseService
 
 from ..api.schemas import (

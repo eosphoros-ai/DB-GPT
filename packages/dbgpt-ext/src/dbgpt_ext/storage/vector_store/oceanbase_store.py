@@ -8,6 +8,10 @@ import uuid
 from typing import Any, List, Optional, Tuple
 
 import numpy as np
+from pydantic import Field
+from sqlalchemy import JSON, Column, String, Table, func, text
+from sqlalchemy.dialects.mysql import LONGTEXT
+
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -17,9 +21,6 @@ from dbgpt.storage.vector_store.base import (
 )
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
 from dbgpt.util.i18n_utils import _
-from pydantic import Field
-from sqlalchemy import JSON, Column, String, Table, func, text
-from sqlalchemy.dialects.mysql import LONGTEXT
 
 logger = logging.getLogger(__name__)
 

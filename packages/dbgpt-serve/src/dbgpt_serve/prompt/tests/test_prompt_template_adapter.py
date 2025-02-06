@@ -1,4 +1,5 @@
 import pytest
+
 from dbgpt.core.interface.prompt import PromptManager, PromptTemplate
 from dbgpt.storage.metadata import db
 from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage

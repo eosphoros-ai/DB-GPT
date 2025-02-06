@@ -1,11 +1,11 @@
 from functools import cache
 from typing import List, Optional
 
-from dbgpt.component import SystemApp
-from dbgpt.util import PaginationResult
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
+from dbgpt.component import SystemApp
+from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result
 
 from ..config import SERVE_SERVICE_COMPONENT_NAME

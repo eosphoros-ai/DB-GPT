@@ -4,14 +4,14 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
-
-from dbgpt.util.executor_utils import blocking_func_to_async
-from ..assembler.base import BaseAssembler
-from ..chunk_manager import ChunkParameters
-from dbgpt.storage.base import IndexStoreBase
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.retriever import BaseRetriever, RetrieverStrategy
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+from dbgpt.storage.base import IndexStoreBase
+from dbgpt.util.executor_utils import blocking_func_to_async
+
+from ..assembler.base import BaseAssembler
+from ..chunk_manager import ChunkParameters
 
 
 class EmbeddingAssembler(BaseAssembler):

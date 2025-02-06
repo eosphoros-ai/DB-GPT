@@ -1,9 +1,6 @@
 from functools import cache
 from typing import List, Optional, Union
 
-from dbgpt.component import SystemApp
-from dbgpt_ext.rag.chunk_manager import ChunkParameters
-from dbgpt.util import PaginationResult
 from fastapi import (
     APIRouter,
     Depends,
@@ -14,6 +11,9 @@ from fastapi import (
 )
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
+from dbgpt.component import SystemApp
+from dbgpt.util import PaginationResult
+from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt_serve.core import Result
 from dbgpt_serve.rag.api.schemas import (
     DocumentServeRequest,

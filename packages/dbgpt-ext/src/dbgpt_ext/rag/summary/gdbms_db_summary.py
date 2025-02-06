@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from dbgpt._private.config import Config
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.summary.db_summary import DBSummary
-
 from dbgpt_ext.datasource.conn_tugraph import TuGraphConnector
 
 if TYPE_CHECKING:

@@ -1,8 +1,8 @@
+from fastapi import APIRouter
+
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.model.cluster import WorkerManagerFactory, WorkerStartupRequest
-from fastapi import APIRouter
-
 from dbgpt_app.llm_manage.request.request import ModelResponse
 from dbgpt_app.openapi.api_view_model import Result
 

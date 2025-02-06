@@ -1,13 +1,13 @@
 import logging
 from typing import List, Optional
 
+from fastapi import APIRouter, Depends
+
 from dbgpt._private.config import Config
 from dbgpt.agent.core.agent_manage import get_agent_manager
 from dbgpt.agent.resource.manage import get_resource_manager
 from dbgpt.agent.util.llm.llm import LLMStrategyType
 from dbgpt_app.openapi.api_view_model import Result
-from fastapi import APIRouter, Depends
-
 from dbgpt_serve.agent.app.gpts_server import available_llms
 from dbgpt_serve.agent.db.gpts_app import (
     GptsApp,

@@ -12,9 +12,9 @@ from dbgpt.core import (
 )
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.storage.base import IndexStoreBase
+from dbgpt.util.chat_util import run_async_tasks
 from dbgpt_ext.rag.schemalinker.base_linker import BaseSchemaLinker
 from dbgpt_ext.rag.summary.rdbms_db_summary import _parse_db_summary
-from dbgpt.util.chat_util import run_async_tasks
 
 INSTRUCTION = """
 You need to filter out the most relevant database table schema information (it may be a

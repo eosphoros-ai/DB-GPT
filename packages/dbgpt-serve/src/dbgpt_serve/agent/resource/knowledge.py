@@ -8,7 +8,6 @@ from dbgpt.agent.resource.knowledge import (
     RetrieverResourceParameters,
 )
 from dbgpt.util import ParameterDescription
-
 from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 
 CFG = Config()

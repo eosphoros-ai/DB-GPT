@@ -5,7 +5,6 @@ from dbgpt.core import (
     MessagesPlaceholder,
     SystemPromptTemplate,
 )
-
 from dbgpt_app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt_app.scene.chat_db.professional_qa.out_parser import NormalChatOutputParser
 

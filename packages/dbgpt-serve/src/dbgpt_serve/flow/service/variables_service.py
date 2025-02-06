@@ -17,7 +17,6 @@ from dbgpt.core.interface.variables import (
 )
 from dbgpt.util import PaginationResult
 from dbgpt.util.i18n_utils import _
-
 from dbgpt_serve.core import BaseService, blocking_func_to_async
 
 from ..api.schemas import VariablesKeyResponse, VariablesRequest, VariablesResponse

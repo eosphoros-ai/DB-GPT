@@ -3,10 +3,10 @@ import os
 from typing import Optional
 
 import click
+
 from dbgpt.configs.model_config import LOGDIR
 from dbgpt.util.command_utils import _run_current_with_daemon, _stop_service
 from dbgpt.util.parameter_utils import EnvArgumentParser
-
 from dbgpt_app.base import WebServerParameters
 
 
@@ -273,7 +273,6 @@ def _get_migration_config(
 ):
     from dbgpt.storage.metadata.db_manager import db as db_manager
     from dbgpt.util._db_migration_utils import create_alembic_config
-
     from dbgpt_app.base import _initialize_db
     from dbgpt_app.initialization.db_model_initialization import _MODELS  # noqa: F401
 

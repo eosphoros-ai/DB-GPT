@@ -18,7 +18,6 @@ from dbgpt.rag.evaluation.answer import AnswerRelevancyMetric
 from dbgpt.rag.evaluation.retriever import RetrieverSimilarityMetric
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.vector_store.base import VectorStoreConfig
-
 from dbgpt_serve.rag.operators.knowledge_space import SpaceRetrieverOperator
 
 from ...agent.agents.controller import multi_agents

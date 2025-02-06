@@ -2,7 +2,6 @@ import json
 
 from dbgpt._private.config import Config
 from dbgpt.core import ChatPromptTemplate, HumanPromptTemplate, SystemPromptTemplate
-
 from dbgpt_app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt_app.scene.chat_dashboard.out_parser import ChatDashboardOutputParser
 

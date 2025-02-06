@@ -511,9 +511,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         ]
         context = "\n".join(summaries) if summaries else ""
 
-        subgraph, (
-            subgraph_for_doc,
-            text2gql_query,
+        (
+            subgraph,
+            (
+                subgraph_for_doc,
+                text2gql_query,
+            ),
         ) = await self._graph_retriever.retrieve(text)
 
         knowledge_graph_str = subgraph.format() if subgraph else ""

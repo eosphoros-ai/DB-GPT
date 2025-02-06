@@ -2,9 +2,10 @@
 
 from typing import Any, Callable, Dict, List
 
+from httpx import AsyncClient
+
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
 from dbgpt.core.schema.api import Result
-from httpx import AsyncClient
 
 from .client import Client, ClientException
 

@@ -6,7 +6,6 @@ from dbgpt.core import (
     HumanPromptTemplate,
     SystemPromptTemplate,
 )
-
 from dbgpt_app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt_app.scene.chat_data.chat_excel.excel_learning.out_parser import (
     LearningExcelOutputParser,

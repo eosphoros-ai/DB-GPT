@@ -6,11 +6,10 @@ import traceback
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
-from dbgpt_ext.rag import ChunkParameters
-from dbgpt_ext.rag.summary.rdbms_db_summary import RdbmsSummary
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.summary.gdbms_db_summary import GdbmsSummary
-
+from dbgpt_ext.rag.summary.rdbms_db_summary import RdbmsSummary
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
 logger = logging.getLogger(__name__)
@@ -97,7 +96,6 @@ class DBSummaryClient:
         """
         vector_store_name = dbname + "_profile"
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-
         from dbgpt_serve.rag.connector import VectorStoreConnector
 
         table_vector_store_config = VectorStoreConfig(name=vector_store_name)
@@ -131,7 +129,6 @@ class DBSummaryClient:
         table_vector_store_name = dbname + "_profile"
         field_vector_store_name = dbname + "_profile_field"
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-
         from dbgpt_serve.rag.connector import VectorStoreConnector
 
         table_vector_store_config = VectorStoreConfig(name=vector_store_name)

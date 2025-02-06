@@ -8,11 +8,11 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from fastapi import UploadFile
+
 from dbgpt.agent.core.schema import PluginStorageType
 from dbgpt.agent.resource.tool.autogpt.plugins_util import scan_plugins, update_from_git
 from dbgpt.configs.model_config import PLUGINS_DIR
-from fastapi import UploadFile
-
 from dbgpt_serve.agent.hub.db.my_plugin_db import MyPluginDao, MyPluginEntity
 from dbgpt_serve.agent.hub.db.plugin_hub_db import PluginHubDao, PluginHubEntity
 

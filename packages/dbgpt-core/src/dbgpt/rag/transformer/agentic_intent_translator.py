@@ -1,4 +1,5 @@
 """Agentic IntentTranslator class."""
+
 import logging
 
 from dbgpt.rag.transformer.base import TranslatorBase

@@ -12,8 +12,6 @@ from dbgpt.core.interface.message import (
     StorageConversation,
     _split_messages_by_round,
 )
-from dbgpt_serve.conversation.serve import Serve as ConversationServe
-
 from dbgpt_app.openapi.api_view_model import Result
 from dbgpt_app.openapi.editor_view_model import (
     ChartDetail,
@@ -21,6 +19,7 @@ from dbgpt_app.openapi.editor_view_model import (
     ChatDbRounds,
     ChatSqlEditContext,
 )
+from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
 if TYPE_CHECKING:
     from dbgpt.datasource.base import BaseConnect

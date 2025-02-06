@@ -1,4 +1,5 @@
 """Text2GQL class."""
+
 import json
 import logging
 import re

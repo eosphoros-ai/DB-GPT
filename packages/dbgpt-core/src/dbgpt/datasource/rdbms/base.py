@@ -23,7 +23,6 @@ from urllib.parse import quote_plus as urlquote
 
 import sqlalchemy
 import sqlparse
-from dbgpt_ext.datasource.schema import DBType
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
@@ -33,6 +32,7 @@ from sqlalchemy.schema import CreateTable
 
 from dbgpt.datasource.base import BaseConnector
 from dbgpt.util.i18n_utils import _
+from dbgpt_ext.datasource.schema import DBType
 
 from ..parameter import BaseDatasourceParameters
 

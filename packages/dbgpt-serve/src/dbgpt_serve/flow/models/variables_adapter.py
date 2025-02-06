@@ -1,8 +1,9 @@
 from typing import Type
 
+from sqlalchemy.orm import Session
+
 from dbgpt.core.interface.storage import StorageItemAdapter
 from dbgpt.core.interface.variables import StorageVariables, VariablesIdentifier
-from sqlalchemy.orm import Session
 
 from .models import VariablesEntity
 

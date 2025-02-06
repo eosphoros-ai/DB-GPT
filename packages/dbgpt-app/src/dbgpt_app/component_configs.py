@@ -7,7 +7,6 @@ from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import MODEL_DISK_CACHE_DIR
 from dbgpt.util.executor_utils import DefaultExecutorFactory
-
 from dbgpt_app.base import WebServerParameters
 
 logger = logging.getLogger(__name__)
@@ -25,14 +24,13 @@ def initialize_components(
 ):
     # Lazy import to avoid high time cost
     from dbgpt.model.cluster.controller.controller import controller
-    from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
-
     from dbgpt_app.initialization.embedding_component import (
         _initialize_embedding_model,
         _initialize_rerank_model,
     )
     from dbgpt_app.initialization.scheduler import DefaultScheduler
     from dbgpt_app.initialization.serve_initialization import register_serve_apps
+    from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
 
     # Register global default executor factory first
     system_app.register(
@@ -137,8 +135,6 @@ def _initialize_openapi(system_app: SystemApp):
 
 
 def _initialize_operators():
-    from dbgpt_serve.agent.resource.datasource import DatasourceResource  # noqa: F401
-
     from dbgpt_app.operators.code import CodeMapOperator  # noqa: F401
     from dbgpt_app.operators.converter import StringToInteger  # noqa: F401
     from dbgpt_app.operators.datasource import (  # noqa: F401
@@ -150,6 +146,7 @@ def _initialize_operators():
         HOStreamingLLMOperator,
     )
     from dbgpt_app.operators.rag import HOKnowledgeOperator  # noqa: F401
+    from dbgpt_serve.agent.resource.datasource import DatasourceResource  # noqa: F401
 
 
 def _initialize_code_server(system_app: SystemApp):

@@ -5,9 +5,9 @@ import logging
 from typing import Dict, List, Tuple, Union
 
 from dbgpt.rag.transformer.simple_intent_translator import SimpleIntentTranslator
-from dbgpt_ext.rag.transformer.text2gql import Text2GQL
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 from dbgpt_ext.rag.retriever.graph_retriever.base import GraphRetrieverBase
+from dbgpt_ext.rag.transformer.text2gql import Text2GQL
 
 logger = logging.getLogger(__name__)
 

@@ -52,3 +52,7 @@ line-ending = "auto"
 [tool.ruff.lint]
 # Enable: eror check, import order
 select = ["E", "F", "I"]
+
+[tool.ruff.isort]
+# Specify the local modules (first-party)
+known-first-party = ["dbgpt", "dbgpt_accelerator", "dbgpt_client", "dbgpt_ext", "dbgpt_serve", "dbgpt_app"]

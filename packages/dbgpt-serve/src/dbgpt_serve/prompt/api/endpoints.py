@@ -2,12 +2,12 @@ import logging
 from functools import cache
 from typing import List, Optional
 
-from dbgpt.component import SystemApp
-from dbgpt.util import PaginationResult
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import StreamingResponse
 
+from dbgpt.component import SystemApp
+from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result
 
 from ..config import SERVE_SERVICE_COMPONENT_NAME

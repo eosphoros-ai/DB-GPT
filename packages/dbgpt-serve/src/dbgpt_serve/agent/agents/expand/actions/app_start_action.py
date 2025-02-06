@@ -4,7 +4,6 @@ from typing import Optional
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.agent import Action, ActionOutput, AgentResource
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
-
 from dbgpt_serve.agent.agents.expand.actions.intent_recognition_action import (
     IntentRecognitionInput,
 )

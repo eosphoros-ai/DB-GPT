@@ -2,6 +2,12 @@ import os
 import sys
 from typing import List
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# fastapi import time cost about 0.05s
+from fastapi.staticfiles import StaticFiles
+
 from dbgpt._private.config import Config
 from dbgpt._version import version
 from dbgpt.component import SystemApp
@@ -22,13 +28,6 @@ from dbgpt.util.utils import (
     setup_http_service_logging,
     setup_logging,
 )
-from dbgpt_serve.core import add_exception_handler
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-# fastapi import time cost about 0.05s
-from fastapi.staticfiles import StaticFiles
-
 from dbgpt_app.base import (
     WebServerParameters,
     _create_model_start_listener,
@@ -38,6 +37,7 @@ from dbgpt_app.base import (
 
 # initialize_components import time cost about 0.1s
 from dbgpt_app.component_configs import initialize_components
+from dbgpt_serve.core import add_exception_handler
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -64,9 +64,6 @@ system_app = SystemApp(app)
 
 def mount_routers(app: FastAPI):
     """Lazy import to avoid high time cost"""
-    from dbgpt_serve.agent.app.controller import router as gpts_v1
-    from dbgpt_serve.agent.app.endpoints import router as app_v2
-
     from dbgpt_app.knowledge.api import router as knowledge_router
     from dbgpt_app.llm_manage.api import router as llm_manage_api
     from dbgpt_app.openapi.api_v1.api_v1 import router as api_v1
@@ -75,6 +72,8 @@ def mount_routers(app: FastAPI):
     )
     from dbgpt_app.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
     from dbgpt_app.openapi.api_v2 import router as api_v2
+    from dbgpt_serve.agent.app.controller import router as gpts_v1
+    from dbgpt_serve.agent.app.endpoints import router as app_v2
 
     app.include_router(api_v1, prefix="/api", tags=["Chat"])
     app.include_router(api_v2, prefix="/api", tags=["ChatV2"])

@@ -7,7 +7,6 @@ from dbgpt.agent.resource.pack import PackResourceParameters
 from dbgpt.agent.resource.tool.pack import ToolPack
 from dbgpt.component import ComponentType
 from dbgpt.util.parameter_utils import ParameterDescription
-
 from dbgpt_serve.agent.hub.controller import ModulePlugin
 
 CFG = Config()

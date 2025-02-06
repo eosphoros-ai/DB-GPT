@@ -1,9 +1,9 @@
 from typing import List
 
 import pytest
+
 from dbgpt.component import SystemApp
 from dbgpt.storage.metadata import db
-
 from dbgpt_serve.core.tests.conftest import system_app  # noqa: F401
 
 from ..api.schemas import ServeRequest, ServerResponse

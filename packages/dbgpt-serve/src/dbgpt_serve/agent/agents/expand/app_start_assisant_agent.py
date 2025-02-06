@@ -11,7 +11,6 @@ from dbgpt.agent import (
 )
 from dbgpt.agent.core.memory.gpts import GptsMessage
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
-
 from dbgpt_serve.agent.agents.expand.actions.app_start_action import StartAppAction
 
 logger = logging.getLogger()

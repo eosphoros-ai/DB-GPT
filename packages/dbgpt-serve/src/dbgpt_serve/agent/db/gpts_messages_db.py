@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
 
-from dbgpt.storage.metadata import BaseDao, Model
 from sqlalchemy import (
     Boolean,
     Column,
@@ -14,6 +13,8 @@ from sqlalchemy import (
     desc,
     or_,
 )
+
+from dbgpt.storage.metadata import BaseDao, Model
 
 
 class GptsMessagesEntity(Model):

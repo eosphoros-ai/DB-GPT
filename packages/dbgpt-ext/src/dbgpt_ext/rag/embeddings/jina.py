@@ -1,9 +1,10 @@
 """Jina Embeddings module."""
+
 from typing import Any, List
 
+from dbgpt._private.pydantic import BaseModel, ConfigDict
 from dbgpt.core import Embeddings
 from dbgpt.rag.embedding.embeddings import _handle_request_result
-from dbgpt._private.pydantic import BaseModel, ConfigDict
 
 
 class JinaEmbeddings(BaseModel, Embeddings):

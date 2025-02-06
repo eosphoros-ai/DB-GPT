@@ -11,7 +11,6 @@ from dbgpt.storage.full_text.base import FullTextStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util import string_utils
 from dbgpt.util.executor_utils import blocking_func_to_async
-
 from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
 
 

@@ -5,6 +5,8 @@ import time
 from abc import ABC
 from typing import Any, Dict, List, Optional, Type
 
+from fastapi import APIRouter
+
 from dbgpt._private.config import Config
 from dbgpt.agent import (
     Agent,
@@ -33,8 +35,6 @@ from dbgpt.util.json_utils import serialize
 from dbgpt.util.tracer import TracerManager
 from dbgpt_app.dbgpt_server import system_app
 from dbgpt_app.scene.base import ChatScene
-from fastapi import APIRouter
-
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
 from dbgpt_serve.prompt.api.endpoints import get_service
 from dbgpt_serve.prompt.service import service as PromptService

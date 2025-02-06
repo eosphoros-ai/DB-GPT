@@ -55,10 +55,9 @@ Example:
 
 import asyncio
 
-from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest
-
 from dbgpt_client import Client
 from dbgpt_client.evaluation import run_evaluation
+from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest
 
 
 async def main():

@@ -2,7 +2,6 @@ from typing import Dict
 
 from dbgpt._private.config import Config
 from dbgpt.util.tracer import trace
-
 from dbgpt_app.scene import BaseChat, ChatScene
 
 CFG = Config()

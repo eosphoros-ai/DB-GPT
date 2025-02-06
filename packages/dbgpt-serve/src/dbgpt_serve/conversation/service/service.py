@@ -10,7 +10,6 @@ from dbgpt.core.interface.message import _append_view_messages
 from dbgpt.storage.metadata._base_dao import REQ, RES
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.vis.client import vis_name_change
-
 from dbgpt_serve.core import BaseService
 
 from ...feedback.api.endpoints import get_service

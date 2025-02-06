@@ -1,6 +1,6 @@
 """Qianfan Embeddings module."""
 
-from typing import Any, Optional, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings

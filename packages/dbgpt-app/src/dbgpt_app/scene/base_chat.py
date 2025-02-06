@@ -14,14 +14,13 @@ from dbgpt.util import get_or_create_event_loop
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.retry import async_retry
 from dbgpt.util.tracer import root_tracer, trace
-from dbgpt_serve.conversation.serve import Serve as ConversationServe
-
 from dbgpt_app.scene.base import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt_app.scene.operators.app_operator import (
     AppChatComposerOperator,
     ChatComposerInput,
     build_cached_chat_operator,
 )
+from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
 from .exceptions import BaseAppException
 

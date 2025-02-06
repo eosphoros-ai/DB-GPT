@@ -4,6 +4,10 @@ import time
 import uuid
 from typing import AsyncIterator, Optional
 
+from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from starlette.responses import JSONResponse, StreamingResponse
+
 from dbgpt._private.pydantic import model_to_dict, model_to_json
 from dbgpt.component import logger
 from dbgpt.core.awel import CommonLLMHttpRequestBody
@@ -20,13 +24,6 @@ from dbgpt.core.schema.api import (
 from dbgpt.model.cluster.apiserver.api import APISettings
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import SpanType, root_tracer
-from dbgpt_client.schema import ChatCompletionRequestBody, ChatMode
-from dbgpt_serve.agent.agents.controller import multi_agents
-from dbgpt_serve.flow.api.endpoints import get_service
-from fastapi import APIRouter, Body, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from starlette.responses import JSONResponse, StreamingResponse
-
 from dbgpt_app.openapi.api_v1.api_v1 import (
     CHAT_FACTORY,
     __new_conversation,
@@ -35,6 +32,9 @@ from dbgpt_app.openapi.api_v1.api_v1 import (
     stream_generator,
 )
 from dbgpt_app.scene import BaseChat, ChatScene
+from dbgpt_client.schema import ChatCompletionRequestBody, ChatMode
+from dbgpt_serve.agent.agents.controller import multi_agents
+from dbgpt_serve.flow.api.endpoints import get_service
 
 router = APIRouter()
 api_settings = APISettings()

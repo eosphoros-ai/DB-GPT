@@ -12,8 +12,8 @@ from dbgpt.core.awel.flow import (
     ViewMetadata,
 )
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
-from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.util.i18n_utils import _
+from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
 
 
 class KnowledgeOperator(MapOperator[dict, Knowledge]):

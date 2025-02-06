@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional, Type
 
+from sqlalchemy import create_engine, text
+
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
     ResourceCategory,
@@ -11,7 +13,6 @@ from dbgpt.core.awel.flow import (
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.i18n_utils import _
-from sqlalchemy import create_engine, text
 
 
 @auto_register_resource(

@@ -8,6 +8,9 @@ from concurrent.futures import Executor
 from typing import List, Optional, cast
 
 import pandas as pd
+from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
+from fastapi.responses import StreamingResponse
+
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_CHAT_DOMAIN_TYPE
@@ -23,14 +26,6 @@ from dbgpt.util.executor_utils import (
 )
 from dbgpt.util.file_client import FileClient
 from dbgpt.util.tracer import SpanType, root_tracer
-from dbgpt_serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
-from dbgpt_serve.datasource.manages.db_conn_info import DBConfig, DbTypeInfo
-from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
-from dbgpt_serve.flow.service.service import Service as FlowService
-from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
-from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
-from fastapi.responses import StreamingResponse
-
 from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_app.knowledge.service import KnowledgeService
 from dbgpt_app.openapi.api_view_model import (
@@ -43,6 +38,11 @@ from dbgpt_app.openapi.api_view_model import (
     Result,
 )
 from dbgpt_app.scene import BaseChat, ChatFactory, ChatScene
+from dbgpt_serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
+from dbgpt_serve.datasource.manages.db_conn_info import DBConfig, DbTypeInfo
+from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
+from dbgpt_serve.flow.service.service import Service as FlowService
+from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
 router = APIRouter()
 CFG = Config()

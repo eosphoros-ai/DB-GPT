@@ -6,6 +6,8 @@ from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
+from sqlalchemy import text
+
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
     ResourceCategory,
@@ -13,7 +15,6 @@ from dbgpt.core.awel.flow import (
 )
 from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
 from dbgpt.util.i18n_utils import _
-from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 

@@ -5,9 +5,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urljoin
 
 import requests
-from dbgpt.rag.knowledge.base import KnowledgeType
 from prettytable import PrettyTable
 
+from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt_app.knowledge.request.request import (
     ChunkQueryRequest,
     DocumentQueryRequest,

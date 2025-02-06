@@ -2,7 +2,6 @@ import logging
 
 from dbgpt.agent import ConversableAgent, get_agent_manager
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
-
 from dbgpt_serve.agent.agents.expand.actions.intent_recognition_action import (
     IntentRecognitionAction,
 )

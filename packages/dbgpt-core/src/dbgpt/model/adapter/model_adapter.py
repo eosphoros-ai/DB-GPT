@@ -80,12 +80,11 @@ def get_llm_model_adapter(
             result_adapter = FastChatLLMModelAdapterWrapper(adapter)
 
     else:
-        from dbgpt_app.chat_adapter import get_llm_chat_adapter
-
         from dbgpt.model.adapter.old_adapter import OldLLMModelAdapterWrapper
         from dbgpt.model.adapter.old_adapter import (
             get_llm_model_adapter as _old_get_llm_model_adapter,
         )
+        from dbgpt_app.chat_adapter import get_llm_chat_adapter
 
         logger.info("Use DB-GPT old adapter")
         result_adapter = OldLLMModelAdapterWrapper(

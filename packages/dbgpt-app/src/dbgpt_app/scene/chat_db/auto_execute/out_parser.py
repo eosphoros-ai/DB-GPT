@@ -6,6 +6,7 @@ from typing import Dict, NamedTuple
 import numpy as np
 import pandas as pd
 import sqlparse
+
 from dbgpt._private.config import Config
 from dbgpt.core.interface.output_parser import BaseOutputParser
 from dbgpt.util.json_utils import serialize

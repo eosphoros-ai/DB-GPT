@@ -1,13 +1,13 @@
 """Module for ChunkManager."""
 
 from enum import Enum
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import Chunk, Document
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.extractor.base import Extractor
-from dbgpt.rag.knowledge.base import Knowledge, ChunkStrategy
+from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge
 from dbgpt.rag.text_splitter import TextSplitter
 from dbgpt.util.i18n_utils import _
 

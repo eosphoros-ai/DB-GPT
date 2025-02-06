@@ -5,13 +5,12 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk
-
-from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
+from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt_ext.rag.assembler.base import BaseAssembler
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
-from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt_ext.rag.retriever.bm25 import BM25Retriever
+from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
 
 
 class BM25Assembler(BaseAssembler):

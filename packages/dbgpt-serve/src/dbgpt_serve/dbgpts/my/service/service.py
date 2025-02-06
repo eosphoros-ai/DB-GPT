@@ -9,7 +9,6 @@ from dbgpt.util.dbgpts.repo import (
     inner_uninstall,
 )
 from dbgpt.util.pagination_utils import PaginationResult
-
 from dbgpt_serve.core import BaseService
 
 from ..api.schemas import ServeRequest, ServerResponse

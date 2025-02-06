@@ -1,8 +1,9 @@
 """Ollama Embeddings."""
+
 from typing import List
 
-from dbgpt.core import Embeddings
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
+from dbgpt.core import Embeddings
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):

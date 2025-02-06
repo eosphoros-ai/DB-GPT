@@ -4,11 +4,11 @@ from functools import cache
 from typing import List, Optional
 from urllib.parse import quote
 
-from dbgpt.component import SystemApp
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import StreamingResponse
 
+from dbgpt.component import SystemApp
 from dbgpt_serve.core import Result, blocking_func_to_async
 
 from ..config import SERVE_SERVICE_COMPONENT_NAME

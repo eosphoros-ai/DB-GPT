@@ -3,7 +3,6 @@ import logging
 from typing import List, NamedTuple
 
 from dbgpt.core.interface.output_parser import BaseOutputParser
-
 from dbgpt_app.scene import ChatScene
 
 

@@ -1,4 +1,5 @@
 import pytest
+
 from dbgpt.storage.metadata import db
 from dbgpt_serve.core.tests.conftest import (  # noqa: F401
     asystem_app,

@@ -2,12 +2,13 @@ import logging
 import sys
 from typing import TYPE_CHECKING, List
 
-from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core.schema.api import Result
-from dbgpt.util.parameter_utils import ParameterDescription
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+
+from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.core.schema.api import Result
+from dbgpt.util.parameter_utils import ParameterDescription
 
 if sys.version_info < (3, 11):
     try:

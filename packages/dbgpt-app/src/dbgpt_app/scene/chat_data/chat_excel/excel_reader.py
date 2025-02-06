@@ -8,9 +8,6 @@ import duckdb
 import numpy as np
 import pandas as pd
 import sqlparse
-from dbgpt.util.file_client import FileClient
-from dbgpt.util.pd_utils import csv_colunm_foramt
-from dbgpt.util.string_utils import is_chinese_include_number
 from pyparsing import (
     CaselessKeyword,
     Forward,
@@ -21,6 +18,10 @@ from pyparsing import (
     alphanums,
     delimitedList,
 )
+
+from dbgpt.util.file_client import FileClient
+from dbgpt.util.pd_utils import csv_colunm_foramt
+from dbgpt.util.string_utils import is_chinese_include_number
 
 logger = logging.getLogger(__name__)
 

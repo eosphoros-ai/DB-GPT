@@ -4,6 +4,8 @@ import os
 from typing import AsyncIterator, List, Optional, cast
 
 import schedule
+from fastapi import HTTPException
+
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import model_to_json
 from dbgpt.agent import AgentDummyTrigger
@@ -31,8 +33,6 @@ from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.pagination_utils import PaginationResult
-from fastapi import HTTPException
-
 from dbgpt_serve.core import BaseService, blocking_func_to_async
 
 from ..api.schemas import FlowDebugRequest, FlowInfo, ServeRequest, ServerResponse

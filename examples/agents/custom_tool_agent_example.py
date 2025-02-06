@@ -3,10 +3,11 @@ import logging
 import os
 import sys
 
+from typing_extensions import Annotated, Doc
+
 from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.agent.expand.tool_assistant_agent import ToolAssistantAgent
 from dbgpt.agent.resource import ToolPack, tool
-from typing_extensions import Annotated, Doc
 
 logging.basicConfig(
     stream=sys.stdout,

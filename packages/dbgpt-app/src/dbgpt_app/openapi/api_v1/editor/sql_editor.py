@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel
-
 from dbgpt_app.scene.chat_dashboard.data_preparation.report_schma import ValueItem
 
 

@@ -5,8 +5,9 @@ import os
 from typing import List, Tuple, Union
 
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
-from ...transformer.text_embedder import TextEmbedder
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
+
+from ...transformer.text_embedder import TextEmbedder
 from .base import GraphRetrieverBase
 from .document_graph_retriever import (
     DocumentGraphRetriever,

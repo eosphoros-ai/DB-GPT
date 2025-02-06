@@ -1,8 +1,9 @@
 """Tongyi embeddings for RAG."""
+
 from typing import List, Optional
 
-from dbgpt.core import Embeddings
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
+from dbgpt.core import Embeddings
 
 
 class TongYiEmbeddings(BaseModel, Embeddings):

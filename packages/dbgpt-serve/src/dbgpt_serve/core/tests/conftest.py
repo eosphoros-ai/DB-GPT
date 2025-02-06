@@ -2,11 +2,12 @@ from typing import Dict
 
 import pytest
 import pytest_asyncio
+from fastapi.middleware.cors import CORSMiddleware
+from httpx import ASGITransport, AsyncClient
+
 from dbgpt.component import SystemApp
 from dbgpt.util import AppConfig
 from dbgpt.util.fastapi import create_app
-from fastapi.middleware.cors import CORSMiddleware
-from httpx import ASGITransport, AsyncClient
 
 
 def create_system_app(param: Dict) -> SystemApp:

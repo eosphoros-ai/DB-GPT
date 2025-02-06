@@ -1,4 +1,7 @@
 import pytest
+from fastapi import FastAPI
+from httpx import AsyncClient
+
 from dbgpt.component import SystemApp
 from dbgpt.storage.metadata import db
 from dbgpt_serve.core.tests.conftest import (  # noqa: F401
@@ -6,8 +9,6 @@ from dbgpt_serve.core.tests.conftest import (  # noqa: F401
     client,
     system_app,
 )
-from fastapi import FastAPI
-from httpx import AsyncClient
 
 from ..api.endpoints import init_endpoints, router
 from ..config import SERVE_CONFIG_KEY_PREFIX

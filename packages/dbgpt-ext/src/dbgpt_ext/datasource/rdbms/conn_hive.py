@@ -5,6 +5,8 @@ from typing import Any, Dict, Optional, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
+from sqlalchemy import create_engine
+
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
     ResourceCategory,
@@ -13,7 +15,6 @@ from dbgpt.core.awel.flow import (
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.i18n_utils import _
-from sqlalchemy import create_engine
 
 
 @auto_register_resource(

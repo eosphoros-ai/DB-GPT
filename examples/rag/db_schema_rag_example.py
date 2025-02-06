@@ -1,12 +1,11 @@
 import os
 
+from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
+from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt_ext.rag.assembler import DBSchemaAssembler
 from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt_serve.rag.connector import VectorStoreConnector
-
-from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
-from dbgpt.rag.embedding import DefaultEmbeddingFactory
 
 """DB struct rag example.
     pre-requirements:

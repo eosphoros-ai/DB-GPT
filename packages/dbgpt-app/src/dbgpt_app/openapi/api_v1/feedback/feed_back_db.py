@@ -1,9 +1,8 @@
 from datetime import datetime
 
 from dbgpt.storage.metadata import BaseDao
-from dbgpt_serve.feedback.models.models import ServeEntity
-
 from dbgpt_app.openapi.api_v1.feedback.feed_back_model import FeedBackBody
+from dbgpt_serve.feedback.models.models import ServeEntity
 
 ChatFeedBackEntity = ServeEntity
 

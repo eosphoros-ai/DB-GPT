@@ -6,6 +6,8 @@ import os
 import tempfile
 from typing import Any, Iterable, List, Optional, Tuple, Type
 
+from sqlalchemy import create_engine, text
+
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
     ResourceCategory,
@@ -14,7 +16,6 @@ from dbgpt.core.awel.flow import (
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.i18n_utils import _
-from sqlalchemy import create_engine, text
 
 logger = logging.getLogger(__name__)
 

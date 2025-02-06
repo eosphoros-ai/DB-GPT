@@ -3,13 +3,13 @@ import json
 from functools import cache
 from typing import Dict, List, Literal, Optional
 
-from dbgpt.component import SystemApp
-from dbgpt.core.awel.flow.flow_factory import FlowCategory
-from dbgpt.util import PaginationResult
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import JSONResponse, StreamingResponse
 
+from dbgpt.component import SystemApp
+from dbgpt.core.awel.flow.flow_factory import FlowCategory
+from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result, blocking_func_to_async
 
 from ..service.service import Service, _parse_flow_template_from_json

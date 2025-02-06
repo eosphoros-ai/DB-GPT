@@ -18,7 +18,6 @@ from dbgpt.core.interface.evaluation import (
     Evaluator,
 )
 from dbgpt.rag.evaluation import RetrieverSimilarityMetric
-
 from dbgpt_serve.agent.agents.controller import multi_agents
 
 logger = logging.getLogger(__name__)

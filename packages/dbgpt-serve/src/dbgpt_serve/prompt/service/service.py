@@ -15,7 +15,6 @@ from dbgpt.storage.metadata import BaseDao
 from dbgpt.util.json_utils import compare_json_properties_ex, find_json_objects
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.tracer import root_tracer
-
 from dbgpt_serve.core import BaseService
 
 from ..api.schemas import PromptDebugInput, PromptType, ServeRequest, ServerResponse

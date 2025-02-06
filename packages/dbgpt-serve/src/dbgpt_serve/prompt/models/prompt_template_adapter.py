@@ -1,8 +1,9 @@
 from typing import Type
 
+from sqlalchemy.orm import Session
+
 from dbgpt.core.interface.prompt import PromptTemplateIdentifier, StoragePromptTemplate
 from dbgpt.core.interface.storage import StorageItemAdapter
-from sqlalchemy.orm import Session
 
 from .models import ServeEntity
 

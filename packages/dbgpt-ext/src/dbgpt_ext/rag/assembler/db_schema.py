@@ -4,11 +4,11 @@ from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.datasource.base import BaseConnector
-
+from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.storage.vector_store.base import VectorStoreBase
+
 from ..assembler.base import BaseAssembler
 from ..chunk_manager import ChunkParameters
-from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from ..knowledge.datasource import DatasourceKnowledge
 from ..retriever.db_schema import DBSchemaRetriever
 

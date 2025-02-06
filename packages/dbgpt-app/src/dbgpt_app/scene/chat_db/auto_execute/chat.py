@@ -4,7 +4,6 @@ from dbgpt._private.config import Config
 from dbgpt.agent.util.api_call import ApiCall
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
-
 from dbgpt_app.scene import BaseChat, ChatScene
 
 CFG = Config()

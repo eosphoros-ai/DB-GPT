@@ -31,4 +31,3 @@ __ALL__ = [
     "TongYiEmbeddings",
     "WrappedEmbeddingFactory",
 ]
-

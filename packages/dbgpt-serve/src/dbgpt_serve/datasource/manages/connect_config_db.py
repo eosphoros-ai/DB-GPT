@@ -4,7 +4,6 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
-from dbgpt.storage.metadata import BaseDao, Model
 from sqlalchemy import (
     Column,
     DateTime,
@@ -16,6 +15,7 @@ from sqlalchemy import (
     text,
 )
 
+from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt_serve.datasource.api.schemas import (
     DatasourceServeRequest,
     DatasourceServeResponse,

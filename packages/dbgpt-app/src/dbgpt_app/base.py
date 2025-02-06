@@ -11,9 +11,8 @@ from dbgpt.component import SystemApp
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.parameter_utils import BaseServerParameters
-from dbgpt_ext.datasource.schema import DBType
-
 from dbgpt_app.config import ApplicationConfig, ServiceConfig
+from dbgpt_ext.datasource.schema import DBType
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -75,7 +74,6 @@ def _migration_db_storage(param: "WebServerParameters"):
     """Migration the db storage."""
     # Import all models to make sure they are registered with SQLAlchemy.
     from dbgpt.configs.model_config import PILOT_PATH
-
     from dbgpt_app.initialization.db_model_initialization import _MODELS  # noqa: F401
 
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")

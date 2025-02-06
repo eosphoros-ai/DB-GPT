@@ -2,9 +2,10 @@ import json
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text
+
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.storage.metadata import BaseDao, Model
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text
 
 
 class RecommendQuestion(BaseModel):

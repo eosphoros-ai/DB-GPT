@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import List
 
-from dbgpt.storage.metadata import BaseDao, Model
 from sqlalchemy import Column, DateTime, Integer, String, UniqueConstraint, func
 
+from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt_serve.agent.hub.model.model import MyPluginVO
 
 

@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import sqlparse
+from sqlalchemy import MetaData, text
+
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
     ResourceCategory,
@@ -14,8 +16,6 @@ from dbgpt.core.awel.flow import (
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.i18n_utils import _
-from sqlalchemy import MetaData, text
-
 from dbgpt_ext.datasource.schema import DBType
 
 logger = logging.getLogger(__name__)
