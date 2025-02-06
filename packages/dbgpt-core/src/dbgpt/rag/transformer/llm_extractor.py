@@ -54,6 +54,10 @@ class LLMExtractor(ExtractorBase, ABC):
         self, text: str, history: str = None, limit: Optional[int] = None
     ) -> List:
         """Inner extract by LLM."""
+        # limit check
+        if limit and limit < 1:
+            ValueError("optional argument limit >= 1")
+
         template = HumanPromptTemplate.from_template(self._prompt_template)
 
         messages = (
@@ -80,8 +84,6 @@ class LLMExtractor(ExtractorBase, ABC):
             logger.error(f"request llm failed ({code}) {reason}")
             return []
 
-        if limit and limit < 1:
-            ValueError("optional argument limit >= 1")
         return self._parse_response(response.text, limit)
 
     def truncate(self):

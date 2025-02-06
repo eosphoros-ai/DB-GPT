@@ -28,7 +28,7 @@ from dbgpt_ext.rag.assembler import SummaryAssembler
 
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 
 async def main():

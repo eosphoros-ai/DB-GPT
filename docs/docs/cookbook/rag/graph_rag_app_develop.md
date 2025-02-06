@@ -171,7 +171,7 @@ from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.core import Chunk, HumanPromptTemplate, ModelMessage, ModelRequest
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.assembler import EmbeddingAssembler
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
 
 async def test_community_graph_rag():
@@ -473,3 +473,48 @@ Furthermore, as shown in the following figure, compared to RAG, GraphRAG with si
 </p>
 
 In conclusion, enabling similarity search in GraphRAG significantly expands the scope and relevance of its responses.
+
+### Text2GQL Search in GraphRAG:
+
+In the latest version of DB-GPT, we have implemented a new feature:
+
+- **Text2GQL search** for GraphRAG retrieval
+
+#### How to use?
+
+Set the variables below in the `.env` file to enable text2gql search in DB-GPT.
+
+```
+TEXT2GQL_SEARCH_ENABLED=True # enable the text2gql search for entities and relations.
+```
+
+#### Why to use?
+
+Keywords or vectors based retrieval will generate large multihop subgraph for LLM to summarize information, but this method is costive when questions asked by users can be simply expressed by a single graph query. Text2GQL search can effectively reduce the cost of graph search and increase the accuracy of the retrieved subgraph under above situation.
+
+In the future, we hope to further improve the ability of Text2GQL translation to compete with keywords or vectors based retrieval under complicated questions with both prompt based method and finetune based method.
+
+
+#### Comparison of Text2GQL Search Results
+
+Given identical documents and questions in the same environment, the results of the keyword mode are as follows:
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/comparison_result_for_keywords_search.png'} width="1000px"/>
+</p>
+
+The results of the text2gql search mode are as follows:
+
+<p align="left">
+  <img src={'/img/chat_knowledge/graph_rag/comparison_result_for_text2gql_search.png'} width="1000px"/>
+</p>
+
+Compared to the keyword search method, the text2gql search method can generate an accurate graph query laguage to query the entity of DB-GPT in knowledge graph, which is
+
+```cypher
+MATCH (n) WHERE n.id = 'DB-GPT' RETURN n LIMIT 10
+```
+
+This implies that in scenarios where questions can be expressed by a single graph query, the text2gql search approach can retrieve more accurate information with lower cost.
+
+In conclusion, enabling text2gql search in GraphRAG significantly increase the accuracy and lower the cost when questions are concise and clear.

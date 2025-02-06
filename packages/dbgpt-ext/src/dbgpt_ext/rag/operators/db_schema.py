@@ -1,6 +1,5 @@
 """The DBSchema Retriever Operator."""
 
-import os
 from typing import List, Optional
 
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
@@ -11,8 +10,7 @@ from dbgpt.datasource.base import BaseConnector
 from dbgpt_ext.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt_ext.rag.operators.assembler import AssemblerOperator
 from dbgpt_ext.rag.retriever.db_schema import DBSchemaRetriever
-from dbgpt.storage.vector_store.base import VectorStoreConfig
-from dbgpt_serve.rag.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.base import VectorStoreBase
 
 
 class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
@@ -21,14 +19,14 @@ class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
     Args:
         connector (BaseConnector): The connection.
         top_k (int, optional): The top k. Defaults to 4.
-        vector_store_connector (VectorStoreConnector, optional): The vector store
+        vector_store_connector (VectorStoreBase, optional): The vector store
         connector. Defaults to None.
     """
 
     def __init__(
         self,
-        table_vector_store_connector: VectorStoreConnector,
-        field_vector_store_connector: VectorStoreConnector,
+        table_vector_store_connector: VectorStoreBase,
+        field_vector_store_connector: VectorStoreBase,
         top_k: int = 4,
         connector: Optional[BaseConnector] = None,
         **kwargs,
@@ -57,8 +55,8 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
     def __init__(
         self,
         connector: BaseConnector,
-        table_vector_store_connector: VectorStoreConnector,
-        field_vector_store_connector: VectorStoreConnector = None,
+        table_vector_store_connector: VectorStoreBase,
+        field_vector_store_connector: VectorStoreBase = None,
         chunk_parameters: Optional[ChunkParameters] = None,
         **kwargs,
     ):
@@ -66,7 +64,7 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
 
         Args:
             connector (BaseConnector): The connection.
-            vector_store_connector (VectorStoreConnector): The vector store connector.
+            vector_store_connector (VectorStoreBase): The vector store connector.
             chunk_parameters (Optional[ChunkParameters], optional): The chunk
                 parameters.
         """
@@ -74,18 +72,7 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
             chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
         self._chunk_parameters = chunk_parameters
         self._table_vector_store_connector = table_vector_store_connector
-
-        field_vector_store_config = VectorStoreConfig(
-            name=table_vector_store_connector.vector_store_config.name + "_field"
-        )
-        self._field_vector_store_connector = (
-            field_vector_store_connector
-            or VectorStoreConnector.from_default(
-                os.getenv("VECTOR_STORE_TYPE", "Chroma"),
-                self._table_vector_store_connector.current_embeddings,
-                vector_store_config=field_vector_store_config,
-            )
-        )
+        self._field_vector_store_connector = field_vector_store_connector
         self._connector = connector
         super().__init__(**kwargs)
 

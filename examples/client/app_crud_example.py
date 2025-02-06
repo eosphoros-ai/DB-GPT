@@ -15,7 +15,7 @@ Example:
 import asyncio
 
 from dbgpt_client.app import list_app
-from dbgpt_client.client import Client
+from dbgpt_client import Client
 
 
 async def main():

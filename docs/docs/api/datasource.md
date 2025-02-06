@@ -42,7 +42,7 @@ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
 <TabItem value="python">
 
 ```python
-from dbgpt.client import Client
+from dbgpt_client import Client
 
 DBGPT_API_KEY = "dbgpt"
 DB_NAME="{your_db_name}"
@@ -136,8 +136,8 @@ DATASOURCE_ID={YOUR_DATASOURCE_ID}
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.datasource import delete_datasource
+from dbgpt_client import Client
+from dbgpt_client.datasource import delete_datasource
 
 DBGPT_API_KEY = "dbgpt"
 datasource_id = "{your_datasource_id}"
@@ -189,8 +189,8 @@ curl -X GET "http://localhost:5670/api/v2/serve/datasources/$DATASOURCE_ID" -H "
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.datasource import get_datasource
+from dbgpt_client import Client
+from dbgpt_client.datasource import get_datasource
 
 DBGPT_API_KEY = "dbgpt"
 datasource_id = "{your_datasource_id}"
@@ -243,8 +243,8 @@ curl -X GET "http://localhost:5670/api/v2/serve/datasources" -H "Authorization: 
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.datasource import list_datasource
+from dbgpt_client import Client
+from dbgpt_client.datasource import list_datasource
 
 DBGPT_API_KEY = "dbgpt"
 

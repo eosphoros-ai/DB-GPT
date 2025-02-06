@@ -1,7 +1,7 @@
 """Module for RAG operators."""
 
 from dbgpt.rag.operators.chunk_manager import ChunkManagerOperator  # noqa: F401
-from dbgpt.rag.operators.datasource import DatasourceRetrieverOperator  # noqa: F401
+from .db_schema import DBSchemaAssemblerOperator
 from .embedding import (  # noqa: F401
     EmbeddingAssemblerOperator,
     EmbeddingRetrieverOperator,
@@ -20,6 +20,7 @@ from .summary import SummaryAssemblerOperator  # noqa: F401
 from .vector_store import VectorStorageOperator  # noqa: F401
 
 __all__ = [
+    "DBSchemaAssemblerOperator",
     "EmbeddingRetrieverOperator",
     "EmbeddingAssemblerOperator",
     "FullTextStorageOperator",

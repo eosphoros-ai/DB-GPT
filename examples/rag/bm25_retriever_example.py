@@ -6,7 +6,7 @@ from dbgpt_ext.rag.assembler.bm25 import BM25Assembler
 from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
 
 from dbgpt.configs.model_config import ROOT_PATH
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 
 """Embedding rag example.
     pre-requirements:

@@ -76,7 +76,7 @@ class Client:
         --------
         .. code-block:: python
 
-            from dbgpt.client import Client
+            from dbgpt_client import Client
 
             DBGPT_API_BASE = "http://localhost:5670/api/v2"
             DBGPT_API_KEY = "dbgpt"
@@ -154,7 +154,7 @@ class Client:
         --------
         .. code-block:: python
 
-            from dbgpt.client import Client
+            from dbgpt_client import Client
 
             DBGPT_API_BASE = "http://localhost:5670/api/v2"
             DBGPT_API_KEY = "dbgpt"
@@ -230,7 +230,7 @@ class Client:
         --------
         .. code-block:: python
 
-            from dbgpt.client import Client
+            from dbgpt_client import Client
 
             DBGPT_API_BASE = "http://localhost:5670/api/v2"
             DBGPT_API_KEY = "dbgpt"

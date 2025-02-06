@@ -16,7 +16,7 @@ from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.core import Chunk, HumanPromptTemplate, ModelMessage, ModelRequest
 from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
 
 """GraphRAG example.
