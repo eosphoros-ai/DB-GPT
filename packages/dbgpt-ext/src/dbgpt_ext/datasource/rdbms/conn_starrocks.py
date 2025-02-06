@@ -65,36 +65,38 @@ class StarRocksConnector(RDBMSConnector):
 
     def _sync_tables_from_db(self) -> Iterable[str]:
         db_name = self.get_current_db_name()
-        table_results = self.session.execute(
-            text(
-                "SELECT TABLE_NAME FROM information_schema.tables where "
-                f'TABLE_SCHEMA="{db_name}"'
+        with self.session_scope() as session:
+            table_results = session.execute(
+                text(
+                    "SELECT TABLE_NAME FROM information_schema.tables where "
+                    f'TABLE_SCHEMA="{db_name}"'
+                )
             )
-        )
-        # view_results = self.session.execute(text(f'SELECT TABLE_NAME from
-        # information_schema.materialized_views where TABLE_SCHEMA="{db_name}"'))
-        table_results = set(row[0] for row in table_results)  # noqa: C401
-        # view_results = set(row[0] for row in view_results)
-        self._all_tables = table_results
-        self._metadata.reflect(bind=self._engine)
-        return self._all_tables
+            # view_results = session.execute(text(f'SELECT TABLE_NAME from
+            # information_schema.materialized_views where TABLE_SCHEMA="{db_name}"'))
+            table_results = set(row[0] for row in table_results)  # noqa: C401
+            # view_results = set(row[0] for row in view_results)
+            self._all_tables = table_results
+            self._metadata.reflect(bind=self._engine)
+            return self._all_tables
 
     def get_grants(self):
         """Get grants."""
-        session = self._db_sessions()
-        cursor = session.execute(text("SHOW GRANTS"))
-        grants = cursor.fetchall()
-        if len(grants) == 0:
-            return []
-        if len(grants[0]) == 2:
-            grants_list = [x[1] for x in grants]
-        else:
-            grants_list = [x[2] for x in grants]
-        return grants_list
+        with self.session_scope() as session:
+            cursor = session.execute(text("SHOW GRANTS"))
+            grants = cursor.fetchall()
+            if len(grants) == 0:
+                return []
+            if len(grants[0]) == 2:
+                grants_list = [x[1] for x in grants]
+            else:
+                grants_list = [x[2] for x in grants]
+            return grants_list
 
     def _get_current_version(self):
         """Get database current version."""
-        return int(self.session.execute(text("select current_version()")).scalar())
+        with self.session_scope() as session:
+            return int(session.execute(text("select current_version()")).scalar())
 
     def get_collation(self):
         """Get collation."""
@@ -107,18 +109,20 @@ class StarRocksConnector(RDBMSConnector):
 
     def get_fields(self, table_name, db_name="database()") -> List[Tuple]:
         """Get column fields about specified table."""
-        session = self._db_sessions()
-        if db_name != "database()":
-            db_name = f'"{db_name}"'
-        cursor = session.execute(
-            text(
-                "select COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, "
-                "COLUMN_COMMENT from information_schema.columns where "
-                f'TABLE_NAME="{table_name}" and TABLE_SCHEMA = {db_name}'
+        with self.session_scope() as session:
+            if db_name != "database()":
+                db_name = f'"{db_name}"'
+            cursor = session.execute(
+                text(
+                    "select COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, "
+                    "COLUMN_COMMENT from information_schema.columns where "
+                    f'TABLE_NAME="{table_name}" and TABLE_SCHEMA = {db_name}'
+                )
             )
-        )
-        fields = cursor.fetchall()
-        return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
+            fields = cursor.fetchall()
+            return [
+                (field[0], field[1], field[2], field[3], field[4]) for field in fields
+            ]
 
     def get_charset(self):
         """Get character_set."""
@@ -135,46 +139,50 @@ class StarRocksConnector(RDBMSConnector):
         # create_sql = rows[0]
 
         # return create_sql
-        # 这里是要表描述, 返回建表语句会导致token过长而失败
-        cur = self.session.execute(
-            text(
-                "SELECT TABLE_COMMENT FROM information_schema.tables where "
-                f'TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'
+        # Here is the table description, returning the create table statement will
+        # cause the token to be too long and fail
+        with self.session_scope() as session:
+            cur = session.execute(
+                text(
+                    "SELECT TABLE_COMMENT FROM information_schema.tables where "
+                    f'TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'
+                )
             )
-        )
-        table = cur.fetchone()
-        if table:
-            return str(table[0])
-        else:
-            return ""
+            table = cur.fetchone()
+            if table:
+                return str(table[0])
+            else:
+                return ""
 
     def get_table_comments(self, db_name=None):
         """Get table comments."""
         if not db_name:
             db_name = self.get_current_db_name()
-        cur = self.session.execute(
-            text(
-                "SELECT TABLE_NAME,TABLE_COMMENT FROM information_schema.tables "
-                f'where TABLE_SCHEMA="{db_name}"'
+        with self.session_scope() as session:
+            cur = session.execute(
+                text(
+                    "SELECT TABLE_NAME,TABLE_COMMENT FROM information_schema.tables "
+                    f'where TABLE_SCHEMA="{db_name}"'
+                )
             )
-        )
-        tables = cur.fetchall()
-        return [(table[0], table[1]) for table in tables]
+            tables = cur.fetchall()
+            return [(table[0], table[1]) for table in tables]
 
     def get_database_names(self):
         """Get database names."""
-        session = self._db_sessions()
-        cursor = session.execute(text("SHOW DATABASES;"))
-        results = cursor.fetchall()
-        return [
-            d[0]
-            for d in results
-            if d[0] not in ["information_schema", "sys", "_statistics_", "dataease"]
-        ]
+        with self.session_scope() as session:
+            cursor = session.execute(text("SHOW DATABASES;"))
+            results = cursor.fetchall()
+            return [
+                d[0]
+                for d in results
+                if d[0] not in ["information_schema", "sys", "_statistics_", "dataease"]
+            ]
 
     def get_current_db_name(self) -> str:
         """Get current database name."""
-        return self.session.execute(text("select database()")).scalar()
+        with self.session_scope() as session:
+            return session.execute(text("select database()")).scalar()
 
     def table_simple_info(self):
         """Get table simple info."""
@@ -182,14 +190,15 @@ class StarRocksConnector(RDBMSConnector):
           SELECT concat(TABLE_NAME,"(",group_concat(COLUMN_NAME,","),");")
            FROM information_schema.columns where TABLE_SCHEMA=database()
             GROUP BY TABLE_NAME
-            """
-        cursor = self.session.execute(text(_sql))
-        results = cursor.fetchall()
-        return [x[0] for x in results]
+        """
+        with self.session_scope() as session:
+            cursor = session.execute(text(_sql))
+            results = cursor.fetchall()
+            return [x[0] for x in results]
 
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""
-        session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW INDEX FROM {table_name}"))
-        indexes = cursor.fetchall()
-        return [(index[2], index[4]) for index in indexes]
+        with self.session_scope() as session:
+            cursor = session.execute(text(f"SHOW INDEX FROM {table_name}"))
+            indexes = cursor.fetchall()
+            return [(index[2], index[4]) for index in indexes]

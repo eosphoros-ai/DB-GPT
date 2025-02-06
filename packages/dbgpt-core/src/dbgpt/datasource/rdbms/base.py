@@ -2,8 +2,22 @@
 
 import logging
 import re
+import weakref
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Type, cast
+from functools import wraps
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    cast,
+)
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
@@ -14,6 +28,7 @@ from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import CreateTable
 
 from dbgpt.datasource.base import BaseConnector
@@ -121,7 +136,7 @@ class RDBMSConnector(BaseConnector):
         session_factory = sessionmaker(bind=engine)
         Session_Manages = scoped_session(session_factory)
         self._db_sessions = Session_Manages
-        self.session = self.get_session()
+        self._sessions = weakref.WeakSet()
 
         self.view_support = view_support
         self._usable_tables: Set[str] = set()
@@ -135,6 +150,7 @@ class RDBMSConnector(BaseConnector):
         self._metadata.reflect(bind=self._engine)
 
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
+        self._is_closed = False
 
     @classmethod
     def param_class(cls) -> Type[RDBMSDatasourceParameters]:
@@ -188,6 +204,11 @@ class RDBMSConnector(BaseConnector):
         return cls(create_engine(database_uri, **_engine_args), **kwargs)
 
     @property
+    def db_url(self) -> str:
+        """Return database engine url."""
+        return str(self._engine.url)
+
+    @property
     def dialect(self) -> str:
         """Return string representation of dialect to use."""
         return self._engine.dialect.name
@@ -222,9 +243,43 @@ class RDBMSConnector(BaseConnector):
         """Get names of tables available."""
         return self.get_usable_table_names()
 
-    def get_session(self):
+    @property
+    def session(self):
+        """Return session.
+
+        It is a raw session object, you must use it with caution.
+        """
+        return self._db_sessions()
+
+    @contextmanager
+    def session_scope(self, commit: bool = True) -> Generator[Session, None, None]:
+        """Provide a transactional scope around a series of operations."""
+        session = self.get_session()
+        try:
+            yield session
+            if commit:
+                session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error in session scope: {e}")
+            raise
+        finally:
+            session.close()
+
+    def with_session(self, func):
+        """Decorator to automatically handle session management."""
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with self.session_scope() as session:
+                return func(*args, session=session, **kwargs)
+
+        return wrapper
+
+    def get_session(self) -> Session:
         """Get session."""
         session = self._db_sessions()
+        self._sessions.add(session)
 
         return session
 
@@ -234,7 +289,9 @@ class RDBMSConnector(BaseConnector):
         Returns:
             str: database name
         """
-        return self.session.execute(text("SELECT DATABASE()")).scalar()
+        with self.session_scope() as session:
+            cursor = session.execute(text("SELECT DATABASE()"))
+            return cursor.scalar()
 
     def table_simple_info(self):
         """Return table simple info."""
@@ -243,9 +300,10 @@ class RDBMSConnector(BaseConnector):
                 as schema_info from information_schema.COLUMNS where
                 table_schema="{self.get_current_db_name()}" group by TABLE_NAME;
             """
-        cursor = self.session.execute(text(_sql))
-        results = cursor.fetchall()
-        return results
+        with self.session_scope() as session:
+            cursor = session.execute(text(_sql))
+            results = cursor.fetchall()
+            return results
 
     @property
     def table_info(self) -> str:
@@ -365,13 +423,14 @@ class RDBMSConnector(BaseConnector):
         """
         logger.info(f"Write[{write_sql}]")
         db_cache = self._engine.url.database
-        result = self.session.execute(text(write_sql))
-        self.session.commit()
-        # TODO  Subsequent optimization of dynamically specified database submission
-        #  loss target problem
-        self.session.execute(text(f"use `{db_cache}`"))
-        logger.info(f"SQL[{write_sql}], result:{result.rowcount}")
-        return result.rowcount
+        with self.session_scope(commit=False) as session:
+            result = session.execute(text(write_sql))
+            session.commit()
+            # TODO  Subsequent optimization of dynamically specified database submission
+            #  loss target problem
+            session.execute(text(f"use `{db_cache}`"))
+            logger.info(f"SQL[{write_sql}], result:{result.rowcount}")
+            return result.rowcount
 
     def _query(self, query: str, fetch: str = "all"):
         """Run a SQL query and return the results as a list of tuples.
@@ -385,18 +444,19 @@ class RDBMSConnector(BaseConnector):
         logger.info(f"Query[{query}]")
         if not query:
             return result
-        cursor = self.session.execute(text(query))
-        if cursor.returns_rows:
-            if fetch == "all":
-                result = cursor.fetchall()
-            elif fetch == "one":
-                result = [cursor.fetchone()]
-            else:
-                raise ValueError("Fetch parameter must be either 'one' or 'all'")
-            field_names = tuple(i[0:] for i in cursor.keys())
+        with self.session_scope() as session:
+            cursor = session.execute(text(query))
+            if cursor.returns_rows:
+                if fetch == "all":
+                    result = cursor.fetchall()
+                elif fetch == "one":
+                    result = [cursor.fetchone()]
+                else:
+                    raise ValueError("Fetch parameter must be either 'one' or 'all'")
+                field_names = tuple(i[0:] for i in cursor.keys())
 
-            result.insert(0, field_names)
-            return result
+                result.insert(0, field_names)
+                return result
 
     def query_table_schema(self, table_name: str):
         """Query table schema.
@@ -422,19 +482,20 @@ class RDBMSConnector(BaseConnector):
         logger.info(f"Query[{query}]")
         if not query:
             return [], None
-        cursor = self.session.execute(text(query))
-        if cursor.returns_rows:
-            if fetch == "all":
-                result = cursor.fetchall()
-            elif fetch == "one":
-                result = cursor.fetchone()  # type: ignore
-            else:
-                raise ValueError("Fetch parameter must be either 'one' or 'all'")
-            field_names = list(cursor.keys())
+        with self.session_scope() as session:
+            cursor = session.execute(text(query))
+            if cursor.returns_rows:
+                if fetch == "all":
+                    result = cursor.fetchall()
+                elif fetch == "one":
+                    result = cursor.fetchone()  # type: ignore
+                else:
+                    raise ValueError("Fetch parameter must be either 'one' or 'all'")
+                field_names = list(cursor.keys())
 
-            result = list(result)
-            return field_names, result
-        return [], None
+                result = list(result)
+                return field_names, result
+            return [], None
 
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
@@ -455,20 +516,20 @@ class RDBMSConnector(BaseConnector):
             logger.info(
                 "DDL execution determines whether to enable through configuration "
             )
-            cursor = self.session.execute(text(command))
-            self.session.commit()
-            if cursor.returns_rows:
-                result = cursor.fetchall()
-                field_names = tuple(i[0:] for i in cursor.keys())
-                result = list(result)
-                result.insert(0, field_names)
-                logger.info("DDL Result:" + str(result))
-                if not result:
-                    # return self._query(f"SHOW COLUMNS FROM {table_name}")
+            with self.session_scope(commit=False) as session:
+                cursor = session.execute(text(command))
+                if cursor.returns_rows:
+                    result = cursor.fetchall()
+                    field_names = tuple(i[0:] for i in cursor.keys())
+                    result = list(result)
+                    result.insert(0, field_names)
+                    logger.info("DDL Result:" + str(result))
+                    if not result:
+                        # return self._query(f"SHOW COLUMNS FROM {table_name}")
+                        return self.get_simple_fields(table_name)
+                    return result
+                else:
                     return self.get_simple_fields(table_name)
-                return result
-            else:
-                return self.get_simple_fields(table_name)
 
     def run_to_df(self, command: str, fetch: str = "all"):
         """Execute sql command and return result as dataframe."""
@@ -596,24 +657,26 @@ class RDBMSConnector(BaseConnector):
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""
-        session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
-        ans = cursor.fetchall()
-        return ans[0][1]
+        with self.session_scope() as session:
+            cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
+            ans = cursor.fetchall()
+            return ans[0][1]
 
     def get_fields(self, table_name, db_name=None) -> List[Tuple]:
         """Get column fields about specified table."""
-        session = self._db_sessions()
-        query = (
-            "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, "
-            "COLUMN_COMMENT  from information_schema.COLUMNS where "
-            f"table_name='{table_name}'"
-        )
-        if db_name is not None:
-            query += f" AND table_schema='{db_name}'"
-        cursor = session.execute(text(query))
-        fields = cursor.fetchall()
-        return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
+        with self.session_scope() as session:
+            query = (
+                "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, "
+                "COLUMN_COMMENT  from information_schema.COLUMNS where "
+                f"table_name='{table_name}'"
+            )
+            if db_name is not None:
+                query += f" AND table_schema='{db_name}'"
+            cursor = session.execute(text(query))
+            fields = cursor.fetchall()
+            return [
+                (field[0], field[1], field[2], field[3], field[4]) for field in fields
+            ]
 
     def get_simple_fields(self, table_name):
         """Get column fields about specified table."""
@@ -621,46 +684,48 @@ class RDBMSConnector(BaseConnector):
 
     def get_charset(self) -> str:
         """Get character_set."""
-        session = self._db_sessions()
-        cursor = session.execute(text("SELECT @@character_set_database"))
-        character_set = cursor.fetchone()[0]  # type: ignore
-        return character_set
+        with self.session_scope() as session:
+            cursor = session.execute(text("SELECT @@character_set_database"))
+            character_set = cursor.fetchone()[0]  # type: ignore
+            return character_set
 
     def get_collation(self):
         """Get collation."""
-        session = self._db_sessions()
-        cursor = session.execute(text("SELECT @@collation_database"))
-        collation = cursor.fetchone()[0]
-        return collation
+        with self.session_scope() as session:
+            cursor = session.execute(text("SELECT @@collation_database"))
+            collation = cursor.fetchone()[0]
+            return collation
 
     def get_grants(self):
         """Get grant info."""
-        session = self._db_sessions()
-        cursor = session.execute(text("SHOW GRANTS"))
-        grants = cursor.fetchall()
-        return grants
+        with self.session_scope() as session:
+            cursor = session.execute(text("SHOW GRANTS"))
+            grants = cursor.fetchall()
+            return grants
 
     def get_users(self):
         """Get user info."""
         try:
-            cursor = self.session.execute(text("SELECT user, host FROM mysql.user"))
-            users = cursor.fetchall()
-            return [(user[0], user[1]) for user in users]
+            with self.session_scope() as session:
+                cursor = session.execute(text("SELECT user, host FROM mysql.user"))
+                users = cursor.fetchall()
+                return [(user[0], user[1]) for user in users]
         except Exception:
             return []
 
     def get_table_comments(self, db_name: str):
         """Return table comments."""
-        cursor = self.session.execute(
-            text(
-                f"""SELECT table_name, table_comment    FROM information_schema.tables
-                    WHERE table_schema = '{db_name}'""".format(db_name)
+        with self.session_scope() as session:
+            cursor = session.execute(
+                text(
+                    f"""SELECT table_name, table_comment FROM information_schema.tables
+                        WHERE table_schema = '{db_name}'""".format(db_name)
+                )
             )
-        )
-        table_comments = cursor.fetchall()
-        return [
-            (table_comment[0], table_comment[1]) for table_comment in table_comments
-        ]
+            table_comments = cursor.fetchall()
+            return [
+                (table_comment[0], table_comment[1]) for table_comment in table_comments
+            ]
 
     def get_table_comment(self, table_name: str) -> Dict:
         """Get table comments.
@@ -674,17 +739,20 @@ class RDBMSConnector(BaseConnector):
 
     def get_column_comments(self, db_name: str, table_name: str):
         """Return column comments."""
-        cursor = self.session.execute(
-            text(
-                f"""SELECT column_name, column_comment FROM information_schema.columns
+        with self.session_scope() as session:
+            cursor = session.execute(
+                text(
+                    f"""SELECT column_name, column_comment FROM \
+                    information_schema.columns \
                     WHERE table_schema = '{db_name}' and table_name = '{table_name}'
-                """.format(db_name, table_name)
+                    """.format(db_name, table_name)
+                )
             )
-        )
-        column_comments = cursor.fetchall()
-        return [
-            (column_comment[0], column_comment[1]) for column_comment in column_comments
-        ]
+            column_comments = cursor.fetchall()
+            return [
+                (column_comment[0], column_comment[1])
+                for column_comment in column_comments
+            ]
 
     def get_database_names(self) -> List[str]:
         """Return a list of database names available in the database.
@@ -692,11 +760,30 @@ class RDBMSConnector(BaseConnector):
         Returns:
             List[str]: database list
         """
-        session = self._db_sessions()
-        cursor = session.execute(text(" show databases;"))
-        results = cursor.fetchall()
-        return [
-            d[0]
-            for d in results
-            if d[0] not in ["information_schema", "performance_schema", "sys", "mysql"]
-        ]
+        with self.session_scope() as session:
+            cursor = session.execute(text(" show databases;"))
+            results = cursor.fetchall()
+            return [
+                d[0]
+                for d in results
+                if d[0]
+                not in ["information_schema", "performance_schema", "sys", "mysql"]
+            ]
+
+    def close(self):
+        if self._is_closed:
+            return
+        logger.info("Closing RDBMS connector resources...")
+        # Close all active sessions
+        for session in self._sessions:
+            try:
+                if session.is_active:
+                    session.close()
+            except Exception as e:
+                logger.error(f"Error closing session: {e}")
+
+        # Remove the scoped_session registry
+        self._db_sessions.remove()
+        # Release connection pool resources
+        self._engine.dispose()
+        self._is_closed = True

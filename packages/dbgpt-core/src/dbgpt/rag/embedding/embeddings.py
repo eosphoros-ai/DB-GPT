@@ -468,8 +468,6 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
         ),
     ],
 )
-
-
 @register_resource(
     _("OpenAPI Embeddings"),
     "openapi_embeddings",
@@ -678,8 +676,3 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         """Asynchronous Embed query text."""
         embeddings = await self.aembed_documents([text])
         return embeddings[0]
-
-
-
-
-

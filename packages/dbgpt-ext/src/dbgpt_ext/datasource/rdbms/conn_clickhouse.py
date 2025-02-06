@@ -457,3 +457,10 @@ class ClickhouseConnector(RDBMSConnector):
             )
         )
         return self._all_tables
+
+    def close(self):
+        """Close the connection.
+
+        TODO: implement this method
+        """
+        pass

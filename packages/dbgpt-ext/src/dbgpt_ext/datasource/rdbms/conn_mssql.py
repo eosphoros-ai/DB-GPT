@@ -52,20 +52,21 @@ class MSSQLConnector(RDBMSConnector):
                 SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE
                 TABLE_TYPE='BASE TABLE'
             """
-        cursor = self.session.execute(text(_tables_sql))
-        tables_results = cursor.fetchall()
-        results = []
-        for row in tables_results:
-            table_name = row[0]
-            _sql = f"""
-                SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE
-                 TABLE_NAME='{table_name}'
-            """
-            cursor_colums = self.session.execute(text(_sql))
-            colum_results = cursor_colums.fetchall()
-            table_colums = []
-            for row_col in colum_results:
-                field_info = list(row_col)
-                table_colums.append(field_info[0])
-            results.append(f"{table_name}({','.join(table_colums)});")
-        return results
+        with self.session_scope() as session:
+            cursor = session.execute(text(_tables_sql))
+            tables_results = cursor.fetchall()
+            results = []
+            for row in tables_results:
+                table_name = row[0]
+                _sql = f"""
+                    SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE
+                     TABLE_NAME='{table_name}'
+                """
+                cursor_colums = session.execute(text(_sql))
+                colum_results = cursor_colums.fetchall()
+                table_colums = []
+                for row_col in colum_results:
+                    field_info = list(row_col)
+                    table_colums.append(field_info[0])
+                results.append(f"{table_name}({','.join(table_colums)});")
+            return results

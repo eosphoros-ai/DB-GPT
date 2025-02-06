@@ -6,4 +6,5 @@ from .db_summary import (  # noqa: F401
     IndexSummary,
     TableSummary,
 )
+
 __all__ = ["DBSummary", "FieldSummary", "IndexSummary", "TableSummary"]

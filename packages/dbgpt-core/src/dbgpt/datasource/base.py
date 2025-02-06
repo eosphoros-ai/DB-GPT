@@ -37,6 +37,11 @@ class BaseConnector(ABC):
         """
         raise NotImplementedError("Current connector does not support from_parameters")
 
+    @property
+    def db_url(self) -> str:
+        """Return database engine url."""
+        raise NotImplementedError("Current connector does not support db_url")
+
     def get_table_names(self) -> Iterable[str]:
         """Get all table names."""
         raise NotImplementedError("Current connector does not support get_table_names")
@@ -249,3 +254,21 @@ class BaseConnector(ABC):
     def is_graph_type(cls) -> bool:
         """Return whether the connector is a graph database connector."""
         return False
+
+    def close(self):
+        """Close the connector.
+
+        Make sure it can be called multiple times.
+        """
+
+    def __enter__(self):
+        """Return self when entering the context."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Close the connection when exiting the context."""
+        self.close()
+
+    def __del__(self):
+        """Close the connection when the object is deleted."""
+        self.close()

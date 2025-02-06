@@ -8,8 +8,12 @@ from typing import Optional
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
+from dbgpt.datasource.parameter import BaseDatasourceParameters
+from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.parameter_utils import BaseServerParameters
 from dbgpt_ext.datasource.schema import DBType
+
+from dbgpt_app.config import ApplicationConfig, ServiceConfig
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -31,7 +35,7 @@ def async_db_summary(system_app: SystemApp):
     thread.start()
 
 
-def server_init(param: "WebServerParameters", system_app: SystemApp):
+def server_init(param: ApplicationConfig, system_app: SystemApp):
     # logger.info(f"args: {args}")
     # init config
     cfg = Config()
@@ -51,12 +55,17 @@ def _create_model_start_listener(system_app: SystemApp):
     return startup_event
 
 
-def _initialize_db_storage(param: "WebServerParameters", system_app: SystemApp):
+def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
     """Initialize the db storage.
 
     Now just support sqlite and mysql. If db type is sqlite, the db path is
     `pilot/meta_data/{db_name}.db`.
     """
+    db_config: BaseDatasourceParameters = param.web.database
+    connector = db_config.create_connector()
+    if not isinstance(connector, RDBMSConnector):
+        raise ValueError("Only support RDBMSConnector")
+    db_url = connector.db_url
     _initialize_db(
         try_to_create_db=not param.disable_alembic_upgrade, system_app=system_app
     )

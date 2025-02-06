@@ -4,10 +4,10 @@ from functools import reduce
 from typing import Any, Dict, List, Optional, cast
 
 from dbgpt.core import Chunk
-from dbgpt.storage.base import IndexStoreBase
 from dbgpt.rag.retriever.base import BaseRetriever, RetrieverStrategy
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
+from dbgpt.storage.base import IndexStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.chat_util import run_async_tasks
 from dbgpt.util.tracer import root_tracer

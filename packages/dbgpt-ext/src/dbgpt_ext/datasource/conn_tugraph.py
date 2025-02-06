@@ -66,6 +66,7 @@ class TuGraphConnector(BaseConnector):
         self._schema = None
         self._graph = graph
         self._session = None
+        self._is_closed = False
 
     def create_graph(self, graph_name: str) -> bool:
         """Create a new graph in the database if it doesn't already exist."""
@@ -178,7 +179,10 @@ class TuGraphConnector(BaseConnector):
 
     def close(self):
         """Close the Neo4j driver."""
+        if self._is_closed:
+            return
         self._driver.close()
+        self._is_closed = True
 
     def run(self, query: str, fetch: str = "all") -> List:
         """Run query."""

@@ -80,22 +80,23 @@ Note， the most important requirement is that \
 table name should keep its schema name in "
 
     def _sync_tables_from_db(self) -> Iterable[str]:
-        table_results = self.session.execute(
-            text(
-                """
-                SELECT table_schema||'.'||table_name
-                FROM v_catalog.tables
-                WHERE table_schema NOT LIKE 'v\_%'
-                UNION
-                SELECT table_schema||'.'||table_name
-                FROM v_catalog.views
-                WHERE table_schema NOT LIKE 'v\_%';
-                """
+        with self.session_scope() as session:
+            table_results = session.execute(
+                text(
+                    """
+                    SELECT table_schema||'.'||table_name
+                    FROM v_catalog.tables
+                    WHERE table_schema NOT LIKE 'v\_%'
+                    UNION
+                    SELECT table_schema||'.'||table_name
+                    FROM v_catalog.views
+                    WHERE table_schema NOT LIKE 'v\_%';
+                    """
+                )
             )
-        )
-        self._all_tables = {row[0] for row in table_results}
-        self._metadata.reflect(bind=self._engine)
-        return self._all_tables
+            self._all_tables = {row[0] for row in table_results}
+            self._metadata.reflect(bind=self._engine)
+            return self._all_tables
 
     def get_grants(self):
         """Get grants."""
@@ -108,30 +109,33 @@ table name should keep its schema name in "
     def get_users(self):
         """Get user info."""
         try:
-            cursor = self.session.execute(text("SELECT name FROM v_internal.vs_users;"))
-            users = cursor.fetchall()
-            return [user[0] for user in users]
+            with self.session_scope() as session:
+                cursor = session.execute(text("SELECT name FROM v_internal.vs_users;"))
+                users = cursor.fetchall()
+                return [user[0] for user in users]
         except Exception as e:
             logger.warning(f"vertica get users error: {str(e)}")
             return []
 
     def get_fields(self, table_name, db_name=None) -> List[Tuple]:
         """Get column fields about specified table."""
-        session = self._db_sessions()
-        cursor = session.execute(
-            text(
-                f"""
-                SELECT column_name, data_type, column_default, is_nullable,
-                  nvl(comment, column_name) as column_comment
-                FROM v_catalog.columns c
-                  LEFT JOIN v_internal.vs_sub_comments s ON c.table_id = s.objectoid
-                    AND c.column_name = s.childobject
-                WHERE table_schema||'.'||table_name = '{table_name}';
-                """
+        with self.session_scope() as session:
+            cursor = session.execute(
+                text(
+                    f"""
+                    SELECT column_name, data_type, column_default, is_nullable,
+                      nvl(comment, column_name) as column_comment
+                    FROM v_catalog.columns c
+                      LEFT JOIN v_internal.vs_sub_comments s ON c.table_id = s.objectoid
+                        AND c.column_name = s.childobject
+                    WHERE table_schema||'.'||table_name = '{table_name}';
+                    """
+                )
             )
-        )
-        fields = cursor.fetchall()
-        return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
+            fields = cursor.fetchall()
+            return [
+                (field[0], field[1], field[2], field[3], field[4]) for field in fields
+            ]
 
     def get_columns(self, table_name: str) -> List[Dict]:
         """Get columns about specified table.
@@ -145,10 +149,7 @@ table name should keep its schema name in "
                 eg:[{'name': 'id', 'type': 'int', 'default_expression': '',
                 'is_in_primary_key': True, 'comment': 'id'}, ...]
         """
-        session = self._db_sessions()
-        cursor = session.execute(
-            text(
-                f"""
+        sql = f"""
                 SELECT c.column_name, data_type, column_default
                   , (p.column_name IS NOT NULL) is_in_primary_key
                   , nvl(comment, c.column_name) as column_comment
@@ -159,20 +160,20 @@ table name should keep its schema name in "
                     AND c.table_name = p.table_name
                     AND c.column_name = p.column_name
                 WHERE c.table_schema||'.'||c.table_name = '{table_name}';
-                """
-            )
-        )
-        fields = cursor.fetchall()
-        return [
-            {
-                "name": field[0],
-                "type": field[1],
-                "default_expression": field[2],
-                "is_in_primary_key": field[3],
-                "comment": field[4],
-            }
-            for field in fields
-        ]
+        """
+        with self.session_scope() as session:
+            cursor = session.execute(text(sql))
+            fields = cursor.fetchall()
+            return [
+                {
+                    "name": field[0],
+                    "type": field[1],
+                    "default_expression": field[2],
+                    "is_in_primary_key": field[3],
+                    "comment": field[4],
+                }
+                for field in fields
+            ]
 
     def get_charset(self):
         """Get character_set."""
@@ -180,41 +181,43 @@ table name should keep its schema name in "
 
     def get_show_create_table(self, table_name: str):
         """Return show create table."""
-        cur = self.session.execute(
-            text(
-                f"""
-                SELECT column_name, data_type
-                FROM v_catalog.columns
-                WHERE table_schema||'.'||table_name = '{table_name}';
-                """
+        with self.session_scope() as session:
+            cur = session.execute(
+                text(
+                    f"""
+                    SELECT column_name, data_type
+                    FROM v_catalog.columns
+                    WHERE table_schema||'.'||table_name = '{table_name}';
+                    """
+                )
             )
-        )
-        rows = cur.fetchall()
+            rows = cur.fetchall()
 
-        create_table_query = f"CREATE TABLE {table_name} (\n"
-        for row in rows:
-            create_table_query += f"    {row[0]} {row[1]},\n"
-        create_table_query = create_table_query.rstrip(",\n") + "\n)"
+            create_table_query = f"CREATE TABLE {table_name} (\n"
+            for row in rows:
+                create_table_query += f"    {row[0]} {row[1]},\n"
+            create_table_query = create_table_query.rstrip(",\n") + "\n)"
 
-        return create_table_query
+            return create_table_query
 
     def get_table_comments(self, db_name=None):
         """Return table comments."""
-        cursor = self.session.execute(
-            text(
-                f"""
-                SELECT table_schema||'.'||table_name
-                  , nvl(comment, table_name) as column_comment
-                FROM v_catalog.tables t
-                  LEFT JOIN v_internal.vs_comments c ON t.table_id = c.objectoid
-                WHERE table_schema = '{db_name}'
-                """
+        with self.session_scope() as session:
+            cursor = session.execute(
+                text(
+                    f"""
+                    SELECT table_schema||'.'||table_name
+                      , nvl(comment, table_name) as column_comment
+                    FROM v_catalog.tables t
+                      LEFT JOIN v_internal.vs_comments c ON t.table_id = c.objectoid
+                    WHERE table_schema = '{db_name}'
+                    """
+                )
             )
-        )
-        table_comments = cursor.fetchall()
-        return [
-            (table_comment[0], table_comment[1]) for table_comment in table_comments
-        ]
+            table_comments = cursor.fetchall()
+            return [
+                (table_comment[0], table_comment[1]) for table_comment in table_comments
+            ]
 
     def get_table_comment(self, table_name: str) -> Dict:
         """Get table comments.
@@ -224,46 +227,52 @@ table name should keep its schema name in "
         Returns:
             comment: Dict, which contains text: Optional[str], eg:["text": "comment"]
         """
-        cursor = self.session.execute(
-            text(
-                f"""
-                SELECT nvl(comment, table_name) as column_comment
-                FROM v_catalog.tables t
-                  LEFT JOIN v_internal.vs_comments c ON t.table_id = c.objectoid
-                WHERE table_schema||'.'||table_nam e= '{table_name}'
-                """
+        with self.session_scope() as session:
+            cursor = session.execute(
+                text(
+                    f"""
+                    SELECT nvl(comment, table_name) as column_comment
+                    FROM v_catalog.tables t
+                      LEFT JOIN v_internal.vs_comments c ON t.table_id = c.objectoid
+                    WHERE table_schema||'.'||table_nam e= '{table_name}'
+                    """
+                )
             )
-        )
-        return {"text": cursor.scalar()}
+            return {"text": cursor.scalar()}
 
     def get_column_comments(self, db_name: str, table_name: str):
         """Return column comments."""
-        cursor = self.session.execute(
-            text(
-                f"""
-                SELECT column_name, nvl(comment, column_name) as column_comment
-                FROM v_catalog.columns c
-                  LEFT JOIN v_internal.vs_sub_comments s ON c.table_id = s.objectoid
-                    AND c.column_name = s.childobject
-                WHERE table_schema = '{db_name}' AND table_name = '{table_name}'
-                """
+        with self.session_scope() as session:
+            cursor = session.execute(
+                text(
+                    f"""
+                    SELECT column_name, nvl(comment, column_name) as column_comment
+                    FROM v_catalog.columns c
+                      LEFT JOIN v_internal.vs_sub_comments s ON c.table_id = s.objectoid
+                        AND c.column_name = s.childobject
+                    WHERE table_schema = '{db_name}' AND table_name = '{table_name}'
+                    """
+                )
             )
-        )
-        column_comments = cursor.fetchall()
-        return [
-            (column_comment[0], column_comment[1]) for column_comment in column_comments
-        ]
+            column_comments = cursor.fetchall()
+            return [
+                (column_comment[0], column_comment[1])
+                for column_comment in column_comments
+            ]
 
     def get_database_names(self):
         """Get database names."""
-        session = self._db_sessions()
-        cursor = session.execute(text("SELECT schema_name FROM v_catalog.schemata;"))
-        results = cursor.fetchall()
-        return [d[0] for d in results if not d[0].startswith("v_")]
+        with self.session_scope() as session:
+            cursor = session.execute(
+                text("SELECT schema_name FROM v_catalog.schemata;")
+            )
+            results = cursor.fetchall()
+            return [d[0] for d in results if not d[0].startswith("v_")]
 
     def get_current_db_name(self) -> str:
         """Get current database name."""
-        return self.session.execute(text("SELECT current_schema()")).scalar()
+        with self.session_scope() as session:
+            return session.execute(text("SELECT current_schema()")).scalar()
 
     def table_simple_info(self):
         """Get table simple info."""
@@ -274,9 +283,10 @@ table name should keep its schema name in "
             WHERE table_schema NOT LIKE 'v\_%'
             GROUP BY 1;
             """
-        cursor = self.session.execute(text(_sql))
-        results = cursor.fetchall()
-        return results
+        with self.session_scope() as session:
+            cursor = session.execute(text(_sql))
+            results = cursor.fetchall()
+            return results
 
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""

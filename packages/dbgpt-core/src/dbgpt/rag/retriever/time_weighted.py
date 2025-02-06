@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.rerank import Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
+from dbgpt.storage.base import IndexStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
-from dbgpt.storage.base import IndexStoreBase
 from .embedding import EmbeddingRetriever
 
 
