@@ -94,7 +94,7 @@ class ZhipuLLMClient(ProxyLLMClient):
     ) -> Iterator[ModelOutput]:
         request = self.local_covert_message(request, message_converter)
 
-        messages = request.to_common_messages(support_system_role=False)
+        messages = request.to_common_messages(support_system_role=True)
 
         model = request.model or self._model
         try:
