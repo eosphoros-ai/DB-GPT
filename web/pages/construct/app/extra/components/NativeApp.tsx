@@ -185,7 +185,7 @@ const NativeApp: React.FC<{
             className='w-1/2'
           />
         </Form.Item>
-         <Form.Item label={t('prompt')} name="prompt_template">
+         <Form.Item label={t('prompt')} name='prompt_template'>
           <PromptSelect promptList={promptData?.items || []} />
         </Form.Item>
         <Form.Item label={t('temperature')} tooltip name='temperature'>

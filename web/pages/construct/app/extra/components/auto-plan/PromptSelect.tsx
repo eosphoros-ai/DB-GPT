@@ -21,10 +21,10 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
   }, [promptList, value]);
 
   return (
-    <div className="w-2/5 flex items-center gap-2">
+    <div className='w-2/5 flex items-center gap-2'>
       <Select
-        className="w-1/2"
-        placeholder="select prompt"
+        className='w-1/2'
+        placeholder='select prompt'
         options={promptList}
         fieldNames={{ label: 'prompt_name', value: 'prompt_code' }}
         onChange={(value) => {
@@ -37,12 +37,12 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
         showSearch
       />
       {curPrompt && (
-        <span className="text-sm text-blue-500 cursor-pointer" onClick={() => setShowPrompt(true)}>
-          <ExclamationCircleOutlined className="mr-1" />
+        <span className='text-sm text-blue-500 cursor-pointer' onClick={() => setShowPrompt(true)}>
+          <ExclamationCircleOutlined className='mr-1' />
           查看详情
         </span>
       )}
-      <Modal title="Prompt" open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
+      <Modal title='Prompt' open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
         <MarkDownContext>{curPrompt?.content}</MarkDownContext>
       </Modal>
     </div>
