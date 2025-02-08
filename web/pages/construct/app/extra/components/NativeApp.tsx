@@ -1,11 +1,13 @@
-import { apiInterceptors, getAppStrategyValues, getNativeAppScenes, getResource } from '@/client/api';
+/* eslint-disable */
 import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
+import { apiInterceptors, getAppStrategyValues, getNativeAppScenes, getResource, getPromptList } from '@/client/api';
 import { ParamNeed } from '@/types/app';
 import { useRequest } from 'ahooks';
 import { Form, InputNumber, Select, Tooltip } from 'antd';
 import cls from 'classnames';
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import PromptSelect from './auto-plan/PromptSelect';
 
 interface TeamContext {
   scene_name?: string;
@@ -22,6 +24,7 @@ interface FormProps {
   model?: string;
   temperature?: number;
   max_new_tokens?: number;
+  prompt_template?: string;
 }
 
 const NativeApp: React.FC<{
@@ -36,6 +39,7 @@ const NativeApp: React.FC<{
   const model = Form.useWatch('model', form);
   const temperature = Form.useWatch('temperature', form);
   const max_new_tokens = Form.useWatch('max_new_tokens', form);
+  const prompt_template = Form.useWatch('prompt_template', form);
 
   const { team_context, param_need } = initValue || {};
 
@@ -49,9 +53,20 @@ const NativeApp: React.FC<{
     form.setFieldValue('chat_scene', team_context?.chat_scene);
     form.setFieldValue('model', param_need?.find(param => param.type === 'model')?.value);
     form.setFieldValue('temperature', param_need?.find(param => param.type === 'temperature')?.value);
-    form.setFieldValue('max_new_tokens', param_need?.find(param => param.type === 'max_new_tokens')?.value);
+    form.setFieldValue('prompt_template', param_need?.find(param => param.type === 'prompt_template')?.value);
     await run(param_need?.find(param => param.type === 'resource')?.value || '');
     return [types, models] ?? [];
+  });
+
+  // 获取prompt提示语列表
+  const { data: promptData } = useRequest(async () => {
+    const [, res] = await apiInterceptors(
+      getPromptList({
+        page: 1,
+        page_size: 100000,
+      }),
+    );
+    return res ?? { items: [] };
   });
 
   // 获取资源类型参数列表
@@ -63,9 +78,7 @@ const NativeApp: React.FC<{
     async (type: string) => {
       const [, res] = await apiInterceptors(getResource({ type }));
       if (chatScene === team_context?.chat_scene && param_need?.find(param => param.type === 'resource')?.bind_value) {
-        form.setFieldsValue({
-          bind_value: param_need?.find(param => param.type === 'resource')?.bind_value,
-        });
+        form.setFieldsValue({ bind_value: param_need?.find(param => param.type === 'resource')?.bind_value });
       }
 
       return (
@@ -104,7 +117,6 @@ const NativeApp: React.FC<{
   // 将数据实时返回给消费组件
   useEffect(() => {
     const rawVal = form.getFieldsValue();
-
     updateData([
       loading,
       [
@@ -118,15 +130,15 @@ const NativeApp: React.FC<{
           { type: 'max_new_tokens', value: rawVal.max_new_tokens },
           {
             type: 'resource',
-            value: appTypeOptions
-              .find(type => type.chat_scene === rawVal.chat_scene)
-              ?.param_need?.find((param: any) => param.type === 'resource')?.value,
+            value: appTypeOptions.find(type => type.chat_scene === rawVal.chat_scene)?.param_need?.find((param: any) => param.type === 'resource')
+              ?.value,
             bind_value: rawVal.bind_value,
           },
+          { type: 'prompt_template', value: rawVal.prompt_template },
         ],
       ],
     ]);
-  }, [form, chatScene, bindValue, model, temperature, max_new_tokens, updateData, appTypeOptions, loading]);
+  }, [form, chatScene, bindValue, model, temperature, prompt_template, max_new_tokens, updateData, appTypeOptions, loading]);
 
   useEffect(() => {
     const type = (data?.[0]?.[1]?.find((type: any) => type.chat_scene === chatScene) as any)?.param_need?.find(
@@ -173,6 +185,9 @@ const NativeApp: React.FC<{
             }))}
             className='w-1/2'
           />
+        </Form.Item>
+         <Form.Item label={t('prompt')} name='prompt_template'>
+          <PromptSelect promptList={promptData?.items || []} />
         </Form.Item>
         <Form.Item label={t('temperature')} tooltip name='temperature'>
           <InputNumber className='w-1/5 h-8' max={1} min={0} step={0.1} placeholder={t('please_input_temperature')} />
