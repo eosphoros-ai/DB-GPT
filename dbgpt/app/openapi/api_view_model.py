@@ -82,6 +82,8 @@ class ConversationVo(BaseModel):
 
     sys_code: Optional[str] = Field(None, description="System code")
 
+    prompt_code: Optional[str] = Field(None, description="prompt code")
+
     ext_info: Optional[dict] = {}
 
 

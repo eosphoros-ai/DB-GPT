@@ -103,7 +103,7 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
             KnowledgeSpaceRequest(**kwargs)
         )
         results = [
-            {"label": ks.name, "key": ks.id, "description": ks.desc}
+            {"label": ks.name, "key": ks.name, "description": ks.desc}
             for ks in knowledge_spaces
         ]
 
