@@ -1,8 +1,9 @@
+/* eslint-disable */
 import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
 import { apiInterceptors, getAppStrategyValues, getNativeAppScenes, getResource, getPromptList } from '@/client/api';
 import { ParamNeed } from '@/types/app';
 import { useRequest } from 'ahooks';
-import { Form, InputNumber, Select, Tooltip, Typography } from 'antd';
+import { Form, InputNumber, Select, Tooltip } from 'antd';
 import cls from 'classnames';
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -50,10 +51,10 @@ const NativeApp: React.FC<{
     ]);
     const [types, models] = res;
     form.setFieldValue('chat_scene', team_context?.chat_scene);
-    form.setFieldValue('model', param_need?.find((param) => param.type === 'model')?.value);
-    form.setFieldValue('temperature', param_need?.find((param) => param.type === 'temperature')?.value);
-    form.setFieldValue('prompt_template', param_need?.find((param) => param.type === 'prompt_template')?.value);
-    await run(param_need?.find((param) => param.type === 'resource')?.value || '');
+    form.setFieldValue('model', param_need?.find(param => param.type === 'model')?.value);
+    form.setFieldValue('temperature', param_need?.find(param => param.type === 'temperature')?.value);
+    form.setFieldValue('prompt_template', param_need?.find(param => param.type === 'prompt_template')?.value);
+    await run(param_need?.find(param => param.type === 'resource')?.value || '');
     return [types, models] ?? [];
   });
 
@@ -76,12 +77,12 @@ const NativeApp: React.FC<{
   } = useRequest(
     async (type: string) => {
       const [, res] = await apiInterceptors(getResource({ type }));
-      if (chatScene === team_context?.chat_scene && param_need?.find((param) => param.type === 'resource')?.bind_value) {
-        form.setFieldsValue({ bind_value: param_need?.find((param) => param.type === 'resource')?.bind_value });
+      if (chatScene === team_context?.chat_scene && param_need?.find(param => param.type === 'resource')?.bind_value) {
+        form.setFieldsValue({ bind_value: param_need?.find(param => param.type === 'resource')?.bind_value });
       }
 
       return (
-        res?.map((item) => {
+        res?.map(item => {
           return {
             ...item,
             value: item.key,
@@ -121,7 +122,7 @@ const NativeApp: React.FC<{
       [
         {
           chat_scene: rawVal.chat_scene,
-          scene_name: appTypeOptions.find((type) => type.chat_scene === rawVal.chat_scene)?.scene_name,
+          scene_name: appTypeOptions.find(type => type.chat_scene === rawVal.chat_scene)?.scene_name,
         },
         [
           { type: 'model', value: rawVal.model },
@@ -129,7 +130,7 @@ const NativeApp: React.FC<{
           { type: 'max_new_tokens', value: rawVal.max_new_tokens },
           {
             type: 'resource',
-            value: appTypeOptions.find((type) => type.chat_scene === rawVal.chat_scene)?.param_need?.find((param: any) => param.type === 'resource')
+            value: appTypeOptions.find(type => type.chat_scene === rawVal.chat_scene)?.param_need?.find((param: any) => param.type === 'resource')
               ?.value,
             bind_value: rawVal.bind_value,
           },

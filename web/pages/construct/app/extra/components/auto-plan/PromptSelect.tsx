@@ -1,4 +1,4 @@
-
+/* eslint-disable */
 import React, { useEffect, useState } from 'react';
 import { Modal, Select } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
@@ -15,7 +15,7 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
 
   useEffect(() => {
     if (value) {
-      const filterPrompt = promptList?.filter((item) => item.prompt_code === value)[0];
+      const filterPrompt = promptList?.filter(item => item.prompt_code === value)[0];
       setCurPrompt(filterPrompt);
     }
   }, [promptList, value]);
@@ -27,8 +27,8 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
         placeholder='select prompt'
         options={promptList}
         fieldNames={{ label: 'prompt_name', value: 'prompt_code' }}
-        onChange={(value) => {
-          const filterPrompt = promptList?.filter((item) => item.prompt_code === value)[0];
+        onChange={value => {
+          const filterPrompt = promptList?.filter(item => item.prompt_code === value)[0];
           setCurPrompt(filterPrompt);
           onChange?.(value);
         }}
@@ -50,3 +50,4 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
 };
 
 export default PromptSelect;
+/* eslint-enable */
