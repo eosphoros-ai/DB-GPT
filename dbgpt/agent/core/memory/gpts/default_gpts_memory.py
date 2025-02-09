@@ -146,4 +146,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
 
     def get_last_message(self, conv_id: str) -> Optional[GptsMessage]:
         """Get the last message in the conversation."""
-        return None
+        messages: List[GptsMessage] = self.get_by_conv_id(conv_id)
+        if messages is None or len(messages) == 0:
+            return None
+        return messages[-1]

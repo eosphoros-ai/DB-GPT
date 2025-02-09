@@ -47,6 +47,7 @@ class ConversableAgent(Role, Agent):
     stream_out: bool = True
     # 确认当前Agent是否需要进行参考资源展示
     show_reference: bool = False
+    name_prefix: Optional[str] = None
 
     executor: Executor = Field(
         default_factory=lambda: ThreadPoolExecutor(max_workers=1),
@@ -57,6 +58,13 @@ class ConversableAgent(Role, Agent):
         """Create a new agent."""
         Role.__init__(self, **kwargs)
         Agent.__init__(self)
+
+    @property
+    def name(self) -> str:
+        """Return the name of the agent."""
+        if self.name_prefix is not None:
+            return f"{self.current_profile.get_name()}[{self.name_prefix}]"
+        return self.current_profile.get_name()
 
     def check_available(self) -> None:
         """Check if the agent is available.
@@ -347,7 +355,22 @@ class ConversableAgent(Role, Agent):
             fail_reason = None
             current_retry_counter = 0
             is_success = True
-            while current_retry_counter < self.max_retry_count:
+            force_retry = False
+            while force_retry or current_retry_counter < self.max_retry_count:
+                # Action force_retry 强制重试的处理: Action中明确指定需要进行重试，重试的消息按以下规则重新生成
+                # - 重新生成消息，保留上一轮的Action，并增加Rounds
+                # - 将上一轮的Action的Content作为当前输入消息
+                if force_retry:
+                    if reply_message.action_report is None:
+                        raise ValueError("action output is None when force_retry")
+                    received_message.content = reply_message.action_report.content
+                    received_message.rounds = reply_message.rounds + 1
+                    reply_message = self._init_reply_message(
+                        received_message=received_message,
+                        rely_messages=rely_messages,
+                    )
+
+                # 普通重试的处理
                 if current_retry_counter > 0:
                     retry_message = self._init_reply_message(
                         received_message=received_message,
@@ -460,6 +483,21 @@ class ConversableAgent(Role, Agent):
 
                 question: str = received_message.content or ""
                 ai_message: str = llm_reply or ""
+
+                # force_retry means this reply do not complete
+                # should reentry and do more things
+                force_retry = False
+                if act_out is not None and act_out.force_retry:
+                    await self.write_memories(
+                        question=question,
+                        ai_message=ai_message,
+                        action_output=act_out,
+                        check_pass=check_pass,
+                        check_fail_reason=fail_reason,
+                    )
+                    force_retry = True
+                    continue
+
                 # 5.Optimize wrong answers myself
                 if not check_pass:
                     if not act_out.have_retry:
