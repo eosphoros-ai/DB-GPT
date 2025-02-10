@@ -125,6 +125,47 @@ class RegisterParameters(abc.ABC, metaclass=PolymorphicMeta):
             cls._type_registry = {}
         cls._type_registry[type_value] = subclass
 
+    @classmethod
+    def get_type_value(cls) -> str:
+        """Get the type value for this class.
+
+        The type value is determined in the following order:
+        1. Use __type__ attribute if defined
+        2. Use the value of the type field (defined by __type_field__) if it exists
+        3. Generate from class name by removing parent class name suffix and converting
+         to lowercase
+
+        Returns:
+            str: The type value for this class
+        """
+        # Try to get explicit type value from __type__ attribute
+        type_value = getattr(cls, "__type__", None)
+        if type_value is not None:
+            return type_value
+
+        # Try to get value from type field
+        type_field = getattr(cls, "__type_field__", "type")
+        if type_field and hasattr(cls, type_field):
+            type_value = getattr(cls, type_field)
+            if type_value is not None:
+                return type_value
+
+        # Get base class that uses PolymorphicMeta
+        base_cls = next(
+            (base for base in cls.__bases__ if isinstance(base, PolymorphicMeta)),
+            None,
+        )
+
+        if base_cls is not None:
+            # Remove base class name suffix and convert to lowercase
+            base_suffix = base_cls.__name__.lower()
+            type_value = cls.__name__.lower()
+            if type_value.endswith(base_suffix):
+                type_value = type_value[: -len(base_suffix)]
+            return type_value
+
+        return cls.__name__.lower()
+
 
 class ConfigurationManager:
     """A unified configuration manager that supports loading configuration from files
@@ -254,6 +295,51 @@ class ConfigurationManager:
 
         return self.ENV_VAR_PATTERN.sub(replace_env_var, value)
 
+    def _process_dataclass_env_vars(self, obj: Any) -> Any:
+        """Process environment variables in a dataclass object's string fields.
+
+        Args:
+            obj: The dataclass object to process
+
+        Returns:
+            The processed dataclass object with environment variables resolved
+        """
+        if not is_dataclass(obj):
+            return obj
+
+        for fd in fields(obj):
+            field_value = getattr(obj, fd.name)
+            if isinstance(field_value, str) and self.resolve_env_vars:
+                # Handle environment variables in string fields
+                new_value = self._resolve_env_vars(field_value)
+                if new_value != field_value:
+                    setattr(obj, fd.name, new_value)
+            elif is_dataclass(field_value):
+                # Recursively process nested dataclass objects
+                setattr(obj, fd.name, self._process_dataclass_env_vars(field_value))
+            elif isinstance(field_value, (list, tuple)):
+                # Process dataclass objects in lists or tuples
+                new_value = [
+                    (
+                        self._process_dataclass_env_vars(item)
+                        if is_dataclass(item)
+                        else item
+                    )
+                    for item in field_value
+                ]
+                if any(a is not b for a, b in zip(new_value, field_value)):
+                    setattr(obj, fd.name, type(field_value)(new_value))
+            elif isinstance(field_value, dict):
+                # Process dataclass objects in dictionaries
+                new_value = {
+                    k: self._process_dataclass_env_vars(v) if is_dataclass(v) else v
+                    for k, v in field_value.items()
+                }
+                if new_value != field_value:
+                    setattr(obj, fd.name, new_value)
+
+        return obj
+
     def _convert_value(self, value: Any, field_type: Type) -> Any:
         """Convert a value to the specified type, supporting complex types and env vars.
 
@@ -371,25 +457,44 @@ class ConfigurationManager:
         if not is_dataclass(cls):
             raise ValueError(f"{cls.__name__} is not a dataclass")
 
+        if hasattr(cls, "_parse_class_") and callable(getattr(cls, "_parse_class_")):
+            new_cls = cls._parse_class_(data)
+            if new_cls is not None:
+                cls = new_cls
+
         concrete_cls = self._get_concrete_class(cls, data)
 
-        field_values = {}
-        type_hints = get_type_hints(concrete_cls)
+        def prepare_data_func(real_cls, dict_data: Dict[str, Any]):
+            field_values = {}
+            type_hints = get_type_hints(real_cls)
 
-        for fd in fields(concrete_cls):
-            field_type = type_hints[fd.name]
-            field_value = data.get(fd.name, MISSING)
+            for fd in fields(real_cls):
+                field_type = type_hints[fd.name]
+                field_value = dict_data.get(fd.name, MISSING)
 
-            if field_value is MISSING and fd.default is not MISSING:
-                field_values[fd.name] = fd.default
-            elif field_value is MISSING and fd.default_factory is not MISSING:
-                field_values[fd.name] = fd.default_factory()
-            elif field_value is MISSING:
-                raise ValueError(f"Missing required field: {fd.name}")
-            else:
-                field_values[fd.name] = self._convert_value(field_value, field_type)
+                if field_value is MISSING and fd.default is not MISSING:
+                    field_values[fd.name] = self._convert_value(fd.default, field_type)
+                elif field_value is MISSING and fd.default_factory is not MISSING:
+                    default_value = fd.default_factory()
+                    if is_dataclass(default_value):
+                        default_value = self._process_dataclass_env_vars(default_value)
+                    field_values[fd.name] = default_value
+                elif field_value is MISSING:
+                    raise ValueError(f"Missing required field: {fd.name}")
+                else:
+                    field_values[fd.name] = self._convert_value(field_value, field_type)
+            return field_values
 
-        return concrete_cls(**field_values)
+        # Check if the class has a custom from_dict method
+        if hasattr(concrete_cls, "_from_dict_") and callable(
+            getattr(concrete_cls, "_from_dict_")
+        ):
+            # Pass self._convert_value as the converter function
+            return concrete_cls._from_dict_(
+                data, prepare_data_func, self._convert_value
+            )
+        prepared_field_values = prepare_data_func(concrete_cls, data)
+        return concrete_cls(**prepared_field_values)
 
     def _get_concrete_class(self, base_class: Type[T], data: Dict[str, Any]) -> Type[T]:
         """Get the concrete subclass of a polymorphic dataclass.

@@ -7,7 +7,7 @@ from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import MODEL_DISK_CACHE_DIR
 from dbgpt.util.executor_utils import DefaultExecutorFactory
-from dbgpt_app.base import WebServerParameters
+from dbgpt_app.config import ApplicationConfig
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +15,8 @@ CFG = Config()
 
 
 def initialize_components(
-    param: WebServerParameters,
+    param: ApplicationConfig,
     system_app: SystemApp,
-    embedding_model_name: str,
-    embedding_model_path: str,
-    rerank_model_name: Optional[str] = None,
-    rerank_model_path: Optional[str] = None,
 ):
     # Lazy import to avoid high time cost
     from dbgpt.model.cluster.controller.controller import controller
@@ -32,9 +28,13 @@ def initialize_components(
     from dbgpt_app.initialization.serve_initialization import register_serve_apps
     from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
 
+    web_config = param.service.web
+    default_embedding_name = param.models.default_embedding
+    default_rerank_name = param.models.default_reranker
+
     # Register global default executor factory first
     system_app.register(
-        DefaultExecutorFactory, max_workers=param.default_thread_pool_size
+        DefaultExecutorFactory, max_workers=web_config.default_thread_pool_size
     )
     system_app.register(DefaultScheduler, scheduler_enable=CFG.SCHEDULER_ENABLED)
     system_app.register_instance(controller)
@@ -48,18 +48,16 @@ def initialize_components(
 
     system_app.register_instance(multi_agents)
 
-    _initialize_embedding_model(
-        param, system_app, embedding_model_name, embedding_model_path
-    )
-    _initialize_rerank_model(param, system_app, rerank_model_name, rerank_model_path)
-    _initialize_model_cache(system_app, param.port)
-    _initialize_awel(system_app, param)
+    _initialize_embedding_model(system_app, default_embedding_name)
+    _initialize_rerank_model(system_app, default_rerank_name)
+    _initialize_model_cache(system_app, web_config.port)
+    _initialize_awel(system_app, web_config.awel_dirs)
     # Initialize resource manager of agent
     _initialize_resource_manager(system_app)
     _initialize_agent(system_app)
     _initialize_openapi(system_app)
     # Register serve apps
-    register_serve_apps(system_app, CFG, param.port)
+    register_serve_apps(system_app, CFG, web_config.port)
     _initialize_operators()
     _initialize_code_server(system_app)
 
@@ -79,14 +77,14 @@ def _initialize_model_cache(system_app: SystemApp, port: int):
     initialize_cache(system_app, storage_type, max_memory_mb, persist_dir)
 
 
-def _initialize_awel(system_app: SystemApp, param: WebServerParameters):
+def _initialize_awel(system_app: SystemApp, awel_dirs: Optional[str] = None):
     from dbgpt.configs.model_config import _DAG_DEFINITION_DIR
     from dbgpt.core.awel import initialize_awel
 
     # Add default dag definition dir
     dag_dirs = [_DAG_DEFINITION_DIR]
-    if param.awel_dirs:
-        dag_dirs += param.awel_dirs.strip().split(",")
+    if awel_dirs:
+        dag_dirs += awel_dirs.strip().split(",")
     dag_dirs = [x.strip() for x in dag_dirs]
 
     initialize_awel(system_app, dag_dirs)

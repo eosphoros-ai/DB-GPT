@@ -17,6 +17,9 @@ from fastapi.responses import StreamingResponse
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import LOGDIR
 from dbgpt.core import ModelMetadata, ModelOutput
+from dbgpt.core.interface.parameter import (
+    BaseDeployModelParameters,
+)
 from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
 from dbgpt.model.cluster.base import (
     WORKER_MANAGER_SERVICE_NAME,
@@ -36,7 +39,11 @@ from dbgpt.model.cluster.manager_base import (
 )
 from dbgpt.model.cluster.registry import ModelRegistry
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.parameter import ModelWorkerParameters, WorkerType
+from dbgpt.model.parameter import (
+    ModelsDeployParameters,
+    ModelWorkerParameters,
+    WorkerType,
+)
 from dbgpt.model.utils.llm_utils import list_supported_models
 from dbgpt.util.fastapi import create_app, register_event_handler
 from dbgpt.util.parameter_utils import (
@@ -94,6 +101,7 @@ class LocalWorkerManager(WorkerManager):
         self.run_data = WorkerRunData(
             host=self.host,
             port=self.port,
+            worker_type=WORKER_MANAGER_SERVICE_TYPE,
             worker_key=self._worker_key(
                 WORKER_MANAGER_SERVICE_TYPE, WORKER_MANAGER_SERVICE_NAME
             ),
@@ -168,32 +176,28 @@ class LocalWorkerManager(WorkerManager):
         self,
         worker: ModelWorker,
         worker_params: ModelWorkerParameters,
+        deploy_model_params: BaseDeployModelParameters,
         command_args: List[str] = None,
     ) -> bool:
         if not command_args:
             command_args = sys.argv[1:]
-        worker.load_worker(**asdict(worker_params))
+        model_name = deploy_model_params.name
+        worker.load_worker(model_name, deploy_model_params)
+        worker_type = worker_params.worker_type
 
-        if not worker_params.worker_type:
-            worker_params.worker_type = worker.worker_type()
+        if not worker_type:
+            worker_type = worker.worker_type().value
 
-        if isinstance(worker_params.worker_type, WorkerType):
-            worker_params.worker_type = worker_params.worker_type.value
-
-        worker_key = self._worker_key(
-            worker_params.worker_type, worker_params.model_name
-        )
-
-        # Load model params from persist storage
-        model_params = worker.parse_parameters(command_args=command_args)
+        worker_key = self._worker_key(worker_type, model_name)
 
         worker_run_data = WorkerRunData(
             host=self.host,
             port=self.port,
+            worker_type=worker_type,
             worker_key=worker_key,
             worker=worker,
             worker_params=worker_params,
-            model_params=model_params,
+            model_params=deploy_model_params,
             stop_event=asyncio.Event(),
             semaphore=asyncio.Semaphore(worker_params.limit_model_concurrency),
             command_args=command_args,
@@ -219,6 +223,7 @@ class LocalWorkerManager(WorkerManager):
 
     async def model_startup(self, startup_req: WorkerStartupRequest):
         """Start model"""
+        raise NotImplementedError("Not implemented in 0.7.0")
         model_name = startup_req.model
         worker_type = startup_req.worker_type
         params = startup_req.params
@@ -231,7 +236,9 @@ class LocalWorkerManager(WorkerManager):
         )
         if not worker_params.model_name:
             worker_params.model_name = model_name
-        worker = _build_worker(worker_params)
+        worker = _build_worker(
+            worker_type=worker_type, worker_class=worker_params.worker_class
+        )
         command_args = _dict_to_command_args(params)
         success = await self.run_blocking_func(
             self.add_worker, worker, worker_params, command_args
@@ -453,9 +460,10 @@ class LocalWorkerManager(WorkerManager):
                     )
 
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
-        apply_func: Callable[[WorkerApplyRequest], Awaitable[str]] = None
         if apply_req.apply_type == WorkerApplyType.START:
-            apply_func = self._start_all_worker
+            apply_func: Callable[[WorkerApplyRequest], Awaitable[WorkerApplyOutput]] = (
+                self._start_all_worker
+            )
         elif apply_req.apply_type == WorkerApplyType.STOP:
             apply_func = self._stop_all_worker
         elif apply_req.apply_type == WorkerApplyType.RESTART:
@@ -524,7 +532,6 @@ class LocalWorkerManager(WorkerManager):
             try:
                 await self.run_blocking_func(
                     worker_run_data.worker.start,
-                    worker_run_data.model_params,
                     worker_run_data.command_args,
                 )
                 worker_run_data.stop_event.clear()
@@ -984,31 +991,28 @@ def _create_local_model_manager(
 
 
 def _build_worker(
-    worker_params: ModelWorkerParameters,
+    worker_type: Optional[str] = None,
+    worker_class: Optional[str] = None,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
 ):
-    worker_class = worker_params.worker_class
     if worker_class:
         from dbgpt.util.module_utils import import_from_checked_string
 
         worker_cls = import_from_checked_string(worker_class, ModelWorker)
         logger.info(f"Import worker class from {worker_class} successfully")
     else:
-        if (
-            worker_params.worker_type is None
-            or worker_params.worker_type == WorkerType.LLM
-        ):
+        if worker_type is None or worker_type == WorkerType.LLM:
             from dbgpt.model.cluster.worker.default_worker import DefaultModelWorker
 
             worker_cls = DefaultModelWorker
-        elif worker_params.worker_type == WorkerType.TEXT2VEC:
+        elif worker_type == WorkerType.TEXT2VEC:
             from dbgpt.model.cluster.worker.embedding_worker import (
                 EmbeddingsModelWorker,
             )
 
             worker_cls = EmbeddingsModelWorker
         else:
-            raise Exception("Unsupported worker type: {worker_params.worker_type}")
+            raise Exception(f"Unsupported worker type: {worker_type}")
 
     if ext_worker_kwargs:
         return worker_cls(**ext_worker_kwargs)
@@ -1019,6 +1023,7 @@ def _build_worker(
 def _start_local_worker(
     worker_manager: WorkerManagerAdapter,
     worker_params: ModelWorkerParameters,
+    deploy_model_params: BaseDeployModelParameters,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
 ):
     with root_tracer.start_span(
@@ -1030,24 +1035,27 @@ def _start_local_worker(
             "sys_infos": _get_dict_from_obj(get_system_info()),
         },
     ):
-        worker = _build_worker(worker_params, ext_worker_kwargs=ext_worker_kwargs)
+        worker = _build_worker(
+            worker_type=worker_params.worker_type,
+            worker_class=worker_params.worker_class,
+            ext_worker_kwargs=ext_worker_kwargs,
+        )
         if not worker_manager.worker_manager:
             worker_manager.worker_manager = _create_local_model_manager(worker_params)
-        worker_manager.worker_manager.add_worker(worker, worker_params)
+        worker_manager.worker_manager.add_worker(
+            worker, worker_params, deploy_model_params
+        )
 
 
 def _start_local_embedding_worker(
     worker_manager: WorkerManagerAdapter,
-    embedding_model_name: str = None,
-    embedding_model_path: str = None,
+    deploy_model_params: BaseDeployModelParameters,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
 ):
-    if not embedding_model_name or not embedding_model_path:
-        return
     worker_class = "dbgpt.model.cluster.worker.embedding_worker.EmbeddingsModelWorker"
     embedding_worker_params = ModelWorkerParameters(
-        model_name=embedding_model_name,
-        model_path=embedding_model_path,
+        model_name=deploy_model_params.name,
+        model_path=deploy_model_params.real_model_path,
         worker_type=WorkerType.TEXT2VEC,
         worker_class=worker_class,
     )
@@ -1056,22 +1064,21 @@ def _start_local_embedding_worker(
         f"{embedding_worker_params}"
     )
     _start_local_worker(
-        worker_manager, embedding_worker_params, ext_worker_kwargs=ext_worker_kwargs
+        worker_manager,
+        embedding_worker_params,
+        deploy_model_params,
+        ext_worker_kwargs=ext_worker_kwargs,
     )
 
 
 def initialize_worker_manager_in_client(
+    worker_params: ModelWorkerParameters,
+    models_config: ModelsDeployParameters,
     app=None,
     include_router: bool = True,
-    model_name: Optional[str] = None,
-    model_path: Optional[str] = None,
     run_locally: bool = True,
     controller_addr: Optional[str] = None,
     local_port: int = 5670,
-    embedding_model_name: Optional[str] = None,
-    embedding_model_path: Optional[str] = None,
-    rerank_model_name: Optional[str] = None,
-    rerank_model_path: Optional[str] = None,
     start_listener: Optional[Callable[["WorkerManager"], None]] = None,
     system_app: Optional[SystemApp] = None,
 ):
@@ -1096,11 +1103,12 @@ def initialize_worker_manager_in_client(
         logger.info(f"Register WorkerManager {_DefaultWorkerManagerFactory.name}")
         system_app.register(_DefaultWorkerManagerFactory, worker_manager)
 
-    worker_params: ModelWorkerParameters = _parse_worker_params(
-        model_name=model_name, model_path=model_path, controller_addr=controller_addr
-    )
+    # worker_params: ModelWorkerParameters = _parse_worker_params(
+    #     model_name=model_name, model_path=model_path, controller_addr=controller_addr
+    # )
+    if controller_addr and not worker_params.controller_addr:
+        worker_params.controller_addr = controller_addr
 
-    controller_addr = None
     if run_locally:
         # TODO start ModelController
         worker_params.standalone = True
@@ -1108,17 +1116,21 @@ def initialize_worker_manager_in_client(
         worker_params.port = local_port
         logger.info(f"Worker params: {worker_params}")
         _setup_fastapi(worker_params, app, ignore_exception=True, system_app=system_app)
-        _start_local_worker(worker_manager, worker_params)
+        for llm_deploy_config in models_config.llms:
+            # Multiple LLMs
+            _start_local_worker(worker_manager, worker_params, llm_deploy_config)
         worker_manager.after_start(start_listener)
-        _start_local_embedding_worker(
-            worker_manager, embedding_model_name, embedding_model_path
-        )
-        _start_local_embedding_worker(
-            worker_manager,
-            rerank_model_name,
-            rerank_model_path,
-            ext_worker_kwargs={"rerank_model": True},
-        )
+        for embedding_deploy_config in models_config.embeddings:
+            _start_local_embedding_worker(
+                worker_manager,
+                embedding_deploy_config,
+            )
+        for rerank_deploy_config in models_config.rerankers:
+            _start_local_embedding_worker(
+                worker_manager,
+                rerank_deploy_config,
+                ext_worker_kwargs={"rerank_model": True},
+            )
     else:
         from dbgpt.model.cluster.controller.controller import (
             ModelRegistryClient,

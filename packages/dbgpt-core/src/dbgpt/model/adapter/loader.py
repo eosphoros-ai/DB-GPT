@@ -2,37 +2,33 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
-from dbgpt.configs.model_config import get_device
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter
-from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.model.base import ModelType
 from dbgpt.model.parameter import (
     LlamaCppModelParameters,
-    ModelParameters,
-    ProxyModelParameters,
 )
 from dbgpt.util import get_gpu_memory
-from dbgpt.util.parameter_utils import EnvArgumentParser, _genenv_ignoring_key_case
+from dbgpt.util.parameter_utils import _genenv_ignoring_key_case
+
+from .hf_adapter import HFLLMDeployModelParameters
 
 logger = logging.getLogger(__name__)
 
 
-def _check_multi_gpu_or_4bit_quantization(model_params: ModelParameters):
-    # TODO: vicuna-v1.5 8-bit quantization info is slow
-    # TODO: support wizardlm quantization, see: https://huggingface.co/WizardLM/WizardLM-13B-V1.2/discussions/5
-    # TODO: support internlm quantization
-    model_name = model_params.model_name.lower()
+def _check_multi_gpu_or_4bit_quantization(model_params: LLMDeployModelParameters):
+    model_name = model_params.real_provider_model_name.lower()
     supported_models = ["llama", "baichuan", "vicuna"]
     return any(m in model_name for m in supported_models)
 
 
-def _check_quantization(model_params: ModelParameters):
-    model_name = model_params.model_name.lower()
-    has_quantization = any([model_params.load_8bit or model_params.load_4bit])
+def _hf_check_quantization(model_params: HFLLMDeployModelParameters):
+    model_name = model_params.real_provider_model_name.lower()
+    has_quantization = model_params.quantization is not None
     if has_quantization:
-        if model_params.device != "cuda":
+        if model_params.real_device != "cuda":
             logger.warn(
                 "8-bit quantization and 4-bit quantization just supported by cuda"
             )
@@ -40,7 +36,8 @@ def _check_quantization(model_params: ModelParameters):
         elif "chatglm" in model_name:
             if "int4" not in model_name:
                 logger.warn(
-                    "chatglm or chatglm2 not support quantization now, see: https://github.com/huggingface/transformers/issues/25228"
+                    "chatglm or chatglm2 not support quantization now, see: "
+                    "https://github.com/huggingface/transformers/issues/25228"
                 )
             return False
     return has_quantization
@@ -62,72 +59,24 @@ def _get_model_real_path(model_name, default_model_path) -> str:
 
 
 class ModelLoader:
-    """Model loader is a class for model load
+    """Model loader is a class for model load."""
 
-      Args: model_path
-
-    TODO: multi model support.
-    """
-
-    def __init__(self, model_path: str, model_name: str = None) -> None:
-        self.device = get_device()
-        self.model_path = model_path
-        self.model_name = model_name
-        self.prompt_template: str = None
-
-    # TODO multi gpu support
-    def loader(
+    def __init__(
         self,
-        load_8bit=False,
-        load_4bit=False,
-        debug=False,
-        cpu_offloading=False,
-        max_gpu_memory: Optional[str] = None,
-    ):
-        llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
-        model_type = llm_adapter.model_type()
-        param_cls = llm_adapter.model_param_class(model_type)
-
-        args_parser = EnvArgumentParser()
-        # Read the parameters of the model from the environment variable according to
-        # the model name prefix, which currently has the highest priority
-        # vicuna_13b_max_gpu_memory=13Gib or VICUNA_13B_MAX_GPU_MEMORY=13Gib
-        env_prefix = self.model_name + "_"
-        env_prefix = env_prefix.replace("-", "_")
-        model_params = args_parser.parse_args_into_dataclass(
-            param_cls,
-            env_prefixes=[env_prefix],
-            device=self.device,
-            model_path=self.model_path,
-            model_name=self.model_name,
-            max_gpu_memory=max_gpu_memory,
-            cpu_offloading=cpu_offloading,
-            load_8bit=load_8bit,
-            load_4bit=load_4bit,
-            verbose=debug,
-        )
-        self.prompt_template = model_params.prompt_template
-
-        logger.info(f"model_params:\n{model_params}")
-
-        if model_type == ModelType.HF:
-            return huggingface_loader(llm_adapter, model_params)
-        elif model_type == ModelType.LLAMA_CPP:
-            return llamacpp_loader(llm_adapter, model_params)
-        else:
-            raise Exception(f"Unkown model type {model_type}")
+        prompt_template: Optional[str] = None,
+    ) -> None:
+        self.prompt_template: Optional[str] = prompt_template
 
     def loader_with_params(
-        self, model_params: ModelParameters, llm_adapter: LLMModelAdapter
+        self, model_params: LLMDeployModelParameters, llm_adapter: LLMModelAdapter
     ):
+        """Load model with model parameters."""
         model_type = llm_adapter.model_type()
-        self.prompt_template = model_params.prompt_template
         if model_type == ModelType.HF:
             return huggingface_loader(llm_adapter, model_params)
         elif model_type == ModelType.LLAMA_CPP:
             return llamacpp_loader(llm_adapter, model_params)
         elif model_type == ModelType.PROXY:
-            # return proxyllm_loader(llm_adapter, model_params)
             return llm_adapter.load_from_params(model_params)
         elif model_type == ModelType.VLLM:
             return llm_adapter.load_from_params(model_params)
@@ -137,21 +86,32 @@ class ModelLoader:
             raise Exception(f"Unkown model type {model_type}")
 
 
-def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParameters):
+def huggingface_loader(
+    llm_adapter: LLMModelAdapter, model_params: LLMDeployModelParameters
+):
     import torch
 
     from dbgpt.model.llm.compression import compress_module
 
-    device = model_params.device
+    if not isinstance(model_params, HFLLMDeployModelParameters):
+        raise ValueError(
+            "Huggingface model loader only support HFLLMDeployModelParameters"
+        )
+    model_params = cast(HFLLMDeployModelParameters, model_params)
+    model_path = model_params.real_model_path or model_params.real_provider_model_name
+
+    device = model_params.real_device
     max_memory = None
 
     # if device is cpu or mps. gpu need to be zero
     num_gpus = 0
 
+    parsed_torch_dtype = _parse_torch_dtype(model_params.torch_dtype)
+    kwargs = {}
     if device == "cpu":
-        kwargs = {"torch_dtype": torch.float32}
+        default_torch_dtype = torch.float32
     elif device == "cuda":
-        kwargs = {"torch_dtype": torch.float16}
+        default_torch_dtype = torch.float16
         num_gpus = torch.cuda.device_count()
         available_gpu_memory = get_gpu_memory(num_gpus)
         max_memory = {
@@ -171,7 +131,7 @@ def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParamete
         logger.debug(f"max_memory: {max_memory}")
 
     elif device == "mps":
-        kwargs = {"torch_dtype": torch.float16}
+        default_torch_dtype = torch.float16
 
         import transformers
 
@@ -190,76 +150,97 @@ def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParamete
     else:
         raise ValueError(f"Invalid device: {device}")
 
-    model, tokenizer = _try_load_default_quantization_model(
-        llm_adapter, device, num_gpus, model_params, kwargs
+    kwargs["torch_dtype"] = parsed_torch_dtype or default_torch_dtype
+
+    model, tokenizer = _hf_try_load_default_quantization_model(
+        model_path, llm_adapter, device, num_gpus, model_params, kwargs
     )
     if model:
         return model, tokenizer
 
-    can_quantization = _check_quantization(model_params)
+    can_quantization = _hf_check_quantization(model_params)
+    is_load_8bits = (
+        model_params.quantization and model_params.quantization._is_load_in_8bits
+    )
 
-    if can_quantization and (num_gpus > 1 or model_params.load_4bit):
-        if _check_multi_gpu_or_4bit_quantization(model_params):
+    if can_quantization:
+        try:
+            # Try load quantization model
             return load_huggingface_quantization_model(
-                llm_adapter, model_params, kwargs, max_memory
+                model_path, llm_adapter, model_params, kwargs, max_memory
             )
-        else:
-            logger.warn(
-                f"Current model {model_params.model_name} not supported quantization"
+        except Exception as e:
+            logger.warning(
+                f"Load quantization model failed, error: {str(e)}, try load default "
+                "model"
             )
     # default loader
-    model, tokenizer = llm_adapter.load(model_params.model_path, kwargs)
+    model, tokenizer = llm_adapter.load(model_path, kwargs)
 
-    if model_params.load_8bit and num_gpus == 1 and tokenizer:
-        # TODO merge current code into `load_huggingface_quantization_model`
-        compress_module(model, model_params.device)
+    if is_load_8bits and num_gpus == 1 and tokenizer:
+        # Try to compress model with 8bit
+        compress_module(model, device)
 
-    return _handle_model_and_tokenizer(model, tokenizer, device, num_gpus, model_params)
+    return _hf_handle_model_and_tokenizer(
+        model, tokenizer, device, num_gpus, model_params
+    )
 
 
-def _try_load_default_quantization_model(
+def _hf_try_load_default_quantization_model(
+    model_path: str,
     llm_adapter: LLMModelAdapter,
     device: str,
     num_gpus: int,
-    model_params: ModelParameters,
+    model_params: HFLLMDeployModelParameters,
     kwargs: Dict[str, Any],
 ):
     """Try load default quantization model(Support by huggingface default)"""
     cloned_kwargs = {k: v for k, v in kwargs.items()}
+    model_name = model_params.name
     try:
         model, tokenizer = None, None
         if device != "cuda":
+            # Just support cuda
             return None, None
-        elif model_params.load_8bit and llm_adapter.support_8bit:
-            cloned_kwargs["load_in_8bit"] = True
-            model, tokenizer = llm_adapter.load(model_params.model_path, cloned_kwargs)
-        elif model_params.load_4bit and llm_adapter.support_4bit:
-            cloned_kwargs["load_in_4bit"] = True
-            model, tokenizer = llm_adapter.load(model_params.model_path, cloned_kwargs)
-        if model:
-            logger.info(
-                f"Load default quantization model {model_params.model_name} success"
+        elif model_params.quantization and (
+            llm_adapter.support_8bit or llm_adapter.support_4bit
+        ):
+            quantization_config = (
+                model_params.quantization.generate_quantization_config()
             )
-            return _handle_model_and_tokenizer(
+            if not quantization_config:
+                logger.warning(
+                    f"Generate quantization config failed, model: {model_name}"
+                )
+                return None, None
+            logger.info(
+                f"Load quantization model {model_name} with config: "
+                f"{quantization_config}"
+            )
+            cloned_kwargs.update(quantization_config)
+            model, tokenizer = llm_adapter.load(model_path, cloned_kwargs)
+        if model:
+            logger.info(f"Load default quantization model {model_name} success")
+            return _hf_handle_model_and_tokenizer(
                 model, tokenizer, device, num_gpus, model_params
             )
         return None, None
     except Exception as e:
         logger.warning(
-            f"Load default quantization model {model_params.model_name} failed, error: "
-            f"{str(e)}"
+            f"Load default quantization model {model_name} failed, error: {str(e)}"
         )
         return None, None
 
 
-def _handle_model_and_tokenizer(
-    model, tokenizer, device: str, num_gpus: int, model_params: ModelParameters
+def _hf_handle_model_and_tokenizer(
+    model,
+    tokenizer,
+    device: str,
+    num_gpus: int,
+    model_params: HFLLMDeployModelParameters,
 ):
-    if (
-        (device == "cuda" and num_gpus == 1 and not model_params.cpu_offloading)
-        or device == "mps"
-        and tokenizer
-    ):
+    if (device == "cuda" and num_gpus == 1) or device == "mps" and tokenizer:
+        # TODO: Check cpu_offloading
         try:
             model.to(device)
         except ValueError:
@@ -271,9 +252,22 @@ def _handle_model_and_tokenizer(
     return model, tokenizer
 
 
+def _parse_torch_dtype(torch_dtype: Optional[str]):
+    import torch  # noqa: F401
+
+    if torch_dtype and torch_dtype in ["float16", "bfloat16", "float", "float32"]:
+        try:
+            return eval(f"torch.{torch_dtype}")
+        except Exception as e:
+            logger.warning(f"Parse torch dtype failed, error: {str(e)}")
+            return None
+    return torch_dtype
+
+
 def load_huggingface_quantization_model(
+    model_path: str,
     llm_adapter: LLMModelAdapter,
-    model_params: ModelParameters,
+    model_params: HFLLMDeployModelParameters,
     kwargs: Dict,
     max_memory: Dict[int, str],
 ):
@@ -289,7 +283,6 @@ def load_huggingface_quantization_model(
             AutoModelForCausalLM,
             AutoModelForSeq2SeqLM,
             AutoTokenizer,
-            BitsAndBytesConfig,
             LlamaForCausalLM,
             LlamaTokenizer,
         )
@@ -299,61 +292,41 @@ def load_huggingface_quantization_model(
             "Please install it with `pip install transformers` "
             "`pip install bitsandbytes``pip install accelerate`."
         ) from exc
-    if (
-        "llama-2" in model_params.model_name.lower()
-        and not transformers.__version__ >= "4.31.0"
-    ):
+
+    if not model_params.quantization:
+        raise ValueError("Quantization config is required")
+
+    # It will be return a dict with keys: quantization_config
+    quantization_config = model_params.quantization.generate_quantization_config()
+    is_load_8bits = (
+        model_params.quantization and model_params.quantization._is_load_in_8bits
+    )
+
+    model_name = model_params.real_provider_model_name.lower()
+    if "llama-2" in model_name and not transformers.__version__ >= "4.31.0":
         raise ValueError(
             "Llama-2 quantization require transformers.__version__>=4.31.0"
         )
-    params = {"low_cpu_mem_usage": True}
-    params["low_cpu_mem_usage"] = True
-    params["device_map"] = "auto"
-
+    params = {"low_cpu_mem_usage": True, "device_map": "auto"}
     torch_dtype = kwargs.get("torch_dtype")
-
-    if model_params.load_4bit:
-        compute_dtype = None
-        if model_params.compute_dtype and model_params.compute_dtype in [
-            "bfloat16",
-            "float16",
-            "float32",
-        ]:
-            compute_dtype = eval("torch.{}".format(model_params.compute_dtype))
-
-        quantization_config_params = {
-            "load_in_4bit": True,
-            "bnb_4bit_compute_dtype": compute_dtype,
-            "bnb_4bit_quant_type": model_params.quant_type,
-            "bnb_4bit_use_double_quant": model_params.use_double_quant,
-        }
-        logger.warn(
-            "Using the following 4-bit params: " + str(quantization_config_params)
-        )
-        params["quantization_config"] = BitsAndBytesConfig(**quantization_config_params)
-    elif model_params.load_8bit and max_memory:
-        params["quantization_config"] = BitsAndBytesConfig(
-            load_in_8bit=True, llm_int8_enable_fp32_cpu_offload=True
-        )
-    elif model_params.load_in_8bit:
-        params["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
     params["torch_dtype"] = torch_dtype if torch_dtype else torch.float16
     params["max_memory"] = max_memory
+    params.update(quantization_config)
 
-    if "chatglm" in model_params.model_name.lower():
+    if "chatglm" in model_name:
         LoaderClass = AutoModel
     else:
         config = AutoConfig.from_pretrained(
-            model_params.model_path, trust_remote_code=model_params.trust_remote_code
+            model_path, trust_remote_code=model_params.trust_remote_code
         )
         if config.to_dict().get("is_encoder_decoder", False):
             LoaderClass = AutoModelForSeq2SeqLM
         else:
             LoaderClass = AutoModelForCausalLM
 
-    if model_params.load_8bit and max_memory is not None:
+    if is_load_8bits and max_memory is not None:
         config = AutoConfig.from_pretrained(
-            model_params.model_path, trust_remote_code=model_params.trust_remote_code
+            model_path, trust_remote_code=model_params.trust_remote_code
         )
         with init_empty_weights():
             model = LoaderClass.from_config(
@@ -371,7 +344,7 @@ def load_huggingface_quantization_model(
         if model_params.trust_remote_code:
             params["trust_remote_code"] = True
         logger.info(f"params: {params}")
-        model = LoaderClass.from_pretrained(model_params.model_path, **params)
+        model = LoaderClass.from_pretrained(model_path, **params)
     except Exception as e:
         logger.error(
             f"Load quantization model failed, error: {str(e)}, params: {params}"
@@ -385,7 +358,7 @@ def load_huggingface_quantization_model(
             "LlamaTokenizer"
         )
         tokenizer = LlamaTokenizer.from_pretrained(
-            model_params.model_path, clean_up_tokenization_spaces=True
+            model_path, clean_up_tokenization_spaces=True
         )
         # Leaving this here until the LLaMA tokenizer gets figured out.
         # For some people this fixes things, for others it causes an error.
@@ -401,7 +374,7 @@ def load_huggingface_quantization_model(
             "AutoTokenizer"
         )
         tokenizer = AutoTokenizer.from_pretrained(
-            model_params.model_path,
+            model_path,
             trust_remote_code=model_params.trust_remote_code,
             use_fast=llm_adapter.use_fast_tokenizer(),
         )
@@ -424,11 +397,3 @@ def llamacpp_loader(
     model_path = model_params.model_path
     model, tokenizer = LlamaCppModel.from_pretrained(model_path, model_params)
     return model, tokenizer
-
-
-def proxyllm_loader(llm_adapter: LLMModelAdapter, model_params: ProxyModelParameters):
-    from dbgpt.model.proxy.llms.proxy_model import ProxyModel
-
-    logger.info("Load proxyllm")
-    model = ProxyModel(model_params)
-    return model, model

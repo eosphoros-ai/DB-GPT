@@ -1,9 +1,41 @@
 """Ollama Embeddings."""
 
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Optional, Type
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
+from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
+from dbgpt.model.adapter.base import register_embedding_adapter
+from dbgpt.util.i18n_utils import _
+
+
+@dataclass
+class OllamaEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
+    """Ollama Embeddings deploy model parameters."""
+
+    provider = "proxy/ollama"
+
+    api_url: str = field(
+        default="http://localhost:11434",
+        metadata={
+            "help": _("The URL of the embeddings API."),
+        },
+    )
+    backend: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The real model name to pass to the provider, default is None. If "
+                "backend is None, use name as the real model name."
+            ),
+        },
+    )
+
+    @property
+    def real_provider_model_name(self) -> str:
+        """Get the real provider model name."""
+        return self.backend or self.name
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -27,6 +59,20 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs):
         """Initialize the OllamaEmbeddings."""
         super().__init__(**kwargs)
+
+    @classmethod
+    def param_class(cls) -> Type[OllamaEmbeddingDeployModelParameters]:
+        """Get the parameter class."""
+        return OllamaEmbeddingDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: OllamaEmbeddingDeployModelParameters
+    ) -> "Embeddings":
+        """Create an embedding model from parameters."""
+        return cls(
+            api_url=parameters.api_url, model_name=parameters.real_provider_model_name
+        )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
@@ -98,3 +144,6 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             return list(embedding["embedding"])
         except ollama.ResponseError as e:
             raise ValueError(f"**Ollama Response Error, Please CheckErrorInfo.**: {e}")
+
+
+register_embedding_adapter(OllamaEmbeddings)

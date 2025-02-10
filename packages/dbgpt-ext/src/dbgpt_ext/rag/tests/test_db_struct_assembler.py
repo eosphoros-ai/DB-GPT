@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import dbgpt
+import dbgpt_ext
 from dbgpt.core import Chunk
 from dbgpt_ext.rag.retriever.db_schema import DBSchemaRetriever
 
@@ -94,7 +94,7 @@ def mock_parse_db_summary() -> str:
 
 # Mocking the _parse_db_summary method in your test function
 @patch.object(
-    dbgpt.rag.summary.rdbms_db_summary, "_parse_db_summary", mock_parse_db_summary
+    dbgpt_ext.rag.summary.rdbms_db_summary, "_parse_db_summary", mock_parse_db_summary
 )
 def test_retrieve_with_mocked_summary(dbstruct_retriever):
     query = "Table summary"

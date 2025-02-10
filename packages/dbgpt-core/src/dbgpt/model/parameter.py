@@ -1,11 +1,16 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""Models Configuration Parameters."""
 
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
+from dbgpt.core.interface.parameter import (
+    EmbeddingDeployModelParameters,
+    LLMDeployModelParameters,
+    RerankerDeployModelParameters,
+)
+from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters, BaseServerParameters
 
 
@@ -628,6 +633,92 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
     def is_rerank_model(self) -> bool:
         """Check if the model is a rerank model"""
         return self.rerank
+
+
+@dataclass
+class DeployModelWorkerParameters(BaseParameters):
+    host: Optional[str] = field(
+        default="0.0.0.0", metadata={"help": "The host IP address to bind to."}
+    )
+    port: Optional[int] = field(
+        default=None, metadata={"help": "The port number to bind to."}
+    )
+
+
+@dataclass
+class ModelServiceConfig(BaseParameters):
+    """Model service configuration."""
+
+    controller: ModelControllerParameters = field(
+        metadata={"help": _("Model controller")}
+    )
+    worker: DeployModelWorkerParameters = field(metadata={"help": _("Model worker")})
+    api: ModelAPIServerParameters = field(metadata={"help": _("Model API")})
+
+
+@dataclass
+class ModelsDeployParameters(BaseParameters):
+    default_llm: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Default LLM model name, used to specify which model to use when you "
+                "have multiple LLMs"
+            ),
+        },
+    )
+    default_embedding: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Default embedding model name, used to specify which model to use when "
+                "you have multiple embedding models"
+            ),
+        },
+    )
+    default_reranker: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Default reranker model name, used to specify which model to use when "
+                "you have multiple reranker models"
+            ),
+        },
+    )
+    llms: List[LLMDeployModelParameters] = field(
+        default_factory=list,
+        metadata={
+            "help": "LLM model deploy configuration",
+        },
+    )
+    embeddings: List[EmbeddingDeployModelParameters] = field(
+        default_factory=list,
+        metadata={
+            "help": "Embedding model deploy configuration",
+        },
+    )
+    rerankers: List[RerankerDeployModelParameters] = field(
+        default_factory=list,
+        metadata={
+            "help": "Reranker model deploy configuration",
+        },
+    )
+
+    def __post_init__(self):
+        """Post init method."""
+        llms, embeds, rerankers = [], [], []
+        for llm in self.llms:
+            llms.append(llm.name)
+        for embedding in self.embeddings:
+            embeds.append(embedding.name)
+        for reranker in self.rerankers:
+            rerankers.append(reranker.name)
+        if not self.default_llm and llms:
+            self.default_llm = llms[0]
+        if not self.default_embedding and embeds:
+            self.default_embedding = embeds[0]
+        if not self.default_reranker and rerankers:
+            self.default_reranker = rerankers[0]
 
 
 _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {

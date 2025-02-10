@@ -1,13 +1,45 @@
 import logging
 from concurrent.futures import Executor
-from typing import Iterator, Optional
+from dataclasses import dataclass, field
+from typing import Iterator, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    ProxyLLMClient,
+    register_proxy_model_adapter,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
+
+from .chatgpt import OpenAICompatibleDeployModelParameters
 
 logger = logging.getLogger(__name__)
+
+
+_DEFAULT_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+
+@dataclass
+class TongyiDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Tongyi."""
+
+    provider: str = "proxy/tongyi"
+
+    # api_base: Optional[str] = field(
+    #     default="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    #     metadata={
+    #         "help": _("The base url of the tongyi API."),
+    #     },
+    # )
+    #
+    api_key: Optional[str] = field(
+        default="${env:DASHSCOPE_API_KEY}",
+        metadata={
+            "help": _("The API key of the tongyi API."),
+        },
+    )
 
 
 def tongyi_generate_stream(
@@ -54,16 +86,26 @@ class TongyiLLMClient(ProxyLLMClient):
     @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: TongyiDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "TongyiLLMClient":
         return cls(
-            model=model_params.proxyllm_backend,
-            api_key=model_params.proxy_api_key,
-            model_alias=model_params.model_name,
-            context_length=model_params.max_context_size,
+            model=model_params.real_provider_model_name,
+            api_key=model_params.api_key,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
             executor=default_executor,
         )
+
+    @classmethod
+    def param_class(cls) -> Type[TongyiDeployModelParameters]:
+        return TongyiDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return tongyi_generate_stream
 
     @property
     def default_model(self) -> str:
@@ -86,7 +128,7 @@ class TongyiLLMClient(ProxyLLMClient):
             res = gen.call(
                 model,
                 messages=messages,
-                top_p=0.8,
+                top_p=request.top_p or 0.8,
                 stream=True,
                 result_format="message",
                 stop=request.stop,
@@ -100,7 +142,10 @@ class TongyiLLMClient(ProxyLLMClient):
                         content = r["code"] + ":" + r["message"]
                         yield ModelOutput(text=content, error_code=-1)
         except Exception as e:
-            return ModelOutput(
+            yield ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 error_code=1,
             )
+
+
+register_proxy_model_adapter(TongyiLLMClient)

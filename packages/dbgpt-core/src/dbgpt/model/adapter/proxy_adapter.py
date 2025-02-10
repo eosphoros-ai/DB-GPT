@@ -2,9 +2,9 @@ import logging
 from abc import abstractmethod
 from typing import Optional, Type
 
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
 from dbgpt.model.base import ModelType
-from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
@@ -20,7 +20,7 @@ class ProxyLLMModelAdapter(LLMModelAdapter):
 
     def match(
         self,
-        model_type: str,
+        provider: str,
         model_name: Optional[str] = None,
         model_path: Optional[str] = None,
     ) -> bool:
@@ -33,20 +33,20 @@ class ProxyLLMModelAdapter(LLMModelAdapter):
         raise NotImplementedError()
 
     def dynamic_llm_client_class(
-        self, params: ProxyModelParameters
+        self, params: LLMDeployModelParameters
     ) -> Optional[Type[ProxyLLMClient]]:
         """Get dynamic llm client class
 
         Parse the llm_client_class from params and return the class
 
         Args:
-            params (ProxyModelParameters): proxy model parameters
+            params (LLMDeployModelParameters): proxy model parameters
 
         Returns:
             Optional[Type[ProxyLLMClient]]: llm client class
         """
 
-        if params.llm_client_class:
+        if hasattr(params, "llm_client_class") and params.llm_client_class:
             from dbgpt.util.module_utils import import_from_checked_string
 
             worker_cls: Type[ProxyLLMClient] = import_from_checked_string(
@@ -56,7 +56,7 @@ class ProxyLLMModelAdapter(LLMModelAdapter):
         return None
 
     def get_llm_client_class(
-        self, params: ProxyModelParameters
+        self, params: LLMDeployModelParameters
     ) -> Type[ProxyLLMClient]:
         """Get llm client class"""
         dynamic_llm_client_class = self.dynamic_llm_client_class(params)
@@ -64,7 +64,7 @@ class ProxyLLMModelAdapter(LLMModelAdapter):
             return dynamic_llm_client_class
         raise NotImplementedError()
 
-    def load_from_params(self, params: ProxyModelParameters):
+    def load_from_params(self, params: LLMDeployModelParameters):
         dynamic_llm_client_class = self.dynamic_llm_client_class(params)
         if not dynamic_llm_client_class:
             dynamic_llm_client_class = self.get_llm_client_class(params)
@@ -77,153 +77,154 @@ class ProxyLLMModelAdapter(LLMModelAdapter):
         return model, model
 
 
-class OpenAIProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    def support_async(self) -> bool:
-        return True
+# class OpenAIProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     def support_async(self) -> bool:
+#         return True
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path in ["chatgpt_proxyllm", "proxyllm"]
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         """Get llm client class"""
+#         from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
+#
+#         return OpenAILLMClient
+#
+#     def get_async_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.chatgpt import chatgpt_generate_stream
+#
+#         return chatgpt_generate_stream
 
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path in ["chatgpt_proxyllm", "proxyllm"]
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        """Get llm client class"""
-        from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
-
-        return OpenAILLMClient
-
-    def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.chatgpt import chatgpt_generate_stream
-
-        return chatgpt_generate_stream
-
-
-class ClaudeProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    def support_async(self) -> bool:
-        return True
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "claude_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.claude import ClaudeLLMClient
-
-        return ClaudeLLMClient
-
-    def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.claude import claude_generate_stream
-
-        return claude_generate_stream
-
-
-class TongyiProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "tongyi_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
-
-        return TongyiLLMClient
-
-    def get_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.tongyi import tongyi_generate_stream
-
-        return tongyi_generate_stream
+# class ClaudeProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     def support_async(self) -> bool:
+#         return True
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "claude_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.claude import ClaudeLLMClient
+#
+#         return ClaudeLLMClient
+#
+#     def get_async_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.claude import claude_generate_stream
+#
+#         return claude_generate_stream
+#
 
 
-class OllamaLLMModelAdapter(ProxyLLMModelAdapter):
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "ollama_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
-
-        return OllamaLLMClient
-
-    def get_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.ollama import ollama_generate_stream
-
-        return ollama_generate_stream
-
-
-class ZhipuProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    support_system_message = False
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "zhipu_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.zhipu import ZhipuLLMClient
-
-        return ZhipuLLMClient
-
-    def get_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.zhipu import zhipu_generate_stream
-
-        return zhipu_generate_stream
+# class TongyiProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "tongyi_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
+#
+#         return TongyiLLMClient
+#
+#     def get_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.tongyi import tongyi_generate_stream
+#
+#         return tongyi_generate_stream
 
 
-class WenxinProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "wenxin_proxyllm"
+#
+# class OllamaLLMModelAdapter(ProxyLLMModelAdapter):
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "ollama_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
+#
+#         return OllamaLLMClient
+#
+#     def get_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.ollama import ollama_generate_stream
+#
+#         return ollama_generate_stream
 
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.wenxin import WenxinLLMClient
-
-        return WenxinLLMClient
-
-    def get_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.wenxin import wenxin_generate_stream
-
-        return wenxin_generate_stream
-
-
-class GeminiProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    support_system_message = False
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "gemini_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
-
-        return GeminiLLMClient
-
-    def get_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.gemini import gemini_generate_stream
-
-        return gemini_generate_stream
+#
+# class ZhipuProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     support_system_message = False
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "zhipu_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.zhipu import ZhipuLLMClient
+#
+#         return ZhipuLLMClient
+#
+#     def get_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.zhipu import zhipu_generate_stream
+#
+#         return zhipu_generate_stream
 
 
-class SparkProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    support_system_message = False
+# class WenxinProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "wenxin_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.wenxin import WenxinLLMClient
+#
+#         return WenxinLLMClient
+#
+#     def get_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.wenxin import wenxin_generate_stream
+#
+#         return wenxin_generate_stream
 
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "spark_proxyllm"
 
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.spark import SparkLLMClient
+# class GeminiProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     support_system_message = False
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "gemini_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
+#
+#         return GeminiLLMClient
+#
+#     def get_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.gemini import gemini_generate_stream
+#
+#         return gemini_generate_stream
 
-        return SparkLLMClient
-
-    def get_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.spark import spark_generate_stream
-
-        return spark_generate_stream
+#
+# class SparkProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     support_system_message = False
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "spark_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.spark import SparkLLMClient
+#
+#         return SparkLLMClient
+#
+#     def get_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.spark import spark_generate_stream
+#
+#         return spark_generate_stream
 
 
 class BardProxyLLMModelAdapter(ProxyLLMModelAdapter):
@@ -231,7 +232,7 @@ class BardProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return lower_model_name_or_path == "bard_proxyllm"
 
     def get_llm_client_class(
-        self, params: ProxyModelParameters
+        self, params: LLMDeployModelParameters
     ) -> Type[ProxyLLMClient]:
         """Get llm client class"""
         # TODO: Bard proxy LLM not support ProxyLLMClient now, we just return
@@ -240,7 +241,9 @@ class BardProxyLLMModelAdapter(ProxyLLMModelAdapter):
 
         return OpenAILLMClient
 
-    def get_async_generate_stream_function(self, model, model_path: str):
+    def get_async_generate_stream_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         from dbgpt.model.proxy.llms.bard import bard_generate_stream
 
         return bard_generate_stream
@@ -251,7 +254,7 @@ class BaichuanProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return lower_model_name_or_path == "bc_proxyllm"
 
     def get_llm_client_class(
-        self, params: ProxyModelParameters
+        self, params: LLMDeployModelParameters
     ) -> Type[ProxyLLMClient]:
         """Get llm client class"""
         # TODO: Baichuan proxy LLM not support ProxyLLMClient now, we just return
@@ -260,150 +263,154 @@ class BaichuanProxyLLMModelAdapter(ProxyLLMModelAdapter):
 
         return OpenAILLMClient
 
-    def get_async_generate_stream_function(self, model, model_path: str):
+    def get_async_generate_stream_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         from dbgpt.model.proxy.llms.baichuan import baichuan_generate_stream
 
         return baichuan_generate_stream
 
 
-class YiProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    """Yi proxy LLM model adapter.
+#
+# class YiProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     """Yi proxy LLM model adapter.
+#
+#     See Also: `Yi Documentation <https://platform.lingyiwanwu.com/docs/>`_
+#     """
+#
+#     def support_async(self) -> bool:
+#         return True
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path in ["yi_proxyllm"]
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         """Get llm client class"""
+#         from dbgpt.model.proxy.llms.yi import YiLLMClient
+#
+#         return YiLLMClient
+#
+#     def get_async_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.yi import yi_generate_stream
+#
+#         return yi_generate_stream
+#
 
-    See Also: `Yi Documentation <https://platform.lingyiwanwu.com/docs/>`_
-    """
-
-    def support_async(self) -> bool:
-        return True
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path in ["yi_proxyllm"]
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        """Get llm client class"""
-        from dbgpt.model.proxy.llms.yi import YiLLMClient
-
-        return YiLLMClient
-
-    def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.yi import yi_generate_stream
-
-        return yi_generate_stream
-
-
-class MoonshotProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    """Moonshot proxy LLM model adapter.
-
-    See Also: `Moonshot Documentation <https://platform.moonshot.cn/docs/>`_
-    """
-
-    def support_async(self) -> bool:
-        return True
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path in ["moonshot_proxyllm"]
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
-
-        return MoonshotLLMClient
-
-    def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.moonshot import moonshot_generate_stream
-
-        return moonshot_generate_stream
-
-
-class DeepseekProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    """Deepseek proxy LLM model adapter.
-
-    See Also: `Deepseek Documentation <https://platform.deepseek.com/api-docs/>`_
-    """
-
-    def support_async(self) -> bool:
-        return True
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "deepseek_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.deepseek import DeepseekLLMClient
-
-        return DeepseekLLMClient
-
-    def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.deepseek import deepseek_generate_stream
-
-        return deepseek_generate_stream
+#
+# class MoonshotProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     """Moonshot proxy LLM model adapter.
+#
+#     See Also: `Moonshot Documentation <https://platform.moonshot.cn/docs/>`_
+#     """
+#
+#     def support_async(self) -> bool:
+#         return True
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path in ["moonshot_proxyllm"]
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
+#
+#         return MoonshotLLMClient
+#
+#     def get_async_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.moonshot import moonshot_generate_stream
+#
+#         return moonshot_generate_stream
 
 
-class SiliconFlowProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    """SiliconFlow proxy LLM model adapter.
-
-    See Also: `SiliconFlow Documentation <https://docs.siliconflow.cn/quickstart>`_
-    """
-
-    def support_async(self) -> bool:
-        return True
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "siliconflow_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
-
-        return SiliconFlowLLMClient
-
-    def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.siliconflow import siliconflow_generate_stream
-
-        return siliconflow_generate_stream
-
-
-class GiteeProxyLLMModelAdapter(ProxyLLMModelAdapter):
-    """Gitee proxy LLM model adapter.
-
-    See Also: `Gitee Documentation <https://ai.gitee.com/docs/getting-started/intro>`_
-    """
-
-    def support_async(self) -> bool:
-        return True
-
-    def do_match(self, lower_model_name_or_path: Optional[str] = None):
-        return lower_model_name_or_path == "gitee_proxyllm"
-
-    def get_llm_client_class(
-        self, params: ProxyModelParameters
-    ) -> Type[ProxyLLMClient]:
-        from dbgpt.model.proxy.llms.gitee import GiteeLLMClient
-
-        return GiteeLLMClient
-
-    def get_async_generate_stream_function(self, model, model_path: str):
-        from dbgpt.model.proxy.llms.gitee import gitee_generate_stream
-
-        return gitee_generate_stream
+# class DeepseekProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     """Deepseek proxy LLM model adapter.
+#
+#     See Also: `Deepseek Documentation <https://platform.deepseek.com/api-docs/>`_
+#     """
+#
+#     def support_async(self) -> bool:
+#         return True
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "deepseek_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.deepseek import DeepseekLLMClient
+#
+#         return DeepseekLLMClient
+#
+#     def get_async_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.deepseek import deepseek_generate_stream
+#
+#         return deepseek_generate_stream
 
 
-register_model_adapter(OpenAIProxyLLMModelAdapter)
-register_model_adapter(ClaudeProxyLLMModelAdapter)
-register_model_adapter(TongyiProxyLLMModelAdapter)
-register_model_adapter(OllamaLLMModelAdapter)
-register_model_adapter(ZhipuProxyLLMModelAdapter)
-register_model_adapter(WenxinProxyLLMModelAdapter)
-register_model_adapter(GeminiProxyLLMModelAdapter)
-register_model_adapter(SparkProxyLLMModelAdapter)
+# class SiliconFlowProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     """SiliconFlow proxy LLM model adapter.
+#
+#     See Also: `SiliconFlow Documentation <https://docs.siliconflow.cn/quickstart>`_
+#     """
+#
+#     def support_async(self) -> bool:
+#         return True
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "siliconflow_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
+#
+#         return SiliconFlowLLMClient
+#
+#     def get_async_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.siliconflow import siliconflow_generate_stream
+#
+#         return siliconflow_generate_stream
+
+
+# class GiteeProxyLLMModelAdapter(ProxyLLMModelAdapter):
+#     """Gitee proxy LLM model adapter.
+#
+#     See Also: `Gitee Documentation <https://ai.gitee.com/docs/getting-started/intro>`_
+#     """
+#
+#     def support_async(self) -> bool:
+#         return True
+#
+#     def do_match(self, lower_model_name_or_path: Optional[str] = None):
+#         return lower_model_name_or_path == "gitee_proxyllm"
+#
+#     def get_llm_client_class(
+#         self, params: ProxyModelParameters
+#     ) -> Type[ProxyLLMClient]:
+#         from dbgpt.model.proxy.llms.gitee import GiteeLLMClient
+#
+#         return GiteeLLMClient
+#
+#     def get_async_generate_stream_function(self, model, model_path: str):
+#         from dbgpt.model.proxy.llms.gitee import gitee_generate_stream
+#
+#         return gitee_generate_stream
+
+
+# register_model_adapter(OpenAIProxyLLMModelAdapter)
+# register_model_adapter(ClaudeProxyLLMModelAdapter)
+# register_model_adapter(TongyiProxyLLMModelAdapter)
+# register_model_adapter(OllamaLLMModelAdapter)
+# register_model_adapter(ZhipuProxyLLMModelAdapter)
+# register_model_adapter(WenxinProxyLLMModelAdapter)
+# register_model_adapter(GeminiProxyLLMModelAdapter)
+# register_model_adapter(SparkProxyLLMModelAdapter)
 register_model_adapter(BardProxyLLMModelAdapter)
 register_model_adapter(BaichuanProxyLLMModelAdapter)
-register_model_adapter(YiProxyLLMModelAdapter)
-register_model_adapter(MoonshotProxyLLMModelAdapter)
-register_model_adapter(DeepseekProxyLLMModelAdapter)
-register_model_adapter(SiliconFlowProxyLLMModelAdapter)
-register_model_adapter(GiteeProxyLLMModelAdapter)
+# register_model_adapter(YiProxyLLMModelAdapter)
+# register_model_adapter(MoonshotProxyLLMModelAdapter)
+# register_model_adapter(DeepseekProxyLLMModelAdapter)
+# register_model_adapter(SiliconFlowProxyLLMModelAdapter)
+# register_model_adapter(GiteeProxyLLMModelAdapter)

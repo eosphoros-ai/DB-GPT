@@ -1,9 +1,38 @@
 """Tongyi embeddings for RAG."""
 
-from typing import List, Optional
+from dataclasses import dataclass, field
+from typing import List, Optional, Type
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
+from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
+from dbgpt.model.adapter.base import register_embedding_adapter
+from dbgpt.util.i18n_utils import _
+
+
+@dataclass
+class TongyiEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
+    """Qianfan Embeddings deploy model parameters."""
+
+    provider = "proxy/tongyi"
+
+    api_key: Optional[str] = Field(
+        default=None, description="The API key for the embeddings API."
+    )
+    backend: Optional[str] = field(
+        default="text-embedding-v1",
+        metadata={
+            "help": _(
+                "The real model name to pass to the provider, default is None. If "
+                "backend is None, use name as the real model name."
+            ),
+        },
+    )
+
+    @property
+    def real_provider_model_name(self) -> str:
+        """Get the real provider model name."""
+        return self.backend or self.name
 
 
 class TongYiEmbeddings(BaseModel, Embeddings):
@@ -51,6 +80,21 @@ class TongYiEmbeddings(BaseModel, Embeddings):
         dashscope.TextEmbedding.api_key = kwargs.get("api_key")
         super().__init__(**kwargs)
         self._api_key = kwargs.get("api_key")
+
+    @classmethod
+    def param_class(cls) -> Type[TongyiEmbeddingDeployModelParameters]:
+        """Get the parameter class."""
+        return TongyiEmbeddingDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: TongyiEmbeddingDeployModelParameters
+    ) -> "Embeddings":
+        """Create an embedding model from parameters."""
+        return cls(
+            api_key=parameters.api_key,
+            model_name=parameters.real_provider_model_name,
+        )
 
     def embed_documents(
         self, texts: List[str], max_batch_chunks_size=25
@@ -102,3 +146,6 @@ class TongYiEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
         return self.embed_documents([text])[0]
+
+
+register_embedding_adapter(TongYiEmbeddings)

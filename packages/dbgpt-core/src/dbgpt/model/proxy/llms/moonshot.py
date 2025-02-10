@@ -1,9 +1,16 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
-from .chatgpt import OpenAILLMClient
+from ..base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    register_proxy_model_adapter,
+)
+from .chatgpt import OpenAICompatibleDeployModelParameters, OpenAILLMClient
 
 if TYPE_CHECKING:
     from httpx._types import ProxiesTypes
@@ -12,6 +19,27 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 _MOONSHOT_DEFAULT_MODEL = "moonshot-v1-8k"
+
+
+@dataclass
+class MoonshotDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Moonshot."""
+
+    provider: str = "proxy/moonshot"
+
+    api_base: Optional[str] = field(
+        default="${env:MOONSHOT_API_BASE:-https://api.moonshot.cn/v1}",
+        metadata={
+            "help": _("The base url of the Moonshot API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:MOONSHOT_API_KEY}",
+        metadata={
+            "help": _("The API key of the Moonshot API."),
+        },
+    )
 
 
 async def moonshot_generate_stream(
@@ -38,7 +66,7 @@ class MoonshotLLMClient(OpenAILLMClient):
         model: Optional[str] = _MOONSHOT_DEFAULT_MODEL,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "moonshot_proxyllm",
+        model_alias: Optional[str] = _MOONSHOT_DEFAULT_MODEL,
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -91,3 +119,16 @@ class MoonshotLLMClient(OpenAILLMClient):
         if not model:
             model = _MOONSHOT_DEFAULT_MODEL
         return model
+
+    @classmethod
+    def param_class(cls) -> Type[MoonshotDeployModelParameters]:
+        return MoonshotDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return moonshot_generate_stream
+
+
+register_proxy_model_adapter(MoonshotLLMClient)

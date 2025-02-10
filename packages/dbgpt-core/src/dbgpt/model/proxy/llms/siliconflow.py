@@ -1,9 +1,16 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
-from .chatgpt import OpenAILLMClient
+from ..base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    register_proxy_model_adapter,
+)
+from .chatgpt import OpenAICompatibleDeployModelParameters, OpenAILLMClient
 
 if TYPE_CHECKING:
     from httpx._types import ProxiesTypes
@@ -13,6 +20,27 @@ if TYPE_CHECKING:
 
 
 _SILICONFLOW_DEFAULT_MODEL = "Qwen/Qwen2.5-Coder-32B-Instruct"
+
+
+@dataclass
+class SiliconFlowDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for SiliconFlow."""
+
+    provider: str = "proxy/siliconflow"
+
+    api_base: Optional[str] = field(
+        default="${env:SILICONFLOW_API_BASE:-https://api.deepseek.com/v1}",
+        metadata={
+            "help": _("The base url of the SiliconFlow API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:SILICONFLOW_API_KEY}",
+        metadata={
+            "help": _("The API key of the SiliconFlow API."),
+        },
+    )
 
 
 async def siliconflow_generate_stream(
@@ -37,10 +65,10 @@ class SiliconFlowLLMClient(OpenAILLMClient):
         api_base: Optional[str] = None,
         api_type: Optional[str] = None,
         api_version: Optional[str] = None,
-        model: Optional[str] = None,
+        model: Optional[str] = _SILICONFLOW_DEFAULT_MODEL,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "siliconflow_proxyllm",
+        model_alias: Optional[str] = _SILICONFLOW_DEFAULT_MODEL,
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -86,3 +114,16 @@ class SiliconFlowLLMClient(OpenAILLMClient):
         if not model:
             model = _SILICONFLOW_DEFAULT_MODEL
         return model
+
+    @classmethod
+    def param_class(cls) -> Type[SiliconFlowDeployModelParameters]:
+        return SiliconFlowDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return siliconflow_generate_stream
+
+
+register_proxy_model_adapter(SiliconFlowLLMClient)

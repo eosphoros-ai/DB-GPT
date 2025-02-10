@@ -10,6 +10,7 @@ import threading
 from functools import cache
 from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 
@@ -114,7 +115,9 @@ class FastChatLLMModelAdapterWrapper(LLMModelAdapter):
     def load(self, model_path: str, from_pretrained_kwargs: dict):
         return self._adapter.load_model(model_path, from_pretrained_kwargs)
 
-    def get_generate_stream_function(self, model: "TorchNNModule", model_path: str):
+    def get_generate_stream_function(
+        self, model: "TorchNNModule", deploy_model_params: LLMDeployModelParameters
+    ):
         if _IS_BENCHMARK:
             from dbgpt.util.benchmarks.llm.fastchat_benchmarks_inference import (
                 generate_stream,
@@ -124,6 +127,7 @@ class FastChatLLMModelAdapterWrapper(LLMModelAdapter):
         else:
             from fastchat.model.model_adapter import get_generate_stream_function
 
+            model_path = deploy_model_params.real_model_path
             return get_generate_stream_function(model, model_path)
 
     def get_default_conv_template(
@@ -142,7 +146,7 @@ class FastChatLLMModelAdapterWrapper(LLMModelAdapter):
 
 def _get_fastchat_model_adapter(
     model_name: str,
-    model_path: str,
+    model_path: Optional[str] = None,
     caller: Callable[[str], None] = None,
     use_fastchat_monkey_patch: bool = False,
 ):

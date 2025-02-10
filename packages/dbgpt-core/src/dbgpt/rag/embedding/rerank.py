@@ -1,7 +1,8 @@
 """Re-rank embeddings."""
 
 import os
-from typing import Any, Dict, List, Optional, cast
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Type, cast
 
 import aiohttp
 import numpy as np
@@ -9,7 +10,72 @@ import requests
 
 from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
 from dbgpt.core import RerankEmbeddings
+from dbgpt.core.interface.parameter import RerankerDeployModelParameters
+from dbgpt.model.adapter.base import register_embedding_adapter
+from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
+
+
+@dataclass
+class CrossEncoderRerankEmbeddingsParameters(RerankerDeployModelParameters):
+    """CrossEncoder Rerank Embeddings Parameters."""
+
+    provider = "hf"
+    path: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The path of the model, if you want to deploy a local model."),
+        },
+    )
+    device: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Device to run model. If None, the device is automatically determined"
+            )
+        },
+    )
+    max_length: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Max length for input sequences. Longer sequences will be truncated."
+            )
+        },
+    )
+
+    model_kwargs: Dict[str, Any] = field(
+        default_factory=dict,
+        metadata={
+            "help": _("Keyword arguments to pass to the model."),
+        },
+    )
+
+    @property
+    def real_provider_model_name(self) -> str:
+        """Get the real provider model name."""
+        return self.path or self.name
+
+    @property
+    def real_model_path(self) -> Optional[str]:
+        """Get the real model path.
+
+        If deploy model is not local, return None.
+        """
+        return self._resolve_root_path(self.path)
+
+    @property
+    def real_device(self) -> Optional[str]:
+        """Get the real device."""
+        return self.device or super().real_device
+
+    @property
+    def real_model_kwargs(self) -> Dict:
+        """Get the real model kwargs."""
+        model_kwargs = self.model_kwargs or {}
+        if self.device:
+            model_kwargs["device"] = self.device
+        return model_kwargs
 
 
 class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
@@ -42,6 +108,36 @@ class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
         )
         super().__init__(**kwargs)
 
+    @classmethod
+    def param_class(cls) -> Type[CrossEncoderRerankEmbeddingsParameters]:
+        """Get the parameter class."""
+        return CrossEncoderRerankEmbeddingsParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: CrossEncoderRerankEmbeddingsParameters
+    ) -> "RerankEmbeddings":
+        """Create a rerank model from parameters."""
+        return cls(
+            model_name=parameters.real_provider_model_name,
+            max_length=parameters.max_length,
+            model_kwargs=parameters.real_model_kwargs,
+        )
+
+    @classmethod
+    def _match(
+        cls, provider: str, lower_model_name_or_path: Optional[str] = None
+    ) -> bool:
+        """Check if the model name matches the rerank model."""
+        return (
+            super()._match(provider, lower_model_name_or_path)
+            and lower_model_name_or_path
+            and (
+                "reranker" in lower_model_name_or_path
+                or "rerank" in lower_model_name_or_path
+            )
+        )
+
     def predict(self, query: str, candidates: List[str]) -> List[float]:
         """Predict the rank scores of the candidates.
 
@@ -60,6 +156,47 @@ class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
         if isinstance(rank_scores, np.ndarray):
             rank_scores = rank_scores.tolist()
         return rank_scores  # type: ignore
+
+
+@dataclass
+class OpenAPIRerankerDeployModelParameters(RerankerDeployModelParameters):
+    """OpenAPI Reranker Deploy Model Parameters."""
+
+    provider = "proxy/openapi"
+
+    api_url: str = field(
+        default="http://localhost:8100/v1/beta/relevance",
+        metadata={
+            "help": _("The URL of the rerank API."),
+        },
+    )
+    api_key: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The API key for the rerank API."),
+        },
+    )
+    backend: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The real model name to pass to the provider, default is None. If "
+                "backend is None, use name as the real model name."
+            ),
+        },
+    )
+
+    timeout: int = field(
+        default=60,
+        metadata={
+            "help": _("The timeout for the request in seconds."),
+        },
+    )
+
+    @property
+    def real_provider_model_name(self) -> str:
+        """Get the real provider model name."""
+        return self.backend or self.name
 
 
 class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
@@ -104,6 +241,23 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
             session.headers.update({"Authorization": f"Bearer {api_key}"})
         kwargs["session"] = session
         super().__init__(**kwargs)
+
+    @classmethod
+    def param_class(cls) -> Type[OpenAPIRerankerDeployModelParameters]:
+        """Get the parameter class."""
+        return OpenAPIRerankerDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: OpenAPIRerankerDeployModelParameters
+    ) -> "RerankEmbeddings":
+        """Create a rerank model from parameters."""
+        return cls(
+            api_url=parameters.api_url,
+            api_key=parameters.api_key,
+            model_name=parameters.real_provider_model_name,
+            timeout=parameters.timeout,
+        )
 
     def _parse_results(self, response: Dict[str, Any]) -> List[float]:
         """Parse the response from the API.
@@ -164,6 +318,26 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
                 return self._parse_results(response_data)
 
 
+@dataclass
+class SiliconFlowRerankEmbeddingsParameters(OpenAPIRerankerDeployModelParameters):
+    """SiliconFlow Rerank Embeddings Parameters."""
+
+    provider: str = "proxy/siliconflow"
+
+    api_url: str = field(
+        default="https://api.siliconflow.cn/v1/rerank",
+        metadata={
+            "help": _("The URL of the rerank API."),
+        },
+    )
+    api_key: Optional[str] = field(
+        default="${env:SILICONFLOW_API_KEY}",
+        metadata={
+            "help": _("The API key for the rerank API."),
+        },
+    )
+
+
 class SiliconFlowRerankEmbeddings(OpenAPIRerankEmbeddings):
     """SiliconFlow Rerank Model.
 
@@ -190,6 +364,11 @@ class SiliconFlowRerankEmbeddings(OpenAPIRerankEmbeddings):
 
         super().__init__(**kwargs)
 
+    @classmethod
+    def param_class(cls) -> Type[SiliconFlowRerankEmbeddingsParameters]:
+        """Get the parameter class."""
+        return SiliconFlowRerankEmbeddingsParameters
+
     def _parse_results(self, response: Dict[str, Any]) -> List[float]:
         """Parse the response from the API.
 
@@ -208,3 +387,8 @@ class SiliconFlowRerankEmbeddings(OpenAPIRerankEmbeddings):
         results = sorted(results, key=lambda x: x.get("index", 0))
         scores = [float(result.get("relevance_score")) for result in results]
         return scores
+
+
+register_embedding_adapter(CrossEncoderRerankEmbeddings)
+register_embedding_adapter(OpenAPIRerankEmbeddings)
+register_embedding_adapter(SiliconFlowRerankEmbeddings)

@@ -1,6 +1,7 @@
 """Embedding implementations."""
 
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Type
 
 import aiohttp
 import requests
@@ -8,6 +9,8 @@ import requests
 from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
+from dbgpt.model.adapter.base import register_embedding_adapter
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
@@ -22,6 +25,105 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
     "Represent this question for searching relevant passages: "
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
+
+
+@dataclass
+class HFEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
+    provider = "hf"
+
+    path: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The path of the model, if you want to deploy a local model."),
+        },
+    )
+    device: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Device to run model. If None, the device is automatically determined"
+            )
+        },
+    )
+    cache_folder: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("Path of the cache folder."),
+        },
+    )
+
+    normalize_embeddings: bool = field(
+        default=False,
+        metadata={
+            "help": _("Normalize embeddings."),
+        },
+    )
+    multi_process: bool = field(
+        default=False,
+        metadata={
+            "help": _("Run encode() on multiple GPUs."),
+        },
+    )
+    model_kwargs: Dict[str, Any] = field(
+        default_factory=dict,
+        metadata={
+            "help": _("Keyword arguments to pass to the model."),
+        },
+    )
+    encode_kwargs: Dict[str, Any] = field(
+        default_factory=dict,
+        metadata={
+            "help": _("Keyword arguments to pass when calling the `encode` method."),
+        },
+    )
+    embed_instruction: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Instruction to use for embedding documents. Just for Instructor model."
+            ),
+        },
+    )
+    query_instruction: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Instruction to use for embedding query. Just for Instructor model."
+            )
+        },
+    )
+
+    @property
+    def real_provider_model_name(self) -> str:
+        """Get the real provider model name."""
+        return self.path or self.name
+
+    @property
+    def real_model_path(self) -> Optional[str]:
+        """Get the real model path.
+
+        If deploy model is not local, return None.
+        """
+        return self._resolve_root_path(self.path)
+
+    @property
+    def real_device(self) -> Optional[str]:
+        """Get the real device."""
+        return self.device or super().real_device
+
+    @property
+    def real_model_kwargs(self) -> Dict:
+        model_kwargs = self.model_kwargs or {}
+        if self.device:
+            model_kwargs["device"] = self.device
+        return model_kwargs
+
+    @property
+    def real_encode_kwargs(self) -> Dict:
+        encode_kwargs = self.encode_kwargs or {}
+        if self.normalize_embeddings:
+            encode_kwargs["normalize_embeddings"] = self.normalize_embeddings
+        return encode_kwargs
 
 
 @register_resource(
@@ -96,6 +198,32 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             **(kwargs.get("model_kwargs") or {}),
         )
         super().__init__(**kwargs)
+
+    @classmethod
+    def param_class(cls) -> Type[HFEmbeddingDeployModelParameters]:
+        return HFEmbeddingDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: HFEmbeddingDeployModelParameters
+    ) -> "Embeddings":
+        """Create an instance of the model from the parameters."""
+        return cls(
+            model_name=parameters.real_provider_model_name,
+            model_kwargs=parameters.real_model_kwargs,
+            encode_kwargs=parameters.real_encode_kwargs,
+            cache_folder=parameters.cache_folder,
+            multi_process=parameters.multi_process,
+        )
+
+    @classmethod
+    def _match(
+        cls, provider: str, lower_model_name_or_path: Optional[str] = None
+    ) -> bool:
+        return (
+            super()._match(provider, lower_model_name_or_path)
+            and lower_model_name_or_path
+        )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -215,6 +343,34 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
 
         super().__init__(**kwargs)
 
+    @classmethod
+    def param_class(cls) -> Type[HFEmbeddingDeployModelParameters]:
+        return HFEmbeddingDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: HFEmbeddingDeployModelParameters
+    ) -> "Embeddings":
+        """Create an instance of the model from the parameters."""
+        return cls(
+            model_name=parameters.real_provider_model_name,
+            model_kwargs=parameters.real_model_kwargs,
+            encode_kwargs=parameters.real_encode_kwargs,
+            cache_folder=parameters.cache_folder,
+            embed_instruction=parameters.embed_instruction or DEFAULT_EMBED_INSTRUCTION,
+            query_instruction=parameters.query_instruction or DEFAULT_QUERY_INSTRUCTION,
+        )
+
+    @classmethod
+    def _match(
+        cls, provider: str, lower_model_name_or_path: Optional[str] = None
+    ) -> bool:
+        return (
+            super()._match(provider, lower_model_name_or_path)
+            and lower_model_name_or_path
+            and ("instructor" in lower_model_name_or_path)
+        )
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace instruct model.
 
@@ -301,6 +457,34 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         if "-zh" in self.model_name:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
+
+    @classmethod
+    def param_class(cls) -> Type[HFEmbeddingDeployModelParameters]:
+        return HFEmbeddingDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: HFEmbeddingDeployModelParameters
+    ) -> "Embeddings":
+        """Create an instance of the model from the parameters."""
+        return cls(
+            model_name=parameters.real_provider_model_name,
+            model_kwargs=parameters.real_model_kwargs,
+            encode_kwargs=parameters.real_encode_kwargs,
+            cache_folder=parameters.cache_folder,
+            query_instruction=parameters.query_instruction
+            or DEFAULT_QUERY_BGE_INSTRUCTION_EN,
+        )
+
+    @classmethod
+    def _match(
+        cls, provider: str, lower_model_name_or_path: Optional[str] = None
+    ) -> bool:
+        return (
+            super()._match(provider, lower_model_name_or_path)
+            and lower_model_name_or_path
+            and "bge" in lower_model_name_or_path
+        )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a HuggingFace transformer model.
@@ -446,28 +630,47 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
     return [result["embedding"] for result in sorted_embeddings]
 
 
-@register_resource(
-    _("Jina AI Embeddings"),
-    "jina_embeddings",
-    category=ResourceCategory.EMBEDDINGS,
-    description=_("Jina AI embeddings."),
-    parameters=[
-        Parameter.build_from(
-            _("API Key"),
-            "api_key",
-            str,
-            description=_("Your API key for the Jina AI API."),
-        ),
-        Parameter.build_from(
-            _("Model Name"),
-            "model_name",
-            str,
-            optional=True,
-            default="jina-embeddings-v2-base-en",
-            description=_("The name of the model to use for text embeddings."),
-        ),
-    ],
-)
+@dataclass
+class OpenAPIEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
+    """OpenAPI embedding deploy model parameters."""
+
+    provider = "proxy/openapi"
+
+    api_url: str = field(
+        default="http://localhost:8100/api/v1/embeddings",
+        metadata={
+            "help": _("The URL of the embeddings API."),
+        },
+    )
+    api_key: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The API key for the embeddings API."),
+        },
+    )
+    backend: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The real model name to pass to the provider, default is None. If "
+                "backend is None, use name as the real model name."
+            ),
+        },
+    )
+
+    timeout: int = field(
+        default=60,
+        metadata={
+            "help": _("The timeout for the request in seconds."),
+        },
+    )
+
+    @property
+    def real_provider_model_name(self) -> str:
+        """Get the real provider model name."""
+        return self.backend or self.name
+
+
 @register_resource(
     _("OpenAPI Embeddings"),
     "openapi_embeddings",
@@ -608,6 +811,22 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         kwargs["session"] = session
         super().__init__(**kwargs)
 
+    @classmethod
+    def param_class(cls) -> Type[OpenAPIEmbeddingDeployModelParameters]:
+        return OpenAPIEmbeddingDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: OpenAPIEmbeddingDeployModelParameters
+    ) -> "Embeddings":
+        """Create an instance of the model from the parameters."""
+        return cls(
+            api_url=parameters.api_url,
+            api_key=parameters.api_key,
+            model_name=parameters.real_provider_model_name,
+            timeout=parameters.timeout,
+        )
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.
 
@@ -676,3 +895,9 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         """Asynchronous Embed query text."""
         embeddings = await self.aembed_documents([text])
         return embeddings[0]
+
+
+register_embedding_adapter(HuggingFaceEmbeddings)
+register_embedding_adapter(HuggingFaceInstructEmbeddings)
+register_embedding_adapter(HuggingFaceBgeEmbeddings)
+register_embedding_adapter(OpenAPIEmbeddings)

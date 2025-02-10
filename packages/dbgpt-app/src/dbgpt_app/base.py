@@ -8,11 +8,11 @@ from typing import Optional
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
+from dbgpt.configs.model_config import resolve_root_path
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.util.parameter_utils import BaseServerParameters
 from dbgpt_app.config import ApplicationConfig, ServiceConfig
-from dbgpt_ext.datasource.schema import DBType
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -40,7 +40,7 @@ def server_init(param: ApplicationConfig, system_app: SystemApp):
     cfg = Config()
     cfg.SYSTEM_APP = system_app
     # Initialize db storage first
-    _initialize_db_storage(param, system_app)
+    _initialize_db_storage(param.service, system_app)
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
@@ -60,24 +60,38 @@ def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
     Now just support sqlite and mysql. If db type is sqlite, the db path is
     `pilot/meta_data/{db_name}.db`.
     """
+    from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
+
     db_config: BaseDatasourceParameters = param.web.database
+    if isinstance(db_config, SQLiteConnectorParameters):
+        db_config.path = resolve_root_path(db_config.path)
+        db_dir = os.path.dirname(db_config.path)
+        os.makedirs(db_dir, exist_ok=True)
+
+    disable_alembic_upgrade = param.web.disable_alembic_upgrade
+    db_ssl_verify = param.web.db_ssl_verify
     connector = db_config.create_connector()
     if not isinstance(connector, RDBMSConnector):
         raise ValueError("Only support RDBMSConnector")
     db_url = connector.db_url
+    db_type = connector.db_type
     _initialize_db(
-        try_to_create_db=not param.disable_alembic_upgrade, system_app=system_app
+        db_url,
+        db_type,
+        db_ssl_verify,
+        try_to_create_db=not disable_alembic_upgrade,
+        system_app=system_app,
     )
 
 
-def _migration_db_storage(param: "WebServerParameters"):
+def _migration_db_storage(disable_alembic_upgrade: bool):
     """Migration the db storage."""
     # Import all models to make sure they are registered with SQLAlchemy.
     from dbgpt.configs.model_config import PILOT_PATH
     from dbgpt_app.initialization.db_model_initialization import _MODELS  # noqa: F401
 
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
-    if not param.disable_alembic_upgrade:
+    if not disable_alembic_upgrade:
         from dbgpt.storage.metadata.db_manager import db
         from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
 
@@ -93,7 +107,7 @@ def _migration_db_storage(param: "WebServerParameters"):
                     f"Create all tables stored in this metadata error: {str(e)}"
                 )
 
-            _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
+            _ddl_init_and_upgrade(default_meta_data_path, disable_alembic_upgrade)
         else:
             warn_msg = """For safety considerations, MySQL Database not support DDL \
             init and upgrade. "
@@ -109,15 +123,17 @@ def _migration_db_storage(param: "WebServerParameters"):
 
 
 def _initialize_db(
-    try_to_create_db: Optional[bool] = False, system_app: Optional[SystemApp] = None
+    db_url: str,
+    db_type: str,
+    db_ssl_verify: bool = False,
+    try_to_create_db: Optional[bool] = False,
+    system_app: Optional[SystemApp] = None,
 ) -> str:
     """Initialize the database
 
     Now just support sqlite and MySQL. If db type is sqlite, the db path is
     `pilot/meta_data/{db_name}.db`.
     """
-    from urllib.parse import quote
-    from urllib.parse import quote_plus as urlquote
 
     from dbgpt.configs.model_config import PILOT_PATH
     from dbgpt.storage.metadata.db_manager import initialize_db
@@ -129,26 +145,26 @@ def _initialize_db(
     db_name = CFG.LOCAL_DB_NAME
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     os.makedirs(default_meta_data_path, exist_ok=True)
-    if CFG.LOCAL_DB_TYPE == DBType.MySQL.value():
-        db_url = (
-            f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:"
-            f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
-            f"{CFG.LOCAL_DB_HOST}:"
-            f"{str(CFG.LOCAL_DB_PORT)}/"
-            f"{db_name}?charset=utf8mb4"
-        )
-        if CFG.LOCAL_DB_SSL_VERIFY:
+    if db_type == "mysql":
+        # db_url = (
+        #     f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:"
+        #     f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
+        #     f"{CFG.LOCAL_DB_HOST}:"
+        #     f"{str(CFG.LOCAL_DB_PORT)}/"
+        #     f"{db_name}?charset=utf8mb4"
+        # )
+        if db_ssl_verify:
             db_url += "&ssl_verify_cert=true&ssl_verify_identity=true"
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)
-    elif CFG.LOCAL_DB_TYPE == DBType.OceanBase.value():
-        db_url = (
-            f"mysql+ob://{quote(CFG.LOCAL_DB_USER)}:"
-            f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
-            f"{CFG.LOCAL_DB_HOST}:"
-            f"{str(CFG.LOCAL_DB_PORT)}/"
-            f"{db_name}?charset=utf8mb4"
-        )
+    elif db_type == "oceanbase":
+        # db_url = (
+        #     f"mysql+ob://{quote(CFG.LOCAL_DB_USER)}:"
+        #     f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
+        #     f"{CFG.LOCAL_DB_HOST}:"
+        #     f"{str(CFG.LOCAL_DB_PORT)}/"
+        #     f"{db_name}?charset=utf8mb4"
+        # )
         _create_mysql_database(db_name, db_url, try_to_create_db)
     else:
         sqlite_db_path = os.path.join(default_meta_data_path, f"{db_name}.db")

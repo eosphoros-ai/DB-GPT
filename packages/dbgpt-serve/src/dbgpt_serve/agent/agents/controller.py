@@ -84,9 +84,6 @@ class MultiAgents(BaseComponent, ABC):
     def init_app(self, system_app: SystemApp):
         system_app.app.include_router(router, prefix="/api", tags=["Multi-Agents"])
         self.system_app = system_app
-        from dbgpt_serve.agent.app.controller import gpts_dao
-
-        gpts_dao.init_native_apps()
 
     def __init__(self, system_app: SystemApp):
         self.gpts_conversations = GptsConversationsDao()
@@ -114,6 +111,13 @@ class MultiAgents(BaseComponent, ABC):
             GptsAppEntity,
             UserRecentAppsEntity,
         )
+
+    def after_start(self):
+        from dbgpt_serve.agent.app.controller import gpts_dao
+
+        gpts_dao.init_native_apps()
+
+        gpts_dao.init_native_apps("dbgpt")
 
     def get_dbgpts(self, user_code: str = None, sys_code: str = None):
         apps = self.gpts_app.app_list(

@@ -153,6 +153,7 @@ class RemoteWorkerManager(LocalWorkerManager):
         wr = WorkerRunData(
             host=instance.host,
             port=instance.port,
+            worker_type=worker.worker_type().value,
             worker_key=instance.model_name,
             worker=worker,
             worker_params=None,

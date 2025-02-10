@@ -1,33 +1,13 @@
 """Module for embedding related classes and functions."""
 
-from .embeddings.jina import (  # noqa: F401
-    JinaEmbeddings,
-    OllamaEmbeddings,
-    OpenAPIEmbeddings,
-    QianFanEmbeddings,
-    TongYiEmbeddings,
-)
-from .rerank import (  # noqa: F401
-    CrossEncoderRerankEmbeddings,
-    OpenAPIRerankEmbeddings,
-    SiliconFlowRerankEmbeddings,
-)
+from .jina import JinaEmbeddings  # noqa: F401
+from .ollama import OllamaEmbeddings  # noqa: F401
+from .qianfan import QianFanEmbeddings  # noqa: F401
+from .tongyi import TongYiEmbeddings  # noqa: F401
 
 __ALL__ = [
-    "CrossEncoderRerankEmbeddings",
-    "DefaultEmbeddingFactory",
-    "EmbeddingFactory",
-    "Embeddings",
-    "HuggingFaceBgeEmbeddings",
-    "HuggingFaceEmbeddings",
-    "HuggingFaceInferenceAPIEmbeddings",
-    "HuggingFaceInstructEmbeddings",
     "JinaEmbeddings",
     "OllamaEmbeddings",
-    "OpenAPIEmbeddings",
-    "OpenAPIRerankEmbeddings",
-    "SiliconFlowRerankEmbeddings",
     "QianFanEmbeddings",
     "TongYiEmbeddings",
-    "WrappedEmbeddingFactory",
 ]

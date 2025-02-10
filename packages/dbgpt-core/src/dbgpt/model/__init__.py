@@ -12,3 +12,45 @@ if RemoteLLMClient:
     _exports.append("RemoteLLMClient")
 
 __ALL__ = _exports
+
+
+def scan_model_providers():
+    """Scan and register all model providers."""
+    from dbgpt.core.interface.parameter import (
+        EmbeddingDeployModelParameters,
+        LLMDeployModelParameters,
+    )
+    from dbgpt.util.module_utils import ModelScanner, ScannerConfig
+
+    scanner = ModelScanner[LLMDeployModelParameters]()
+    config = ScannerConfig(
+        module_path="dbgpt.model.adapter",
+        base_class=LLMDeployModelParameters,
+        specific_files=["vllm_adapter", "hf_adapter"],
+    )
+    config_llms = ScannerConfig(
+        module_path="dbgpt.model.proxy.llms",
+        base_class=LLMDeployModelParameters,
+        recursive=True,
+    )
+    embedding_config = ScannerConfig(
+        module_path="dbgpt.rag.embedding",
+        base_class=EmbeddingDeployModelParameters,
+        specific_files=["embeddings"],
+    )
+    ext_embedding_config = ScannerConfig(
+        module_path="dbgpt_ext.rag.embeddings",
+        base_class=EmbeddingDeployModelParameters,
+    )
+    reranker_config = ScannerConfig(
+        module_path="dbgpt.rag.embedding",
+        base_class=EmbeddingDeployModelParameters,
+        specific_files=["rerank"],
+    )
+    scanner.scan_and_register(config)
+    scanner.scan_and_register(config_llms)
+    scanner.scan_and_register(embedding_config)
+    scanner.scan_and_register(ext_embedding_config)
+    scanner.scan_and_register(reranker_config)
+
+    return scanner.get_registered_items()

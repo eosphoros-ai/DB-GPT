@@ -1,27 +1,41 @@
 import json
 import os
 from concurrent.futures import Executor
-from typing import Iterator, Optional
+from dataclasses import dataclass, field
+from typing import Iterator, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    ProxyLLMClient,
+    register_proxy_model_adapter,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
+
+from .chatgpt import OpenAICompatibleDeployModelParameters
 
 
-def getlength(text):
-    length = 0
-    for content in text:
-        temp = content["content"]
-        leng = len(temp)
-        length += leng
-    return length
+@dataclass
+class SparkDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Spark."""
 
+    provider: str = "proxy/spark"
 
-def checklen(text):
-    while getlength(text) > 8192:
-        del text[0]
-    return text
+    api_base: Optional[str] = field(
+        default="${env:XUNFEI_SPARK_API_BASE:-https://spark-api-open.xf-yun.com/v1}",
+        metadata={
+            "help": _("The base url of the Spark API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:XUNFEI_SPARK_API_KEY}",
+        metadata={
+            "help": _("The API key of the Spark API."),
+        },
+    )
 
 
 def spark_generate_stream(
@@ -31,27 +45,6 @@ def spark_generate_stream(
     request = parse_model_request(params, client.default_model, stream=True)
     for r in client.sync_generate_stream(request):
         yield r
-
-
-def get_response(request_url, data):
-    from websockets.sync.client import connect
-
-    with connect(request_url) as ws:
-        ws.send(json.dumps(data, ensure_ascii=False))
-        result = ""
-        while True:
-            try:
-                chunk = ws.recv()
-                response = json.loads(chunk)
-                print("look out the response: ", response)
-                choices = response.get("payload", {}).get("choices", {})
-                if text := choices.get("text"):
-                    result += text[0]["content"]
-                if choices.get("status") == 2:
-                    break
-            except Exception as e:
-                raise e
-    yield result
 
 
 def extract_content(line: str):
@@ -82,6 +75,8 @@ class SparkLLMClient(ProxyLLMClient):
     def __init__(
         self,
         model: Optional[str] = None,
+        api_base: Optional[str] = None,
+        api_key: Optional[str] = None,
         model_alias: Optional[str] = "spark_proxyllm",
         context_length: Optional[int] = 4096,
         executor: Optional[Executor] = None,
@@ -97,14 +92,18 @@ class SparkLLMClient(ProxyLLMClient):
         https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_3-%E8%AF%B7%E6%B1%82%E8%AF%B4%E6%98%8E
         """
         self._model = model or os.getenv("XUNFEI_SPARK_API_MODEL")
-        self._api_base = os.getenv("PROXY_SERVER_URL")
-        self._api_password = os.getenv("XUNFEI_SPARK_API_PASSWORD")
+        self._api_base = api_base
+        self._api_key = (
+            api_key
+            or os.getenv("XUNFEI_SPARK_API_KEY")
+            or os.getenv("XUNFEI_SPARK_API_PASSWORD")
+        )
         if not self._model:
             raise ValueError("model can't be empty")
         if not self._api_base:
             raise ValueError("api_base can't be empty")
-        if not self._api_password:
-            raise ValueError("api_password can't be empty")
+        if not self._api_key:
+            raise ValueError("Spark API key is required, please provide it.")
 
         super().__init__(
             model_names=[model, model_alias],
@@ -115,15 +114,27 @@ class SparkLLMClient(ProxyLLMClient):
     @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: SparkDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "SparkLLMClient":
         return cls(
-            model=model_params.proxyllm_backend,
-            model_alias=model_params.model_name,
-            context_length=model_params.max_context_size,
+            model=model_params.real_provider_model_name,
+            api_base=model_params.api_base,
+            api_key=model_params.api_key,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
             executor=default_executor,
         )
+
+    @classmethod
+    def param_class(cls) -> Type[SparkDeployModelParameters]:
+        return SparkDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return spark_generate_stream
 
     @property
     def default_model(self) -> str:
@@ -156,10 +167,13 @@ class SparkLLMClient(ProxyLLMClient):
         }
         header = {
             # Please replace the APIPassword with your own
-            "Authorization": f"Bearer {self._api_password}"
+            "Authorization": f"Bearer {self._api_key}"
         }
-        response = requests.post(self._api_base, headers=header, json=data, stream=True)
-        # 流式响应解析示例
+        url = self._api_base
+        if url.endswith("/"):
+            url = url[:-1]
+        url = f"{url}/chat/completions"
+        response = requests.post(url, headers=header, json=data, stream=True)
         response.encoding = "utf-8"
         try:
             content = ""
@@ -170,7 +184,10 @@ class SparkLLMClient(ProxyLLMClient):
                 content = content + extract_content(line)
                 yield ModelOutput(text=content, error_code=0)
         except Exception as e:
-            return ModelOutput(
+            yield ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 error_code=1,
             )
+
+
+register_proxy_model_adapter(SparkLLMClient)

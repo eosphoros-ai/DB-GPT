@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from dbgpt._private.config import Config
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 from dbgpt.model.base import ModelType
@@ -23,7 +24,6 @@ from dbgpt.model.llm.conversation import Conversation
 from dbgpt.model.parameter import (
     LlamaCppModelParameters,
     ModelParameters,
-    ProxyModelParameters,
 )
 
 if TYPE_CHECKING:
@@ -49,7 +49,7 @@ class BaseLLMAdaper:
         if model_type == ModelType.LLAMA_CPP:
             return LlamaCppModelParameters
         elif model_type == ModelType.PROXY:
-            return ProxyModelParameters
+            raise NotImplementedError("Not support proxy model yet")
         return ModelParameters
 
     def match(self, model_path: str):
@@ -73,7 +73,9 @@ def register_llm_model_adapters(cls):
 
 
 @cache
-def get_llm_model_adapter(model_name: str, model_path: str) -> BaseLLMAdaper:
+def get_llm_model_adapter(
+    model_name: str, model_path: Optional[str] = None
+) -> BaseLLMAdaper:
     # Prefer using model name matching
     for adapter in llm_model_adapters:
         if adapter.match(model_name):
@@ -241,8 +243,12 @@ class OldLLMModelAdapterWrapper(LLMModelAdapter):
     def load(self, model_path: str, from_pretrained_kwargs: dict):
         return self._adapter.loader(model_path, from_pretrained_kwargs)
 
-    def get_generate_stream_function(self, model, model_path: str):
-        return self._chat_adapter.get_generate_stream_func(model_path)
+    def get_generate_stream_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
+        return self._chat_adapter.get_generate_stream_func(
+            deploy_model_params.real_model_path
+        )
 
     def __str__(self) -> str:
         return "{}({}.{})".format(

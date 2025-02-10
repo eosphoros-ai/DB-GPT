@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from typing import List
@@ -12,8 +13,6 @@ from dbgpt._private.config import Config
 from dbgpt._version import version
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-    LLM_MODEL_CONFIG,
     LOGDIR,
     STATIC_MESSAGE_IMG_PATH,
 )
@@ -23,7 +22,6 @@ from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
 from dbgpt.util.utils import (
-    _get_logging_level,
     logging_str_to_uvicorn_level,
     setup_http_service_logging,
     setup_logging,
@@ -37,8 +35,10 @@ from dbgpt_app.base import (
 
 # initialize_components import time cost about 0.1s
 from dbgpt_app.component_configs import initialize_components
+from dbgpt_app.config import ApplicationConfig, ServiceWebParameters
 from dbgpt_serve.core import add_exception_handler
 
+logger = logging.getLogger(__name__)
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
@@ -128,7 +128,7 @@ def _get_webserver_params(args: List[str] = None):
     return webserver_params
 
 
-def initialize_app(param: WebServerParameters = None, args: List[str] = None):
+def initialize_app(param: ApplicationConfig, args: List[str] = None):
     """Initialize app
     If you use gunicorn as a process manager, initialize_app can be invoke in
     `on_starting` hook.
@@ -136,72 +136,67 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
         param:WebWerverParameters
         args:List[str]
     """
-    if not param:
-        param = _get_webserver_params(args)
 
     # import after param is initialized, accelerate --help speed
     from dbgpt.model.cluster import initialize_worker_manager_in_client
 
-    if not param.log_level:
-        param.log_level = _get_logging_level()
+    web_config = param.service.web
+    log_config = web_config.log or param.log
+
+    logger_filename = log_config.file or os.path.join(LOGDIR, "dbgpt_webserver.log")
     setup_logging(
-        "dbgpt", logging_level=param.log_level, logger_filename=param.log_file
+        "dbgpt", logging_level=log_config.level, logger_filename=logger_filename
     )
 
-    model_name = param.model_name or CFG.LLM_MODEL
-    param.model_name = model_name
-    param.port = param.port or CFG.DBGPT_WEBSERVER_PORT
-    if not param.port:
-        param.port = 5670
+    # model_name = param.model_name or CFG.LLM_MODEL
+    # model_name = param.models.default_llm
+    # param.model_name = model_name
+    # param.port = param.port or CFG.DBGPT_WEBSERVER_PORT
+    # if not param.port:
+    #     param.port = 5670
 
     print(param)
 
-    embedding_model_name = CFG.EMBEDDING_MODEL
-    embedding_model_path = EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-    rerank_model_name = CFG.RERANK_MODEL
-    rerank_model_path = None
-    if rerank_model_name:
-        rerank_model_path = CFG.RERANK_MODEL_PATH or EMBEDDING_MODEL_CONFIG.get(
-            rerank_model_name
-        )
-
+    # embedding_model_name = CFG.EMBEDDING_MODEL
+    # embedding_model_path = EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+    # rerank_model_name = CFG.RERANK_MODEL
+    # rerank_model_path = None
+    # if rerank_model_name:
+    #     rerank_model_path = CFG.RERANK_MODEL_PATH or EMBEDDING_MODEL_CONFIG.get(
+    #         rerank_model_name
+    #     )
+    #
     server_init(param, system_app)
     mount_routers(app)
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(
         param,
         system_app,
-        embedding_model_name,
-        embedding_model_path,
-        rerank_model_name,
-        rerank_model_path,
     )
     system_app.on_init()
 
     # Migration db storage, so you db models must be imported before this
-    _migration_db_storage(param)
+    _migration_db_storage(web_config.disable_alembic_upgrade)
 
-    model_path = CFG.LLM_MODEL_PATH or LLM_MODEL_CONFIG.get(model_name)
+    local_port = web_config.port
     # TODO: initialize_worker_manager_in_client as a component register in system_app
-    if not param.light:
-        print("Model Unified Deployment Mode!")
-        if not param.remote_embedding:
-            # Embedding model is running in the same process, set embedding_model_name
-            # and embedding_model_path to None
-            embedding_model_name, embedding_model_path = None, None
-        if not param.remote_rerank:
-            # Rerank model is running in the same process, set rerank_model_name and
-            # rerank_model_path to None
-            rerank_model_name, rerank_model_path = None, None
+    if not web_config.light:
+        logger.info(
+            "Model Unified Deployment Mode, run all services in the same process"
+        )
+        # if not param.remote_embedding:
+        #     # Embedding model is running in the same process, set embedding_model_name
+        #     # and embedding_model_path to None
+        #     embedding_model_name, embedding_model_path = None, None
+        # if not param.remote_rerank:
+        #     # Rerank model is running in the same process, set rerank_model_name and
+        #     # rerank_model_path to None
+        #     rerank_model_name, rerank_model_path = None, None
         initialize_worker_manager_in_client(
+            worker_params=param.generate_temp_model_worker_params(),
+            models_config=param.models,
             app=app,
-            model_name=model_name,
-            model_path=model_path,
-            local_port=param.port,
-            embedding_model_name=embedding_model_name,
-            embedding_model_path=embedding_model_path,
-            rerank_model_name=rerank_model_name,
-            rerank_model_path=rerank_model_path,
+            local_port=local_port,
             start_listener=model_start_listener,
             system_app=system_app,
         )
@@ -209,14 +204,14 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
         CFG.NEW_SERVER_MODE = True
     else:
         # MODEL_SERVER is controller address now
-        controller_addr = param.controller_addr or CFG.MODEL_SERVER
+        controller_addr = web_config.controller_addr or CFG.MODEL_SERVER
         initialize_worker_manager_in_client(
+            worker_params=param.generate_temp_model_worker_params(),
+            models_config=param.models,
             app=app,
-            model_name=model_name,
-            model_path=model_path,
             run_locally=False,
             controller_addr=controller_addr,
-            local_port=param.port,
+            local_port=local_port,
             start_listener=model_start_listener,
             system_app=system_app,
         )
@@ -229,7 +224,7 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     return param
 
 
-def run_uvicorn(param: WebServerParameters):
+def run_uvicorn(param: ServiceWebParameters):
     import uvicorn
 
     setup_http_service_logging()
@@ -242,25 +237,27 @@ def run_uvicorn(param: WebServerParameters):
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["*"],
     )
+    log_level = "info"
+    if param.log:
+        log_level = logging_str_to_uvicorn_level(param.log.level)
     uvicorn.run(
         cors_app,
         host=param.host,
         port=param.port,
-        log_level=logging_str_to_uvicorn_level(param.log_level),
+        log_level=log_level,
     )
 
 
-def run_webserver(param: WebServerParameters = None):
-    if not param:
-        param = _get_webserver_params()
+def run_webserver(param: ApplicationConfig):
+    trace_config = param.service.web.trace or param.trace
+    trace_file = trace_config.file or os.path.join(
+        "logs", "dbgpt_webserver_tracer.jsonl"
+    )
     initialize_tracer(
-        os.path.join(LOGDIR, param.tracer_file),
+        trace_file,
         system_app=system_app,
-        tracer_storage_cls=param.tracer_storage_cls,
-        enable_open_telemetry=param.tracer_to_open_telemetry,
-        otlp_endpoint=param.otel_exporter_otlp_traces_endpoint,
-        otlp_insecure=param.otel_exporter_otlp_traces_insecure,
-        otlp_timeout=param.otel_exporter_otlp_traces_timeout,
+        root_operation_name=trace_config.root_operation_name or "DB-GPT-Webserver",
+        tracer_parameters=trace_config,
     )
 
     with root_tracer.start_span(
@@ -282,8 +279,28 @@ def run_webserver(param: WebServerParameters = None):
             IntentRecognitionAgent,
         )
 
-        run_uvicorn(param)
+        run_uvicorn(param.service.web)
+
+
+def load_config() -> ApplicationConfig:
+    from dbgpt.configs.model_config import ROOT_PATH as DBGPT_ROOT_PATH
+    from dbgpt.model import scan_model_providers
+    from dbgpt.util.configure import ConfigurationManager
+    from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
+
+    cm = ConnectorManager(system_app)
+    # pre import all connectors
+    cm.on_init()
+    # Register all model providers
+    scan_model_providers()
+
+    cfg = ConfigurationManager.from_file(
+        os.path.join(DBGPT_ROOT_PATH, "configs", "dbgpt-default.toml")
+    )
+    app_config = cfg.parse_config(ApplicationConfig, hook_section="hooks")
+    return app_config
 
 
 if __name__ == "__main__":
-    run_webserver()
+    app_config = load_config()
+    run_webserver(app_config)

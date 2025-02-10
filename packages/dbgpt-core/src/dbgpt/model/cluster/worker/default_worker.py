@@ -2,7 +2,7 @@ import logging
 import os
 import time
 import traceback
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Type
 
 from dbgpt.configs.model_config import get_device
 from dbgpt.core import (
@@ -11,13 +11,16 @@ from dbgpt.core import (
     ModelMetadata,
     ModelOutput,
 )
+from dbgpt.core.interface.parameter import (
+    BaseDeployModelParameters,
+    LLMDeployModelParameters,
+)
 from dbgpt.model.adapter.base import LLMModelAdapter
-from dbgpt.model.adapter.loader import ModelLoader, _get_model_real_path
+from dbgpt.model.adapter.loader import ModelLoader
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.parameter import ModelParameters
 from dbgpt.util.model_utils import _clear_model_cache, _get_current_cuda_memory
-from dbgpt.util.parameter_utils import EnvArgumentParser, _get_dict_from_obj
+from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, root_tracer
 
@@ -29,107 +32,109 @@ torch = None
 
 class DefaultModelWorker(ModelWorker):
     def __init__(self) -> None:
+        self.model_name: Optional[str] = None
+        self.model_path: Optional[str] = None
         self.model = None
         self.tokenizer = None
-        self._model_params = None
+        self._model_params: Optional[LLMDeployModelParameters] = None
+        self._param_cls: Optional[Type[LLMDeployModelParameters]] = None
         self.llm_adapter: LLMModelAdapter = None
         self._support_async = False
+        self._support_generate_func = False
+        self.context_len = 4096
+        self._device = get_device()
 
-    def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
-        if model_path.endswith("/"):
-            model_path = model_path[:-1]
-        model_path = _get_model_real_path(model_name, model_path)
+    def load_worker(
+        self, model_name: str, deploy_model_params: BaseDeployModelParameters, **kwargs
+    ) -> None:
+        if not isinstance(deploy_model_params, LLMDeployModelParameters):
+            raise ValueError(
+                f"deploy_model_params should be LLMDeployModelParameters, but got "
+                f"{type(deploy_model_params)}"
+            )
+        self._model_params = deploy_model_params
+        self._param_cls = deploy_model_params.__class__
+        if deploy_model_params.real_device:
+            # Use the configured device
+            self._device = deploy_model_params.real_device
+
+        model_path = deploy_model_params.real_model_path
+
+        # model_path = _get_model_real_path(model_name, model_path)
         self.model_name = model_name
         self.model_path = model_path
 
-        model_type = kwargs.get("model_type")
-        ### Temporary configuration, fastchat will be used by default in the future.
-        use_fastchat = os.getenv("USE_FASTCHAT", "True").lower() == "true"
+        # Temporary configuration, fastchat will be used by default in the future.
+        use_fastchat = os.getenv("USE_FASTCHAT", "False").lower() == "true"
 
         self.llm_adapter = get_llm_model_adapter(
             self.model_name,
-            self.model_path,
+            model_path,
             use_fastchat=use_fastchat,
-            model_type=model_type,
+            model_type=deploy_model_params.provider,
         )
-        model_type = self.llm_adapter.model_type()
-        self.param_cls = self.llm_adapter.model_param_class(model_type)
+        # self._param_cls = self.llm_adapter.model_param_class(model_type)
         self._support_async = self.llm_adapter.support_async()
         self._support_generate_func = self.llm_adapter.support_generate_function()
 
         logger.info(
-            f"model_name: {self.model_name}, model_path: {self.model_path}, "
-            f"model_param_class: {self.param_cls}"
+            f"model_name: {self.model_name}, model_path: {model_path}, "
+            f"model_param_class: {self._param_cls}"
         )
 
         self.ml: ModelLoader = ModelLoader(
-            model_path=self.model_path, model_name=self.model_name
+            prompt_template=self._model_params.prompt_template
         )
         # Default model context len
-        self.context_len = 2048
+        self.context_len = 4096
 
-    def model_param_class(self) -> ModelParameters:
-        return self.param_cls
+    def model_param_class(self) -> Type[LLMDeployModelParameters]:
+        return self._param_cls
 
     def support_async(self) -> bool:
         return self._support_async
 
-    def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
-        param_cls = self.model_param_class()
-        model_args = EnvArgumentParser()
-        env_prefix = EnvArgumentParser.get_env_prefix(self.model_name)
-        model_type = self.llm_adapter.model_type()
-        model_params: ModelParameters = model_args.parse_args_into_dataclass(
-            param_cls,
-            env_prefixes=[env_prefix, "LLM_"],
-            command_args=command_args,
-            model_name=self.model_name,
-            model_path=self.model_path,
-            model_type=model_type,
-        )
-        if hasattr(model_params, "device") and not model_params.device:
-            model_params.device = get_device()
-            logger.info(
-                "[DefaultModelWorker] Parameters of device is None, use "
-                f"{model_params.device}"
-            )
-        return model_params
+    # def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
+    #     raise NotImplementedError
 
-    def start(
-        self, model_params: ModelParameters = None, command_args: List[str] = None
-    ) -> None:
+    def start(self, command_args: List[str] = None) -> None:
         # Lazy load torch
         _try_import_torch()
-        if not model_params:
-            model_params = self.parse_parameters(command_args)
-        self._model_params = model_params
-        logger.info(f"Begin load model, model params: {model_params}")
+        logger.info(f"Begin load model, model params: {self._model_params}")
         metadata = {
             "model_name": self.model_name,
             "model_path": self.model_path,
             "model_type": self.llm_adapter.model_type(),
             "llm_adapter": str(self.llm_adapter),
             "run_service": SpanTypeRunName.MODEL_WORKER,
-            "params": _get_dict_from_obj(model_params),
+            "params": _get_dict_from_obj(self._model_params),
             "sys_infos": _get_dict_from_obj(get_system_info()),
         }
         with root_tracer.start_span(
             "DefaultModelWorker.start", span_type=SpanType.RUN, metadata=metadata
         ):
             self.model, self.tokenizer = self.ml.loader_with_params(
-                model_params, self.llm_adapter
+                self._model_params, self.llm_adapter
             )
-            model_max_length = self.llm_adapter.parse_max_length(
+            parsed_model_max_length = self.llm_adapter.parse_max_length(
                 self.model, self.tokenizer
             )
-            if model_max_length:
+            if (
+                self._model_params.context_length
+                and self._model_params.context_length > 0
+            ):
+                # Use context length from model params
+                self.context_len = self._model_params.context_length
+            elif parsed_model_max_length:
                 logger.info(
-                    f"Parse model max length {model_max_length} from model "
+                    f"Parse model max length {parsed_model_max_length} from model "
                     f"{self.model_name}."
                 )
-                self.context_len = model_max_length
-            elif hasattr(model_params, "max_context_size"):
-                self.context_len = model_params.max_context_size
+                self.context_len = parsed_model_max_length
+            elif hasattr(self._model_params, "max_context_size"):
+                self.context_len = self._model_params.max_context_size
+            elif hasattr(self._model_params, "model_max_length"):
+                self.context_len = self._model_params.model_max_length
 
     def stop(self) -> None:
         if not self.model:
@@ -139,7 +144,7 @@ class DefaultModelWorker(ModelWorker):
         del self.tokenizer
         self.model = None
         self.tokenizer = None
-        _clear_model_cache(self._model_params.device)
+        _clear_model_cache(self._device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
         span = root_tracer.start_span(
@@ -363,7 +368,7 @@ class DefaultModelWorker(ModelWorker):
         if self.support_async():
             if not is_stream and self.llm_adapter.support_generate_function():
                 func = self.llm_adapter.get_generate_function(
-                    self.model, self.model_path
+                    self.model, self._model_params
                 )
                 func_type = "async generate"
                 logger.info(
@@ -371,7 +376,7 @@ class DefaultModelWorker(ModelWorker):
                 )
             else:
                 func = self.llm_adapter.get_async_generate_stream_function(
-                    self.model, self.model_path
+                    self.model, self._model_params
                 )
                 func_type = "async generate stream"
                 logger.info(
@@ -381,7 +386,7 @@ class DefaultModelWorker(ModelWorker):
         else:
             if not is_stream and self.llm_adapter.support_generate_function():
                 func = self.llm_adapter.get_generate_function(
-                    self.model, self.model_path
+                    self.model, self._model_params
                 )
                 func_type = "generate"
                 logger.info(
@@ -389,7 +394,7 @@ class DefaultModelWorker(ModelWorker):
                 )
             else:
                 func = self.llm_adapter.get_generate_stream_function(
-                    self.model, self.model_path
+                    self.model, self._model_params
                 )
                 func_type = "generate stream"
                 logger.info(

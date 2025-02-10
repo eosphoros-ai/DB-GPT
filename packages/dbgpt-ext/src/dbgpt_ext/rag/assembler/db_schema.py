@@ -38,7 +38,7 @@ class DBSchemaAssembler(BaseAssembler):
         self,
         connector: BaseConnector,
         table_vector_store_connector: VectorStoreBase,
-        field_vector_store_connector: VectorStoreBase = None,
+        field_vector_store_connector: Optional[VectorStoreBase] = None,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
@@ -106,7 +106,7 @@ class DBSchemaAssembler(BaseAssembler):
         cls,
         connector: BaseConnector,
         table_vector_store_connector: VectorStoreBase,
-        field_vector_store_connector: VectorStoreBase = None,
+        field_vector_store_connector: Optional[VectorStoreBase] = None,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
@@ -158,7 +158,8 @@ class DBSchemaAssembler(BaseAssembler):
             else:
                 table_chunks.append(chunk)
 
-        self._field_vector_store_connector.load_document(field_chunks)
+        if self._field_vector_store_connector and field_chunks:
+            self._field_vector_store_connector.load_document(field_chunks)
         return self._table_vector_store_connector.load_document(table_chunks)
 
     def _extract_info(self, chunks) -> List[Chunk]:

@@ -1,8 +1,8 @@
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import pytest
 
@@ -545,7 +545,7 @@ def test_env_var_with_default():
             "language": "${env:LANG:-en}",
             "log_level": "${env:LOG_LEVEL:-INFO}",
             "api_keys": [],
-            "encrypt_key": "${env:ENCRYPT_KEY:-default_key}",
+            "encrypt_key": "${env:ENCRYPT_KEY:-https://api.openai.com/v1}",
         }
     }
 
@@ -562,7 +562,7 @@ def test_env_var_with_default():
 
     assert system_config.language == "en"
     assert system_config.log_level == "INFO"
-    assert system_config.encrypt_key == "default_key"
+    assert system_config.encrypt_key == "https://api.openai.com/v1"
 
     # Test with set environment variable
     os.environ["LANG"] = "zh"
@@ -1272,6 +1272,480 @@ def test_env_var_set_hook_disabled():
     # Since hook is disabled, environment variable shouldn't be set
     assert "TEST_APP_NAME" not in os.environ
     assert service_config.name == "default-name"  # Use default value
+
+
+# Test Dataclasses with custom from_dict methods
+@dataclass
+class CustomUser:
+    name: str
+    age: int
+    email: Optional[str] = None
+
+    @classmethod
+    def _from_dict_(cls, data: Dict, prepare_data_func, converter) -> "CustomUser":
+        # Custom logic to create instance
+        name = data.get("full_name", "").strip()  # Use different field name
+        age = converter(data.get("user_age", 0), int)  # Use different field name
+        email = data.get("email")
+        return cls(name=name, age=age, email=email)
+
+
+@dataclass
+class ExtCustomUser:
+    name: str
+    age: int
+    email: Optional[str] = None
+
+    @classmethod
+    def _from_dict_(cls, data: Dict, prepare_data_func, converter) -> "CustomUser":
+        real_data = prepare_data_func(cls, data)
+        return cls(**real_data)
+
+
+@dataclass
+class CustomAddress:
+    street: str
+    city: str
+    country: str = "Unknown"
+
+    @classmethod
+    def _from_dict_(cls, data: Dict, prepare_data_func, converter) -> "CustomAddress":
+        # Combine street number and name
+        street_num = data.get("street_number", "")
+        street_name = data.get("street_name", "")
+        street = f"{street_num} {street_name}".strip()
+        return cls(
+            street=street,
+            city=data.get("city", ""),
+            country=data.get("country", "Unknown"),
+        )
+
+
+@dataclass
+class CustomProfile:
+    user: CustomUser
+    address: CustomAddress
+    tags: List[str] = field(default_factory=list)
+
+    @classmethod
+    def _from_dict_(cls, data: Dict, prepare_data_func, converter) -> "CustomProfile":
+        # Convert nested objects using the converter
+        user_data = data.get("user_info", {})  # Different field name
+        address_data = data.get("address_info", {})  # Different field name
+
+        return cls(
+            user=converter(user_data, CustomUser),
+            address=converter(address_data, CustomAddress),
+            tags=data.get("tags", []),
+        )
+
+
+def test_basic_custom_from_dict():
+    """Test basic custom from_dict implementation"""
+    config_dict = {
+        "full_name": "John Doe",
+        "user_age": "30",
+        "email": "john@example.com",
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    user_config = config_manager.parse_config(CustomUser)
+
+    assert user_config.name == "John Doe"
+    assert user_config.age == 30
+    assert user_config.email == "john@example.com"
+
+
+def test_basic_ext_custom_from_dict():
+    """Test basic custom from_dict implementation"""
+    config_dict = {
+        "name": "John Doe",
+        "age": 30,
+        "email": "john@example.com",
+        "other_field": "extra",  # Extra field should be ignored
+    }
+    config_manager = ConfigurationManager(config_dict)
+    user_config = config_manager.parse_config(ExtCustomUser)
+    assert user_config.name == "John Doe"
+
+
+def test_nested_custom_from_dict():
+    """Test nested objects with custom from_dict methods"""
+    config_dict = {
+        "user_info": {
+            "full_name": "Jane Smith",
+            "user_age": "25",
+            "email": "jane@example.com",
+        },
+        "address_info": {
+            "street_number": "123",
+            "street_name": "Main St",
+            "city": "Boston",
+            "country": "USA",
+        },
+        "tags": ["developer", "python"],
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    profile_config = config_manager.parse_config(CustomProfile)
+
+    assert profile_config.user.name == "Jane Smith"
+    assert profile_config.user.age == 25
+    assert profile_config.address.street == "123 Main St"
+    assert profile_config.tags == ["developer", "python"]
+
+
+def test_custom_from_dict_with_missing_fields():
+    """Test custom from_dict with missing optional fields"""
+    config_dict = {
+        "full_name": "John Doe",
+        "user_age": "30",
+        # email is missing
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    user_config = config_manager.parse_config(CustomUser)
+
+    assert user_config.name == "John Doe"
+    assert user_config.age == 30
+    assert user_config.email is None
+
+
+def test_custom_from_dict_with_default_values():
+    """Test custom from_dict with default values"""
+    config_dict = {
+        "street_number": "456",
+        "street_name": "Oak Avenue",
+        "city": "Chicago",
+        # country will use default value
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    address_config = config_manager.parse_config(CustomAddress)
+
+    assert address_config.street == "456 Oak Avenue"
+    assert address_config.city == "Chicago"
+    assert address_config.country == "Unknown"
+
+
+def test_invalid_custom_from_dict():
+    """Test custom from_dict with invalid data type"""
+    config_dict = {
+        "full_name": "John Doe",
+        "user_age": "invalid_age",  # This should raise an error
+        "email": "john@example.com",
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    with pytest.raises(ValueError):
+        config_manager.parse_config(CustomUser)
+
+
+@dataclass
+class PartialCustomConfig:
+    name: str
+    value: int
+
+    @classmethod
+    def _from_dict_(
+        cls, data: Dict, prepare_data_func, converter
+    ) -> "PartialCustomConfig":
+        # Demonstrate using converter for specific fields
+        return cls(
+            name=data.get("name", ""), value=converter(data.get("value", 0), int)
+        )
+
+
+def test_partial_custom_conversion():
+    """Test custom from_dict with partial custom conversion"""
+    config_dict = {"name": "test", "value": "42"}  # String that needs conversion
+
+    config_manager = ConfigurationManager(config_dict)
+    config = config_manager.parse_config(PartialCustomConfig)
+
+    assert config.name == "test"
+    assert config.value == 42
+    assert isinstance(config.value, int)
+
+
+@dataclass
+class BaseDbConfig:
+    host: str
+    port: int
+
+    @classmethod
+    def _parse_class_(cls, data: Dict) -> Optional[Type["BaseDbConfig"]]:
+        db_type = data.get("type", "").lower()
+        if db_type == "mysql":
+            return MySQLConfig
+        elif db_type == "postgres":
+            return PostgresConfig
+        elif db_type == "mongodb":
+            return MongoDBConfig
+        return None
+
+
+@dataclass
+class MySQLConfig(BaseDbConfig):
+    database: str
+    user: str
+    password: str
+    charset: str = "utf8mb4"
+
+
+@dataclass
+class PostgresConfig(BaseDbConfig):
+    database: str
+    user: str
+    password: str
+    schema: str = "public"
+
+
+@dataclass
+class MongoDBConfig(BaseDbConfig):
+    database: str
+    user: str
+    password: str
+    replica_set: Optional[str] = None
+
+
+# Model configurations for different model types
+@dataclass
+class BaseModelConfig:
+    name: str
+    version: str
+
+    @classmethod
+    def _parse_class_(cls, data: Dict) -> Optional[Type["BaseModelConfig"]]:
+        if "gpu_memory" in data:
+            return GPUModelConfig
+        elif "quantization" in data:
+            return QuantizedModelConfig
+        return None
+
+
+@dataclass
+class GPUModelConfig(BaseModelConfig):
+    gpu_memory: int
+    batch_size: int
+
+
+@dataclass
+class QuantizedModelConfig(BaseModelConfig):
+    quantization: str
+    threads: int
+
+
+# Test cases
+def test_basic_parse_class():
+    """Test basic class parsing based on type field"""
+    config_dict = {
+        "type": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "database": "testdb",
+        "user": "root",
+        "password": "secret",
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    db_config = config_manager.parse_config(BaseDbConfig)
+
+    assert isinstance(db_config, MySQLConfig)
+    assert db_config.host == "localhost"
+    assert db_config.port == 3306
+    assert db_config.charset == "utf8mb4"
+
+
+def test_parse_class_with_feature_detection():
+    """Test class parsing based on feature detection"""
+    config_dict = {
+        "name": "gpt-4",
+        "version": "1.0",
+        "gpu_memory": 16384,
+        "batch_size": 32,
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    model_config = config_manager.parse_config(BaseModelConfig)
+
+    assert isinstance(model_config, GPUModelConfig)
+    assert model_config.gpu_memory == 16384
+    assert model_config.batch_size == 32
+
+
+def test_parse_class_fallback():
+    """Test fallback when no specific class is selected"""
+    config_dict = {"type": "unknown", "host": "localhost", "port": 5432}
+
+    config_manager = ConfigurationManager(config_dict)
+    db_config = config_manager.parse_config(BaseDbConfig)
+
+    assert isinstance(db_config, BaseDbConfig)
+    assert not isinstance(db_config, (MySQLConfig, PostgresConfig, MongoDBConfig))
+    assert db_config.host == "localhost"
+    assert db_config.port == 5432
+
+
+def test_parse_class_with_defaults():
+    """Test class parsing with default values"""
+    config_dict = {
+        "type": "postgres",
+        "host": "localhost",
+        "port": 5432,
+        "database": "testdb",
+        "user": "postgres",
+        "password": "secret",
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    db_config = config_manager.parse_config(BaseDbConfig)
+
+    assert isinstance(db_config, PostgresConfig)
+    assert db_config.schema == "public"  # Default value
+
+
+def test_parse_class_with_optional_fields():
+    """Test class parsing with optional fields"""
+    config_dict = {
+        "type": "mongodb",
+        "host": "localhost",
+        "port": 27017,
+        "database": "testdb",
+        "user": "admin",
+        "password": "secret",
+        # replica_set is optional
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    db_config = config_manager.parse_config(BaseDbConfig)
+
+    assert isinstance(db_config, MongoDBConfig)
+    assert db_config.replica_set is None
+
+
+@dataclass
+class NestedConfig:
+    db: BaseDbConfig
+    model: BaseModelConfig
+
+    @classmethod
+    def _parse_class_(cls, data: Dict) -> Optional[Type["NestedConfig"]]:
+        # Demonstrate that parse_class can also be used in nested configurations
+        if data.get("environment") == "production":
+            return ProductionConfig
+        return None
+
+
+@dataclass
+class ProductionConfig(NestedConfig):
+    replicas: int
+    monitoring: bool = True
+
+
+def test_nested_parse_class():
+    """Test nested configurations with parse_class"""
+    config_dict = {
+        "environment": "production",
+        "replicas": 3,
+        "db": {
+            "type": "mysql",
+            "host": "prod-db",
+            "port": 3306,
+            "database": "proddb",
+            "user": "admin",
+            "password": "secret",
+        },
+        "model": {
+            "name": "gpt-4",
+            "version": "1.0",
+            "quantization": "int8",
+            "threads": 4,
+        },
+    }
+
+    config_manager = ConfigurationManager(config_dict)
+    config = config_manager.parse_config(NestedConfig)
+
+    assert isinstance(config, ProductionConfig)
+    assert isinstance(config.db, MySQLConfig)
+    assert isinstance(config.model, QuantizedModelConfig)
+    assert config.replicas == 3
+    assert config.monitoring is True  # Default value
+
+
+def test_multiple_parse_class_conditions():
+    """Test multiple conditions in parse_class"""
+
+    @dataclass
+    class MultiConditionConfig:
+        name: str
+
+        @classmethod
+        def _parse_class_(cls, data: Dict) -> Optional[Type["MultiConditionConfig"]]:
+            if "gpu" in data and data.get("distributed", False):
+                return DistributedGPUConfig
+            elif "gpu" in data:
+                return SingleGPUConfig
+            elif data.get("distributed", False):
+                return DistributedCPUConfig
+            return None
+
+    @dataclass
+    class DistributedGPUConfig(MultiConditionConfig):
+        gpu: int
+        nodes: int
+
+    @dataclass
+    class SingleGPUConfig(MultiConditionConfig):
+        gpu: int
+
+    @dataclass
+    class DistributedCPUConfig(MultiConditionConfig):
+        nodes: int
+
+    # Test different combinations
+    config_dict = {"name": "test", "gpu": 2, "distributed": True, "nodes": 4}
+
+    config_manager = ConfigurationManager(config_dict)
+    config = config_manager.parse_config(MultiConditionConfig)
+
+    assert isinstance(config, DistributedGPUConfig)
+    assert config.gpu == 2
+    assert config.nodes == 4
+
+
+def test_parse_class_chaining():
+    """Test chaining of parse_class with from_dict"""
+
+    @dataclass
+    class ChainedConfig:
+        value: str
+
+        @classmethod
+        def _parse_class_(cls, data: Dict) -> Optional[Type["ChainedConfig"]]:
+            if data.get("type") == "special":
+                return SpecialChainedConfig
+            return None
+
+        @classmethod
+        def _from_dict_(
+            cls, data: Dict, prepare_data_func, converter
+        ) -> "ChainedConfig":
+            return cls(value=data.get("value", "").upper())
+
+    @dataclass
+    class SpecialChainedConfig(ChainedConfig):
+        extra: str = "special"
+
+    config_dict = {"type": "special", "value": "test"}
+
+    config_manager = ConfigurationManager(config_dict)
+    config = config_manager.parse_config(ChainedConfig)
+
+    assert isinstance(config, SpecialChainedConfig)
+    assert config.value == "TEST"  # Transformed by _from_dict_
+    assert config.extra == "special"
 
 
 @pytest.fixture(autouse=True)

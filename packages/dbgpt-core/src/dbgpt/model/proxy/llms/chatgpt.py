@@ -1,14 +1,18 @@
-from __future__ import annotations
-
 import importlib.metadata as metadata
 import logging
 from concurrent.futures import Executor
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, Union
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
+from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    ProxyLLMClient,
+    register_proxy_model_adapter,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.model.utils.chatgpt_utils import OpenAIParameters
 from dbgpt.util.i18n_utils import _
@@ -20,6 +24,53 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class OpenAICompatibleDeployModelParameters(LLMDeployModelParameters):
+    """OpenAI compatible deploy model parameters."""
+
+    provider: str = "proxy/openai"
+
+    api_base: Optional[str] = field(
+        default="${env:OPENAI_API_BASE:-https://api.openai.com/v1}",
+        metadata={
+            "help": _("The base url of the OpenAI API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:OPENAI_API_KEY}",
+        metadata={
+            "help": _("The API key of the OpenAI API."),
+        },
+    )
+    api_type: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The type of the OpenAI API, if you use Azure, it can be: azure")
+        },
+    )
+    api_version: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The version of the OpenAI API."),
+        },
+    )
+    context_length: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The context length of the OpenAI API. If None, it is determined by the"
+                " model."
+            )
+        },
+    )
+
+    http_proxy: Optional[str] = field(
+        default=None,
+        metadata={"help": _("The http or https proxy to use openai")},
+    )
 
 
 async def chatgpt_generate_stream(
@@ -71,7 +122,7 @@ class OpenAILLMClient(ProxyLLMClient):
         model: Optional[str] = None,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "chatgpt_proxyllm",
+        model_alias: Optional[str] = "gpt-4o-mini",
         context_length: Optional[int] = 8192,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -118,22 +169,48 @@ class OpenAILLMClient(ProxyLLMClient):
             _ = self.client.default_headers
 
     @classmethod
+    def param_class(cls) -> Type[OpenAICompatibleDeployModelParameters]:
+        """Get model parameters class.
+
+        This method will be called by the factory method to get the model parameters
+        class.
+
+        Returns:
+            Type[OpenAICompatibleDeployModelParameters]: model parameters class
+
+        """
+        return OpenAICompatibleDeployModelParameters
+
+    @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: OpenAICompatibleDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "OpenAILLMClient":
+        """Create a new client with the model parameters."""
         return cls(
-            api_key=model_params.proxy_api_key,
-            api_base=model_params.proxy_api_base,
-            api_type=model_params.proxy_api_type,
-            api_version=model_params.proxy_api_version,
-            model=model_params.proxyllm_backend,
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            api_type=model_params.api_type,
+            api_version=model_params.api_version,
+            model=model_params.real_provider_model_name,
             proxies=model_params.http_proxy,
-            model_alias=model_params.model_name,
-            context_length=max(model_params.max_context_size, 8192),
-            full_url=model_params.proxy_server_url,
+            model_alias=model_params.real_provider_model_name,
+            context_length=max(model_params.context_length or 8192, 8192),
+            # full_url=model_params.proxy_server_url,
         )
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        """Get generate stream function.
+
+        Returns:
+            Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+                generate stream function
+        """
+        return chatgpt_generate_stream
 
     def check_sdk_version(self, version: str) -> None:
         """Check the sdk version of the client.
@@ -144,7 +221,7 @@ class OpenAILLMClient(ProxyLLMClient):
         pass
 
     @property
-    def client(self) -> ClientType:
+    def client(self) -> "ClientType":
         if self._openai_less_then_v1:
             raise ValueError(
                 "Current model (Load by OpenAILLMClient) require "
@@ -162,7 +239,7 @@ class OpenAILLMClient(ProxyLLMClient):
     def default_model(self) -> str:
         model = self._model
         if not model:
-            model = "gpt-35-turbo" if self._api_type == "azure" else "gpt-3.5-turbo"
+            model = "gpt-35-turbo" if self._api_type == "azure" else "gpt-4o-mini"
         return model
 
     def _build_request(
@@ -301,3 +378,6 @@ class OpenAILLMClient(ProxyLLMClient):
             eg. get real context length from the openai api.
         """
         return self._context_length
+
+
+register_proxy_model_adapter(OpenAILLMClient)

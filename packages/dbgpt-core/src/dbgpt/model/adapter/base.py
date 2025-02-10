@@ -1,22 +1,105 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from dbgpt.core import Embeddings, RerankEmbeddings
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.core.interface.parameter import (
+    BaseDeployModelParameters,
+    LLMDeployModelParameters,
+)
 from dbgpt.model.adapter.template import (
     ConversationAdapter,
     ConversationAdapterFactory,
     get_conv_template,
 )
 from dbgpt.model.base import ModelType
-from dbgpt.model.parameter import (
-    BaseModelParameters,
-    LlamaCppModelParameters,
-    ModelParameters,
-    ProxyModelParameters,
-)
 
 logger = logging.getLogger(__name__)
+
+
+class EmbeddingModelAdapter(ABC):
+    """New Adapter for DB-GPT Embedding models"""
+
+    model_name: Optional[str] = None
+    model_path: Optional[str] = None
+
+    def __repr__(self) -> str:
+        return (
+            f"<{self.__class__.__name__} model_name={self.model_name} "
+            f"model_path={self.model_path}>"
+        )
+
+    def new_adapter(self, **kwargs) -> "EmbeddingModelAdapter":
+        """Create a new adapter instance
+
+        Args:
+            **kwargs: The parameters of the new adapter instance
+
+        Returns:
+            EmbeddingModelAdapter: The new adapter instance
+        """
+        return self.__class__()
+
+    def model_type(self) -> str:
+        return ModelType.HF
+
+    def model_param_class(
+        self, model_type: Optional[str] = None
+    ) -> Type[BaseDeployModelParameters]:
+        """Get the startup parameters instance of the model
+
+        Args:
+            model_type (str, optional): The type of model. Defaults to None.
+
+        Returns:
+            Type[BaseModelParameters]: The startup parameters instance of the model
+        """
+        raise NotImplementedError
+
+    def match(
+        self,
+        provider: str,
+        is_rerank: bool,
+        model_name: Optional[str] = None,
+        model_path: Optional[str] = None,
+    ) -> bool:
+        """Whether the model adapter can load the given model
+
+        Args:
+            provider (str): The provider of the model, old version is model_type.
+            model_name (Optional[str], optional): The name of model. Defaults to None.
+            model_path (Optional[str], optional): The path of model. Defaults to None.
+        """
+        model_cls = self.model_param_class()
+        if model_cls.provider != provider:
+            return False
+        if model_name is None and model_path is None:
+            return False
+        model_name = model_name.lower() if model_name else None
+        model_path = model_path.lower() if model_path else None
+        return self.do_match(is_rerank, model_name) or self.do_match(
+            is_rerank, model_path
+        )
+
+    @abstractmethod
+    def do_match(self, is_rerank: bool, lower_model_name_or_path: Optional[str] = None):
+        """Whether the model adapter can load the given model."""
+        raise NotImplementedError()
+
+    def load(
+        self, model_path: str, embedding_kwargs: dict
+    ) -> Union[Embeddings, RerankEmbeddings]:
+        """Load the embeddings model or rerank embeddings model."""
+        raise NotImplementedError
+
+    def load_from_params(self, params):
+        """Load the model according to the given parameters"""
+        raise NotImplementedError
+
+    def support_async(self) -> bool:
+        """Whether the loaded model supports asynchronous calls"""
+        return False
 
 
 class LLMModelAdapter(ABC):
@@ -60,7 +143,9 @@ class LLMModelAdapter(ABC):
     def model_type(self) -> str:
         return ModelType.HF
 
-    def model_param_class(self, model_type: str = None) -> Type[BaseModelParameters]:
+    def model_param_class(
+        self, model_type: str = None
+    ) -> Type[LLMDeployModelParameters]:
         """Get the startup parameters instance of the model
 
         Args:
@@ -69,24 +154,25 @@ class LLMModelAdapter(ABC):
         Returns:
             Type[BaseModelParameters]: The startup parameters instance of the model
         """
+        raise NotImplementedError("v0.7.0 not support model_param_class now")
         # """Get the startup parameters instance of the model"""
-        model_type = model_type if model_type else self.model_type()
-        if model_type == ModelType.LLAMA_CPP:
-            return LlamaCppModelParameters
-        elif model_type == ModelType.PROXY:
-            return ProxyModelParameters
-        return ModelParameters
+        # model_type = model_type if model_type else self.model_type()
+        # if model_type == ModelType.LLAMA_CPP:
+        #     return LlamaCppModelParameters
+        # elif model_type == ModelType.PROXY:
+        #     return ProxyModelParameters
+        # return ModelParameters
 
     def match(
         self,
-        model_type: str,
+        provider: str,
         model_name: Optional[str] = None,
         model_path: Optional[str] = None,
     ) -> bool:
         """Whether the model adapter can load the given model
 
         Args:
-            model_type (str): The type of model
+            provider (str): The provider of the model, old version is model_type.
             model_name (Optional[str], optional): The name of model. Defaults to None.
             model_path (Optional[str], optional): The path of model. Defaults to None.
         """
@@ -157,15 +243,21 @@ class LLMModelAdapter(ABC):
         """
         return False
 
-    def get_generate_stream_function(self, model, model_path: str):
+    def get_generate_stream_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         """Get the generate stream function of the model"""
         raise NotImplementedError
 
-    def get_async_generate_stream_function(self, model, model_path: str):
+    def get_async_generate_stream_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         """Get the asynchronous generate stream function of the model"""
         raise NotImplementedError
 
-    def get_generate_function(self, model, model_path: str):
+    def get_generate_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         """Get the generate function of the model"""
         raise NotImplementedError
 
@@ -535,14 +627,18 @@ class AdapterEntry:
 
     def __init__(
         self,
-        model_adapter: LLMModelAdapter,
+        model_adapter: Union[LLMModelAdapter, EmbeddingModelAdapter],
         match_funcs: List[Callable[[str, str, str], bool]] = None,
     ):
         self.model_adapter = model_adapter
         self.match_funcs = match_funcs or []
 
+    def __repr__(self) -> str:
+        return f"<AdapterEntry model_adapter={self.model_adapter}>"
+
 
 model_adapters: List[AdapterEntry] = []
+embedding_adapters: List[AdapterEntry] = []
 
 
 def register_model_adapter(
@@ -560,30 +656,38 @@ def register_model_adapter(
 
 
 def get_model_adapter(
-    model_type: str,
-    model_name: str,
-    model_path: str,
+    provider: str,
+    model_name: Optional[str] = None,
+    model_path: Optional[str] = None,
     conv_factory: Optional[ConversationAdapterFactory] = None,
 ) -> Optional[LLMModelAdapter]:
     """Get a model adapter.
 
     Args:
-        model_type (str): The type of the model.
-        model_name (str): The name of the model.
-        model_path (str): The path of the model.
+        provider (str): Provider of the model, old version is model_type.
+        model_name (Optional[str], optional): The name of the model. Defaults to None.
+        model_path (Optional[str], optional): The path of the model. Defaults to None.
         conv_factory (Optional[ConversationAdapterFactory], optional): The conversation
          factory. Defaults to None.
     Returns:
         Optional[LLMModelAdapter]: The model adapter.
     """
     adapter = None
-    # First find adapter by model_name
+    # First find adapter by model type
+    adapters_by_provider = []
     for adapter_entry in model_adapters[::-1]:
-        if adapter_entry.model_adapter.match(model_type, model_name, None):
+        if adapter_entry.model_adapter.match(provider, None, None):
+            adapters_by_provider.append(adapter_entry)
+    if adapters_by_provider and len(adapters_by_provider) == 1:
+        adapter = adapters_by_provider[0].model_adapter
+
+    # Then find adapter by model name
+    for adapter_entry in model_adapters[::-1]:
+        if adapter_entry.model_adapter.match(provider, model_name, None):
             adapter = adapter_entry.model_adapter
             break
     for adapter_entry in model_adapters[::-1]:
-        if adapter_entry.model_adapter.match(model_type, None, model_path):
+        if adapter_entry.model_adapter.match(provider, None, model_path):
             adapter = adapter_entry.model_adapter
             break
     if adapter:
@@ -592,5 +696,87 @@ def get_model_adapter(
         new_adapter.model_path = model_path
         if conv_factory:
             new_adapter.conv_factory = conv_factory
+        return new_adapter
+    return None
+
+
+def register_embedding_adapter(
+    model_adapter_cls: Union[
+        Type[EmbeddingModelAdapter], Type[Embeddings], Type[RerankEmbeddings]
+    ],
+    match_funcs: List[Callable[[str, str, str], bool]] = None,
+) -> None:
+    """Register an embedding adapter.
+
+    Args:
+        model_adapter_cls (Type[EmbeddingModelAdapter]): The embedding adapter class.
+        match_funcs (List[Callable[[str, str, str], bool]], optional): The match
+            functions. Defaults to None.
+    """
+    if issubclass(model_adapter_cls, Embeddings) or issubclass(
+        model_adapter_cls, RerankEmbeddings
+    ):
+        params_adapter_cls = model_adapter_cls.param_class()
+        provider = params_adapter_cls.provider
+        match_fun = model_adapter_cls._match
+        is_rerank_params = issubclass(model_adapter_cls, RerankEmbeddings)
+
+        class _DyEmbeddingAdapter(EmbeddingModelAdapter):
+            def model_param_class(self, model_type: str = None):
+                return params_adapter_cls
+
+            def do_match(
+                self, is_rerank: bool, lower_model_name_or_path: Optional[str] = None
+            ):
+                if is_rerank_params != is_rerank:
+                    return False
+                return match_fun(provider, lower_model_name_or_path)
+
+            def load_from_params(self, params):
+                return model_adapter_cls.from_parameters(params)
+
+        embedding_adapters.append(AdapterEntry(_DyEmbeddingAdapter(), match_funcs))
+    else:
+        embedding_adapters.append(AdapterEntry(model_adapter_cls(), match_funcs))
+
+
+def get_embedding_adapter(
+    provider: str,
+    is_rerank: bool,
+    model_name: Optional[str] = None,
+    model_path: Optional[str] = None,
+) -> Optional[EmbeddingModelAdapter]:
+    """Get an embedding adapter.
+
+    Args:
+        provider (str): Provider of the model, old version is model_type.
+        is_rerank (bool): Whether the model is a rerank model.
+        model_name (Optional[str], optional): The name of the model. Defaults to None.
+        model_path (Optional[str], optional): The path of the model. Defaults to None.
+    Returns:
+        Optional[EmbeddingModelAdapter]: The embedding adapter.
+    """
+    adapter: Optional[EmbeddingModelAdapter] = None
+    # First find adapter by model type
+    adapters_by_provider = []
+    for adapter_entry in embedding_adapters[::-1]:
+        if adapter_entry.model_adapter.match(provider, is_rerank, None, None):
+            adapters_by_provider.append(adapter_entry)
+    if adapters_by_provider and len(adapters_by_provider) == 1:
+        adapter = adapters_by_provider[0].model_adapter
+
+    # Then find adapter by model name
+    for adapter_entry in embedding_adapters[::-1]:
+        if adapter_entry.model_adapter.match(provider, is_rerank, model_name, None):
+            adapter = adapter_entry.model_adapter
+            break
+    for adapter_entry in embedding_adapters[::-1]:
+        if adapter_entry.model_adapter.match(provider, is_rerank, None, model_path):
+            adapter = adapter_entry.model_adapter
+            break
+    if adapter:
+        new_adapter = adapter.new_adapter()
+        new_adapter.model_name = model_name
+        new_adapter.model_path = model_path
         return new_adapter
     return None

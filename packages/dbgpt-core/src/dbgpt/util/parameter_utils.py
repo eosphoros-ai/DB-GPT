@@ -116,6 +116,20 @@ class BaseParameters:
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
+    @classmethod
+    def get_parameter_descriptions(cls) -> List[ParameterDescription]:
+        """Get the descriptions of the parameters in the dataclass."""
+        return _get_parameter_descriptions(cls)
+
+    @classmethod
+    def _resolve_root_path(
+        cls, path: Optional[str] = None, root_path: Optional[str] = None
+    ) -> Optional[str]:
+        """Replace the path to absolute path."""
+        from dbgpt.configs.model_config import resolve_root_path
+
+        return resolve_root_path(path, root_path)
+
 
 @dataclass
 class BaseServerParameters(BaseParameters):
@@ -617,6 +631,17 @@ def _get_parameter_descriptions(
 ) -> List[ParameterDescription]:
     from .function_utils import type_to_string
 
+    # Get the descriptions of the parameters in the dataclass.
+    parent_descriptions = {}
+    # For each parent class in the MRO, skip the current class and object class
+    for parent in dataclass_type.__mro__[1:]:
+        if parent is object or not is_dataclass(parent):
+            # Just handle dataclass parent classes
+            continue
+        # Get the descriptions of the parameters in the parent class
+        for parent_param in _get_parameter_descriptions(parent):
+            if parent_param.description:
+                parent_descriptions[parent_param.param_name] = parent_param.description
     descriptions = []
     for fd in fields(dataclass_type):
         ext_metadata = {
@@ -639,14 +664,16 @@ def _get_parameter_descriptions(
         required = True
         if fd.default != MISSING or fd.default_factory != MISSING:
             required = False
-
+        description = fd.metadata.get("help")
+        if not description:
+            description = parent_descriptions.get(fd.name)
         descriptions.append(
             ParameterDescription(
                 is_array=is_array,
                 param_class=f"{dataclass_type.__module__}.{dataclass_type.__name__}",
                 param_name=fd.name,
                 param_type=real_type_name,
-                description=fd.metadata.get("help", None),
+                description=description,
                 label=fd.metadata.get("label", fd.name),
                 required=required,
                 default_value=default_value,

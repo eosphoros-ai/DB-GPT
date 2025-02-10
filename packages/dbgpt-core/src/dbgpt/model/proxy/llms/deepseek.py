@@ -1,9 +1,16 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
-from .chatgpt import OpenAILLMClient
+from ..base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    register_proxy_model_adapter,
+)
+from .chatgpt import OpenAICompatibleDeployModelParameters, OpenAILLMClient
 
 if TYPE_CHECKING:
     from httpx._types import ProxiesTypes
@@ -13,6 +20,27 @@ if TYPE_CHECKING:
 
 # 32K model
 _DEFAULT_MODEL = "deepseek-chat"
+
+
+@dataclass
+class DeepSeekDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for DeepSeek."""
+
+    provider: str = "proxy/deepseek"
+
+    api_base: Optional[str] = field(
+        default="${env:DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}",
+        metadata={
+            "help": _("The base url of the DeepSeek API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:DEEPSEEK_API_KEY}",
+        metadata={
+            "help": _("The API key of the DeepSeek API."),
+        },
+    )
 
 
 async def deepseek_generate_stream(
@@ -41,7 +69,7 @@ class DeepseekLLMClient(OpenAILLMClient):
         model: Optional[str] = _DEFAULT_MODEL,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "deepseek_proxyllm",
+        model_alias: Optional[str] = _DEFAULT_MODEL,
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -94,3 +122,18 @@ class DeepseekLLMClient(OpenAILLMClient):
         if not model:
             model = _DEFAULT_MODEL
         return model
+
+    @classmethod
+    def param_class(cls) -> Type[DeepSeekDeployModelParameters]:
+        """Get the deploy model parameters class."""
+        return DeepSeekDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        """Get the generate stream function."""
+        return deepseek_generate_stream
+
+
+register_proxy_model_adapter(DeepseekLLMClient)

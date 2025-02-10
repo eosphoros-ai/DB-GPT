@@ -3,6 +3,7 @@
 
 import os
 from functools import cache
+from typing import Optional
 
 ROOT_PATH = os.path.dirname(
     os.path.dirname(
@@ -26,6 +27,19 @@ _DAG_DEFINITION_DIR = os.path.join(ROOT_PATH, "examples/awel")
 LOCALES_DIR = os.path.join(ROOT_PATH, "i18n/locales")
 
 current_directory = os.getcwd()
+
+
+def resolve_root_path(
+    path: Optional[str], root_path: Optional[str] = None
+) -> Optional[str]:
+    """Resolve the path relative to the root path."""
+    if path is None:
+        return None
+    if path.startswith("/"):
+        return path
+    if not root_path:
+        root_path = ROOT_PATH
+    return os.path.join(root_path, path)
 
 
 @cache

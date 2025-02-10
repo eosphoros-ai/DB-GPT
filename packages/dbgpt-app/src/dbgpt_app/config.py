@@ -2,9 +2,16 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from dbgpt.datasource.parameter import BaseDatasourceParameters
+from dbgpt.model.parameter import (
+    ModelsDeployParameters,
+    ModelServiceConfig,
+    ModelWorkerParameters,
+)
 from dbgpt.util.configure import HookConfig
 from dbgpt.util.i18n_utils import _
-from dbgpt.util.parameter_utils import BaseParameters, BaseServerParameters
+from dbgpt.util.parameter_utils import BaseParameters
+from dbgpt.util.tracer import TracerParameters
+from dbgpt.util.utils import LoggingParameters
 
 
 @dataclass
@@ -42,6 +49,9 @@ class ServiceWebParameters(BaseParameters):
     # daemon: Optional[bool] = field(
     #     default=False, metadata={"help": "Run Webserver in background"}
     # )
+    light: Optional[bool] = field(
+        default=False, metadata={"help": _("Run Webserver in light mode")}
+    )
     controller_addr: Optional[str] = field(
         default=None,
         metadata={
@@ -55,20 +65,69 @@ class ServiceWebParameters(BaseParameters):
         default_factory=BaseDatasourceParameters,
         metadata={
             "help": _(
-                "Database connection parameters, now support SQLite, OceanBase "
-                "and MySQL"
+                "Database connection config, now support SQLite, OceanBase and MySQL"
             )
         },
     )
-
-
-@dataclass
-class ModelServiceConfig(BaseParameters):
-    """Model service configuration."""
-
-    controller: BaseServerParameters = field(metadata={"help": _("Model controller")})
-    worker: BaseServerParameters = field(metadata={"help": _("Model worker")})
-    api: BaseServerParameters = field(metadata={"help": _("Model API")})
+    trace: Optional[TracerParameters] = field(
+        default=None,
+        metadata={
+            "help": _("Tracer config for web server, if None, use global tracer config")
+        },
+    )
+    log: Optional[LoggingParameters] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Logging configuration for web server, if None, use global config"
+            )
+        },
+    )
+    disable_alembic_upgrade: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": _(
+                "Whether to disable alembic to initialize and upgrade database metadata"
+            )
+        },
+    )
+    db_ssl_verify: Optional[bool] = field(
+        default=False,
+        metadata={"help": _("Whether to verify the SSL certificate of the database")},
+    )
+    default_thread_pool_size: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The default thread pool size, If None, use default config of python "
+                "thread pool"
+            )
+        },
+    )
+    remote_embedding: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": _(
+                "Whether to enable remote embedding models. If it is True, you need"
+                " to start a embedding model through `dbgpt start worker --worker_type "
+                "text2vec --model_name xxx --model_path xxx`"
+            )
+        },
+    )
+    remote_rerank: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": _(
+                "Whether to enable remote rerank models. If it is True, you need"
+                " to start a rerank model through `dbgpt start worker --worker_type "
+                "text2vec --rerank --model_name xxx --model_path xxx`"
+            )
+        },
+    )
+    awel_dirs: Optional[str] = field(
+        default=None,
+        metadata={"help": _("The directories to search awel files, split by `,`")},
+    )
 
 
 @dataclass
@@ -94,23 +153,35 @@ class ApplicationConfig:
     system: SystemParameters = field(
         default_factory=SystemParameters,
         metadata={
-            "help": _("System parameters"),
+            "help": _("System configuration"),
         },
     )
     service: ServiceConfig = field(default_factory=ServiceConfig)
-
-
-if __name__ == "__main__":
-    import os
-
-    from dbgpt.configs.model_config import ROOT_PATH
-    from dbgpt.util.configure import ConfigurationManager
-    from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
-
-    cm = ConnectorManager(None)
-    cm.on_init()
-    cfg = ConfigurationManager.from_file(
-        os.path.join(ROOT_PATH, "configs", "dbgpt-default.toml")
+    models: ModelsDeployParameters = field(
+        default_factory=ModelsDeployParameters,
+        metadata={
+            "help": _("Model deployment configuration"),
+        },
     )
-    app_config = cfg.parse_config(ApplicationConfig, hook_section="hooks")
-    print(app_config)
+    trace: TracerParameters = field(
+        default_factory=TracerParameters,
+        metadata={
+            "help": _("Global tracer configuration"),
+        },
+    )
+    log: LoggingParameters = field(
+        default_factory=LoggingParameters,
+        metadata={
+            "help": _("Logging configuration"),
+        },
+    )
+
+    def generate_temp_model_worker_params(self) -> ModelWorkerParameters:
+        model_name = self.models.default_llm
+        model_path = self.models.default_llm
+        return ModelWorkerParameters(
+            model_name=model_name,
+            model_path=model_path,
+            host=self.service.model.worker.host,
+            port=self.service.model.worker.port,
+        )

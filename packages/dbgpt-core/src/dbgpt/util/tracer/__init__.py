@@ -16,6 +16,7 @@ from dbgpt.util.tracer.span_storage import (
 from dbgpt.util.tracer.tracer_impl import (
     DefaultTracer,
     TracerManager,
+    TracerParameters,
     initialize_tracer,
     root_tracer,
     trace,
@@ -38,4 +39,5 @@ __all__ = [
     "initialize_tracer",
     "DefaultTracer",
     "TracerManager",
+    "TracerParameters",
 ]

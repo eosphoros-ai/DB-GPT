@@ -4,17 +4,17 @@ from unittest.mock import patch
 
 import pytest
 
+from dbgpt.model.adapter.hf_adapter import HFLLMDeployModelParameters
 from dbgpt.model.base import WorkerApplyType
 from dbgpt.model.cluster.base import WorkerApplyRequest, WorkerStartupRequest
 from dbgpt.model.cluster.manager_base import WorkerRunData
-from dbgpt.model.cluster.tests.conftest import (
+from dbgpt.model.cluster.tests.conftest import (  # noqa
     _create_workers,
     _new_worker_params,
     _start_worker_manager,
+    manager_2_workers,
 )
-from dbgpt.model.cluster.worker.manager import (
-    LocalWorkerManager,
-)
+from dbgpt.model.cluster.worker.manager import LocalWorkerManager
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.parameter import ModelWorkerParameters, WorkerType
 
@@ -81,9 +81,13 @@ async def test_add_worker(
     worker_param: ModelWorkerParameters,
 ):
     # TODO test with register function
-    assert manager.add_worker(worker, worker_param)
+    deploy_params = HFLLMDeployModelParameters(
+        name=worker_param.model_name,
+        path=worker_param.model_path,
+    )
+    assert manager.add_worker(worker, worker_param, deploy_params)
     # Add again
-    assert manager.add_worker(worker, worker_param) is True
+    assert manager.add_worker(worker, worker_param, deploy_params) is False
     key = manager._worker_key(worker_param.worker_type, worker_param.model_name)
     assert len(manager.workers) == 1
     assert len(manager.workers[key]) == 1
@@ -94,6 +98,9 @@ async def test_add_worker(
         _new_worker_params(
             model_name="chatglm2-6b", model_path="/app/models/chatglm2-6b"
         ),
+        deploy_model_params=HFLLMDeployModelParameters(
+            name="chatglm2-6b", path="/app/models/chatglm2-6b"
+        ),
     )
     assert (
         manager.add_worker(
@@ -101,14 +108,17 @@ async def test_add_worker(
             _new_worker_params(
                 model_name="chatglm2-6b", model_path="/app/models/chatglm2-6b"
             ),
+            deploy_model_params=HFLLMDeployModelParameters(
+                name="chatglm2-6b", path="/app/models/chatglm2-6b"
+            ),
         )
-        is True
+        is False
     )
     assert len(manager.workers) == 2
 
 
 @pytest.mark.asyncio
-async def test__apply_worker(manager_2_workers: LocalWorkerManager):
+async def test__apply_worker(manager_2_workers: LocalWorkerManager):  # noqa: F811
     manager = manager_2_workers
 
     async def f1(wr: WorkerRunData) -> int:
@@ -130,7 +140,7 @@ async def test__apply_worker(manager_2_workers: LocalWorkerManager):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("manager_2_workers", [{"start": False}], indirect=True)
-async def test__start_all_worker(manager_2_workers: LocalWorkerManager):
+async def test__start_all_worker(manager_2_workers: LocalWorkerManager):  # noqa: F811
     manager = manager_2_workers
     out = await manager._start_all_worker(None)
     assert out.success
@@ -146,8 +156,9 @@ async def test__start_all_worker(manager_2_workers: LocalWorkerManager):
     ],
     indirect=["manager_2_workers"],
 )
-async def test_start_worker_manager(
-    manager_2_workers: LocalWorkerManager, is_error_worker: bool
+async def test_start_worker_manager(  # noqa: F811
+    manager_2_workers: LocalWorkerManager,  # noqa: F811
+    is_error_worker: bool,
 ):
     manager = manager_2_workers
     if is_error_worker:
@@ -166,8 +177,9 @@ async def test_start_worker_manager(
     ],
     indirect=["manager_2_workers"],
 )
-async def test__stop_all_worker(
-    manager_2_workers: LocalWorkerManager, is_stop_error: bool
+async def test__stop_all_worker(  # noqa: F811
+    manager_2_workers: LocalWorkerManager,  # noqa: F811
+    is_stop_error: bool,
 ):
     manager = manager_2_workers
     out = await manager._stop_all_worker(None)
@@ -178,7 +190,7 @@ async def test__stop_all_worker(
 
 
 @pytest.mark.asyncio
-async def test__restart_all_worker(manager_2_workers: LocalWorkerManager):
+async def test__restart_all_worker(manager_2_workers: LocalWorkerManager):  # noqa: F811
     manager = manager_2_workers
     out = await manager._restart_all_worker(None)
     assert out.success
@@ -193,8 +205,9 @@ async def test__restart_all_worker(manager_2_workers: LocalWorkerManager):
     ],
     indirect=["manager_2_workers"],
 )
-async def test_stop_worker_manager(
-    manager_2_workers: LocalWorkerManager, is_stop_error: bool
+async def test_stop_worker_manager(  # noqa: F811
+    manager_2_workers: LocalWorkerManager,  # noqa: F811
+    is_stop_error: bool,
 ):
     manager = manager_2_workers
     if is_stop_error:
@@ -218,7 +231,8 @@ async def test__remove_worker():
 
 
 @pytest.mark.asyncio
-@patch("dbgpt.model.cluster.worker.manager._build_worker")
+# @patch("dbgpt.model.cluster.worker.manager._build_worker")
+@patch("dbgpt.model.cluster.worker.tests.test_manager._build_worker")
 async def test_model_startup(mock_build_worker):
     async with _start_worker_manager() as manager:
         workers = _create_workers(1)
@@ -271,7 +285,7 @@ async def test_model_shutdown(mock_build_worker):
 
 
 @pytest.mark.asyncio
-async def test_supported_models(manager_2_workers: LocalWorkerManager):
+async def test_supported_models(manager_2_workers: LocalWorkerManager):  # noqa: F811
     manager = manager_2_workers
     models = await manager.supported_models()
     assert len(models) == 1

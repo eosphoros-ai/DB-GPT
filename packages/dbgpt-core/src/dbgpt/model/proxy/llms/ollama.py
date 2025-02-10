@@ -1,13 +1,34 @@
 import logging
 from concurrent.futures import Executor
-from typing import Iterator, Optional
+from dataclasses import dataclass, field
+from typing import Iterator, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    ProxyLLMClient,
+    register_proxy_model_adapter,
+)
+from dbgpt.model.proxy.llms.chatgpt import OpenAICompatibleDeployModelParameters
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class OllamaDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Ollama."""
+
+    provider: str = "proxy/ollama"
+
+    api_base: Optional[str] = field(
+        default="${env:OLLAMA_API_BASE:-http://localhost:11434}",
+        metadata={
+            "help": _("The base url of the Ollama API."),
+        },
+    )
 
 
 def ollama_generate_stream(
@@ -23,17 +44,17 @@ class OllamaLLMClient(ProxyLLMClient):
     def __init__(
         self,
         model: Optional[str] = None,
-        host: Optional[str] = None,
-        model_alias: Optional[str] = "ollama_proxyllm",
+        api_base: Optional[str] = None,
+        model_alias: Optional[str] = "llama2",
         context_length: Optional[int] = 4096,
         executor: Optional[Executor] = None,
     ):
         if not model:
             model = "llama2"
-        if not host:
-            host = "http://localhost:11434"
+        if not api_base:
+            api_base = "http://localhost:11434"
         self._model = model
-        self._host = host
+        self._api_base = api_base
 
         super().__init__(
             model_names=[model, model_alias],
@@ -44,16 +65,26 @@ class OllamaLLMClient(ProxyLLMClient):
     @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: OllamaDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "OllamaLLMClient":
         return cls(
-            model=model_params.proxyllm_backend,
-            host=model_params.proxy_server_url,
-            model_alias=model_params.model_name,
-            context_length=model_params.max_context_size,
+            model=model_params.real_provider_model_name,
+            api_base=model_params.api_base,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
             executor=default_executor,
         )
+
+    @classmethod
+    def param_class(cls) -> Type[OllamaDeployModelParameters]:
+        return OllamaDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return ollama_generate_stream
 
     @property
     def default_model(self) -> str:
@@ -76,7 +107,7 @@ class OllamaLLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
 
         model = request.model or self._model
-        client = Client(self._host)
+        client = Client(self._api_base)
         try:
             stream = client.chat(
                 model=model,
@@ -88,7 +119,10 @@ class OllamaLLMClient(ProxyLLMClient):
                 content = content + chunk["message"]["content"]
                 yield ModelOutput(text=content, error_code=0)
         except ollama.ResponseError as e:
-            return ModelOutput(
+            yield ModelOutput(
                 text=f"**Ollama Response Error, Please CheckErrorInfo.**: {e}",
                 error_code=-1,
             )
+
+
+register_proxy_model_adapter(OllamaLLMClient)

@@ -1,9 +1,43 @@
 """Qianfan Embeddings module."""
 
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Type
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
+from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
+from dbgpt.model.adapter.base import register_embedding_adapter
+from dbgpt.util.i18n_utils import _
+
+
+@dataclass
+class QianfanEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
+    """Qianfan Embeddings deploy model parameters."""
+
+    provider = "proxy/qianfan"
+
+    api_key: Optional[str] = Field(
+        default=None,
+        description="The API key for the embeddings API. It's the ak for qianfan.",
+    )
+    api_secret: Optional[str] = Field(
+        default=None,
+        description="The Secret key for the embeddings API. It's the sk for qianfan.",
+    )
+    backend: Optional[str] = field(
+        default="text-embedding-v1",
+        metadata={
+            "help": _(
+                "The real model name to pass to the provider, default is None. If "
+                "backend is None, use name as the real model name."
+            ),
+        },
+    )
+
+    @property
+    def real_provider_model_name(self) -> str:
+        """Get the real provider model name."""
+        return self.backend or self.name
 
 
 class QianFanEmbeddings(BaseModel, Embeddings):
@@ -82,6 +116,22 @@ class QianFanEmbeddings(BaseModel, Embeddings):
         kwargs["client"] = qianfan.Embedding(**params)
         super().__init__(**kwargs)
 
+    @classmethod
+    def param_class(cls) -> Type[QianfanEmbeddingDeployModelParameters]:
+        """Get the parameter class."""
+        return QianfanEmbeddingDeployModelParameters
+
+    @classmethod
+    def from_parameters(
+        cls, parameters: QianfanEmbeddingDeployModelParameters
+    ) -> "QianFanEmbeddings":
+        """Create an embedding model from parameters."""
+        return cls(
+            api_key=parameters.api_key,
+            api_secret=parameters.api_secret,
+            model_name=parameters.real_provider_model_name,
+        )
+
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a QianFan embedding model."""
         resp = self.embed_documents([text])
@@ -107,3 +157,6 @@ class QianFanEmbeddings(BaseModel, Embeddings):
             resp = self.client.do(texts=chunk, **self.model_kwargs)
             lst.extend([res["embedding"] for res in resp["data"]])
         return lst
+
+
+register_embedding_adapter(QianFanEmbeddings)

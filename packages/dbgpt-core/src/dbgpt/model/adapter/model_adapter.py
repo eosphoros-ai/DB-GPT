@@ -30,7 +30,7 @@ _OLD_MODELS = [
 @cache
 def get_llm_model_adapter(
     model_name: str,
-    model_path: str,
+    model_path: Optional[str] = None,
     use_fastchat: bool = True,
     use_fastchat_monkey_patch: bool = False,
     model_type: str = None,

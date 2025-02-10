@@ -124,6 +124,7 @@ class RDBMSConnector(BaseConnector):
            - custom_table_info: Optional[dict] = None,
            - view_support: bool = False,
         """
+        self._is_closed = False
         self._engine = engine
         self._schema = schema
         if include_tables and ignore_tables:
@@ -150,7 +151,6 @@ class RDBMSConnector(BaseConnector):
         self._metadata.reflect(bind=self._engine)
 
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
-        self._is_closed = False
 
     @classmethod
     def param_class(cls) -> Type[RDBMSDatasourceParameters]:

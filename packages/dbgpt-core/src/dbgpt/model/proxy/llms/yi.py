@@ -1,9 +1,16 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
-from .chatgpt import OpenAILLMClient
+from ..base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    register_proxy_model_adapter,
+)
+from .chatgpt import OpenAICompatibleDeployModelParameters, OpenAILLMClient
 
 if TYPE_CHECKING:
     from httpx._types import ProxiesTypes
@@ -12,6 +19,27 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 _YI_DEFAULT_MODEL = "yi-34b-chat-0205"
+
+
+@dataclass
+class YiDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Yi."""
+
+    provider: str = "proxy/yi"
+
+    api_base: Optional[str] = field(
+        default="${env:YI_API_BASE:-https://api.lingyiwanwu.com/v1}",
+        metadata={
+            "help": _("The base url of the Yi API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:YI_API_KEY}",
+        metadata={
+            "help": _("The API key of the Yi API."),
+        },
+    )
 
 
 async def yi_generate_stream(
@@ -38,7 +66,7 @@ class YiLLMClient(OpenAILLMClient):
         model: Optional[str] = _YI_DEFAULT_MODEL,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "yi_proxyllm",
+        model_alias: Optional[str] = _YI_DEFAULT_MODEL,
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -81,3 +109,16 @@ class YiLLMClient(OpenAILLMClient):
         if not model:
             model = _YI_DEFAULT_MODEL
         return model
+
+    @classmethod
+    def param_class(cls) -> Type[YiDeployModelParameters]:
+        return YiDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return yi_generate_stream
+
+
+register_proxy_model_adapter(YiLLMClient)

@@ -2,6 +2,7 @@
 
 import logging
 import traceback
+from typing import Tuple
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
@@ -43,29 +44,30 @@ class DBSummaryClient:
 
     def db_summary_embedding(self, dbname, db_type):
         """Put db profile and table profile summary into vector store."""
-        db_summary_client = self.create_summary_client(dbname, db_type)
+        try:
+            db_summary_client = self.create_summary_client(dbname, db_type)
 
-        self.init_db_profile(db_summary_client, dbname)
+            self.init_db_profile(db_summary_client, dbname)
 
-        logger.info("db summary embedding success")
+            logger.info("db summary embedding success")
+        except Exception as e:
+            message = traceback.format_exc()
+            logger.warning(
+                f"{dbname}, {db_type} summary error!{str(e)}, detail: {message}"
+            )
+            raise
 
     def get_db_summary(self, dbname, query, topk):
         """Get user query related tables info."""
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
-
-        vector_store_name = dbname + "_profile"
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
-        table_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=table_vector_store_config,
-        )
-
         from dbgpt_ext.rag.retriever.db_schema import DBSchemaRetriever
 
+        table_vector_connector, field_vector_connector = (
+            self._get_vector_connector_by_db(dbname)
+        )
         retriever = DBSchemaRetriever(
             top_k=topk,
-            table_vector_store_connector=table_vector_connector,
+            table_vector_store_connector=table_vector_connector.index_client,
+            field_vector_store_connector=field_vector_connector.index_client,
             separator="--table-field-separator--",
         )
 
@@ -95,14 +97,9 @@ class DBSummaryClient:
         dbname(str): dbname
         """
         vector_store_name = dbname + "_profile"
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
-        from dbgpt_serve.rag.connector import VectorStoreConnector
 
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
-        table_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=table_vector_store_config,
+        table_vector_connector, field_vector_connector = (
+            self._get_vector_connector_by_db(dbname)
         )
         if not table_vector_connector.vector_name_exists():
             from dbgpt_ext.rag.assembler.db_schema import DBSchemaAssembler
@@ -112,7 +109,8 @@ class DBSummaryClient:
             )
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connector=db_summary_client.db,
-                table_vector_store_connector=table_vector_connector,
+                table_vector_store_connector=table_vector_connector.index_client,
+                field_vector_store_connector=field_vector_connector.index_client,
                 chunk_parameters=chunk_parameters,
                 max_seq_length=CFG.EMBEDDING_MODEL_MAX_SEQ_LEN,
             )
@@ -125,23 +123,11 @@ class DBSummaryClient:
 
     def delete_db_profile(self, dbname):
         """Delete db profile."""
-        vector_store_name = dbname + "_profile"
         table_vector_store_name = dbname + "_profile"
         field_vector_store_name = dbname + "_profile_field"
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
-        from dbgpt_serve.rag.connector import VectorStoreConnector
 
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
-        field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
-        table_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=table_vector_store_config,
-        )
-        field_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
-            self.embeddings,
-            vector_store_config=field_vector_store_config,
+        table_vector_connector, field_vector_connector = (
+            self._get_vector_connector_by_db(dbname)
         )
 
         table_vector_connector.delete_vector_name(table_vector_store_name)
@@ -161,3 +147,24 @@ class DBSummaryClient:
             return GdbmsSummary(dbname, db_type)
         else:
             return RdbmsSummary(dbname, db_type)
+
+    def _get_vector_connector_by_db(
+        self, dbname
+    ) -> Tuple[VectorStoreConnector, VectorStoreConnector]:
+        from dbgpt.storage.vector_store.base import VectorStoreConfig
+
+        vector_store_name = dbname + "_profile"
+        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
+        table_vector_connector = VectorStoreConnector.from_default(
+            CFG.VECTOR_STORE_TYPE,
+            self.embeddings,
+            vector_store_config=table_vector_store_config,
+        )
+        field_vector_store_name = dbname + "_profile_field"
+        field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
+        field_vector_connector = VectorStoreConnector.from_default(
+            CFG.VECTOR_STORE_TYPE,
+            self.embeddings,
+            vector_store_config=field_vector_store_config,
+        )
+        return table_vector_connector, field_vector_connector

@@ -9,6 +9,7 @@ from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.core import Embeddings, RerankEmbeddings
 from dbgpt.core.awel import DAGVar
 from dbgpt.core.awel.flow import ResourceCategory, register_resource
+from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
@@ -93,32 +94,26 @@ class DefaultEmbeddingFactory(EmbeddingFactory):
         return self._model
 
     def _load_model(self) -> Embeddings:
-        from dbgpt.model.adapter.embeddings_loader import (
-            EmbeddingLoader,
-            _parse_embedding_params,
-        )
-        from dbgpt.model.parameter import (
-            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
-            BaseEmbeddingModelParameters,
-            EmbeddingModelParameters,
-        )
+        from dbgpt.model.adapter.base import get_embedding_adapter
 
-        param_cls = EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
-            self._default_model_name, EmbeddingModelParameters
-        )
-        model_params: BaseEmbeddingModelParameters = _parse_embedding_params(
+        adapter = get_embedding_adapter(
+            "hf",
+            is_rerank=False,
             model_name=self._default_model_name,
             model_path=self._default_model_path,
-            param_cls=param_cls,
+        )
+        param_cls = adapter.model_param_class()
+        if not issubclass(param_cls, EmbeddingDeployModelParameters):
+            raise ValueError(
+                f"Model parameter class {param_cls} is not a subclass of "
+                "EmbeddingDeployModelParameters"
+            )
+        params: EmbeddingDeployModelParameters = param_cls(
+            name=self._default_model_name,
+            path=self._default_model_path,
             **self._kwargs,
         )
-        logger.info(model_params)
-        loader = EmbeddingLoader()
-        # Ignore model_name args
-        model_name = self._default_model_name or model_params.model_name
-        if not model_name:
-            raise ValueError("model_name must be provided.")
-        return loader.load(model_name, model_params)
+        return adapter.load_from_params(params)
 
     @classmethod
     def openai(

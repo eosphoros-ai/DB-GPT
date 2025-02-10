@@ -1,13 +1,43 @@
 import os
 from concurrent.futures import Executor
-from typing import Iterator, Optional
+from dataclasses import dataclass, field
+from typing import Iterator, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
+from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    ProxyLLMClient,
+    register_proxy_model_adapter,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
-CHATGLM_DEFAULT_MODEL = "chatglm_pro"
+from .chatgpt import OpenAICompatibleDeployModelParameters
+
+_DEFAULT_MODEL = "glm-4-plus"
+
+
+@dataclass
+class ZhipuDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Zhipu."""
+
+    provider: str = "proxy/zhipu"
+
+    api_base: Optional[str] = field(
+        default="${env:ZHIPUAI_BASE_URL:-https://open.bigmodel.cn/api/paas/v4}",
+        metadata={
+            "help": _("The base url of the Zhipu API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:ZHIPUAI_API_KEY}",
+        metadata={
+            "help": _("The API key of the Zhipu API."),
+        },
+    )
 
 
 def zhipu_generate_stream(
@@ -30,10 +60,10 @@ def zhipu_generate_stream(
 class ZhipuLLMClient(ProxyLLMClient):
     def __init__(
         self,
-        model: Optional[str] = None,
+        model: Optional[str] = _DEFAULT_MODEL,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
-        model_alias: Optional[str] = "zhipu_proxyllm",
+        model_alias: Optional[str] = _DEFAULT_MODEL,
         context_length: Optional[int] = 8192,
         executor: Optional[Executor] = None,
     ):
@@ -57,7 +87,7 @@ class ZhipuLLMClient(ProxyLLMClient):
                     "`pip install --upgrade zhipuai`."
                 ) from exc
         if not model:
-            model = CHATGLM_DEFAULT_MODEL
+            model = _DEFAULT_MODEL
         if not api_key:
             # Compatible with DB-GPT's config
             api_key = os.getenv("ZHIPU_PROXY_API_KEY")
@@ -74,16 +104,27 @@ class ZhipuLLMClient(ProxyLLMClient):
     @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: ZhipuDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "ZhipuLLMClient":
         return cls(
-            model=model_params.proxyllm_backend,
-            api_key=model_params.proxy_api_key,
-            model_alias=model_params.model_name,
-            context_length=model_params.max_context_size,
+            model=model_params.real_provider_model_name,
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
             executor=default_executor,
         )
+
+    @classmethod
+    def param_class(cls) -> Type[LLMDeployModelParameters]:
+        return ZhipuDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return zhipu_generate_stream
 
     @property
     def default_model(self) -> str:
@@ -104,7 +145,7 @@ class ZhipuLLMClient(ProxyLLMClient):
                 model=model,
                 messages=messages,
                 temperature=request.temperature,
-                # top_p=params.get("top_p"),
+                top_p=request.top_p,
                 stream=True,
             )
             partial_text = ""
@@ -113,7 +154,10 @@ class ZhipuLLMClient(ProxyLLMClient):
                 partial_text += delta_content
                 yield ModelOutput(text=partial_text, error_code=0)
         except Exception as e:
-            return ModelOutput(
+            yield ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 error_code=1,
             )
+
+
+register_proxy_model_adapter(ZhipuLLMClient)

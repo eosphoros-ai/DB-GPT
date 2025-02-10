@@ -1,12 +1,20 @@
 import os
 from concurrent.futures import Executor
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from dataclasses import dataclass, field
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 
 from dbgpt.core import MessageConverter, ModelMessage, ModelOutput, ModelRequest
 from dbgpt.core.interface.message import parse_model_messages
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    ProxyLLMClient,
+    register_proxy_model_adapter,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
+
+from .chatgpt import OpenAICompatibleDeployModelParameters
 
 GEMINI_DEFAULT_MODEL = "gemini-pro"
 
@@ -25,6 +33,27 @@ safety_settings = [
         "threshold": "BLOCK_MEDIUM_AND_ABOVE",
     },
 ]
+
+
+@dataclass
+class GeminiDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Gemini."""
+
+    provider: str = "proxy/gemini"
+
+    api_base: Optional[str] = field(
+        default="${env:GEMINI_PROXY_API_BASE}",
+        metadata={
+            "help": _("The base url of the gemini API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:GEMINI_PROXY_API_KEY}",
+        metadata={
+            "help": _("The API key of the gemini API."),
+        },
+    )
 
 
 def gemini_generate_stream(
@@ -122,17 +151,29 @@ class GeminiLLMClient(ProxyLLMClient):
     @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: GeminiDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "GeminiLLMClient":
         return cls(
-            model=model_params.proxyllm_backend,
-            api_key=model_params.proxy_api_key,
-            api_base=model_params.proxy_api_base,
-            model_alias=model_params.model_name,
-            context_length=model_params.max_context_size,
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            model=model_params.real_provider_model_name,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
             executor=default_executor,
         )
+
+    @classmethod
+    def param_class(cls) -> Type[GeminiDeployModelParameters]:
+        """Return the parameter class for the client."""
+        return GeminiDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        """Get the generate stream function."""
+        return gemini_generate_stream
 
     @property
     def default_model(self) -> str:
@@ -166,7 +207,10 @@ class GeminiLLMClient(ProxyLLMClient):
                 text += chunk.text
                 yield ModelOutput(text=text, error_code=0)
         except Exception as e:
-            return ModelOutput(
+            yield ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 error_code=1,
             )
+
+
+register_proxy_model_adapter(GeminiLLMClient)

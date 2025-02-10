@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import Any, Optional, Type
 
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core import Embeddings, RerankEmbeddings
@@ -10,49 +10,26 @@ from dbgpt.rag.embedding.embedding_factory import (
     RerankEmbeddingFactory,
 )
 
-if TYPE_CHECKING:
-    from langchain.embeddings.base import Embeddings
-
-    from dbgpt_app.base import WebServerParameters
-
 logger = logging.getLogger(__name__)
 
 
 def _initialize_embedding_model(
-    param: "WebServerParameters",
     system_app: SystemApp,
-    embedding_model_name: str,
-    embedding_model_path: str,
+    default_embedding_name: Optional[str] = None,
 ):
-    if param.remote_embedding:
+    if default_embedding_name:
         logger.info("Register remote RemoteEmbeddingFactory")
-        system_app.register(RemoteEmbeddingFactory, model_name=embedding_model_name)
-    else:
-        logger.info("Register local LocalEmbeddingFactory")
-        system_app.register(
-            LocalEmbeddingFactory,
-            default_model_name=embedding_model_name,
-            default_model_path=embedding_model_path,
-        )
+        system_app.register(RemoteEmbeddingFactory, model_name=default_embedding_name)
 
 
 def _initialize_rerank_model(
-    param: "WebServerParameters",
     system_app: SystemApp,
-    rerank_model_name: Optional[str] = None,
-    rerank_model_path: Optional[str] = None,
+    default_rerank_model_name: Optional[str] = None,
 ):
-    if not rerank_model_name:
-        return
-    if param.remote_rerank:
+    if default_rerank_model_name:
         logger.info("Register remote RemoteRerankEmbeddingFactory")
-        system_app.register(RemoteRerankEmbeddingFactory, model_name=rerank_model_name)
-    else:
-        logger.info("Register local LocalRerankEmbeddingFactory")
         system_app.register(
-            LocalRerankEmbeddingFactory,
-            default_model_name=rerank_model_name,
-            default_model_path=rerank_model_path,
+            RemoteRerankEmbeddingFactory, model_name=default_rerank_model_name
         )
 
 
@@ -81,56 +58,6 @@ class RemoteEmbeddingFactory(EmbeddingFactory):
         return RemoteEmbeddings(self._default_model_name, worker_manager)
 
 
-class LocalEmbeddingFactory(EmbeddingFactory):
-    def __init__(
-        self,
-        system_app,
-        default_model_name: str = None,
-        default_model_path: str = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(system_app=system_app)
-        self._default_model_name = default_model_name
-        self._default_model_path = default_model_path
-        self._kwargs = kwargs
-        self._model = self._load_model()
-
-    def init_app(self, system_app):
-        pass
-
-    def create(
-        self, model_name: str = None, embedding_cls: Type = None
-    ) -> "Embeddings":
-        if embedding_cls:
-            raise NotImplementedError
-        return self._model
-
-    def _load_model(self) -> "Embeddings":
-        from dbgpt.model.adapter.embeddings_loader import (
-            EmbeddingLoader,
-            _parse_embedding_params,
-        )
-        from dbgpt.model.parameter import (
-            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
-            BaseEmbeddingModelParameters,
-            EmbeddingModelParameters,
-        )
-
-        param_cls = EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
-            self._default_model_name, EmbeddingModelParameters
-        )
-        model_params: BaseEmbeddingModelParameters = _parse_embedding_params(
-            model_name=self._default_model_name,
-            model_path=self._default_model_path,
-            param_cls=param_cls,
-            **self._kwargs,
-        )
-        logger.info(model_params)
-        loader = EmbeddingLoader()
-        # Ignore model_name args
-        return loader.load(self._default_model_name, model_params)
-
-
 class RemoteRerankEmbeddingFactory(RerankEmbeddingFactory):
     def __init__(self, system_app, model_name: str = None, **kwargs: Any) -> None:
         super().__init__(system_app=system_app)
@@ -157,53 +84,3 @@ class RemoteRerankEmbeddingFactory(RerankEmbeddingFactory):
         return RemoteRerankEmbeddings(
             model_name or self._default_model_name, worker_manager
         )
-
-
-class LocalRerankEmbeddingFactory(RerankEmbeddingFactory):
-    def __init__(
-        self,
-        system_app,
-        default_model_name: str = None,
-        default_model_path: str = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(system_app=system_app)
-        self._default_model_name = default_model_name
-        self._default_model_path = default_model_path
-        self._kwargs = kwargs
-        self._model = self._load_model()
-
-    def init_app(self, system_app):
-        pass
-
-    def create(
-        self, model_name: str = None, embedding_cls: Type = None
-    ) -> "RerankEmbeddings":
-        if embedding_cls:
-            raise NotImplementedError
-        return self._model
-
-    def _load_model(self) -> "RerankEmbeddings":
-        from dbgpt.model.adapter.embeddings_loader import (
-            EmbeddingLoader,
-            _parse_embedding_params,
-        )
-        from dbgpt.model.parameter import (
-            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
-            BaseEmbeddingModelParameters,
-            EmbeddingModelParameters,
-        )
-
-        param_cls = EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
-            self._default_model_name, EmbeddingModelParameters
-        )
-        model_params: BaseEmbeddingModelParameters = _parse_embedding_params(
-            model_name=self._default_model_name,
-            model_path=self._default_model_path,
-            param_cls=param_cls,
-            **self._kwargs,
-        )
-        logger.info(model_params)
-        loader = EmbeddingLoader()
-        # Ignore model_name args
-        return loader.load_rerank_model(self._default_model_name, model_params)

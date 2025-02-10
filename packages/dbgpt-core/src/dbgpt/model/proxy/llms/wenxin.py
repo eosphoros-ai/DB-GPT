@@ -2,15 +2,21 @@ import json
 import logging
 import os
 from concurrent.futures import Executor
-from typing import Iterator, Optional
+from dataclasses import dataclass, field
+from typing import Iterator, Optional, Type, Union
 
-import requests
 from cachetools import TTLCache, cached
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
+from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    ProxyLLMClient,
+    register_proxy_model_adapter,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+from dbgpt.util.i18n_utils import _
 
 # https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t
 MODEL_VERSION_MAPPING = {
@@ -25,11 +31,42 @@ _DEFAULT_MODEL = "ERNIE-Bot"
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class WenxinDeployModelParameters(LLMDeployModelParameters):
+    """Deploy model parameters for Wenxin."""
+
+    provider: str = "proxy/wenxin"
+
+    api_key: Optional[str] = field(
+        default="${env:WEN_XIN_API_KEY}",
+        metadata={
+            "help": _("The API key of the Wenxin API."),
+        },
+    )
+    api_secret: Optional[str] = field(
+        default="${env:WEN_XIN_API_SECRET}",
+        metadata={
+            "help": _("The API secret key of the Wenxin API."),
+        },
+    )
+
+    context_length: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The context length of the OpenAI API. If None, it is determined by the"
+                " model."
+            )
+        },
+    )
+
+
 @cached(TTLCache(1, 1800))
 def _build_access_token(api_key: str, secret_key: str) -> str:
     """
     Generate Access token according AK, SK
     """
+    import requests
 
     url = "https://aip.baidubce.com/oauth/2.0/token"
     params = {
@@ -79,7 +116,7 @@ class WenxinLLMClient(ProxyLLMClient):
         api_key: Optional[str] = None,
         api_secret: Optional[str] = None,
         model_version: Optional[str] = None,
-        model_alias: Optional[str] = "wenxin_proxyllm",
+        model_alias: Optional[str] = _DEFAULT_MODEL,
         context_length: Optional[int] = 8192,
         executor: Optional[Executor] = None,
     ):
@@ -114,18 +151,27 @@ class WenxinLLMClient(ProxyLLMClient):
     @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: WenxinDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "WenxinLLMClient":
         return cls(
-            model=model_params.proxyllm_backend,
-            api_key=model_params.proxy_api_key,
-            api_secret=model_params.proxy_api_secret,
-            model_version=model_params.proxy_api_version,
-            model_alias=model_params.model_name,
-            context_length=model_params.max_context_size,
+            model=model_params.real_provider_model_name,
+            api_key=model_params.api_key,
+            api_secret=model_params.api_secret,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
             executor=default_executor,
         )
+
+    @classmethod
+    def param_class(cls) -> Type[WenxinDeployModelParameters]:
+        return WenxinDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        return wenxin_generate_stream
 
     @property
     def default_model(self) -> str:
@@ -136,6 +182,14 @@ class WenxinLLMClient(ProxyLLMClient):
         request: ModelRequest,
         message_converter: Optional[MessageConverter] = None,
     ) -> Iterator[ModelOutput]:
+        try:
+            import requests
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import python package: requests "
+                "Please install requests by running `pip install requests`."
+            ) from exc
+
         request = self.local_covert_message(request, message_converter)
 
         try:
@@ -185,7 +239,10 @@ class WenxinLLMClient(ProxyLLMClient):
                                 text += content
                         yield ModelOutput(text=text, error_code=0)
         except Exception as e:
-            return ModelOutput(
+            yield ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 error_code=1,
             )
+
+
+register_proxy_model_adapter(WenxinLLMClient)

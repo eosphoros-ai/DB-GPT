@@ -4,7 +4,6 @@ from typing import Dict, Iterator, List
 
 from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.parameter import ModelParameters
 from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
 logger = logging.getLogger(__name__)
@@ -25,19 +24,16 @@ class RemoteModelWorker(ModelWorker):
     def support_async(self) -> bool:
         return True
 
-    def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
-        return None
+    # def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
+    #     return None
 
-    def load_worker(self, model_name: str, model_path: str, **kwargs):
+    def load_worker(self, model_name: str, **kwargs):
         self.host = kwargs.get("host")
         self.port = kwargs.get("port")
 
-    def start(
-        self, model_params: ModelParameters = None, command_args: List[str] = None
-    ) -> None:
+    def start(self, command_args: List[str] = None) -> None:
         """Start model worker"""
         pass
-        # raise NotImplementedError("Remote model worker not support start methods")
 
     def stop(self) -> None:
         raise NotImplementedError("Remote model worker not support stop methods")

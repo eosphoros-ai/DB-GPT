@@ -7,7 +7,7 @@ We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 # -*- coding: utf-8 -*-
 
 from functools import cache
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.model.llm.conversation import Conversation, get_conv_template
@@ -105,7 +105,9 @@ def register_llm_model_chat_adapter(cls):
 
 
 @cache
-def get_llm_chat_adapter(model_name: str, model_path: str) -> BaseChatAdpter:
+def get_llm_chat_adapter(
+    model_name: str, model_path: Optional[str] = None
+) -> BaseChatAdpter:
     """Get a chat generate func for a model"""
     for adapter in llm_model_chat_adapters:
         if adapter.match(model_name):

@@ -1,9 +1,16 @@
 import os
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
-from .chatgpt import OpenAILLMClient
+from ..base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    register_proxy_model_adapter,
+)
+from .chatgpt import OpenAICompatibleDeployModelParameters, OpenAILLMClient
 
 if TYPE_CHECKING:
     from httpx._types import ProxiesTypes
@@ -13,6 +20,27 @@ if TYPE_CHECKING:
 
 
 _GITEE_DEFAULT_MODEL = "Qwen2.5-72B-Instruct"
+
+
+@dataclass
+class GiteeDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for DeepSeek."""
+
+    provider: str = "proxy/gitee"
+
+    api_base: Optional[str] = field(
+        default="${env:GITEE_API_BASE:-https://ai.gitee.com/v1}",
+        metadata={
+            "help": _("The base url of the Gitee API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:GITEE_API_KEY}",
+        metadata={
+            "help": _("The API key of the Gitee API."),
+        },
+    )
 
 
 async def gitee_generate_stream(
@@ -36,10 +64,10 @@ class GiteeLLMClient(OpenAILLMClient):
         api_base: Optional[str] = None,
         api_type: Optional[str] = None,
         api_version: Optional[str] = None,
-        model: Optional[str] = None,
+        model: Optional[str] = _GITEE_DEFAULT_MODEL,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "gitee_proxyllm",
+        model_alias: Optional[str] = _GITEE_DEFAULT_MODEL,
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -81,3 +109,17 @@ class GiteeLLMClient(OpenAILLMClient):
         if not model:
             model = _GITEE_DEFAULT_MODEL
         return model
+
+    @classmethod
+    def param_class(cls) -> Type[GiteeDeployModelParameters]:
+        return GiteeDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        """Get the generate stream function."""
+        return gitee_generate_stream
+
+
+register_proxy_model_adapter(GiteeLLMClient)

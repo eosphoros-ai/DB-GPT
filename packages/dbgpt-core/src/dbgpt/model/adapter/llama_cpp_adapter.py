@@ -18,6 +18,7 @@ from typing import Dict, Optional, Type
 
 from dbgpt.configs.model_config import get_device
 from dbgpt.core import ModelOutput
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import ConversationAdapter, LLMModelAdapter
 from dbgpt.model.base import ModelType
 from dbgpt.model.parameter import ModelParameters
@@ -93,10 +94,14 @@ class LLamaServerModelAdapter(LLMModelAdapter):
     def support_generate_function(self) -> bool:
         return True
 
-    def get_generate_stream_function(self, model, model_path: str):
+    def get_generate_stream_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         return generate_stream
 
-    def get_generate_function(self, model, model_path: str):
+    def get_generate_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         return generate
 
 

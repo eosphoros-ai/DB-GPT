@@ -1,17 +1,16 @@
 import logging
-from typing import Dict, List, Type, Union
+from typing import Dict, List, Optional, Type, Union
 
+from dbgpt.configs.model_config import get_device
 from dbgpt.core import Embeddings, ModelMetadata, RerankEmbeddings
-from dbgpt.model.adapter.embeddings_loader import (
-    EmbeddingLoader,
-    _parse_embedding_params,
+from dbgpt.core.interface.parameter import (
+    BaseDeployModelParameters,
+    EmbeddingDeployModelParameters,
+    RerankerDeployModelParameters,
 )
-from dbgpt.model.adapter.loader import _get_model_real_path
+from dbgpt.model.adapter.base import EmbeddingModelAdapter, get_embedding_adapter
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.parameter import (
-    EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
-    BaseEmbeddingModelParameters,
-    EmbeddingModelParameters,
     WorkerType,
 )
 from dbgpt.util.model_utils import _clear_model_cache
@@ -22,58 +21,67 @@ logger = logging.getLogger(__name__)
 class EmbeddingsModelWorker(ModelWorker):
     def __init__(self, rerank_model: bool = False) -> None:
         self._embeddings_impl: Union[Embeddings, RerankEmbeddings, None] = None
-        self._model_params = None
-        self.model_name = None
-        self.model_path = None
+        self._model_params: Optional[
+            Union[EmbeddingDeployModelParameters, RerankerDeployModelParameters]
+        ] = None
+        self._param_cls: Optional[
+            Union[
+                Type[EmbeddingDeployModelParameters],
+                Type[RerankerDeployModelParameters],
+            ]
+        ] = None
+        self._adapter: Optional[EmbeddingModelAdapter] = None
+
+        self.model_name: str = ""
+        self.model_path: str = ""
         self._rerank_model = rerank_model
-        self._loader = EmbeddingLoader()
+        self._device = get_device()
 
-    def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
-        if model_path.endswith("/"):
-            model_path = model_path[:-1]
-        model_path = _get_model_real_path(model_name, model_path)
-
+    def load_worker(
+        self,
+        model_name: str,
+        deploy_model_params: BaseDeployModelParameters,
+        **kwargs,
+    ) -> None:
         self.model_name = model_name
-        self.model_path = model_path
+        if isinstance(
+            deploy_model_params, EmbeddingDeployModelParameters
+        ) or isinstance(deploy_model_params, RerankerDeployModelParameters):
+            self._model_params = deploy_model_params
+            self._param_cls = deploy_model_params.__class__
+            self.model_path = deploy_model_params.real_provider_model_name
+            self._adapter = get_embedding_adapter(
+                deploy_model_params.provider,
+                self._rerank_model,
+                self.model_name,
+                self.model_path,
+            )
+            if self._model_params.real_device:
+                # Assign device from model params
+                self._device = self._model_params.real_device
+        else:
+            raise ValueError(
+                f"Invalid deploy_model_params type: {type(deploy_model_params)}"
+            )
 
     def worker_type(self) -> WorkerType:
         return WorkerType.TEXT2VEC
 
-    def model_param_class(self) -> Type:
-        return EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
-            self.model_name, EmbeddingModelParameters
-        )
-
-    def parse_parameters(
-        self, command_args: List[str] = None
-    ) -> BaseEmbeddingModelParameters:
-        param_cls = self.model_param_class()
-        return _parse_embedding_params(
-            model_name=self.model_name,
-            model_path=self.model_path,
-            command_args=command_args,
-            param_cls=param_cls,
-        )
+    def model_param_class(self) -> Type[BaseDeployModelParameters]:
+        return self._param_cls
 
     def start(
         self,
-        model_params: EmbeddingModelParameters = None,
         command_args: List[str] = None,
     ) -> None:
         """Start model worker"""
-        if not model_params:
-            model_params = self.parse_parameters(command_args)
+
         if self._rerank_model:
-            model_params.rerank = True  # type: ignore
-        self._model_params = model_params
-        if model_params.is_rerank_model():
             logger.info(f"Load rerank embeddings model: {self.model_name}")
-            self._embeddings_impl = self._loader.load_rerank_model(
-                self.model_name, model_params
-            )
+            self._embeddings_impl = self._adapter.load_from_params(self._model_params)
         else:
             logger.info(f"Load embeddings model: {self.model_name}")
-            self._embeddings_impl = self._loader.load(self.model_name, model_params)
+            self._embeddings_impl = self._adapter.load_from_params(self._model_params)
 
     def __del__(self):
         self.stop()
@@ -83,7 +91,7 @@ class EmbeddingsModelWorker(ModelWorker):
             return
         del self._embeddings_impl
         self._embeddings_impl = None
-        _clear_model_cache(self._model_params.device)
+        _clear_model_cache(self._device)
 
     def generate_stream(self, params: Dict):
         """Generate stream result, chat scene"""

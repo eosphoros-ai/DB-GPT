@@ -1,12 +1,17 @@
 import asyncio
 import inspect
 import logging
+import os
 from contextvars import ContextVar
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import Any, AsyncIterator, Dict, Optional
 
 from dbgpt.component import ComponentType, SystemApp
+from dbgpt.configs.model_config import resolve_root_path
+from dbgpt.util.i18n_utils import _
 from dbgpt.util.module_utils import import_from_checked_string
+from dbgpt.util.parameter_utils import BaseParameters
 from dbgpt.util.tracer.base import (
     Span,
     SpanStorage,
@@ -235,16 +240,83 @@ def _parse_operation_name(func, *args):
     return func_name
 
 
+@dataclass
+class TracerParameters(BaseParameters):
+    file: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The file to store the tracer, e.g. dbgpt_webserver_tracer.jsonl"
+            ),
+        },
+    )
+    root_operation_name: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The root operation name of the tracer"),
+        },
+    )
+    exporter: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The exporter of the tracer, e.g. telemetry"),
+        },
+    )
+    otlp_endpoint: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The endpoint of the OpenTelemetry Protocol, you can set "
+                "'${env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}' to use the environment "
+                "variable"
+            ),
+        },
+    )
+    otlp_insecure: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Whether to use insecure connection, you can set "
+                "'${env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}' to use the environment "
+            )
+        },
+    )
+    otlp_timeout: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The timeout of the connection, in seconds, you can set "
+                "'${env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}' to use the environment "
+            )
+        },
+    )
+    tracer_storage_cls: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The class of the tracer storage"),
+        },
+    )
+
+    def __post_init__(self):
+        use_telemetry = os.getenv("TRACER_TO_OPEN_TELEMETRY", "false").lower() == "true"
+        if self.exporter is None and use_telemetry:
+            self.exporter = "telemetry"
+
+    @property
+    def absolute_file(self) -> Optional[str]:
+        """Get the absolute path of the file"""
+
+        if not self.file:
+            return None
+        return resolve_root_path(self.file)
+
+
 def initialize_tracer(
     tracer_filename: str,
     root_operation_name: str = "DB-GPT-Webserver",
     system_app: Optional[SystemApp] = None,
-    tracer_storage_cls: Optional[str] = None,
     create_system_app: bool = False,
-    enable_open_telemetry: bool = False,
-    otlp_endpoint: Optional[str] = None,
-    otlp_insecure: Optional[bool] = None,
-    otlp_timeout: Optional[int] = None,
+    tracer_parameters: Optional[TracerParameters] = None,
 ):
     """Initialize the tracer with the given filename and system app."""
     from dbgpt.util.tracer.span_storage import FileSpanStorage, SpanStorageContainer
@@ -261,20 +333,22 @@ def initialize_tracer(
     tracer = DefaultTracer(system_app)
 
     storage_container = SpanStorageContainer(system_app)
+    tracer_filename = resolve_root_path(tracer_filename)
     storage_container.append_storage(FileSpanStorage(tracer_filename))
-    if enable_open_telemetry:
+    if tracer_parameters and tracer_parameters.exporter == "telemetry":
         from dbgpt.util.tracer.opentelemetry import OpenTelemetrySpanStorage
 
         storage_container.append_storage(
             OpenTelemetrySpanStorage(
                 service_name=root_operation_name,
-                otlp_endpoint=otlp_endpoint,
-                otlp_insecure=otlp_insecure,
-                otlp_timeout=otlp_timeout,
+                otlp_endpoint=tracer_parameters.otlp_endpoint,
+                otlp_insecure=tracer_parameters.otlp_insecure,
+                otlp_timeout=tracer_parameters.otlp_timeout,
             )
         )
 
-    if tracer_storage_cls:
+    if tracer_parameters and tracer_parameters.tracer_storage_cls:
+        tracer_storage_cls = tracer_parameters.tracer_storage_cls
         logger.info(f"Begin parse storage class {tracer_storage_cls}")
         storage = import_from_checked_string(tracer_storage_cls, SpanStorage)
         storage_container.append_storage(storage())

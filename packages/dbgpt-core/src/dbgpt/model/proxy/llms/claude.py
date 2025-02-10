@@ -1,16 +1,31 @@
 import logging
 import os
 from concurrent.futures import Executor
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, cast
+from dataclasses import dataclass, field
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
-from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
     ProxyLLMClient,
     ProxyTokenizer,
     TiktokenProxyTokenizer,
+    register_proxy_model_adapter,
 )
+from dbgpt.model.proxy.llms.chatgpt import OpenAICompatibleDeployModelParameters
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
 if TYPE_CHECKING:
     from anthropic import AsyncAnthropic, ProxiesTypes
@@ -18,8 +33,33 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class ClaudeDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Claude."""
+
+    provider: str = "proxy/claude"
+
+    api_base: Optional[str] = field(
+        default="${env:ANTHROPIC_BASE_URL:-https://api.anthropic.com}",
+        metadata={
+            "help": _("The base url of the claude API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:ANTHROPIC_API_KEY}",
+        metadata={
+            "help": _("The API key of the claude API."),
+        },
+    )
+
+
 async def claude_generate_stream(
-    model: ProxyModel, tokenizer, params, device, context_len=2048
+    model: ProxyModel,
+    tokenizer: Any,
+    params: Dict[str, Any],
+    device: str,
+    context_len=2048,
 ) -> AsyncIterator[ModelOutput]:
     client: ClaudeLLMClient = cast(ClaudeLLMClient, model.proxy_llm_client)
     request = parse_model_request(params, client.default_model, stream=True)
@@ -71,19 +111,34 @@ class ClaudeLLMClient(ProxyLLMClient):
     @classmethod
     def new_client(
         cls,
-        model_params: ProxyModelParameters,
+        model_params: ClaudeDeployModelParameters,
         default_executor: Optional[Executor] = None,
     ) -> "ClaudeLLMClient":
         return cls(
-            api_key=model_params.proxy_api_key,
-            api_base=model_params.proxy_api_base,
-            # api_type=model_params.proxy_api_type,
-            # api_version=model_params.proxy_api_version,
-            model=model_params.proxyllm_backend,
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            model=model_params.real_provider_model_name,
             proxies=model_params.http_proxy,
-            model_alias=model_params.model_name,
-            context_length=max(model_params.max_context_size, 8192),
+            model_alias=model_params.real_provider_model_name,
+            context_length=max(model_params.context_length or 8192, 8192),
         )
+
+    @classmethod
+    def param_class(cls) -> Type[ClaudeDeployModelParameters]:
+        """Get the model parameters class."""
+        return ClaudeDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        """Get generate stream function.
+
+        Returns:
+            Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+                generate stream function
+        """
+        return claude_generate_stream
 
     @property
     def client(self) -> "AsyncAnthropic":
@@ -275,3 +330,6 @@ class ClaudeProxyTokenizer(ProxyTokenizer):
             )
         results = await run_async_tasks(tasks, self.concurrency_limit)
         return results
+
+
+register_proxy_model_adapter(ClaudeLLMClient)

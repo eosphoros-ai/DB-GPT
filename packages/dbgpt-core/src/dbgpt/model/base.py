@@ -12,7 +12,7 @@ from dbgpt.util.parameter_utils import ParameterDescription
 class ModelType:
     """Type of model."""
 
-    HF = "huggingface"
+    HF = "hf"
     LLAMA_CPP = "llama.cpp"
     LLAMA_CPP_SERVER = "llama_cpp_server"
     PROXY = "proxy"

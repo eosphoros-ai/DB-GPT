@@ -3,9 +3,12 @@ import logging
 import logging.handlers
 import os
 import sys
+from dataclasses import dataclass, field
 from typing import Any, List, Optional, cast
 
-from dbgpt.configs.model_config import LOGDIR
+from dbgpt.configs.model_config import resolve_root_path
+from dbgpt.util.i18n_utils import _
+from dbgpt.util.parameter_utils import BaseParameters
 
 try:
     from termcolor import colored
@@ -24,6 +27,44 @@ handler = None
 
 def _get_logging_level() -> str:
     return os.getenv("DBGPT_LOG_LEVEL", "INFO")
+
+
+@dataclass
+class LoggingParameters(BaseParameters):
+    """Logging parameters."""
+
+    level: Optional[str] = field(
+        default="${env:DBGPT_LOG_LEVEL:-INFO}",
+        metadata={
+            "help": _(
+                "Logging level, just support FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+            ),
+            "valid_values": [
+                "FATAL",
+                "ERROR",
+                "WARNING",
+                "WARNING",
+                "INFO",
+                "DEBUG",
+                "NOTSET",
+            ],
+        },
+    )
+    file: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The filename to store logs"),
+        },
+    )
+
+    def get_real_log_file(self) -> Optional[str]:
+        """Get the real log file path.
+
+        It will resolve the root path if the log file is not None.
+        """
+        if self.file:
+            return resolve_root_path(self.file)
+        return None
 
 
 def setup_logging_level(
@@ -48,6 +89,7 @@ def setup_logging(
 ):
     if not logging_level:
         logging_level = _get_logging_level()
+    logger_filename = resolve_root_path(logger_filename)
     logger = _build_logger(logger_name, logging_level, logger_filename, redirect_stdio)
     try:
         import coloredlogs
@@ -98,10 +140,10 @@ def _build_logger(
 
     # Add a file handler for all loggers
     if handler is None and logger_filename:
-        os.makedirs(LOGDIR, exist_ok=True)
-        filename = os.path.join(LOGDIR, logger_filename)
+        logger_dir = os.path.dirname(logger_filename)
+        os.makedirs(logger_dir, exist_ok=True)
         handler = logging.handlers.TimedRotatingFileHandler(
-            filename, when="D", utc=True
+            logger_filename, when="D", utc=True
         )
         handler.setFormatter(formatter)
 

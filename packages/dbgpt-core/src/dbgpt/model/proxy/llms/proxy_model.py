@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from dbgpt.core import ModelRequest, ModelRequestContext
-from dbgpt.model.parameter import ProxyModelParameters
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
 from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
@@ -17,14 +17,14 @@ logger = logging.getLogger(__name__)
 class ProxyModel:
     def __init__(
         self,
-        model_params: ProxyModelParameters,
+        model_params: LLMDeployModelParameters,
         proxy_llm_client: Optional[ProxyLLMClient] = None,
     ) -> None:
         self._model_params = model_params
         self._tokenizer = ProxyTokenizerWrapper()
         self.proxy_llm_client = proxy_llm_client
 
-    def get_params(self) -> ProxyModelParameters:
+    def get_params(self) -> LLMDeployModelParameters:
         return self._model_params
 
     def count_token(

@@ -1,12 +1,91 @@
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from dbgpt.core import ModelMessage
+from dbgpt.core.interface.parameter import (
+    BaseHFQuantization,
+    LLMDeployModelParameters,
+)
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
 from dbgpt.model.base import ModelType
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class HFLLMDeployModelParameters(LLMDeployModelParameters):
+    """Local deploy model parameters."""
+
+    provider: str = "hf"
+
+    path: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The path of the model, if you want to deploy a local model."),
+        },
+    )
+    device: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Device to run model. If None, the device is automatically determined"
+            )
+        },
+    )
+
+    trust_remote_code: Optional[bool] = field(
+        default=True, metadata={"help": _("Trust remote code or not.")}
+    )
+    quantization: Optional[BaseHFQuantization] = field(
+        default=None,
+        metadata={
+            "help": _("The quantization parameters."),
+        },
+    )
+    num_gpus: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The number of gpus you expect to use, if it is empty, use all of "
+                "them as much as possible"
+            )
+        },
+    )
+    max_gpu_memory: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The maximum memory limit of each GPU, only valid in multi-GPU "
+                "configuration, eg: 10GiB, 24GiB"
+            )
+        },
+    )
+    verbose: Optional[bool] = field(
+        default=None, metadata={"help": _("Whether to print verbose information.")}
+    )
+    torch_dtype: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The dtype of the model, default is None."),
+            "valid_values": ["auto", "float16", "bfloat16", "float", "float32"],
+        },
+    )
+
+    @property
+    def real_model_path(self) -> Optional[str]:
+        """Get the real model path.
+
+        If deploy model is not local, return None.
+        """
+        return self._resolve_root_path(self.path)
+
+    @property
+    def real_device(self) -> Optional[str]:
+        """Get the real device."""
+        return self.device or super().real_device
 
 
 class NewHFChatModelAdapter(LLMModelAdapter, ABC):
@@ -25,11 +104,11 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
 
     def match(
         self,
-        model_type: str,
+        provider: str,
         model_name: Optional[str] = None,
         model_path: Optional[str] = None,
     ) -> bool:
-        if model_type != ModelType.HF:
+        if provider != ModelType.HF:
             return False
         if model_name is None and model_path is None:
             return False
@@ -107,7 +186,9 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         # tokenizer.use_default_system_prompt = False
         return model, tokenizer
 
-    def get_generate_stream_function(self, model, model_path: str):
+    def get_generate_stream_function(
+        self, model, deploy_model_params: LLMDeployModelParameters
+    ):
         """Get the generate stream function of the model"""
         from dbgpt.model.llm_out.hf_chat_llm import huggingface_chat_generate_stream
 

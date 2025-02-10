@@ -7,10 +7,11 @@ from typing import AsyncIterator, Callable, Dict, List, Optional
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import ModelMetadata, ModelOutput
+from dbgpt.core.interface.parameter import BaseDeployModelParameters
 from dbgpt.model.base import WorkerApplyOutput, WorkerSupportedModel
 from dbgpt.model.cluster.base import WorkerApplyRequest, WorkerStartupRequest
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters
+from dbgpt.model.parameter import ModelWorkerParameters
 from dbgpt.util.parameter_utils import ParameterDescription
 
 
@@ -18,10 +19,11 @@ from dbgpt.util.parameter_utils import ParameterDescription
 class WorkerRunData:
     host: str
     port: int
+    worker_type: str
     worker_key: str
     worker: ModelWorker
     worker_params: ModelWorkerParameters
-    model_params: ModelParameters
+    model_params: BaseDeployModelParameters
     stop_event: asyncio.Event
     semaphore: asyncio.Semaphore = None
     command_args: List[str] = None
@@ -29,15 +31,11 @@ class WorkerRunData:
     _last_heartbeat: Optional[datetime] = None
 
     def _to_print_key(self):
-        model_name = self.model_params.model_name
-        model_type = (
-            self.model_params.model_type
-            if hasattr(self.model_params, "model_type")
-            else "text2vec"
-        )
+        model_name = self.model_params.name
+        provider = self.model_params.provider
         host = self.host
         port = self.port
-        return f"model {model_name}@{model_type}({host}:{port})"
+        return f"model {model_name}@{provider}({host}:{port})"
 
     @property
     def stopped(self):

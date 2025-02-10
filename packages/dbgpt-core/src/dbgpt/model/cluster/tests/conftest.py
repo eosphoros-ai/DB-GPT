@@ -5,6 +5,8 @@ import pytest
 import pytest_asyncio
 
 from dbgpt.core import ModelMetadata, ModelOutput
+from dbgpt.core.interface.parameter import BaseDeployModelParameters
+from dbgpt.model.adapter.hf_adapter import HFLLMDeployModelParameters
 from dbgpt.model.base import ModelInstance
 from dbgpt.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
 from dbgpt.model.cluster.worker.manager import (
@@ -35,29 +37,29 @@ class MockModelWorker(ModelWorker):
         model_parameters: ModelParameters,
         error_worker: bool = False,
         stop_error: bool = False,
-        stream_messags: List[str] = None,
+        stream_messages: List[str] = None,
         embeddings: List[List[float]] = None,
     ) -> None:
         super().__init__()
-        if not stream_messags:
-            stream_messags = []
+        if not stream_messages:
+            stream_messages = []
         if not embeddings:
             embeddings = []
         self.model_parameters = model_parameters
         self.error_worker = error_worker
         self.stop_error = stop_error
-        self.stream_messags = stream_messags
+        self.stream_messages = stream_messages
         self._embeddings = embeddings
 
-    def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
-        return self.model_parameters
+    # def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
+    #     return self.model_parameters
 
-    def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
+    def load_worker(
+        self, model_name: str, deploy_model_params: BaseDeployModelParameters, **kwargs
+    ) -> None:
         pass
 
-    def start(
-        self, model_params: ModelParameters = None, command_args: List[str] = None
-    ) -> None:
+    def start(self, command_args: List[str] = None) -> None:
         if self.error_worker:
             raise Exception("Start worker error for mock")
 
@@ -67,7 +69,7 @@ class MockModelWorker(ModelWorker):
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
         full_text = ""
-        for msg in self.stream_messags:
+        for msg in self.stream_messages:
             full_text += msg
             yield ModelOutput(text=full_text, error_code=0)
 
@@ -110,7 +112,7 @@ def _create_workers(
     error_worker: bool = False,
     stop_error: bool = False,
     worker_type: str = WorkerType.LLM.value,
-    stream_messags: List[str] = None,
+    stream_messages: List[str] = None,
     embeddings: List[List[float]] = None,
     host: str = "127.0.0.1",
     start_port=8001,
@@ -124,7 +126,7 @@ def _create_workers(
             model_parameters,
             error_worker=error_worker,
             stop_error=stop_error,
-            stream_messags=stream_messags,
+            stream_messages=stream_messages,
             embeddings=embeddings,
         )
         model_instance = ModelInstance(
@@ -152,7 +154,7 @@ async def _start_worker_manager(**kwargs):
     stop = kwargs.get("stop", True)
     error_worker = kwargs.get("error_worker", False)
     stop_error = kwargs.get("stop_error", False)
-    stream_messags = kwargs.get("stream_messags", [])
+    stream_messages = kwargs.get("stream_messages", [])
     embeddings = kwargs.get("embeddings", [])
 
     worker_manager = LocalWorkerManager(
@@ -163,12 +165,24 @@ async def _start_worker_manager(**kwargs):
     )
 
     for worker, worker_params, model_instance in _create_workers(
-        num_workers, error_worker, stop_error, stream_messags, embeddings
+        num_workers,
+        error_worker,
+        stop_error,
+        stream_messages=stream_messages,
+        embeddings=embeddings,
     ):
-        worker_manager.add_worker(worker, worker_params)
+        deploy_params = HFLLMDeployModelParameters(
+            name=worker_params.model_name,
+            path=worker_params.model_path,
+        )
+        worker_manager.add_worker(worker, worker_params, deploy_params)
     if workers:
         for worker, worker_params, model_instance in workers:
-            worker_manager.add_worker(worker, worker_params)
+            deploy_params = HFLLMDeployModelParameters(
+                name=worker_params.model_name,
+                path=worker_params.model_path,
+            )
+            worker_manager.add_worker(worker, worker_params, deploy_params)
 
     if start:
         await worker_manager.start()
@@ -197,7 +211,7 @@ async def manager_2_workers(request):
 @pytest_asyncio.fixture
 async def manager_with_2_workers(request):
     param = getattr(request, "param", {})
-    workers = _create_workers(2, stream_messags=param.get("stream_messags", []))
+    workers = _create_workers(2, stream_messages=param.get("stream_messages", []))
     async with _start_worker_manager(workers=workers, **param) as worker_manager:
         yield (worker_manager, workers)
 
@@ -216,7 +230,7 @@ async def manager_2_embedding_workers(request):
 async def _new_cluster(**kwargs) -> ClusterType:
     num_workers = kwargs.get("num_workers", 0)
     workers = _create_workers(
-        num_workers, stream_messags=kwargs.get("stream_messags", [])
+        num_workers, stream_messages=kwargs.get("stream_messages", [])
     )
     if "num_workers" in kwargs:
         del kwargs["num_workers"]
