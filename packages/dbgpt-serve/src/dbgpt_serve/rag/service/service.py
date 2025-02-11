@@ -74,6 +74,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
     def __init__(
         self,
         system_app: SystemApp,
+        config: ServeConfig,
         dao: Optional[KnowledgeSpaceDao] = None,
         document_dao: Optional[KnowledgeDocumentDao] = None,
         chunk_dao: Optional[DocumentChunkDao] = None,
@@ -82,6 +83,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._dao: KnowledgeSpaceDao = dao
         self._document_dao: KnowledgeDocumentDao = document_dao
         self._chunk_dao: DocumentChunkDao = chunk_dao
+        self._serve_config = config
 
         super().__init__(system_app)
 
@@ -92,9 +94,6 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             system_app (SystemApp): The system app
         """
         super().init_app(system_app)
-        self._serve_config = ServeConfig.from_app_config(
-            system_app.config, SERVE_CONFIG_KEY_PREFIX
-        )
         self._dao = self._dao or KnowledgeSpaceDao()
         self._document_dao = self._document_dao or KnowledgeDocumentDao()
         self._chunk_dao = self._chunk_dao or DocumentChunkDao()

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dbgpt.util.i18n_utils import _
 from dbgpt_serve.core import BaseServeConfig
 
 APP_NAME = "prompt"
@@ -16,16 +17,13 @@ SERVER_APP_TABLE_NAME = "dbgpt_serve_prompt"
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
-    # TODO: add your own parameters here
-    api_keys: Optional[str] = field(
-        default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
-    )
+    __type__ = APP_NAME
 
     default_user: Optional[str] = field(
         default=None,
-        metadata={"help": "Default user name for prompt"},
+        metadata={"help": _("Default user name for prompt")},
     )
     default_sys_code: Optional[str] = field(
         default=None,
-        metadata={"help": "Default system code for prompt"},
+        metadata={"help": _("Default system code for prompt")},
     )

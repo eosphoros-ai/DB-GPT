@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dbgpt.util.i18n_utils import _
 from dbgpt_serve.core import BaseServeConfig
 
 APP_NAME = "file"
@@ -16,45 +17,45 @@ SERVER_APP_TABLE_NAME = "dbgpt_serve_file"
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
-    # TODO: add your own parameters here
-    api_keys: Optional[str] = field(
-        default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
-    )
+    __type__ = APP_NAME
+
     check_hash: Optional[bool] = field(
-        default=True, metadata={"help": "Check the hash of the file when downloading"}
+        default=True,
+        metadata={"help": _("Check the hash of the file when downloading")},
     )
-    file_server_host: Optional[str] = field(
-        default=None, metadata={"help": "The host of the file server"}
+    host: Optional[str] = field(
+        default=None, metadata={"help": _("The host of the file server")}
     )
-    file_server_port: Optional[int] = field(
-        default=5670, metadata={"help": "The port of the file server"}
+    port: Optional[int] = field(
+        default=5670,
+        metadata={"help": _("The port of the file server, default is 5670")},
     )
-    file_server_download_chunk_size: Optional[int] = field(
+    download_chunk_size: Optional[int] = field(
         default=1024 * 1024,
-        metadata={"help": "The chunk size when downloading the file"},
+        metadata={"help": _("The chunk size when downloading the file")},
     )
-    file_server_save_chunk_size: Optional[int] = field(
-        default=1024 * 1024, metadata={"help": "The chunk size when saving the file"}
+    save_chunk_size: Optional[int] = field(
+        default=1024 * 1024, metadata={"help": _("The chunk size when saving the file")}
     )
-    file_server_transfer_chunk_size: Optional[int] = field(
+    transfer_chunk_size: Optional[int] = field(
         default=1024 * 1024,
-        metadata={"help": "The chunk size when transferring the file"},
+        metadata={"help": _("The chunk size when transferring the file")},
     )
-    file_server_transfer_timeout: Optional[int] = field(
-        default=360, metadata={"help": "The timeout when transferring the file"}
+    transfer_timeout: Optional[int] = field(
+        default=360, metadata={"help": _("The timeout when transferring the file")}
     )
     local_storage_path: Optional[str] = field(
-        default=None, metadata={"help": "The local storage path"}
+        default=None, metadata={"help": _("The local storage path")}
     )
 
     def get_node_address(self) -> str:
         """Get the node address"""
-        file_server_host = self.file_server_host
+        file_server_host = self.host
         if not file_server_host:
             from dbgpt.util.net_utils import _get_ip_address
 
             file_server_host = _get_ip_address()
-        file_server_port = self.file_server_port or 5670
+        file_server_port = self.port or 5670
         return f"{file_server_host}:{file_server_port}"
 
     def get_local_storage_path(self) -> str:

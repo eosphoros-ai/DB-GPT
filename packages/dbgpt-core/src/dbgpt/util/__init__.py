@@ -1,4 +1,5 @@
 from .config_utils import AppConfig  # noqa: F401
+from .configure.manager import RegisterParameters  # noqa: F401
 from .pagination_utils import PaginationResult  # noqa: F401
 from .parameter_utils import (  # noqa: F401
     BaseParameters,
@@ -15,4 +16,5 @@ __ALL__ = [
     "ParameterDescription",
     "EnvArgumentParser",
     "AppConfig",
+    "RegisterParameters",
 ]

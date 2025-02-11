@@ -238,7 +238,7 @@ class TestModelScanner:
 
         # Check results
         assert len(results) == 1
-        assert "testimpl1" in results
+        assert "test_modules.module1.testimpl1" in results
         assert "testimpl2" not in results
         assert "testimpl3" not in results
 
@@ -253,8 +253,8 @@ class TestModelScanner:
 
         # Check results
         assert len(results) == 2
-        assert "testimpl1" in results
-        assert "testimpl2" in results
+        assert "test_modules.module1.testimpl1" in results
+        assert "test_modules.module2.testimpl2" in results
         assert "testimpl3" not in results
 
     def test_specific_files_not_found(self):
@@ -272,7 +272,7 @@ class TestModelScanner:
 
         # Should still find the existing module
         assert len(results) == 1
-        assert "testimpl1" in results
+        assert "test_modules.module1.testimpl1" in results
 
     def test_specific_files_in_nested_directory(self):
         """Test scanning specific files in nested directories"""
@@ -297,7 +297,7 @@ class TestModelScanner:
 
         # Check results
         assert len(results) == 1
-        assert "testimpl2" in results
+        assert "test_modules.nested.module2.testimpl2" in results
 
     def test_specific_files_with_filter(self):
         """Test scanning specific files with additional filter"""
@@ -320,5 +320,5 @@ class TestModelScanner:
 
         # Should only find classes that match both criteria
         assert len(results) == 1
-        assert "testimpl1" in results
+        assert "test_modules.module1.testimpl1" in results
         assert "testimpl2" not in results

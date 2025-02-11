@@ -41,6 +41,7 @@ class Service(
     def __init__(
         self,
         system_app: SystemApp,
+        config: ServeConfig,
         dao: Optional[ConnectConfigDao] = None,
     ):
         self._system_app = None
@@ -48,6 +49,7 @@ class Service(
         self._dag_manager: Optional[DAGManager] = None
         self._db_summary_client = None
         self._vector_connector = None
+        self._serve_config = config
 
         super().__init__(system_app)
 
@@ -59,9 +61,6 @@ class Service(
         """
         super().init_app(system_app)
 
-        self._serve_config = ServeConfig.from_app_config(
-            system_app.config, SERVE_CONFIG_KEY_PREFIX
-        )
         self._dao = self._dao or ConnectConfigDao()
         self._system_app = system_app
 

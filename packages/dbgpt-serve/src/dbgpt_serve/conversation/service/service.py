@@ -26,12 +26,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def __init__(
         self,
         system_app: SystemApp,
+        config: ServeConfig,
         dao: Optional[ServeDao] = None,
         storage: Optional[StorageInterface[StorageConversation, Any]] = None,
         message_storage: Optional[StorageInterface[MessageStorageItem, Any]] = None,
     ):
         self._system_app = None
-        self._serve_config: ServeConfig = None
+        self._serve_config: ServeConfig = config
         self._dao: ServeDao = dao
         self._storage = storage
         self._message_storage = message_storage
@@ -44,10 +45,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             system_app (SystemApp): The system app
         """
         super().init_app(system_app)
-
-        self._serve_config = ServeConfig.from_app_config(
-            system_app.config, SERVE_CONFIG_KEY_PREFIX
-        )
         self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
 

@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 from dbgpt_serve.core import BaseServeConfig
 
@@ -16,7 +15,4 @@ SERVER_APP_TABLE_NAME = "dbgpt_serve_feedback"
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
-    # TODO: add your own parameters here
-    api_keys: Optional[str] = field(
-        default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
-    )
+    __type__ = APP_NAME

@@ -49,9 +49,11 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
 
     name = SERVE_SERVICE_COMPONENT_NAME
 
-    def __init__(self, system_app: SystemApp, dao: Optional[ServeDao] = None):
+    def __init__(
+        self, system_app: SystemApp, config: ServeConfig, dao: Optional[ServeDao] = None
+    ):
         self._system_app = None
-        self._serve_config: ServeConfig = None
+        self._serve_config: ServeConfig = config
         self._dao: ServeDao = dao
         super().__init__(system_app)
         self.rag_service = get_rag_service(system_app)
@@ -63,9 +65,6 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
         Args:
             system_app (SystemApp): The system app
         """
-        self._serve_config = ServeConfig.from_app_config(
-            system_app.config, SERVE_CONFIG_KEY_PREFIX
-        )
         self._system_app = system_app
 
     @property

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dbgpt.util.i18n_utils import _
 from dbgpt_serve.core import BaseServeConfig
 
 APP_NAME = "flow"
@@ -18,13 +19,12 @@ SERVER_APP_VARIABLES_TABLE_NAME = "dbgpt_serve_variables"
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
-    # TODO: add your own parameters here
-    api_keys: Optional[str] = field(
-        default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
-    )
+    __type__ = APP_NAME
+
     load_dbgpts_interval: int = field(
-        default=5, metadata={"help": "Interval to load dbgpts from installed packages"}
+        default=5,
+        metadata={"help": _("Interval to load dbgpts from installed packages")},
     )
     encrypt_key: Optional[str] = field(
-        default=None, metadata={"help": "The key to encrypt the data"}
+        default=None, metadata={"help": _("The key to encrypt the data")}
     )

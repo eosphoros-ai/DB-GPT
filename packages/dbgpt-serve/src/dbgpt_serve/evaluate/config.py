@@ -16,16 +16,4 @@ SERVER_APP_TABLE_NAME = "dbgpt_serve_evaluate"
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
-    # TODO: add your own parameters here
-    api_keys: Optional[str] = field(
-        default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
-    )
-
-    default_user: Optional[str] = field(
-        default=None,
-        metadata={"help": "Default user name for evaluate"},
-    )
-    default_sys_code: Optional[str] = field(
-        default=None,
-        metadata={"help": "Default system code for evaluate"},
-    )
+    __type__ = APP_NAME

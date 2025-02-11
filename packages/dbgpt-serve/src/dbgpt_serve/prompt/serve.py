@@ -14,6 +14,7 @@ from .config import (
     SERVE_APP_NAME,
     SERVE_APP_NAME_HUMP,
     SERVE_CONFIG_KEY_PREFIX,  # noqa: F401
+    ServeConfig,
 )
 from .models.prompt_template_adapter import PromptTemplateAdapter
 
@@ -87,6 +88,7 @@ class Serve(BaseServe):
     def __init__(
         self,
         system_app: SystemApp,
+        config: Optional[ServeConfig] = None,
         api_prefix: Optional[str] = f"/api/v1/serve/{APP_NAME}",
         api_tags: Optional[List[str]] = None,
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
@@ -99,6 +101,7 @@ class Serve(BaseServe):
         )
         self._prompt_manager = None
         self._db_manager: Optional[DatabaseManager] = None
+        self._config = config
 
     def init_app(self, system_app: SystemApp):
         if self._app_has_initiated:
@@ -107,7 +110,12 @@ class Serve(BaseServe):
         self._system_app.app.include_router(
             router, prefix=self._api_prefix, tags=self._api_tags
         )
-        init_endpoints(self._system_app)
+
+        config = self._config or ServeConfig.from_app_config(
+            system_app.config, SERVE_CONFIG_KEY_PREFIX
+        )
+
+        init_endpoints(self._system_app, config)
         self._app_has_initiated = True
 
     @property

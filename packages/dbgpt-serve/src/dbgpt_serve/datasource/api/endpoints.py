@@ -12,7 +12,7 @@ from dbgpt_serve.datasource.api.schemas import (
     DatasourceServeRequest,
     DatasourceServeResponse,
 )
-from dbgpt_serve.datasource.config import SERVE_SERVICE_COMPONENT_NAME
+from dbgpt_serve.datasource.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.datasource.service.service import Service
 
 router = APIRouter()
@@ -227,8 +227,8 @@ async def test_connection(
     return Result.succ(res)
 
 
-def init_endpoints(system_app: SystemApp) -> None:
+def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app
-    system_app.register(Service)
+    system_app.register(Service, config=config)
     global_system_app = system_app

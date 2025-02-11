@@ -29,7 +29,6 @@
 import os
 from typing import Dict, List
 
-from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import Chunk
@@ -42,8 +41,6 @@ from dbgpt_ext.rag.operators import (
     RerankOperator,
 )
 from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
-
-CFG = Config()
 
 
 class TriggerReqBody(BaseModel):

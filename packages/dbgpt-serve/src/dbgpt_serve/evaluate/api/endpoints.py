@@ -9,7 +9,7 @@ from dbgpt.component import ComponentType, SystemApp
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt_serve.core import Result
 from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest
-from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME
+from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.evaluate.service.service import Service
 
 from ...prompt.service.service import Service as PromptService
@@ -146,8 +146,8 @@ async def evaluation(
     )
 
 
-def init_endpoints(system_app: SystemApp) -> None:
+def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app
-    system_app.register(Service)
+    system_app.register(Service, config=config)
     global_system_app = system_app

@@ -28,6 +28,7 @@ class Serve(BaseServe):
     def __init__(
         self,
         system_app: SystemApp,
+        config: Optional[ServeConfig] = None,
         api_prefix: Optional[str] = f"/api/v2/serve/{APP_NAME}",
         api_tags: Optional[List[str]] = None,
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
@@ -42,7 +43,7 @@ class Serve(BaseServe):
 
         self._db_manager: Optional[DatabaseManager] = None
         self._file_storage_client: Optional[FileStorageClient] = None
-        self._serve_config: Optional[ServeConfig] = None
+        self._serve_config: Optional[ServeConfig] = config
 
     def init_app(self, system_app: SystemApp):
         if self._app_has_initiated:
@@ -51,7 +52,10 @@ class Serve(BaseServe):
         self._system_app.app.include_router(
             router, prefix=self._api_prefix, tags=self._api_tags
         )
-        init_endpoints(self._system_app)
+        self._serve_config = self._serve_config or ServeConfig.from_app_config(
+            system_app.config, SERVE_CONFIG_KEY_PREFIX
+        )
+        init_endpoints(self._system_app, self._serve_config)
         self._app_has_initiated = True
 
     def on_init(self):
@@ -76,10 +80,6 @@ class Serve(BaseServe):
         from .models.file_adapter import FileMetadataAdapter
         from .models.models import ServeEntity
 
-        self._serve_config = ServeConfig.from_app_config(
-            self._system_app.config, SERVE_CONFIG_KEY_PREFIX
-        )
-
         self._db_manager = self.create_or_get_db_manager()
         serializer = JsonSerializer()
         storage = SQLAlchemyStorage(
@@ -91,9 +91,9 @@ class Serve(BaseServe):
         simple_distributed_storage = SimpleDistributedStorage(
             node_address=self._serve_config.get_node_address(),
             local_storage_path=self._serve_config.get_local_storage_path(),
-            save_chunk_size=self._serve_config.file_server_save_chunk_size,
-            transfer_chunk_size=self._serve_config.file_server_transfer_chunk_size,
-            transfer_timeout=self._serve_config.file_server_transfer_timeout,
+            save_chunk_size=self._serve_config.save_chunk_size,
+            transfer_chunk_size=self._serve_config.transfer_chunk_size,
+            transfer_timeout=self._serve_config.transfer_timeout,
         )
         storage_backends = {
             simple_distributed_storage.storage_type: simple_distributed_storage,

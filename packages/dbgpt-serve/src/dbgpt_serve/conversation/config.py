@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dbgpt.util.i18n_utils import _
 from dbgpt_serve.core import BaseServeConfig
 
 APP_NAME = "conversation"
@@ -16,12 +17,9 @@ SERVER_APP_TABLE_NAME = "dbgpt_serve_conversation"
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
-    # TODO: add your own parameters here
-    api_keys: Optional[str] = field(
-        default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
-    )
+    __type__ = APP_NAME
 
     default_model: Optional[str] = field(
         default=None,
-        metadata={"help": "Default model name"},
+        metadata={"help": _("Default model for the conversation")},
     )

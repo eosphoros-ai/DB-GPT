@@ -30,6 +30,7 @@ class Serve(BaseServe):
     def __init__(
         self,
         system_app: SystemApp,
+        config: Optional[ServeConfig] = None,
         api_prefix: Optional[List[str]] = None,
         api_tags: Optional[List[str]] = None,
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
@@ -43,12 +44,12 @@ class Serve(BaseServe):
             system_app, api_prefix, api_tags, db_url_or_db, try_create_tables
         )
         self._db_manager: Optional[DatabaseManager] = None
-        self._serve_config = ServeConfig.from_app_config(
+        self._config = config or ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
         self._variables_provider: StorageVariablesProvider = StorageVariablesProvider(
             storage=None,
-            encryption=FernetEncryption(self._serve_config.encrypt_key),
+            encryption=FernetEncryption(self._config.encrypt_key),
             system_app=system_app,
         )
         system_app.register_instance(self._variables_provider)
@@ -61,7 +62,7 @@ class Serve(BaseServe):
             self._system_app.app.include_router(
                 router, prefix=prefix, tags=self._api_tags
             )
-        init_endpoints(self._system_app)
+        init_endpoints(self._system_app, self._config)
         self._app_has_initiated = True
 
     def on_init(self):

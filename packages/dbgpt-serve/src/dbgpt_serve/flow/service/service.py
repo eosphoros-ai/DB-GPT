@@ -49,9 +49,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
     name = SERVE_SERVICE_COMPONENT_NAME
 
-    def __init__(self, system_app: SystemApp, dao: Optional[ServeDao] = None):
+    def __init__(
+        self, system_app: SystemApp, config: ServeConfig, dao: Optional[ServeDao] = None
+    ):
         self._system_app = None
-        self._serve_config: ServeConfig = None
+        self._serve_config: ServeConfig = config
         self._dao: ServeDao = dao
         self._flow_factory: FlowFactory = FlowFactory()
         self._dbgpts_loader: Optional[DBGPTsLoader] = None
@@ -66,9 +68,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         super().init_app(system_app)
 
-        self._serve_config = ServeConfig.from_app_config(
-            system_app.config, SERVE_CONFIG_KEY_PREFIX
-        )
         self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
         self._dbgpts_loader = system_app.get_component(

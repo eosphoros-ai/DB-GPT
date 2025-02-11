@@ -165,7 +165,8 @@ class ModelScanner(Generic[T]):
                     module = importlib.import_module(full_module_path)
                     module_results = self._scan_module(module, config)
                     for key, value in module_results.items():
-                        results[key] = value
+                        real_key = f"{full_module_path}.{key}"
+                        results[real_key] = value
                 except Exception as e:
                     logger.warning(
                         f"Error scanning specific file {full_module_path}: {str(e)}"

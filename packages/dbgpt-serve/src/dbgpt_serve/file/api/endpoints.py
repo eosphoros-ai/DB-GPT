@@ -11,7 +11,7 @@ from starlette.responses import StreamingResponse
 from dbgpt.component import SystemApp
 from dbgpt_serve.core import Result, blocking_func_to_async
 
-from ..config import SERVE_SERVICE_COMPONENT_NAME
+from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
 from .schemas import (
     FileMetadataBatchRequest,
@@ -141,9 +141,7 @@ async def download_file(
 
     def file_iterator(raw_iter):
         with raw_iter:
-            while chunk := raw_iter.read(
-                service.config.file_server_download_chunk_size
-            ):
+            while chunk := raw_iter.read(service.config.download_chunk_size):
                 yield chunk
 
     response = StreamingResponse(
@@ -234,8 +232,8 @@ async def get_files_metadata_batch(
     return Result.succ(metadata_list)
 
 
-def init_endpoints(system_app: SystemApp) -> None:
+def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app
-    system_app.register(Service)
+    system_app.register(Service, config=config)
     global_system_app = system_app

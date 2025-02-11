@@ -4,7 +4,7 @@ import signal
 import sys
 import threading
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
@@ -60,6 +60,7 @@ def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
     Now just support sqlite and mysql. If db type is sqlite, the db path is
     `pilot/meta_data/{db_name}.db`.
     """
+    from dbgpt.datasource.rdbms.base import RDBMSDatasourceParameters
     from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
 
     db_config: BaseDatasourceParameters = param.web.database
@@ -67,6 +68,15 @@ def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
         db_config.path = resolve_root_path(db_config.path)
         db_dir = os.path.dirname(db_config.path)
         os.makedirs(db_dir, exist_ok=True)
+        # Parse the db name from the db path
+        db_name = os.path.basename(db_config.path).split(".")[0]
+    elif isinstance(db_config, RDBMSDatasourceParameters):
+        db_name = db_config.database
+    else:
+        raise ValueError(
+            "DB-GPT only support SQLite, MySQL and OceanBase database as metadata "
+            "storage database"
+        )
 
     disable_alembic_upgrade = param.web.disable_alembic_upgrade
     db_ssl_verify = param.web.db_ssl_verify
@@ -75,20 +85,26 @@ def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
         raise ValueError("Only support RDBMSConnector")
     db_url = connector.db_url
     db_type = connector.db_type
+    db_engine_args: Optional[Dict[str, Any]] = db_config.engine_args()
     _initialize_db(
         db_url,
         db_type,
+        db_name,
         db_ssl_verify,
+        db_engine_args,
         try_to_create_db=not disable_alembic_upgrade,
         system_app=system_app,
     )
 
 
-def _migration_db_storage(disable_alembic_upgrade: bool):
+def _migration_db_storage(
+    db_params: BaseDatasourceParameters, disable_alembic_upgrade: bool
+):
     """Migration the db storage."""
     # Import all models to make sure they are registered with SQLAlchemy.
     from dbgpt.configs.model_config import PILOT_PATH
     from dbgpt_app.initialization.db_model_initialization import _MODELS  # noqa: F401
+    from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
 
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     if not disable_alembic_upgrade:
@@ -98,8 +114,10 @@ def _migration_db_storage(disable_alembic_upgrade: bool):
         # Try to create all tables, when the dbtype is sqlite, it will auto create and
         # upgrade system schema,
         # Otherwise, you need to execute initialization scripts to create schemas.
-        CFG = Config()
-        if CFG.LOCAL_DB_TYPE == "sqlite":
+        if (
+            isinstance(db_params, SQLiteConnectorParameters)
+            or db_params.get_type_value() == "sqlite"
+        ):
             try:
                 db.create_all()
             except Exception as e:
@@ -125,7 +143,9 @@ def _migration_db_storage(disable_alembic_upgrade: bool):
 def _initialize_db(
     db_url: str,
     db_type: str,
+    db_name: str,
     db_ssl_verify: bool = False,
+    db_engine_args: Optional[Dict[str, Any]] = None,
     try_to_create_db: Optional[bool] = False,
     system_app: Optional[SystemApp] = None,
 ) -> str:
@@ -141,10 +161,7 @@ def _initialize_db(
         OBDialect,
     )
 
-    CFG = Config()
-    db_name = CFG.LOCAL_DB_NAME
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
-    os.makedirs(default_meta_data_path, exist_ok=True)
     if db_type == "mysql":
         # db_url = (
         #     f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:"
@@ -166,17 +183,16 @@ def _initialize_db(
         #     f"{db_name}?charset=utf8mb4"
         # )
         _create_mysql_database(db_name, db_url, try_to_create_db)
-    else:
-        sqlite_db_path = os.path.join(default_meta_data_path, f"{db_name}.db")
-        db_url = f"sqlite:///{sqlite_db_path}"
-    engine_args = {
-        "pool_size": CFG.LOCAL_DB_POOL_SIZE,
-        "max_overflow": CFG.LOCAL_DB_POOL_OVERFLOW,
-        "pool_timeout": 30,
-        "pool_recycle": 3600,
-        "pool_pre_ping": True,
-    }
-    db = initialize_db(db_url, db_name, engine_args)
+
+    if not db_engine_args:
+        db_engine_args = {
+            "pool_size": 10,
+            "max_overflow": 20,
+            "pool_timeout": 30,
+            "pool_recycle": 3600,
+            "pool_pre_ping": True,
+        }
+    db = initialize_db(db_url, db_name, db_engine_args)
     if system_app:
         from dbgpt.storage.metadata import UnifiedDBManagerFactory
 

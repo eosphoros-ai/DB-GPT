@@ -9,7 +9,7 @@ from dbgpt.component import SystemApp
 from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result
 
-from ..config import SERVE_SERVICE_COMPONENT_NAME
+from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
 from .schemas import MessageVo, ServeRequest, ServerResponse
 
@@ -231,8 +231,8 @@ async def get_history_messages(con_uid: str, service: Service = Depends(get_serv
     return Result.succ(service.get_history_messages(ServeRequest(conv_uid=con_uid)))
 
 
-def init_endpoints(system_app: SystemApp) -> None:
+def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app
-    system_app.register(Service)
+    system_app.register(Service, config=config)
     global_system_app = system_app

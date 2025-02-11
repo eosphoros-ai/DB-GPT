@@ -8,7 +8,7 @@ from dbgpt.component import SystemApp
 from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result
 
-from ..config import SERVE_SERVICE_COMPONENT_NAME
+from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
 from .schemas import ServeRequest, ServerResponse
 
@@ -171,8 +171,8 @@ async def query_page(
     return Result.succ(service.get_list_by_page(request, page, page_size))
 
 
-def init_endpoints(system_app: SystemApp) -> None:
+def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app
-    system_app.register(Service)
+    system_app.register(Service, config=config)
     global_system_app = system_app

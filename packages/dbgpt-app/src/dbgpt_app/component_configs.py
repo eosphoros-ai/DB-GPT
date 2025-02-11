@@ -1,17 +1,12 @@
-from __future__ import annotations
-
 import logging
 from typing import Optional
 
-from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
-from dbgpt.configs.model_config import MODEL_DISK_CACHE_DIR
+from dbgpt.configs.model_config import MODEL_DISK_CACHE_DIR, resolve_root_path
 from dbgpt.util.executor_utils import DefaultExecutorFactory
-from dbgpt_app.config import ApplicationConfig
+from dbgpt_app.config import ApplicationConfig, ServiceWebParameters
 
 logger = logging.getLogger(__name__)
-
-CFG = Config()
 
 
 def initialize_components(
@@ -36,7 +31,7 @@ def initialize_components(
     system_app.register(
         DefaultExecutorFactory, max_workers=web_config.default_thread_pool_size
     )
-    system_app.register(DefaultScheduler, scheduler_enable=CFG.SCHEDULER_ENABLED)
+    system_app.register(DefaultScheduler)
     system_app.register_instance(controller)
     system_app.register(ConnectorManager)
 
@@ -50,30 +45,32 @@ def initialize_components(
 
     _initialize_embedding_model(system_app, default_embedding_name)
     _initialize_rerank_model(system_app, default_rerank_name)
-    _initialize_model_cache(system_app, web_config.port)
+    _initialize_model_cache(system_app, web_config)
     _initialize_awel(system_app, web_config.awel_dirs)
     # Initialize resource manager of agent
     _initialize_resource_manager(system_app)
     _initialize_agent(system_app)
     _initialize_openapi(system_app)
     # Register serve apps
-    register_serve_apps(system_app, CFG, web_config.port)
+    register_serve_apps(system_app, param, web_config.host, web_config.port)
     _initialize_operators()
     _initialize_code_server(system_app)
 
 
-def _initialize_model_cache(system_app: SystemApp, port: int):
+def _initialize_model_cache(system_app: SystemApp, web_config: ServiceWebParameters):
     from dbgpt.storage.cache import initialize_cache
 
-    if not CFG.MODEL_CACHE_ENABLE:
+    if not web_config.model_cache or not web_config.model_cache.enable_model_cache:
         logger.info("Model cache is not enable")
         return
 
-    storage_type = CFG.MODEL_CACHE_STORAGE_TYPE or "disk"
-    max_memory_mb = CFG.MODEL_CACHE_MAX_MEMORY_MB or 256
-    persist_dir = CFG.MODEL_CACHE_STORAGE_DISK_DIR or MODEL_DISK_CACHE_DIR
-    if CFG.WEBSERVER_MULTI_INSTANCE:
-        persist_dir = f"{persist_dir}_{port}"
+    storage_type = web_config.model_cache.storage_type or "memory"
+    max_memory_mb = web_config.model_cache.max_memory_mb or 256
+    if web_config.model_cache.persist_dir:
+        persist_dir = web_config.model_cache.persist_dir
+    else:
+        persist_dir = f"{MODEL_DISK_CACHE_DIR}_{web_config.port}"
+    persist_dir = resolve_root_path(persist_dir)
     initialize_cache(system_app, storage_type, max_memory_mb, persist_dir)
 
 

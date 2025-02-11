@@ -8,7 +8,13 @@ from dbgpt.storage.metadata import DatabaseManager
 from dbgpt_serve.core import BaseServe
 
 from .api.endpoints import init_endpoints, router
-from .config import APP_NAME, SERVE_APP_NAME, SERVE_APP_NAME_HUMP
+from .config import (
+    APP_NAME,
+    SERVE_APP_NAME,
+    SERVE_APP_NAME_HUMP,
+    SERVE_CONFIG_KEY_PREFIX,
+    ServeConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +86,7 @@ class Serve(BaseServe):
     def __init__(
         self,
         system_app: SystemApp,
+        config: Optional[ServeConfig] = None,
         api_prefix: Optional[List[str]] = None,
         api_tags: Optional[List[str]] = None,
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
@@ -92,6 +99,7 @@ class Serve(BaseServe):
         super().__init__(
             system_app, api_prefix, api_tags, db_url_or_db, try_create_tables
         )
+        self._config = config
 
     def init_app(self, system_app: SystemApp):
         if self._app_has_initiated:
@@ -101,7 +109,10 @@ class Serve(BaseServe):
             self._system_app.app.include_router(
                 router, prefix=prefix, tags=self._api_tags
             )
-        init_endpoints(self._system_app)
+        config = self._config or ServeConfig.from_app_config(
+            system_app.config, SERVE_CONFIG_KEY_PREFIX
+        )
+        init_endpoints(self._system_app, config)
         self._app_has_initiated = True
 
     def on_init(self):

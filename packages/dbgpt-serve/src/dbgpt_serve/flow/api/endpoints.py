@@ -12,6 +12,7 @@ from dbgpt.core.awel.flow.flow_factory import FlowCategory
 from dbgpt.util import PaginationResult
 from dbgpt_serve.core import Result, blocking_func_to_async
 
+from ..config import ServeConfig
 from ..service.service import Service, _parse_flow_template_from_json
 from ..service.variables_service import VariablesService
 from .schemas import (
@@ -603,7 +604,7 @@ async def flow_file_path(
 # ) -> Result[PaginationResult[ServerResponse]]:
 
 
-def init_endpoints(system_app: SystemApp) -> None:
+def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     from .variables_provider import (
         BuiltinAgentsVariablesProvider,
@@ -618,8 +619,8 @@ def init_endpoints(system_app: SystemApp) -> None:
     )
 
     global global_system_app
-    system_app.register(Service)
-    system_app.register(VariablesService)
+    system_app.register(Service, config=config)
+    system_app.register(VariablesService, config=config)
     system_app.register(BuiltinFlowVariablesProvider)
     system_app.register(BuiltinNodeVariablesProvider)
     system_app.register(BuiltinAllVariablesProvider)

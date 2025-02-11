@@ -140,7 +140,9 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     system_app.on_init()
 
     # Migration db storage, so you db models must be imported before this
-    _migration_db_storage(web_config.disable_alembic_upgrade)
+    _migration_db_storage(
+        param.service.web.database, web_config.disable_alembic_upgrade
+    )
 
     local_port = web_config.port
     # TODO: initialize_worker_manager_in_client as a component register in system_app
@@ -240,6 +242,7 @@ def load_config(config_file: str = None) -> ApplicationConfig:
     from dbgpt.configs.model_config import ROOT_PATH as DBGPT_ROOT_PATH
     from dbgpt.model import scan_model_providers
     from dbgpt.util.configure import ConfigurationManager
+    from dbgpt_app.initialization.serve_initialization import scan_serve_configs
     from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
 
     cm = ConnectorManager(system_app)
@@ -247,6 +250,8 @@ def load_config(config_file: str = None) -> ApplicationConfig:
     cm.on_init()
     # Register all model providers
     scan_model_providers()
+    # Register all serve configs
+    scan_serve_configs()
 
     if config_file is None:
         config_file = os.path.join(DBGPT_ROOT_PATH, "configs", "dbgpt-siliconflow.toml")

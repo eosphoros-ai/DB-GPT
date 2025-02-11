@@ -23,7 +23,7 @@ from dbgpt_serve.rag.api.schemas import (
     SpaceServeRequest,
     SpaceServeResponse,
 )
-from dbgpt_serve.rag.config import SERVE_SERVICE_COMPONENT_NAME
+from dbgpt_serve.rag.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.rag.service.service import Service
 
 router = APIRouter()
@@ -372,8 +372,8 @@ async def delete_document(
     return Result.succ(service.delete_document(document_id))
 
 
-def init_endpoints(system_app: SystemApp) -> None:
+def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app
-    system_app.register(Service)
+    system_app.register(Service, config=config)
     global_system_app = system_app

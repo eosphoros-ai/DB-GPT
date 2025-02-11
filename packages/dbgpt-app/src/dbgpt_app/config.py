@@ -7,11 +7,14 @@ from dbgpt.model.parameter import (
     ModelServiceConfig,
     ModelWorkerParameters,
 )
+from dbgpt.storage.cache.manager import ModelCacheParameters
 from dbgpt.util.configure import HookConfig
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
 from dbgpt.util.tracer import TracerParameters
 from dbgpt.util.utils import LoggingParameters
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
+from dbgpt_serve.core import BaseServeConfig
 
 
 @dataclass
@@ -38,6 +41,10 @@ class SystemParameters:
             "help": _("API keys"),
         },
     )
+    encrypt_key: Optional[str] = field(
+        default="your_secret_key",
+        metadata={"help": _("The key to encrypt the data")},
+    )
 
 
 @dataclass
@@ -46,9 +53,6 @@ class ServiceWebParameters(BaseParameters):
     port: int = field(
         default=5670, metadata={"help": _("Webserver deploy port, default is 5670")}
     )
-    # daemon: Optional[bool] = field(
-    #     default=False, metadata={"help": "Run Webserver in background"}
-    # )
     light: Optional[bool] = field(
         default=False, metadata={"help": _("Run Webserver in light mode")}
     )
@@ -62,7 +66,9 @@ class ServiceWebParameters(BaseParameters):
         },
     )
     database: BaseDatasourceParameters = field(
-        default_factory=BaseDatasourceParameters,
+        default_factory=lambda: SQLiteConnectorParameters(
+            path="pilot/meta_data/dbgpt.db"
+        ),
         metadata={
             "help": _(
                 "Database connection config, now support SQLite, OceanBase and MySQL"
@@ -132,6 +138,10 @@ class ServiceWebParameters(BaseParameters):
         default=True,
         metadata={"help": _("Whether to use the new web UI, default is True")},
     )
+    model_cache: ModelCacheParameters = field(
+        default_factory=ModelCacheParameters,
+        metadata={"help": _("Model cache configuration")},
+    )
 
 
 @dataclass
@@ -165,6 +175,12 @@ class ApplicationConfig:
         default_factory=ModelsDeployParameters,
         metadata={
             "help": _("Model deployment configuration"),
+        },
+    )
+    serves: List[BaseServeConfig] = field(
+        default_factory=list,
+        metadata={
+            "help": _("Serve configuration"),
         },
     )
     trace: TracerParameters = field(

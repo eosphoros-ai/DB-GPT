@@ -6,14 +6,15 @@ import os
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
+from dbgpt._private.config import Config
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt_app.component_configs import CFG
 
 logger = logging.getLogger(__name__)
 
+CFG = Config()
 connector: Dict[str, Tuple[Type, Type]] = {}
 pools: DefaultDict[str, Dict] = defaultdict(dict)
 

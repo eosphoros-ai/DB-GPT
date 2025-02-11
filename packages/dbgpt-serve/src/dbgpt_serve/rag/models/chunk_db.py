@@ -7,8 +7,6 @@ from dbgpt._private.config import Config
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt_serve.rag.api.schemas import ChunkServeRequest, ChunkServeResponse
 
-CFG = Config()
-
 
 class DocumentChunkEntity(Model):
     __tablename__ = "document_chunk"

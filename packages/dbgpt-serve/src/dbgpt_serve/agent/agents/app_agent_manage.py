@@ -3,6 +3,7 @@ import uuid
 from abc import ABC
 from typing import List, Type
 
+from dbgpt._private.config import Config
 from dbgpt.agent import (
     AgentContext,
     AgentMemory,
@@ -21,7 +22,6 @@ from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import LLMClient, PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
-from dbgpt_app.component_configs import CFG
 from dbgpt_serve.prompt.api.endpoints import get_service
 
 from ..db import GptsMessagesDao
@@ -30,6 +30,7 @@ from ..db.gpts_conversations_db import GptsConversationsDao
 from ..team.base import TeamMode
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
 
+CFG = Config()
 logger = logging.getLogger(__name__)
 
 
