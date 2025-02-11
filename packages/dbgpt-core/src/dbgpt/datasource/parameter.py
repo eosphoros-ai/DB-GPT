@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from dbgpt.util.configure import RegisterParameters
@@ -25,6 +25,16 @@ class BaseDatasourceParameters(BaseParameters, RegisterParameters):
         cls: Type["BaseDatasourceParameters"], state: Dict[str, Any]
     ) -> "BaseDatasourceParameters":
         """Create a new instance from the persisted state."""
+        new_state = cls._parse_persisted_state(state)
+        valid_state = {}
+        for fd in fields(cls):
+            if fd.name in new_state:
+                valid_state[fd.name] = new_state[fd.name]
+        return cls(**valid_state)
+
+    @classmethod
+    def _parse_persisted_state(cls, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse the persisted state."""
         mapping = cls._persisted_state_mapping()
         unmapping = {v: k for k, v in mapping.items()}
         new_state = {}
@@ -33,7 +43,7 @@ class BaseDatasourceParameters(BaseParameters, RegisterParameters):
                 new_state[unmapping[k]] = v
             elif k == "ext_config" and isinstance(v, dict) and v:
                 new_state.update(v)
-        return cls(**new_state)
+        return new_state
 
     def persisted_state(self) -> Dict[str, Any]:
         """Return the persisted state."""
@@ -47,7 +57,8 @@ class BaseDatasourceParameters(BaseParameters, RegisterParameters):
                 new_state[mapping[k]] = v
             else:
                 ext_config[k] = v
-        new_state["ext_config"] = ext_config
+        if ext_config:
+            new_state["ext_config"] = ext_config
         return new_state
 
     @classmethod

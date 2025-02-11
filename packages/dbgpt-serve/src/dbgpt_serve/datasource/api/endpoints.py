@@ -9,6 +9,7 @@ from dbgpt.util import PaginationResult
 from dbgpt_serve.core import ResourceTypes, Result, blocking_func_to_async
 from dbgpt_serve.datasource.api.schemas import (
     DatasourceCreateRequest,
+    DatasourceQueryResponse,
     DatasourceServeRequest,
     DatasourceServeResponse,
 )
@@ -97,11 +98,15 @@ async def test_auth():
     return {"status": "ok"}
 
 
-@router.post("/datasources", dependencies=[Depends(check_api_key)])
+@router.post(
+    "/datasources",
+    response_model=Result[DatasourceQueryResponse],
+    dependencies=[Depends(check_api_key)],
+)
 async def create(
     request: Union[DatasourceCreateRequest, DatasourceServeRequest],
     service: Service = Depends(get_service),
-) -> Result:
+) -> Result[DatasourceQueryResponse]:
     """Create a new Space entity
 
     Args:
@@ -114,10 +119,15 @@ async def create(
     return Result.succ(service.create(request))
 
 
-@router.put("/datasources", dependencies=[Depends(check_api_key)])
+@router.put(
+    "/datasources",
+    response_model=Result[DatasourceQueryResponse],
+    dependencies=[Depends(check_api_key)],
+)
 async def update(
-    request: DatasourceServeRequest, service: Service = Depends(get_service)
-) -> Result:
+    request: Union[DatasourceCreateRequest, DatasourceServeRequest],
+    service: Service = Depends(get_service),
+) -> Result[DatasourceQueryResponse]:
     """Update a Space entity
 
     Args:
@@ -145,17 +155,18 @@ async def delete(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.delete(datasource_id))
+    service.delete(datasource_id)
+    return Result.succ(None)
 
 
 @router.get(
     "/datasources/{datasource_id}",
     dependencies=[Depends(check_api_key)],
-    response_model=Result[List],
+    response_model=Result[DatasourceQueryResponse],
 )
 async def query(
     datasource_id: str, service: Service = Depends(get_service)
-) -> Result[List[DatasourceServeResponse]]:
+) -> Result[DatasourceQueryResponse]:
     """Query Space entities
 
     Args:
@@ -170,23 +181,23 @@ async def query(
 @router.get(
     "/datasources",
     dependencies=[Depends(check_api_key)],
-    response_model=Result[PaginationResult[DatasourceServeResponse]],
+    response_model=Result[List[DatasourceQueryResponse]],
 )
 async def query_page(
-    page: int = Query(default=1, description="current page"),
-    page_size: int = Query(default=20, description="page size"),
+    db_type: Optional[str] = Query(
+        None, description="Database type, e.g. sqlite, mysql, etc."
+    ),
     service: Service = Depends(get_service),
-) -> Result[PaginationResult[DatasourceServeResponse]]:
+) -> Result[List[DatasourceQueryResponse]]:
     """Query Space entities
 
     Args:
-        page (int): The page number
-        page_size (int): The page size
         service (Service): The service
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.list())
+    res = service.get_list(db_type=db_type)
+    return Result.succ(res)
 
 
 @router.get(
