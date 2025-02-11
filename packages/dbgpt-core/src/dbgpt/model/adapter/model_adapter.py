@@ -51,6 +51,9 @@ def get_llm_model_adapter(
 
     # Import NewHFChatModelAdapter for it can be registered
     from dbgpt.model.adapter.hf_adapter import NewHFChatModelAdapter  # noqa: F401
+    from dbgpt.model.adapter.llama_cpp_py_adapter import (  # noqa: F401
+        LLamaCppModelAdapter,
+    )
     from dbgpt.model.adapter.proxy_adapter import ProxyLLMModelAdapter  # noqa: F401
 
     new_model_adapter = get_model_adapter(
@@ -79,18 +82,6 @@ def get_llm_model_adapter(
         if adapter:
             result_adapter = FastChatLLMModelAdapterWrapper(adapter)
 
-    else:
-        from dbgpt.model.adapter.old_adapter import OldLLMModelAdapterWrapper
-        from dbgpt.model.adapter.old_adapter import (
-            get_llm_model_adapter as _old_get_llm_model_adapter,
-        )
-        from dbgpt_app.chat_adapter import get_llm_chat_adapter
-
-        logger.info("Use DB-GPT old adapter")
-        result_adapter = OldLLMModelAdapterWrapper(
-            _old_get_llm_model_adapter(model_name, model_path),
-            get_llm_chat_adapter(model_name, model_path),
-        )
     if result_adapter:
         result_adapter.model_name = model_name
         result_adapter.model_path = model_path
@@ -140,11 +131,8 @@ def _dynamic_model_parser() -> Optional[List[Type[BaseModelParameters]]]:
     Returns:
         Optional[List[Type[BaseModelParameters]]]: The model parameters class list.
     """
-    from dbgpt.model.parameter import (
-        EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
-        EmbeddingModelParameters,
-        WorkerType,
-    )
+    from dbgpt.model.adapter.base import get_embedding_adapter
+    from dbgpt.model.parameter import WorkerType
     from dbgpt.util.parameter_utils import _SimpleArgParser
 
     pre_args = _SimpleArgParser("model_name", "model_path", "worker_type", "model_type")
@@ -154,11 +142,13 @@ def _dynamic_model_parser() -> Optional[List[Type[BaseModelParameters]]]:
     worker_type = pre_args.get("worker_type")
     model_type = pre_args.get("model_type")
     if worker_type == WorkerType.TEXT2VEC:
-        return [
-            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
-                model_name, EmbeddingModelParameters
-            )
-        ]
+        adapter = get_embedding_adapter(
+            model_type,
+            is_rerank=False,
+            model_name=model_name,
+            model_path=model_path,
+        )
+        return [adapter.model_param_class()]
     if model_name is None and model_type != ModelType.VLLM:
         return None
     llm_adapter = get_llm_model_adapter(model_name, model_path, model_type=model_type)

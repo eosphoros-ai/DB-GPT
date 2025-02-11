@@ -35,6 +35,9 @@ class BaseDeployModelParameters(BaseParameters):
             ],
         },
     )
+    verbose: Optional[bool] = field(
+        default=False, metadata={"help": "Show verbose output."}
+    )
 
     @property
     def real_provider_model_name(self) -> str:

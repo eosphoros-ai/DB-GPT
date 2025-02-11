@@ -1,9 +1,8 @@
 """Models Configuration Parameters."""
 
-import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from dbgpt.core.interface.parameter import (
     EmbeddingDeployModelParameters,
@@ -276,65 +275,6 @@ class ModelWorkerParameters(BaseServerParameters, BaseModelParameters):
 
 
 @dataclass
-class BaseEmbeddingModelParameters(BaseModelParameters):
-    def build_kwargs(self, **kwargs) -> Dict:
-        pass
-
-    def is_rerank_model(self) -> bool:
-        """Check if the model is a rerank model"""
-        return False
-
-
-@dataclass
-class EmbeddingModelParameters(BaseEmbeddingModelParameters):
-    device: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Device to run model. If None, the device is automatically "
-            "determined"
-        },
-    )
-
-    normalize_embeddings: Optional[bool] = field(
-        default=None,
-        metadata={
-            "help": "Determines whether the model's embeddings should be normalized."
-        },
-    )
-
-    rerank: Optional[bool] = field(
-        default=False, metadata={"help": "Whether the model is a rerank model"}
-    )
-
-    max_length: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "Max length for input sequences. Longer sequences will be "
-            "truncated. If None, max length of the model will be used, just for rerank"
-            " model now."
-        },
-    )
-
-    def build_kwargs(self, **kwargs) -> Dict:
-        model_kwargs, encode_kwargs = None, None
-        if self.device:
-            model_kwargs = {"device": self.device}
-        if self.normalize_embeddings:
-            encode_kwargs = {"normalize_embeddings": self.normalize_embeddings}
-        if model_kwargs:
-            kwargs["model_kwargs"] = model_kwargs
-        if self.is_rerank_model():
-            kwargs["max_length"] = self.max_length
-        if encode_kwargs:
-            kwargs["encode_kwargs"] = encode_kwargs
-        return kwargs
-
-    def is_rerank_model(self) -> bool:
-        """Check if the model is a rerank model"""
-        return self.rerank
-
-
-@dataclass
 class ModelParameters(BaseModelParameters):
     device: Optional[str] = field(
         default=None,
@@ -412,7 +352,22 @@ class ModelParameters(BaseModelParameters):
 
 
 @dataclass
-class LlamaCppModelParameters(ModelParameters):
+class LlamaCppModelParameters(LLMDeployModelParameters):
+    provider = "llama.cpp"
+    path: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _("The path of the model, if you want to deploy a local model."),
+        },
+    )
+    device: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Device to run model. If None, the device is automatically determined"
+            )
+        },
+    )
     seed: Optional[int] = field(
         default=-1, metadata={"help": "Random seed for llama-cpp models. -1 for random"}
     )
@@ -459,180 +414,18 @@ class LlamaCppModelParameters(ModelParameters):
         },
     )
 
+    @property
+    def real_model_path(self) -> Optional[str]:
+        """Get the real model path.
 
-@dataclass
-class ProxyModelParameters(BaseModelParameters):
-    proxy_server_url: str = field(
-        metadata={
-            "help": "Proxy server url, such as: "
-            "https://api.openai.com/v1/chat/completions"
-        },
-    )
+        If deploy model is not local, return None.
+        """
+        return self._resolve_root_path(self.path)
 
-    proxy_api_key: str = field(
-        metadata={"tags": "privacy", "help": "The api key of current proxy LLM"},
-    )
-
-    proxy_api_base: str = field(
-        default=None,
-        metadata={
-            "help": "The base api address, such as: https://api.openai.com/v1. If None,"
-            " we will use proxy_api_base first"
-        },
-    )
-
-    proxy_api_app_id: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The app id for current proxy LLM(Just for spark proxy LLM now)."
-        },
-    )
-
-    proxy_api_secret: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The app secret for current proxy LLM"
-            "(Just for spark proxy LLM now)."
-        },
-    )
-
-    proxy_api_type: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The api type of current proxy the current proxy model, if you use"
-            " Azure, it can be: azure"
-        },
-    )
-
-    proxy_api_version: Optional[str] = field(
-        default=None,
-        metadata={"help": "The api version of current proxy the current model"},
-    )
-
-    http_proxy: Optional[str] = field(
-        default=os.environ.get("http_proxy") or os.environ.get("https_proxy"),
-        metadata={"help": "The http or https proxy to use openai"},
-    )
-
-    proxyllm_backend: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The model name actually pass to current proxy server url, such "
-            "as gpt-3.5-turbo, gpt-4, chatglm_pro, chatglm_std and so on"
-        },
-    )
-    model_type: Optional[str] = field(
-        default="proxy",
-        metadata={
-            "help": "Model type: huggingface, llama.cpp, proxy and vllm",
-            "tags": "fixed",
-        },
-    )
-    device: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Device to run model. If None, the device is automatically "
-            "determined"
-        },
-    )
-    prompt_template: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Prompt template. If None, the prompt template is automatically "
-            "determined from model path"
-        },
-    )
-    max_context_size: Optional[int] = field(
-        default=4096, metadata={"help": "Maximum context size"}
-    )
-    llm_client_class: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The class name of llm client, such as "
-            "dbgpt.model.proxy.llms.proxy_model.ProxyModel"
-        },
-    )
-
-    def __post_init__(self):
-        if not self.proxy_server_url and self.proxy_api_base:
-            self.proxy_server_url = f"{self.proxy_api_base}/chat/completions"
-
-
-@dataclass
-class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
-    proxy_server_url: str = field(
-        metadata={
-            "help": "Proxy base url(OPENAI_API_BASE), such as https://api.openai.com/v1"
-        },
-    )
-    proxy_api_key: str = field(
-        metadata={
-            "tags": "privacy",
-            "help": "The api key of the current embedding model(OPENAI_API_KEY)",
-        },
-    )
-    device: Optional[str] = field(
-        default=None,
-        metadata={"help": "Device to run model. Not working for proxy embedding model"},
-    )
-    proxy_api_type: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The api type of current proxy the current embedding "
-            "model(OPENAI_API_TYPE), if you use Azure, it can be: azure"
-        },
-    )
-    proxy_api_secret: str = field(
-        default=None,
-        metadata={
-            "tags": "privacy",
-            "help": "The api secret of the current embedding model(OPENAI_API_SECRET)",
-        },
-    )
-    proxy_api_version: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The api version of current proxy the current embedding "
-            "model(OPENAI_API_VERSION)"
-        },
-    )
-    proxy_backend: Optional[str] = field(
-        default="text-embedding-ada-002",
-        metadata={
-            "help": "The model name actually pass to current proxy server url, such as "
-            "text-embedding-ada-002"
-        },
-    )
-
-    proxy_deployment: Optional[str] = field(
-        default="text-embedding-ada-002",
-        metadata={"help": "Tto support Azure OpenAI Service custom deployment names"},
-    )
-
-    rerank: Optional[bool] = field(
-        default=False, metadata={"help": "Whether the model is a rerank model"}
-    )
-
-    def build_kwargs(self, **kwargs) -> Dict:
-        params = {
-            "openai_api_base": self.proxy_server_url,
-            "openai_api_key": self.proxy_api_key,
-            "openai_api_type": self.proxy_api_type if self.proxy_api_type else None,
-            "openai_api_version": (
-                self.proxy_api_version if self.proxy_api_version else None
-            ),
-            "model": self.proxy_backend,
-            "deployment": (
-                self.proxy_deployment if self.proxy_deployment else self.proxy_backend
-            ),
-        }
-        for k, v in kwargs:
-            params[k] = v
-        return params
-
-    def is_rerank_model(self) -> bool:
-        """Check if the model is a rerank model"""
-        return self.rerank
+    @property
+    def real_device(self) -> Optional[str]:
+        """Get the real device."""
+        return self.device or super().real_device
 
 
 @dataclass
@@ -649,11 +442,17 @@ class DeployModelWorkerParameters(BaseParameters):
 class ModelServiceConfig(BaseParameters):
     """Model service configuration."""
 
-    controller: ModelControllerParameters = field(
-        metadata={"help": _("Model controller")}
+    worker: DeployModelWorkerParameters = field(
+        default_factory=DeployModelWorkerParameters,
+        metadata={"help": _("Model worker")},
     )
-    worker: DeployModelWorkerParameters = field(metadata={"help": _("Model worker")})
-    api: ModelAPIServerParameters = field(metadata={"help": _("Model API")})
+    api: ModelAPIServerParameters = field(
+        default_factory=ModelControllerParameters, metadata={"help": _("Model API")}
+    )
+    controller: ModelControllerParameters = field(
+        default_factory=ModelControllerParameters,
+        metadata={"help": _("Model controller")},
+    )
 
 
 @dataclass
@@ -719,30 +518,3 @@ class ModelsDeployParameters(BaseParameters):
             self.default_embedding = embeds[0]
         if not self.default_reranker and rerankers:
             self.default_reranker = rerankers[0]
-
-
-_EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {
-    ProxyEmbeddingParameters: [
-        "proxy_openai",
-        "proxy_azure",
-        "proxy_http_openapi",
-        "proxy_ollama",
-        "proxy_tongyi",
-        "proxy_qianfan",
-        "rerank_proxy_http_openapi",
-        "rerank_proxy_siliconflow",
-    ]
-}
-
-EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG = {}
-
-
-def _update_embedding_config():
-    global EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG
-    for param_cls, models in _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG.items():
-        for model in models:
-            if model not in EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG:
-                EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG[model] = param_cls
-
-
-_update_embedding_config()

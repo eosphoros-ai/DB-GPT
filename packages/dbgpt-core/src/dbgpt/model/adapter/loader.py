@@ -7,9 +7,6 @@ from typing import Any, Dict, Optional, cast
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.base import ModelType
-from dbgpt.model.parameter import (
-    LlamaCppModelParameters,
-)
 from dbgpt.util import get_gpu_memory
 from dbgpt.util.parameter_utils import _genenv_ignoring_key_case
 
@@ -75,7 +72,7 @@ class ModelLoader:
         if model_type == ModelType.HF:
             return huggingface_loader(llm_adapter, model_params)
         elif model_type == ModelType.LLAMA_CPP:
-            return llamacpp_loader(llm_adapter, model_params)
+            return llm_adapter.load_from_params(model_params)
         elif model_type == ModelType.PROXY:
             return llm_adapter.load_from_params(model_params)
         elif model_type == ModelType.VLLM:
@@ -379,21 +376,4 @@ def load_huggingface_quantization_model(
             use_fast=llm_adapter.use_fast_tokenizer(),
         )
 
-    return model, tokenizer
-
-
-def llamacpp_loader(
-    llm_adapter: LLMModelAdapter, model_params: LlamaCppModelParameters
-):
-    try:
-        from dbgpt.model.llm.llama_cpp.llama_cpp import LlamaCppModel
-    except ImportError as exc:
-        raise ValueError(
-            "Could not import python package: llama-cpp-python "
-            "Please install db-gpt llama support with "
-            "`cd $DB-GPT-DIR && pip install .[llama_cpp]` "
-            "or install llama-cpp-python with `pip install llama-cpp-python`"
-        ) from exc
-    model_path = model_params.model_path
-    model, tokenizer = LlamaCppModel.from_pretrained(model_path, model_params)
     return model, tokenizer

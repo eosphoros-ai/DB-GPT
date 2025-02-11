@@ -9,6 +9,17 @@ if TYPE_CHECKING:
 
 MISSING_DEFAULT_VALUE = "__MISSING_DEFAULT_VALUE__"
 
+_DEFAULT_PRIVACY_FIELDS = {
+    "password",
+    "token",
+    "key",
+    "secret",
+    "credential",
+    "api_key",
+    "api_secret",
+    "db_password",
+}
+
 
 @dataclass
 class ParameterDescription:
@@ -256,7 +267,9 @@ def _dict_to_command_args(obj: Dict, args_prefix: str = "--") -> List[str]:
     return args
 
 
-def _get_simple_privacy_field_value(obj, field_info):
+def _get_simple_privacy_field_value(
+    obj, field_info, sensitive_fields: Optional[set] = None
+):
     """Retrieve the value of a field from a dataclass instance, applying privacy rules
     if necessary.
 
@@ -285,10 +298,14 @@ def _get_simple_privacy_field_value(obj, field_info):
     p = Person("Alice", 30, "123-45-6789")
     print(_get_simple_privacy_field_value(p, Person.ssn))  # A******9
     """
+    if sensitive_fields is None:
+        sensitive_fields = _DEFAULT_PRIVACY_FIELDS
     tags = field_info.metadata.get("tags")
     tags = [] if not tags else tags.split(",")
     is_privacy = False
     if tags and "privacy" in tags:
+        is_privacy = True
+    elif field_info.name in sensitive_fields:
         is_privacy = True
     value = getattr(obj, field_info.name)
     if not is_privacy or not value:
@@ -302,7 +319,7 @@ def _get_simple_privacy_field_value(obj, field_info):
         return False
     # str
     if len(value) > 5:
-        return value[0] + "******" + value[-1]
+        return "".join(value[:2]) + "******" + "".join(value[-2:])
     return "******"
 
 

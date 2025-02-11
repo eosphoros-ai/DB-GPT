@@ -101,6 +101,9 @@ code = [
     "lyric-component-ts-transpiling>=0.1.6",
 ]
 
+llama_cpp = [
+    "llama-cpp-python"
+]
 
 [build-system]
 requires = ["hatchling"]

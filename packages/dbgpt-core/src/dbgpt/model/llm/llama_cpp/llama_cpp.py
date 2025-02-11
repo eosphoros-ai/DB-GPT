@@ -9,7 +9,9 @@ from typing import Dict
 import llama_cpp
 import torch
 
+from dbgpt.core import ModelOutput
 from dbgpt.model.parameter import LlamaCppModelParameters
+from dbgpt.model.utils.llm_utils import parse_model_request
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ def ban_eos_logits_processor(eos_token, input_ids, logits):
 def get_params(model_path: str, model_params: LlamaCppModelParameters) -> Dict:
     return {
         "model_path": model_path,
-        "n_ctx": model_params.max_context_size,
+        "n_ctx": model_params.context_length or 4096,
         "seed": model_params.seed,
         "n_threads": model_params.n_threads,
         "n_batch": model_params.n_batch,
@@ -105,47 +107,27 @@ class LlamaCppModel:
         return self.model.detokenize(tokens)
 
     def generate_streaming(self, params, context_len: int):
-        # LogitsProcessorList = llama_cpp_lib().LogitsProcessorList
-
-        # Read parameters
-        prompt = params["prompt"]
-        if self.verbose:
-            print(f"Prompt of model: \n{prompt}")
-
-        temperature = float(params.get("temperature", 1.0))
+        request = parse_model_request(params, default_model=params.get("model"))
+        messages = request.to_common_messages()
         repetition_penalty = float(params.get("repetition_penalty", 1.1))
-        top_p = float(params.get("top_p", 1.0))
         top_k = int(params.get("top_k", -1))  # -1 means disable
-        max_new_tokens = int(params.get("max_new_tokens", 2048))
-        echo = bool(params.get("echo", True))
-
-        max_src_len = context_len - max_new_tokens
         # Handle truncation
-        prompt = self.encode(prompt)
-        prompt = prompt[-max_src_len:]
-        prompt = self.decode(prompt).decode("utf-8")
-
-        # TODO Compared with the original llama model, the Chinese effect of llama.cpp
-        #  is very general, and it needs to be debugged
-        completion_chunks = self.model.create_completion(
-            prompt=prompt,
-            max_tokens=max_new_tokens,
-            temperature=temperature,
-            top_p=top_p,
+        completion_chunks = self.model.create_chat_completion(
+            messages=messages,
+            max_tokens=request.max_new_tokens,
+            temperature=request.temperature or 0.8,
+            top_p=request.top_p or 0.95,
             top_k=top_k,
             repeat_penalty=repetition_penalty,
-            # tfs_z=params['tfs'],
-            # mirostat_mode=int(params['mirostat_mode']),
-            # mirostat_tau=params['mirostat_tau'],
-            # mirostat_eta=params['mirostat_eta'],
             stream=True,
-            echo=echo,
             logits_processor=None,
         )
 
-        output = ""
-        for completion_chunk in completion_chunks:
-            text = completion_chunk["choices"][0]["text"]
-            output += text
-            # print(output)
-            yield output
+        text = ""
+        for r in completion_chunks:
+            if not r.get("choices"):
+                continue
+            if r["choices"][0]["delta"].get("content") is not None:
+                content = r["choices"][0]["delta"]["content"]
+                text += content
+                yield ModelOutput(text=text, error_code=0)

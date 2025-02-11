@@ -128,6 +128,10 @@ class ServiceWebParameters(BaseParameters):
         default=None,
         metadata={"help": _("The directories to search awel files, split by `,`")},
     )
+    new_web_ui: bool = field(
+        default=True,
+        metadata={"help": _("Whether to use the new web UI, default is True")},
+    )
 
 
 @dataclass

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
-from dbgpt.core import ModelRequest, ModelRequestContext
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
+from dbgpt.model.utils.llm_utils import parse_model_request  # noqa: F401
 from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
 if TYPE_CHECKING:
@@ -43,30 +43,3 @@ class ProxyModel:
             int: token count, -1 if failed
         """
         return self._tokenizer.count_token(messages, model_name)
-
-
-def parse_model_request(
-    params: Dict[str, Any], default_model: str, stream: bool = True
-) -> ModelRequest:
-    """Parse model request from params.
-
-    Args:
-        params (Dict[str, Any]): request params
-        default_model (str): default model name
-        stream (bool, optional): whether stream. Defaults to True.
-    """
-    context = ModelRequestContext(
-        stream=stream,
-        user_name=params.get("user_name"),
-        request_id=params.get("request_id"),
-    )
-    request = ModelRequest.build_request(
-        default_model,
-        messages=params["messages"],
-        temperature=params.get("temperature"),
-        context=context,
-        max_new_tokens=params.get("max_new_tokens"),
-        stop=params.get("stop"),
-        top_p=params.get("top_p"),
-    )
-    return request

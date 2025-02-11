@@ -4,7 +4,6 @@ from typing import List
 import requests
 
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
-from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 BAICHUAN_DEFAULT_MODEL = "Baichuan2-Turbo-192k"
@@ -67,30 +66,3 @@ def baichuan_generate_stream(
                         content = obj["choices"][0]["delta"].get("content")
                         text += content
                 yield text
-
-
-def main():
-    model_params = ProxyModelParameters(
-        model_name="not-used",
-        model_path="not-used",
-        proxy_server_url="not-used",
-        proxy_api_key="YOUR_BAICHUAN_API_KEY",
-        proxyllm_backend="Baichuan2-Turbo-192k",
-    )
-    final_text = ""
-    for part in baichuan_generate_stream(
-        model=ProxyModel(model_params=model_params),
-        params={
-            "messages": [
-                ModelMessage(
-                    role=ModelMessageRoleType.HUMAN, content="背诵《论语》第一章"
-                )
-            ]
-        },
-    ):
-        final_text = part
-    print(final_text)
-
-
-if __name__ == "__main__":
-    main()

@@ -63,9 +63,6 @@ class HFLLMDeployModelParameters(LLMDeployModelParameters):
             )
         },
     )
-    verbose: Optional[bool] = field(
-        default=None, metadata={"help": _("Whether to print verbose information.")}
-    )
     torch_dtype: Optional[str] = field(
         default=None,
         metadata={

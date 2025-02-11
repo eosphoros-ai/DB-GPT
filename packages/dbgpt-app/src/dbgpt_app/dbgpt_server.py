@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # fastapi import time cost about 0.05s
 from fastapi.staticfiles import StaticFiles
 
-from dbgpt._private.config import Config
 from dbgpt._version import version
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import (
@@ -27,7 +26,6 @@ from dbgpt.util.utils import (
     setup_logging,
 )
 from dbgpt_app.base import (
-    WebServerParameters,
     _create_model_start_listener,
     _migration_db_storage,
     server_init,
@@ -41,14 +39,6 @@ from dbgpt_serve.core import add_exception_handler
 logger = logging.getLogger(__name__)
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-
-CFG = Config()
-set_default_language(CFG.LANGUAGE)
-
-if CFG.USE_NEW_WEB_UI:
-    static_file_path = os.path.join(ROOT_PATH, "src", "dbgpt_app/static/web")
-else:
-    static_file_path = os.path.join(ROOT_PATH, "src", "dbgpt_app/static/old_web")
 
 app = create_app(
     title=_("DB-GPT Open API"),
@@ -92,7 +82,12 @@ def mount_routers(app: FastAPI):
     app.include_router(recommend_question_v1, prefix="/api", tags=["RecommendQuestion"])
 
 
-def mount_static_files(app: FastAPI):
+def mount_static_files(app: FastAPI, param: ApplicationConfig):
+    if param.service.web.new_web_ui:
+        static_file_path = os.path.join(ROOT_PATH, "src", "dbgpt_app/static/web")
+    else:
+        static_file_path = os.path.join(ROOT_PATH, "src", "dbgpt_app/static/old_web")
+
     os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
     app.mount(
         "/images",
@@ -114,20 +109,6 @@ def mount_static_files(app: FastAPI):
 add_exception_handler(app)
 
 
-def _get_webserver_params(args: List[str] = None):
-    from dbgpt.util.parameter_utils import EnvArgumentParser
-
-    parser = EnvArgumentParser()
-
-    env_prefix = "webserver_"
-    webserver_params: WebServerParameters = parser.parse_args_into_dataclass(
-        WebServerParameters,
-        env_prefixes=[env_prefix],
-        command_args=args,
-    )
-    return webserver_params
-
-
 def initialize_app(param: ApplicationConfig, args: List[str] = None):
     """Initialize app
     If you use gunicorn as a process manager, initialize_app can be invoke in
@@ -147,25 +128,8 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     setup_logging(
         "dbgpt", logging_level=log_config.level, logger_filename=logger_filename
     )
-
-    # model_name = param.model_name or CFG.LLM_MODEL
-    # model_name = param.models.default_llm
-    # param.model_name = model_name
-    # param.port = param.port or CFG.DBGPT_WEBSERVER_PORT
-    # if not param.port:
-    #     param.port = 5670
-
     print(param)
 
-    # embedding_model_name = CFG.EMBEDDING_MODEL
-    # embedding_model_path = EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-    # rerank_model_name = CFG.RERANK_MODEL
-    # rerank_model_path = None
-    # if rerank_model_name:
-    #     rerank_model_path = CFG.RERANK_MODEL_PATH or EMBEDDING_MODEL_CONFIG.get(
-    #         rerank_model_name
-    #     )
-    #
     server_init(param, system_app)
     mount_routers(app)
     model_start_listener = _create_model_start_listener(system_app)
@@ -184,14 +148,6 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         logger.info(
             "Model Unified Deployment Mode, run all services in the same process"
         )
-        # if not param.remote_embedding:
-        #     # Embedding model is running in the same process, set embedding_model_name
-        #     # and embedding_model_path to None
-        #     embedding_model_name, embedding_model_path = None, None
-        # if not param.remote_rerank:
-        #     # Rerank model is running in the same process, set rerank_model_name and
-        #     # rerank_model_path to None
-        #     rerank_model_name, rerank_model_path = None, None
         initialize_worker_manager_in_client(
             worker_params=param.generate_temp_model_worker_params(),
             models_config=param.models,
@@ -201,10 +157,9 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
             system_app=system_app,
         )
 
-        CFG.NEW_SERVER_MODE = True
     else:
         # MODEL_SERVER is controller address now
-        controller_addr = web_config.controller_addr or CFG.MODEL_SERVER
+        controller_addr = web_config.controller_addr
         initialize_worker_manager_in_client(
             worker_params=param.generate_temp_model_worker_params(),
             models_config=param.models,
@@ -215,9 +170,8 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
             start_listener=model_start_listener,
             system_app=system_app,
         )
-        CFG.SERVER_LIGHT_MODE = True
 
-    mount_static_files(app)
+    mount_static_files(app, param)
 
     # Before start, after on_init
     system_app.before_start()
@@ -282,7 +236,7 @@ def run_webserver(param: ApplicationConfig):
         run_uvicorn(param.service.web)
 
 
-def load_config() -> ApplicationConfig:
+def load_config(config_file: str = None) -> ApplicationConfig:
     from dbgpt.configs.model_config import ROOT_PATH as DBGPT_ROOT_PATH
     from dbgpt.model import scan_model_providers
     from dbgpt.util.configure import ConfigurationManager
@@ -294,13 +248,39 @@ def load_config() -> ApplicationConfig:
     # Register all model providers
     scan_model_providers()
 
-    cfg = ConfigurationManager.from_file(
-        os.path.join(DBGPT_ROOT_PATH, "configs", "dbgpt-default.toml")
-    )
+    if config_file is None:
+        config_file = os.path.join(DBGPT_ROOT_PATH, "configs", "dbgpt-siliconflow.toml")
+    elif not os.path.isabs(config_file):
+        # If config_file is a relative path, make it relative to DBGPT_ROOT_PATH
+        config_file = os.path.join(DBGPT_ROOT_PATH, config_file)
+
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"Configuration file not found: {config_file}")
+
+    logger.info(f"Loading configuration from: {config_file}")
+    cfg = ConfigurationManager.from_file(config_file)
     app_config = cfg.parse_config(ApplicationConfig, hook_section="hooks")
     return app_config
 
 
+def parse_args():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="DB-GPT Webserver")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default=None,
+        help="Path to the configuration file. Default: configs/dbgpt-siliconflow.toml",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    app_config = load_config()
+    # Parse command line arguments
+    args = parse_args()
+    # Load configuration with specified config file
+    app_config = load_config(args.config)
+    set_default_language(app_config.system.language)
     run_webserver(app_config)

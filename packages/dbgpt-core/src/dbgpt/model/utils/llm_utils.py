@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding:utf-8 -*-
-
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import cachetools
 
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG
+from dbgpt.core import ModelRequest, ModelRequestContext
 from dbgpt.model.base import SupportedModel
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 
@@ -70,3 +68,30 @@ def _list_supported_models(
             pass
         ret.append(model)
     return ret
+
+
+def parse_model_request(
+    params: Dict[str, Any], default_model: str, stream: bool = True
+) -> ModelRequest:
+    """Parse model request from params.
+
+    Args:
+        params (Dict[str, Any]): request params
+        default_model (str): default model name
+        stream (bool, optional): whether stream. Defaults to True.
+    """
+    context = ModelRequestContext(
+        stream=stream,
+        user_name=params.get("user_name"),
+        request_id=params.get("request_id"),
+    )
+    request = ModelRequest.build_request(
+        default_model,
+        messages=params["messages"],
+        temperature=params.get("temperature"),
+        context=context,
+        max_new_tokens=params.get("max_new_tokens"),
+        stop=params.get("stop"),
+        top_p=params.get("top_p"),
+    )
+    return request
