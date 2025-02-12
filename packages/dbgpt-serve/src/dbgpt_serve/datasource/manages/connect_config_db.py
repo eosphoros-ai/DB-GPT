@@ -1,5 +1,6 @@
 """DB Model for connect_config."""
 
+import json
 import logging
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
@@ -170,6 +171,7 @@ class ConnectConfigDao(BaseDao):
         db_user: str = "",
         db_pwd: str = "",
         comment: str = "",
+        ext_config: Optional[str] = None,
     ):
         """Update db connect info."""
         old_db_conf = self.get_db_config(db_name)
@@ -271,6 +273,9 @@ class ConnectConfigDao(BaseDao):
         request_dict = (
             request.dict() if isinstance(request, DatasourceServeRequest) else request
         )
+        ext_config = request_dict.get("ext_config")
+        if ext_config and isinstance(ext_config, dict):
+            request_dict["ext_config"] = json.dumps(ext_config, ensure_ascii=False)
         entity = ConnectConfigEntity(**request_dict)
         return entity
 
@@ -283,6 +288,9 @@ class ConnectConfigDao(BaseDao):
         Returns:
             REQ: The request
         """
+        ext_config = entity.ext_config
+        if ext_config:
+            ext_config = json.loads(ext_config)
         return DatasourceServeRequest(
             id=entity.id,
             db_type=entity.db_type,
@@ -293,6 +301,7 @@ class ConnectConfigDao(BaseDao):
             db_user=entity.db_user,
             db_pwd=entity.db_pwd,
             comment=entity.comment,
+            ext_config=ext_config,
         )
 
     def to_response(self, entity: ConnectConfigEntity) -> DatasourceServeResponse:
@@ -304,6 +313,19 @@ class ConnectConfigDao(BaseDao):
         Returns:
             REQ: The request
         """
+        ext_config = entity.ext_config
+        if ext_config:
+            ext_config = json.loads(ext_config)
+        gmt_created = (
+            entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+            if entity.gmt_created
+            else None
+        )
+        gmt_modified = (
+            entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+            if entity.gmt_modified
+            else None
+        )
         return DatasourceServeResponse(
             id=entity.id,
             db_type=entity.db_type,
@@ -314,4 +336,7 @@ class ConnectConfigDao(BaseDao):
             db_user=entity.db_user,
             db_pwd=entity.db_pwd,
             comment=entity.comment,
+            ext_config=ext_config,
+            gmt_created=gmt_created,
+            gmt_modified=gmt_modified,
         )

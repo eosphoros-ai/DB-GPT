@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import List, Optional, Union
 
@@ -7,6 +8,7 @@ from dbgpt._private.config import Config
 from dbgpt._private.pydantic import model_to_dict
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory
@@ -22,6 +24,7 @@ from dbgpt_serve.rag.connector import VectorStoreConnector
 
 from ..api.schemas import (
     DatasourceCreateRequest,
+    DatasourceQueryResponse,
     DatasourceServeRequest,
     DatasourceServeResponse,
 )
@@ -94,7 +97,7 @@ class Service(
 
     def create(
         self, request: Union[DatasourceCreateRequest, DatasourceServeRequest]
-    ) -> DatasourceServeResponse:
+    ) -> DatasourceQueryResponse:
         """Create a new Datasource entity
 
         Args:
@@ -103,21 +106,41 @@ class Service(
                 deprecated.
 
         Returns:
-            DatasourceServeResponse: The response
+            DatasourceQueryResponse: The response
         """
-        datasource = self._dao.get_by_names(request.db_name)
+        str_db_type = (
+            request.type
+            if isinstance(request, DatasourceCreateRequest)
+            else request.db_type
+        )
+        if isinstance(request, DatasourceCreateRequest):
+            connector_params: BaseDatasourceParameters = (
+                self.datasource_manager._create_parameters(request)
+            )
+            persisted_state = connector_params.persisted_state()
+        else:
+            persisted_state = model_to_dict(request)
+        if "ext_config" in persisted_state and isinstance(
+            persisted_state["ext_config"], dict
+        ):
+            persisted_state["ext_config"] = json.dumps(
+                persisted_state["ext_config"], ensure_ascii=False
+            )
+        db_name = persisted_state.get("db_name")
+        datasource = self._dao.get_by_names(db_name)
         if datasource:
             raise HTTPException(
                 status_code=400,
-                detail=f"datasource name:{request.db_name} already exists",
+                detail=f"datasource name:{db_name} already exists",
             )
         try:
-            db_type = DBType.of_db_type(request.db_type)
+            db_type = DBType.of_db_type(str_db_type)
             if not db_type:
                 raise HTTPException(
-                    status_code=400, detail=f"Unsupported Db Type, {request.db_type}"
+                    status_code=400, detail=f"Unsupported Db Type, {str_db_type}"
                 )
-            res = self._dao.create(request)
+
+            res = self._dao.create(persisted_state)
 
             # async embedding
             executor = self._system_app.get_component(
@@ -125,38 +148,58 @@ class Service(
             ).create()  # type: ignore
             executor.submit(
                 self._db_summary_client.db_summary_embedding,
-                request.db_name,
-                request.db_type,
+                db_name,
+                str_db_type,
             )
         except Exception as e:
             raise ValueError("Add db connect info error!" + str(e))
-        return res
+        return self._to_query_response(res)
 
-    def update(self, request: DatasourceServeRequest) -> DatasourceServeResponse:
+    def update(
+        self, request: Union[DatasourceCreateRequest, DatasourceServeRequest]
+    ) -> DatasourceQueryResponse:
         """Create a new Datasource entity
 
         Args:
-            request (DatasourceServeRequest): The request
+            request (Union[DatasourceCreateRequest, DatasourceServeRequest]): The
+                request to create a new Datasource entity. DatasourceServeRequest is
+                deprecated.
 
         Returns:
-            DatasourceServeResponse: The response
+            DatasourceQueryResponse: The response
         """
-        datasources = self._dao.get_by_names(request.db_name)
+        str_db_type = (
+            request.type
+            if isinstance(request, DatasourceCreateRequest)
+            else request.db_type
+        )
+        if isinstance(request, DatasourceCreateRequest):
+            connector_params: BaseDatasourceParameters = (
+                self.datasource_manager._create_parameters(request)
+            )
+            persisted_state = connector_params.persisted_state()
+        else:
+            persisted_state = model_to_dict(request)
+        if "ext_config" in persisted_state and isinstance(
+            persisted_state["ext_config"], dict
+        ):
+            persisted_state["ext_config"] = json.dumps(
+                persisted_state["ext_config"], ensure_ascii=False
+            )
+        db_name = persisted_state.get("db_name")
+        if not db_name:
+            raise HTTPException(status_code=400, detail=f"datasource name is required")
+        datasources = self._dao.get_by_names(db_name)
         if datasources is None:
             raise HTTPException(
                 status_code=400,
-                detail=f"there is no datasource name:{request.db_name} exists",
+                detail=f"there is no datasource name:{db_name} exists",
             )
-        db_config = DBConfig(**model_to_dict(request))
-        if self.datasource_manager.edit_db(db_config):
-            return DatasourceServeResponse(**model_to_dict(db_config))
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"update datasource name:{request.db_name} failed",
-            )
+        update_req = DatasourceServeRequest(**persisted_state)
+        res = self._dao.update({"id": datasources.id}, update_req)
+        return self._to_query_response(res)
 
-    def get(self, datasource_id: str) -> Optional[DatasourceServeResponse]:
+    def get(self, datasource_id: str) -> Optional[DatasourceQueryResponse]:
         """Get a Flow entity
 
         Args:
@@ -165,7 +208,10 @@ class Service(
         Returns:
             DatasourceServeResponse: The response
         """
-        return self._dao.get_one({"id": datasource_id})
+        res = self._dao.get_one({"id": datasource_id})
+        if not res:
+            return None
+        return self._to_query_response(res)
 
     def delete(self, datasource_id: str) -> Optional[DatasourceServeResponse]:
         """Delete a Flow entity
@@ -188,15 +234,35 @@ class Service(
             self._dao.delete({"id": datasource_id})
         return db_config
 
-    def list(self) -> List[DatasourceServeResponse]:
+    def get_list(self, db_type: Optional[str] = None) -> List[DatasourceQueryResponse]:
         """List the Flow entities.
 
         Returns:
             List[DatasourceServeResponse]: The list of responses
         """
+        query_request = {}
+        if db_type:
+            query_request["db_type"] = db_type
+        query_list = self.dao.get_list(query_request)
+        results = []
+        for item in query_list:
+            results.append(self._to_query_response(item))
+        return results
 
-        db_list = self.datasource_manager.get_db_list()
-        return [DatasourceServeResponse(**db) for db in db_list]
+    def _to_query_response(
+        self, res: DatasourceServeResponse
+    ) -> DatasourceQueryResponse:
+        param_cls = self.datasource_manager._get_param_cls(res.db_type)
+        param = param_cls.from_persisted_state(model_to_dict(res))
+        param_dict = param.to_dict()
+        return DatasourceQueryResponse(
+            type=res.db_type,
+            params=param_dict,
+            description=res.comment,
+            id=res.id,
+            gmt_created=res.gmt_created,
+            gmt_modified=res.gmt_modified,
+        )
 
     def datasource_types(self) -> ResourceTypes:
         """List the datasource types.

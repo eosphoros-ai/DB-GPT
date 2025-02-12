@@ -1,4 +1,9 @@
+import functools
+import logging
+import warnings
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def PublicAPI(*args, **kwargs):
@@ -104,6 +109,106 @@ def immutable(func):
     """
     _modify_mutability(func, mutability=False)
     return func
+
+
+def Deprecated(
+    reason: Optional[str] = None,
+    version: Optional[str] = None,
+    remove_version: Optional[str] = None,
+    alternative: Optional[str] = None,
+):
+    """Decorator to mark a function or class as deprecated.
+
+    Args:
+        reason: The reason why this API is deprecated.
+        version: The version in which this API was deprecated.
+        remove_version: The version in which this API will be removed.
+        alternative: The alternative API that should be used instead.
+
+    Examples:
+        >>> from dbgpt.util.annotations import Deprecated
+        >>> @Deprecated(reason="Use bar() instead", version="0.4.0")
+        ... def foo():
+        ...     pass
+
+        >>> @Deprecated(
+        ...     reason="API redesigned",
+        ...     version="0.4.0",
+        ...     remove_version="0.5.0",
+        ...     alternative="new_function()",
+        ... )
+        ... def old_function():
+        ...     pass
+    """
+
+    def decorator(obj):
+        if isinstance(obj, type):
+            categoria = "class"
+            # Add a new __new__ method to the class to trigger the warning
+            original_new = obj.__new__
+
+            def deprecated_new(cls, *args, **kwargs):
+                msg = _build_message(
+                    categoria,
+                    obj.__name__,
+                    reason,
+                    version,
+                    remove_version,
+                    alternative,
+                )
+                warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+                logger.warning(msg)  # Log the warning
+                if original_new is not object.__new__:
+                    return original_new(cls, *args, **kwargs)
+                return super(obj, cls).__new__(cls)
+
+            obj.__new__ = staticmethod(deprecated_new)
+        else:
+            categoria = "function"
+
+        msg = f"Call to deprecated {categoria} {obj.__name__}."
+        if reason:
+            msg += f" {reason}"
+        if version:
+            msg += f" Deprecated since version {version}."
+        if remove_version:
+            msg += f" Will be removed in version {remove_version}."
+        if alternative:
+            msg += f" Use {alternative} instead."
+
+        if not isinstance(obj, type):
+
+            @functools.wraps(obj)
+            def wrapper(*args, **kwargs):
+                warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+                logger.warning(msg)  # Log the warning
+                return obj(*args, **kwargs)
+
+            return wrapper
+
+        return obj
+
+    def _build_message(categoria, name, reason, version, remove_version, alternative):
+        msg = f"Call to deprecated {categoria} {name}."
+        if reason:
+            msg += f" {reason}"
+        if version:
+            msg += f" Deprecated since version {version}."
+        if remove_version:
+            msg += f" Will be removed in version {remove_version}."
+        if alternative:
+            msg += f" Use {alternative} instead."
+        return msg
+
+    # Support the case where the decorator is used without parentheses
+    if callable(reason):
+        # @Deprecated
+        fn = reason
+        reason = None
+        return decorator(fn)
+
+    # @Deprecated() or @Deprecated(reason="xxx")
+    return decorator
 
 
 def _modify_docstring(obj, message: Optional[str] = None):

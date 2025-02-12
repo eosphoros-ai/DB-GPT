@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Type
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata
 from dbgpt.datasource.base import BaseConnector, BaseDatasourceParameters
+from dbgpt.util.annotations import Deprecated
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 from dbgpt_ext.datasource.schema import DBType
@@ -95,6 +96,9 @@ class ConnectorManager(BaseComponent):
             subclasses += self._get_all_subclasses(subclass)
         return subclasses
 
+    @Deprecated(
+        version="0.7.0", remove_version="0.8.0", alternative="get_supported_types"
+    )
     def get_all_completed_types(self) -> List[DBType]:
         """Get all completed types."""
         chat_classes = self._get_all_subclasses(BaseConnector)  # type: ignore
@@ -193,10 +197,23 @@ class ConnectorManager(BaseComponent):
         param_cls = cls.param_class()
         return param_cls(**request.params)
 
+    def _get_param_cls(self, db_type: str) -> Type[BaseDatasourceParameters]:
+        """Get param class."""
+        support_types = self._supported_types()
+        if db_type not in support_types:
+            raise ValueError("Unsupported Db Type！" + db_type)
+        cls = support_types[db_type]
+        return cls.param_class()
+
     def create_connector(self, param: BaseDatasourceParameters) -> BaseConnector:
         """Create a new connector instance."""
         return param.create_connector()
 
+    @Deprecated(
+        version="0.7.0",
+        remove_version="0.8.0",
+        alternative="test_connection",
+    )
     def test_connect(self, db_info: DBConfig) -> BaseConnector:
         """Test connectivity.
 
@@ -257,10 +274,18 @@ class ConnectorManager(BaseComponent):
         """Get db list."""
         return self.storage.get_db_list(db_name, user_id)
 
+    @Deprecated(
+        version="0.7.0",
+        remove_version="0.8.0",
+    )
     def delete_db(self, db_name: str):
         """Delete db connect info."""
         return self.storage.delete_db(db_name)
 
+    @Deprecated(
+        version="0.7.0",
+        remove_version="0.8.0",
+    )
     def edit_db(self, db_info: DBConfig):
         """Edit db connect info."""
         return self.storage.update_db_info(
@@ -282,6 +307,10 @@ class ConnectorManager(BaseComponent):
         executor.submit(self.db_summary_client.db_summary_embedding, db_name, db_type)
         return True
 
+    @Deprecated(
+        version="0.7.0",
+        remove_version="0.8.0",
+    )
     def add_db(self, db_info: DBConfig, user_id: Optional[str] = None):
         """Add db connect info.
 
