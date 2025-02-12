@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from dbgpt.core import Embeddings, RerankEmbeddings
+from dbgpt.core import Embeddings, ModelMetadata, RerankEmbeddings
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
@@ -13,7 +13,7 @@ from dbgpt.model.adapter.template import (
     ConversationAdapterFactory,
     get_conv_template,
 )
-from dbgpt.model.base import ModelType
+from dbgpt.model.base import ModelType, SupportedModel
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +112,7 @@ class LLMModelAdapter(ABC):
     support_4bit: bool = False
     support_8bit: bool = False
     support_system_message: bool = True
+    _supported_models: List[ModelMetadata] = []
 
     def __repr__(self) -> str:
         return (
@@ -122,7 +123,6 @@ class LLMModelAdapter(ABC):
     def __str__(self):
         return self.__repr__()
 
-    @abstractmethod
     def new_adapter(self, **kwargs) -> "LLMModelAdapter":
         """Create a new adapter instance
 
@@ -132,6 +132,15 @@ class LLMModelAdapter(ABC):
         Returns:
             LLMModelAdapter: The new adapter instance
         """
+        new_obj = self.__class__()
+        new_obj.model_name = self.model_name
+        new_obj.model_path = self.model_path
+        new_obj.conv_factory = self.conv_factory
+        new_obj.support_4bit = self.support_4bit
+        new_obj.support_8bit = self.support_8bit
+        new_obj.support_system_message = self.support_system_message
+        new_obj._supported_models = self._supported_models
+        return new_obj
 
     def use_fast_tokenizer(self) -> bool:
         """Whether use a [fast Rust-based tokenizer]
@@ -154,14 +163,6 @@ class LLMModelAdapter(ABC):
         Returns:
             Type[BaseModelParameters]: The startup parameters instance of the model
         """
-        raise NotImplementedError("v0.7.0 not support model_param_class now")
-        # """Get the startup parameters instance of the model"""
-        # model_type = model_type if model_type else self.model_type()
-        # if model_type == ModelType.LLAMA_CPP:
-        #     return LlamaCppModelParameters
-        # elif model_type == ModelType.PROXY:
-        #     return ProxyModelParameters
-        # return ModelParameters
 
     def match(
         self,
@@ -177,6 +178,10 @@ class LLMModelAdapter(ABC):
             model_path (Optional[str], optional): The path of model. Defaults to None.
         """
         return False
+
+    def supported_models(self) -> List[ModelMetadata]:
+        """Return the supported models."""
+        return self._supported_models
 
     def support_quantization_4bit(self) -> bool:
         """Whether the model adapter can load 4bit model
@@ -644,6 +649,7 @@ embedding_adapters: List[AdapterEntry] = []
 def register_model_adapter(
     model_adapter_cls: Type[LLMModelAdapter],
     match_funcs: List[Callable[[str, str, str], bool]] = None,
+    supported_models: List[ModelMetadata] = None,
 ) -> None:
     """Register a model adapter.
 
@@ -651,8 +657,12 @@ def register_model_adapter(
         model_adapter_cls (Type[LLMModelAdapter]): The model adapter class.
         match_funcs (List[Callable[[str, str, str], bool]], optional): The match
             functions. Defaults to None.
+        supported_models (List[ModelMetadata], optional): The supported models.
     """
-    model_adapters.append(AdapterEntry(model_adapter_cls(), match_funcs))
+    adapter = model_adapter_cls()
+    if supported_models:
+        adapter._supported_models = supported_models
+    model_adapters.append(AdapterEntry(adapter, match_funcs))
 
 
 def get_model_adapter(
@@ -698,6 +708,42 @@ def get_model_adapter(
             new_adapter.conv_factory = conv_factory
         return new_adapter
     return None
+
+
+def get_supported_models(worker_type: str) -> List[SupportedModel]:
+    """Get the supported models."""
+    models = []
+    from dbgpt.util.parameter_utils import _get_parameter_descriptions
+
+    for adapter_entry in model_adapters[::-1]:
+        model_adapter = adapter_entry.model_adapter
+        try:
+            params_cls = model_adapter.model_param_class()
+            provider = params_cls.provider or model_adapter.model_type()
+            is_proxy = provider == ModelType.PROXY or provider.startswith(
+                ModelType.PROXY
+            )
+            for m in model_adapter.supported_models():
+                real_models = m.model if isinstance(m.model, list) else [m.model]
+                for model_name in real_models:
+                    doc_title = m.label or model_name
+                    description = m.description or ""
+                    if m.link:
+                        description += f"\n[More Details]({m.link})"
+                    description = "## " + doc_title + "\n\n" + description
+                    sm = SupportedModel(
+                        model=model_name,
+                        worker_type=worker_type,
+                        provider=provider,
+                        proxy=is_proxy,
+                        enabled=True,
+                        params=_get_parameter_descriptions(params_cls),
+                        description=description,
+                    )
+                    models.append(sm)
+        except Exception as e:
+            logger.warning(f"{model_adapter} get supported models failed: {e}")
+    return models
 
 
 def register_embedding_adapter(

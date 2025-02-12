@@ -3,7 +3,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Type
 
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
-from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
+from dbgpt.model.adapter.model_metadata import COMMON_HF_MODELS
 from dbgpt.model.adapter.template import ConversationAdapter, ConversationAdapterFactory
 from dbgpt.model.base import ModelType
 from dbgpt.util.i18n_utils import _
@@ -396,11 +397,19 @@ class VLLMDeployModelParameters(LLMDeployModelParameters):
 class VLLMModelAdapterWrapper(LLMModelAdapter):
     """Wrapping vllm engine"""
 
-    def __init__(self, conv_factory: ConversationAdapterFactory):
+    def __init__(self, conv_factory: Optional[ConversationAdapterFactory] = None):
+        if not conv_factory:
+            from dbgpt.model.adapter.model_adapter import (
+                DefaultConversationAdapterFactory,
+            )
+
+            conv_factory = DefaultConversationAdapterFactory()
         self.conv_factory = conv_factory
 
     def new_adapter(self, **kwargs) -> "VLLMModelAdapterWrapper":
-        return VLLMModelAdapterWrapper(self.conv_factory)
+        new_obj = super().new_adapter(**kwargs)
+        new_obj.conv_factory = self.conv_factory
+        return new_obj  # type: ignore
 
     def model_type(self) -> str:
         return ModelType.VLLM
@@ -446,3 +455,6 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
 
     def __str__(self) -> str:
         return "{}.{}".format(self.__class__.__module__, self.__class__.__name__)
+
+
+register_model_adapter(VLLMModelAdapterWrapper, supported_models=COMMON_HF_MODELS)

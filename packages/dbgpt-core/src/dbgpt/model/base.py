@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
@@ -14,7 +14,7 @@ class ModelType:
 
     HF = "hf"
     LLAMA_CPP = "llama.cpp"
-    LLAMA_CPP_SERVER = "llama_cpp_server"
+    LLAMA_CPP_SERVER = "llama.cpp.server"
     PROXY = "proxy"
     VLLM = "vllm"
     # TODO, support more model type
@@ -70,13 +70,34 @@ class WorkerApplyOutput:
 
 @dataclass
 class SupportedModel:
-    model: str
-    path: str
-    worker_type: str
-    path_exist: bool
-    proxy: bool
-    enabled: bool
-    params: List[ParameterDescription]
+    model: str = field(metadata={"help": "The name of the model"})
+    worker_type: str = field(
+        metadata={"help": "The type of the worker, llm or tex2vec"}
+    )
+    provider: Optional[str] = field(
+        default="hf",
+        metadata={
+            "help": "The provider of the model. eg. hf, vllm, llama.cpp, proxy/openai"
+        },
+    )
+    path: Optional[str] = field(
+        default=None, metadata={"help": "The path of the model"}
+    )
+    path_exist: bool = field(
+        default=False, metadata={"help": "Whether the path exists"}
+    )
+    proxy: bool = field(
+        default=False, metadata={"help": "Whether the model is a proxy"}
+    )
+    enabled: bool = field(
+        default=False, metadata={"help": "Whether the model is enabled"}
+    )
+    params: List[ParameterDescription] = field(
+        default_factory=list, metadata={"help": "The parameters of the model"}
+    )
+    description: Optional[str] = field(
+        default=None, metadata={"help": "The description of the model"}
+    )
 
     @classmethod
     def from_dict(cls, model_data: Dict) -> "SupportedModel":
@@ -106,8 +127,12 @@ class WorkerSupportedModel:
 class FlatSupportedModel(SupportedModel):
     """For web"""
 
-    host: str
-    port: int
+    host: Optional[str] = field(
+        default=None, metadata={"help": "The host of the model"}
+    )
+    port: Optional[int] = field(
+        default=None, metadata={"help": "The port of the model"}
+    )
 
     @staticmethod
     def from_supports(

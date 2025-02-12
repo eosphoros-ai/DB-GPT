@@ -3,7 +3,13 @@ from concurrent.futures import Executor
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
 
-from dbgpt.core import MessageConverter, ModelMessage, ModelOutput, ModelRequest
+from dbgpt.core import (
+    MessageConverter,
+    ModelMessage,
+    ModelMetadata,
+    ModelOutput,
+    ModelRequest,
+)
 from dbgpt.core.interface.message import parse_model_messages
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
@@ -16,7 +22,7 @@ from dbgpt.util.i18n_utils import _
 
 from .chatgpt import OpenAICompatibleDeployModelParameters
 
-GEMINI_DEFAULT_MODEL = "gemini-pro"
+GEMINI_DEFAULT_MODEL = "gemini-2.0-flash"
 
 safety_settings = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
@@ -113,7 +119,7 @@ class GeminiLLMClient(ProxyLLMClient):
         model: Optional[str] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
-        model_alias: Optional[str] = "gemini_proxyllm",
+        model_alias: Optional[str] = "gemini-2.0-flash",
         context_length: Optional[int] = 8192,
         executor: Optional[Executor] = None,
     ):
@@ -213,4 +219,29 @@ class GeminiLLMClient(ProxyLLMClient):
             )
 
 
-register_proxy_model_adapter(GeminiLLMClient)
+register_proxy_model_adapter(
+    GeminiLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=["gemini-2.0-flash", "gemini-2.0-flash-lite-preview-02-05"],
+            context_length=1048576,
+            max_output_length=8 * 1024,
+            description="Gemini-2.0 by Google",
+            link="https://ai.google.dev/gemini-api/docs/models/gemini#gemini-2.0-flash",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gemini-1.5-flash-latest",
+                "gemini-1.5-flash",
+                "gemini-1.5-flash-001",
+                "gemini-1.5-flash-002",
+            ],
+            context_length=1048576,
+            max_output_length=8 * 1024,
+            description="Gemini-1.5 by Google",
+            link="https://ai.google.dev/gemini-api/docs/models/gemini#gemini-1.5-flash",
+            function_calling=True,
+        ),
+    ],
+)

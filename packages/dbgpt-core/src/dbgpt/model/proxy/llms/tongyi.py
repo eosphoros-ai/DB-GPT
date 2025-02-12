@@ -3,7 +3,7 @@ from concurrent.futures import Executor
 from dataclasses import dataclass, field
 from typing import Iterator, Optional, Type, Union
 
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
+from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
@@ -148,4 +148,32 @@ class TongyiLLMClient(ProxyLLMClient):
             )
 
 
-register_proxy_model_adapter(TongyiLLMClient)
+register_proxy_model_adapter(
+    TongyiLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=["qwen-max-latest", "qwen-max-2025-01-25", "qwen-max"],
+            context_length=32 * 1024,
+            description="Qwen Max by Qwen",
+            link="https://bailian.console.aliyun.com/#/model-market/detail/qwen-max-latest",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="deepseek-r1",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-R1 by DeepSeek",
+            link="https://bailian.console.aliyun.com/#/model-market/detail/deepseek-r1",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="deepseek-v3",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-R1 by DeepSeek",
+            link="https://bailian.console.aliyun.com/#/model-market/detail/deepseek-v3",
+            function_calling=True,
+        ),
+        # More models see: https://bailian.console.aliyun.com/#/model-market
+    ],
+)

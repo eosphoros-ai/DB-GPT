@@ -1124,6 +1124,9 @@ framework = [
 llama-cpp = [
     { name = "llama-cpp-python" },
 ]
+llama-cpp-server = [
+    { name = "llama-cpp-server-py" },
+]
 simple-framework = [
     { name = "cloudpickle" },
     { name = "duckdb" },
@@ -1166,6 +1169,7 @@ requires-dist = [
     { name = "jinja2", marker = "extra == 'simple-framework'" },
     { name = "jsonschema", marker = "extra == 'framework'" },
     { name = "llama-cpp-python", marker = "extra == 'llama-cpp'" },
+    { name = "llama-cpp-server-py", marker = "extra == 'llama-cpp-server'" },
     { name = "lyric-component-ts-transpiling", marker = "extra == 'code'", specifier = ">=0.1.6" },
     { name = "lyric-js-worker", marker = "extra == 'code'", specifier = ">=0.1.6" },
     { name = "lyric-py", marker = "extra == 'code'", specifier = ">=0.1.6" },
@@ -3143,6 +3147,21 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a6/38/7a47b1fb1d83eaddd86ca8ddaf20f141cbc019faf7b425283d8e5ef710e5/llama_cpp_python-0.3.7.tar.gz", hash = "sha256:0566a0dcc0f38005c4093309a87f67c2452449522e3e17e15cd735a62957894c", size = 66715891 }
+
+[[package]]
+name = "llama-cpp-server-py"
+version = "0.1.2"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "llama-cpp-server-py-core" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/45/e8/e4b7e5fdcfe56c97143dedb2b7f503df5675828dfb8ce58a6d8487bc370f/llama_cpp_server_py-0.1.2.tar.gz", hash = "sha256:295b7283e214f75c27ab6d40e218b9356342d1baabc2665aa9ef1f23f9a60905", size = 758 }
+
+[[package]]
+name = "llama-cpp-server-py-core"
+version = "0.1.2"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e9/af/068376aa50a4312f67121b06f3ff360c98a9692b5b7e99f3ea7e41989512/llama_cpp_server_py_core-0.1.2.tar.gz", hash = "sha256:5d1ca66d351286c7995ca47c4aaa7cb8d117120a35cfb52d97b5b45f34c7a9dc", size = 33850015 }
 
 [[package]]
 name = "lsprotocol"

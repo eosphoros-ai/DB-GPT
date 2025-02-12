@@ -11,6 +11,7 @@ from dbgpt.core.interface.message import StorageConversation
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.util import get_or_create_event_loop
+from dbgpt.util.annotations import Deprecated
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.retry import async_retry
 from dbgpt.util.tracer import root_tracer, trace
@@ -236,7 +237,6 @@ class BaseChat(ABC):
         node_input = ChatComposerInput(
             messages=self.history_messages, prompt_dict=input_values
         )
-        # llm_messages = self.generate_llm_messages()
         model_request: ModelRequest = await node.call(call_data=node_input)
         model_request.context.cache_enable = self.model_cache_enable
         return model_request
@@ -360,6 +360,7 @@ class BaseChat(ABC):
         )
         return ai_response_text, view_message.replace("\n", "\\n")
 
+    @Deprecated(version="0.7.0", remove_version="0.8.0")
     async def get_llm_response(self):
         payload = await self._build_model_request()
         logger.info(f"Request: \n{payload}")
@@ -428,50 +429,6 @@ class BaseChat(ABC):
             if message.type == "view":
                 return message.content
         return None
-
-    async def prompt_context_token_adapt(self, prompt) -> str:
-        """prompt token adapt according to llm max context length"""
-        model_metadata = await self.worker_manager.get_model_metadata(
-            {"model": self.llm_model}
-        )
-        current_token_count = await self.worker_manager.count_token(
-            {"model": self.llm_model, "prompt": prompt}
-        )
-        if current_token_count == -1:
-            logger.warning(
-                "tiktoken not installed, please `pip install tiktoken` first"
-            )
-        template_define_token_count = 0
-        if len(self.prompt_template.template_define) > 0:
-            template_define_token_count = await self.worker_manager.count_token(
-                {
-                    "model": self.llm_model,
-                    "prompt": self.prompt_template.template_define,
-                }
-            )
-            current_token_count += template_define_token_count
-        if (
-            current_token_count + self.prompt_template.max_new_tokens
-        ) > model_metadata.context_length:
-            prompt = prompt[
-                : (
-                    model_metadata.context_length
-                    - self.prompt_template.max_new_tokens
-                    - template_define_token_count
-                )
-            ]
-        return prompt
-
-    def generate(self, p) -> str:
-        """
-        generate context for LLM input
-        Args:
-            p:
-
-        Returns:
-
-        """
-        pass
 
     def _parse_prompt_define_response(self, prompt_define_response: Any) -> Any:
         if not prompt_define_response:

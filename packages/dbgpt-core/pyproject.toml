@@ -104,6 +104,9 @@ code = [
 llama_cpp = [
     "llama-cpp-python"
 ]
+llama_cpp_server = [
+    "llama-cpp-server-py"
+]
 
 [build-system]
 requires = ["hatchling"]

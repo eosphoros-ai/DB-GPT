@@ -3,7 +3,7 @@ from concurrent.futures import Executor
 from dataclasses import dataclass, field
 from typing import Iterator, Optional, Type, Union
 
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
+from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
@@ -125,4 +125,25 @@ class OllamaLLMClient(ProxyLLMClient):
             )
 
 
-register_proxy_model_adapter(OllamaLLMClient)
+register_proxy_model_adapter(
+    OllamaLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model="deepseek-v3",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-V3 by DeepSeek",
+            link="https://ollama.com/library/deepseek-v3",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="deepseek-r1:671b",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-R1 by DeepSeek",
+            link="https://ollama.com/library/deepseek-r1",
+            function_calling=True,
+        ),
+        # More models see: https://ollama.com/search
+    ],
+)

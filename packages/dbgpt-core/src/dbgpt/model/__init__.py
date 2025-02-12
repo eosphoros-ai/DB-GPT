@@ -26,7 +26,12 @@ def scan_model_providers():
     config = ScannerConfig(
         module_path="dbgpt.model.adapter",
         base_class=LLMDeployModelParameters,
-        specific_files=["vllm_adapter", "hf_adapter", "llama_cpp_py_adapter"],
+        specific_files=[
+            "vllm_adapter",
+            "hf_adapter",
+            "llama_cpp_adapter",
+            "llama_cpp_py_adapter",
+        ],
     )
     config_llms = ScannerConfig(
         module_path="dbgpt.model.proxy.llms",

@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
+from dbgpt.core import ModelMetadata
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -136,4 +137,24 @@ class DeepseekLLMClient(OpenAILLMClient):
         return deepseek_generate_stream
 
 
-register_proxy_model_adapter(DeepseekLLMClient)
+register_proxy_model_adapter(
+    DeepseekLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model="deepseek-chat",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-V3 by DeepSeek",
+            link="https://api-docs.deepseek.com/news/news1226",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="deepseek-reasoner",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-R1 by DeepSeek",
+            link="https://api-docs.deepseek.com/news/news250120",
+            function_calling=True,
+        ),
+    ],
+)

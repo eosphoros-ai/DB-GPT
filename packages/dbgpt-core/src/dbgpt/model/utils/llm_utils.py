@@ -3,9 +3,9 @@ from typing import Any, Dict, List
 
 import cachetools
 
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG
 from dbgpt.core import ModelRequest, ModelRequestContext
 from dbgpt.model.base import SupportedModel
+from dbgpt.util.annotations import Deprecated
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 
 
@@ -25,13 +25,19 @@ def is_partial_stop(output: str, stop_str: str):
 
 @cachetools.cached(cachetools.TTLCache(maxsize=100, ttl=60 * 5))
 def list_supported_models():
+    from dbgpt.model.adapter.base import get_supported_models
     from dbgpt.model.parameter import WorkerType
 
-    models = _list_supported_models(WorkerType.LLM.value, LLM_MODEL_CONFIG)
-    models += _list_supported_models(WorkerType.TEXT2VEC.value, EMBEDDING_MODEL_CONFIG)
+    # models += _list_supported_models(WorkerType.TEXT2VEC.value, EMBEDDING_MODEL_CONFIG)
+    models = get_supported_models(WorkerType.LLM.value)
     return models
 
 
+def _list_supported_models_from_adapter(worker_type: str) -> List[SupportedModel]:
+    pass
+
+
+@Deprecated(version="0.7.0", remove_version="0.8.8")
 def _list_supported_models(
     worker_type: str, model_config: Dict[str, str]
 ) -> List[SupportedModel]:

@@ -9,24 +9,6 @@ from dbgpt._private.pydantic import BaseModel, model_to_json
 SSE_DATA_TYPE = Union[str, BaseModel, dict]
 
 
-async def llm_chat_response_nostream(chat_scene: str, **chat_param):
-    """llm_chat_response_nostream"""
-    from dbgpt_app.scene import BaseChat, ChatFactory
-
-    chat_factory = ChatFactory()
-    chat: BaseChat = chat_factory.get_implementation(chat_scene, **chat_param)
-    res = await chat.get_llm_response()
-    return res
-
-
-async def llm_chat_response(chat_scene: str, **chat_param):
-    from dbgpt_app.scene import BaseChat, ChatFactory
-
-    chat_factory = ChatFactory()
-    chat: BaseChat = chat_factory.get_implementation(chat_scene, **chat_param)
-    return chat.stream_call()
-
-
 async def run_async_tasks(
     tasks: List[Coroutine],
     concurrency_limit: int = None,

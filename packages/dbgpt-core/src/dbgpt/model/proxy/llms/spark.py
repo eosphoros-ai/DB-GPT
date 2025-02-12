@@ -4,7 +4,7 @@ from concurrent.futures import Executor
 from dataclasses import dataclass, field
 from typing import Iterator, Optional, Type, Union
 
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
+from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
@@ -190,4 +190,50 @@ class SparkLLMClient(ProxyLLMClient):
             )
 
 
-register_proxy_model_adapter(SparkLLMClient)
+register_proxy_model_adapter(
+    SparkLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model="lite",
+            # Maybe not correct, the value inferred from max_output_length
+            context_length=14096,
+            max_output_length=14096,
+            description="Xunfei Spark Lite model",
+            link="https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="pro-128k",
+            context_length=128 * 1024,
+            max_output_length=14096,
+            description="Xunfei Spark Pro-128K model",
+            link="https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["generalv3", "generalv3.5", "4.0Ultra"],
+            # Maybe not correct, the value inferred from max_output_length
+            context_length=18192,
+            max_output_length=18192,
+            description="Xunfei Spark General model",
+            link="https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["pro-128k"],
+            context_length=128 * 1024,
+            max_output_length=18192,
+            description="Xunfei Spark Pro-128K model",
+            link="https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="max-32k",
+            context_length=32 * 1024,
+            max_output_length=18192,
+            description="Xunfei Spark Max-32K model",
+            link="https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E",  # noqa
+            function_calling=True,
+        ),
+    ],
+)

@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from dbgpt.core import ModelMessage
 from dbgpt.core.interface.parameter import (
@@ -9,6 +9,11 @@ from dbgpt.core.interface.parameter import (
     LLMDeployModelParameters,
 )
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
+from dbgpt.model.adapter.model_metadata import (
+    COMMON_HF_DEEPSEEK__MODELS,
+    COMMON_HF_GLM_MODELS,
+    COMMON_HF_QWEN25_MODELS,
+)
 from dbgpt.model.base import ModelType
 from dbgpt.util.i18n_utils import _
 
@@ -96,9 +101,6 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
 
     trust_remote_code: bool = True
 
-    def new_adapter(self, **kwargs) -> "NewHFChatModelAdapter":
-        return self.__class__()
-
     def match(
         self,
         provider: str,
@@ -112,6 +114,11 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         model_name = model_name.lower() if model_name else None
         model_path = model_path.lower() if model_path else None
         return self.do_match(model_name) or self.do_match(model_path)
+
+    def model_param_class(
+        self, model_type: str = None
+    ) -> Type[LLMDeployModelParameters]:
+        return HFLLMDeployModelParameters
 
     @abstractmethod
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
@@ -591,6 +598,15 @@ class DeepseekCoderV2Adapter(DeepseekV2Adapter):
         )
 
 
+class DeepseekV3R1Adapter(DeepseekV2Adapter):
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "deepseek" in lower_model_name_or_path
+            and ("v3" in lower_model_name_or_path or "r1" in lower_model_name_or_path)
+        )
+
+
 class SailorAdapter(QwenAdapter):
     """
     https://huggingface.co/sail/Sailor-14B-Chat
@@ -744,7 +760,8 @@ register_model_adapter(SailorAdapter)
 register_model_adapter(PhiAdapter)
 register_model_adapter(SQLCoderAdapter)
 register_model_adapter(OpenChatAdapter)
-register_model_adapter(GLM4Adapter)
+register_model_adapter(GLM4Adapter, supported_models=COMMON_HF_GLM_MODELS)
 register_model_adapter(Codegeex4Adapter)
-register_model_adapter(Qwen2Adapter)
+register_model_adapter(Qwen2Adapter, supported_models=COMMON_HF_QWEN25_MODELS)
 register_model_adapter(Internlm2Adapter)
+register_model_adapter(DeepseekV3R1Adapter, supported_models=COMMON_HF_DEEPSEEK__MODELS)

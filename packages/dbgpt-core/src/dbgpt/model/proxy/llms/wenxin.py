@@ -7,7 +7,13 @@ from typing import Iterator, Optional, Type, Union
 
 from cachetools import TTLCache, cached
 
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
+from dbgpt.core import (
+    MessageConverter,
+    ModelMetadata,
+    ModelOutput,
+    ModelRequest,
+    ModelRequestContext,
+)
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
@@ -245,4 +251,14 @@ class WenxinLLMClient(ProxyLLMClient):
             )
 
 
-register_proxy_model_adapter(WenxinLLMClient)
+register_proxy_model_adapter(
+    WenxinLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=["ERNIE-Bot-4.0", "ERNIE-Bot-8K", "ERNIE-Bot", "ERNIE-Bot-turbo"],
+            description="ERNIE-Bot-4.0 by Baidu",
+            link="https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t",
+            function_calling=True,
+        ),
+    ],
+)

@@ -7,6 +7,7 @@ from dbgpt.model.adapter.base import (
     LLMModelAdapter,
     register_model_adapter,
 )
+from dbgpt.model.adapter.model_metadata import COMMON_LLAMA_CPP_MODELS
 from dbgpt.model.base import ModelType
 from dbgpt.model.parameter import LlamaCppModelParameters
 
@@ -14,9 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class LLamaCppModelAdapter(LLMModelAdapter):
-    def new_adapter(self, **kwargs) -> "LLMModelAdapter":
-        return self.__class__()
-
     def model_type(self) -> str:
         return ModelType.LLAMA_CPP
 
@@ -68,4 +66,4 @@ def generate_stream(model, tokenizer, params: Dict, device: str, context_len: in
     return model.generate_streaming(params=params, context_len=context_len)
 
 
-register_model_adapter(LLamaCppModelAdapter)
+register_model_adapter(LLamaCppModelAdapter, supported_models=COMMON_LLAMA_CPP_MODELS)

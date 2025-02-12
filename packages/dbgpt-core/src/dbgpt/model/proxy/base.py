@@ -394,11 +394,13 @@ def _is_async_function(
 
 def register_proxy_model_adapter(
     client_cls: Type[ProxyLLMClient],
+    supported_models: List[ModelMetadata],
 ):
     """Register proxy model adapter
 
     Args:
         client_cls (Type[ProxyLLMClient]): proxy model client class
+        supported_models (List[ModelMetadata]): supported models
     """
     from dbgpt.model.adapter.base import register_model_adapter
     from dbgpt.model.adapter.proxy_adapter import ProxyLLMModelAdapter
@@ -428,6 +430,14 @@ def register_proxy_model_adapter(
             model_path: Optional[str] = None,
         ) -> bool:
             return _provider == provider
+
+        def model_param_class(
+            self, model_type: str = None
+        ) -> Type[LLMDeployModelParameters]:
+            return param_cls
+
+        def supported_models(self) -> List[ModelMetadata]:
+            return supported_models
 
         def do_match(self, lower_model_name_or_path: Optional[str] = None):
             raise NotImplementedError()
