@@ -21,7 +21,6 @@ from dbgpt_serve.core import BaseService, blocking_func_to_async
 
 from ..api.schemas import VariablesKeyResponse, VariablesRequest, VariablesResponse
 from ..config import (
-    SERVE_CONFIG_KEY_PREFIX,
     SERVE_VARIABLES_SERVICE_COMPONENT_NAME,
     ServeConfig,
 )

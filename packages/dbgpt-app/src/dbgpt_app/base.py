@@ -5,12 +5,13 @@ import sys
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
+from urllib.parse import quote
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import resolve_root_path
 from dbgpt.datasource.parameter import BaseDatasourceParameters
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
 from dbgpt.util.parameter_utils import BaseServerParameters
 from dbgpt_app.config import ApplicationConfig, ServiceConfig
 
@@ -90,6 +91,7 @@ def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
         db_url,
         db_type,
         db_name,
+        db_config,
         db_ssl_verify,
         db_engine_args,
         try_to_create_db=not disable_alembic_upgrade,
@@ -144,6 +146,7 @@ def _initialize_db(
     db_url: str,
     db_type: str,
     db_name: str,
+    db_config: RDBMSDatasourceParameters,
     db_ssl_verify: bool = False,
     db_engine_args: Optional[Dict[str, Any]] = None,
     try_to_create_db: Optional[bool] = False,
@@ -163,25 +166,25 @@ def _initialize_db(
 
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     if db_type == "mysql":
-        # db_url = (
-        #     f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:"
-        #     f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
-        #     f"{CFG.LOCAL_DB_HOST}:"
-        #     f"{str(CFG.LOCAL_DB_PORT)}/"
-        #     f"{db_name}?charset=utf8mb4"
-        # )
+        db_url = (
+            f"mysql+pymysql://{db_config.user}:"
+            f"{db_config.password}@"
+            f"{db_config.host}:"
+            f"{str(db_config.port)}/"
+            f"{db_name}?charset=utf8mb4"
+        )
         if db_ssl_verify:
             db_url += "&ssl_verify_cert=true&ssl_verify_identity=true"
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)
     elif db_type == "oceanbase":
-        # db_url = (
-        #     f"mysql+ob://{quote(CFG.LOCAL_DB_USER)}:"
-        #     f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
-        #     f"{CFG.LOCAL_DB_HOST}:"
-        #     f"{str(CFG.LOCAL_DB_PORT)}/"
-        #     f"{db_name}?charset=utf8mb4"
-        # )
+        db_url = (
+            f"mysql+ob://{quote(db_config.user)}:"
+            f"{db_config.password}@"
+            f"{db_config.host}:"
+            f"{str(db_config.port)}/"
+            f"{db_name}?charset=utf8mb4"
+        )
         _create_mysql_database(db_name, db_url, try_to_create_db)
 
     if not db_engine_args:

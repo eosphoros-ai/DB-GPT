@@ -148,13 +148,14 @@ class RetrieverResource(Resource[ResourceParameters]):
         self,
         query: str,
         filters: Optional["MetadataFilters"] = None,
-        score: float = 0.3,
+        score: float = 0.0,
     ) -> List["Chunk"]:
         """Retrieve knowledge chunks.
 
         Args:
             query (str): query text.
             filters: (Optional[MetadataFilters]) metadata filters.
+            score: (float) similarity score.
 
         Returns:
             List[Chunk]: list of chunks
