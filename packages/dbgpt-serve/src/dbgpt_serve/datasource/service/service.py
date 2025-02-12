@@ -25,7 +25,7 @@ from ..api.schemas import (
     DatasourceServeRequest,
     DatasourceServeResponse,
 )
-from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 
 logger = logging.getLogger(__name__)
 CFG = Config()

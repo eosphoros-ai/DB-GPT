@@ -70,10 +70,7 @@ class DbChatOutputParser(BaseOutputParser):
                     if key.strip() == "direct_response":
                         resp = response[key]
                 return SqlAction(
-                    sql=sql,
-                    thoughts=thoughts,
-                    display=display,
-                    direct_response=resp
+                    sql=sql, thoughts=thoughts, display=display, direct_response=resp
                 )
             except Exception:
                 logger.error(f"json load failed:{clean_str}")

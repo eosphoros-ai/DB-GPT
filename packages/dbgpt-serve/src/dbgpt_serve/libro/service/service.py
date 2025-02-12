@@ -8,7 +8,7 @@ from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt_serve.core import BaseService
 
 from ..api.schemas import ServeRequest, ServerResponse
-from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
 
 CFG = Config()
