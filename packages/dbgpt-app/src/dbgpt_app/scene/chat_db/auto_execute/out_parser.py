@@ -56,6 +56,10 @@ class DbChatOutputParser(BaseOutputParser):
         else:
             try:
                 response = json.loads(clean_str, strict=False)
+                sql = ""
+                thoughts = dict
+                display = ""
+                resp = ""
                 for key in sorted(response):
                     if key.strip() == "sql":
                         sql = response[key]
@@ -65,7 +69,12 @@ class DbChatOutputParser(BaseOutputParser):
                         display = response[key]
                     if key.strip() == "direct_response":
                         resp = response[key]
-                return SqlAction(sql, thoughts, display, resp)
+                return SqlAction(
+                    sql=sql,
+                    thoughts=thoughts,
+                    display=display,
+                    direct_response=resp
+                )
             except Exception:
                 logger.error(f"json load failed:{clean_str}")
                 return SqlAction("", clean_str, "", "")
