@@ -36,7 +36,7 @@ _DEFAULT_MODEL_ALIAS = "tinyllama-2"
 
 @dataclass
 class LlamaServerParameters(LLMDeployModelParameters):
-    provider = ModelType.LLAMA_CPP_SERVER
+    provider: str = ModelType.LLAMA_CPP_SERVER
 
     path: Optional[str] = field(
         default=None, metadata={"help": _("Local model file path")}

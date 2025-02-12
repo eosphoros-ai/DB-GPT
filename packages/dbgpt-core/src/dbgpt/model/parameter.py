@@ -9,6 +9,7 @@ from dbgpt.core.interface.parameter import (
     LLMDeployModelParameters,
     RerankerDeployModelParameters,
 )
+from dbgpt.model.base import ModelType
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters, BaseServerParameters
 
@@ -353,7 +354,7 @@ class ModelParameters(BaseModelParameters):
 
 @dataclass
 class LlamaCppModelParameters(LLMDeployModelParameters):
-    provider = "llama.cpp"
+    provider: str = ModelType.LLAMA_CPP
     path: Optional[str] = field(
         default=None,
         metadata={

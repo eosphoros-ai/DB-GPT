@@ -22,13 +22,17 @@ export type BaseModelParams = {
   params: any;
 };
 
+// export type ModelParams = {
+//   model_name: string;
+//   model_path: string;
+//   proxy_api_key: string;
+//   proxy_server_url: string;
+//   model_type: string;
+//   max_context_size: number;
+// };
+//
 export type ModelParams = {
-  model_name: string;
-  model_path: string;
-  proxy_api_key: string;
-  proxy_server_url: string;
-  model_type: string;
-  max_context_size: number;
+  [key: string]: string | number | boolean;
 };
 
 export type StartModelParams = {
@@ -52,6 +56,8 @@ export type SupportModelParams = {
   required: boolean;
   valid_values: null;
   ext_metadata: ExtMetadata;
+  is_array: boolean;
+  label: string;
 };
 
 export type SupportModel = {
@@ -64,4 +70,6 @@ export type SupportModel = {
   host: string;
   port: number;
   params: SupportModelParams;
+  provider: string;
+  description: string;
 };

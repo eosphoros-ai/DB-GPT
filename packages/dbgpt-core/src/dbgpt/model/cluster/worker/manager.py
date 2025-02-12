@@ -19,6 +19,7 @@ from dbgpt.configs.model_config import LOGDIR
 from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
+    LLMDeployModelParameters,
 )
 from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
 from dbgpt.model.cluster.base import (
@@ -49,7 +50,6 @@ from dbgpt.util.fastapi import create_app, register_event_handler
 from dbgpt.util.parameter_utils import (
     EnvArgumentParser,
     ParameterDescription,
-    _dict_to_command_args,
     _get_dict_from_obj,
 )
 from dbgpt.util.system_utils import get_system_info
@@ -223,25 +223,27 @@ class LocalWorkerManager(WorkerManager):
 
     async def model_startup(self, startup_req: WorkerStartupRequest):
         """Start model"""
-        raise NotImplementedError("Not implemented in 0.7.0")
+        from dbgpt.util.configure import ConfigurationManager
+
         model_name = startup_req.model
         worker_type = startup_req.worker_type
         params = startup_req.params
+
+        cfg = ConfigurationManager(params)
+        llm_deploy_params = cfg.parse_config(LLMDeployModelParameters)
+
         logger.debug(
             f"start model, model name {model_name}, worker type {worker_type},  params:"
             f" {params}"
         )
         worker_params: ModelWorkerParameters = ModelWorkerParameters.from_dict(
-            params, ignore_extra_fields=True
+            {"model_name": model_name, "model_path": ""}, ignore_extra_fields=True
         )
-        if not worker_params.model_name:
-            worker_params.model_name = model_name
         worker = _build_worker(
             worker_type=worker_type, worker_class=worker_params.worker_class
         )
-        command_args = _dict_to_command_args(params)
         success = await self.run_blocking_func(
-            self.add_worker, worker, worker_params, command_args
+            self.add_worker, worker, worker_params, llm_deploy_params
         )
         if not success:
             msg = f"Add worker {model_name}@{worker_type}, worker instances is exist"
