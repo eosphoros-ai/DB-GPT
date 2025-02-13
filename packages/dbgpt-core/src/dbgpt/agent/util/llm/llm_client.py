@@ -199,7 +199,7 @@ class AIWrapper:
             model_request = _build_model_request(payload)
             str_prompt = model_request.messages_to_string()
             model_output = None
-
+            sep = "########S#E#P#########"
             async for output in self._llm_client.generate_stream(model_request.copy()):  # type: ignore # noqa
                 model_output = output
                 if memory and stream_out:
@@ -210,7 +210,7 @@ class AIWrapper:
                         "receiver": "?",
                         "model": llm_model,
                         "markdown": self._output_parser.parse_model_nostream_resp(
-                            model_output, "###"
+                            model_output, sep
                         ),
                     }
 
@@ -221,7 +221,7 @@ class AIWrapper:
             if not model_output:
                 raise ValueError("LLM generate stream is null!")
             parsed_output = self._output_parser.parse_model_nostream_resp(
-                model_output, "###"
+                model_output, sep
             )
             parsed_output = parsed_output.strip().replace("\\n", "\n")
 
