@@ -1068,7 +1068,7 @@ class TestAppConfig:
     name: str
     database: TestDbConfig
     debug: bool = False
-    allowed_origins: List[str] = None
+    allowed_origins: List[str] = field(default_factory=list)
 
 
 class EnvVarSetHook:
@@ -1771,3 +1771,93 @@ def cleanup_env_vars():
             os.environ.pop(var, None)
         else:
             os.environ[var] = original_values[var]
+
+
+def test_basic_config_description():
+    """Test basic configuration description parsing"""
+    descriptions = ConfigurationManager.parse_description(SystemConfig)
+
+    assert len(descriptions) == 4
+
+    # Test language field
+    lang_desc = next(d for d in descriptions if d.param_name == "language")
+    assert lang_desc.param_type == "string"
+    assert lang_desc.required is True
+    assert not lang_desc.is_array
+    assert lang_desc.nested_fields is None
+
+    # Test api_keys field
+    api_keys_desc = next(d for d in descriptions if d.param_name == "api_keys")
+    assert api_keys_desc.param_type == "string"  # 元素类型是 string
+    assert api_keys_desc.is_array is True  # 标记为数组
+
+    # Test log_level field
+    log_level_desc = next(d for d in descriptions if d.param_name == "log_level")
+    assert log_level_desc.param_type == "string"
+    assert not log_level_desc.is_array
+
+
+def test_list_config_description():
+    """Test configuration with list fields"""
+    descriptions = ConfigurationManager.parse_description(RagConfig)
+
+    # Test chunk array field
+    chunk_desc = next(d for d in descriptions if d.param_name == "chunk")
+    assert chunk_desc.is_array is True  # 是数组
+    assert chunk_desc.param_type == "ChunkConfig"  # 元素类型是 ChunkConfig
+
+    # Verify nested chunk config
+    assert chunk_desc.nested_fields is not None
+    chunk_fields = chunk_desc.nested_fields["chunkconfig"]
+    chunk_type_desc = next(d for d in chunk_fields if d.param_name == "type")
+    assert chunk_type_desc.param_type == "string"
+    assert not chunk_type_desc.is_array
+
+
+def test_app_config_lists():
+    """Test AppConfig with nested list fields"""
+    descriptions = ConfigurationManager.parse_description(AppConfig)
+
+    # Check configs field which is List[AppConfigItem]
+    configs_desc = next(d for d in descriptions if d.param_name == "configs")
+    assert configs_desc.is_array is True
+    assert configs_desc.param_type == "AppConfigItem"  # 元素类型是 AppConfigItem
+
+    # Check nested AppConfigItem fields
+    assert configs_desc.nested_fields is not None
+    config_item_fields = configs_desc.nested_fields["appconfigitem"]
+    name_desc = next(d for d in config_item_fields if d.param_name == "name")
+    assert name_desc.param_type == "string"
+    assert not name_desc.is_array
+
+
+def test_datasource_arrays():
+    """Test arrays in datasource configurations"""
+    descriptions = ConfigurationManager.parse_description(ClickHouseDataSource)
+
+    # Test hosts field which is List[str]
+    hosts_desc = next(d for d in descriptions if d.param_name == "hosts")
+    assert hosts_desc.is_array is True
+    assert hosts_desc.param_type == "string"  # 元素类型是 string
+
+    # Test settings field which is Dict[str, Any]
+    settings_desc = next(d for d in descriptions if d.param_name == "settings")
+    assert not settings_desc.is_array
+    assert settings_desc.param_type == "object"
+
+
+def test_model_config_lists():
+    """Test model configuration with deployment lists"""
+    descriptions = ConfigurationManager.parse_description(ModelsConfig)
+
+    # Test deploy field which is List[ModelDeployConfig]
+    deploy_desc = next(d for d in descriptions if d.param_name == "deploy")
+    assert deploy_desc.is_array is True
+    assert deploy_desc.param_type == "ModelDeployConfig"  # 元素类型是 ModelDeployConfig
+
+    # Check nested ModelDeployConfig fields
+    assert deploy_desc.nested_fields is not None
+    deploy_fields = deploy_desc.nested_fields["modeldeployconfig"]
+    type_desc = next(d for d in deploy_fields if d.param_name == "type")
+    assert type_desc.param_type == "string"
+    assert not type_desc.is_array

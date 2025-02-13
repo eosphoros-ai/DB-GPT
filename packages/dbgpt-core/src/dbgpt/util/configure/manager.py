@@ -18,6 +18,8 @@ from typing import (
     get_type_hints,
 )
 
+from ..parameter_utils import ParameterDescription
+
 try:
     # tomllib in stdlib after Python 3.11, try to import it first
     import tomllib
@@ -119,6 +121,11 @@ class RegisterParameters(abc.ABC, metaclass=PolymorphicMeta):
         return registry.get(type_value)
 
     @classmethod
+    def get_register_class(cls) -> Optional[Dict[str, Type["RegisterParameters"]]]:
+        """Get the register class for this class."""
+        return getattr(cls, "_type_registry", None)
+
+    @classmethod
     def register_subclass(cls, type_value: str, subclass: Type["RegisterParameters"]):
         """Register a subclass with this base class using a type value."""
         if not hasattr(cls, "_type_registry"):
@@ -165,6 +172,33 @@ class RegisterParameters(abc.ABC, metaclass=PolymorphicMeta):
             return type_value
 
         return cls.__name__.lower()
+
+
+def _get_concrete_class(base_class: Type[T], data: Dict[str, Any]) -> Type[T]:
+    """Get the concrete subclass of a polymorphic dataclass.
+
+    It checks all the registered subclasses of the base class and returns the
+    appropriate subclass based on the type field value in the data.
+    """
+    if not isinstance(base_class, PolymorphicMeta):
+        return base_class
+
+    type_field = getattr(base_class, "__type_field__", "type")
+    type_value = data.get(type_field)
+    if not type_value:
+        return base_class
+    real_cls = base_class.get_subclass(type_value)
+    if not real_cls:
+        raise ValueError(f"Unknown type value: {type_value}")
+    return real_cls
+
+
+def _get_all_subclasses(base_class: Type[T]) -> Dict[str, Type[T]]:
+    """Get all the registered subclasses of a polymorphic dataclass."""
+    if not isinstance(base_class, PolymorphicMeta):
+        #  Not a polymorphic dataclass, the type is the name of the class.
+        return {base_class.__name__.lower(): base_class}
+    return base_class.get_register_class() or {}
 
 
 class ConfigurationManager:
@@ -462,7 +496,7 @@ class ConfigurationManager:
             if new_cls is not None:
                 cls = new_cls
 
-        concrete_cls = self._get_concrete_class(cls, data)
+        concrete_cls = _get_concrete_class(cls, data)
 
         def prepare_data_func(real_cls, dict_data: Dict[str, Any]):
             field_values = {}
@@ -495,24 +529,6 @@ class ConfigurationManager:
             )
         prepared_field_values = prepare_data_func(concrete_cls, data)
         return concrete_cls(**prepared_field_values)
-
-    def _get_concrete_class(self, base_class: Type[T], data: Dict[str, Any]) -> Type[T]:
-        """Get the concrete subclass of a polymorphic dataclass.
-
-        It checks all the registered subclasses of the base class and returns the
-        appropriate subclass based on the type field value in the data.
-        """
-        if not isinstance(base_class, PolymorphicMeta):
-            return base_class
-
-        type_field = getattr(base_class, "__type_field__", "type")
-        type_value = data.get(type_field)
-        if not type_value:
-            return base_class
-        real_cls = base_class.get_subclass(type_value)
-        if not real_cls:
-            raise ValueError(f"Unknown type value: {type_value}")
-        return real_cls
 
     def parse_config(
         self, cls: Type[T], prefix: str = "", hook_section: Optional[str] = None
@@ -555,6 +571,140 @@ class ConfigurationManager:
         if config_section is None:
             raise ValueError(f"Configuration section not found: {prefix}")
         return self._convert_to_dataclass(cls, config_section)
+
+    @classmethod
+    def parse_description(cls, target_cls: Type[T]) -> List[ParameterDescription]:
+        """Parse configuration description into a list of ParameterDescription.
+
+        This method analyzes a dataclass and returns descriptions of its fields. For
+        polymorphic fields (fields using RegisterParameters), it will include
+        descriptions of all possible
+        implementations.
+
+        Args:
+            target_cls: The target dataclass type to parse
+
+        Returns:
+            List of ParameterDescription objects describing the fields
+        """
+        from ..function_utils import type_to_string
+
+        if not is_dataclass(target_cls):
+            raise ValueError(f"{target_cls.__name__} is not a dataclass")
+
+        descriptions = []
+        type_hints = get_type_hints(target_cls)
+
+        parent_descriptions = {}
+        for parent in target_cls.__mro__[1:]:
+            if parent is object or not is_dataclass(parent):
+                continue
+            for parent_param in cls.parse_description(parent):
+                if parent_param.description:
+                    parent_descriptions[parent_param.param_name] = (
+                        parent_param.description
+                    )
+
+        for fd in fields(target_cls):
+            field_type = type_hints[fd.name]
+            origin = get_origin(field_type)
+            args = get_args(field_type)
+
+            # Handle Optional types
+            if origin is Union and type(None) in args:
+                field_type = next(arg for arg in args if arg is not type(None))
+                origin = get_origin(field_type)
+                args = get_args(field_type)
+
+            # Check if the field is an array type
+            is_array = origin is list or origin is List
+
+            # For List types, get the element type
+            if is_array:
+                element_type = args[0] if args else Any
+                str_type, _ = type_to_string(element_type)
+            else:
+                str_type, _ = type_to_string(field_type)
+
+            description = fd.metadata.get("help")
+            if not description:
+                description = parent_descriptions.get(fd.name)
+            desc = ParameterDescription(
+                param_name=fd.name,
+                param_class=f"{target_cls.__module__}.{target_cls.__name__}",
+                param_type=str_type,
+                required=fd.default is MISSING and fd.default_factory is MISSING,
+                is_array=is_array,
+                description=description,
+            )
+
+            # Get metadata from field
+            if fd.metadata:
+                desc.label = fd.metadata.get("label")
+                desc.valid_values = fd.metadata.get("valid_values")
+                desc.ext_metadata = {
+                    k: v
+                    for k, v in fd.metadata.items()
+                    if k not in ("help", "label", "valid_values")
+                }
+
+            # Handle default values
+            if fd.default is not MISSING:
+                desc.default_value = fd.default
+            elif fd.default_factory is not MISSING:
+                try:
+                    desc.default_value = fd.default_factory()
+                except Exception:
+                    desc.default_value = f"<factory: {fd.default_factory.__name__}>"
+
+            # Handle List types with nested dataclass
+            if is_array and is_dataclass(element_type):
+                if isinstance(element_type, PolymorphicMeta):
+                    implementations = _get_all_subclasses(element_type)
+                    desc.nested_fields = {
+                        type_value: cls.parse_description(impl_cls)
+                        for type_value, impl_cls in implementations.items()
+                    }
+                else:
+                    desc.nested_fields = {
+                        element_type.__name__.lower(): cls.parse_description(
+                            element_type
+                        )
+                    }
+
+            # Handle Dict types
+            elif origin is dict or origin is Dict:
+                value_type = args[1] if args else Any
+                if is_dataclass(value_type):
+                    if isinstance(value_type, PolymorphicMeta):
+                        implementations = _get_all_subclasses(value_type)
+                        desc.nested_fields = {
+                            type_value: cls.parse_description(impl_cls)
+                            for type_value, impl_cls in implementations.items()
+                        }
+                    else:
+                        desc.nested_fields = {
+                            value_type.__name__.lower(): cls.parse_description(
+                                value_type
+                            )
+                        }
+
+            # Handle nested dataclass fields
+            elif is_dataclass(field_type):
+                if isinstance(field_type, PolymorphicMeta):
+                    implementations = _get_all_subclasses(field_type)
+                    desc.nested_fields = {
+                        type_value: cls.parse_description(impl_cls)
+                        for type_value, impl_cls in implementations.items()
+                    }
+                else:
+                    desc.nested_fields = {
+                        field_type.__name__.lower(): cls.parse_description(field_type)
+                    }
+
+            descriptions.append(desc)
+
+        return descriptions
 
 
 def _load_hook(

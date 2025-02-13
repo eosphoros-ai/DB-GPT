@@ -47,6 +47,10 @@ interface ExtMetadata {
   tags: string;
 }
 
+type NestedField = {
+  [key: string]: SupportModelParams;
+};
+
 export type SupportModelParams = {
   param_class: string;
   param_name: string;
@@ -54,10 +58,11 @@ export type SupportModelParams = {
   default_value: string | boolean | number;
   description: string;
   required: boolean;
-  valid_values: null;
+  valid_values: null | string[];
   ext_metadata: ExtMetadata;
   is_array: boolean;
   label: string;
+  nested_fields: NestedField | null;
 };
 
 export type SupportModel = {

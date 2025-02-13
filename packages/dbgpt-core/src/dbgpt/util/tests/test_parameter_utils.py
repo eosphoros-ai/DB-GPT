@@ -320,7 +320,8 @@ def test_nested_dataclass_fields():
 
     # Test nested Inner | None field
     assert desc_list[2].param_name == "inner_pipe"
-    assert desc_list[2].param_type == "Inner"  # Should normalize to Optional[Inner]
+    # Should normalize to Optional[Inner]
+    assert desc_list[2].param_type == "Inner"
     assert desc_list[2].required is False
 
     # Test list of Inner configs
