@@ -36,7 +36,7 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
           const type = nestedValue.type;
           normalized[param.param_name] = {
             type,
-            ...nestedValue
+            ...nestedValue,
           };
         }
       }
@@ -89,7 +89,7 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
   }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {params?.map((param: SupportModelParams) => (
         <Form.Item
           key={param.param_name}

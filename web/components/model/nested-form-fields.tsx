@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Checkbox, Select, FormInstance } from 'antd';
 import { SupportModelParams } from '@/types/model';
+import { Checkbox, Form, FormInstance, Input, InputNumber, Select } from 'antd';
+import React, { useEffect, useState } from 'react';
 
 interface NestedFormFieldsProps {
   parentName: string;
@@ -40,7 +40,7 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
         control = <Input />;
       }
     } else if (type === 'int' || type === 'integer' || type === 'number' || type === 'float') {
-      control = <InputNumber className="w-full" />;
+      control = <InputNumber className='w-full' />;
     } else if (type === 'bool' || type === 'boolean') {
       control = <Checkbox />;
     } else {
@@ -50,7 +50,7 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
     return (
       <Form.Item
         key={itemName}
-        label={<p className="whitespace-normal overflow-wrap-break-word">{param.label || param.param_name}</p>}
+        label={<p className='whitespace-normal overflow-wrap-break-word'>{param.label || param.param_name}</p>}
         name={itemName}
         initialValue={param.default_value}
         valuePropName={type === 'bool' || type === 'boolean' ? 'checked' : 'value'}
@@ -69,9 +69,7 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
     const newFields = fields[value] || [];
     const defaultValues = {
       type: value,
-      ...Object.fromEntries(
-        newFields.map(field => [field.param_name, field.default_value])
-      )
+      ...Object.fromEntries(newFields.map(field => [field.param_name, field.default_value])),
     };
 
     // 更新表单中的所有相关字段
@@ -79,19 +77,14 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
   };
 
   return (
-    <div className="space-y-4 border rounded-md p-4">
+    <div className='space-y-4 border rounded-md p-4'>
       <Form.Item
-        label="Type"
+        label='Type'
         name={`${parentName}.type`}
         required
-        tooltip="Select the type to see specific configuration options"
+        tooltip='Select the type to see specific configuration options'
       >
-        <Select
-          value={selectedType}
-          onChange={handleTypeChange}
-          placeholder="Select a type"
-          className="w-full"
-        >
+        <Select value={selectedType} onChange={handleTypeChange} placeholder='Select a type' className='w-full'>
           {Object.keys(fields).map(type => (
             <Select.Option key={type} value={type}>
               {type}
@@ -101,11 +94,9 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
       </Form.Item>
 
       {selectedType && (
-        <div className="mt-4">
-          <h4 className="mb-4 text-base font-medium">{selectedType} Configuration</h4>
-          <div className="space-y-4">
-            {fields[selectedType].map(param => renderFormItem(param))}
-          </div>
+        <div className='mt-4'>
+          <h4 className='mb-4 text-base font-medium'>{selectedType} Configuration</h4>
+          <div className='space-y-4'>{fields[selectedType].map(param => renderFormItem(param))}</div>
         </div>
       )}
     </div>

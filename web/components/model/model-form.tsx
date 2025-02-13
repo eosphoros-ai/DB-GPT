@@ -12,6 +12,7 @@ const FormItem = Form.Item;
 
 function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: () => void }) {
   const { t } = useTranslation();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [models, setModels] = useState<Array<SupportModel> | null>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>();
   const [params, setParams] = useState<Array<SupportModelParams> | null>(null);
@@ -105,14 +106,20 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
       <FormItem label='Provider' name='provider' rules={[{ required: true, message: t('provider_select_tips') }]}>
         <Select onChange={handleProviderChange} placeholder={t('model_select_provider')}>
           {providers.map(provider => (
-            <Option key={provider} value={provider}>{provider}</Option>
+            <Option key={provider} value={provider}>
+              {provider}
+            </Option>
           ))}
         </Select>
       </FormItem>
 
       {selectedProvider && params && (
         <>
-          <FormItem label={t('model_deploy_name')} name='name' rules={[{ required: true, message: t('model_please_input_name') }]}>
+          <FormItem
+            label={t('model_deploy_name')}
+            name='name'
+            rules={[{ required: true, message: t('model_please_input_name') }]}
+          >
             <AutoComplete
               style={{ width: '100%' }}
               placeholder={t('model_select_or_input_model')}
