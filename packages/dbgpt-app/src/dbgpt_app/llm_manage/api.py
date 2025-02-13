@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.model.cluster import WorkerManagerFactory, WorkerStartupRequest
+from dbgpt.model.parameter import WorkerType
 from dbgpt_app.llm_manage.request.request import ModelResponse
 from dbgpt_app.openapi.api_view_model import Result
 
@@ -49,7 +50,11 @@ async def model_list():
         models = await controller.get_all_instances()
         for model in models:
             worker_name, worker_type = model.model_name.split("@")
-            if worker_type == "llm" or worker_type == "text2vec":
+            if (
+                worker_type == WorkerType.LLM
+                or worker_type == WorkerType.TEXT2VEC
+                or worker_type == WorkerType.RERANKER
+            ):
                 response = ModelResponse(
                     model_name=worker_name,
                     model_type=worker_type,

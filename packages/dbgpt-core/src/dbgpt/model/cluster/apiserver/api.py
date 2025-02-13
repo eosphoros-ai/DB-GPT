@@ -255,7 +255,11 @@ class APIServer(BaseComponent):
         model_name_set = set()
         for inst in model_instances:
             name, worker_type = WorkerType.parse_worker_key(inst.model_name)
-            if worker_type == WorkerType.LLM or worker_type == WorkerType.TEXT2VEC:
+            if (
+                worker_type == WorkerType.LLM
+                or worker_type == WorkerType.TEXT2VEC
+                or worker_type == WorkerType.RERANKER
+            ):
                 model_name_set.add(name)
         models = list(model_name_set)
         models.sort()

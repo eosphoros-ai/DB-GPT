@@ -7,10 +7,14 @@ import aiohttp
 import requests
 
 from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
-from dbgpt.core import Embeddings
+from dbgpt.core import EmbeddingModelMetadata, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
 from dbgpt.model.adapter.base import register_embedding_adapter
+from dbgpt.model.adapter.embed_metadata import (
+    EMBED_COMMON_HF_BGE_MODELS,
+    EMBED_COMMON_HF_JINA_MODELS,
+)
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
@@ -29,7 +33,7 @@ DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索�
 
 @dataclass
 class HFEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
-    provider = "hf"
+    provider: str = "hf"
 
     path: Optional[str] = field(
         default=None,
@@ -634,7 +638,7 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
 class OpenAPIEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
     """OpenAPI embedding deploy model parameters."""
 
-    provider = "proxy/openapi"
+    provider: str = "proxy/openapi"
 
     api_url: str = field(
         default="http://localhost:8100/api/v1/embeddings",
@@ -897,7 +901,90 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         return embeddings[0]
 
 
-register_embedding_adapter(HuggingFaceEmbeddings)
-register_embedding_adapter(HuggingFaceInstructEmbeddings)
-register_embedding_adapter(HuggingFaceBgeEmbeddings)
-register_embedding_adapter(OpenAPIEmbeddings)
+register_embedding_adapter(
+    HuggingFaceEmbeddings,
+    supported_models=[
+        EmbeddingModelMetadata(
+            model=["thenlper/gte-large-zh"],
+            context_length=512,
+            description=_(
+                "The GTE models are trained by Alibaba DAMO Academy, supporting "
+                "Chinese."
+            ),
+            link="https://huggingface.co/thenlper/gte-large-zh",
+            languages=["zh"],
+        ),
+        EmbeddingModelMetadata(
+            model=["thenlper/gte-large"],
+            context_length=512,
+            description=_(
+                "The GTE models are trained by Alibaba DAMO Academy, supporting "
+                "English."
+            ),
+            link="https://huggingface.co/thenlper/gte-large",
+            languages=["en"],
+        ),
+        EmbeddingModelMetadata(
+            model=["moka-ai/m3e-base"],
+            context_length=768,
+            description=_(
+                "The embedding model are trained by MokaAI, this version support "
+                "English and Chinese."
+            ),
+            link="https://huggingface.co/moka-ai/m3e-base",
+            languages=["en", "zh"],
+        ),
+        EmbeddingModelMetadata(
+            model=["moka-ai/m3e-large"],
+            context_length=768,
+            description=_(
+                "The embedding model are trained by MokaAI, this version support "
+                "Chinese."
+            ),
+            link="https://huggingface.co/moka-ai/m3e-large",
+            languages=["zh"],
+        ),
+    ]
+    + EMBED_COMMON_HF_JINA_MODELS,
+)
+register_embedding_adapter(
+    HuggingFaceInstructEmbeddings,
+    supported_models=[
+        EmbeddingModelMetadata(
+            model=["hkunlp/instructor-large", "hkunlp/instructor-base"],
+            description=_(
+                "The embedding model are trained by HKUNLP, it support English."
+            ),
+            link="https://huggingface.co/hkunlp/instructor-large",
+            languages=["en"],
+        )
+    ],
+)
+register_embedding_adapter(
+    HuggingFaceBgeEmbeddings, supported_models=EMBED_COMMON_HF_BGE_MODELS
+)
+register_embedding_adapter(
+    OpenAPIEmbeddings,
+    supported_models=[
+        EmbeddingModelMetadata(
+            model=["text-embedding-3-small"],
+            dimension=1536,
+            context_length=8191,
+            description=_(
+                "The embedding model are trained by OpenAI, it support English."
+            ),
+            link="https://platform.openai.com/docs/guides/embeddings",
+            languages=["en"],
+        ),
+        EmbeddingModelMetadata(
+            model=["text-embedding-3-small"],
+            dimension=3072,
+            context_length=8191,
+            description=_(
+                "The embedding model are trained by OpenAI, it support English."
+            ),
+            link="https://platform.openai.com/docs/guides/embeddings",
+            languages=["en"],
+        ),
+    ],
+)

@@ -2,7 +2,12 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from dbgpt.core import Embeddings, ModelMetadata, RerankEmbeddings
+from dbgpt.core import (
+    EmbeddingModelMetadata,
+    Embeddings,
+    ModelMetadata,
+    RerankEmbeddings,
+)
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
@@ -14,6 +19,7 @@ from dbgpt.model.adapter.template import (
     get_conv_template,
 )
 from dbgpt.model.base import ModelType, SupportedModel
+from dbgpt.model.parameter import WorkerType
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +29,7 @@ class EmbeddingModelAdapter(ABC):
 
     model_name: Optional[str] = None
     model_path: Optional[str] = None
+    _supported_models: List[EmbeddingModelMetadata] = []
 
     def __repr__(self) -> str:
         return (
@@ -39,7 +46,11 @@ class EmbeddingModelAdapter(ABC):
         Returns:
             EmbeddingModelAdapter: The new adapter instance
         """
-        return self.__class__()
+        new_obj = self.__class__()
+        new_obj.model_name = self.model_name
+        new_obj.model_path = self.model_path
+        new_obj._supported_models = self._supported_models
+        return new_obj
 
     def model_type(self) -> str:
         return ModelType.HF
@@ -56,6 +67,10 @@ class EmbeddingModelAdapter(ABC):
             Type[BaseModelParameters]: The startup parameters instance of the model
         """
         raise NotImplementedError
+
+    def supported_models(self) -> List[EmbeddingModelMetadata]:
+        """Return the supported models."""
+        return self._supported_models
 
     def match(
         self,
@@ -715,10 +730,16 @@ def get_supported_models(worker_type: str) -> List[SupportedModel]:
     models = []
     from dbgpt.util.parameter_utils import _get_parameter_descriptions
 
-    for adapter_entry in model_adapters[::-1]:
+    adapters = (
+        model_adapters if worker_type == WorkerType.LLM.value else embedding_adapters
+    )
+
+    for adapter_entry in adapters[::-1]:
         model_adapter = adapter_entry.model_adapter
         try:
             params_cls = model_adapter.model_param_class()
+            if params_cls.worker_type() != worker_type:
+                continue
             provider = params_cls.provider or model_adapter.model_type()
             is_proxy = provider == ModelType.PROXY or provider.startswith(
                 ModelType.PROXY
@@ -750,12 +771,14 @@ def register_embedding_adapter(
     model_adapter_cls: Union[
         Type[EmbeddingModelAdapter], Type[Embeddings], Type[RerankEmbeddings]
     ],
+    supported_models: List[EmbeddingModelMetadata],
     match_funcs: List[Callable[[str, str, str], bool]] = None,
 ) -> None:
     """Register an embedding adapter.
 
     Args:
         model_adapter_cls (Type[EmbeddingModelAdapter]): The embedding adapter class.
+        supported_models (List[EmbeddingModelMetadata]): The supported models.
         match_funcs (List[Callable[[str, str, str], bool]], optional): The match
             functions. Defaults to None.
     """
@@ -770,6 +793,9 @@ def register_embedding_adapter(
         class _DyEmbeddingAdapter(EmbeddingModelAdapter):
             def model_param_class(self, model_type: str = None):
                 return params_adapter_cls
+
+            def supported_models(self):
+                return supported_models
 
             def do_match(
                 self, is_rerank: bool, lower_model_name_or_path: Optional[str] = None

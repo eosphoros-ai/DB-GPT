@@ -1,10 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from dbgpt.configs.model_config import get_device
 from dbgpt.util.configure import RegisterParameters
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
+
+if TYPE_CHECKING:
+    from dbgpt.model.parameter import WorkerType
 
 
 @dataclass
@@ -104,15 +107,36 @@ class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
             return "proxy"
         return self.provider
 
+    @classmethod
+    def worker_type(cls) -> "WorkerType":
+        """Get the worker type."""
+        from dbgpt.model.parameter import WorkerType
+
+        return WorkerType.LLM
+
 
 @dataclass
 class EmbeddingDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Embedding deploy model parameters."""
 
+    @classmethod
+    def worker_type(cls) -> "WorkerType":
+        """Get the worker type."""
+        from dbgpt.model.parameter import WorkerType
+
+        return WorkerType.TEXT2VEC
+
 
 @dataclass
 class RerankerDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Reranker deploy model parameters."""
+
+    @classmethod
+    def worker_type(cls) -> "WorkerType":
+        """Get the worker type."""
+        from dbgpt.model.parameter import WorkerType
+
+        return WorkerType.RERANKER
 
 
 @dataclass

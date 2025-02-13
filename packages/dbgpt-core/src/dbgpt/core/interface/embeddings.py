@@ -2,9 +2,55 @@
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import List, Optional, Type
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Type, Union
+
+from dbgpt.util.annotations import PublicAPI
+from dbgpt.util.parameter_utils import BaseParameters
 
 from .parameter import EmbeddingDeployModelParameters, RerankerDeployModelParameters
+
+
+@dataclass
+@PublicAPI(stability="beta")
+class EmbeddingModelMetadata(BaseParameters):
+    """A class to represent the metadata of the embedding model."""
+
+    model: Union[str, List[str]] = field(
+        metadata={"help": "Model name"},
+    )
+    label: Optional[str] = field(
+        default=None,
+        metadata={"help": "Model label"},
+    )
+    dimension: Optional[int] = field(
+        default=None,
+        metadata={"help": "Model dimension"},
+    )
+    context_length: Optional[int] = field(
+        default=None,
+        metadata={"help": "Context length of model"},
+    )
+    description: Optional[str] = field(
+        default=None,
+        metadata={"help": "Model description"},
+    )
+    link: Optional[str] = field(
+        default=None,
+        metadata={"help": "Model link"},
+    )
+    metadata: Optional[Dict[str, Any]] = field(
+        default_factory=dict,
+        metadata={"help": "Model metadata"},
+    )
+    is_reranker: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether the model is a reranker model"},
+    )
+    languages: Optional[List[str]] = field(
+        default=None,
+        metadata={"help": "Model language, e.g. ['en', 'zh']"},
+    )
 
 
 class RerankEmbeddings(ABC):

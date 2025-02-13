@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Type
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
-from dbgpt.core import Embeddings
+from dbgpt.core import EmbeddingModelMetadata, Embeddings
 from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
 from dbgpt.model.adapter.base import register_embedding_adapter
 from dbgpt.util.i18n_utils import _
@@ -14,10 +14,10 @@ from dbgpt.util.i18n_utils import _
 class TongyiEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
     """Qianfan Embeddings deploy model parameters."""
 
-    provider = "proxy/tongyi"
+    provider: str = "proxy/tongyi"
 
-    api_key: Optional[str] = Field(
-        default=None, description="The API key for the embeddings API."
+    api_key: Optional[str] = field(
+        default=None, metadata={"help": _("The API key for the embeddings API.")}
     )
     backend: Optional[str] = field(
         default="text-embedding-v1",
@@ -148,4 +148,17 @@ class TongYiEmbeddings(BaseModel, Embeddings):
         return self.embed_documents([text])[0]
 
 
-register_embedding_adapter(TongYiEmbeddings)
+register_embedding_adapter(
+    TongYiEmbeddings,
+    supported_models=[
+        EmbeddingModelMetadata(
+            model="text-embedding-v3",
+            dimension=1024,
+            context_length=8192,
+            description=_(
+                "The embedding model are trained by TongYi, it support more than 50 "
+                "working languages."
+            ),
+        )
+    ],
+)

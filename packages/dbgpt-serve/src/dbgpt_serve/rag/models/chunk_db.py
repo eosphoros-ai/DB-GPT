@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, func, not_
 
-from dbgpt._private.config import Config
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt_serve.rag.api.schemas import ChunkServeRequest, ChunkServeResponse
 

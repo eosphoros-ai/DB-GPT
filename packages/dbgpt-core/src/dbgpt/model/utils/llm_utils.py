@@ -23,13 +23,14 @@ def is_partial_stop(output: str, stop_str: str):
     return False
 
 
-@cachetools.cached(cachetools.TTLCache(maxsize=100, ttl=60 * 5))
+@cachetools.cached(cachetools.TTLCache(maxsize=100, ttl=10))
 def list_supported_models():
     from dbgpt.model.adapter.base import get_supported_models
     from dbgpt.model.parameter import WorkerType
 
-    # models += _list_supported_models(WorkerType.TEXT2VEC.value, EMBEDDING_MODEL_CONFIG)
     models = get_supported_models(WorkerType.LLM.value)
+    models += get_supported_models(WorkerType.TEXT2VEC.value)
+    models += get_supported_models(WorkerType.RERANKER.value)
     return models
 
 

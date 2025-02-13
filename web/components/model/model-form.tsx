@@ -10,10 +10,13 @@ import ModelParams from './model-params';
 const { Option } = Select;
 const FormItem = Form.Item;
 
+// 支持的 worker 类型
+const WORKER_TYPES = ['llm', 'text2vec', 'reranker'];
+
 function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: () => void }) {
   const { t } = useTranslation();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [models, setModels] = useState<Array<SupportModel> | null>([]);
+  const [_, setModels] = useState<Array<SupportModel> | null>([]);
+  const [selectedWorkerType, setSelectedWorkerType] = useState<string>();
   const [selectedProvider, setSelectedProvider] = useState<string>();
   const [params, setParams] = useState<Array<SupportModelParams> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,7 +44,8 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
       }, {});
 
       setGroupedModels(grouped);
-      setProviders(Object.keys(grouped).sort());
+      // 初始时不设置 providers，等待选择 worker_type 后再设置
+      setProviders([]);
     }
   }
 
@@ -49,15 +53,34 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
     getModels();
   }, []);
 
+  // 根据 worker_type 过滤并设置可用的 providers
+  function updateProvidersByWorkerType(workerType: string) {
+    const availableProviders = new Set<string>();
+    Object.entries(groupedModels).forEach(([provider, models]) => {
+      if (models.some(model => model.worker_type === workerType)) {
+        availableProviders.add(provider);
+      }
+    });
+    setProviders(Array.from(availableProviders).sort());
+  }
+
+  function handleWorkerTypeChange(value: string) {
+    setSelectedWorkerType(value);
+    setSelectedProvider(undefined);
+    form.resetFields();
+    form.setFieldValue('worker_type', value);
+    updateProvidersByWorkerType(value);
+  }
+
   function handleProviderChange(value: string) {
     setSelectedProvider(value);
-    form.resetFields();
     form.setFieldValue('provider', value);
 
-    // Get the parameters of the first model of the current provider as the default parameters
+    // 获取当前 provider 下符合所选 worker_type 的第一个模型的参数作为默认参数
     const providerModels = groupedModels[value] || [];
-    if (providerModels.length > 0) {
-      const firstModel = providerModels[0];
+    const filteredModels = providerModels.filter(m => m.worker_type === selectedWorkerType);
+    if (filteredModels.length > 0) {
+      const firstModel = filteredModels[0];
       if (firstModel?.params) {
         setParams(Array.isArray(firstModel.params) ? firstModel.params : [firstModel.params]);
       }
@@ -65,17 +88,16 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
   }
 
   async function onFinish(values: any) {
-    if (!selectedProvider) return;
+    if (!selectedProvider || !selectedWorkerType) return;
 
     setLoading(true);
     try {
-      // Get the selected model information (if any)
       const selectedModel = groupedModels[selectedProvider]?.find(m => m.model === values.name);
       const params: StartModelParams = {
         host: selectedModel?.host || '',
         port: selectedModel?.port || 0,
         model: values.name,
-        worker_type: selectedModel?.worker_type || 'llm',
+        worker_type: selectedWorkerType,
         params: values,
       };
       const [, , data] = await apiInterceptors(startModel(params));
@@ -103,17 +125,33 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
 
   return (
     <Form form={form} labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} onFinish={onFinish}>
-      <FormItem label='Provider' name='provider' rules={[{ required: true, message: t('provider_select_tips') }]}>
-        <Select onChange={handleProviderChange} placeholder={t('model_select_provider')}>
-          {providers.map(provider => (
-            <Option key={provider} value={provider}>
-              {provider}
+      <FormItem
+        label='Worker Type'
+        name='worker_type'
+        rules={[{ required: true, message: t('worker_type_select_tips') }]}
+      >
+        <Select onChange={handleWorkerTypeChange} placeholder={t('model_select_worker_type')}>
+          {WORKER_TYPES.map(type => (
+            <Option key={type} value={type}>
+              {type}
             </Option>
           ))}
         </Select>
       </FormItem>
 
-      {selectedProvider && params && (
+      {selectedWorkerType && (
+        <FormItem label='Provider' name='provider' rules={[{ required: true, message: t('provider_select_tips') }]}>
+          <Select onChange={handleProviderChange} placeholder={t('model_select_provider')} value={selectedProvider}>
+            {providers.map(provider => (
+              <Option key={provider} value={provider}>
+                {provider}
+              </Option>
+            ))}
+          </Select>
+        </FormItem>
+      )}
+
+      {selectedProvider && selectedWorkerType && params && (
         <>
           <FormItem
             label={t('model_deploy_name')}
@@ -123,19 +161,21 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
             <AutoComplete
               style={{ width: '100%' }}
               placeholder={t('model_select_or_input_model')}
-              options={groupedModels[selectedProvider]?.map(model => ({
-                value: model.model,
-                label: (
-                  <div className='flex items-center w-full'>
-                    <div className='flex items-center'>
-                      {renderModelIcon(model.model)}
-                      <Tooltip title={renderTooltipContent(model)} placement='right'>
-                        <span className='ml-2'>{model.model}</span>
-                      </Tooltip>
+              options={groupedModels[selectedProvider]
+                ?.filter(model => model.worker_type === selectedWorkerType)
+                .map(model => ({
+                  value: model.model,
+                  label: (
+                    <div className='flex items-center w-full'>
+                      <div className='flex items-center'>
+                        {renderModelIcon(model.model)}
+                        <Tooltip title={renderTooltipContent(model)} placement='right'>
+                          <span className='ml-2'>{model.model}</span>
+                        </Tooltip>
+                      </div>
                     </div>
-                  </div>
-                ),
-              }))}
+                  ),
+                }))}
               filterOption={(inputValue, option) =>
                 option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
               }

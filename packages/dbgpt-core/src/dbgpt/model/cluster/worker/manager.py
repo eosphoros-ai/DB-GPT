@@ -19,7 +19,9 @@ from dbgpt.configs.model_config import LOGDIR
 from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
+    EmbeddingDeployModelParameters,
     LLMDeployModelParameters,
+    RerankerDeployModelParameters,
 )
 from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
 from dbgpt.model.cluster.base import (
@@ -230,7 +232,12 @@ class LocalWorkerManager(WorkerManager):
         params = startup_req.params
 
         cfg = ConfigurationManager(params)
-        llm_deploy_params = cfg.parse_config(LLMDeployModelParameters)
+        if worker_type == WorkerType.TEXT2VEC:
+            deploy_params = cfg.parse_config(EmbeddingDeployModelParameters)
+        elif worker_type == WorkerType.RERANKER:
+            deploy_params = cfg.parse_config(RerankerDeployModelParameters)
+        else:
+            deploy_params = cfg.parse_config(LLMDeployModelParameters)
 
         logger.debug(
             f"start model, model name {model_name}, worker type {worker_type},  params:"
@@ -243,7 +250,7 @@ class LocalWorkerManager(WorkerManager):
             worker_type=worker_type, worker_class=worker_params.worker_class
         )
         success = await self.run_blocking_func(
-            self.add_worker, worker, worker_params, llm_deploy_params
+            self.add_worker, worker, worker_params, deploy_params
         )
         if not success:
             msg = f"Add worker {model_name}@{worker_type}, worker instances is exist"
@@ -1013,6 +1020,12 @@ def _build_worker(
             )
 
             worker_cls = EmbeddingsModelWorker
+        elif worker_type == WorkerType.RERANKER:
+            from dbgpt.model.cluster.worker.embedding_worker import (
+                RerankerModelWorker,
+            )
+
+            worker_cls = RerankerModelWorker
         else:
             raise Exception(f"Unsupported worker type: {worker_type}")
 
@@ -1053,13 +1066,12 @@ def _start_local_embedding_worker(
     worker_manager: WorkerManagerAdapter,
     deploy_model_params: BaseDeployModelParameters,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
+    worker_type: str = WorkerType.TEXT2VEC.value,
 ):
-    worker_class = "dbgpt.model.cluster.worker.embedding_worker.EmbeddingsModelWorker"
     embedding_worker_params = ModelWorkerParameters(
         model_name=deploy_model_params.name,
         model_path=deploy_model_params.real_model_path,
-        worker_type=WorkerType.TEXT2VEC,
-        worker_class=worker_class,
+        worker_type=worker_type,
     )
     logger.info(
         "Start local embedding worker with embedding parameters\n"
@@ -1131,7 +1143,7 @@ def initialize_worker_manager_in_client(
             _start_local_embedding_worker(
                 worker_manager,
                 rerank_deploy_config,
-                ext_worker_kwargs={"rerank_model": True},
+                worker_type=WorkerType.RERANKER.value,
             )
     else:
         from dbgpt.model.cluster.controller.controller import (

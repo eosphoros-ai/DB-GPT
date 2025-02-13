@@ -17,6 +17,7 @@ from dbgpt.util.parameter_utils import BaseParameters, BaseServerParameters
 class WorkerType(str, Enum):
     LLM = "llm"
     TEXT2VEC = "text2vec"
+    RERANKER = "reranker"
 
     @staticmethod
     def values():
