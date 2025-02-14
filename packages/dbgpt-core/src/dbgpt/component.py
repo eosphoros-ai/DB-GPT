@@ -29,13 +29,21 @@ class LifeCycle:
 
     Execution order of lifecycle hooks:
     1. on_init
-    2. before_start(async_before_start)
-    3. after_start(async_after_start)
-    4. before_stop(async_before_stop)
+    2. after_init
+    3. before_start(async_before_start)
+    4. after_start(async_after_start)
+    5. before_stop(async_before_stop)
     """
 
     def on_init(self):
         """Called when the component is being initialized."""
+        pass
+
+    def after_init(self):
+        """Called after the component has been initialized.
+
+        For most cases, you should initialize your database connection here.
+        """
         pass
 
     async def async_on_init(self):
@@ -258,6 +266,11 @@ class SystemApp(LifeCycle):
         """Invoke the on_init hooks for all registered components."""
         for _, v in self.components.items():
             v.on_init()
+
+    def after_init(self):
+        """Invoke the after_init hooks for all registered components."""
+        for _, v in self.components.items():
+            v.after_init()
 
     async def async_on_init(self):
         """Asynchronously invoke the on_init hooks for all registered components."""

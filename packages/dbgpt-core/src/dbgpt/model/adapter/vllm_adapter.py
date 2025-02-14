@@ -444,7 +444,7 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
     def get_async_generate_stream_function(
         self, model, deploy_model_params: LLMDeployModelParameters
     ):
-        from dbgpt.model.llm_out.vllm_llm import generate_stream
+        from dbgpt.model.llm.llm_out import generate_stream
 
         return generate_stream
 

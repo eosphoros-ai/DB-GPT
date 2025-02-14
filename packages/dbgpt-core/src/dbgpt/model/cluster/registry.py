@@ -148,6 +148,16 @@ class EmbeddedModelRegistry(ModelRegistry):
         exist_ins = [ins for ins in instances if ins.host == host and ins.port == port]
         return instances, exist_ins
 
+    def _remove_instance(self, model_name: str, host: str, port: int):
+        instances, exist_ins = self._get_instances(
+            model_name, host, port, healthy_only=False
+        )
+        if exist_ins:
+            ins = exist_ins[0]
+            ins.healthy = False
+            if ins.remove_from_registry:
+                self.registry[model_name].remove(ins)
+
     def _heartbeat_checker(self):
         while True:
             for instances in self.registry.values():
@@ -190,6 +200,8 @@ class EmbeddedModelRegistry(ModelRegistry):
         if exist_ins:
             ins = exist_ins[0]
             ins.healthy = False
+            if instance.remove_from_registry:
+                self.registry[model_name].remove(ins)
         return True
 
     async def get_all_instances(

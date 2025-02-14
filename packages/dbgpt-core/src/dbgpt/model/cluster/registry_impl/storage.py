@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from concurrent.futures import Executor, ThreadPoolExecutor
@@ -16,6 +17,8 @@ from dbgpt.util.executor_utils import blocking_func_to_async
 
 from ...base import ModelInstance
 from ..registry import ModelRegistry
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -285,7 +288,16 @@ class StorageModelRegistry(ModelRegistry):
         if exist_ins:
             ins = exist_ins[0]
             ins.healthy = False
-            await blocking_func_to_async(self._executor, self._storage.update, ins)
+            if instance.remove_from_registry:
+                logger.info(
+                    f"Remove instance {model_name}@{host}:{port} from registry."
+                )
+                await blocking_func_to_async(
+                    self._executor, self._storage.delete, ins.identifier
+                )
+            else:
+                logger.info(f"Set instance {model_name}@{host}:{port} as unhealthy.")
+                await blocking_func_to_async(self._executor, self._storage.update, ins)
         return True
 
     async def get_all_instances(

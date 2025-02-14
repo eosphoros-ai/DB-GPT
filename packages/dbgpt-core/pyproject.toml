@@ -119,3 +119,6 @@ default-groups = ["dev"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt"]
+
+[project.scripts]
+dbgpt = "dbgpt.cli.cli_scripts:main"

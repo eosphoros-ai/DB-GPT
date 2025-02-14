@@ -53,6 +53,17 @@ class WorkerType(str, Enum):
         """
         return tuple(worker_key.split("@"))
 
+    @classmethod
+    def from_str(cls, value: str) -> "WorkerType":
+        """Convert a string to an Enum value."""
+        try:
+            return cls(value)
+        except ValueError:
+            raise ValueError(
+                f"Invalid value '{value}' for {cls.__name__}. "
+                f"Valid values are {cls.values()}"
+            )
+
 
 @dataclass
 class ModelControllerParameters(BaseServerParameters):

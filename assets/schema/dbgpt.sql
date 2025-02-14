@@ -364,6 +364,26 @@ CREATE TABLE `dbgpt_serve_variables` (
   KEY `ix_your_table_name_name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `dbgpt_serve_model` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `host` varchar(255) NOT NULL COMMENT 'The model worker host',
+  `port` int NOT NULL COMMENT 'The model worker port',
+  `model` varchar(255) NOT NULL COMMENT 'The model name',
+  `provider` varchar(255) NOT NULL COMMENT 'The model provider',
+  `worker_type` varchar(255) NOT NULL COMMENT 'The worker type',
+  `params` text NOT NULL COMMENT 'The model parameters, JSON format',
+  `enabled` int DEFAULT 1 COMMENT 'Whether the model is enabled, if it is enabled, it will be started when the system starts, 1 is enabled, 0 is disabled',
+  `worker_name` varchar(255) DEFAULT NULL COMMENT 'The worker name',
+  `description` text DEFAULT NULL COMMENT 'The model description',
+  `user_name` varchar(128) DEFAULT NULL COMMENT 'User name',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
+  `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+  `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record update time',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_name` (`user_name`),
+  KEY `idx_sys_code` (`sys_code`),
+  UNIQUE KEY `uk_model_provider_type` (`model`, `provider`, `worker_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Model persistence table';
 
 -- dbgpt.gpts_app definition
 CREATE TABLE `gpts_app` (

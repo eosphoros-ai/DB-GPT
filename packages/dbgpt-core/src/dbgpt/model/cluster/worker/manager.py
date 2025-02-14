@@ -41,6 +41,7 @@ from dbgpt.model.cluster.manager_base import (
     WorkerRunData,
 )
 from dbgpt.model.cluster.registry import ModelRegistry
+from dbgpt.model.cluster.storage import ModelStorage, ModelStorageItem
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.parameter import (
     ModelsDeployParameters,
@@ -89,7 +90,22 @@ class LocalWorkerManager(WorkerManager):
         model_registry: ModelRegistry = None,
         host: str = None,
         port: int = None,
+        model_storage: Optional[ModelStorage] = None,
     ) -> None:
+        """Create a LocalWorkerManager instance.
+
+        Args:
+            register_func (RegisterFunc, optional): Register function. Defaults to None.
+            deregister_func (DeregisterFunc, optional): Deregister function. Defaults
+                to None.
+            send_heartbeat_func (SendHeartbeatFunc, optional): Send heartbeat function.
+                Defaults to None.
+            model_registry (ModelRegistry, optional): Model registry. Defaults to None.
+            host (str, optional): Host. Defaults to None.
+            port (int, optional): Port. Defaults to None.
+            model_storage (Optional[ModelStorage], optional): Model storage. Defaults
+                to None. It is used to store model metadata.
+        """
         self.workers: Dict[str, List[WorkerRunData]] = dict()
         self.executor = ThreadPoolExecutor(max_workers=os.cpu_count() * 5)
         self.register_func = register_func
@@ -98,6 +114,7 @@ class LocalWorkerManager(WorkerManager):
         self.model_registry = model_registry
         self.host = host
         self.port = port
+        self.model_storage = model_storage
         self.start_listeners = []
 
         self.run_data = WorkerRunData(
@@ -135,6 +152,26 @@ class LocalWorkerManager(WorkerManager):
             asyncio.create_task(
                 _async_heartbeat_sender(self.run_data, 20, self.send_heartbeat_func)
             )
+        if self.model_storage:
+            try:
+                logger.info("There has model storage, start the model from storage")
+                startup_reqs = await self.run_blocking_func(
+                    self.model_storage.all_models
+                )
+                for startup_req in startup_reqs:
+                    try:
+                        # Update host and port
+                        startup_req.host = self.host
+                        startup_req.port = self.port
+                        logger.info(f"Start model {startup_req.model} from storage")
+                        await self.model_startup(startup_req)
+                        logger.info(f"Start model {startup_req.model} successfully")
+                    except Exception as e:
+                        logger.warning(
+                            f"Start model {startup_req.model} error: {str(e)}"
+                        )
+            except Exception as e:
+                logger.warning(f"Load model storage error: {str(e)}")
         for listener in self.start_listeners:
             if asyncio.iscoroutinefunction(listener):
                 await listener(self)
@@ -244,7 +281,12 @@ class LocalWorkerManager(WorkerManager):
             f" {params}"
         )
         worker_params: ModelWorkerParameters = ModelWorkerParameters.from_dict(
-            {"model_name": model_name, "model_path": ""}, ignore_extra_fields=True
+            {
+                "model_name": model_name,
+                "model_path": "",
+                "worker_type": worker_type.value,
+            },
+            ignore_extra_fields=True,
         )
         worker = _build_worker(
             worker_type=worker_type, worker_class=worker_params.worker_class
@@ -278,6 +320,20 @@ class LocalWorkerManager(WorkerManager):
         if not out.success:
             self._remove_worker(worker_params)
             raise Exception(out.message)
+        else:
+            logger.info(f"Model {model_name} startup successfully")
+            if self.model_storage:
+                try:
+                    logger.info("There has model storage, save model storage")
+                    # UPDATE host and port
+                    startup_req.host = self.host
+                    startup_req.port = self.port
+                    await self.run_blocking_func(
+                        self.model_storage.save_or_update, startup_req
+                    )
+                    logger.info("Save model storage successfully")
+                except Exception as e:
+                    logger.warning(f"Save model storage error: {str(e)}")
 
     async def model_shutdown(self, shutdown_req: WorkerStartupRequest):
         logger.info(f"Begin shutdown model, shutdown_req: {shutdown_req}")
@@ -286,9 +342,24 @@ class LocalWorkerManager(WorkerManager):
             apply_type=WorkerApplyType.STOP,
             worker_type=shutdown_req.worker_type,
         )
-        out = await self._stop_all_worker(apply_req)
+        remove_from_registry = self.model_storage and shutdown_req.delete_after
+        out = await self._stop_all_worker(
+            apply_req, remove_from_registry=remove_from_registry
+        )
         if not out.success:
             raise Exception(out.message)
+        else:
+            logger.info(f"Model {shutdown_req.model} shutdown successfully")
+            if remove_from_registry:
+                try:
+                    logger.info("There has model storage, delete model storage")
+                    st = ModelStorageItem.from_startup_req(shutdown_req)
+                    await self.run_blocking_func(
+                        self.model_storage.delete, st.identifier
+                    )
+                    logger.info("Delete model storage successfully")
+                except Exception as e:
+                    logger.warning(f"Delete model storage error: {str(e)}")
 
     async def supported_models(self) -> List[WorkerSupportedModel]:
         models = await self.run_blocking_func(list_supported_models)
@@ -587,7 +658,10 @@ class LocalWorkerManager(WorkerManager):
         return out
 
     async def _stop_all_worker(
-        self, apply_req: WorkerApplyRequest, ignore_exception: bool = False
+        self,
+        apply_req: WorkerApplyRequest,
+        ignore_exception: bool = False,
+        remove_from_registry: bool = False,
     ) -> WorkerApplyOutput:
         start_time = time.time()
 
@@ -621,6 +695,7 @@ class LocalWorkerManager(WorkerManager):
                                 )
 
                         _deregister_func = safe_deregister_func
+                    worker_run_data.remove_from_registry = remove_from_registry
                     await _deregister_func(worker_run_data)
                 # Remove metadata
                 self._remove_worker(worker_run_data.worker_params)
@@ -952,6 +1027,7 @@ def _parse_worker_params(
 
 def _create_local_model_manager(
     worker_params: ModelWorkerParameters,
+    model_storage: Optional[ModelStorage] = None,
 ) -> LocalWorkerManager:
     from dbgpt.util.net_utils import _get_ip_address
 
@@ -966,7 +1042,7 @@ def _create_local_model_manager(
             f"Not register current to controller, register: {worker_params.register}, "
             f"controller_addr: {worker_params.controller_addr}"
         )
-        return LocalWorkerManager(host=host, port=port)
+        return LocalWorkerManager(host=host, port=port, model_storage=model_storage)
     else:
         from dbgpt.model.cluster.controller.controller import ModelRegistryClient
 
@@ -980,7 +1056,10 @@ def _create_local_model_manager(
 
         async def deregister_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
-                model_name=worker_run_data.worker_key, host=host, port=port
+                model_name=worker_run_data.worker_key,
+                host=host,
+                port=port,
+                remove_from_registry=worker_run_data.remove_from_registry,
             )
             return await client.deregister_instance(instance)
 
@@ -996,6 +1075,7 @@ def _create_local_model_manager(
             send_heartbeat_func=send_heartbeat_func,
             host=host,
             port=port,
+            model_storage=model_storage,
         )
 
 
@@ -1039,6 +1119,7 @@ def _start_local_worker(
     worker_manager: WorkerManagerAdapter,
     worker_params: ModelWorkerParameters,
     deploy_model_params: BaseDeployModelParameters,
+    model_storage: Optional[ModelStorage] = None,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
 ):
     with root_tracer.start_span(
@@ -1056,7 +1137,9 @@ def _start_local_worker(
             ext_worker_kwargs=ext_worker_kwargs,
         )
         if not worker_manager.worker_manager:
-            worker_manager.worker_manager = _create_local_model_manager(worker_params)
+            worker_manager.worker_manager = _create_local_model_manager(
+                worker_params, model_storage
+            )
         worker_manager.worker_manager.add_worker(
             worker, worker_params, deploy_model_params
         )
@@ -1067,6 +1150,7 @@ def _start_local_embedding_worker(
     deploy_model_params: BaseDeployModelParameters,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
     worker_type: str = WorkerType.TEXT2VEC.value,
+    model_storage: Optional[ModelStorage] = None,
 ):
     embedding_worker_params = ModelWorkerParameters(
         model_name=deploy_model_params.name,
@@ -1081,6 +1165,7 @@ def _start_local_embedding_worker(
         worker_manager,
         embedding_worker_params,
         deploy_model_params,
+        model_storage=model_storage,
         ext_worker_kwargs=ext_worker_kwargs,
     )
 
@@ -1095,6 +1180,7 @@ def initialize_worker_manager_in_client(
     local_port: int = 5670,
     start_listener: Optional[Callable[["WorkerManager"], None]] = None,
     system_app: Optional[SystemApp] = None,
+    model_storage: Optional[ModelStorage] = None,
 ):
     """Initialize WorkerManager in client.
     If run_locally is True:
@@ -1132,18 +1218,25 @@ def initialize_worker_manager_in_client(
         _setup_fastapi(worker_params, app, ignore_exception=True, system_app=system_app)
         for llm_deploy_config in models_config.llms:
             # Multiple LLMs
-            _start_local_worker(worker_manager, worker_params, llm_deploy_config)
+            _start_local_worker(
+                worker_manager,
+                worker_params,
+                llm_deploy_config,
+                model_storage=model_storage,
+            )
         worker_manager.after_start(start_listener)
         for embedding_deploy_config in models_config.embeddings:
             _start_local_embedding_worker(
                 worker_manager,
                 embedding_deploy_config,
+                model_storage=model_storage,
             )
         for rerank_deploy_config in models_config.rerankers:
             _start_local_embedding_worker(
                 worker_manager,
                 rerank_deploy_config,
                 worker_type=WorkerType.RERANKER.value,
+                model_storage=model_storage,
             )
     else:
         from dbgpt.model.cluster.controller.controller import (
@@ -1151,6 +1244,9 @@ def initialize_worker_manager_in_client(
             initialize_controller,
         )
         from dbgpt.model.cluster.worker.remote_manager import RemoteWorkerManager
+
+        if model_storage:
+            raise ValueError("Model storage is not supported in remote mode now")
 
         if not worker_params.controller_addr:
             raise ValueError("Controller can`t be None")

@@ -1,7 +1,7 @@
 export type IModelData = {
   chat_scene: string;
   model_name: string;
-  model_type: string;
+  worker_type: string;
   host: string;
   port: number;
   manager_host: string;
@@ -19,6 +19,7 @@ export type BaseModelParams = {
   port: number;
   model: string;
   worker_type: string;
+  delete_after: boolean | null;
   params: any;
 };
 

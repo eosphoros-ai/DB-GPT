@@ -219,8 +219,15 @@ async def api_register_instance(request: ModelInstance):
 
 
 @router.delete("/controller/models")
-async def api_deregister_instance(model_name: str, host: str, port: int):
-    instance = ModelInstance(model_name=model_name, host=host, port=port)
+async def api_deregister_instance(
+    model_name: str, host: str, port: int, remove_from_registry: bool = False
+):
+    instance = ModelInstance(
+        model_name=model_name,
+        host=host,
+        port=port,
+        remove_from_registry=remove_from_registry,
+    )
     with root_tracer.start_span(
         "dbgpt.model.controller.deregister_instance", metadata=instance.to_dict()
     ):

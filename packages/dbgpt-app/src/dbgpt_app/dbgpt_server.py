@@ -55,7 +55,6 @@ system_app = SystemApp(app)
 def mount_routers(app: FastAPI):
     """Lazy import to avoid high time cost"""
     from dbgpt_app.knowledge.api import router as knowledge_router
-    from dbgpt_app.llm_manage.api import router as llm_manage_api
     from dbgpt_app.openapi.api_v1.api_v1 import router as api_v1
     from dbgpt_app.openapi.api_v1.editor.api_editor_v1 import (
         router as api_editor_route_v1,
@@ -68,7 +67,6 @@ def mount_routers(app: FastAPI):
     app.include_router(api_v1, prefix="/api", tags=["Chat"])
     app.include_router(api_v2, prefix="/api", tags=["ChatV2"])
     app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
-    app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
     app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
     app.include_router(gpts_v1, prefix="/api", tags=["GptsApp"])
     app.include_router(app_v2, prefix="/api", tags=["App"])
@@ -144,12 +142,20 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         param.service.web.database, web_config.disable_alembic_upgrade
     )
 
+    # After init, when the database is ready
+    system_app.after_init()
+
     local_port = web_config.port
-    # TODO: initialize_worker_manager_in_client as a component register in system_app
     if not web_config.light:
+        from dbgpt.model.cluster.storage import ModelStorage
+        from dbgpt_serve.model.serve import Serve as ModelServe
+
         logger.info(
             "Model Unified Deployment Mode, run all services in the same process"
         )
+        model_serve = ModelServe.get_instance(system_app)
+        # Persistent model storage
+        model_storage = ModelStorage(model_serve.model_storage)
         initialize_worker_manager_in_client(
             worker_params=param.generate_temp_model_worker_params(),
             models_config=param.models,
@@ -157,6 +163,7 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
             local_port=local_port,
             start_listener=model_start_listener,
             system_app=system_app,
+            model_storage=model_storage,
         )
 
     else:

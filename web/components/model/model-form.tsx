@@ -1,4 +1,4 @@
-import { apiInterceptors, getSupportModels, startModel } from '@/client/api';
+import { apiInterceptors, createModel, getSupportModels } from '@/client/api';
 import { renderModelIcon } from '@/components/chat/header/model-selector';
 import { StartModelParams, SupportModel, SupportModelParams } from '@/types/model';
 import { AutoComplete, Button, Form, Select, Tooltip, message } from 'antd';
@@ -100,7 +100,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
         worker_type: selectedWorkerType,
         params: values,
       };
-      const [, , data] = await apiInterceptors(startModel(params));
+      const [, , data] = await apiInterceptors(createModel(params));
       if (data?.success) {
         message.success(t('start_model_success'));
         onSuccess?.();

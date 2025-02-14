@@ -194,7 +194,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         self, model, deploy_model_params: LLMDeployModelParameters
     ):
         """Get the generate stream function of the model"""
-        from dbgpt.model.llm_out.hf_chat_llm import huggingface_chat_generate_stream
+        from dbgpt.model.llm.llm_out.hf_chat_llm import huggingface_chat_generate_stream
 
         return huggingface_chat_generate_stream
 

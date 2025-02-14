@@ -33,6 +33,8 @@ class ModelInstance:
     enabled: Optional[bool] = True
     prompt_template: Optional[str] = None
     last_heartbeat: Optional[datetime] = None
+    # Remove from the registry
+    remove_from_registry: Optional[bool] = False
 
     def to_dict(self) -> Dict:
         """Convert to dict"""
@@ -72,7 +74,7 @@ class WorkerApplyOutput:
 class SupportedModel:
     model: str = field(metadata={"help": "The name of the model"})
     worker_type: str = field(
-        metadata={"help": "The type of the worker, llm or tex2vec"}
+        metadata={"help": "The type of the worker, llm, tex2vec and reranker"}
     )
     provider: Optional[str] = field(
         default="hf",
@@ -132,6 +134,9 @@ class FlatSupportedModel(SupportedModel):
     )
     port: Optional[int] = field(
         default=None, metadata={"help": "The port of the model"}
+    )
+    worker_name: Optional[str] = field(
+        default=None, metadata={"help": "The name of the model worker"}
     )
 
     @staticmethod

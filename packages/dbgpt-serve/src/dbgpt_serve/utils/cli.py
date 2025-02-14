@@ -25,9 +25,18 @@ def serve(name: str, template: str):
     """Create a serve module structure with the given name."""
     from dbgpt.configs.model_config import ROOT_PATH
 
-    base_path = os.path.join(ROOT_PATH, "dbgpt", "serve", name)
+    base_path = os.path.join(
+        ROOT_PATH, "packages", "dbgpt-serve", "src", "dbgpt_serve", name
+    )
     template_path = os.path.join(
-        ROOT_PATH, "dbgpt", "serve", "utils", "_template_files", template
+        ROOT_PATH,
+        "packages",
+        "dbgpt-serve",
+        "src",
+        "dbgpt_serve",
+        "utils",
+        "_template_files",
+        template,
     )
     if not os.path.exists(template_path):
         raise ValueError(f"Template '{template}' not found")
