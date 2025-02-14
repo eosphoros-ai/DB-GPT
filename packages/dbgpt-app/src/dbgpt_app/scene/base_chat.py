@@ -6,7 +6,16 @@ from typing import Any, AsyncIterator, Dict
 
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
-from dbgpt.core import LLMClient, ModelOutput, ModelRequest, ModelRequestContext
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    LLMClient,
+    MessagesPlaceholder,
+    ModelOutput,
+    ModelRequest,
+    ModelRequestContext,
+    SystemPromptTemplate,
+)
 from dbgpt.core.interface.message import StorageConversation
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
@@ -22,6 +31,7 @@ from dbgpt_app.scene.operators.app_operator import (
     build_cached_chat_operator,
 )
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
+from dbgpt_serve.prompt.service.service import Service as PromptService
 
 from .exceptions import BaseAppException
 
@@ -92,11 +102,8 @@ class BaseChat(ABC):
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         self.model_cache_enable = chat_param.get("model_cache_enable", False)
+        self.prompt_code = chat_param.get("prompt_code", None)
 
-        ### load prompt template
-        # self.prompt_template: PromptTemplate = CFG.prompt_templates[
-        #     self.chat_mode.value()
-        # ]
         self.prompt_template: AppScenePromptTemplateAdapter = (
             CFG.prompt_template_registry.get_prompt_template(
                 self.chat_mode.value(),
@@ -105,6 +112,24 @@ class BaseChat(ABC):
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
+        self._prompt_service = PromptService.get_instance(CFG.SYSTEM_APP)
+        if self.prompt_code:
+            # adapt prompt template according to the prompt code
+            prompt_template = self._prompt_service.get_template(self.prompt_code)
+            chat_prompt_template = ChatPromptTemplate(
+                messages=[
+                    SystemPromptTemplate.from_template(prompt_template.template),
+                    MessagesPlaceholder(variable_name="chat_history"),
+                    HumanPromptTemplate.from_template("{question}"),
+                ]
+            )
+            self.prompt_template = AppScenePromptTemplateAdapter(
+                prompt=chat_prompt_template,
+                template_scene=self.prompt_template.template_scene,
+                stream_out=self.prompt_template.stream_out,
+                output_parser=self.prompt_template.output_parser,
+                need_historical_messages=False,
+            )
         self._conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
         self.current_message: StorageConversation = _build_conversation(
             self.chat_mode, chat_param, self.llm_model, self._conv_serve

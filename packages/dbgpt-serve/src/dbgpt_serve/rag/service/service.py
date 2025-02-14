@@ -326,11 +326,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 update_chunk.doc_name = request.doc_name
                 self._chunk_dao.update({"id": update_chunk.id}, update_chunk)
         if len(request.questions) == 0:
-            request.questions = ""
-        questions = [
-            remove_trailing_punctuation(question) for question in request.questions
-        ]
-        entity.questions = json.dumps(questions, ensure_ascii=False)
+            entity.questions = ""
+        else:
+            questions = [
+                remove_trailing_punctuation(question) for question in request.questions
+            ]
+            entity.questions = json.dumps(questions, ensure_ascii=False)
         self._document_dao.update(
             {"id": entity.id}, self._document_dao.to_request(entity)
         )
