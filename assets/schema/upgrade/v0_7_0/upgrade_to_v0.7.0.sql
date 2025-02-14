@@ -29,3 +29,6 @@ CREATE TABLE `dbgpt_serve_model` (
   UNIQUE KEY `uk_model_provider_type` (`model`, `provider`, `worker_type`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Model persistence table';
 
+ALTER TABLE `recommend_question`
+MODIFY COLUMN `user_code` varchar(255) NULL COMMENT 'user code';
+
