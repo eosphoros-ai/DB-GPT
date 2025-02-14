@@ -103,7 +103,7 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
             KnowledgeSpaceRequest(**kwargs)
         )
         results = [
-            {"label": ks.name, "key": ks.id, "description": ks.desc}
+            {"label": ks.name, "key": ks.name, "description": ks.desc}
             for ks in knowledge_spaces
         ]
 
@@ -123,8 +123,8 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
 
 
 def get_knowledge_spaces_info(**kwargs):
-    from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
-    from dbgpt.app.knowledge.service import KnowledgeService
+    from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
+    from dbgpt_app.knowledge.service import KnowledgeService
 
     knowledge_space_service = KnowledgeService()
     knowledge_spaces = knowledge_space_service.get_knowledge_space(

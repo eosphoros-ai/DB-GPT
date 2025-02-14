@@ -443,7 +443,7 @@ CREATE TABLE `recommend_question` (
   `gmt_modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
   `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
   `question` text DEFAULT NULL COMMENT 'question',
-  `user_code` int(11) NOT NULL COMMENT 'user code',
+  `user_code` varchar(255) NOT NULL COMMENT 'user code',
   `sys_code` varchar(255) NULL COMMENT 'system app code',
   `valid` varchar(10) DEFAULT 'true' COMMENT 'is it effective，true/false',
   `chat_mode` varchar(255) DEFAULT NULL COMMENT 'Conversation scene mode，chat_knowledge...',

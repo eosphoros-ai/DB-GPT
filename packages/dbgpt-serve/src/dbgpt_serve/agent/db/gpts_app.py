@@ -978,7 +978,6 @@ class GptsAppDao(BaseDao):
                     RecommendQuestionEntity(
                         app_code=gpts_app.app_code,
                         question=recommend_question.question,
-                        user_code=app_entity.user_code,
                         gmt_create=recommend_question.gmt_create,
                         gmt_modified=recommend_question.gmt_modified,
                         params=json.dumps(recommend_question.params),
@@ -1405,6 +1404,14 @@ def adapt_native_app_model(dialogue: ConversationVo):
                     for x in app_info.param_need
                     if x["type"] == AppParamType.Resource.value
                 ]
+                prompt_params = [
+                    x
+                    for x in app_info.param_need
+                    if x["type"] == AppParamType.PromptTemplate.value
+                ]
+                dialogue.prompt_code = (
+                    prompt_params[0].get("value") if prompt_params else None
+                )
                 if len(resource_params) == 1:
                     resource_param = resource_params[0]
                     if resource_param.get("bind_value"):
@@ -1445,3 +1452,4 @@ class AppParamType(Enum):
     Model = "model"
     Temperature = "temperature"
     MaxNewTokens = "max_new_tokens"
+    PromptTemplate = "prompt_template"
