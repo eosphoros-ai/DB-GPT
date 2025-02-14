@@ -3,14 +3,22 @@ name = "dbgpt-ext"
 version = "0.7.0"
 description = "Add your description here"
 authors = [
-    { name = "aries_ckt", email = "ariesketing@gmail.com" }
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
 ]
+license = "MIT"
+readme = "README.md"
+requires-python = ">= 3.10"
+
 dependencies = [
     "dbgpt>=0.7.0",
     "pymysql",
 ]
-readme = "README.md"
-requires-python = ">= 3.10"
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -47,6 +55,7 @@ datasource_clickhouse = [
     "clickhouse-connect",
 ]
 datasource_spark = ["pyspark"]
+datasource_mssql = ["pymssql"]
 datasource_hive = [
     "pyhive",
     "thrift",
@@ -57,18 +66,10 @@ datasource_duckdb = [
     "duckdb",
     "duckdb-engine==0.9.1",
 ]
+datasource_doris = ["pydoris>=1.0.2,<2.0.0"]
 storage_milvus = ["pymilvus"]
 storage_weaviate = ["weaviate-client"]
 storage_chromadb = ["chromadb>=0.4.22"]
-proxy_ollama = ["ollama"]
-proxy_zhipuai = ["zhipuai"]
-proxy_tongyi = ["dashscope"]
-proxy_qianfan = ["qianfan"]
-proxy_openai = [
-    "openai>=1.59.6",
-    "tiktoken>=0.8.0",
-]
-proxy_anthropic = ["anthropic"]
 
 [tool.uv]
 managed = true
@@ -78,4 +79,11 @@ dev-dependencies = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt_ext"]
-
+exclude = [
+    "src/dbgpt_ext/**/tests",
+    "src/dbgpt_ext/**/tests/*",
+    "src/dbgpt_ext/tests",
+    "src/dbgpt_ext/tests/*",
+    "src/dbgpt_ext/**/examples",
+    "src/dbgpt_ext/**/examples/*"
+]
