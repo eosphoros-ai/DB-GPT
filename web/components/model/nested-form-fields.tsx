@@ -21,14 +21,14 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
 
   const renderFormItem = (param: SupportModelParams) => {
     const type = param.param_type.toLowerCase();
-    // 不再使用嵌套的路径，而是直接使用参数名
     const itemName = [parentName, param.param_name].join('.');
+    const isFixed = param.ext_metadata?.tags?.includes('fixed');
 
     let control;
     if (type === 'str' || type === 'string') {
       if (param.valid_values) {
         control = (
-          <Select>
+          <Select disabled={isFixed}>
             {param.valid_values.map(value => (
               <Select.Option key={value} value={value}>
                 {value}
@@ -37,14 +37,14 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
           </Select>
         );
       } else {
-        control = <Input />;
+        control = <Input disabled={isFixed} />;
       }
     } else if (type === 'int' || type === 'integer' || type === 'number' || type === 'float') {
-      control = <InputNumber className='w-full' />;
+      control = <InputNumber className='w-full' disabled={isFixed} />;
     } else if (type === 'bool' || type === 'boolean') {
-      control = <Checkbox />;
+      control = <Checkbox disabled={isFixed} />;
     } else {
-      control = <Input />;
+      control = <Input disabled={isFixed} />;
     }
 
     return (

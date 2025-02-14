@@ -19,6 +19,7 @@ class BaseDeployModelParameters(BaseParameters):
     name: str = field(
         metadata={
             "help": _("The name of the model."),
+            "order": -1000,
         },
     )
     provider: Optional[str] = field(
@@ -29,6 +30,8 @@ class BaseDeployModelParameters(BaseParameters):
                 "inference type. If model is deployed in third-party service, this is "
                 "platform name('proxy/<platform>')"
             ),
+            "order": -900,
+            "tags": "fixed",
             "valid_values": [
                 "huggingface",
                 "llama.cpp",
@@ -73,6 +76,7 @@ class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
                 "The real model name to pass to the provider, default is None. If "
                 "backend is None, use name as the real model name."
             ),
+            "order": -700,
         },
     )
     prompt_template: Optional[str] = field(

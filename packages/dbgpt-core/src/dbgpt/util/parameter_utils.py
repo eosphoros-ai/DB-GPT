@@ -58,6 +58,7 @@ class ParameterDescription:
     valid_values: Optional[List[Any]] = None
     ext_metadata: Optional[Dict[str, Any]] = None
     nested_fields: Optional[Dict[str, List["ParameterDescription"]]] = None
+    param_order: Optional[int] = None
 
 
 @dataclass

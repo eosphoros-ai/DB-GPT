@@ -65,10 +65,12 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
     }
 
     const type = param.param_type.toLowerCase();
+    const isFixed = param.ext_metadata?.tags?.includes('fixed');
+
     if (type === 'str' || type === 'string') {
       if (param.valid_values) {
         return (
-          <Select>
+          <Select disabled={isFixed}>
             {param.valid_values.map(value => (
               <Select.Option key={value} value={value}>
                 {value}
@@ -77,15 +79,15 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
           </Select>
         );
       }
-      return <Input />;
+      return <Input disabled={isFixed} />;
     }
     if (type === 'int' || type === 'integer' || type === 'number' || type === 'float') {
-      return <InputNumber className='w-full' />;
+      return <InputNumber className='w-full' disabled={isFixed} />;
     }
     if (type === 'bool' || type === 'boolean') {
-      return <Checkbox />;
+      return <Checkbox disabled={isFixed} />;
     }
-    return <Input />;
+    return <Input disabled={isFixed} />;
   }
 
   return (

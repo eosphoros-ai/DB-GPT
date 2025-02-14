@@ -1,6 +1,6 @@
 /* eslint-disable */
+import { apiInterceptors, getAppStrategyValues, getNativeAppScenes, getPromptList, getResource } from '@/client/api';
 import AppDefaultIcon from '@/new-components/common/AppDefaultIcon';
-import { apiInterceptors, getAppStrategyValues, getNativeAppScenes, getResource, getPromptList } from '@/client/api';
 import { ParamNeed } from '@/types/app';
 import { useRequest } from 'ahooks';
 import { Form, InputNumber, Select, Tooltip } from 'antd';
@@ -142,7 +142,18 @@ const NativeApp: React.FC<{
         ],
       ],
     ]);
-  }, [form, chatScene, bindValue, model, temperature, max_new_tokens, prompt_template, updateData, appTypeOptions, loading]);
+  }, [
+    form,
+    chatScene,
+    bindValue,
+    model,
+    temperature,
+    max_new_tokens,
+    prompt_template,
+    updateData,
+    appTypeOptions,
+    loading,
+  ]);
 
   useEffect(() => {
     const type = (data?.[0]?.[1]?.find((type: any) => type.chat_scene === chatScene) as any)?.param_need?.find(
@@ -190,7 +201,7 @@ const NativeApp: React.FC<{
             className='w-1/2'
           />
         </Form.Item>
-         <Form.Item label={t('prompt')} name='prompt_template'>
+        <Form.Item label={t('prompt')} name='prompt_template'>
           <PromptSelect promptList={promptData?.items || []} />
         </Form.Item>
         <Form.Item label={t('temperature')} tooltip name='temperature'>

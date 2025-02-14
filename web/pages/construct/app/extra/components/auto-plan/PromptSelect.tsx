@@ -1,8 +1,8 @@
 /* eslint-disable */
-import React, { useEffect, useState } from 'react';
-import { Modal, Select } from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { Modal, Select } from 'antd';
+import React, { useEffect, useState } from 'react';
 
 type PromptSelectType = {
   promptList: Record<string, any>[];

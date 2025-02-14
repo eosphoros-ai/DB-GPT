@@ -39,7 +39,11 @@ class LlamaServerParameters(LLMDeployModelParameters):
     provider: str = ModelType.LLAMA_CPP_SERVER
 
     path: Optional[str] = field(
-        default=None, metadata={"help": _("Local model file path")}
+        default=None,
+        metadata={
+            "order": -800,
+            "help": _("Local model file path"),
+        },
     )
     # Model configuration
     model_hf_repo: Optional[str] = field(
@@ -55,9 +59,10 @@ class LlamaServerParameters(LLMDeployModelParameters):
     device: Optional[str] = field(
         default=None,
         metadata={
+            "order": -700,
             "help": _(
                 "Device to run model. If None, the device is automatically determined"
-            )
+            ),
         },
     )
 

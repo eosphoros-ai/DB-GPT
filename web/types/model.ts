@@ -46,6 +46,8 @@ export type StartModelParams = {
 
 interface ExtMetadata {
   tags: string;
+  order: number;
+  [key: string]: string | number | boolean;
 }
 
 type NestedField = {

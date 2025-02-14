@@ -601,11 +601,9 @@ class ConfigurationManager:
                 continue
             for parent_param in cls.parse_description(parent):
                 if parent_param.description:
-                    parent_descriptions[parent_param.param_name] = (
-                        parent_param.description
-                    )
+                    parent_descriptions[parent_param.param_name] = parent_param
 
-        for fd in fields(target_cls):
+        for raw_order, fd in enumerate(fields(target_cls)):
             field_type = type_hints[fd.name]
             origin = get_origin(field_type)
             args = get_args(field_type)
@@ -626,9 +624,15 @@ class ConfigurationManager:
             else:
                 str_type, _ = type_to_string(field_type)
 
-            description = fd.metadata.get("help")
-            if not description:
-                description = parent_descriptions.get(fd.name)
+            description = fd.metadata.get("help") if fd.metadata else None
+            param_order = fd.metadata.get("order") if fd.metadata else None
+            parent_tags = {}
+            if param_order is None:
+                param_order = raw_order
+            if not description and fd.name in parent_descriptions:
+                description = parent_descriptions[fd.name].description
+            if fd.name in parent_descriptions:
+                parent_tags = parent_descriptions[fd.name].ext_metadata
             desc = ParameterDescription(
                 param_name=fd.name,
                 param_class=f"{target_cls.__module__}.{target_cls.__name__}",
@@ -636,6 +640,7 @@ class ConfigurationManager:
                 required=fd.default is MISSING and fd.default_factory is MISSING,
                 is_array=is_array,
                 description=description,
+                param_order=param_order,
             )
 
             # Get metadata from field
@@ -645,6 +650,13 @@ class ConfigurationManager:
                 desc.ext_metadata = {
                     k: v
                     for k, v in fd.metadata.items()
+                    if k not in ("help", "label", "valid_values")
+                }
+            elif parent_tags:
+                desc.label = parent_tags.get("label")
+                desc.ext_metadata = {
+                    k: v
+                    for k, v in parent_tags.items()
                     if k not in ("help", "label", "valid_values")
                 }
 
@@ -704,6 +716,8 @@ class ConfigurationManager:
 
             descriptions.append(desc)
 
+        # Sort descriptions by order
+        descriptions.sort(key=lambda d: d.param_order)
         return descriptions
 
 

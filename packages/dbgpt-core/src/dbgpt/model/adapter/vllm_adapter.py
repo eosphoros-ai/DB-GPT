@@ -24,15 +24,17 @@ class VLLMDeployModelParameters(LLMDeployModelParameters):
     path: Optional[str] = field(
         default=None,
         metadata={
+            "order": -800,
             "help": _("The path of the model, if you want to deploy a local model."),
         },
     )
     device: Optional[str] = field(
         default=None,
         metadata={
+            "order": -700,
             "help": _(
                 "Device to run model. If None, the device is automatically determined"
-            )
+            ),
         },
     )
 

@@ -131,7 +131,7 @@ register_proxy_model_adapter(
     SiliconFlowLLMClient,
     supported_models=[
         ModelMetadata(
-            model="deepseek-ai/DeepSeek-V3",
+            model=["deepseek-ai/DeepSeek-V3", "Pro/deepseek-ai/DeepSeek-V3"],
             context_length=64 * 1024,
             max_output_length=8 * 1024,
             description="DeepSeek-V3 by DeepSeek",
@@ -139,7 +139,7 @@ register_proxy_model_adapter(
             function_calling=True,
         ),
         ModelMetadata(
-            model="deepseek-ai/DeepSeek-R1",
+            model=["deepseek-ai/DeepSeek-R1", "Pro/deepseek-ai/DeepSeek-R1"],
             context_length=64 * 1024,
             max_output_length=8 * 1024,
             description="DeepSeek-R1 by DeepSeek",
