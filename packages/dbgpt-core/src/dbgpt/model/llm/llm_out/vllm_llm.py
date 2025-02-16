@@ -18,8 +18,13 @@ async def generate_stream(
     request_id = params.pop("request_id") if "request_id" in params else random_uuid()
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 1.0))
+    top_k = params.get("top_k", -1)
+    presence_penalty = float(params.get("presence_penalty", 0.0))
+    frequency_penalty = float(params.get("frequency_penalty", 0.0))
     max_new_tokens = int(params.get("max_new_tokens", 2048))
     echo = bool(params.get("echo", True))
+    # use_beam_search = params.get("use_beam_search", False)
+    best_of = params.get("best_of", None)
     stop_str = params.get("stop", None)
 
     stop_token_ids = params.get("stop_token_ids", None) or []
@@ -56,8 +61,11 @@ async def generate_stream(
         n=1,
         temperature=temperature,
         top_p=top_p,
-        use_beam_search=False,
         max_tokens=max_new_tokens,
+        top_k=top_k,
+        presence_penalty=presence_penalty,
+        frequency_penalty=frequency_penalty,
+        best_of=best_of,
         **gen_params,
     )
 

@@ -52,6 +52,17 @@ class HFLLMDeployModelParameters(LLMDeployModelParameters):
             "help": _("The quantization parameters."),
         },
     )
+    low_cpu_mem_usage: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Whether to use low CPU memory usage mode. It can reduce the memory "
+                "when loading the model, if you load your model with quantization, it "
+                "will be True by default. You must install `accelerate` to make it "
+                "work."
+            )
+        },
+    )
     num_gpus: Optional[int] = field(
         default=None,
         metadata={
@@ -165,31 +176,38 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         )
 
         revision = from_pretrained_kwargs.get("revision", "main")
+        trust_remote_code = from_pretrained_kwargs.get(
+            "trust_remote_code", self.trust_remote_code
+        )
+        low_cpu_mem_usage = from_pretrained_kwargs.get("low_cpu_mem_usage", False)
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = trust_remote_code
+        if "low_cpu_mem_usage" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["low_cpu_mem_usage"] = low_cpu_mem_usage
         try:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
                 use_fast=self.use_fast_tokenizer(),
                 revision=revision,
-                trust_remote_code=self.trust_remote_code,
+                trust_remote_code=trust_remote_code,
             )
         except TypeError:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
                 use_fast=False,
                 revision=revision,
-                trust_remote_code=self.trust_remote_code,
+                trust_remote_code=trust_remote_code,
             )
         try:
-            if "trust_remote_code" not in from_pretrained_kwargs:
-                from_pretrained_kwargs["trust_remote_code"] = self.trust_remote_code
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+                model_path,
+                **from_pretrained_kwargs,
             )
         except NameError:
             model = AutoModel.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+                model_path,
+                **from_pretrained_kwargs,
             )
-        # tokenizer.use_default_system_prompt = False
         return model, tokenizer
 
     def get_generate_stream_function(

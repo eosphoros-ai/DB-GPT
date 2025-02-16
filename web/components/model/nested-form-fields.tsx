@@ -7,11 +7,9 @@ interface NestedFormFieldsProps {
   fields: Record<string, SupportModelParams[]>;
   form: FormInstance;
 }
-
 const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields, form }) => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
 
-  // 当父组件的表单值变化时，尝试恢复已选择的类型
   useEffect(() => {
     const currentValue = form.getFieldValue(parentName);
     if (currentValue?.type && !selectedType) {
@@ -19,16 +17,38 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
     }
   }, [form, parentName]);
 
+  const handleTypeChange = (value: string) => {
+    setSelectedType(value);
+
+    // Get all field configurations for the current type
+    const typeFields = fields[value] || [];
+
+    // Create an object containing default values for all fields
+    const defaultValues = {
+      type: value,
+    };
+
+    // Set default values for each field
+    typeFields.forEach(field => {
+      defaultValues[field.param_name] = field.default_value;
+    });
+
+    // Set the entire object as the value of the form field
+    form.setFieldsValue({
+      [parentName]: defaultValues,
+    });
+  };
+
   const renderFormItem = (param: SupportModelParams) => {
     const type = param.param_type.toLowerCase();
-    const itemName = [parentName, param.param_name].join('.');
-    const isFixed = param.ext_metadata?.tags?.includes('fixed');
+    // Use the complete field path
+    const fieldPath = [parentName, param.param_name];
 
     let control;
     if (type === 'str' || type === 'string') {
       if (param.valid_values) {
         control = (
-          <Select disabled={isFixed}>
+          <Select>
             {param.valid_values.map(value => (
               <Select.Option key={value} value={value}>
                 {value}
@@ -37,54 +57,34 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
           </Select>
         );
       } else {
-        control = <Input disabled={isFixed} />;
+        control = <Input />;
       }
     } else if (type === 'int' || type === 'integer' || type === 'number' || type === 'float') {
-      control = <InputNumber className='w-full' disabled={isFixed} />;
+      control = <InputNumber className='w-full' />;
     } else if (type === 'bool' || type === 'boolean') {
-      control = <Checkbox disabled={isFixed} />;
+      control = <Checkbox />;
     } else {
-      control = <Input disabled={isFixed} />;
+      control = <Input />;
     }
 
     return (
       <Form.Item
-        key={itemName}
-        label={<p className='whitespace-normal overflow-wrap-break-word'>{param.label || param.param_name}</p>}
-        name={itemName}
-        initialValue={param.default_value}
+        key={param.param_name}
+        label={param.label || param.param_name}
+        name={fieldPath}
         valuePropName={type === 'bool' || type === 'boolean' ? 'checked' : 'value'}
         tooltip={param.description}
-        rules={[{ required: param.required, message: `Please input ${param.param_name}` }]}
+        rules={selectedType && param.required ? [{ required: true, message: `Please input ${param.param_name}` }] : []}
       >
         {control}
       </Form.Item>
     );
   };
 
-  const handleTypeChange = (value: string) => {
-    setSelectedType(value);
-
-    // 获取新类型的默认值
-    const newFields = fields[value] || [];
-    const defaultValues = {
-      type: value,
-      ...Object.fromEntries(newFields.map(field => [field.param_name, field.default_value])),
-    };
-
-    // 更新表单中的所有相关字段
-    form.setFieldValue(parentName, defaultValues);
-  };
-
   return (
     <div className='space-y-4 border rounded-md p-4'>
-      <Form.Item
-        label='Type'
-        name={`${parentName}.type`}
-        required
-        tooltip='Select the type to see specific configuration options'
-      >
-        <Select value={selectedType} onChange={handleTypeChange} placeholder='Select a type' className='w-full'>
+      <Form.Item label='Type' name={[parentName, 'type']}>
+        <Select onChange={handleTypeChange} placeholder='Select a type'>
           {Object.keys(fields).map(type => (
             <Select.Option key={type} value={type}>
               {type}
@@ -93,7 +93,7 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
         </Select>
       </Form.Item>
 
-      {selectedType && (
+      {selectedType && fields[selectedType] && (
         <div className='mt-4'>
           <h4 className='mb-4 text-base font-medium'>{selectedType} Configuration</h4>
           <div className='space-y-4'>{fields[selectedType].map(param => renderFormItem(param))}</div>
@@ -102,5 +102,4 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
     </div>
   );
 };
-
 export default NestedFormFields;

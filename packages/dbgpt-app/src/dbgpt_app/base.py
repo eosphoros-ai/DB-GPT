@@ -10,9 +10,9 @@ from urllib.parse import quote
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import resolve_root_path
+from dbgpt.core.interface.parameter import BaseServerParameters
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.datasource.rdbms.base import RDBMSConnector, RDBMSDatasourceParameters
-from dbgpt.util.parameter_utils import BaseServerParameters
 from dbgpt_app.config import ApplicationConfig, ServiceConfig
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

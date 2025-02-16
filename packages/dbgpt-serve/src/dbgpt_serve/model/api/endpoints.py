@@ -1,3 +1,4 @@
+import logging
 from functools import cache
 from typing import List, Optional
 
@@ -19,6 +20,7 @@ from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
 from .schemas import ModelResponse
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Add your API endpoints here
@@ -206,6 +208,7 @@ async def create_model(
         await worker_manager.model_startup(request)
         return Result.succ(True)
     except Exception as e:
+        logger.error(f"model start failed {e}")
         return Result.failed(err_code="E000X", msg=f"model start failed {e}")
 
 
@@ -233,6 +236,7 @@ async def start_model(
         await worker_manager.model_startup(models[0])
         return Result.succ(True)
     except Exception as e:
+        logger.error(f"model start failed {e}")
         return Result.failed(err_code="E000X", msg=f"model start failed {e}")
 
 

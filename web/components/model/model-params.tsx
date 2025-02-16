@@ -12,9 +12,12 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
     if (params) {
       const initialValues: ParamValues = {};
       params.forEach(param => {
-        // 对于嵌套字段，我们不在这里设置初始值
         if (!param.nested_fields) {
-          initialValues[param.param_name] = param.default_value;
+          // Only set default value when the field has not been modified by the user
+          const currentValue = form.getFieldValue(param.param_name);
+          if (currentValue === undefined) {
+            initialValues[param.param_name] = param.default_value;
+          }
         }
       });
       form.setFieldsValue(initialValues);
@@ -25,26 +28,32 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
     return null;
   }
 
-  // 在表单提交前转换数据结构
+  // Transform data structure before form submission
   const normalizeFormValues = (values: any) => {
     const normalized = { ...values };
     params?.forEach(param => {
       if (param.nested_fields && normalized[param.param_name]) {
         const nestedValue = normalized[param.param_name];
-        // 移除多余的嵌套结构，只保留选中类型的配置
         if (nestedValue.type) {
-          const type = nestedValue.type;
+          // Keep all field values instead of just type
+          const nestedFields = param.nested_fields[nestedValue.type] || [];
+          const fieldValues = {};
+          nestedFields.forEach(field => {
+            if (nestedValue[field.param_name] !== undefined) {
+              fieldValues[field.param_name] = nestedValue[field.param_name];
+            }
+          });
+
           normalized[param.param_name] = {
-            type,
-            ...nestedValue,
+            type: nestedValue.type,
+            ...fieldValues,
           };
         }
       }
     });
     return normalized;
   };
-
-  // 覆盖表单的原始提交方法
+  // Override the original submit method of the form
   const originalSubmit = form.submit;
   form.submit = () => {
     const values = form.getFieldsValue();
@@ -104,7 +113,7 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
               : 'value'
           }
           tooltip={param.description}
-          rules={[{ required: param.required, message: `Please input ${param.param_name}` }]}
+          rules={param.required ? [{ required: true, message: `Please input ${param.param_name}` }] : []}
         >
           {renderItem(param)}
         </Form.Item>

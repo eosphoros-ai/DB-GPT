@@ -1,7 +1,8 @@
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Type
+from dataclasses import dataclass, field, fields, is_dataclass
+from typing import Any, Dict, List, Optional, Type
 
+from dbgpt.core import ModelMessage
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
 from dbgpt.model.adapter.model_metadata import COMMON_HF_MODELS
@@ -29,7 +30,7 @@ class VLLMDeployModelParameters(LLMDeployModelParameters):
         },
     )
     device: Optional[str] = field(
-        default=None,
+        default="auto",
         metadata={
             "order": -700,
             "help": _(
@@ -51,7 +52,7 @@ class VLLMDeployModelParameters(LLMDeployModelParameters):
         """Get the real device."""
         return self.device or super().real_device
 
-    def to_vllm_params(self) -> Dict[str, Any]:
+    def to_vllm_params(self, vllm_config_cls: Optional[Type] = None) -> Dict[str, Any]:
         """Convert to vllm parameters."""
         data = self.to_dict()
         model = data.get("path", None)
@@ -62,15 +63,30 @@ class VLLMDeployModelParameters(LLMDeployModelParameters):
                 "Model is required, please specify the model path or name."
             )
         copy_data = data.copy()
+        real_params = {}
         extra_params = copy_data.get("extras", {})
-        del copy_data["path"]
-        del copy_data["name"]
-        del copy_data["provider"]
-        del copy_data["extras"]
-        copy_data["model"] = model
+        if vllm_config_cls and is_dataclass(vllm_config_cls):
+            for fd in fields(vllm_config_cls):
+                if fd.name in copy_data:
+                    real_params[fd.name] = copy_data[fd.name]
+        else:
+            for k, v in copy_data.items():
+                if k in [
+                    "provider",
+                    "path",
+                    "name",
+                    "extras",
+                    "verbose",
+                    "backend",
+                    "prompt_template",
+                    "context_length",
+                ]:
+                    continue
+                real_params[k] = v
+        real_params["model"] = model
         if extra_params and isinstance(extra_params, dict):
-            copy_data.update(extra_params)
-        return copy_data
+            real_params.update(extra_params)
+        return real_params
 
     trust_remote_code: Optional[bool] = field(
         default=True, metadata={"help": _("Trust remote code or not.")}
@@ -422,6 +438,35 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
         """Get model parameters class."""
         return VLLMDeployModelParameters
 
+    def match(
+        self,
+        provider: str,
+        model_name: Optional[str] = None,
+        model_path: Optional[str] = None,
+    ) -> bool:
+        return provider == ModelType.VLLM
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        if not tokenizer:
+            raise ValueError("tokenizer is is None")
+        if hasattr(tokenizer, "apply_chat_template"):
+            messages = self.transform_model_messages(
+                messages, convert_to_compatible_format
+            )
+            logger.debug(f"The messages after transform: \n{messages}")
+            str_prompt = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            return str_prompt
+        return None
+
     def load_from_params(self, params: VLLMDeployModelParameters):
         from vllm import AsyncLLMEngine
         from vllm.engine.arg_utils import AsyncEngineArgs
@@ -430,7 +475,7 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
             f"Start vllm AsyncLLMEngine with args: {_get_dataclass_print_str(params)}"
         )
 
-        vllm_engine_args_dict = params.to_vllm_params()
+        vllm_engine_args_dict = params.to_vllm_params(AsyncEngineArgs)
         # Set the attributes from the parsed arguments.
         engine_args = AsyncEngineArgs(**vllm_engine_args_dict)
         engine = AsyncLLMEngine.from_engine_args(engine_args)
@@ -446,7 +491,7 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
     def get_async_generate_stream_function(
         self, model, deploy_model_params: LLMDeployModelParameters
     ):
-        from dbgpt.model.llm.llm_out import generate_stream
+        from dbgpt.model.llm.llm_out.vllm_llm import generate_stream
 
         return generate_stream
 

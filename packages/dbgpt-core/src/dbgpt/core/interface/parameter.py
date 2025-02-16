@@ -5,6 +5,8 @@ from dbgpt.configs.model_config import get_device
 from dbgpt.util.configure import RegisterParameters
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
+from dbgpt.util.tracer import TracerParameters
+from dbgpt.util.utils import LoggingParameters
 
 if TYPE_CHECKING:
     from dbgpt.model.parameter import WorkerType
@@ -360,3 +362,28 @@ class BitsandbytesQuantization4bits(BitsandbytesQuantization):
                 bnb_4bit_use_double_quant=self.bnb_4bit_use_double_quant,
             )
         }
+
+
+@dataclass
+class BaseServerParameters(BaseParameters):
+    host: Optional[str] = field(
+        default="0.0.0.0", metadata={"help": "The host IP address to bind to."}
+    )
+    port: Optional[int] = field(
+        default=None, metadata={"help": "The port number to bind to."}
+    )
+    daemon: Optional[bool] = field(
+        default=False, metadata={"help": "Run the server as a daemon."}
+    )
+    log: LoggingParameters = field(
+        default_factory=LoggingParameters,
+        metadata={
+            "help": _("Logging configuration"),
+        },
+    )
+    trace: Optional[TracerParameters] = field(
+        default=None,
+        metadata={
+            "help": _("Tracer configuration"),
+        },
+    )

@@ -187,13 +187,15 @@ class ModelStorage:
     def __init__(self, storage: StorageInterface):
         self._storage = storage
 
-    def all_models(self) -> List[WorkerStartupRequest]:
+    def all_models(self, enabled: bool = True) -> List[WorkerStartupRequest]:
         """Get all stored models.
 
         Returns:
             List[WorkerStartupRequest]: The list of worker startup requests.
         """
-        models = self._storage.query(QuerySpec(conditions={}), ModelStorageItem)
+        models = self._storage.query(
+            QuerySpec(conditions={"enabled": enabled}), ModelStorageItem
+        )
         return [model.to_startup_req() for model in models]
 
     def query_models(
@@ -202,6 +204,7 @@ class ModelStorage:
         worker_type: str,
         sys_code: Optional[str] = None,
         user_name: Optional[str] = None,
+        enabled: Optional[bool] = True,
         **kwargs,
     ) -> List[WorkerStartupRequest]:
         """Query models by the specified conditions.
@@ -211,6 +214,8 @@ class ModelStorage:
             worker_type (str): The worker type.
             sys_code (Optional[str], optional): The system code. Defaults to None.
             user_name (Optional[str], optional): The user name. Defaults to None.
+            enabled (Optional[bool], optional): Whether the model is enabled. Defaults
+                to True.
 
         Returns:
             List[WorkerStartupRequest]: The list of worker startup requests.
@@ -220,6 +225,7 @@ class ModelStorage:
             "worker_type": worker_type,
             "sys_code": sys_code,
             "user_name": user_name,
+            "enabled": enabled,
         }
         conditions.update(kwargs)
         models = self._storage.query(QuerySpec(conditions=conditions), ModelStorageItem)

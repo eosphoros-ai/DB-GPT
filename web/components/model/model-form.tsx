@@ -10,7 +10,7 @@ import ModelParams from './model-params';
 const { Option } = Select;
 const FormItem = Form.Item;
 
-// 支持的 worker 类型
+// The supported worker types
 const WORKER_TYPES = ['llm', 'text2vec', 'reranker'];
 
 function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: () => void }) {
@@ -44,7 +44,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
       }, {});
 
       setGroupedModels(grouped);
-      // 初始时不设置 providers，等待选择 worker_type 后再设置
+      // Note: Initially do not set providers, wait for worker_type selection before setting
       setProviders([]);
     }
   }
@@ -53,7 +53,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
     getModels();
   }, []);
 
-  // 根据 worker_type 过滤并设置可用的 providers
+  // Filter and set available providers based on worker_type
   function updateProvidersByWorkerType(workerType: string) {
     const availableProviders = new Set<string>();
     Object.entries(groupedModels).forEach(([provider, models]) => {
@@ -76,7 +76,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
     setSelectedProvider(value);
     form.setFieldValue('provider', value);
 
-    // 获取当前 provider 下符合所选 worker_type 的第一个模型的参数作为默认参数
+    // Get the params of the first model that matches the selected worker_type under the current provider as the default params
     const providerModels = groupedModels[value] || [];
     const filteredModels = providerModels.filter(m => m.worker_type === selectedWorkerType);
     if (filteredModels.length > 0) {
@@ -90,19 +90,52 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
   async function onFinish(values: any) {
     if (!selectedProvider || !selectedWorkerType) return;
 
+    const processFormValues = (formValues: any) => {
+      const processed = { ...formValues };
+
+      params?.forEach(param => {
+        if (param.nested_fields && processed[param.param_name]) {
+          const nestedValue = processed[param.param_name];
+          // Make sure to keep all field values
+          if (nestedValue.type) {
+            const typeFields = param.nested_fields[nestedValue.type] || [];
+            const fieldValues = {};
+
+            // Collect values of all fields
+            typeFields.forEach(field => {
+              if (nestedValue[field.param_name] !== undefined) {
+                fieldValues[field.param_name] = nestedValue[field.param_name];
+              }
+            });
+
+            processed[param.param_name] = {
+              ...fieldValues,
+              type: nestedValue.type,
+            };
+          }
+        }
+      });
+
+      return processed;
+    };
+
     setLoading(true);
     try {
-      const selectedModel = groupedModels[selectedProvider]?.find(m => m.model === values.name);
+      const processedValues = processFormValues(values);
+      const selectedModel = groupedModels[selectedProvider]?.find(m => m.model === processedValues.name);
+
       const params: StartModelParams = {
         host: selectedModel?.host || '',
         port: selectedModel?.port || 0,
-        model: values.name,
+        model: processedValues.name,
         worker_type: selectedWorkerType,
-        params: values,
+        params: processedValues,
       };
+
       const [, , data] = await apiInterceptors(createModel(params));
       if (data?.success) {
         message.success(t('start_model_success'));
+        form.resetFields();
         onSuccess?.();
       }
     } catch (_error) {

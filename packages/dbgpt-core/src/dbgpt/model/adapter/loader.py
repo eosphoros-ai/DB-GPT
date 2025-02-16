@@ -109,7 +109,10 @@ def huggingface_loader(
         default_torch_dtype = torch.float32
     elif device == "cuda":
         default_torch_dtype = torch.float16
-        num_gpus = torch.cuda.device_count()
+        if model_params.num_gpus is not None:
+            num_gpus = model_params.num_gpus
+        else:
+            num_gpus = torch.cuda.device_count()
         available_gpu_memory = get_gpu_memory(num_gpus)
         max_memory = {
             i: str(int(available_gpu_memory[i] * 0.85)) + "GiB" for i in range(num_gpus)
@@ -148,6 +151,11 @@ def huggingface_loader(
         raise ValueError(f"Invalid device: {device}")
 
     kwargs["torch_dtype"] = parsed_torch_dtype or default_torch_dtype
+    if model_params.low_cpu_mem_usage is not None:
+        kwargs["low_cpu_mem_usage"] = model_params.low_cpu_mem_usage
+    if "device_map" in kwargs and "low_cpu_mem_usage" not in kwargs:
+        # Must set low_cpu_mem_usage to True when device_map is set
+        kwargs["low_cpu_mem_usage"] = True
 
     model, tokenizer = _hf_try_load_default_quantization_model(
         model_path, llm_adapter, device, num_gpus, model_params, kwargs
@@ -303,6 +311,11 @@ def load_huggingface_quantization_model(
     if "llama-2" in model_name and not transformers.__version__ >= "4.31.0":
         raise ValueError(
             "Llama-2 quantization require transformers.__version__>=4.31.0"
+        )
+    if "low_cpu_mem_usage" in kwargs and kwargs["low_cpu_mem_usage"] is False:
+        logger.warning(
+            "low_cpu_mem_usage setting is False, it dose not support for "
+            "quantization model, will set it to True"
         )
     params = {"low_cpu_mem_usage": True, "device_map": "auto"}
     torch_dtype = kwargs.get("torch_dtype")

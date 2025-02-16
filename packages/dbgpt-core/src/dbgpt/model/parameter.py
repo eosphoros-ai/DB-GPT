@@ -5,13 +5,14 @@ from enum import Enum
 from typing import List, Optional, Tuple, Union
 
 from dbgpt.core.interface.parameter import (
+    BaseServerParameters,
     EmbeddingDeployModelParameters,
     LLMDeployModelParameters,
     RerankerDeployModelParameters,
 )
 from dbgpt.model.base import ModelType
 from dbgpt.util.i18n_utils import _
-from dbgpt.util.parameter_utils import BaseParameters, BaseServerParameters
+from dbgpt.util.parameter_utils import BaseParameters
 
 
 class WorkerType(str, Enum):

@@ -75,11 +75,36 @@ cuda124 = [
 #    "torchvision>=0.18.0,<0.19.0;sys_platform == 'linux'",
 #    "torchaudio>=2.3.0,<2.4.0;sys_platform == 'linux'",
 #]
-
-quantization = [
-    # Accessible large language models via k-bit quantization for PyTorch.
-    "bitsandbytes>=0.45.0; sys_platform == 'win32' or sys_platform == 'linux'",
-    # "autoawq"
+vllm = [
+    # Just support GPU version on Linux
+    "vllm>=0.7.0; sys_platform == 'linux'"
+]
+vllm_pascal = [
+    # https://github.com/sasha0552/pascal-pkgs-ci
+    "vllm-pascal==0.7.2; sys_platform == 'linux'"
+]
+quant_bnb = [
+    "bitsandbytes>=0.39.0; sys_platform == 'win32' or sys_platform == 'linux'",
+    "accelerate"
+]
+# NVIDIA:
+#   - 1. Capabilities: 7.5 or higher
+#   - 2. CUDA: 11.8 or higher
+# AMD:
+#   - 1. Your ROCm version must be compatible with Triton.
+quant_awq = [
+    "autoawq"
+]
+quant_gptqmodel = [
+    "optimum",
+    "device-smi>=0.3.3",
+    "tokenicer",
+    # Required transformers>4.48.3
+    "gptqmodel"
+]
+quant_gptq = [
+    "optimum",
+    "auto-gptq",
 ]
 
 [dependency-groups]
@@ -103,7 +128,6 @@ conflicts = [
         { extra = "cuda118" },
         { extra = "cuda121" },
         { extra = "cuda124" },
-#        { extra = "rocm60" },
     ],
 ]
 default-groups = ["auto"]
@@ -131,6 +155,11 @@ explicit = true
 [[tool.uv.index]]
 name = "pytorch-rocm60"
 url = "https://download.pytorch.org/whl/rocm6.0"
+explicit = true
+
+[[tool.uv.index]]
+name = "vllm-pascal"
+url = "https://sasha0552.github.io/pascal-pkgs-ci/"
 explicit = true
 
 [tool.uv.sources]
@@ -174,3 +203,10 @@ torchaudio = [
     { index = "pytorch-cu124", marker = "platform_system == 'Linux'", extra = "cuda124" },
 #    { index = "pytorch-rocm60", marker = "platform_system == 'Linux'", extra = "rocm60" },
 ]
+vllm-pascal = [
+    { index = "vllm-pascal", marker = "platform_system == 'Linux'", extra = "vllm_pascal" },
+]
+
+[tool.uv.build-isolation]
+# Disable build isolation for gptqmodel
+gptqmodel = false

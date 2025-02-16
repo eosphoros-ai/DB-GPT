@@ -109,7 +109,6 @@ code = [
     "lyric-js-worker>=0.1.6",
     "lyric-component-ts-transpiling>=0.1.6",
 ]
-vllm = ["vllm"]
 llama_cpp = [
     "llama-cpp-python"
 ]
