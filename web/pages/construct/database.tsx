@@ -16,7 +16,7 @@ type DBItem = DbListResponse[0];
 export function isFileDb(dbTypeList: DBOption[], dbType: DBType) {
   return dbTypeList.find(item => item.value === dbType)?.isFileDb;
 }
-
+let getFromRenderData:any = []
 function Database() {
   // const { setCurrentDialogInfo } = useContext(ChatContext);  // unused
   // const router = useRouter(); // unused
@@ -40,7 +40,7 @@ function Database() {
 
   const getDbSupportList = async () => {
     const [, data] = await apiInterceptors(getDbSupportType());
-    setDbSupportList(data ?? []);
+    setDbSupportList(data.types ?? []);
   };
 
   const refreshDbList = async () => {
@@ -50,11 +50,12 @@ function Database() {
     setLoading(false);
   };
 
+
   const dbTypeList = useMemo(() => {
     const supportDbList = dbSupportList.map(item => {
-      const { db_type, is_file_db } = item;
+      const db_type = item.name;
 
-      return { ...dbMapper[db_type], value: db_type, isFileDb: is_file_db };
+      return { ...dbMapper[db_type], value: db_type, isFileDb: true, parameters: item.parameters };
     }) as DBOption[];
     const unSupportDbList = Object.keys(dbMapper)
       .filter(item => !supportDbList.some(db => db.value === item))
@@ -116,6 +117,9 @@ function Database() {
 
   const handleDbTypeClick = (info: DBOption) => {
     const dbItems = dbList.filter(item => item.db_type === info.value);
+    getFromRenderData = info?.parameters
+   
+   
     setDraw({
       open: true,
       dbList: dbItems,
@@ -253,6 +257,7 @@ function Database() {
         <FormDialog
           open={modal.open}
           dbTypeList={dbTypeList}
+          getFromRenderData={getFromRenderData}
           choiceDBType={modal.dbType}
           editValue={modal.info}
           dbNames={dbList.map(item => item.db_name)}

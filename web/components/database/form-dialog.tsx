@@ -3,7 +3,7 @@ import { addOmcDB, apiInterceptors, getSupportDBList, postDbAdd, postDbEdit, pos
 import { isFileDb } from '@/pages/construct/database';
 import { DBOption, DBType, DbListResponse, PostDbParams } from '@/types/db';
 import { useDebounceFn } from 'ahooks';
-import { Button, Form, Input, InputNumber, Modal, Select, Spin, Tooltip, message } from 'antd';
+import { Button, Form, Input, Modal, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,12 +19,22 @@ interface Props {
   onClose?: () => void;
 }
 
-function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClose, onSuccess }: Props) {
+function FormDialog({
+  open,
+  choiceDBType,
+  dbTypeList,
+  getFromRenderData,
+  editValue,
+  dbNames,
+  onClose,
+  onSuccess,
+}: Props) {
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
   const [form] = Form.useForm<DBItem>();
   const dbType = Form.useWatch('db_type', form);
   const [omcDBList, setOmcDBList] = useState([]);
+  const [fromDefault, setFromDefault] = useState({});
   const [omcListLoading, setOmcListLoading] = useState(false);
   const fileDb = useMemo(() => isFileDb(dbTypeList, dbType), [dbTypeList, dbType]);
 
@@ -33,6 +43,16 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
       form.setFieldValue('db_type', choiceDBType);
     }
   }, [choiceDBType]);
+
+  useEffect(() => {
+    console.log(getFromRenderData);
+    let obj = {}
+    for (let index = 0; index < getFromRenderData.length; index++) {
+      const element = getFromRenderData[index];
+      obj[element.param_name] = element.default_value
+    }
+    setFromDefault(obj)
+  }, [getFromRenderData]);
 
   useEffect(() => {
     if (editValue) {
@@ -51,6 +71,12 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
 
   const onFinish = async (val: DBItem) => {
     const { db_host, db_path, db_port, db_type, ...params } = val;
+
+    for(const key in val){
+      if (!isNaN(val[key])) {
+        val[key] = +val[key]
+      }
+    }
     setLoading(true);
 
     if (db_type === 'omc') {
@@ -81,13 +107,17 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
       message.error('The database already exists!');
       return;
     }
-    const data: PostDbParams = {
-      db_host: fileDb ? undefined : db_host,
-      db_port: fileDb ? undefined : db_port,
-      db_type: db_type,
-      file_path: fileDb ? db_path : undefined,
-      ...params,
-    };
+    // const data: PostDbParams = {
+    //   db_host: fileDb ? undefined : db_host,
+    //   db_port: fileDb ? undefined : db_port,
+    //   db_type: db_type,
+    //   file_path: fileDb ? db_path : undefined,
+    //   ...params,
+    // };
+    const data = {
+      type: choiceDBType,
+      params: val,
+    }
     try {
       const [testErr] = await apiInterceptors(postDbTestConnect(data));
       if (testErr) return;
@@ -123,16 +153,24 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
     <Modal
       open={open}
       width={800}
-      title={editValue ? t('Edit') : t('create_database')}
+      title={editValue ? t('Edit') + ' - ' + choiceDBType : t('create_database')  + ' - '  + choiceDBType}
       maskClosable={false}
       footer={null}
+      
       onCancel={onClose}
     >
-      <Form form={form} className='pt-2' labelCol={{ span: 6 }} labelAlign='left' onFinish={onFinish}>
-        <Form.Item name='db_type' label='DB Type' className='mb-6' rules={[{ required: true }]}>
-          <Select aria-readonly={lockDBType} disabled={lockDBType} options={dbTypeList} />
-        </Form.Item>
-        {form.getFieldValue('db_type') === 'omc' ? (
+      <Form form={form} initialValues={fromDefault} className='pt-2' labelCol={{ span: 6 }} labelAlign='left' onFinish={onFinish}>
+        {getFromRenderData.map(item => (
+          <Form.Item name={item.param_name} label={item.label} className='mb-6' rules={[{ required: item.required }]}>
+            <Input defaultValue={item.default_value} value={item.default_value} readOnly={!!editValue}  />
+        
+          </Form.Item>
+        
+        ))}
+  
+        {/* <Form.Item name='db_name' label='DB Name' className='mb-3' rules={[{ required: true }]}>
+        </Form.Item> */}
+        {/* {form.getFieldValue('db_type') === 'omc' ? (
           <Form.Item name='db_name' label='DB Name' className='mb-6' rules={[{ required: true }]}>
             <Select
               optionRender={(option, { index }) => {
@@ -202,7 +240,7 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
         )}
         <Form.Item name='comment' label='Remark' className='mb-6'>
           <Input />
-        </Form.Item>
+        </Form.Item> */}
         <Form.Item className='flex flex-row-reverse pt-1 mb-0'>
           <Button htmlType='submit' type='primary' size='middle' className='mr-1' loading={loading}>
             Save
