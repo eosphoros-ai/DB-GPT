@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 from sqlalchemy import URL
 
 from dbgpt.component import SystemApp
-from dbgpt.core import StorageInterface
+from dbgpt.core import InMemoryStorage, StorageInterface
 from dbgpt.storage.metadata import DatabaseManager
 from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
 from dbgpt.util.serialization.json_serialization import JsonSerializer
@@ -53,10 +53,10 @@ class Serve(BaseServe):
             self._system_app.app.include_router(
                 router, prefix=prefix, tags=self._api_tags
             )
-        config = self._config or ServeConfig.from_app_config(
+        self._config = self._config or ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
-        init_endpoints(self._system_app, config)
+        init_endpoints(self._system_app, self._config)
         self._app_has_initiated = True
 
     def on_init(self):
@@ -76,12 +76,17 @@ class Serve(BaseServe):
 
         self._db_manager = self.create_or_get_db_manager()
         serializer = JsonSerializer()
-        self._model_storage = SQLAlchemyStorage(
-            self._db_manager,
-            ServeEntity,
-            ModelStorageAdapter(),
-            serializer,
-        )
+        if self.config.model_storage == "memory":
+            self._model_storage = InMemoryStorage(serializer)
+        elif self.config.model_storage == "database" or not self.config.model_storage:
+            self._model_storage = SQLAlchemyStorage(
+                self._db_manager,
+                ServeEntity,
+                ModelStorageAdapter(),
+                serializer,
+            )
+        else:
+            raise ValueError(f"Invalid model storage type: {self.config.model_storage}")
 
     @property
     def model_storage(self) -> StorageInterface:
@@ -89,3 +94,10 @@ class Serve(BaseServe):
         if not self._model_storage:
             raise ValueError("Model storage is not initialized")
         return self._model_storage
+
+    @property
+    def config(self) -> ServeConfig:
+        """Get the config"""
+        if not self._config:
+            raise ValueError("Config is not initialized")
+        return self._config

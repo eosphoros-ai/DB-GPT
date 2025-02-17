@@ -72,6 +72,10 @@ class OpenAICompatibleDeployModelParameters(LLMDeployModelParameters):
         metadata={"help": _("The http or https proxy to use openai")},
     )
 
+    concurrency: Optional[int] = field(
+        default=100, metadata={"help": _("Model concurrency limit")}
+    )
+
 
 async def chatgpt_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048

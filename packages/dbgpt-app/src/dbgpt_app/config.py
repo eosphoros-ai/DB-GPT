@@ -5,7 +5,6 @@ from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.model.parameter import (
     ModelsDeployParameters,
     ModelServiceConfig,
-    ModelWorkerParameters,
 )
 from dbgpt.storage.cache.manager import ModelCacheParameters
 from dbgpt.util.configure import HookConfig
@@ -73,6 +72,17 @@ class ServiceWebParameters(BaseParameters):
             "help": _(
                 "Database connection config, now support SQLite, OceanBase and MySQL"
             )
+        },
+    )
+    model_storage: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The storage type of model configures, if None, use the default "
+                "storage(current database). When you run in light mode, it will not "
+                "use any storage."
+            ),
+            "valid_values": ["database", "memory"],
         },
     )
     trace: Optional[TracerParameters] = field(
@@ -195,13 +205,3 @@ class ApplicationConfig:
             "help": _("Logging configuration"),
         },
     )
-
-    def generate_temp_model_worker_params(self) -> ModelWorkerParameters:
-        model_name = self.models.default_llm
-        model_path = self.models.default_llm
-        return ModelWorkerParameters(
-            model_name=model_name,
-            model_path=model_path,
-            host=self.service.model.worker.host,
-            port=self.service.model.worker.port,
-        )

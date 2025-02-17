@@ -11,7 +11,6 @@ from dbgpt.model.parameter import (
     BaseParameters,
     ModelAPIServerParameters,
     ModelControllerParameters,
-    ModelParameters,
     ModelWorkerParameters,
 )
 from dbgpt.util import get_or_create_event_loop
@@ -414,7 +413,8 @@ def _model_dynamic_factory() -> Callable[[None], List[Type]]:
     param_class = _dynamic_model_parser()
     fix_class = [ModelWorkerParameters]
     if not param_class:
-        param_class = [ModelParameters]
+        # param_class = [ModelParameters]
+        param_class = []
     fix_class += param_class
     return fix_class
 

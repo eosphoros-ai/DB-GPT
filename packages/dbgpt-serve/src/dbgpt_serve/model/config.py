@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
 
+from dbgpt.util.i18n_utils import _
 from dbgpt_serve.core import BaseServeConfig
 
 APP_NAME = "model"
@@ -17,4 +19,14 @@ class ServeConfig(BaseServeConfig):
 
     __type__ = APP_NAME
 
-    # TODO: add your own parameters here
+    model_storage: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The storage type of model configures, if None, use the default "
+                "storage(current database). When you run in light mode, it will not "
+                "use any storage."
+            ),
+            "valid_values": ["database", "memory"],
+        },
+    )

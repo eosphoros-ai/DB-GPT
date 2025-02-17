@@ -2,6 +2,7 @@ import abc
 import logging
 import os
 import re
+from collections.abc import Callable
 from dataclasses import MISSING, dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import (
@@ -261,6 +262,31 @@ class ConfigurationManager:
         with open(file_path, "rb") as f:
             config_dict = tomllib.load(f)
         return cls(config_dict)
+
+    def exists(self, key: str) -> bool:
+        """Check if a configuration key exists.
+
+        Args:
+            key: Dot-notation key to access nested configuration (e.g., 'database.host')
+
+        Returns:
+            True if the key exists, otherwise False
+
+        Examples:
+            >>> config = ConfigurationManager({"database": {"host": "localhost"}})
+            >>> print(config.exists("database.host"))
+            True
+            >>> print(config.exists("database.port"))
+            False
+        """
+        keys = key.split(".")
+        value = self.config
+        for k in keys:
+            if isinstance(value, dict) and k in value:
+                value = value[k]
+            else:
+                return False
+        return True
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get a configuration value using a dot-notation key.
@@ -531,13 +557,21 @@ class ConfigurationManager:
         return concrete_cls(**prepared_field_values)
 
     def parse_config(
-        self, cls: Type[T], prefix: str = "", hook_section: Optional[str] = None
+        self,
+        cls: Type[T],
+        prefix: str = "",
+        config_handler: Optional[
+            Callable[[Union[Dict[str, Any], List[Dict[str, Any]]]], Dict[str, Any]]
+        ] = None,
+        hook_section: Optional[str] = None,
     ) -> T:
         """Parse configuration data into a specified dataclass type.
 
         Args:
             cls: The target dataclass type to parse into
             prefix: Optional dot-notation prefix to select a configuration section
+            config_handler: Optional function to process the configuration data before
+                parsing
             hook_section: Optional configuration section to use as the hook
 
         Returns:
@@ -560,7 +594,8 @@ class ConfigurationManager:
         """
         config_section = self.config
         if prefix:
-            config_section = self.get(prefix)
+            for key in prefix.split("."):
+                config_section = config_section.get(key, {})
         if hook_section:
             hook_configs = config_section.get(hook_section, [])
             if not isinstance(hook_configs, list):
@@ -570,6 +605,8 @@ class ConfigurationManager:
                 config_section = _load_hook(hook_configs, config_section)
         if config_section is None:
             raise ValueError(f"Configuration section not found: {prefix}")
+        if config_handler:
+            config_section = config_handler(config_section)
         return self._convert_to_dataclass(cls, config_section)
 
     @classmethod

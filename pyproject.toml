@@ -35,6 +35,11 @@ dev-dependencies = [
     "pytest_asyncio",
     "twine",
     "ruff>=0.9.1",
+    "pytest-mock>=3.14.0",
+    "asynctest>=0.13.0",
+    "pytest-integration>=0.2.3",
+    "pytest-recording>=0.13.2",
+    "pytest-cov>=6.0.0",
 ]
 
 [tool.pytest.ini_options]

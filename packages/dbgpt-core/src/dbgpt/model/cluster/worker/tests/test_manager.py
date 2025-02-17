@@ -1,6 +1,5 @@
 from dataclasses import asdict
 from typing import List, Tuple
-from unittest.mock import patch
 
 import pytest
 
@@ -12,9 +11,11 @@ from dbgpt.model.cluster.tests.conftest import (  # noqa
     _create_workers,
     _new_worker_params,
     _start_worker_manager,
+    manager_2_embedding_workers,
     manager_2_workers,
+    manager_with_2_workers,
 )
-from dbgpt.model.cluster.worker.manager import LocalWorkerManager
+from dbgpt.model.cluster.worker.manager import LocalWorkerManager, _build_worker  # noqa
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.parameter import ModelWorkerParameters, WorkerType
 
@@ -82,22 +83,19 @@ async def test_add_worker(
 ):
     # TODO test with register function
     deploy_params = HFLLMDeployModelParameters(
-        name=worker_param.model_name,
-        path=worker_param.model_path,
+        name=_TEST_MODEL_NAME, path=_TEST_MODEL_PATH
     )
     assert manager.add_worker(worker, worker_param, deploy_params)
     # Add again
     assert manager.add_worker(worker, worker_param, deploy_params) is False
-    key = manager._worker_key(worker_param.worker_type, worker_param.model_name)
+    key = manager._worker_key(worker_param.worker_type, deploy_params.name)
     assert len(manager.workers) == 1
     assert len(manager.workers[key]) == 1
     assert manager.workers[key][0].worker == worker
 
     assert manager.add_worker(
         worker,
-        _new_worker_params(
-            model_name="chatglm2-6b", model_path="/app/models/chatglm2-6b"
-        ),
+        _new_worker_params(),
         deploy_model_params=HFLLMDeployModelParameters(
             name="chatglm2-6b", path="/app/models/chatglm2-6b"
         ),
@@ -105,9 +103,7 @@ async def test_add_worker(
     assert (
         manager.add_worker(
             worker,
-            _new_worker_params(
-                model_name="chatglm2-6b", model_path="/app/models/chatglm2-6b"
-            ),
+            _new_worker_params(),
             deploy_model_params=HFLLMDeployModelParameters(
                 name="chatglm2-6b", path="/app/models/chatglm2-6b"
             ),
@@ -131,7 +127,7 @@ async def test__apply_worker(manager_2_workers: LocalWorkerManager):  # noqa: F8
     async with _start_worker_manager(workers=workers) as manager:
         # Apply to single model
         req = WorkerApplyRequest(
-            model=workers[0][1].model_name,
+            model=workers[0][1].name,
             apply_type=WorkerApplyType.START,
             worker_type=WorkerType.LLM,
         )
@@ -222,27 +218,25 @@ async def test__remove_worker():
     workers = _create_workers(3)
     async with _start_worker_manager(workers=workers, stop=False) as manager:
         assert len(manager.workers) == 3
-        for _, worker_params, _ in workers:
-            manager._remove_worker(worker_params)
-        not_exist_parmas = _new_worker_params(
-            model_name="this is a not exist worker params"
+        for w, worker_params, _ in workers:
+            manager._remove_worker(worker_params, worker_params.name)
+        not_exist_parmas = _new_worker_params()
+        manager._remove_worker(
+            not_exist_parmas, model_name="this is a not exist worker params"
         )
-        manager._remove_worker(not_exist_parmas)
 
 
 @pytest.mark.asyncio
-# @patch("dbgpt.model.cluster.worker.manager._build_worker")
-@patch("dbgpt.model.cluster.worker.tests.test_manager._build_worker")
-async def test_model_startup(mock_build_worker):
+async def test_model_startup():
     async with _start_worker_manager() as manager:
         workers = _create_workers(1)
         worker, worker_params, model_instance = workers[0]
-        mock_build_worker.return_value = worker
+        manager._gen_worker_fun = lambda x, y: worker
 
         req = WorkerStartupRequest(
             host="127.0.0.1",
             port=8001,
-            model=worker_params.model_name,
+            model=worker_params.name,
             worker_type=WorkerType.LLM,
             params=asdict(worker_params),
         )
@@ -253,11 +247,11 @@ async def test_model_startup(mock_build_worker):
     async with _start_worker_manager() as manager:
         workers = _create_workers(1, error_worker=True)
         worker, worker_params, model_instance = workers[0]
-        mock_build_worker.return_value = worker
+        manager._gen_worker_fun = lambda x, y: worker
         req = WorkerStartupRequest(
             host="127.0.0.1",
             port=8001,
-            model=worker_params.model_name,
+            model=worker_params.name,
             worker_type=WorkerType.LLM,
             params=asdict(worker_params),
         )
@@ -266,17 +260,16 @@ async def test_model_startup(mock_build_worker):
 
 
 @pytest.mark.asyncio
-@patch("dbgpt.model.cluster.worker.manager._build_worker")
-async def test_model_shutdown(mock_build_worker):
+async def test_model_shutdown():
     async with _start_worker_manager(start=False, stop=False) as manager:
         workers = _create_workers(1)
         worker, worker_params, model_instance = workers[0]
-        mock_build_worker.return_value = worker
+        manager._gen_worker_fun = lambda x, y: worker
 
         req = WorkerStartupRequest(
             host="127.0.0.1",
             port=8001,
-            model=worker_params.model_name,
+            model=worker_params.name,
             worker_type=WorkerType.LLM,
             params=asdict(worker_params),
         )
@@ -305,9 +298,9 @@ async def test_get_model_instances(is_async):
     workers = _create_workers(3)
     async with _start_worker_manager(workers=workers, stop=False) as manager:
         assert len(manager.workers) == 3
-        for _, worker_params, _ in workers:
-            model_name = worker_params.model_name
-            worker_type = worker_params.worker_type
+        for wk, worker_params, _ in workers:
+            model_name = worker_params.name
+            worker_type = wk.worker_type()
             if is_async:
                 assert (
                     len(await manager.get_model_instances(worker_type, model_name)) == 1
@@ -328,19 +321,19 @@ async def test_get_model_instances(is_async):
 
 @pytest.mark.asyncio
 async def test__simple_select(
-    manager_with_2_workers: Tuple[
+    manager_with_2_workers: Tuple[  # noqa: F811
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
     ],
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params, _ in workers:
-        model_name = worker_params.model_name
-        worker_type = worker_params.worker_type
+    for wk, worker_params, _ in workers:
+        model_name = worker_params.name
+        worker_type = wk.worker_type()
         instances = await manager.get_model_instances(worker_type, model_name)
         assert instances
         inst = manager._simple_select(worker_params.worker_type, model_name, instances)
         assert inst is not None
-        assert inst.worker_params == worker_params
+        assert inst.model_params == worker_params
 
 
 @pytest.mark.asyncio
@@ -353,14 +346,14 @@ async def test__simple_select(
 )
 async def test_select_one_instance(
     is_async: bool,
-    manager_with_2_workers: Tuple[
+    manager_with_2_workers: Tuple[  # noqa: F811
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
     ],
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params, _ in workers:
-        model_name = worker_params.model_name
-        worker_type = worker_params.worker_type
+    for wk, worker_params, _ in workers:
+        model_name = worker_params.name
+        worker_type = wk.worker_type()
         if is_async:
             inst = await manager.select_one_instance(worker_type, model_name)
         else:
@@ -378,14 +371,14 @@ async def test_select_one_instance(
 )
 async def test__get_model(
     is_async: bool,
-    manager_with_2_workers: Tuple[
+    manager_with_2_workers: Tuple[  # noqa: F811
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
     ],
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params, _ in workers:
-        model_name = worker_params.model_name
-        worker_type = worker_params.worker_type
+    for wk, worker_params, _ in workers:
+        model_name = worker_params.name
+        worker_type = wk.worker_type()
         params = {"model": model_name}
         if is_async:
             wr = await manager._get_model(params, worker_type=worker_type)
@@ -398,20 +391,20 @@ async def test__get_model(
 @pytest.mark.parametrize(
     "manager_with_2_workers, expected_messages",
     [
-        ({"stream_messags": ["Hello", " world."]}, "Hello world."),
-        ({"stream_messags": ["你好，我是", "张三。"]}, "你好，我是张三。"),
+        ({"stream_messages": ["Hello", " world."]}, "Hello world."),
+        ({"stream_messages": ["你好，我是", "张三。"]}, "你好，我是张三。"),
     ],
     indirect=["manager_with_2_workers"],
 )
 async def test_generate_stream(
-    manager_with_2_workers: Tuple[
+    manager_with_2_workers: Tuple[  # noqa: F811
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
     ],
     expected_messages: str,
 ):
     manager, workers = manager_with_2_workers
     for _, worker_params, _ in workers:
-        model_name = worker_params.model_name
+        model_name = worker_params.name
         # worker_type = worker_params.worker_type
         params = {"model": model_name}
         text = ""
@@ -424,20 +417,20 @@ async def test_generate_stream(
 @pytest.mark.parametrize(
     "manager_with_2_workers, expected_messages",
     [
-        ({"stream_messags": ["Hello", " world."]}, "Hello world."),
-        ({"stream_messags": ["你好，我是", "张三。"]}, "你好，我是张三。"),
+        ({"stream_messages": ["Hello", " world."]}, "Hello world."),
+        ({"stream_messages": ["你好，我是", "张三。"]}, "你好，我是张三。"),
     ],
     indirect=["manager_with_2_workers"],
 )
 async def test_generate(
-    manager_with_2_workers: Tuple[
+    manager_with_2_workers: Tuple[  # noqa: F811
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
     ],
     expected_messages: str,
 ):
     manager, workers = manager_with_2_workers
     for _, worker_params, _ in workers:
-        model_name = worker_params.model_name
+        model_name = worker_params.name
         # worker_type = worker_params.worker_type
         params = {"model": model_name}
         out = await manager.generate(params)
@@ -454,7 +447,7 @@ async def test_generate(
     indirect=["manager_2_embedding_workers"],
 )
 async def test_embeddings(
-    manager_2_embedding_workers: Tuple[
+    manager_2_embedding_workers: Tuple[  # noqa: F811
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
     ],
     expected_embedding: List[List[int]],
@@ -462,7 +455,7 @@ async def test_embeddings(
 ):
     manager, workers = manager_2_embedding_workers
     for _, worker_params, _ in workers:
-        model_name = worker_params.model_name
+        model_name = worker_params.name
         # worker_type = worker_params.worker_type
         params = {"model": model_name, "input": ["hello", "world"]}
         if is_async:
@@ -474,14 +467,14 @@ async def test_embeddings(
 
 @pytest.mark.asyncio
 async def test_parameter_descriptions(
-    manager_with_2_workers: Tuple[
+    manager_with_2_workers: Tuple[  # noqa: F811
         LocalWorkerManager, List[Tuple[ModelWorker, ModelWorkerParameters]]
     ],
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params, _ in workers:
-        model_name = worker_params.model_name
-        worker_type = worker_params.worker_type
+    for wk, worker_params, _ in workers:
+        model_name = worker_params.name
+        worker_type = wk.worker_type()
         params = await manager.parameter_descriptions(worker_type, model_name)
         assert params is not None
         assert len(params) > 5

@@ -66,6 +66,10 @@ class WenxinDeployModelParameters(LLMDeployModelParameters):
         },
     )
 
+    concurrency: Optional[int] = field(
+        default=100, metadata={"help": _("Model concurrency limit")}
+    )
+
 
 @cached(TTLCache(1, 1800))
 def _build_access_token(api_key: str, secret_key: str) -> str:

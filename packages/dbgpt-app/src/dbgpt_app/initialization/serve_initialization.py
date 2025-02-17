@@ -57,6 +57,10 @@ def get_config(
     Returns:
         Config instance of type T
     """
+    if hasattr(config_type, "__type__"):
+        # Use the type name as the serve name
+        serve_name = config_type.__type__
+
     config = serve_configs.get(serve_name)
     if not config:
         config = config_type(**default_config)
@@ -252,6 +256,9 @@ def register_serve_apps(
     system_app.register(
         ModelServe,
         config=get_config(
-            serve_configs, ModelServe.name, dbgpt_serve.model.serve.ServeConfig
+            serve_configs,
+            ModelServe.name,
+            dbgpt_serve.model.serve.ServeConfig,
+            model_storage=app_config.service.web.model_storage,
         ),
     )

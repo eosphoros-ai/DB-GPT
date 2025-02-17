@@ -274,6 +274,10 @@ class LlamaServerParameters(LLMDeployModelParameters):
         default=None, metadata={"help": _("Server startup timeout in seconds")}
     )
 
+    concurrency: Optional[int] = field(
+        default=20, metadata={"help": _("Model concurrency limit")}
+    )
+
     @property
     def real_model_path(self) -> Optional[str]:
         """Get the real model path.

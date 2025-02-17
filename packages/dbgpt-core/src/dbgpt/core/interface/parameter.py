@@ -44,7 +44,10 @@ class BaseDeployModelParameters(BaseParameters):
         },
     )
     verbose: Optional[bool] = field(
-        default=False, metadata={"help": "Show verbose output."}
+        default=False, metadata={"help": _("Show verbose output.")}
+    )
+    concurrency: Optional[int] = field(
+        default=5, metadata={"help": _("Model concurrency limit")}
     )
 
     @property
@@ -125,6 +128,10 @@ class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
 class EmbeddingDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Embedding deploy model parameters."""
 
+    concurrency: Optional[int] = field(
+        default=100, metadata={"help": _("Model concurrency limit")}
+    )
+
     @classmethod
     def worker_type(cls) -> "WorkerType":
         """Get the worker type."""
@@ -136,6 +143,10 @@ class EmbeddingDeployModelParameters(BaseDeployModelParameters, RegisterParamete
 @dataclass
 class RerankerDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Reranker deploy model parameters."""
+
+    concurrency: Optional[int] = field(
+        default=50, metadata={"help": _("Model concurrency limit")}
+    )
 
     @classmethod
     def worker_type(cls) -> "WorkerType":

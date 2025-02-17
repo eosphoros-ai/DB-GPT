@@ -121,10 +121,10 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
 
     web_config = param.service.web
     log_config = web_config.log or param.log
-
-    logger_filename = log_config.file or os.path.join(LOGDIR, "dbgpt_webserver.log")
     setup_logging(
-        "dbgpt", logging_level=log_config.level, logger_filename=logger_filename
+        "dbgpt",
+        log_config,
+        default_logger_filename=os.path.join(LOGDIR, "dbgpt_webserver.log"),
     )
     print(param)
 
@@ -157,7 +157,7 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         # Persistent model storage
         model_storage = ModelStorage(model_serve.model_storage)
         initialize_worker_manager_in_client(
-            worker_params=param.generate_temp_model_worker_params(),
+            worker_params=param.service.model.worker,
             models_config=param.models,
             app=app,
             local_port=local_port,
@@ -170,7 +170,7 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         # MODEL_SERVER is controller address now
         controller_addr = web_config.controller_addr
         initialize_worker_manager_in_client(
-            worker_params=param.generate_temp_model_worker_params(),
+            worker_params=param.service.model.worker,
             models_config=param.models,
             app=app,
             run_locally=False,

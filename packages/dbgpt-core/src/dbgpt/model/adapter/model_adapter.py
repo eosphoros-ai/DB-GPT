@@ -6,10 +6,10 @@ import threading
 from functools import cache
 from typing import List, Optional, Type
 
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter, get_model_adapter
 from dbgpt.model.adapter.template import ConversationAdapter, ConversationAdapterFactory
 from dbgpt.model.base import ModelType
-from dbgpt.model.parameter import BaseModelParameters
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class DefaultConversationAdapterFactory(ConversationAdapterFactory):
         return _auto_get_conv_template(model_name, model_path)
 
 
-def _dynamic_model_parser() -> Optional[List[Type[BaseModelParameters]]]:
+def _dynamic_model_parser() -> Optional[List[Type[LLMDeployModelParameters]]]:
     """Dynamic model parser, parse the model parameters from the command line arguments.
 
     Returns:

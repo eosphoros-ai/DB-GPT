@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
-from typing import Dict, Iterator, List, Tuple
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Type
 
 import pytest
 import pytest_asyncio
 
 from dbgpt.core import ModelMetadata, ModelOutput
-from dbgpt.core.interface.parameter import BaseDeployModelParameters
+from dbgpt.core.interface.parameter import (
+    BaseDeployModelParameters,
+)
 from dbgpt.model.adapter.hf_adapter import HFLLMDeployModelParameters
 from dbgpt.model.base import ModelInstance
 from dbgpt.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
@@ -14,7 +16,9 @@ from dbgpt.model.cluster.worker.manager import (
     WorkerManager,
 )
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
+from dbgpt.model.parameter import ModelWorkerParameters, WorkerType
+from dbgpt.rag.embedding import CrossEncoderRerankEmbeddings
+from dbgpt.rag.embedding.embeddings import HFEmbeddingDeployModelParameters
 
 
 @pytest.fixture
@@ -34,7 +38,8 @@ def model_instance():
 class MockModelWorker(ModelWorker):
     def __init__(
         self,
-        model_parameters: ModelParameters,
+        model_parameters: BaseDeployModelParameters,
+        worker_type: str = WorkerType.LLM.value,
         error_worker: bool = False,
         stop_error: bool = False,
         stream_messages: List[str] = None,
@@ -46,13 +51,21 @@ class MockModelWorker(ModelWorker):
         if not embeddings:
             embeddings = []
         self.model_parameters = model_parameters
+        self._worker_type = worker_type
         self.error_worker = error_worker
         self.stop_error = stop_error
         self.stream_messages = stream_messages
         self._embeddings = embeddings
 
-    # def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
-    #     return self.model_parameters
+    @property
+    def model_name(self) -> str:
+        return self.model_parameters.name
+
+    def worker_type(self) -> WorkerType:
+        return WorkerType.from_str(self._worker_type)
+
+    def model_param_class(self) -> Type[BaseDeployModelParameters]:
+        return self.model_parameters.__class__
 
     def load_worker(
         self, model_name: str, deploy_model_params: BaseDeployModelParameters, **kwargs
@@ -84,11 +97,34 @@ class MockModelWorker(ModelWorker):
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
         return ModelMetadata(
-            model=self.model_parameters.model_name,
+            model=self.model_parameters.name,
         )
 
     def embeddings(self, params: Dict) -> List[List[float]]:
         return self._embeddings
+
+
+def _DEFAULT_GEN_WORKER_FUN(worker_type, worker_class):
+    return MockModelWorker(
+        HFLLMDeployModelParameters(name=_TEST_MODEL_NAME, path=_TEST_MODEL_PATH),
+        worker_type=worker_type,
+    )
+
+
+class MockLocalWorkerManager(LocalWorkerManager):
+    def __init__(
+        self,
+        gen_worker_fun: Callable[[Optional[str], Optional[str]], ModelWorker],
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self._gen_worker_fun = gen_worker_fun
+
+    def _build_worker(
+        self, worker_type: Optional[str], worker_class: Optional[str]
+    ) -> ModelWorker:
+        return self._gen_worker_fun(worker_type, worker_class)
 
 
 _TEST_MODEL_NAME = "vicuna-13b-v1.5"
@@ -98,13 +134,9 @@ ClusterType = Tuple[WorkerManager, ModelRegistry]
 
 
 def _new_worker_params(
-    model_name: str = _TEST_MODEL_NAME,
-    model_path: str = _TEST_MODEL_PATH,
     worker_type: str = WorkerType.LLM.value,
 ) -> ModelWorkerParameters:
-    return ModelWorkerParameters(
-        model_name=model_name, model_path=model_path, worker_type=worker_type
-    )
+    return ModelWorkerParameters(worker_type=worker_type)
 
 
 def _create_workers(
@@ -116,14 +148,28 @@ def _create_workers(
     embeddings: List[List[float]] = None,
     host: str = "127.0.0.1",
     start_port=8001,
-) -> List[Tuple[ModelWorker, ModelWorkerParameters, ModelInstance]]:
+) -> List[Tuple[ModelWorker, BaseDeployModelParameters, ModelInstance]]:
     workers = []
     for i in range(num_workers):
         model_name = f"test-model-name-{i}"
         model_path = f"test-model-path-{i}"
-        model_parameters = ModelParameters(model_name=model_name, model_path=model_path)
+        if worker_type == WorkerType.LLM:
+            model_parameters = HFLLMDeployModelParameters(
+                name=model_name, path=model_path
+            )
+        elif worker_type == WorkerType.TEXT2VEC:
+            model_parameters = HFEmbeddingDeployModelParameters(
+                name=model_name, path=model_path
+            )
+        elif worker_type == WorkerType.RERANKER:
+            model_parameters = CrossEncoderRerankEmbeddings(
+                name=model_name, path=model_path
+            )
+        else:
+            raise ValueError(f"Invalid worker type: {worker_type}")
         worker = MockModelWorker(
             model_parameters,
+            worker_type=worker_type,
             error_worker=error_worker,
             stop_error=stop_error,
             stream_messages=stream_messages,
@@ -135,10 +181,7 @@ def _create_workers(
             port=start_port + i,
             healthy=True,
         )
-        worker_params = _new_worker_params(
-            model_name, model_path, worker_type=worker_type
-        )
-        workers.append((worker, worker_params, model_instance))
+        workers.append((worker, model_parameters, model_instance))
     return workers
 
 
@@ -156,31 +199,31 @@ async def _start_worker_manager(**kwargs):
     stop_error = kwargs.get("stop_error", False)
     stream_messages = kwargs.get("stream_messages", [])
     embeddings = kwargs.get("embeddings", [])
+    gen_worker_fun = kwargs.get("gen_worker_fun", _DEFAULT_GEN_WORKER_FUN)
 
-    worker_manager = LocalWorkerManager(
+    worker_manager = MockLocalWorkerManager(
+        gen_worker_fun=gen_worker_fun,
         register_func=register_func,
         deregister_func=deregister_func,
         send_heartbeat_func=send_heartbeat_func,
         model_registry=model_registry,
     )
 
-    for worker, worker_params, model_instance in _create_workers(
+    for worker, deploy_params, model_instance in _create_workers(
         num_workers,
         error_worker,
         stop_error,
         stream_messages=stream_messages,
         embeddings=embeddings,
     ):
-        deploy_params = HFLLMDeployModelParameters(
-            name=worker_params.model_name,
-            path=worker_params.model_path,
+        worker_params = ModelWorkerParameters(
+            worker_type=WorkerType.LLM.value,
         )
         worker_manager.add_worker(worker, worker_params, deploy_params)
     if workers:
-        for worker, worker_params, model_instance in workers:
-            deploy_params = HFLLMDeployModelParameters(
-                name=worker_params.model_name,
-                path=worker_params.model_path,
+        for worker, deploy_params, model_instance in workers:
+            worker_params = ModelWorkerParameters(
+                worker_type=worker.worker_type(),
             )
             worker_manager.add_worker(worker, worker_params, deploy_params)
 

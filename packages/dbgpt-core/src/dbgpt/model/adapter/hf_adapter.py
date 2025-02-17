@@ -240,6 +240,20 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         return str_prompt
 
 
+class CommonModelAdapter(NewHFChatModelAdapter):
+    """Common model adapter for huggingface chat models.
+
+    It is the last one to check if the model is a huggingface chat model.
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+    support_system_message: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path is not None
+
+
 class YiAdapter(NewHFChatModelAdapter):
     support_4bit: bool = True
     support_8bit: bool = True
@@ -762,6 +776,7 @@ class Internlm2Adapter(NewHFChatModelAdapter):
 
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
+register_model_adapter(CommonModelAdapter)  # For all of hf models can be matched
 register_model_adapter(YiAdapter)
 register_model_adapter(Yi15Adapter)
 register_model_adapter(Mixtral8x7BAdapter)
