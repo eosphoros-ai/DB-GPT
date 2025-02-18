@@ -56,6 +56,7 @@ class DbChatOutputParser(BaseOutputParser):
         else:
             try:
                 response = json.loads(clean_str, strict=False)
+                display, resp = "", ""
                 for key in sorted(response):
                     if key.strip() == "sql":
                         sql = response[key]
