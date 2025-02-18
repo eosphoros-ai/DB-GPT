@@ -164,7 +164,7 @@ function FormDialog({
       <Form form={form} initialValues={fromDefault} className='pt-2' labelCol={{ span: 6 }} labelAlign='left' onFinish={onFinish}>
         {getFromRenderData.map(item => (
           <Form.Item name={item.param_name} label={item.label} className='mb-6' rules={[{ required: item.required }]}>
-            <Input defaultValue={item.default_value} value={item.default_value} readOnly={!!editValue}  />
+            <Input defaultValue={item.default_value}   />
           </Form.Item>
         ))}
         <Form.Item className='flex flex-row-reverse pt-1 mb-0'>
