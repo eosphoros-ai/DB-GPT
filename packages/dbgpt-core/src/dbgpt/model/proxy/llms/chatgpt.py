@@ -72,6 +72,10 @@ class OpenAICompatibleDeployModelParameters(LLMDeployModelParameters):
         metadata={"help": _("The http or https proxy to use openai")},
     )
 
+    concurrency: Optional[int] = field(
+        default=100, metadata={"help": _("Model concurrency limit")}
+    )
+
 
 async def chatgpt_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
@@ -380,4 +384,99 @@ class OpenAILLMClient(ProxyLLMClient):
         return self._context_length
 
 
-register_proxy_model_adapter(OpenAILLMClient)
+register_proxy_model_adapter(
+    OpenAILLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=[
+                "gpt-4o",
+                "gpt-4o-2024-08-06",
+                "gpt-4o-2024-11-20",
+                "gpt-4o-2024-08-06",
+            ],
+            context_length=128000,
+            max_output_length=16384,
+            description="The flagship model across audio, vision, and text by OpenAI",
+            link="https://openai.com/index/hello-gpt-4o/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["gpt-4o-mini", "gpt-4o-mini-2024-07-18", "gpt-4o-mini-2024-07-18"],
+            context_length=128000,
+            max_output_length=16384,
+            description="The flagship model across audio, vision, and text by OpenAI",
+            link="https://openai.com/index/hello-gpt-4o/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["o1", "o1-2024-12-17"],
+            context_length=200000,
+            max_output_length=100000,
+            description="Reasoning model by OpenAI",
+            link="https://platform.openai.com/docs/models#o1",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["o1-mini", "o1-mini-2024-09-12"],
+            context_length=128000,
+            max_output_length=65536,
+            description="Reasoning model by OpenAI",
+            link="https://platform.openai.com/docs/models#o1",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["o1-preview", "o1-preview-2024-09-12"],
+            context_length=128000,
+            max_output_length=32768,
+            description="Reasoning model by OpenAI",
+            link="https://platform.openai.com/docs/models#o1",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["o3-mini", "o3-mini-2025-01-31"],
+            context_length=200000,
+            max_output_length=100000,
+            description="Reasoning model by OpenAI",
+            link="https://platform.openai.com/docs/models#o3-mini",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gpt-4-turbo",
+                "gpt-4-turbo-2024-04-09",
+                "gpt-4-turbo-preview",
+                "gpt-4-0125-preview",
+                "gpt-4-1106-preview",
+            ],
+            context_length=128000,
+            max_output_length=4096,
+            description="GPT-4-Turbo by OpenAI",
+            link="https://platform.openai.com/docs/models#gpt-4-turbo-and-gpt-4",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gpt-4",
+                "gpt-4-0613",
+                "gpt-4-0314",
+            ],
+            context_length=8192,
+            max_output_length=8192,
+            description="GPT-4-Turbo by OpenAI",
+            link="https://platform.openai.com/docs/models#gpt-4-turbo-and-gpt-4",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gpt-3.5-turbo-0125",
+                "gpt-3.5-turbo",
+                "gpt-3.5-turbo-1106",
+            ],
+            context_length=16385,
+            max_output_length=4096,
+            description="GPT-3.5 by OpenAI",
+            link="https://platform.openai.com/docs/models#gpt-3-5-turbo",
+            function_calling=True,
+        ),
+    ],
+)

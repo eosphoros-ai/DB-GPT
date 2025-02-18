@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
+from dbgpt.core import ModelMetadata
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -131,4 +132,36 @@ class MoonshotLLMClient(OpenAILLMClient):
         return moonshot_generate_stream
 
 
-register_proxy_model_adapter(MoonshotLLMClient)
+register_proxy_model_adapter(
+    MoonshotLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=["moonshot-v1-8k"],
+            context_length=8 * 1024,
+            description="Moonshot v1 8k model",
+            link="https://platform.moonshot.cn/docs/pricing/chat#%E8%AE%A1%E8%B4%B9%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["moonshot-v1-32k"],
+            context_length=32 * 1024,
+            description="Moonshot v1 32k model",
+            link="https://platform.moonshot.cn/docs/pricing/chat#%E8%AE%A1%E8%B4%B9%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["moonshot-v1-32k"],
+            context_length=32 * 1024,
+            description="Moonshot v1 32k model",
+            link="https://platform.moonshot.cn/docs/pricing/chat#%E8%AE%A1%E8%B4%B9%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5",  # noqa
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["moonshot-v1-128k"],
+            context_length=128 * 1024,
+            description="Moonshot v1 32k model",
+            link="https://platform.moonshot.cn/docs/pricing/chat#%E8%AE%A1%E8%B4%B9%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5",  # noqa
+            function_calling=True,
+        ),
+    ],
+)

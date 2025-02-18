@@ -5,13 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import SystemApp
-from dbgpt.util import PaginationResult
 from dbgpt_serve.core import ResourceTypes, Result, blocking_func_to_async
 from dbgpt_serve.datasource.api.schemas import (
     DatasourceCreateRequest,
     DatasourceQueryResponse,
     DatasourceServeRequest,
-    DatasourceServeResponse,
 )
 from dbgpt_serve.datasource.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.datasource.service.service import Service

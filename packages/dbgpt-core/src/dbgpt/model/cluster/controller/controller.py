@@ -1,21 +1,29 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
+from dbgpt.configs.model_config import resolve_root_path
 from dbgpt.model.base import ModelInstance
 from dbgpt.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
-from dbgpt.model.parameter import ModelControllerParameters
+from dbgpt.model.parameter import DBModelRegistryParameters, ModelControllerParameters
 from dbgpt.util.api_utils import APIMixin
 from dbgpt.util.api_utils import _api_remote as api_remote
 from dbgpt.util.api_utils import _sync_api_remote as sync_api_remote
 from dbgpt.util.fastapi import create_app
-from dbgpt.util.parameter_utils import EnvArgumentParser
-from dbgpt.util.tracer.tracer_impl import initialize_tracer, root_tracer
-from dbgpt.util.utils import setup_http_service_logging, setup_logging
+from dbgpt.util.tracer.tracer_impl import (
+    TracerParameters,
+    initialize_tracer,
+    root_tracer,
+)
+from dbgpt.util.utils import (
+    LoggingParameters,
+    setup_http_service_logging,
+    setup_logging,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -162,11 +170,10 @@ controller = ModelControllerAdapter()
 def initialize_controller(
     app=None,
     remote_controller_addr: str = None,
-    host: str = None,
-    port: int = None,
     registry: Optional[ModelRegistry] = None,
     controller_params: Optional[ModelControllerParameters] = None,
     system_app: Optional[SystemApp] = None,
+    trace_config: Optional[TracerParameters] = None,
 ):
     global controller
     if remote_controller_addr:
@@ -177,11 +184,10 @@ def initialize_controller(
         controller.backend = LocalModelController(registry=registry)
 
     if app:
-        app.include_router(router, prefix="/api", tags=["Model"])
+        # Register the controller API to the FastAPI app.
+        app.include_router(router, prefix="/api", tags=["Model Controller"])
     else:
         import uvicorn
-
-        from dbgpt.configs.model_config import LOGDIR
 
         setup_http_service_logging()
         app = create_app()
@@ -189,19 +195,25 @@ def initialize_controller(
             system_app = SystemApp(app)
         if not controller_params:
             raise ValueError("Controller parameters are required.")
+        trace_config = trace_config or TracerParameters()
+        trace_file = trace_config.file or os.path.join(
+            "logs", "dbgpt_model_controller_tracer.jsonl"
+        )
         initialize_tracer(
-            os.path.join(LOGDIR, controller_params.tracer_file),
-            root_operation_name="DB-GPT-ModelController",
+            trace_file,
             system_app=system_app,
-            tracer_storage_cls=controller_params.tracer_storage_cls,
-            enable_open_telemetry=controller_params.tracer_to_open_telemetry,
-            otlp_endpoint=controller_params.otel_exporter_otlp_traces_endpoint,
-            otlp_insecure=controller_params.otel_exporter_otlp_traces_insecure,
-            otlp_timeout=controller_params.otel_exporter_otlp_traces_timeout,
+            root_operation_name=trace_config.root_operation_name
+            or "DB-GPT-ModelController",
+            tracer_parameters=trace_config,
         )
 
-        app.include_router(router, prefix="/api", tags=["Model"])
-        uvicorn.run(app, host=host, port=port, log_level="info")
+        app.include_router(router, prefix="/api", tags=["Model Controller"])
+        uvicorn.run(
+            app,
+            host=controller_params.host,
+            port=controller_params.port,
+            log_level="info",
+        )
 
 
 @router.get("/health")
@@ -219,8 +231,15 @@ async def api_register_instance(request: ModelInstance):
 
 
 @router.delete("/controller/models")
-async def api_deregister_instance(model_name: str, host: str, port: int):
-    instance = ModelInstance(model_name=model_name, host=host, port=port)
+async def api_deregister_instance(
+    model_name: str, host: str, port: int, remove_from_registry: bool = False
+):
+    instance = ModelInstance(
+        model_name=model_name,
+        host=host,
+        port=port,
+        remove_from_registry=remove_from_registry,
+    )
     with root_tracer.start_span(
         "dbgpt.model.controller.deregister_instance", metadata=instance.to_dict()
     ):
@@ -244,100 +263,115 @@ def _create_registry(controller_params: ModelControllerParameters) -> ModelRegis
     availability service for model instances if you use a database registry now. Also,
     we can implement more registry types in the future.
     """
-    registry_type = controller_params.registry_type.strip()
-    if controller_params.registry_type == "embedded":
+    if not controller_params.registry:
         return EmbeddedModelRegistry(
             heartbeat_interval_secs=controller_params.heartbeat_interval_secs,
             heartbeat_timeout_secs=controller_params.heartbeat_timeout_secs,
         )
-    elif controller_params.registry_type == "database":
-        from urllib.parse import quote
-        from urllib.parse import quote_plus as urlquote
-
+    elif isinstance(controller_params.registry, DBModelRegistryParameters):
+        from dbgpt.datasource.rdbms.base import (
+            RDBMSConnector,
+            RDBMSDatasourceParameters,
+        )
         from dbgpt.model.cluster.registry_impl.storage import StorageModelRegistry
+        from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
 
-        try_to_create_db = False
+        # controller_params.registry.
+        db_config = controller_params.registry.database
 
-        if controller_params.registry_db_type == "mysql":
-            db_name = controller_params.registry_db_name
-            db_host = controller_params.registry_db_host
-            db_port = controller_params.registry_db_port
-            db_user = controller_params.registry_db_user
-            db_password = controller_params.registry_db_password
-            if not db_name:
-                raise ValueError(
-                    "Registry DB name is required when using MySQL registry."
-                )
-            if not db_host:
-                raise ValueError(
-                    "Registry DB host is required when using MySQL registry."
-                )
-            if not db_port:
-                raise ValueError(
-                    "Registry DB port is required when using MySQL registry."
-                )
-            if not db_user:
-                raise ValueError(
-                    "Registry DB user is required when using MySQL registry."
-                )
-            if not db_password:
-                raise ValueError(
-                    "Registry DB password is required when using MySQL registry."
-                )
-            db_url = (
-                f"mysql+pymysql://{quote(db_user)}:"
-                f"{urlquote(db_password)}@"
-                f"{db_host}:"
-                f"{str(db_port)}/"
-                f"{db_name}?charset=utf8mb4"
-            )
-        elif controller_params.registry_db_type == "sqlite":
-            db_name = controller_params.registry_db_name
-            if not db_name:
-                raise ValueError(
-                    "Registry DB name is required when using SQLite registry."
-                )
-            db_url = f"sqlite:///{db_name}"
-            try_to_create_db = True
+        if isinstance(db_config, SQLiteConnectorParameters):
+            db_config.path = resolve_root_path(db_config.path)
+            db_dir = os.path.dirname(db_config.path)
+            os.makedirs(db_dir, exist_ok=True)
+            # Parse the db name from the db path
+            db_name = os.path.basename(db_config.path).split(".")[0]
+        elif isinstance(db_config, RDBMSDatasourceParameters):
+            db_name = db_config.database
         else:
             raise ValueError(
-                f"Unsupported registry DB type: {controller_params.registry_db_type}"
+                "DB-GPT only support SQLite, MySQL and OceanBase database as metadata "
+                "storage database"
             )
+        connector = db_config.create_connector()
+        if not isinstance(connector, RDBMSConnector):
+            raise ValueError("Only support RDBMSConnector")
+        db_url = db_config.db_url()
+        db_engine_args: Optional[Dict[str, Any]] = db_config.engine_args()
+
+        try_to_create_db = False
 
         registry = StorageModelRegistry.from_url(
             db_url,
             db_name,
-            pool_size=controller_params.registry_db_pool_size,
-            max_overflow=controller_params.registry_db_max_overflow,
+            engine_args=db_engine_args,
             try_to_create_db=try_to_create_db,
             heartbeat_interval_secs=controller_params.heartbeat_interval_secs,
             heartbeat_timeout_secs=controller_params.heartbeat_timeout_secs,
         )
         return registry
     else:
-        raise ValueError(f"Unsupported registry type: {registry_type}")
+        raise ValueError(f"Unsupported registry type: {controller_params.registry}")
+
+
+def parse_args():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="DB-GPT API Server")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Path to the configuration file.",
+    )
+    return parser.parse_args()
 
 
 def run_model_controller():
-    parser = EnvArgumentParser()
-    env_prefix = "controller_"
-    controller_params: ModelControllerParameters = parser.parse_args_into_dataclass(
+    from dbgpt.configs.model_config import LOGDIR, ROOT_PATH
+    from dbgpt.util.configure import ConfigurationManager
+    from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
+
+    cm = ConnectorManager(None)  # noqa: F841
+    # pre import all datasource
+    cm.on_init()
+
+    args = parse_args()
+    config_file = args.config
+
+    if not os.path.isabs(config_file) and not os.path.exists(config_file):
+        config_file = os.path.join(ROOT_PATH, config_file)
+
+    cfg = ConfigurationManager.from_file(config_file)
+    controller_params = cfg.parse_config(
         ModelControllerParameters,
-        env_prefixes=[env_prefix],
+        prefix="service.model.controller",
+        hook_section="hooks",
     )
+
+    sys_trace: Optional[TracerParameters] = None
+    sys_log: Optional[LoggingParameters] = None
+
+    if cfg.exists("trace"):
+        sys_trace = cfg.parse_config(TracerParameters, prefix="trace")
+    if cfg.exists("log"):
+        sys_log = cfg.parse_config(LoggingParameters, prefix="log")
+
+    log_config = controller_params.log or sys_log or LoggingParameters()
+    trace_config = controller_params.trace or sys_trace or TracerParameters()
 
     setup_logging(
         "dbgpt",
-        logging_level=controller_params.log_level,
-        logger_filename=controller_params.log_file,
+        log_config=log_config,
+        default_logger_filename=os.path.join(LOGDIR, "dbgpt_model_controller.log"),
     )
+
     registry = _create_registry(controller_params)
 
     initialize_controller(
-        host=controller_params.host,
-        port=controller_params.port,
         registry=registry,
         controller_params=controller_params,
+        trace_config=trace_config,
     )
 
 

@@ -47,10 +47,10 @@ class Serve(BaseServe):
         self._system_app.app.include_router(
             router, prefix=self._api_prefix, tags=self._api_tags
         )
-        config = self._config or ServeConfig.from_app_config(
+        self._config = self._config or ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
-        init_endpoints(self._system_app, config)
+        init_endpoints(self._system_app, self._config)
         self._app_has_initiated = True
 
     def on_init(self):

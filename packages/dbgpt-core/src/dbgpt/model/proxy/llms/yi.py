@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
+from dbgpt.core import ModelMetadata
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
-_YI_DEFAULT_MODEL = "yi-34b-chat-0205"
+_YI_DEFAULT_MODEL = "yi-lightning"
 
 
 @dataclass
@@ -121,4 +122,15 @@ class YiLLMClient(OpenAILLMClient):
         return yi_generate_stream
 
 
-register_proxy_model_adapter(YiLLMClient)
+register_proxy_model_adapter(
+    YiLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=["yi-lightning"],
+            context_length=16 * 1024,
+            description="Yi Lightning by Lingyiwanwu",
+            link="https://platform.lingyiwanwu.com/docs",
+            function_calling=True,
+        ),
+    ],
+)

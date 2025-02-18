@@ -107,7 +107,9 @@ class FastChatLLMModelAdapterWrapper(LLMModelAdapter):
         self._adapter = adapter
 
     def new_adapter(self, **kwargs) -> "LLMModelAdapter":
-        return FastChatLLMModelAdapterWrapper(self._adapter)
+        new_obj = super().new_adapter(**kwargs)
+        new_obj._adapter = self._adapter
+        return new_obj
 
     def use_fast_tokenizer(self) -> bool:
         return self._adapter.use_fast_tokenizer

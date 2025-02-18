@@ -1,6 +1,6 @@
 """MSSQL connector."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterable, Type
 
 from sqlalchemy import text
@@ -27,6 +27,12 @@ class MSSQLParameters(RDBMSDatasourceParameters):
     """MSSQL connection parameters."""
 
     __type__ = "mssql"
+    driver: str = field(
+        default="mssql+pymssql",
+        metadata={
+            "help": _("Driver name for MSSQL, default is mssql+pymssql."),
+        },
+    )
 
     def create_connector(self) -> "MSSQLConnector":
         """Create MS SQL connector."""

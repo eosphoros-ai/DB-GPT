@@ -12,6 +12,7 @@ from dbgpt._private.pydantic import EXTRA_FORBID, BaseModel, ConfigDict, Field
 from dbgpt.core import RerankEmbeddings
 from dbgpt.core.interface.parameter import RerankerDeployModelParameters
 from dbgpt.model.adapter.base import register_embedding_adapter
+from dbgpt.model.adapter.embed_metadata import RERANKER_COMMON_HF_MODELS
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 
@@ -20,19 +21,21 @@ from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
 class CrossEncoderRerankEmbeddingsParameters(RerankerDeployModelParameters):
     """CrossEncoder Rerank Embeddings Parameters."""
 
-    provider = "hf"
+    provider: str = "hf"
     path: Optional[str] = field(
         default=None,
         metadata={
+            "order": -800,
             "help": _("The path of the model, if you want to deploy a local model."),
         },
     )
     device: Optional[str] = field(
         default=None,
         metadata={
+            "order": -700,
             "help": _(
                 "Device to run model. If None, the device is automatically determined"
-            )
+            ),
         },
     )
     max_length: Optional[int] = field(
@@ -162,7 +165,7 @@ class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
 class OpenAPIRerankerDeployModelParameters(RerankerDeployModelParameters):
     """OpenAPI Reranker Deploy Model Parameters."""
 
-    provider = "proxy/openapi"
+    provider: str = "proxy/openapi"
 
     api_url: str = field(
         default="http://localhost:8100/v1/beta/relevance",
@@ -389,6 +392,12 @@ class SiliconFlowRerankEmbeddings(OpenAPIRerankEmbeddings):
         return scores
 
 
-register_embedding_adapter(CrossEncoderRerankEmbeddings)
-register_embedding_adapter(OpenAPIRerankEmbeddings)
-register_embedding_adapter(SiliconFlowRerankEmbeddings)
+register_embedding_adapter(
+    CrossEncoderRerankEmbeddings, supported_models=RERANKER_COMMON_HF_MODELS
+)
+register_embedding_adapter(
+    OpenAPIRerankEmbeddings, supported_models=RERANKER_COMMON_HF_MODELS
+)
+register_embedding_adapter(
+    SiliconFlowRerankEmbeddings, supported_models=RERANKER_COMMON_HF_MODELS
+)

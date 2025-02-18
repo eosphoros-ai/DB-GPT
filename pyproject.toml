@@ -1,9 +1,12 @@
 [project]
 name = "dbgpt-mono"
 version = "0.7.0"
-description = "Add your description here"
+description = """DB-GPT is an experimental open-source project that uses localized GPT \
+large models to interact with your data and environment. With this solution, you can be\
+ assured that there is no risk of data leakage, and your data is 100% private and secure.\
+"""
 authors = [
-    { name = "aries_ckt", email = "ariesketing@gmail.com" }
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
 ]
 dependencies = []
 readme = "README.md"
@@ -31,6 +34,12 @@ dev-dependencies = [
     "pytest>=7.0.0",
     "pytest_asyncio",
     "twine",
+    "ruff>=0.9.1",
+    "pytest-mock>=3.14.0",
+    "asynctest>=0.13.0",
+    "pytest-integration>=0.2.3",
+    "pytest-recording>=0.13.2",
+    "pytest-cov>=6.0.0",
 ]
 
 [tool.pytest.ini_options]

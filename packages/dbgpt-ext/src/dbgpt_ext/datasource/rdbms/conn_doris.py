@@ -1,6 +1,6 @@
 """Doris connector."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
@@ -27,6 +27,12 @@ class DorisParameters(RDBMSDatasourceParameters):
     """Doris connection parameters."""
 
     __type__ = "doris"
+    driver: str = field(
+        default="doris",
+        metadata={
+            "help": _("Driver name for Doris, default is doris."),
+        },
+    )
 
     def create_connector(self) -> "DorisConnector":
         """Create doris connector"""

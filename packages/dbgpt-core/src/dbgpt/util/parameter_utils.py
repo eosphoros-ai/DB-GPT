@@ -4,6 +4,8 @@ from collections import OrderedDict
 from dataclasses import MISSING, asdict, dataclass, field, fields, is_dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
+from dbgpt.util.annotations import Deprecated
+
 if TYPE_CHECKING:
     from dbgpt._private.pydantic import BaseModel
 
@@ -23,6 +25,28 @@ _DEFAULT_PRIVACY_FIELDS = {
 
 @dataclass
 class ParameterDescription:
+    """Description of a parameter in a dataclass.
+
+    It supports nested fields for dataclass types. In some cases, we have a database
+    configuration, and it has two implementations, one for MySQL and another for
+    PostgreSQL, so the nested_fields will include the type of the database and its
+    fields, so the key will be the type of the database and the value will be the
+    fields of the database.
+
+    Attributes:
+        required: Whether this parameter is required
+        is_array: Whether this parameter is an array type
+        param_name: Name of the parameter
+        param_class: Full path of the parameter's class (module.class_name)
+        param_type: Type of the parameter
+        label: Display label for the parameter
+        description: Description of the parameter
+        default_value: Default value of the parameter
+        valid_values: List of valid values for this parameter
+        ext_metadata: Additional metadata for the parameter
+        nested_fields: Nested fields if this parameter is a dataclass.
+    """
+
     required: bool = False
     is_array: bool = False
     param_name: Optional[str] = None
@@ -33,6 +57,8 @@ class ParameterDescription:
     default_value: Optional[Any] = None
     valid_values: Optional[List[Any]] = None
     ext_metadata: Optional[Dict[str, Any]] = None
+    nested_fields: Optional[Dict[str, List["ParameterDescription"]]] = None
+    param_order: Optional[int] = None
 
 
 @dataclass
@@ -140,99 +166,6 @@ class BaseParameters:
         from dbgpt.configs.model_config import resolve_root_path
 
         return resolve_root_path(path, root_path)
-
-
-@dataclass
-class BaseServerParameters(BaseParameters):
-    host: Optional[str] = field(
-        default="0.0.0.0", metadata={"help": "The host IP address to bind to."}
-    )
-    port: Optional[int] = field(
-        default=None, metadata={"help": "The port number to bind to."}
-    )
-    daemon: Optional[bool] = field(
-        default=False, metadata={"help": "Run the server as a daemon."}
-    )
-    log_level: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Logging level",
-            "valid_values": [
-                "FATAL",
-                "ERROR",
-                "WARNING",
-                "WARNING",
-                "INFO",
-                "DEBUG",
-                "NOTSET",
-            ],
-        },
-    )
-    log_file: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The filename to store log",
-        },
-    )
-    tracer_file: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The filename to store tracer span records",
-        },
-    )
-    tracer_to_open_telemetry: Optional[bool] = field(
-        default=os.getenv("TRACER_TO_OPEN_TELEMETRY", "False").lower() == "true",
-        metadata={
-            "help": "Whether send tracer span records to OpenTelemetry",
-        },
-    )
-    otel_exporter_otlp_traces_endpoint: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` target to which the span "
-            "exporter is going to send spans. The endpoint MUST be a valid URL host, "
-            "and MAY contain a scheme (http or https), port and path. A scheme of https"
-            " indicates a secure connection and takes precedence over this "
-            "configuration setting.",
-        },
-    )
-    otel_exporter_otlp_traces_insecure: Optional[bool] = field(
-        default=None,
-        metadata={
-            "help": "OTEL_EXPORTER_OTLP_TRACES_INSECURE` represents whether to enable "
-            "client transport security for gRPC requests for spans. A scheme of https "
-            "takes precedence over the this configuration setting. Default: False"
-        },
-    )
-    otel_exporter_otlp_traces_certificate: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "`OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE` stores the path to the "
-            "certificate file for TLS credentials of gRPC client for traces. "
-            "Should only be used for a secure connection for tracing",
-        },
-    )
-    otel_exporter_otlp_traces_headers: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "`OTEL_EXPORTER_OTLP_TRACES_HEADERS` contains the key-value pairs "
-            "to be used as headers for spans associated with gRPC or HTTP requests.",
-        },
-    )
-    otel_exporter_otlp_traces_timeout: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "`OTEL_EXPORTER_OTLP_TRACES_TIMEOUT` is the maximum time the OTLP "
-            "exporter will wait for each batch export for spans.",
-        },
-    )
-    otel_exporter_otlp_traces_compression: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "`OTEL_EXPORTER_OTLP_COMPRESSION` but only for the span exporter. "
-            "If both are present, this takes higher precedence.",
-        },
-    )
 
 
 def _get_dataclass_print_str(obj):
@@ -644,61 +577,96 @@ def _type_str_to_python_type(type_str: str) -> Type:
 
 
 def _get_parameter_descriptions(
-    dataclass_type: Type, **kwargs
+    dataclass_type: Type, parent_field: Optional[str] = None, **kwargs
 ) -> List[ParameterDescription]:
-    from .function_utils import type_to_string
+    """Get the descriptions of the parameters in the dataclass with nested field
+    support.
 
-    # Get the descriptions of the parameters in the dataclass.
-    parent_descriptions = {}
-    # For each parent class in the MRO, skip the current class and object class
-    for parent in dataclass_type.__mro__[1:]:
-        if parent is object or not is_dataclass(parent):
-            # Just handle dataclass parent classes
-            continue
-        # Get the descriptions of the parameters in the parent class
-        for parent_param in _get_parameter_descriptions(parent):
-            if parent_param.description:
-                parent_descriptions[parent_param.param_name] = parent_param.description
-    descriptions = []
-    for fd in fields(dataclass_type):
-        ext_metadata = {
-            k: v for k, v in fd.metadata.items() if k not in ["help", "valid_values"]
-        }
-        default_value = fd.default if fd.default != MISSING else None
-        if fd.name in kwargs:
-            default_value = kwargs[fd.name]
+    Args:
+        dataclass_type: The dataclass type to get descriptions for
+        parent_field: Name of the parent field if this is a nested parameter
+        **kwargs: Additional keyword arguments
 
-        is_array = False
-        type_name, sub_types = type_to_string(fd.type)
-        real_type_name = type_name
-        if type_name == "array" and sub_types:
-            is_array = True
-            real_type_name = sub_types[0]
+    Returns:
+        List of ParameterDescription objects describing all fields including nested ones
+    """
 
-        if real_type_name == "unknown":
-            real_type_name = fd.type.__name__
+    from dbgpt.util.configure.manager import ConfigurationManager
 
-        required = True
-        if fd.default != MISSING or fd.default_factory != MISSING:
-            required = False
-        description = fd.metadata.get("help")
-        if not description:
-            description = parent_descriptions.get(fd.name)
-        descriptions.append(
-            ParameterDescription(
-                is_array=is_array,
-                param_class=f"{dataclass_type.__module__}.{dataclass_type.__name__}",
-                param_name=fd.name,
-                param_type=real_type_name,
-                description=description,
-                label=fd.metadata.get("label", fd.name),
-                required=required,
-                default_value=default_value,
-                valid_values=fd.metadata.get("valid_values", None),
-                ext_metadata=ext_metadata,
-            )
-        )
-    return descriptions
+    return ConfigurationManager.parse_description(dataclass_type)
+
+    # # Get descriptions from parent classes
+    # parent_descriptions = {}
+    # for parent in dataclass_type.__mro__[1:]:
+    #     if parent is object or not is_dataclass(parent):
+    #         continue
+    #     for parent_param in _get_parameter_descriptions(parent):
+    #         if parent_param.description:
+    #             parent_descriptions[parent_param.param_name] = parent_param.description # noqa
+    #
+    # descriptions = []
+    # for fd in fields(dataclass_type):
+    #     ext_metadata = {
+    #         k: v for k, v in fd.metadata.items() if k not in ["help", "valid_values"]
+    #     }
+    #     default_value = fd.default if fd.default != MISSING else None
+    #     if fd.name in kwargs:
+    #         default_value = kwargs[fd.name]
+    #
+    #     # Get base type information
+    #     is_array = False
+    #     type_name, sub_types = type_to_string(fd.type)
+    #     real_type_name = type_name
+    #
+    #     if type_name == "array" and sub_types:
+    #         is_array = True
+    #         real_type_name = sub_types[0]
+    #
+    #     if real_type_name == "unknown":
+    #         real_type_name = fd.type.__name__
+    #
+    #     # Check if field type is a dataclass
+    #     field_type = fd.type
+    #     nested_fields = None
+    #
+    #     if hasattr(field_type, "__origin__") and field_type.__origin__ is Union:
+    #         # Handle Optional types
+    #         field_type = field_type.__args__[0]
+    #
+    #     if is_dataclass(field_type):
+    #         # Recursively get descriptions for nested dataclass
+    #         nested_fields = _get_parameter_descriptions(
+    #             field_type, parent_field=fd.name, **kwargs
+    #         )
+    #         # Set the type name to the full path of the nested class
+    #         real_type_name = f"{field_type.__module__}.{field_type.__name__}"
+    #
+    #     required = True
+    #     if fd.default != MISSING or fd.default_factory != MISSING:
+    #         required = False
+    #
+    #     description = fd.metadata.get("help")
+    #     if not description:
+    #         description = parent_descriptions.get(fd.name)
+    #
+    #     descriptions.append(
+    #         ParameterDescription(
+    #             is_array=is_array,
+    #             param_class=f"{dataclass_type.__module__}.{dataclass_type.__name__}",
+    #             param_name=fd.name,
+    #             param_type=real_type_name,
+    #             description=description,
+    #             label=fd.metadata.get("label", fd.name),
+    #             required=required,
+    #             default_value=default_value,
+    #             valid_values=fd.metadata.get("valid_values", None),
+    #             ext_metadata=ext_metadata,
+    #             parent_field=parent_field,
+    #             nested_fields=nested_fields,
+    #         )
+    #     )
+    #
+    # return descriptions
 
 
 def _build_parameter_class(desc: List[ParameterDescription]) -> Type:
@@ -745,6 +713,7 @@ def _build_parameter_class(desc: List[ParameterDescription]) -> Type:
     return result_class
 
 
+@Deprecated(version="0.7.0", remove_version="0.8.0")
 def _extract_parameter_details(
     parser: argparse.ArgumentParser,
     param_class: Optional[str] = None,
@@ -829,6 +798,7 @@ def _get_dict_from_obj(obj, default_value=None) -> Optional[Dict]:
     return default_value
 
 
+@Deprecated(version="0.7.0", remove_version="0.8.0")
 def _get_base_model_descriptions(model_cls: "BaseModel") -> List[ParameterDescription]:
     from dbgpt._private import pydantic
 

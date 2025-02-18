@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Union
 from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 from dbgpt._private.config import Config
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.storage.metadata import BaseDao, Model
-from dbgpt.storage.metadata._base_dao import QUERY_SPEC, RES
+from dbgpt.storage.metadata._base_dao import QUERY_SPEC, REQ, RES
 from dbgpt.util import PaginationResult
 from dbgpt_serve.conversation.api.schemas import ServeRequest
 from dbgpt_serve.rag.api.schemas import (
@@ -271,6 +272,28 @@ class KnowledgeDocumentDao(BaseDao):
         session.close()
         return count
 
+    def update(self, query_request: QUERY_SPEC, update_request: REQ) -> RES:
+        """Update an entity object.
+
+        Args:
+            query_request (REQ): The request schema object or dict for query.
+            update_request (REQ): The request schema object for update.
+        Returns:
+            RES: The response schema object.
+        """
+        with self.session() as session:
+            query = self._create_query_object(session, query_request)
+            entry = query.first()
+            if entry is None:
+                raise Exception("Invalid request")
+            for key, value in model_to_dict(update_request).items():  # type: ignore
+                if value is not None:
+                    if key in ["last_sync", "gmt_created", "gmt_modified"]:
+                        continue
+                    setattr(entry, key, value)
+            session.merge(entry)
+            return self.to_response(entry)
+
     def update_set_space_id(self, space, space_id):
         session = self.get_raw_session()
         knowledge_documents = session.query(KnowledgeDocumentEntity)
@@ -284,9 +307,9 @@ class KnowledgeDocumentDao(BaseDao):
     def update_knowledge_document(self, document: KnowledgeDocumentEntity):
         try:
             session = self.get_raw_session()
-            updated_space = session.merge(document)
+            updated_document = session.merge(document)
             session.commit()
-            return updated_space.id
+            return updated_document.id
         finally:
             session.close()
 
@@ -355,7 +378,21 @@ class KnowledgeDocumentDao(BaseDao):
         request_dict = (
             request.dict() if isinstance(request, DocumentServeRequest) else request
         )
-        entity = KnowledgeDocumentEntity(**request_dict)
+        entity = KnowledgeDocumentEntity(
+            id=request_dict.get("id"),
+            doc_name=request_dict.get("doc_name"),
+            doc_type=request_dict.get("doc_type"),
+            doc_token=request_dict.get("doc_token"),
+            space=request_dict.get("space"),
+            chunk_size=request_dict.get("chunk_size"),
+            status=request_dict.get("status"),
+            last_sync=request_dict.get("last_sync"),
+            content=request_dict.get("content"),
+            result=request_dict.get("result"),
+            vector_ids=request_dict.get("vector_ids"),
+            summary=request_dict.get("summary"),
+            questions=request_dict.get("questions"),
+        )
         return entity
 
     def to_request(self, entity: KnowledgeDocumentEntity) -> DocumentServeResponse:
@@ -424,5 +461,19 @@ class KnowledgeDocumentDao(BaseDao):
         response_dict = (
             response.dict() if isinstance(response, DocumentServeResponse) else response
         )
-        entity = KnowledgeDocumentEntity(**response_dict)
+        entity = KnowledgeDocumentEntity(
+            id=response_dict.get("id"),
+            doc_name=response_dict.get("doc_name"),
+            doc_type=response_dict.get("doc_type"),
+            doc_token=response_dict.get("doc_token"),
+            space=response_dict.get("space"),
+            chunk_size=response_dict.get("chunk_size"),
+            status=response_dict.get("status"),
+            last_sync=response_dict.get("last_sync"),
+            content=response_dict.get("content"),
+            result=response_dict.get("result"),
+            vector_ids=response_dict.get("vector_ids"),
+            summary=response_dict.get("summary"),
+            questions=response_dict.get("questions"),
+        )
         return entity

@@ -119,3 +119,11 @@ class EmbeddingsModelWorker(ModelWorker):
             return [scores]
         else:
             return self._embeddings_impl.embed_documents(textx)
+
+
+class RerankerModelWorker(EmbeddingsModelWorker):
+    def __init__(self) -> None:
+        super().__init__(rerank_model=True)
+
+    def worker_type(self) -> WorkerType:
+        return WorkerType.RERANKER

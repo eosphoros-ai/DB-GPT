@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from dbgpt.core import ModelMessage
 from dbgpt.core.interface.parameter import (
@@ -9,6 +9,11 @@ from dbgpt.core.interface.parameter import (
     LLMDeployModelParameters,
 )
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
+from dbgpt.model.adapter.model_metadata import (
+    COMMON_HF_DEEPSEEK__MODELS,
+    COMMON_HF_GLM_MODELS,
+    COMMON_HF_QWEN25_MODELS,
+)
 from dbgpt.model.base import ModelType
 from dbgpt.util.i18n_utils import _
 
@@ -24,15 +29,17 @@ class HFLLMDeployModelParameters(LLMDeployModelParameters):
     path: Optional[str] = field(
         default=None,
         metadata={
+            "order": -800,
             "help": _("The path of the model, if you want to deploy a local model."),
         },
     )
     device: Optional[str] = field(
         default=None,
         metadata={
+            "order": -700,
             "help": _(
                 "Device to run model. If None, the device is automatically determined"
-            )
+            ),
         },
     )
 
@@ -43,6 +50,17 @@ class HFLLMDeployModelParameters(LLMDeployModelParameters):
         default=None,
         metadata={
             "help": _("The quantization parameters."),
+        },
+    )
+    low_cpu_mem_usage: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Whether to use low CPU memory usage mode. It can reduce the memory "
+                "when loading the model, if you load your model with quantization, it "
+                "will be True by default. You must install `accelerate` to make it "
+                "work."
+            )
         },
     )
     num_gpus: Optional[int] = field(
@@ -96,9 +114,6 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
 
     trust_remote_code: bool = True
 
-    def new_adapter(self, **kwargs) -> "NewHFChatModelAdapter":
-        return self.__class__()
-
     def match(
         self,
         provider: str,
@@ -112,6 +127,11 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         model_name = model_name.lower() if model_name else None
         model_path = model_path.lower() if model_path else None
         return self.do_match(model_name) or self.do_match(model_path)
+
+    def model_param_class(
+        self, model_type: str = None
+    ) -> Type[LLMDeployModelParameters]:
+        return HFLLMDeployModelParameters
 
     @abstractmethod
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
@@ -156,38 +176,45 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         )
 
         revision = from_pretrained_kwargs.get("revision", "main")
+        trust_remote_code = from_pretrained_kwargs.get(
+            "trust_remote_code", self.trust_remote_code
+        )
+        low_cpu_mem_usage = from_pretrained_kwargs.get("low_cpu_mem_usage", False)
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = trust_remote_code
+        if "low_cpu_mem_usage" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["low_cpu_mem_usage"] = low_cpu_mem_usage
         try:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
                 use_fast=self.use_fast_tokenizer(),
                 revision=revision,
-                trust_remote_code=self.trust_remote_code,
+                trust_remote_code=trust_remote_code,
             )
         except TypeError:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
                 use_fast=False,
                 revision=revision,
-                trust_remote_code=self.trust_remote_code,
+                trust_remote_code=trust_remote_code,
             )
         try:
-            if "trust_remote_code" not in from_pretrained_kwargs:
-                from_pretrained_kwargs["trust_remote_code"] = self.trust_remote_code
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+                model_path,
+                **from_pretrained_kwargs,
             )
         except NameError:
             model = AutoModel.from_pretrained(
-                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+                model_path,
+                **from_pretrained_kwargs,
             )
-        # tokenizer.use_default_system_prompt = False
         return model, tokenizer
 
     def get_generate_stream_function(
         self, model, deploy_model_params: LLMDeployModelParameters
     ):
         """Get the generate stream function of the model"""
-        from dbgpt.model.llm_out.hf_chat_llm import huggingface_chat_generate_stream
+        from dbgpt.model.llm.llm_out.hf_chat_llm import huggingface_chat_generate_stream
 
         return huggingface_chat_generate_stream
 
@@ -211,6 +238,20 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             messages, tokenize=False, add_generation_prompt=True
         )
         return str_prompt
+
+
+class CommonModelAdapter(NewHFChatModelAdapter):
+    """Common model adapter for huggingface chat models.
+
+    It is the last one to check if the model is a huggingface chat model.
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+    support_system_message: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path is not None
 
 
 class YiAdapter(NewHFChatModelAdapter):
@@ -591,6 +632,15 @@ class DeepseekCoderV2Adapter(DeepseekV2Adapter):
         )
 
 
+class DeepseekV3R1Adapter(DeepseekV2Adapter):
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "deepseek" in lower_model_name_or_path
+            and ("v3" in lower_model_name_or_path or "r1" in lower_model_name_or_path)
+        )
+
+
 class SailorAdapter(QwenAdapter):
     """
     https://huggingface.co/sail/Sailor-14B-Chat
@@ -726,6 +776,7 @@ class Internlm2Adapter(NewHFChatModelAdapter):
 
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
+register_model_adapter(CommonModelAdapter)  # For all of hf models can be matched
 register_model_adapter(YiAdapter)
 register_model_adapter(Yi15Adapter)
 register_model_adapter(Mixtral8x7BAdapter)
@@ -744,7 +795,8 @@ register_model_adapter(SailorAdapter)
 register_model_adapter(PhiAdapter)
 register_model_adapter(SQLCoderAdapter)
 register_model_adapter(OpenChatAdapter)
-register_model_adapter(GLM4Adapter)
+register_model_adapter(GLM4Adapter, supported_models=COMMON_HF_GLM_MODELS)
 register_model_adapter(Codegeex4Adapter)
-register_model_adapter(Qwen2Adapter)
+register_model_adapter(Qwen2Adapter, supported_models=COMMON_HF_QWEN25_MODELS)
 register_model_adapter(Internlm2Adapter)
+register_model_adapter(DeepseekV3R1Adapter, supported_models=COMMON_HF_DEEPSEEK__MODELS)

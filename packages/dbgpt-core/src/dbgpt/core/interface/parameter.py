@@ -1,10 +1,15 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from dbgpt.configs.model_config import get_device
 from dbgpt.util.configure import RegisterParameters
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
+from dbgpt.util.tracer import TracerParameters
+from dbgpt.util.utils import LoggingParameters
+
+if TYPE_CHECKING:
+    from dbgpt.model.parameter import WorkerType
 
 
 @dataclass
@@ -16,6 +21,7 @@ class BaseDeployModelParameters(BaseParameters):
     name: str = field(
         metadata={
             "help": _("The name of the model."),
+            "order": -1000,
         },
     )
     provider: Optional[str] = field(
@@ -26,6 +32,8 @@ class BaseDeployModelParameters(BaseParameters):
                 "inference type. If model is deployed in third-party service, this is "
                 "platform name('proxy/<platform>')"
             ),
+            "order": -900,
+            "tags": "fixed",
             "valid_values": [
                 "huggingface",
                 "llama.cpp",
@@ -36,7 +44,10 @@ class BaseDeployModelParameters(BaseParameters):
         },
     )
     verbose: Optional[bool] = field(
-        default=False, metadata={"help": "Show verbose output."}
+        default=False, metadata={"help": _("Show verbose output.")}
+    )
+    concurrency: Optional[int] = field(
+        default=5, metadata={"help": _("Model concurrency limit")}
     )
 
     @property
@@ -70,6 +81,7 @@ class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
                 "The real model name to pass to the provider, default is None. If "
                 "backend is None, use name as the real model name."
             ),
+            "order": -700,
         },
     )
     prompt_template: Optional[str] = field(
@@ -104,15 +116,44 @@ class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
             return "proxy"
         return self.provider
 
+    @classmethod
+    def worker_type(cls) -> "WorkerType":
+        """Get the worker type."""
+        from dbgpt.model.parameter import WorkerType
+
+        return WorkerType.LLM
+
 
 @dataclass
 class EmbeddingDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Embedding deploy model parameters."""
 
+    concurrency: Optional[int] = field(
+        default=100, metadata={"help": _("Model concurrency limit")}
+    )
+
+    @classmethod
+    def worker_type(cls) -> "WorkerType":
+        """Get the worker type."""
+        from dbgpt.model.parameter import WorkerType
+
+        return WorkerType.TEXT2VEC
+
 
 @dataclass
 class RerankerDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Reranker deploy model parameters."""
+
+    concurrency: Optional[int] = field(
+        default=50, metadata={"help": _("Model concurrency limit")}
+    )
+
+    @classmethod
+    def worker_type(cls) -> "WorkerType":
+        """Get the worker type."""
+        from dbgpt.model.parameter import WorkerType
+
+        return WorkerType.RERANKER
 
 
 @dataclass
@@ -332,3 +373,28 @@ class BitsandbytesQuantization4bits(BitsandbytesQuantization):
                 bnb_4bit_use_double_quant=self.bnb_4bit_use_double_quant,
             )
         }
+
+
+@dataclass
+class BaseServerParameters(BaseParameters):
+    host: Optional[str] = field(
+        default="0.0.0.0", metadata={"help": "The host IP address to bind to."}
+    )
+    port: Optional[int] = field(
+        default=None, metadata={"help": "The port number to bind to."}
+    )
+    daemon: Optional[bool] = field(
+        default=False, metadata={"help": "Run the server as a daemon."}
+    )
+    log: LoggingParameters = field(
+        default_factory=LoggingParameters,
+        metadata={
+            "help": _("Logging configuration"),
+        },
+    )
+    trace: Optional[TracerParameters] = field(
+        default=None,
+        metadata={
+            "help": _("Tracer configuration"),
+        },
+    )

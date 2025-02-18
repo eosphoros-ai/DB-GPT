@@ -7,7 +7,7 @@ SCRIPT_LOCATION=$0
 cd "$(dirname "$SCRIPT_LOCATION")"
 WORK_DIR=$(pwd)
 WORK_DIR="$WORK_DIR/.."
-TARGET_DIR="$WORK_DIR/dbgpt/app/static/web"
+TARGET_DIR="$WORK_DIR/packages/dbgpt-app/src/dbgpt_app/static/web"
 
 echo "Building web static files"
 echo "Target directory: $TARGET_DIR"

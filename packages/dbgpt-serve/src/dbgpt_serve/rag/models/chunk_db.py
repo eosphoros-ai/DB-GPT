@@ -3,8 +3,9 @@ from typing import Any, Dict, List, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, func, not_
 
-from dbgpt._private.config import Config
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.storage.metadata import BaseDao, Model
+from dbgpt.storage.metadata._base_dao import QUERY_SPEC, REQ, RES
 from dbgpt_serve.rag.api.schemas import ChunkServeRequest, ChunkServeResponse
 
 
@@ -126,6 +127,29 @@ class DocumentChunkDao(BaseDao):
         session.close()
         return result
 
+    def update(self, query_request: QUERY_SPEC, update_request: REQ) -> RES:
+        """Update an entity object.
+
+        Args:
+            query_request (REQ): The request schema object or dict for query.
+            update_request (REQ): The request schema object for update.
+        Returns:
+            RES: The response schema object.
+        """
+        with self.session() as session:
+            query = self._create_query_object(session, query_request)
+            entry = query.first()
+            if entry is None:
+                raise Exception("Invalid request")
+            for key, value in model_to_dict(update_request).items():  # type: ignore
+                if value is not None:
+                    if key in ["gmt_created", "gmt_modified"]:
+                        # Assuming the datetime format is 'YYYY-MM-DD HH:MM:SS'
+                        value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+                    setattr(entry, key, value)
+            session.merge(entry)
+            return self.to_response(entry)
+
     def update_chunk(self, chunk: DocumentChunkEntity):
         """Update a chunk"""
         try:
@@ -222,6 +246,8 @@ class DocumentChunkDao(BaseDao):
         Returns:
             REQ: The request
         """
+        gmt_created_str = entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+        gmt_modified_str = entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
         return ChunkServeResponse(
             id=entity.id,
             doc_name=entity.doc_name,
@@ -230,8 +256,8 @@ class DocumentChunkDao(BaseDao):
             content=entity.content,
             questions=entity.questions,
             meta_info=entity.meta_info,
-            gmt_created=str(entity.gmt_created),
-            gmt_modified=str(entity.gmt_modified),
+            gmt_created=gmt_created_str,
+            gmt_modified=gmt_modified_str,
         )
 
     def from_response(

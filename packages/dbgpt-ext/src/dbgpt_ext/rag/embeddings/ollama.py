@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Type
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
-from dbgpt.core import Embeddings
+from dbgpt.core import EmbeddingModelMetadata, Embeddings
 from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
 from dbgpt.model.adapter.base import register_embedding_adapter
 from dbgpt.util.i18n_utils import _
@@ -14,7 +14,7 @@ from dbgpt.util.i18n_utils import _
 class OllamaEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
     """Ollama Embeddings deploy model parameters."""
 
-    provider = "proxy/ollama"
+    provider: str = "proxy/ollama"
 
     api_url: str = field(
         default="http://localhost:11434",
@@ -146,4 +146,18 @@ class OllamaEmbeddings(BaseModel, Embeddings):
             raise ValueError(f"**Ollama Response Error, Please CheckErrorInfo.**: {e}")
 
 
-register_embedding_adapter(OllamaEmbeddings)
+register_embedding_adapter(
+    OllamaEmbeddings,
+    supported_models=[
+        EmbeddingModelMetadata(
+            model=["BAAI/bge-m3"],
+            dimension=1024,
+            context_length=8192,
+            description=_(
+                "The embedding model are trained by BAAI, it support more than 100 "
+                "working languages."
+            ),
+            link="https://ollama.com/library/bge-m3",
+        )
+    ],
+)

@@ -7,6 +7,7 @@ from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 from dbgpt.core import Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.model.adapter.base import register_embedding_adapter
+from dbgpt.model.adapter.embed_metadata import EMBED_COMMON_HF_JINA_MODELS
 from dbgpt.rag.embedding.embeddings import (
     OpenAPIEmbeddingDeployModelParameters,
     _handle_request_result,
@@ -18,7 +19,7 @@ from dbgpt.util.i18n_utils import _
 class JinaEmbeddingsDeployModelParameters(OpenAPIEmbeddingDeployModelParameters):
     """Jina AI Embeddings deploy model parameters."""
 
-    provider = "proxy/jina"
+    provider: str = "proxy/jina"
     api_url: str = field(
         default="https://api.jina.ai/v1/embeddings",
         metadata={
@@ -152,4 +153,4 @@ class JinaEmbeddings(BaseModel, Embeddings):
         return self.embed_documents([text])[0]
 
 
-register_embedding_adapter(JinaEmbeddings)
+register_embedding_adapter(JinaEmbeddings, supported_models=EMBED_COMMON_HF_JINA_MODELS)

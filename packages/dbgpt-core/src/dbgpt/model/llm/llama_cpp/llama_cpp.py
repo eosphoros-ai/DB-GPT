@@ -10,7 +10,7 @@ import llama_cpp
 import torch
 
 from dbgpt.core import ModelOutput
-from dbgpt.model.parameter import LlamaCppModelParameters
+from dbgpt.model.adapter.llama_cpp_py_adapter import LlamaCppModelParameters
 from dbgpt.model.utils.llm_utils import parse_model_request
 
 logger = logging.getLogger(__name__)

@@ -220,19 +220,26 @@ export const delSpace = (data: Record<string, string>) => {
 
 /** models */
 export const getModelList = () => {
-  return GET<null, Array<IModelData>>('/api/v1/worker/model/list');
+  return GET<null, Array<IModelData>>('/api/v2/serve/model/models');
 };
 
+// Create and deploy a new model
+export const createModel = (data: StartModelParams) => {
+  return POST<StartModelParams, boolean>('/api/v2/serve/model/models', data);
+};
+
+// Stop the running model
 export const stopModel = (data: BaseModelParams) => {
-  return POST<BaseModelParams, boolean>('/api/v1/worker/model/stop', data);
+  return POST<BaseModelParams, boolean>('/api/v2/serve/model/models/stop', data);
 };
 
-export const startModel = (data: StartModelParams) => {
-  return POST<StartModelParams, boolean>('/api/v1/worker/model/start', data);
+// Start the stopped model
+export const startModel = (data: BaseModelParams) => {
+  return POST<BaseModelParams, boolean>('/api/v2/serve/model/models/start', data);
 };
 
 export const getSupportModels = () => {
-  return GET<null, Array<SupportModel>>('/api/v1/worker/model/params');
+  return GET<null, Array<SupportModel>>('/api/v2/serve/model/model-types');
 };
 
 /** Agent */

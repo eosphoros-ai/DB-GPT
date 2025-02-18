@@ -1,7 +1,7 @@
 """PostgreSQL connector."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
@@ -32,6 +32,15 @@ class PostgreSQLParameters(RDBMSDatasourceParameters):
     """PostgreSQL connection parameters."""
 
     __type__ = "postgresql"
+    schema: str = field(
+        default="public", metadata={"help": _("Database schema, defaults to 'public'")}
+    )
+    driver: str = field(
+        default="postgresql+psycopg2",
+        metadata={
+            "help": _("Driver name for postgres, default is postgresql+psycopg2."),
+        },
+    )
 
     def create_connector(self) -> "PostgreSQLConnector":
         """Create PostgreSQL connector."""
@@ -67,24 +76,54 @@ class PostgreSQLConnector(RDBMSConnector):
         )
         return cast(PostgreSQLConnector, cls.from_uri(db_url, engine_args, **kwargs))
 
+    @classmethod
+    def from_parameters(cls, parameters: PostgreSQLParameters) -> "RDBMSConnector":
+        """Create a new connector from parameters."""
+        return cls.from_uri_db(
+            parameters.host,
+            parameters.port,
+            parameters.user,
+            parameters.password,
+            parameters.database,
+            schema=parameters.schema,
+            engine_args=parameters.engine_args(),
+        )
+
     def _sync_tables_from_db(self) -> Iterable[str]:
+        """Read table information from database with schema support."""
+        schema = self._schema or "public"
+
         with self.session_scope() as session:
+            # Get tables for specific schema
             table_results = session.execute(
                 text(
-                    "SELECT tablename FROM pg_catalog.pg_tables WHERE "
-                    "schemaname != 'pg_catalog' AND schemaname != 'information_schema'"
-                )
+                    """
+                    SELECT tablename 
+                    FROM pg_catalog.pg_tables 
+                    WHERE schemaname = :schema
+                    """
+                ),
+                {"schema": schema},
             )
+
+            # Get views for specific schema
             view_results = session.execute(
                 text(
-                    "SELECT viewname FROM pg_catalog.pg_views WHERE "
-                    "schemaname != 'pg_catalog' AND schemaname != 'information_schema'"
-                )
+                    """
+                    SELECT viewname 
+                    FROM pg_catalog.pg_views 
+                    WHERE schemaname = :schema
+                    """
+                ),
+                {"schema": schema},
             )
-            table_results = set(row[0] for row in table_results)  # noqa: C401
-            view_results = set(row[0] for row in view_results)  # noqa: C401
+
+            table_results = set(row[0] for row in table_results)
+            view_results = set(row[0] for row in view_results)
             self._all_tables = table_results.union(view_results)
-            self._metadata.reflect(bind=self._engine)
+
+            # Reflect with schema
+            self._metadata.reflect(bind=self._engine, schema=schema)
             return self._all_tables
 
     def get_grants(self):
@@ -130,16 +169,28 @@ class PostgreSQLConnector(RDBMSConnector):
             logger.warning(f"postgresql get users error: {str(e)}")
             return []
 
-    def get_fields(self, table_name, db_name=None) -> List[Tuple]:
+    def get_fields(self, table_name: str, db_name: Optional[str] = None) -> List[Tuple]:
         """Get column fields about specified table."""
+        schema = self._schema or "public"
+        sql = """
+            SELECT 
+                column_name, 
+                data_type, 
+                column_default, 
+                is_nullable,
+                col_description(
+                    (quote_ident(:schema) || '.' || quote_ident(:table))::regclass::oid,
+                    ordinal_position
+                ) as column_comment
+            FROM information_schema.columns 
+            WHERE table_schema = :schema 
+            AND table_name = :table
+            ORDER BY ordinal_position
+        """
         with self.session_scope() as session:
             cursor = session.execute(
-                text(
-                    "SELECT column_name, data_type, column_default, is_nullable, "
-                    "column_name as column_comment \
-                    FROM information_schema.columns WHERE table_name = :table_name",
-                ),
-                {"table_name": table_name},
+                text(sql),
+                {"schema": schema, "table": table_name},
             )
             fields = cursor.fetchall()
             return [
@@ -158,33 +209,52 @@ class PostgreSQLConnector(RDBMSConnector):
             character_set = cursor.fetchone()[0]
             return character_set
 
-    def get_show_create_table(self, table_name: str):
-        """Return show create table."""
+    def get_show_create_table(self, table_name: str) -> str:
+        """Return show create table with schema support."""
+        schema = self._schema or "public"
+
         with self.session_scope() as session:
+            # Get column definitions
             cur = session.execute(
                 text(
-                    f"""
-                SELECT a.attname as column_name,
-                 pg_catalog.format_type(a.atttypid, a.atttypmod) as data_type
-                FROM pg_catalog.pg_attribute a
-                WHERE a.attnum > 0 AND NOT a.attisdropped AND a.attnum <= (
-                    SELECT max(a.attnum)
-                    FROM pg_catalog.pg_attribute a
-                    WHERE a.attrelid = (SELECT oid FROM pg_catalog.pg_class
-                        WHERE relname='{table_name}')
-                ) AND a.attrelid = (SELECT oid FROM pg_catalog.pg_class
-                     WHERE relname='{table_name}')
                     """
-                )
+                    SELECT 
+                        column_name,
+                        data_type,
+                        column_default,
+                        is_nullable,
+                        character_maximum_length,
+                        numeric_precision,
+                        numeric_scale
+                    FROM information_schema.columns
+                    WHERE table_schema = :schema 
+                    AND table_name = :table
+                    ORDER BY ordinal_position
+                    """
+                ),
+                {"schema": schema, "table": table_name},
             )
-            rows = cur.fetchall()
 
-            create_table_query = f"CREATE TABLE {table_name} (\n"
-            for row in rows:
-                create_table_query += f"    {row[0]} {row[1]},\n"
-            create_table_query = create_table_query.rstrip(",\n") + "\n)"
+            create_table = f"CREATE TABLE {schema}.{table_name} (\n"
+            for row in cur.fetchall():
+                col_name = row[0]
+                data_type = row[1]
+                default = f"DEFAULT {row[2]}" if row[2] else ""
+                nullable = "NOT NULL" if row[3] == "NO" else ""
 
-            return create_table_query
+                # Add length/precision/scale if applicable
+                if row[4]:  # character_maximum_length
+                    data_type = f"{data_type}({row[4]})"
+                elif row[5]:  # numeric_precision
+                    if row[6]:  # numeric_scale
+                        data_type = f"{data_type}({row[5]},{row[6]})"
+                    else:
+                        data_type = f"{data_type}({row[5]})"
+
+                create_table += f"    {col_name} {data_type} {default} {nullable},\n"
+
+            create_table = create_table.rstrip(",\n") + "\n)"
+            return create_table
 
     def get_table_comments(self, db_name=None):
         """Get table comments."""

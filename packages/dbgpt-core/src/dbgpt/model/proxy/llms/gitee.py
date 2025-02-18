@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
+from dbgpt.core import ModelMetadata
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -122,4 +123,25 @@ class GiteeLLMClient(OpenAILLMClient):
         return gitee_generate_stream
 
 
-register_proxy_model_adapter(GiteeLLMClient)
+register_proxy_model_adapter(
+    GiteeLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model="DeepSeek-V3",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-V3 by DeepSeek",
+            link="https://ai.gitee.com/hf-models/deepseek-ai/DeepSeek-V3/api",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="DeepSeek-R1",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-R1 by DeepSeek",
+            link="https://ai.gitee.com/hf-models/deepseek-ai/DeepSeek-R1/api",
+            function_calling=True,
+        ),
+        # More models see: https://ai.gitee.com/models
+    ],
+)

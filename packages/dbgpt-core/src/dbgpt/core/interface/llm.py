@@ -461,18 +461,34 @@ class ModelExtraMedata(BaseParameters):
 class ModelMetadata(BaseParameters):
     """A class to represent a LLM model."""
 
-    model: str = field(
+    model: Union[str, List[str]] = field(
         metadata={"help": "Model name"},
     )
+    label: Optional[str] = field(
+        default=None,
+        metadata={"help": "Model label"},
+    )
     context_length: Optional[int] = field(
-        default=4096,
+        default=None,
         metadata={"help": "Context length of model"},
+    )
+    max_output_length: Optional[int] = field(
+        default=None,
+        metadata={"help": "Max output length of model"},
+    )
+    description: Optional[str] = field(
+        default=None,
+        metadata={"help": "Model description"},
+    )
+    link: Optional[str] = field(
+        default=None,
+        metadata={"help": "Model link"},
     )
     chat_model: Optional[bool] = field(
         default=True,
         metadata={"help": "Whether the model is a chat model"},
     )
-    is_function_calling_model: Optional[bool] = field(
+    function_calling: Optional[bool] = field(
         default=False,
         metadata={"help": "Whether the model is a function calling model"},
     )

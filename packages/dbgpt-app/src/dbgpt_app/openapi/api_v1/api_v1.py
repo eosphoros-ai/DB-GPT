@@ -429,6 +429,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "ext_info": dialogue.ext_info,
         "temperature": dialogue.temperature,
         "max_new_tokens": dialogue.max_new_tokens,
+        "prompt_code": dialogue.prompt_code,
     }
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),
@@ -603,9 +604,17 @@ async def test():
     return "service status is UP"
 
 
-@router.get("/v1/model/supports")
+@router.get(
+    "/v1/model/supports",
+    deprecated=True,
+    description="This endpoint is deprecated. Please use "
+    "`/api/v2/serve/model/model-types` instead. It will be removed in v0.8.0.",
+)
 async def model_supports(worker_manager: WorkerManager = Depends(get_worker_manager)):
-    logger.info("/controller/model/supports")
+    logger.warning(
+        "The endpoint `/api/v1/model/supports` is deprecated. Please use "
+        "`/api/v2/serve/model/model-types` instead. It will be removed in v0.8.0."
+    )
     try:
         models = await worker_manager.supported_models()
         return Result.succ(FlatSupportedModel.from_supports(models))

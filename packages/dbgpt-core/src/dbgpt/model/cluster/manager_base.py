@@ -29,6 +29,8 @@ class WorkerRunData:
     command_args: List[str] = None
     _heartbeat_future: Optional[Future] = None
     _last_heartbeat: Optional[datetime] = None
+    # Remove from the registry, Just for stop worker
+    remove_from_registry: bool = False
 
     def _to_print_key(self):
         model_name = self.model_params.name

@@ -1,7 +1,7 @@
 """Ocean base connect."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Type
 
 from dbgpt.core.awel.flow import (
@@ -26,6 +26,12 @@ class OceanBaseParameters(RDBMSDatasourceParameters):
     """Oceanbase connection parameters."""
 
     __type__ = "oceanbase"
+    driver: str = field(
+        default="mysql+ob",
+        metadata={
+            "help": _("Driver name for oceanbase, default is mysql+ob."),
+        },
+    )
 
     def create_connector(self) -> "OceanBaseConnector":
         return OceanBaseConnector.from_parameters(self)

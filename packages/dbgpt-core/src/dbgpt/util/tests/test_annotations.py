@@ -362,7 +362,7 @@ def test_deprecated_return_type_preservation():
     def func() -> int:
         return 42
 
-    assert func.__annotations__["return"] == int
+    assert func.__annotations__["return"] is int
 
 
 def test_deprecated_docstring_preservation():

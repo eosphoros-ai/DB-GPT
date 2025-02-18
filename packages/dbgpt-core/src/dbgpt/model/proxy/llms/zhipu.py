@@ -3,7 +3,7 @@ from concurrent.futures import Executor
 from dataclasses import dataclass, field
 from typing import Iterator, Optional, Type, Union
 
-from dbgpt.core import MessageConverter, ModelOutput, ModelRequest
+from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
@@ -160,4 +160,48 @@ class ZhipuLLMClient(ProxyLLMClient):
             )
 
 
-register_proxy_model_adapter(ZhipuLLMClient)
+register_proxy_model_adapter(
+    ZhipuLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=["glm-4-plus", "glm-4-air", "glm-4-air-0111"],
+            context_length=128 * 1024,
+            max_output_length=4 * 1024,
+            description="GLM-4 by Zhipu AI",
+            link="https://bigmodel.cn/dev/howuse/model",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["glm-4-long"],
+            context_length=1000 * 1024,
+            max_output_length=4 * 1024,
+            description="Long context GLM-4 by Zhipu AI",
+            link="https://bigmodel.cn/dev/howuse/model",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["glm-4-flash", "glm-4-flashx"],
+            context_length=128 * 1024,
+            max_output_length=4 * 1024,
+            description="Flash version of GLM-4 by Zhipu AI",
+            link="https://bigmodel.cn/dev/howuse/model",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["glm-4-airx"],
+            context_length=8 * 1024,
+            max_output_length=4 * 1024,
+            description="Quick response reasoning model by Zhipu AI",
+            link="https://bigmodel.cn/dev/howuse/model",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["glm-zero-preview"],
+            context_length=16 * 1024,
+            max_output_length=12 * 1024,
+            description="Reasoning model by Zhipu AI",
+            link="https://bigmodel.cn/dev/howuse/model",
+            function_calling=True,
+        ),
+    ],
+)

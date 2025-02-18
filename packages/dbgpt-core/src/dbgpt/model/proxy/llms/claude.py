@@ -75,7 +75,7 @@ class ClaudeLLMClient(ProxyLLMClient):
         model: Optional[str] = None,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "claude_proxyllm",
+        model_alias: Optional[str] = "claude-3-5-sonnet-20241022",
         context_length: Optional[int] = 8192,
         client: Optional["AsyncAnthropic"] = None,
         claude_kwargs: Optional[Dict[str, Any]] = None,
@@ -332,4 +332,34 @@ class ClaudeProxyTokenizer(ProxyTokenizer):
         return results
 
 
-register_proxy_model_adapter(ClaudeLLMClient)
+register_proxy_model_adapter(
+    ClaudeLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=[
+                "claude-3-5-sonnet-20241022",
+                "claude-3-5-sonnet-latest",
+                "claude-3-5-haiku-20241022",
+                "claude-3-5-haiku-latest",
+            ],
+            context_length=200 * 1024,
+            max_output_length=8 * 1024,
+            description="Claude 3.5 by Anthropic",
+            link="https://docs.anthropic.com/en/docs/about-claude/models#model-names",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "claude-3-opus-20240229",
+                "claude-3-opus-latest",
+                "claude-3-sonnet-20240229",
+                "claude-3-haiku-20240307",
+            ],
+            context_length=200 * 1024,
+            max_output_length=4 * 1024,
+            description="Claude 3 by Anthropic",
+            link="https://docs.anthropic.com/en/docs/about-claude/models#model-names",
+            function_calling=True,
+        ),
+    ],
+)

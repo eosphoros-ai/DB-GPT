@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Type
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
-from dbgpt.core import Embeddings
+from dbgpt.core import EmbeddingModelMetadata, Embeddings
 from dbgpt.core.interface.parameter import EmbeddingDeployModelParameters
 from dbgpt.model.adapter.base import register_embedding_adapter
 from dbgpt.util.i18n_utils import _
@@ -14,18 +14,20 @@ from dbgpt.util.i18n_utils import _
 class QianfanEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
     """Qianfan Embeddings deploy model parameters."""
 
-    provider = "proxy/qianfan"
+    provider: str = "proxy/qianfan"
 
-    api_key: Optional[str] = Field(
+    api_key: Optional[str] = field(
         default=None,
-        description="The API key for the embeddings API. It's the ak for qianfan.",
+        metadata={"help": _("The API key for the embeddings API.")},
     )
-    api_secret: Optional[str] = Field(
+    api_secret: Optional[str] = field(
         default=None,
-        description="The Secret key for the embeddings API. It's the sk for qianfan.",
+        metadata={
+            "help": _("The Secret key for the embeddings API. It's the sk for qianfan.")
+        },
     )
     backend: Optional[str] = field(
-        default="text-embedding-v1",
+        default=None,
         metadata={
             "help": _(
                 "The real model name to pass to the provider, default is None. If "
@@ -159,4 +161,13 @@ class QianFanEmbeddings(BaseModel, Embeddings):
         return lst
 
 
-register_embedding_adapter(QianFanEmbeddings)
+register_embedding_adapter(
+    QianFanEmbeddings,
+    supported_models=[
+        EmbeddingModelMetadata(
+            model="embedding-v1",
+            description=_("Embedding-V1 by Baidu Qianfan. "),
+            link="https://cloud.baidu.com/doc/WENXINWORKSHOP/s/alj562vvu",
+        )
+    ],
+)

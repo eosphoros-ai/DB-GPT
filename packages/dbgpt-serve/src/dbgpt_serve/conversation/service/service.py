@@ -14,7 +14,7 @@ from dbgpt_serve.core import BaseService
 
 from ...feedback.api.endpoints import get_service
 from ..api.schemas import MessageVo, ServeRequest, ServerResponse
-from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
 
 

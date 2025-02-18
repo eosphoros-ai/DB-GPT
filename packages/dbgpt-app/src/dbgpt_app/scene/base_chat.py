@@ -6,11 +6,21 @@ from typing import Any, AsyncIterator, Dict
 
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
-from dbgpt.core import LLMClient, ModelOutput, ModelRequest, ModelRequestContext
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    LLMClient,
+    MessagesPlaceholder,
+    ModelOutput,
+    ModelRequest,
+    ModelRequestContext,
+    SystemPromptTemplate,
+)
 from dbgpt.core.interface.message import StorageConversation
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.util import get_or_create_event_loop
+from dbgpt.util.annotations import Deprecated
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.retry import async_retry
 from dbgpt.util.tracer import root_tracer, trace
@@ -21,6 +31,7 @@ from dbgpt_app.scene.operators.app_operator import (
     build_cached_chat_operator,
 )
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
+from dbgpt_serve.prompt.service.service import Service as PromptService
 
 from .exceptions import BaseAppException
 
@@ -91,11 +102,8 @@ class BaseChat(ABC):
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         self.model_cache_enable = chat_param.get("model_cache_enable", False)
+        self.prompt_code = chat_param.get("prompt_code", None)
 
-        ### load prompt template
-        # self.prompt_template: PromptTemplate = CFG.prompt_templates[
-        #     self.chat_mode.value()
-        # ]
         self.prompt_template: AppScenePromptTemplateAdapter = (
             CFG.prompt_template_registry.get_prompt_template(
                 self.chat_mode.value(),
@@ -104,6 +112,24 @@ class BaseChat(ABC):
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
+        self._prompt_service = PromptService.get_instance(CFG.SYSTEM_APP)
+        if self.prompt_code:
+            # adapt prompt template according to the prompt code
+            prompt_template = self._prompt_service.get_template(self.prompt_code)
+            chat_prompt_template = ChatPromptTemplate(
+                messages=[
+                    SystemPromptTemplate.from_template(prompt_template.template),
+                    MessagesPlaceholder(variable_name="chat_history"),
+                    HumanPromptTemplate.from_template("{question}"),
+                ]
+            )
+            self.prompt_template = AppScenePromptTemplateAdapter(
+                prompt=chat_prompt_template,
+                template_scene=self.prompt_template.template_scene,
+                stream_out=self.prompt_template.stream_out,
+                output_parser=self.prompt_template.output_parser,
+                need_historical_messages=False,
+            )
         self._conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
         self.current_message: StorageConversation = _build_conversation(
             self.chat_mode, chat_param, self.llm_model, self._conv_serve
@@ -215,10 +241,14 @@ class BaseChat(ABC):
             span_id=root_tracer.get_current_span_id(),
         )
         temperature = float(
-            self._chat_param.get("temperature", self.prompt_template.temperature)
+            self._chat_param.get("temperature")
+            if self._chat_param.get("temperature")
+            else self.prompt_template.temperature
         )
         max_new_tokens = int(
-            self._chat_param.get("max_new_tokens", self.prompt_template.max_new_tokens)
+            self._chat_param.get("max_new_tokens")
+            if self._chat_param.get("max_new_tokens")
+            else self.prompt_template.max_new_tokens
         )
         node = AppChatComposerOperator(
             model=self.llm_model,
@@ -236,7 +266,6 @@ class BaseChat(ABC):
         node_input = ChatComposerInput(
             messages=self.history_messages, prompt_dict=input_values
         )
-        # llm_messages = self.generate_llm_messages()
         model_request: ModelRequest = await node.call(call_data=node_input)
         model_request.context.cache_enable = self.model_cache_enable
         return model_request
@@ -360,6 +389,7 @@ class BaseChat(ABC):
         )
         return ai_response_text, view_message.replace("\n", "\\n")
 
+    @Deprecated(version="0.7.0", remove_version="0.8.0")
     async def get_llm_response(self):
         payload = await self._build_model_request()
         logger.info(f"Request: \n{payload}")
@@ -428,50 +458,6 @@ class BaseChat(ABC):
             if message.type == "view":
                 return message.content
         return None
-
-    async def prompt_context_token_adapt(self, prompt) -> str:
-        """prompt token adapt according to llm max context length"""
-        model_metadata = await self.worker_manager.get_model_metadata(
-            {"model": self.llm_model}
-        )
-        current_token_count = await self.worker_manager.count_token(
-            {"model": self.llm_model, "prompt": prompt}
-        )
-        if current_token_count == -1:
-            logger.warning(
-                "tiktoken not installed, please `pip install tiktoken` first"
-            )
-        template_define_token_count = 0
-        if len(self.prompt_template.template_define) > 0:
-            template_define_token_count = await self.worker_manager.count_token(
-                {
-                    "model": self.llm_model,
-                    "prompt": self.prompt_template.template_define,
-                }
-            )
-            current_token_count += template_define_token_count
-        if (
-            current_token_count + self.prompt_template.max_new_tokens
-        ) > model_metadata.context_length:
-            prompt = prompt[
-                : (
-                    model_metadata.context_length
-                    - self.prompt_template.max_new_tokens
-                    - template_define_token_count
-                )
-            ]
-        return prompt
-
-    def generate(self, p) -> str:
-        """
-        generate context for LLM input
-        Args:
-            p:
-
-        Returns:
-
-        """
-        pass
 
     def _parse_prompt_define_response(self, prompt_define_response: Any) -> Any:
         if not prompt_define_response:

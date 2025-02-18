@@ -1,68 +1,158 @@
-import json
-from typing import List
+import os
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
-import requests
+from dbgpt.core import ModelMetadata
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
 
-from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+from ..base import (
+    AsyncGenerateStreamFunction,
+    GenerateStreamFunction,
+    register_proxy_model_adapter,
+)
+from .chatgpt import OpenAICompatibleDeployModelParameters, OpenAILLMClient
 
-BAICHUAN_DEFAULT_MODEL = "Baichuan2-Turbo-192k"
+if TYPE_CHECKING:
+    from httpx._types import ProxiesTypes
+    from openai import AsyncAzureOpenAI, AsyncOpenAI
+
+    ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
+
+_DEFAULT_MODEL = "Baichuan4-Turbo"
 
 
-def baichuan_generate_stream(
-    model: ProxyModel, tokenizer=None, params=None, device=None, context_len=4096
+@dataclass
+class BaichuanDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters Baichuan."""
+
+    provider: str = "proxy/baichuan"
+
+    api_base: Optional[str] = field(
+        default="${env:BAICHUAN_API_BASE:-https://api.baichuan-ai.com/v1}",
+        metadata={
+            "help": _("The base url of the Baichuan API."),
+        },
+    )
+
+    api_key: Optional[str] = field(
+        default="${env:BAICHUAN_API_KEY}",
+        metadata={
+            "help": _("The API key of the Baichuan API."),
+        },
+    )
+
+
+async def baichuan_generate_stream(
+    model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
-    # TODO: Support new Baichuan ProxyLLMClient
-    url = "https://api.baichuan-ai.com/v1/chat/completions"
+    client: BaichuanLLMClient = cast(BaichuanLLMClient, model.proxy_llm_client)
+    request = parse_model_request(params, client.default_model, stream=True)
+    async for r in client.generate_stream(request):
+        yield r
 
-    model_params = model.get_params()
-    model_name = model_params.proxyllm_backend or BAICHUAN_DEFAULT_MODEL
-    proxy_api_key = model_params.proxy_api_key
 
-    history = []
-    messages: List[ModelMessage] = params["messages"]
+class BaichuanLLMClient(OpenAILLMClient):
+    """Baichuan LLM Client.
 
-    # Add history conversation
-    for message in messages:
-        if message.role == ModelMessageRoleType.HUMAN:
-            history.append({"role": "user", "content": message.content})
-        elif message.role == ModelMessageRoleType.SYSTEM:
-            # As of today, system message is not supported.
-            history.append({"role": "user", "content": message.content})
-        elif message.role == ModelMessageRoleType.AI:
-            history.append({"role": "assistant", "content": message.content})
-        else:
-            pass
+    Baichuan's API is compatible with OpenAI's API, so we inherit from OpenAILLMClient.
 
-    payload = {
-        "model": model_name,
-        "messages": history,
-        "temperature": params.get("temperature", 0.3),
-        "top_k": params.get("top_k", 5),
-        "top_p": params.get("top_p", 0.85),
-        "stream": True,
-    }
+    API Reference: https://platform.baichuan-ai.com/docs/api
+    """
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + proxy_api_key,
-    }
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
+        api_type: Optional[str] = None,
+        api_version: Optional[str] = None,
+        model: Optional[str] = _DEFAULT_MODEL,
+        proxies: Optional["ProxiesTypes"] = None,
+        timeout: Optional[int] = 240,
+        model_alias: Optional[str] = _DEFAULT_MODEL,
+        context_length: Optional[int] = None,
+        openai_client: Optional["ClientType"] = None,
+        openai_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
+        api_base = (
+            api_base
+            or os.getenv("BAICHUAN_API_BASE")
+            or "https://api.baichuan-ai.com/v1"
+        )
+        api_key = api_key or os.getenv("BAICHUAN_API_KEY")
+        model = model or _DEFAULT_MODEL
 
-    print(f"Sending request to {url} with model {model_name}")
-    res = requests.post(url=url, json=payload, headers=headers)
+        if not api_key:
+            raise ValueError(
+                "Baichuan API key is required, please set 'BAICHUAN_API_KEY' in "
+                "environment variable or pass it to the client."
+            )
+        super().__init__(
+            api_key=api_key,
+            api_base=api_base,
+            api_type=api_type,
+            api_version=api_version,
+            model=model,
+            proxies=proxies,
+            timeout=timeout,
+            model_alias=model_alias,
+            context_length=context_length,
+            openai_client=openai_client,
+            openai_kwargs=openai_kwargs,
+            **kwargs,
+        )
 
-    text = ""
-    for line in res.iter_lines():
-        if line:
-            if not line.startswith(b"data: "):
-                error_message = line.decode("utf-8")
-                yield error_message
-            else:
-                json_data = line.split(b": ", 1)[1]
-                decoded_line = json_data.decode("utf-8")
-                if decoded_line.lower() != "[DONE]".lower():
-                    obj = json.loads(json_data)
-                    if obj["choices"][0]["delta"].get("content") is not None:
-                        content = obj["choices"][0]["delta"].get("content")
-                        text += content
-                yield text
+    def check_sdk_version(self, version: str) -> None:
+        if not version >= "1.0":
+            raise ValueError(
+                "Baichuan API requires openai>=1.0, please upgrade it by "
+                "`pip install --upgrade 'openai>=1.0'`"
+            )
+
+    @property
+    def default_model(self) -> str:
+        model = self._model
+        if not model:
+            model = _DEFAULT_MODEL
+        return model
+
+    @classmethod
+    def param_class(cls) -> Type[BaichuanDeployModelParameters]:
+        """Get the deploy model parameters class."""
+        return BaichuanDeployModelParameters
+
+    @classmethod
+    def generate_stream_function(
+        cls,
+    ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
+        """Get the generate stream function."""
+        return baichuan_generate_stream
+
+
+register_proxy_model_adapter(
+    BaichuanLLMClient,
+    supported_models=[
+        ModelMetadata(
+            model=["Baichuan4-Turbo", "Baichuan4-Air", "Baichuan4"],
+            context_length=32 * 1024,
+            description="Baichuan4 by Baichuan",
+            link="https://platform.baichuan-ai.com/docs/api",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["Baichuan3-Turbo"],
+            context_length=32 * 1024,
+            description="Baichuan3 by Baichuan",
+            link="https://platform.baichuan-ai.com/docs/api",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=["Baichuan3-Turbo-128k"],
+            context_length=128 * 1024,
+            description="Baichuan3 128k by Baichuan",
+            link="https://platform.baichuan-ai.com/docs/api",
+            function_calling=True,
+        ),
+    ],
+)

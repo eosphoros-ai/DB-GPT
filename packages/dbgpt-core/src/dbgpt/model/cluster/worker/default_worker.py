@@ -113,9 +113,14 @@ class DefaultModelWorker(ModelWorker):
         with root_tracer.start_span(
             "DefaultModelWorker.start", span_type=SpanType.RUN, metadata=metadata
         ):
-            self.model, self.tokenizer = self.ml.loader_with_params(
-                self._model_params, self.llm_adapter
-            )
+            try:
+                self.model, self.tokenizer = self.ml.loader_with_params(
+                    self._model_params, self.llm_adapter
+                )
+            except Exception:
+                # try to clear cache
+                _clear_model_cache(self._device)
+                raise
             parsed_model_max_length = self.llm_adapter.parse_max_length(
                 self.model, self.tokenizer
             )

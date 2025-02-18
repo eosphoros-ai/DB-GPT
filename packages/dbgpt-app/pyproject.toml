@@ -3,8 +3,12 @@ name = "dbgpt-app"
 version = "0.7.0"
 description = "Add your description here"
 authors = [
-    { name = "aries_ckt", email = "ariesketing@gmail.com" }
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
 ]
+license = "MIT"
+readme = "README.md"
+requires-python = ">= 3.10"
+
 dependencies = [
     "dbgpt-accelerator",
     "dbgpt",
@@ -15,8 +19,12 @@ dependencies = [
     "sentence-transformers",
     "pyparsing",
 ]
-readme = "README.md"
-requires-python = ">= 3.10"
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
 
 [build-system]
 requires = ["hatchling"]
@@ -50,3 +58,12 @@ dev-dependencies = []
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt_app"]
+exclude = [
+    "src/dbgpt_app/**/tests",
+    "src/dbgpt_app/**/tests/*",
+    "src/dbgpt_app/tests",
+    "src/dbgpt_app/tests/*",
+    "src/dbgpt_app/**/examples",
+    "src/dbgpt_app/**/examples/*"
+]
+

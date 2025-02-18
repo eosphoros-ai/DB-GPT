@@ -9,7 +9,7 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional, Union
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -19,6 +19,9 @@ from dbgpt.configs.model_config import LOGDIR
 from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
+    EmbeddingDeployModelParameters,
+    LLMDeployModelParameters,
+    RerankerDeployModelParameters,
 )
 from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
 from dbgpt.model.cluster.base import (
@@ -38,6 +41,7 @@ from dbgpt.model.cluster.manager_base import (
     WorkerRunData,
 )
 from dbgpt.model.cluster.registry import ModelRegistry
+from dbgpt.model.cluster.storage import ModelStorage, ModelStorageItem
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.parameter import (
     ModelsDeployParameters,
@@ -47,14 +51,17 @@ from dbgpt.model.parameter import (
 from dbgpt.model.utils.llm_utils import list_supported_models
 from dbgpt.util.fastapi import create_app, register_event_handler
 from dbgpt.util.parameter_utils import (
-    EnvArgumentParser,
     ParameterDescription,
-    _dict_to_command_args,
     _get_dict_from_obj,
 )
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
-from dbgpt.util.utils import setup_http_service_logging, setup_logging
+from dbgpt.util.tracer.tracer_impl import TracerParameters
+from dbgpt.util.utils import (
+    LoggingParameters,
+    setup_http_service_logging,
+    setup_logging,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +94,22 @@ class LocalWorkerManager(WorkerManager):
         model_registry: ModelRegistry = None,
         host: str = None,
         port: int = None,
+        model_storage: Optional[ModelStorage] = None,
     ) -> None:
+        """Create a LocalWorkerManager instance.
+
+        Args:
+            register_func (RegisterFunc, optional): Register function. Defaults to None.
+            deregister_func (DeregisterFunc, optional): Deregister function. Defaults
+                to None.
+            send_heartbeat_func (SendHeartbeatFunc, optional): Send heartbeat function.
+                Defaults to None.
+            model_registry (ModelRegistry, optional): Model registry. Defaults to None.
+            host (str, optional): Host. Defaults to None.
+            port (int, optional): Port. Defaults to None.
+            model_storage (Optional[ModelStorage], optional): Model storage. Defaults
+                to None. It is used to store model metadata.
+        """
         self.workers: Dict[str, List[WorkerRunData]] = dict()
         self.executor = ThreadPoolExecutor(max_workers=os.cpu_count() * 5)
         self.register_func = register_func
@@ -96,6 +118,7 @@ class LocalWorkerManager(WorkerManager):
         self.model_registry = model_registry
         self.host = host
         self.port = port
+        self.model_storage = model_storage
         self.start_listeners = []
 
         self.run_data = WorkerRunData(
@@ -133,6 +156,26 @@ class LocalWorkerManager(WorkerManager):
             asyncio.create_task(
                 _async_heartbeat_sender(self.run_data, 20, self.send_heartbeat_func)
             )
+        if self.model_storage:
+            try:
+                logger.info("There has model storage, start the model from storage")
+                startup_reqs = await self.run_blocking_func(
+                    self.model_storage.all_models
+                )
+                for startup_req in startup_reqs:
+                    try:
+                        # Update host and port
+                        startup_req.host = self.host
+                        startup_req.port = self.port
+                        logger.info(f"Start model {startup_req.model} from storage")
+                        await self.model_startup(startup_req)
+                        logger.info(f"Start model {startup_req.model} successfully")
+                    except Exception as e:
+                        logger.warning(
+                            f"Start model {startup_req.model} error: {str(e)}"
+                        )
+            except Exception as e:
+                logger.warning(f"Load model storage error: {str(e)}")
         for listener in self.start_listeners:
             if asyncio.iscoroutinefunction(listener):
                 await listener(self)
@@ -190,6 +233,12 @@ class LocalWorkerManager(WorkerManager):
 
         worker_key = self._worker_key(worker_type, model_name)
 
+        concurrency = (
+            deploy_model_params.concurrency
+            if deploy_model_params.concurrency is not None
+            else 5
+        )
+
         worker_run_data = WorkerRunData(
             host=self.host,
             port=self.port,
@@ -199,7 +248,7 @@ class LocalWorkerManager(WorkerManager):
             worker_params=worker_params,
             model_params=deploy_model_params,
             stop_event=asyncio.Event(),
-            semaphore=asyncio.Semaphore(worker_params.limit_model_concurrency),
+            semaphore=asyncio.Semaphore(concurrency),
             command_args=command_args,
         )
         instances = self.workers.get(worker_key)
@@ -213,50 +262,66 @@ class LocalWorkerManager(WorkerManager):
             logger.warning(f"Instance {worker_key} exist")
             return False
 
-    def _remove_worker(self, worker_params: ModelWorkerParameters) -> None:
-        worker_key = self._worker_key(
-            worker_params.worker_type, worker_params.model_name
-        )
+    def _remove_worker(
+        self, worker_params: ModelWorkerParameters, model_name: str
+    ) -> None:
+        worker_key = self._worker_key(worker_params.worker_type, model_name)
         instances = self.workers.get(worker_key)
         if instances:
             del self.workers[worker_key]
 
+    def _build_worker(
+        self, worker_type: Optional[str], worker_class: Optional[str]
+    ) -> ModelWorker:
+        """Build worker instance."""
+        return _build_worker(worker_type, worker_class)
+
     async def model_startup(self, startup_req: WorkerStartupRequest):
         """Start model"""
-        raise NotImplementedError("Not implemented in 0.7.0")
+        from dbgpt.util.configure import ConfigurationManager
+
         model_name = startup_req.model
         worker_type = startup_req.worker_type
         params = startup_req.params
+
+        cfg = ConfigurationManager(params)
+        if worker_type == WorkerType.TEXT2VEC:
+            deploy_params = cfg.parse_config(EmbeddingDeployModelParameters)
+        elif worker_type == WorkerType.RERANKER:
+            deploy_params = cfg.parse_config(RerankerDeployModelParameters)
+        else:
+            deploy_params = cfg.parse_config(LLMDeployModelParameters)
+
         logger.debug(
             f"start model, model name {model_name}, worker type {worker_type},  params:"
             f" {params}"
         )
         worker_params: ModelWorkerParameters = ModelWorkerParameters.from_dict(
-            params, ignore_extra_fields=True
+            {
+                "worker_type": worker_type.value,
+            },
+            ignore_extra_fields=True,
         )
-        if not worker_params.model_name:
-            worker_params.model_name = model_name
-        worker = _build_worker(
+        worker = self._build_worker(
             worker_type=worker_type, worker_class=worker_params.worker_class
         )
-        command_args = _dict_to_command_args(params)
         success = await self.run_blocking_func(
-            self.add_worker, worker, worker_params, command_args
+            self.add_worker, worker, worker_params, deploy_params
         )
         if not success:
             msg = f"Add worker {model_name}@{worker_type}, worker instances is exist"
             logger.warning(f"{msg}, worker_params: {worker_params}")
-            self._remove_worker(worker_params)
+            self._remove_worker(worker_params, model_name)
             raise Exception(msg)
         supported_types = WorkerType.values()
         if worker_type not in supported_types:
-            self._remove_worker(worker_params)
+            self._remove_worker(worker_params, model_name)
             raise ValueError(
                 f"Unsupported worker type: {worker_type}, now supported worker type: "
                 f"{supported_types}"
             )
         start_apply_req = WorkerApplyRequest(
-            model=worker_params.model_name,
+            model=model_name,
             apply_type=WorkerApplyType.START,
             worker_type=worker_type,
         )
@@ -264,11 +329,25 @@ class LocalWorkerManager(WorkerManager):
         try:
             out = await self.worker_apply(start_apply_req)
         except Exception as e:
-            self._remove_worker(worker_params)
+            self._remove_worker(worker_params, model_name)
             raise e
         if not out.success:
-            self._remove_worker(worker_params)
+            self._remove_worker(worker_params, model_name)
             raise Exception(out.message)
+        else:
+            logger.info(f"Model {model_name} startup successfully")
+            if self.model_storage:
+                try:
+                    logger.info("There has model storage, save model storage")
+                    # UPDATE host and port
+                    startup_req.host = self.host
+                    startup_req.port = self.port
+                    await self.run_blocking_func(
+                        self.model_storage.save_or_update, startup_req
+                    )
+                    logger.info("Save model storage successfully")
+                except Exception as e:
+                    logger.warning(f"Save model storage error: {str(e)}")
 
     async def model_shutdown(self, shutdown_req: WorkerStartupRequest):
         logger.info(f"Begin shutdown model, shutdown_req: {shutdown_req}")
@@ -277,9 +356,24 @@ class LocalWorkerManager(WorkerManager):
             apply_type=WorkerApplyType.STOP,
             worker_type=shutdown_req.worker_type,
         )
-        out = await self._stop_all_worker(apply_req)
+        remove_from_registry = self.model_storage and shutdown_req.delete_after
+        out = await self._stop_all_worker(
+            apply_req, remove_from_registry=remove_from_registry
+        )
         if not out.success:
             raise Exception(out.message)
+        else:
+            logger.info(f"Model {shutdown_req.model} shutdown successfully")
+            if remove_from_registry:
+                try:
+                    logger.info("There has model storage, delete model storage")
+                    st = ModelStorageItem.from_startup_req(shutdown_req)
+                    await self.run_blocking_func(
+                        self.model_storage.delete, st.identifier
+                    )
+                    logger.info("Delete model storage successfully")
+                except Exception as e:
+                    logger.warning(f"Delete model storage error: {str(e)}")
 
     async def supported_models(self) -> List[WorkerSupportedModel]:
         models = await self.run_blocking_func(list_supported_models)
@@ -578,11 +672,15 @@ class LocalWorkerManager(WorkerManager):
         return out
 
     async def _stop_all_worker(
-        self, apply_req: WorkerApplyRequest, ignore_exception: bool = False
+        self,
+        apply_req: WorkerApplyRequest,
+        ignore_exception: bool = False,
+        remove_from_registry: bool = False,
     ) -> WorkerApplyOutput:
         start_time = time.time()
 
         async def _stop_worker(worker_run_data: WorkerRunData):
+            model_name = worker_run_data.model_params.name
             _start_time = time.time()
             info = worker_run_data._to_print_key()
             out = WorkerApplyOutput("")
@@ -612,9 +710,10 @@ class LocalWorkerManager(WorkerManager):
                                 )
 
                         _deregister_func = safe_deregister_func
+                    worker_run_data.remove_from_registry = remove_from_registry
                     await _deregister_func(worker_run_data)
                 # Remove metadata
-                self._remove_worker(worker_run_data.worker_params)
+                self._remove_worker(worker_run_data.worker_params, model_name)
                 out.message = f"{info} stop successfully"
             except Exception as e:
                 out.success = False
@@ -910,54 +1009,61 @@ def _setup_fastapi(
     return app
 
 
-def _parse_worker_params(
-    model_name: str = None, model_path: str = None, **kwargs
-) -> ModelWorkerParameters:
-    worker_args = EnvArgumentParser()
-    env_prefix = None
-    if model_name:
-        env_prefix = EnvArgumentParser.get_env_prefix(model_name)
-    worker_params: ModelWorkerParameters = worker_args.parse_args_into_dataclass(
-        ModelWorkerParameters,
-        env_prefixes=[env_prefix],
-        model_name=model_name,
-        model_path=model_path,
-        **kwargs,
-    )
-    env_prefix = EnvArgumentParser.get_env_prefix(worker_params.model_name)
-    # Read parameters agein with prefix of model name.
-    new_worker_params = worker_args.parse_args_into_dataclass(
-        ModelWorkerParameters,
-        env_prefixes=[env_prefix],
-        model_name=worker_params.model_name,
-        model_path=worker_params.model_path,
-        **kwargs,
-    )
-    worker_params.update_from(new_worker_params)
-    if worker_params.model_alias:
-        worker_params.model_name = worker_params.model_alias
-
-    # logger.info(f"Worker params: {worker_params}")
-    return worker_params
+#
+# def _parse_worker_params(
+#     model_name: str = None, model_path: str = None, **kwargs
+# ) -> ModelWorkerParameters:
+#     worker_args = EnvArgumentParser()
+#     env_prefix = None
+#     if model_name:
+#         env_prefix = EnvArgumentParser.get_env_prefix(model_name)
+#     worker_params: ModelWorkerParameters = worker_args.parse_args_into_dataclass(
+#         ModelWorkerParameters,
+#         env_prefixes=[env_prefix],
+#         model_name=model_name,
+#         model_path=model_path,
+#         **kwargs,
+#     )
+#     env_prefix = EnvArgumentParser.get_env_prefix(worker_params.model_name)
+#     # Read parameters agein with prefix of model name.
+#     new_worker_params = worker_args.parse_args_into_dataclass(
+#         ModelWorkerParameters,
+#         env_prefixes=[env_prefix],
+#         model_name=worker_params.model_name,
+#         model_path=worker_params.model_path,
+#         **kwargs,
+#     )
+#     worker_params.update_from(new_worker_params)
+#     if worker_params.model_alias:
+#         worker_params.model_name = worker_params.model_alias
+#
+#     # logger.info(f"Worker params: {worker_params}")
+#     return worker_params
 
 
 def _create_local_model_manager(
     worker_params: ModelWorkerParameters,
+    model_storage: Optional[ModelStorage] = None,
 ) -> LocalWorkerManager:
     from dbgpt.util.net_utils import _get_ip_address
 
-    host = (
-        worker_params.worker_register_host
-        if worker_params.worker_register_host
-        else _get_ip_address()
-    )
+    register_host = worker_params.worker_register_host
+    if not register_host:
+        if worker_params.host in ["127.0.0.1", "localhost"]:
+            # Bind to local ip. it's can't be accessed from other machine.
+            register_host = worker_params.host
+        else:
+            # Get current ip address
+            register_host = _get_ip_address()
     port = worker_params.port
     if not worker_params.register or not worker_params.controller_addr:
         logger.info(
             f"Not register current to controller, register: {worker_params.register}, "
             f"controller_addr: {worker_params.controller_addr}"
         )
-        return LocalWorkerManager(host=host, port=port)
+        return LocalWorkerManager(
+            host=register_host, port=port, model_storage=model_storage
+        )
     else:
         from dbgpt.model.cluster.controller.controller import ModelRegistryClient
 
@@ -965,19 +1071,22 @@ def _create_local_model_manager(
 
         async def register_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
-                model_name=worker_run_data.worker_key, host=host, port=port
+                model_name=worker_run_data.worker_key, host=register_host, port=port
             )
             return await client.register_instance(instance)
 
         async def deregister_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
-                model_name=worker_run_data.worker_key, host=host, port=port
+                model_name=worker_run_data.worker_key,
+                host=register_host,
+                port=port,
+                remove_from_registry=worker_run_data.remove_from_registry,
             )
             return await client.deregister_instance(instance)
 
         async def send_heartbeat_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
-                model_name=worker_run_data.worker_key, host=host, port=port
+                model_name=worker_run_data.worker_key, host=register_host, port=port
             )
             return await client.send_heartbeat(instance)
 
@@ -985,8 +1094,9 @@ def _create_local_model_manager(
             register_func=register_func,
             deregister_func=deregister_func,
             send_heartbeat_func=send_heartbeat_func,
-            host=host,
+            host=register_host,
             port=port,
+            model_storage=model_storage,
         )
 
 
@@ -1011,6 +1121,12 @@ def _build_worker(
             )
 
             worker_cls = EmbeddingsModelWorker
+        elif worker_type == WorkerType.RERANKER:
+            from dbgpt.model.cluster.worker.embedding_worker import (
+                RerankerModelWorker,
+            )
+
+            worker_cls = RerankerModelWorker
         else:
             raise Exception(f"Unsupported worker type: {worker_type}")
 
@@ -1024,6 +1140,7 @@ def _start_local_worker(
     worker_manager: WorkerManagerAdapter,
     worker_params: ModelWorkerParameters,
     deploy_model_params: BaseDeployModelParameters,
+    model_storage: Optional[ModelStorage] = None,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
 ):
     with root_tracer.start_span(
@@ -1041,7 +1158,9 @@ def _start_local_worker(
             ext_worker_kwargs=ext_worker_kwargs,
         )
         if not worker_manager.worker_manager:
-            worker_manager.worker_manager = _create_local_model_manager(worker_params)
+            worker_manager.worker_manager = _create_local_model_manager(
+                worker_params, model_storage
+            )
         worker_manager.worker_manager.add_worker(
             worker, worker_params, deploy_model_params
         )
@@ -1051,13 +1170,11 @@ def _start_local_embedding_worker(
     worker_manager: WorkerManagerAdapter,
     deploy_model_params: BaseDeployModelParameters,
     ext_worker_kwargs: Optional[Dict[str, Any]] = None,
+    worker_type: str = WorkerType.TEXT2VEC.value,
+    model_storage: Optional[ModelStorage] = None,
 ):
-    worker_class = "dbgpt.model.cluster.worker.embedding_worker.EmbeddingsModelWorker"
     embedding_worker_params = ModelWorkerParameters(
-        model_name=deploy_model_params.name,
-        model_path=deploy_model_params.real_model_path,
-        worker_type=WorkerType.TEXT2VEC,
-        worker_class=worker_class,
+        worker_type=worker_type,
     )
     logger.info(
         "Start local embedding worker with embedding parameters\n"
@@ -1067,6 +1184,7 @@ def _start_local_embedding_worker(
         worker_manager,
         embedding_worker_params,
         deploy_model_params,
+        model_storage=model_storage,
         ext_worker_kwargs=ext_worker_kwargs,
     )
 
@@ -1078,9 +1196,11 @@ def initialize_worker_manager_in_client(
     include_router: bool = True,
     run_locally: bool = True,
     controller_addr: Optional[str] = None,
-    local_port: int = 5670,
+    binding_port: int = 5670,
+    binding_host: Optional[str] = None,
     start_listener: Optional[Callable[["WorkerManager"], None]] = None,
     system_app: Optional[SystemApp] = None,
+    model_storage: Optional[ModelStorage] = None,
 ):
     """Initialize WorkerManager in client.
     If run_locally is True:
@@ -1103,9 +1223,6 @@ def initialize_worker_manager_in_client(
         logger.info(f"Register WorkerManager {_DefaultWorkerManagerFactory.name}")
         system_app.register(_DefaultWorkerManagerFactory, worker_manager)
 
-    # worker_params: ModelWorkerParameters = _parse_worker_params(
-    #     model_name=model_name, model_path=model_path, controller_addr=controller_addr
-    # )
     if controller_addr and not worker_params.controller_addr:
         worker_params.controller_addr = controller_addr
 
@@ -1113,23 +1230,32 @@ def initialize_worker_manager_in_client(
         # TODO start ModelController
         worker_params.standalone = True
         worker_params.register = True
-        worker_params.port = local_port
+        # Override host and port
+        worker_params.port = binding_port
+        worker_params.host = binding_host or "127.0.0.1"
         logger.info(f"Worker params: {worker_params}")
         _setup_fastapi(worker_params, app, ignore_exception=True, system_app=system_app)
         for llm_deploy_config in models_config.llms:
             # Multiple LLMs
-            _start_local_worker(worker_manager, worker_params, llm_deploy_config)
+            _start_local_worker(
+                worker_manager,
+                worker_params,
+                llm_deploy_config,
+                model_storage=model_storage,
+            )
         worker_manager.after_start(start_listener)
         for embedding_deploy_config in models_config.embeddings:
             _start_local_embedding_worker(
                 worker_manager,
                 embedding_deploy_config,
+                model_storage=model_storage,
             )
         for rerank_deploy_config in models_config.rerankers:
             _start_local_embedding_worker(
                 worker_manager,
                 rerank_deploy_config,
-                ext_worker_kwargs={"rerank_model": True},
+                worker_type=WorkerType.RERANKER.value,
+                model_storage=model_storage,
             )
     else:
         from dbgpt.model.cluster.controller.controller import (
@@ -1137,6 +1263,9 @@ def initialize_worker_manager_in_client(
             initialize_controller,
         )
         from dbgpt.model.cluster.worker.remote_manager import RemoteWorkerManager
+
+        if model_storage:
+            raise ValueError("Model storage is not supported in remote mode now")
 
         if not worker_params.controller_addr:
             raise ValueError("Controller can`t be None")
@@ -1158,31 +1287,23 @@ def initialize_worker_manager_in_client(
 
 
 def run_worker_manager(
+    worker_params: ModelWorkerParameters,
+    deploy_model_params: BaseDeployModelParameters,
+    sys_trace: Optional[TracerParameters] = None,
+    sys_log: Optional[LoggingParameters] = None,
     app=None,
     include_router: bool = True,
-    model_name: str = None,
-    model_path: str = None,
-    standalone: bool = False,
-    port: int = None,
-    embedding_model_name: str = None,
-    embedding_model_path: str = None,
     start_listener: Callable[["WorkerManager"], None] = None,
     **kwargs,
 ):
     global worker_manager
 
-    worker_params: ModelWorkerParameters = _parse_worker_params(
-        model_name=model_name,
-        model_path=model_path,
-        standalone=standalone,
-        port=port,
-        **kwargs,
-    )
-
+    log_config = worker_params.log or sys_log or LoggingParameters()
+    trace_config = worker_params.trace or sys_trace or TracerParameters()
     setup_logging(
         "dbgpt",
-        logging_level=worker_params.log_level,
-        logger_filename=worker_params.log_file,
+        log_config=log_config,
+        default_logger_filename=os.path.join(LOGDIR, "dbgpt_model_worker_manager.log"),
     )
 
     embedded_mod = True
@@ -1194,22 +1315,38 @@ def run_worker_manager(
         app = _setup_fastapi(worker_params, system_app=system_app)
     system_app._asgi_app = app
 
+    trace_file = trace_config.file or os.path.join(
+        "logs", "dbgpt_model_worker_manager_tracer.jsonl"
+    )
     initialize_tracer(
-        os.path.join(LOGDIR, worker_params.tracer_file),
+        trace_file,
         system_app=system_app,
-        root_operation_name="DB-GPT-ModelWorker",
-        tracer_storage_cls=worker_params.tracer_storage_cls,
-        enable_open_telemetry=worker_params.tracer_to_open_telemetry,
-        otlp_endpoint=worker_params.otel_exporter_otlp_traces_endpoint,
-        otlp_insecure=worker_params.otel_exporter_otlp_traces_insecure,
-        otlp_timeout=worker_params.otel_exporter_otlp_traces_timeout,
+        root_operation_name=trace_config.root_operation_name or "DB-GPT-ModelWorker",
+        tracer_parameters=trace_config,
     )
+    if isinstance(deploy_model_params, LLMDeployModelParameters):
+        _start_local_worker(
+            worker_manager,
+            worker_params,
+            deploy_model_params,
+        )
+    elif isinstance(deploy_model_params, EmbeddingDeployModelParameters):
+        worker_params.worker_type = WorkerType.TEXT2VEC
+        _start_local_worker(
+            worker_manager,
+            worker_params,
+            deploy_model_params,
+        )
 
-    _start_local_worker(worker_manager, worker_params)
-    _start_local_embedding_worker(
-        worker_manager, embedding_model_name, embedding_model_path
-    )
-
+    elif isinstance(deploy_model_params, RerankerDeployModelParameters):
+        worker_params.worker_type = WorkerType.RERANKER
+        _start_local_worker(
+            worker_manager,
+            worker_params,
+            deploy_model_params,
+        )
+    else:
+        raise ValueError(f"Unsupported deploy model params: {deploy_model_params}")
     worker_manager.after_start(start_listener)
 
     if include_router:
@@ -1227,5 +1364,98 @@ def run_worker_manager(
         loop.run_until_complete(worker_manager.start())
 
 
+def parse_args():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="DB-GPT Model Worker")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Path to the configuration file.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    run_worker_manager()
+    from dbgpt.configs.model_config import ROOT_PATH
+    from dbgpt.model import scan_model_providers
+    from dbgpt.util.configure import ConfigurationManager
+
+    def config_handler(config_dict: Union[Dict[str, Any], List[Dict[str, Any]]]):
+        if isinstance(config_dict, list):
+            if not config_dict:
+                raise ValueError("Empty model config list")
+            if len(config_dict) > 1:
+                raise ValueError(
+                    "Only one model config is supported when running worker in cluster "
+                    "mode"
+                )
+            return config_dict[0]
+        else:
+            config_dict
+
+    scan_model_providers()
+    args = parse_args()
+    config_file = args.config
+    if not os.path.isabs(config_file) and not os.path.exists(config_file):
+        config_file = os.path.join(ROOT_PATH, config_file)
+
+    cfg = ConfigurationManager.from_file(config_file)
+    worker_params = cfg.parse_config(
+        ModelWorkerParameters, prefix="service.model.worker", hook_section="hooks"
+    )
+    worker_type = worker_params.worker_type
+    llm_deploy_config: Optional[LLMDeployModelParameters] = None
+    embeddings_deploy_config: Optional[EmbeddingDeployModelParameters] = None
+    rerank_deploy_config: Optional[RerankerDeployModelParameters] = None
+    sys_trace: Optional[TracerParameters] = None
+    sys_log: Optional[LoggingParameters] = None
+    configs = []
+    if cfg.exists("models.llms") and (
+        worker_type is None or worker_type == WorkerType.LLM
+    ):
+        llm_deploy_config = cfg.parse_config(
+            LLMDeployModelParameters,
+            prefix="models.llms",
+            config_handler=config_handler,
+        )
+        configs.append(llm_deploy_config)
+    if cfg.exists("models.embeddings") and (
+        worker_type is None or worker_type == WorkerType.TEXT2VEC
+    ):
+        embeddings_deploy_config = cfg.parse_config(
+            EmbeddingDeployModelParameters,
+            prefix="models.embeddings",
+            config_handler=config_handler,
+        )
+        configs.append(embeddings_deploy_config)
+    if cfg.exists("models.rerankers") and (
+        worker_type is None or worker_type == WorkerType.RERANKER
+    ):
+        rerank_deploy_config = cfg.parse_config(
+            RerankerDeployModelParameters,
+            prefix="models.rerankers",
+            config_handler=config_handler,
+        )
+        configs.append(rerank_deploy_config)
+    if worker_type:
+        configs = [config for config in configs if config.worker_type() == worker_type]
+    if not configs:
+        raise ValueError("No model config found")
+    if len(configs) > 1:
+        raise ValueError(
+            "Only one model config is supported when running worker in cluster mode"
+        )
+    if cfg.exists("trace"):
+        sys_trace = cfg.parse_config(TracerParameters, prefix="trace")
+    if cfg.exists("log"):
+        sys_log = cfg.parse_config(LoggingParameters, prefix="log")
+
+    run_worker_manager(
+        worker_params,
+        configs[0],
+        sys_trace=sys_trace,
+        sys_log=sys_log,
+    )

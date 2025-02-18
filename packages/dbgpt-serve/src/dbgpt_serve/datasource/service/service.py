@@ -19,7 +19,6 @@ from dbgpt_serve.datasource.manages.connect_config_db import (
     ConnectConfigDao,
     ConnectConfigEntity,
 )
-from dbgpt_serve.datasource.manages.db_conn_info import DBConfig
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
 from ..api.schemas import (
@@ -28,7 +27,7 @@ from ..api.schemas import (
     DatasourceServeRequest,
     DatasourceServeResponse,
 )
-from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -188,7 +187,7 @@ class Service(
             )
         db_name = persisted_state.get("db_name")
         if not db_name:
-            raise HTTPException(status_code=400, detail=f"datasource name is required")
+            raise HTTPException(status_code=400, detail="datasource name is required")
         datasources = self._dao.get_by_names(db_name)
         if datasources is None:
             raise HTTPException(

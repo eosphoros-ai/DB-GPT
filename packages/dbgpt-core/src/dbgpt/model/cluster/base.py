@@ -67,8 +67,22 @@ class WorkerParameterRequest(BaseModel):
 
 
 class WorkerStartupRequest(BaseModel):
+    """Request to start a worker"""
+
     host: str
     port: int
     model: str
     worker_type: WorkerType
     params: Dict
+    delete_after: Optional[bool] = Field(
+        False,
+        description="Whether to delete the worker after operation. For debugging and "
+        "delete worker from model memory.",
+    )
+    worker_name: Optional[str] = Field(None, description="The name of the worker.")
+    sys_code: Optional[str] = Field(
+        None, description="The system code for the worker, used for authentication"
+    )
+    user_name: Optional[str] = Field(
+        None, description="The user name for the worker, used for authentication"
+    )
