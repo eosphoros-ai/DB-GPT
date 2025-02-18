@@ -66,6 +66,9 @@ class ClickhouseParameters(BaseDatasourceParameters):
         """Create clickhouse connector."""
         return ClickhouseConnector.from_parameters(self)
 
+    def db_url(self, ssl=False, charset=None):
+        raise NotImplementedError("Clickhouse does not support db_url")
+
 
 class ClickhouseConnector(RDBMSConnector):
     """Clickhouse connector."""

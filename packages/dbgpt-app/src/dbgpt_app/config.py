@@ -156,8 +156,14 @@ class ServiceWebParameters(BaseParameters):
 
 @dataclass
 class ServiceConfig(BaseParameters):
-    web: ServiceWebParameters
-    model: ModelServiceConfig
+    web: ServiceWebParameters = field(
+        default_factory=ServiceWebParameters,
+        metadata={"help": _("Web service configuration")},
+    )
+    model: ModelServiceConfig = field(
+        default_factory=ModelServiceConfig,
+        metadata={"help": _("Model service configuration")},
+    )
 
 
 @dataclass

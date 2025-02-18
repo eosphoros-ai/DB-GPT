@@ -145,7 +145,8 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     # After init, when the database is ready
     system_app.after_init()
 
-    local_port = web_config.port
+    binding_port = web_config.port
+    binding_host = web_config.host
     if not web_config.light:
         from dbgpt.model.cluster.storage import ModelStorage
         from dbgpt_serve.model.serve import Serve as ModelServe
@@ -160,7 +161,8 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
             worker_params=param.service.model.worker,
             models_config=param.models,
             app=app,
-            local_port=local_port,
+            binding_port=binding_port,
+            binding_host=binding_host,
             start_listener=model_start_listener,
             system_app=system_app,
             model_storage=model_storage,
@@ -169,13 +171,17 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     else:
         # MODEL_SERVER is controller address now
         controller_addr = web_config.controller_addr
+        param.models.llms = []
+        param.models.rerankers = []
+        param.models.embeddings = []
         initialize_worker_manager_in_client(
             worker_params=param.service.model.worker,
             models_config=param.models,
             app=app,
             run_locally=False,
             controller_addr=controller_addr,
-            local_port=local_port,
+            binding_port=binding_port,
+            binding_host=binding_host,
             start_listener=model_start_listener,
             system_app=system_app,
         )

@@ -52,6 +52,10 @@ class TuGraphParameters(BaseDatasourceParameters):
         """Create TuGraph connector."""
         return TuGraphConnector.from_parameters(self)
 
+    def db_url(self, ssl=False, charset=None):
+        """Get the database URL."""
+        raise NotImplementedError("TuGraph does not support db_url")
+
 
 class TuGraphConnector(BaseConnector):
     """TuGraph connector."""

@@ -147,9 +147,7 @@ class RemoteWorkerManager(LocalWorkerManager):
 
     def _build_single_worker_instance(self, model_name: str, instance: ModelInstance):
         worker = RemoteModelWorker()
-        worker.load_worker(
-            model_name, model_name, host=instance.host, port=instance.port
-        )
+        worker.load_worker(model_name, host=instance.host, port=instance.port)
         wr = WorkerRunData(
             host=instance.host,
             port=instance.port,

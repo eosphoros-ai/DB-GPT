@@ -157,11 +157,6 @@ async def model_list(controller: BaseModelController = Depends(get_model_control
                     if manager_map.get(model.host)
                     else None
                 )
-                last_heartbeat = (
-                    model.last_heartbeat.strftime("%Y-%m-%d %H:%M:%S")
-                    if model.last_heartbeat
-                    else None
-                )
                 response = ModelResponse(
                     model_name=worker_name,
                     worker_type=worker_type,
@@ -171,7 +166,7 @@ async def model_list(controller: BaseModelController = Depends(get_model_control
                     manager_port=manager_port,
                     healthy=model.healthy,
                     check_healthy=model.check_healthy,
-                    last_heartbeat=last_heartbeat,
+                    last_heartbeat=model.str_last_heartbeat,
                     prompt_template=model.prompt_template,
                 )
                 responses.append(response)

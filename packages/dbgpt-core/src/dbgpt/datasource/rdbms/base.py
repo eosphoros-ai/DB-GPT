@@ -54,6 +54,7 @@ class RDBMSDatasourceParameters(BaseDatasourceParameters):
     port: int = field(metadata={"help": _("Database port, e.g., 3306")})
     user: str = field(metadata={"help": _("Database user to connect")})
     database: str = field(metadata={"help": _("Database name")})
+    driver: str = field(metadata={"help": _("Database driver, e.g., mysql+pymysql")})
     password: str = field(
         default="${env:DBGPT_DB_PASSWORD}",
         metadata={
@@ -94,6 +95,15 @@ class RDBMSDatasourceParameters(BaseDatasourceParameters):
     def create_connector(self) -> "BaseConnector":
         """Create connector"""
         return RDBMSConnector.from_parameters(self)
+
+    def db_url(self, ssl: bool = False, charset: Optional[str] = None) -> str:
+        """Return database engine url."""
+        url = f"{self.driver}://{quote(self.user)}:{urlquote(self.password)}@{self.host}:{str(self.port)}/{self.database}"
+        if ssl:
+            url += "&ssl_verify_cert=true&ssl_verify_identity=true"
+        if charset:
+            url += f"&charset={charset}"
+        return url
 
 
 class RDBMSConnector(BaseConnector):
@@ -160,14 +170,8 @@ class RDBMSConnector(BaseConnector):
     @classmethod
     def from_parameters(cls, parameters: RDBMSDatasourceParameters) -> "RDBMSConnector":
         """Create a new connector from parameters."""
-        return cls.from_uri_db(
-            parameters.host,
-            parameters.port,
-            parameters.user,
-            parameters.password,
-            parameters.database,
-            engine_args=parameters.engine_args(),
-        )
+        db_url = parameters.db_url()
+        return cls.from_uri(db_url, engine_args=parameters.engine_args())
 
     @classmethod
     def from_uri_db(

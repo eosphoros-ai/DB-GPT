@@ -4,7 +4,7 @@ import time
 from concurrent.futures import Executor, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from dbgpt.component import SystemApp
 from dbgpt.core.interface.storage import (
@@ -185,8 +185,7 @@ class StorageModelRegistry(ModelRegistry):
         cls,
         db_url: str,
         db_name: str,
-        pool_size: int = 5,
-        max_overflow: int = 10,
+        engine_args: Optional[Dict[str, Any]] = None,
         try_to_create_db: bool = False,
         **kwargs,
     ) -> "StorageModelRegistry":
@@ -196,13 +195,14 @@ class StorageModelRegistry(ModelRegistry):
 
         from .db_storage import ModelInstanceEntity, ModelInstanceItemAdapter
 
-        engine_args = {
-            "pool_size": pool_size,
-            "max_overflow": max_overflow,
-            "pool_timeout": 30,
-            "pool_recycle": 3600,
-            "pool_pre_ping": True,
-        }
+        if engine_args is None:
+            engine_args = {
+                "pool_size": 5,
+                "max_overflow": 10,
+                "pool_timeout": 30,
+                "pool_recycle": 3600,
+                "pool_pre_ping": True,
+            }
 
         db: DatabaseManager = initialize_db(
             db_url, db_name, engine_args, try_to_create_db=try_to_create_db

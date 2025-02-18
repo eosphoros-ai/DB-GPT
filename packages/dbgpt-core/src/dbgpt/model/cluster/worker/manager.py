@@ -1047,18 +1047,23 @@ def _create_local_model_manager(
 ) -> LocalWorkerManager:
     from dbgpt.util.net_utils import _get_ip_address
 
-    host = (
-        worker_params.worker_register_host
-        if worker_params.worker_register_host
-        else _get_ip_address()
-    )
+    register_host = worker_params.worker_register_host
+    if not register_host:
+        if worker_params.host in ["127.0.0.1", "localhost"]:
+            # Bind to local ip. it's can't be accessed from other machine.
+            register_host = worker_params.host
+        else:
+            # Get current ip address
+            register_host = _get_ip_address()
     port = worker_params.port
     if not worker_params.register or not worker_params.controller_addr:
         logger.info(
             f"Not register current to controller, register: {worker_params.register}, "
             f"controller_addr: {worker_params.controller_addr}"
         )
-        return LocalWorkerManager(host=host, port=port, model_storage=model_storage)
+        return LocalWorkerManager(
+            host=register_host, port=port, model_storage=model_storage
+        )
     else:
         from dbgpt.model.cluster.controller.controller import ModelRegistryClient
 
@@ -1066,14 +1071,14 @@ def _create_local_model_manager(
 
         async def register_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
-                model_name=worker_run_data.worker_key, host=host, port=port
+                model_name=worker_run_data.worker_key, host=register_host, port=port
             )
             return await client.register_instance(instance)
 
         async def deregister_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
                 model_name=worker_run_data.worker_key,
-                host=host,
+                host=register_host,
                 port=port,
                 remove_from_registry=worker_run_data.remove_from_registry,
             )
@@ -1081,7 +1086,7 @@ def _create_local_model_manager(
 
         async def send_heartbeat_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
-                model_name=worker_run_data.worker_key, host=host, port=port
+                model_name=worker_run_data.worker_key, host=register_host, port=port
             )
             return await client.send_heartbeat(instance)
 
@@ -1089,7 +1094,7 @@ def _create_local_model_manager(
             register_func=register_func,
             deregister_func=deregister_func,
             send_heartbeat_func=send_heartbeat_func,
-            host=host,
+            host=register_host,
             port=port,
             model_storage=model_storage,
         )
@@ -1191,7 +1196,8 @@ def initialize_worker_manager_in_client(
     include_router: bool = True,
     run_locally: bool = True,
     controller_addr: Optional[str] = None,
-    local_port: int = 5670,
+    binding_port: int = 5670,
+    binding_host: Optional[str] = None,
     start_listener: Optional[Callable[["WorkerManager"], None]] = None,
     system_app: Optional[SystemApp] = None,
     model_storage: Optional[ModelStorage] = None,
@@ -1224,7 +1230,9 @@ def initialize_worker_manager_in_client(
         # TODO start ModelController
         worker_params.standalone = True
         worker_params.register = True
-        worker_params.port = local_port
+        # Override host and port
+        worker_params.port = binding_port
+        worker_params.host = binding_host or "127.0.0.1"
         logger.info(f"Worker params: {worker_params}")
         _setup_fastapi(worker_params, app, ignore_exception=True, system_app=system_app)
         for llm_deploy_config in models_config.llms:
@@ -1308,7 +1316,7 @@ def run_worker_manager(
     system_app._asgi_app = app
 
     trace_file = trace_config.file or os.path.join(
-        "logs", "ddbgpt_model_worker_manager_tracer.jsonl"
+        "logs", "dbgpt_model_worker_manager_tracer.jsonl"
     )
     initialize_tracer(
         trace_file,
@@ -1323,15 +1331,19 @@ def run_worker_manager(
             deploy_model_params,
         )
     elif isinstance(deploy_model_params, EmbeddingDeployModelParameters):
-        _start_local_embedding_worker(
+        worker_params.worker_type = WorkerType.TEXT2VEC
+        _start_local_worker(
             worker_manager,
+            worker_params,
             deploy_model_params,
         )
+
     elif isinstance(deploy_model_params, RerankerDeployModelParameters):
-        _start_local_embedding_worker(
+        worker_params.worker_type = WorkerType.RERANKER
+        _start_local_worker(
             worker_manager,
+            worker_params,
             deploy_model_params,
-            worker_type=WorkerType.RERANKER.value,
         )
     else:
         raise ValueError(f"Unsupported deploy model params: {deploy_model_params}")
@@ -1394,33 +1406,42 @@ if __name__ == "__main__":
     worker_params = cfg.parse_config(
         ModelWorkerParameters, prefix="service.model.worker", hook_section="hooks"
     )
+    worker_type = worker_params.worker_type
     llm_deploy_config: Optional[LLMDeployModelParameters] = None
     embeddings_deploy_config: Optional[EmbeddingDeployModelParameters] = None
     rerank_deploy_config: Optional[RerankerDeployModelParameters] = None
     sys_trace: Optional[TracerParameters] = None
     sys_log: Optional[LoggingParameters] = None
     configs = []
-    if cfg.exists("models.llms"):
+    if cfg.exists("models.llms") and (
+        worker_type is None or worker_type == WorkerType.LLM
+    ):
         llm_deploy_config = cfg.parse_config(
             LLMDeployModelParameters,
             prefix="models.llms",
             config_handler=config_handler,
         )
         configs.append(llm_deploy_config)
-    if cfg.exists("models.embeddings"):
+    if cfg.exists("models.embeddings") and (
+        worker_type is None or worker_type == WorkerType.TEXT2VEC
+    ):
         embeddings_deploy_config = cfg.parse_config(
             EmbeddingDeployModelParameters,
             prefix="models.embeddings",
             config_handler=config_handler,
         )
         configs.append(embeddings_deploy_config)
-    if cfg.exists("models.rerankers"):
+    if cfg.exists("models.rerankers") and (
+        worker_type is None or worker_type == WorkerType.RERANKER
+    ):
         rerank_deploy_config = cfg.parse_config(
             RerankerDeployModelParameters,
             prefix="models.rerankers",
             config_handler=config_handler,
         )
         configs.append(rerank_deploy_config)
+    if worker_type:
+        configs = [config for config in configs if config.worker_type() == worker_type]
     if not configs:
         raise ValueError("No model config found")
     if len(configs) > 1:

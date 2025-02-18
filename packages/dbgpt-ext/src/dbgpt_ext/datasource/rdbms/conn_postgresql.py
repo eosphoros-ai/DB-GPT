@@ -35,6 +35,12 @@ class PostgreSQLParameters(RDBMSDatasourceParameters):
     schema: str = field(
         default="public", metadata={"help": _("Database schema, defaults to 'public'")}
     )
+    driver: str = field(
+        default="postgresql+psycopg2",
+        metadata={
+            "help": _("Driver name for postgres, default is postgresql+psycopg2."),
+        },
+    )
 
     def create_connector(self) -> "PostgreSQLConnector":
         """Create PostgreSQL connector."""

@@ -40,6 +40,15 @@ class ModelInstance:
         """Convert to dict"""
         return asdict(self)
 
+    @property
+    def str_last_heartbeat(self) -> Optional[str]:
+        """The string of last heartbeat"""
+        if not self.last_heartbeat:
+            return None
+        if isinstance(self.last_heartbeat, str):
+            return self.last_heartbeat
+        return self.last_heartbeat.strftime("%Y-%m-%d %H:%M:%S")
+
 
 class WorkerApplyType(str, Enum):
     START = "start"

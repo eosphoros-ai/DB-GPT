@@ -1,6 +1,6 @@
 """MySQL connector."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Type
 
 from dbgpt.core.awel.flow import (
@@ -25,6 +25,13 @@ class MySQLParameters(RDBMSDatasourceParameters):
     """MySQL connection parameters."""
 
     __type__ = "mysql"
+
+    driver: str = field(
+        default="mysql+pymysql",
+        metadata={
+            "help": _("Driver name for MySQL, default is mysql+pymysql."),
+        },
+    )
 
     def create_connector(self) -> "MySQLConnector":
         return MySQLConnector.from_parameters(self)

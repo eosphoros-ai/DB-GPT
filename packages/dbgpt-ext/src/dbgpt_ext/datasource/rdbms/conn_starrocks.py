@@ -1,6 +1,6 @@
 """StarRocks connector."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
@@ -29,6 +29,13 @@ class StarRocksParameters(RDBMSDatasourceParameters):
     """StarRocks connection parameters."""
 
     __type__ = "starrocks"
+
+    driver: str = field(
+        default="starrocks",
+        metadata={
+            "help": _("Driver name for starrocks, default is starrocks."),
+        },
+    )
 
     def create_connector(self) -> "StarRocksConnector":
         """Create StarRocks connector."""

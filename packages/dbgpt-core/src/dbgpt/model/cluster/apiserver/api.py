@@ -6,6 +6,7 @@ Adapted from https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/openai_
 
 import asyncio
 import logging
+import os
 from typing import Any, Dict, Generator, List, Optional
 
 import shortuuid
@@ -49,9 +50,9 @@ from dbgpt.model.cluster.registry import ModelRegistry
 from dbgpt.model.parameter import ModelAPIServerParameters, WorkerType
 from dbgpt.util.chat_util import transform_to_sse
 from dbgpt.util.fastapi import create_app
-from dbgpt.util.parameter_utils import EnvArgumentParser
 from dbgpt.util.tracer import initialize_tracer, root_tracer
-from dbgpt.util.utils import setup_logging
+from dbgpt.util.tracer.tracer_impl import TracerParameters
+from dbgpt.util.utils import LoggingParameters, setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,19 @@ class APIServerException(Exception):
 
 class APISettings(BaseModel):
     api_keys: Optional[List[str]] = None
-    embedding_bach_size: int = 4
-    ignore_stop_exceeds_error: bool = False
+    api_params: Optional[ModelAPIServerParameters] = None
+
+    @property
+    def embedding_bach_size(self):
+        if not self.api_params:
+            return 4
+        return self.api_params.embedding_batch_size
+
+    @property
+    def ignore_stop_exceeds_error(self):
+        if not self.api_params:
+            return False
+        return self.api_params.ignore_stop_exceeds_error
 
 
 api_settings = APISettings()
@@ -775,15 +787,11 @@ def _initialize_all(controller_addr: str, system_app: SystemApp):
 
 
 def initialize_apiserver(
-    controller_addr: str,
-    apiserver_params: Optional[ModelAPIServerParameters] = None,
+    apiserver_params: ModelAPIServerParameters,
+    sys_trace: Optional[TracerParameters] = None,
+    sys_log: Optional[LoggingParameters] = None,
     app=None,
     system_app: SystemApp = None,
-    host: str = None,
-    port: int = None,
-    api_keys: List[str] = None,
-    embedding_batch_size: Optional[int] = None,
-    ignore_stop_exceeds_error: bool = False,
 ):
     import os
 
@@ -800,24 +808,26 @@ def initialize_apiserver(
         system_app = SystemApp(app)
     global_system_app = system_app
 
-    if apiserver_params:
-        initialize_tracer(
-            os.path.join(LOGDIR, apiserver_params.tracer_file),
-            system_app=system_app,
-            root_operation_name="DB-GPT-APIServer",
-            tracer_storage_cls=apiserver_params.tracer_storage_cls,
-            enable_open_telemetry=apiserver_params.tracer_to_open_telemetry,
-            otlp_endpoint=apiserver_params.otel_exporter_otlp_traces_endpoint,
-            otlp_insecure=apiserver_params.otel_exporter_otlp_traces_insecure,
-            otlp_timeout=apiserver_params.otel_exporter_otlp_traces_timeout,
-        )
+    log_config = apiserver_params.log or sys_log or LoggingParameters()
+    trace_config = apiserver_params.trace or sys_trace or TracerParameters()
+    setup_logging(
+        "dbgpt",
+        log_config=log_config,
+        default_logger_filename=os.path.join(LOGDIR, "dbgpt_model_apiserver.log"),
+    )
 
-    if api_keys:
-        api_settings.api_keys = api_keys
+    trace_file = trace_config.file or os.path.join(
+        "logs", "dbgpt_model_apiserver_tracer.jsonl"
+    )
+    initialize_tracer(
+        trace_file,
+        system_app=system_app,
+        root_operation_name=trace_config.root_operation_name or "DB-GPT-APIServer",
+        tracer_parameters=trace_config,
+    )
 
-    if embedding_batch_size:
-        api_settings.embedding_bach_size = embedding_batch_size
-    api_settings.ignore_stop_exceeds_error = ignore_stop_exceeds_error
+    if apiserver_params.api_keys:
+        api_settings.api_keys = apiserver_params.api_keys.strip().split(",")
 
     app.include_router(router, prefix="/api", tags=["APIServer"])
 
@@ -829,7 +839,7 @@ def initialize_apiserver(
     async def validation_exception_handler(request, exc):
         return create_error_response(ErrorCode.VALIDATION_TYPE_ERROR, str(exc))
 
-    _initialize_all(controller_addr, system_app)
+    _initialize_all(apiserver_params.controller_addr, system_app)
 
     if not embedded_mod:
         import uvicorn
@@ -842,33 +852,57 @@ def initialize_apiserver(
             allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             allow_headers=["*"],
         )
-        uvicorn.run(cors_app, host=host, port=port, log_level="info")
+        uvicorn.run(
+            cors_app,
+            host=apiserver_params.host,
+            port=apiserver_params.port,
+            log_level="info",
+        )
+
+
+def parse_args():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="DB-GPT API Server")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Path to the configuration file.",
+    )
+    return parser.parse_args()
 
 
 def run_apiserver():
-    parser = EnvArgumentParser()
-    env_prefix = "apiserver_"
-    apiserver_params: ModelAPIServerParameters = parser.parse_args_into_dataclass(
-        ModelAPIServerParameters,
-        env_prefixes=[env_prefix],
-    )
-    setup_logging(
-        "dbgpt",
-        logging_level=apiserver_params.log_level,
-        logger_filename=apiserver_params.log_file,
-    )
-    api_keys = None
-    if apiserver_params.api_keys:
-        api_keys = apiserver_params.api_keys.strip().split(",")
+    from dbgpt.configs.model_config import ROOT_PATH
+    from dbgpt.util.configure import ConfigurationManager
 
+    args = parse_args()
+    config_file = args.config
+
+    if not os.path.isabs(config_file) and not os.path.exists(config_file):
+        config_file = os.path.join(ROOT_PATH, config_file)
+
+    cfg = ConfigurationManager.from_file(config_file)
+    apiserver_params = cfg.parse_config(
+        ModelAPIServerParameters, prefix="service.model.api", hook_section="hooks"
+    )
+
+    sys_trace: Optional[TracerParameters] = None
+    sys_log: Optional[LoggingParameters] = None
+
+    if cfg.exists("trace"):
+        sys_trace = cfg.parse_config(TracerParameters, prefix="trace")
+    if cfg.exists("log"):
+        sys_log = cfg.parse_config(LoggingParameters, prefix="log")
+
+    log_config = apiserver_params.log or sys_log or LoggingParameters()
+    trace_config = apiserver_params.trace or sys_trace or TracerParameters()
     initialize_apiserver(
-        apiserver_params.controller_addr,
         apiserver_params,
-        host=apiserver_params.host,
-        port=apiserver_params.port,
-        api_keys=api_keys,
-        embedding_batch_size=apiserver_params.embedding_batch_size,
-        ignore_stop_exceeds_error=apiserver_params.ignore_stop_exceeds_error,
+        sys_trace=trace_config,
+        sys_log=log_config,
     )
 
 
