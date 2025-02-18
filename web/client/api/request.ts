@@ -50,7 +50,7 @@ import {
 } from '@/types/knowledge';
 import { BaseModelParams, IModelData, StartModelParams, SupportModel } from '@/types/model';
 import { AxiosRequestConfig } from 'axios';
-import { GET, POST } from '.';
+import { GET, POST, PUT, DELETE } from '.';
 
 /** App */
 export const postScenes = () => {
@@ -69,22 +69,22 @@ export const addUser = (data: UserParam) => {
 
 /** Database Page */
 export const getDbList = () => {
-  return GET<null, DbListResponse>('/api/v1/chat/db/list');
+  return GET<null, DbListResponse>('/api/v2/serve/datasources');
 };
 export const getDbSupportType = () => {
-  return GET<null, DbSupportTypeResponse>('/api/v1/chat/db/support/type');
+  return GET<null, DbSupportTypeResponse>('/api/v2/serve/datasource-types');
 };
-export const postDbDelete = (dbName: string) => {
-  return POST(`/api/v1/chat/db/delete?db_name=${dbName}`);
+export const postDbDelete = (id: string) => {
+  return DELETE(`/api/v2/serve/datasources/${id}`);
 };
 export const postDbEdit = (data: PostDbParams) => {
-  return POST<PostDbParams, null>('/api/v1/chat/db/edit', data);
+  return PUT<PostDbParams, null>('/api/v2/serve/datasources', data);
 };
 export const postDbAdd = (data: PostDbParams) => {
-  return POST<PostDbParams, null>('/api/v1/chat/db/add', data);
+  return POST<PostDbParams, null>('/api/v2/serve/datasources', data);
 };
 export const postDbTestConnect = (data: PostDbParams) => {
-  return POST<PostDbParams, null>('/api/v1/chat/db/test/connect', data);
+  return POST<PostDbParams, null>('/api/v2/serve/datasources/test-connection', data);
 };
 export const postDbRefresh = (data: PostDbRefreshParams) => {
   return POST<PostDbRefreshParams, boolean>('/api/v1/chat/db/refresh', data);
@@ -353,6 +353,7 @@ export const unPublishApp = (app_code: string) => {
 };
 export const addOmcDB = (params: Record<string, string>) => {
   return POST<Record<string, any>, []>('/api/v1/chat/db/add', params);
+  // return POST<Record<string, any>, []>('/api/v2/serve/datasources', params);
 };
 
 export const getAppInfo = (data: GetAppInfoParams) => {

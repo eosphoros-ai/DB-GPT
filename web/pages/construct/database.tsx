@@ -27,7 +27,7 @@ function Database() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<{
     open: boolean;
-    info?: DBItem;
+    info?: string;
     dbType?: DBType;
   }>({ open: false });
   const [draw, setDraw] = useState<{
@@ -40,7 +40,7 @@ function Database() {
 
   const getDbSupportList = async () => {
     const [, data] = await apiInterceptors(getDbSupportType());
-    setDbSupportList(data.types ?? []);
+    setDbSupportList(data?.types ?? []);
   };
 
   const refreshDbList = async () => {
@@ -50,11 +50,9 @@ function Database() {
     setLoading(false);
   };
 
-
   const dbTypeList = useMemo(() => {
     const supportDbList = dbSupportList.map(item => {
-      const db_type = item.name;
-
+      const db_type = item?.name;
       return { ...dbMapper[db_type], value: db_type, isFileDb: true, parameters: item.parameters };
     }) as DBOption[];
     const unSupportDbList = Object.keys(dbMapper)
@@ -68,24 +66,31 @@ function Database() {
   }, [dbSupportList]);
 
   const onModify = (item: DBItem) => {
-    setModal({ open: true, info: item });
+    for (let index = 0; index < getFromRenderData.length; index++) {
+      const element = getFromRenderData[index];
+      if (item.params[element.param_name]) {
+        element.default_value = item.params[element.param_name]
+      }
+    }    
+    setModal({ open: true, info: item.id, dbType: item.type });
   };
 
   const onDelete = (item: DBItem) => {
+    debugger
     Modal.confirm({
       title: 'Tips',
-      content: `Do you Want to delete the ${item.db_name}?`,
+      content: `Do you Want to delete the ${item.params?.database}?`,
       onOk() {
         return new Promise<void>((resolve, reject) => {
-          handleDelete(item.db_name, resolve, reject);
+          handleDelete(item.id, resolve, reject);
         });
       },
     });
   };
 
-  const handleDelete = async (dbName: string, resolve: () => void, reject: () => void) => {
+  const handleDelete = async (id: string, resolve: () => void, reject: () => void) => {
     try {
-      const [err] = await apiInterceptors(postDbDelete(dbName));
+      const [err] = await apiInterceptors(postDbDelete(id));
       if (err) {
         message.error(err.message);
         reject();
@@ -102,7 +107,7 @@ function Database() {
   const dbListByType = useMemo(() => {
     const mapper = dbTypeList.reduce(
       (acc, item) => {
-        acc[item.value] = dbList.filter(dbConn => dbConn.db_type === item.value);
+        acc[item.value] = dbList.filter(dbConn => dbConn?.type.toLowerCase() === item.value.toLowerCase());
         return acc;
       },
       {} as Record<DBType, DbListResponse>,
@@ -116,7 +121,7 @@ function Database() {
   }, []);
 
   const handleDbTypeClick = (info: DBOption) => {
-    const dbItems = dbList.filter(item => item.db_type === info.value);
+    const dbItems = dbList.filter(item => item.type === info.value);
     getFromRenderData = info?.parameters
    
    
@@ -260,7 +265,7 @@ function Database() {
           getFromRenderData={getFromRenderData}
           choiceDBType={modal.dbType}
           editValue={modal.info}
-          dbNames={dbList.map(item => item.db_name)}
+          dbNames={dbList.map(item => item.params.database)}
           onSuccess={() => {
             setModal({ open: false });
             refreshDbList();
@@ -291,8 +296,8 @@ function Database() {
               </Button>
               {dbListByType[draw.type].map(item => (
                 <Card
-                  key={item.db_name}
-                  title={item.db_name}
+                  key={item.params?.database}
+                  title={item.params?.database}
                   extra={
                     <>
                       <RedoOutlined
@@ -319,16 +324,12 @@ function Database() {
                   }
                   className='mb-4'
                 >
-                  {item.db_path ? (
-                    <p>path: {item.db_path}</p>
-                  ) : (
                     <>
-                      <p>host: {item.db_host}</p>
-                      <p>username: {item.db_user}</p>
-                      <p>port: {item.db_port}</p>
+                      <p>host: {item.params.host}</p>
+                      <p>username: {item.params.user}</p>
+                      <p>port: {item.params.port}</p>
                     </>
-                  )}
-                  <p>remark: {item.comment}</p>
+                  <p>remark: {item.description}</p>
                 </Card>
               ))}
             </Spin>

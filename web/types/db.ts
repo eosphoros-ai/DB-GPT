@@ -27,6 +27,13 @@ export type DBType =
   | (string & {});
 
 export type IChatDbSchema = {
+  type: string;
+  id: string;
+  name: string;
+  label: string;
+  description: string;
+  params: any[];
+  parameters: any[];
   comment: string;
   db_host: string;
   db_name: string;
@@ -38,10 +45,25 @@ export type IChatDbSchema = {
 };
 
 export type DbListResponse = IChatDbSchema[];
-
+export type ParamsData = {
+  label:string;
+  param_name:string;
+  param_type:string;
+  param_class:string;
+  description:Boolean;
+  required:Boolean;
+  is_array:Boolean;
+  default_value:any;
+}
 export type IChatDbSupportTypeSchema = {
   db_type: DBType;
   is_file_db: boolean;
+  name: string;
+  params: ParamsData;
+  types: any[];
+  label: string;
+  description: string;
+  parameters: any[];
 };
 
 export type DbSupportTypeResponse = IChatDbSupportTypeSchema[];
