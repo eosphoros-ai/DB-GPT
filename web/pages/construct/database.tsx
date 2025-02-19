@@ -29,6 +29,7 @@ function Database() {
     open: boolean;
     info?: string;
     dbType?: DBType;
+    dbTypeData?: any[];
   }>({ open: false });
   const [draw, setDraw] = useState<{
     open: boolean;
@@ -76,7 +77,7 @@ function Database() {
   };
 
   const onDelete = (item: DBItem) => {
-    debugger
+    
     Modal.confirm({
       title: 'Tips',
       content: `Do you Want to delete the ${item.params?.database}?`,
@@ -186,7 +187,10 @@ function Database() {
               className='border-none text-white bg-button-gradient'
               icon={<PlusOutlined />}
               onClick={() => {
-                setModal({ open: true });
+                console.log(dbList);
+                console.log(dbTypeList);
+                
+                setModal({ open: true ,dbTypeData:dbTypeList});
               }}
             >
               {t('Add_Datasource')}
@@ -265,6 +269,7 @@ function Database() {
           getFromRenderData={getFromRenderData}
           choiceDBType={modal.dbType}
           editValue={modal.info}
+          dbTypeData={modal.dbTypeData}
           dbNames={dbList.map(item => item.params.database)}
           onSuccess={() => {
             setModal({ open: false });
