@@ -130,7 +130,8 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 uv sync --all-packages --frozen \
 --extra "rag" \
 --extra "storage_chromadb" \
---extra "quant_bnb" 
+--extra "hf" \
+--extra "quant_bnb"
 ```
 
 ### Run Webserver

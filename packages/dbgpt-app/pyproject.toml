@@ -16,7 +16,6 @@ dependencies = [
     "dbgpt-serve",
     "dbgpt-client",
     "aiofiles",
-    "sentence-transformers",
     "pyparsing",
 ]
 

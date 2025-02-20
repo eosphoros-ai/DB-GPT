@@ -48,8 +48,8 @@ services:
       - init
   controller-1:
     image: eosphorosai/dbgpt-openai:latest
-    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /app/configs/ha-model-cluster.toml
-    command: dbgpt start controller -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start controller -c /root/configs/ha-model-cluster.toml
     environment:
       - MYSQL_PASSWORD=aa123456
       - MYSQL_HOST=db
@@ -58,7 +58,7 @@ services:
       - MYSQL_USER=root
     volumes:
       - ../../:/app
-      - ./conf/ha-model-cluster.toml:/app/configs/ha-model-cluster.toml
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
@@ -66,8 +66,8 @@ services:
       - db
   controller-2:
     image: eosphorosai/dbgpt-openai:latest
-    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /app/configs/ha-model-cluster.toml
-    command: dbgpt start controller -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start controller -c /root/configs/ha-model-cluster.toml
     environment:
       - MYSQL_PASSWORD=aa123456
       - MYSQL_HOST=db
@@ -76,7 +76,7 @@ services:
       - MYSQL_USER=root
     volumes:
       - ../../:/app
-      - ./conf/ha-model-cluster.toml:/app/configs/ha-model-cluster.toml
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
@@ -84,8 +84,8 @@ services:
       - db
   llm-worker:
     image: eosphorosai/dbgpt-openai:latest
-    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /app/configs/ha-model-cluster.toml
-    command: dbgpt start worker -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start worker -c /root/configs/ha-model-cluster.toml
     environment:
       - WORKER_TYPE=llm
       - LLM_MODEL_PROVIDER=${LLM_MODEL_PROVIDER:-proxy/openai}
@@ -98,15 +98,15 @@ services:
       - controller-2
     volumes:
       - ../../:/app
-      - ./conf/ha-model-cluster.toml:/app/configs/ha-model-cluster.toml
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
     ipc: host
   embedding-worker:
     image: eosphorosai/dbgpt-openai:latest
-    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /app/configs/ha-model-cluster.toml
-    command: dbgpt start worker -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start worker -c /root/configs/ha-model-cluster.toml
     environment:
       - WORKER_TYPE=text2vec
       - EMBEDDING_MODEL_PROVIDER=${EMBEDDING_MODEL_PROVIDER:-proxy/openai}
@@ -119,15 +119,15 @@ services:
       - controller-2
     volumes:
       - ../../:/app
-      - ./conf/ha-model-cluster.toml:/app/configs/ha-model-cluster.toml
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
     ipc: host
   webserver:
     image: eosphorosai/dbgpt-openai:latest
-    # command: python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c /app/configs/ha-webserver.toml
-    command: dbgpt start webserver -c /app/configs/ha-webserver.toml
+    # command: python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c /root/configs/ha-webserver.toml
+    command: dbgpt start webserver -c /root/configs/ha-webserver.toml
     environment:
       - MYSQL_PASSWORD=aa123456
       - MYSQL_HOST=db
@@ -143,7 +143,7 @@ services:
       - embedding-worker
     volumes:
       - ../../:/app
-      - ./conf/ha-webserver.toml:/app/configs/ha-webserver.toml
+      - ./conf/ha-webserver.toml:/root/configs/ha-webserver.toml
       - dbgpt-data:/app/pilot/data
       - dbgpt-message:/app/pilot/message
     # env_file:

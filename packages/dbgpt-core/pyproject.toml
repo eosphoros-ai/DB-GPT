@@ -84,8 +84,6 @@ framework = [
     "jsonschema",
     # TODO move transformers to default
     "tokenizers>=0.14",
-    "transformers>=4.34.0",
-    "sentencepiece",
     "alembic==1.12.0",
     # for excel
     "openpyxl==3.1.2",
@@ -99,6 +97,11 @@ framework = [
     "cryptography",
     # For high performance RPC communication in code execution
     "pyzmq",
+]
+hf = [
+    "transformers>=4.46.0",
+    "sentencepiece",
+    "sentence-transformers",
 ]
 code = [
     "msgpack",
