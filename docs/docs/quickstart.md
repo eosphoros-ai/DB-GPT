@@ -91,7 +91,8 @@ uv --version
 uv sync --all-packages --frozen \
 --extra "proxy_openai" \
 --extra "rag" \
---extra "storage_chromadb"
+--extra "storage_chromadb" \
+--extra "dbgpts"
 ```
 
 ### Run Webserver
@@ -131,7 +132,8 @@ uv sync --all-packages --frozen \
 --extra "rag" \
 --extra "storage_chromadb" \
 --extra "hf" \
---extra "quant_bnb"
+--extra "quant_bnb" \
+--extra "dbgpts"
 ```
 
 ### Run Webserver

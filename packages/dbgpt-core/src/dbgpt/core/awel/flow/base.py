@@ -86,10 +86,10 @@ def _get_type_cls(type_name: str) -> Type[Any]:
     """
     from .compat import get_new_class_name
 
-    new_cls = get_new_class_name(type_name)
     if type_name in _TYPE_REGISTRY:
         return _TYPE_REGISTRY[type_name]
-    elif new_cls and new_cls in _TYPE_REGISTRY:
+    new_cls = get_new_class_name(type_name)
+    if new_cls and new_cls in _TYPE_REGISTRY:
         return _TYPE_REGISTRY[new_cls]
     else:
         raise ValueError(f"Type {type_name} not registered.")
