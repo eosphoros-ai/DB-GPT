@@ -874,12 +874,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_apiserver():
+def run_apiserver(config_file: str):
     from dbgpt.configs.model_config import ROOT_PATH
     from dbgpt.util.configure import ConfigurationManager
-
-    args = parse_args()
-    config_file = args.config
 
     if not os.path.isabs(config_file) and not os.path.exists(config_file):
         config_file = os.path.join(ROOT_PATH, config_file)
@@ -907,4 +904,6 @@ def run_apiserver():
 
 
 if __name__ == "__main__":
-    run_apiserver()
+    _args = parse_args()
+    _config_file = _args.config
+    run_apiserver(_config_file)

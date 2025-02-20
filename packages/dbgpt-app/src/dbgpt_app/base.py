@@ -5,7 +5,6 @@ import sys
 import threading
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
-from urllib.parse import quote
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
@@ -61,7 +60,6 @@ def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
     Now just support sqlite and mysql. If db type is sqlite, the db path is
     `pilot/meta_data/{db_name}.db`.
     """
-    from dbgpt.datasource.rdbms.base import RDBMSDatasourceParameters
     from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
 
     db_config: BaseDatasourceParameters = param.web.database
@@ -84,15 +82,13 @@ def _initialize_db_storage(param: ServiceConfig, system_app: SystemApp):
     connector = db_config.create_connector()
     if not isinstance(connector, RDBMSConnector):
         raise ValueError("Only support RDBMSConnector")
-    db_url = connector.db_url
+    db_url = db_config.db_url(ssl=db_ssl_verify, charset="utf8mb4")
     db_type = connector.db_type
     db_engine_args: Optional[Dict[str, Any]] = db_config.engine_args()
     _initialize_db(
         db_url,
         db_type,
         db_name,
-        db_config,
-        db_ssl_verify,
         db_engine_args,
         try_to_create_db=not disable_alembic_upgrade,
         system_app=system_app,
@@ -146,8 +142,6 @@ def _initialize_db(
     db_url: str,
     db_type: str,
     db_name: str,
-    db_config: RDBMSDatasourceParameters,
-    db_ssl_verify: bool = False,
     db_engine_args: Optional[Dict[str, Any]] = None,
     try_to_create_db: Optional[bool] = False,
     system_app: Optional[SystemApp] = None,
@@ -166,25 +160,9 @@ def _initialize_db(
 
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     if db_type == "mysql":
-        db_url = (
-            f"mysql+pymysql://{db_config.user}:"
-            f"{db_config.password}@"
-            f"{db_config.host}:"
-            f"{str(db_config.port)}/"
-            f"{db_name}?charset=utf8mb4"
-        )
-        if db_ssl_verify:
-            db_url += "&ssl_verify_cert=true&ssl_verify_identity=true"
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)
     elif db_type == "oceanbase":
-        db_url = (
-            f"mysql+ob://{quote(db_config.user)}:"
-            f"{db_config.password}@"
-            f"{db_config.host}:"
-            f"{str(db_config.port)}/"
-            f"{db_name}?charset=utf8mb4"
-        )
         _create_mysql_database(db_name, db_url, try_to_create_db)
 
     if not db_engine_args:

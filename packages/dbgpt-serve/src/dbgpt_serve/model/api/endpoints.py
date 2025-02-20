@@ -151,11 +151,11 @@ async def model_list(controller: BaseModelController = Depends(get_model_control
         for model in models:
             worker_name, worker_type = model.model_name.split("@")
             if worker_type in WorkerType.values():
-                manager_host = model.host if manager_map.get(model.host) else None
+                manager_host = model.host if manager_map.get(model.host) else ""
                 manager_port = (
                     manager_map[model.host].port
                     if manager_map.get(model.host)
-                    else None
+                    else -1
                 )
                 response = ModelResponse(
                     model_name=worker_name,

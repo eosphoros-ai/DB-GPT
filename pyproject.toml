@@ -40,6 +40,7 @@ dev-dependencies = [
     "pytest-integration>=0.2.3",
     "pytest-recording>=0.13.2",
     "pytest-cov>=6.0.0",
+    "jupyter",
 ]
 
 [tool.pytest.ini_options]
