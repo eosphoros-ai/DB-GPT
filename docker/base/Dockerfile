@@ -3,7 +3,7 @@ FROM ${BASE_IMAGE} as builder
 ARG BASE_IMAGE
 ARG PYTHON_VERSION=3.10
 ARG PYPI_MIRROR=https://pypi.org/simple
-ARG EXTRAS="proxy_openai,rag,storage_chromadb,llama_cpp,llama_cpp_server,quant_bnb"
+ARG EXTRAS="proxy_openai,rag,storage_chromadb,quant_bnb"
 ARG VERSION=latest
 
 ENV PYTHONUNBUFFERED=1 \
@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y \
     python${PYTHON_VERSION} \
     python${PYTHON_VERSION}-venv \
     python3-pip \
+    python3-dev \
+    python3-virtualenv \
     git \
     curl \
     wget \
@@ -23,13 +25,14 @@ RUN apt-get update && apt-get install -y \
     sqlite3 \
     libpq-dev \
     default-libmysqlclient-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && python${PYTHON_VERSION} -m pip install --upgrade pip \
+    && python${PYTHON_VERSION} -m pip install --upgrade pipx \
+    && python${PYTHON_VERSION} -m pipx ensurepath \
+    && pipx ensurepath --global \
+    && pipx install uv --global
 
 WORKDIR /app
-
-# Install uv and make sure the path is correct
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    cp /root/.local/bin/uv /usr/local/bin/uv
 
 # Create a virtual environment
 ENV VIRTUAL_ENV=/app/.venv
@@ -40,9 +43,9 @@ COPY pyproject.toml README.md uv.lock ./
 COPY packages /app/packages
 
 # Install dependencies with uv and install all local packages
-RUN mkdir -p /root/.cache/uv && \
+RUN --mount=type=cache,target=/root/.cache/uv \
     extras=$(echo $EXTRAS | tr ',' '\n' | while read extra; do echo "--extra $extra"; done | tr '\n' ' ') && \
-    uv sync --all-packages $extras && \
+    uv sync --frozen --all-packages --no-dev $extras && \
     # Install local packages, pay attention to the installation order
     cd /app/packages/dbgpt-accelerator && pip install -e . && \
     cd /app/packages/dbgpt-core && pip install -e . && \
@@ -70,9 +73,8 @@ ARG VERSION=latest
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
+    LC_ALL=C.UTF-8
     # Set PYTHONPATH
-    PYTHONPATH="/app/packages/dbgpt/src:/app/packages/dbgpt-core/src:/app/packages/dbgpt-app/src:/app/packages/dbgpt-serve/src:/app/packages/dbgpt-client/src:/app/packages/dbgpt-ext/src:/app/packages/dbgpt-accelerator/src"
 
 # Version label
 LABEL version=${VERSION}
@@ -86,12 +88,18 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy the virtual environment from the previous stage
-COPY --from=builder /app/.venv /opt/venv
+# Use antoher name to avoid conflict when mounting user's local .venv
+ENV FINAL_VENV_NAME="/opt/.uv.venv"
+COPY --from=builder /app/.venv ${FINAL_VENV_NAME}
 COPY . .
 
-ENV PATH="/opt/venv/bin:$PATH" \
-    VIRTUAL_ENV="/opt/venv" \
-    PYTHONPATH="/app/packages/dbgpt/src:/app/packages/dbgpt-core/src:/app/packages/dbgpt-app/src:/app/packages/dbgpt-serve/src:/app/packages/dbgpt-client/src:/app/packages/dbgpt-ext/src:/app/packages/dbgpt-accelerator/src"
+# Fix the shebang of the dbgpt script
+RUN sed -i "s|^#\!/app/\.venv/bin/python[0-9.]*|#!/${FINAL_VENV_NAME}/bin/python${PYTHON_VERSION}|" /${FINAL_VENV_NAME}/bin/dbgpt
+RUN sed -i "s|^#\!/app/\.venv/bin/python[0-9.]*|#!/${FINAL_VENV_NAME}/bin/python${PYTHON_VERSION}|" /${FINAL_VENV_NAME}/bin/pip
+
+ENV PATH="${FINAL_VENV_NAME}/bin:$PATH" \
+    VIRTUAL_ENV="${FINAL_VENV_NAME}"
+#    PYTHONPATH="/app/packages/dbgpt/src:/app/packages/dbgpt-core/src:/app/packages/dbgpt-app/src:/app/packages/dbgpt-serve/src:/app/packages/dbgpt-client/src:/app/packages/dbgpt-ext/src:/app/packages/dbgpt-accelerator/src"
 
 # Default command
-CMD ["/opt/venv/bin/python", "packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py", "--config", "configs/dbgpt-siliconflow.toml"]
+CMD ["dbgpt", "start", "webserver", "--config", "configs/dbgpt-siliconflow.toml"]

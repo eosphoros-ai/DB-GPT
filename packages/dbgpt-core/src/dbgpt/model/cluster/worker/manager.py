@@ -1287,16 +1287,14 @@ def initialize_worker_manager_in_client(
 
 
 def run_worker_manager(
-    worker_params: ModelWorkerParameters,
-    deploy_model_params: BaseDeployModelParameters,
-    sys_trace: Optional[TracerParameters] = None,
-    sys_log: Optional[LoggingParameters] = None,
+    config_file: str,
     app=None,
     include_router: bool = True,
     start_listener: Callable[["WorkerManager"], None] = None,
     **kwargs,
 ):
     global worker_manager
+    worker_params, deploy_model_params, sys_trace, sys_log = _parse_config(config_file)
 
     log_config = worker_params.log or sys_log or LoggingParameters()
     trace_config = worker_params.trace or sys_trace or TracerParameters()
@@ -1378,7 +1376,7 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def _parse_config(config_file: str):
     from dbgpt.configs.model_config import ROOT_PATH
     from dbgpt.model import scan_model_providers
     from dbgpt.util.configure import ConfigurationManager
@@ -1397,8 +1395,7 @@ if __name__ == "__main__":
             config_dict
 
     scan_model_providers()
-    args = parse_args()
-    config_file = args.config
+
     if not os.path.isabs(config_file) and not os.path.exists(config_file):
         config_file = os.path.join(ROOT_PATH, config_file)
 
@@ -1407,9 +1404,6 @@ if __name__ == "__main__":
         ModelWorkerParameters, prefix="service.model.worker", hook_section="hooks"
     )
     worker_type = worker_params.worker_type
-    llm_deploy_config: Optional[LLMDeployModelParameters] = None
-    embeddings_deploy_config: Optional[EmbeddingDeployModelParameters] = None
-    rerank_deploy_config: Optional[RerankerDeployModelParameters] = None
     sys_trace: Optional[TracerParameters] = None
     sys_log: Optional[LoggingParameters] = None
     configs = []
@@ -1452,10 +1446,13 @@ if __name__ == "__main__":
         sys_trace = cfg.parse_config(TracerParameters, prefix="trace")
     if cfg.exists("log"):
         sys_log = cfg.parse_config(LoggingParameters, prefix="log")
+    return worker_params, configs[0], sys_trace, sys_log
+
+
+if __name__ == "__main__":
+    _args = parse_args()
+    _config_file = _args.config
 
     run_worker_manager(
-        worker_params,
-        configs[0],
-        sys_trace=sys_trace,
-        sys_log=sys_log,
+        _config_file,
     )

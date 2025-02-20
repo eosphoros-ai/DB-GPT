@@ -99,10 +99,10 @@ class RDBMSDatasourceParameters(BaseDatasourceParameters):
     def db_url(self, ssl: bool = False, charset: Optional[str] = None) -> str:
         """Return database engine url."""
         url = f"{self.driver}://{quote(self.user)}:{urlquote(self.password)}@{self.host}:{str(self.port)}/{self.database}"
+        if charset:
+            url += f"?charset={charset}"
         if ssl:
             url += "&ssl_verify_cert=true&ssl_verify_identity=true"
-        if charset:
-            url += f"&charset={charset}"
         return url
 
 

@@ -217,7 +217,10 @@ def run_uvicorn(param: ServiceWebParameters):
     )
 
 
-def run_webserver(param: ApplicationConfig):
+def run_webserver(config_file: str):
+    # Load configuration with specified config file
+    param = load_config(config_file)
+    set_default_language(param.system.language)
     trace_config = param.service.web.trace or param.trace
     trace_file = trace_config.file or os.path.join(
         "logs", "dbgpt_webserver_tracer.jsonl"
@@ -297,8 +300,6 @@ def parse_args():
 
 if __name__ == "__main__":
     # Parse command line arguments
-    args = parse_args()
-    # Load configuration with specified config file
-    app_config = load_config(args.config)
-    set_default_language(app_config.system.language)
-    run_webserver(app_config)
+    _args = parse_args()
+    _config_file = _args.config
+    run_webserver(_config_file)

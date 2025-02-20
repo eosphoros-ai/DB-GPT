@@ -5,6 +5,7 @@ models/
 plugins/
 pilot/data
 pilot/message
+pilot/meta_data
 logs/
 venv/
 .venv/
