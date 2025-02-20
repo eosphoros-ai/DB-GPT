@@ -136,7 +136,7 @@ function Database() {
 
   const onRefresh = async (item: DBItem) => {
     setRefreshLoading(true);
-    const [, res] = await apiInterceptors(postDbRefresh({ db_name: item.db_name, db_type: item.db_type }));
+    const [, res] = await apiInterceptors(postDbRefresh({ db_name: item.params.database, db_type: item.type }));
     if (res) message.success(t('refreshSuccess'));
     setRefreshLoading(false);
   };
