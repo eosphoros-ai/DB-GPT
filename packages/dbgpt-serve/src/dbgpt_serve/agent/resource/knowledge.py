@@ -61,18 +61,18 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
 class KnowledgeSpaceRetrieverResource(RetrieverResource):
     """Knowledge Space retriever resource."""
 
-    def __init__(self, name: str,
-                 space_name: str,
-                 context: Optional[dict] = None,
-                 system_app: SystemApp = None,
-                 ):
+    def __init__(
+        self,
+        name: str,
+        space_name: str,
+        context: Optional[dict] = None,
+        system_app: SystemApp = None,
+    ):
         # TODO: Build the retriever in a thread pool, it will block the event loop
         retriever = KnowledgeSpaceRetriever(
             space_id=space_name,
-            top_k=(
-                context.get("top_k", None) if context is not None else None
-            ),
-            system_app=system_app
+            top_k=(context.get("top_k", None) if context is not None else None),
+            system_app=system_app,
         )
         super().__init__(name, retriever=retriever)
 

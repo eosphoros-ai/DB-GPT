@@ -5,7 +5,8 @@ import traceback
 from typing import Tuple
 
 from dbgpt.component import SystemApp
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
+from dbgpt.core import Embeddings
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.summary.gdbms_db_summary import GdbmsSummary
@@ -31,17 +32,17 @@ class DBSummaryClient:
     def __init__(self, system_app: SystemApp):
         """Create a new DBSummaryClient."""
         self.system_app = system_app
-        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
         self.app_config = self.system_app.config.configs.get("app_config")
-        llm_config = self.app_config.models
         self.storage_config = self.app_config.service.web.storage
+
+    @property
+    def embeddings(self) -> Embeddings:
+        """Get the embeddings."""
         embedding_factory: EmbeddingFactory = self.system_app.get_component(
             "embedding_factory", component_type=EmbeddingFactory
         )
-        self.embeddings = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[llm_config.default_embedding]
-        )
+        return embedding_factory.create()
 
     def db_summary_embedding(self, dbname, db_type):
         """Put db profile and table profile summary into vector store."""
