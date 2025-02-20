@@ -30,7 +30,7 @@ class SiliconFlowDeployModelParameters(OpenAICompatibleDeployModelParameters):
     provider: str = "proxy/siliconflow"
 
     api_base: Optional[str] = field(
-        default="${env:SILICONFLOW_API_BASE:-https://api.deepseek.com/v1}",
+        default="${env:SILICONFLOW_API_BASE:-https://api.siliconflow.cn/v1}",
         metadata={
             "help": _("The base url of the SiliconFlow API."),
         },

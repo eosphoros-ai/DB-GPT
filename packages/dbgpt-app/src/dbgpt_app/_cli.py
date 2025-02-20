@@ -1,18 +1,20 @@
 import functools
 import os
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import click
 
 from dbgpt.configs.model_config import LOGDIR
+from dbgpt.model.cli import add_start_server_options
 from dbgpt.util.command_utils import _run_current_with_daemon, _stop_service
-from dbgpt.util.parameter_utils import EnvArgumentParser
-from dbgpt_app.base import WebServerParameters
+from dbgpt.util.i18n_utils import _
+
+_GLOBAL_CONFIG: str = ""
 
 
 @click.command(name="webserver")
-@EnvArgumentParser.create_click_option(WebServerParameters)
-def start_webserver(**kwargs):
+@add_start_server_options
+def start_webserver(config: str, **kwargs):
     """Start webserver(dbgpt_server.py)"""
     if kwargs["daemon"]:
         log_file = os.path.join(LOGDIR, "webserver_uvicorn.log")
@@ -20,7 +22,7 @@ def start_webserver(**kwargs):
     else:
         from dbgpt_app.dbgpt_server import run_webserver
 
-        run_webserver(WebServerParameters(**kwargs))
+        run_webserver(config)
 
 
 @click.command(name="webserver")
@@ -41,9 +43,17 @@ def _stop_all_dbgpt_server():
 
 
 @click.group("migration")
-def migration():
+@click.option(
+    "-c",
+    "--config",
+    required=True,
+    type=str,
+    help=_("The database configuration file"),
+)
+def migration(config: str):
     """Manage database migration"""
-    pass
+    global _GLOBAL_CONFIG
+    _GLOBAL_CONFIG = config
 
 
 def add_migration_options(func):
@@ -271,15 +281,37 @@ def show(alembic_ini_path: str, script_location: str, revision: str):
 def _get_migration_config(
     alembic_ini_path: Optional[str] = None, script_location: Optional[str] = None
 ):
+    from dbgpt.configs.model_config import resolve_root_path
+    from dbgpt.datasource.base import BaseDatasourceParameters
     from dbgpt.storage.metadata.db_manager import db as db_manager
     from dbgpt.util._db_migration_utils import create_alembic_config
+    from dbgpt.util.configure.manager import ConfigurationManager
     from dbgpt_app.base import _initialize_db
     from dbgpt_app.initialization.db_model_initialization import _MODELS  # noqa: F401
+    from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
+
+    cfg = ConfigurationManager.from_file(_GLOBAL_CONFIG)
+    db_config = cfg.parse_config(
+        BaseDatasourceParameters, prefix="service.web.database", hook_section="hooks"
+    )
+    db_name = ""
+    if isinstance(db_config, SQLiteConnectorParameters):
+        db_config.path = resolve_root_path(db_config.path)
+        db_dir = os.path.dirname(db_config.path)
+        os.makedirs(db_dir, exist_ok=True)
+        # Parse the db name from the db path
+        db_name = os.path.basename(db_config.path).split(".")[0]
+    else:
+        raise ValueError("Only SQLite is supported for migration now.")
+    db_url = db_config.db_url()
+    db_engine_args: Optional[Dict[str, Any]] = db_config.engine_args()
 
     # Import all models to make sure they are registered with SQLAlchemy.
 
     # initialize db
-    default_meta_data_path = _initialize_db()
+    default_meta_data_path = _initialize_db(
+        db_url, "sqlite", db_name, db_engine_args, try_to_create_db=True
+    )
     alembic_cfg = create_alembic_config(
         default_meta_data_path,
         db_manager.engine,

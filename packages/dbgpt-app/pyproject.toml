@@ -42,8 +42,8 @@ observability = [
 ]
 
 proxy_openai = [
-    "dbgpt[client,cli,agent,simple_framework,framework,code]",
-    "dbgpt-ext[proxy_openai]"
+    "dbgpt[client,cli,agent,simple_framework,framework,code,proxy_openai]",
+    "dbgpt-ext"
 ]
 
 default = [

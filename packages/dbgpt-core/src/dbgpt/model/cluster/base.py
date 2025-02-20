@@ -57,8 +57,13 @@ class WorkerApplyRequest(BaseModel):
     model: str
     apply_type: WorkerApplyType
     worker_type: WorkerType = WorkerType.LLM
-    params: Dict = None
-    apply_user: str = None
+    params: Dict = Field(
+        default_factory=dict,
+        description="Additional parameters for the apply operation",
+    )
+    apply_user: Optional[str] = Field(
+        None, description="The user name for the apply operation"
+    )
 
 
 class WorkerParameterRequest(BaseModel):

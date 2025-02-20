@@ -640,7 +640,7 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
 class OpenAPIEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
     """OpenAPI embedding deploy model parameters."""
 
-    provider: str = "proxy/openapi"
+    provider: str = "proxy/openai"
 
     api_url: str = field(
         default="http://localhost:8100/api/v1/embeddings",

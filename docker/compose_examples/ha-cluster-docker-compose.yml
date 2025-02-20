@@ -14,7 +14,7 @@
 # LLM_MODEL_NAME="Qwen/Qwen2.5-Coder-32B-Instruct" \
 # OPENAI_API_BASE="https://api.siliconflow.cn/v1" \
 # OPENAI_API_KEY="${SILICONFLOW_API_KEY}" \
-# EMBEDDING_MODEL_PROVIDER="proxy/openapi" \
+# EMBEDDING_MODEL_PROVIDER="proxy/openai" \
 # EMBEDDING_MODEL_NAME="BAAI/bge-large-zh-v1.5" \
 # EMBEDDING_MODEL_API_URL="https://api.siliconflow.cn/v1/embeddings" \
 # docker compose -f ha-cluster-docker-compose.yml up -d
@@ -48,7 +48,8 @@ services:
       - init
   controller-1:
     image: eosphorosai/dbgpt-openai:latest
-    command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /app/configs/ha-model-cluster.toml
+    command: dbgpt start controller -c /app/configs/ha-model-cluster.toml
     environment:
       - MYSQL_PASSWORD=aa123456
       - MYSQL_HOST=db
@@ -65,7 +66,8 @@ services:
       - db
   controller-2:
     image: eosphorosai/dbgpt-openai:latest
-    command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /app/configs/ha-model-cluster.toml
+    command: dbgpt start controller -c /app/configs/ha-model-cluster.toml
     environment:
       - MYSQL_PASSWORD=aa123456
       - MYSQL_HOST=db
@@ -82,7 +84,8 @@ services:
       - db
   llm-worker:
     image: eosphorosai/dbgpt-openai:latest
-    command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /app/configs/ha-model-cluster.toml
+    command: dbgpt start worker -c /app/configs/ha-model-cluster.toml
     environment:
       - WORKER_TYPE=llm
       - LLM_MODEL_PROVIDER=${LLM_MODEL_PROVIDER:-proxy/openai}
@@ -102,10 +105,11 @@ services:
     ipc: host
   embedding-worker:
     image: eosphorosai/dbgpt-openai:latest
-    command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /app/configs/ha-model-cluster.toml
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /app/configs/ha-model-cluster.toml
+    command: dbgpt start worker -c /app/configs/ha-model-cluster.toml
     environment:
       - WORKER_TYPE=text2vec
-      - EMBEDDING_MODEL_PROVIDER=${EMBEDDING_MODEL_PROVIDER:-proxy/openapi}
+      - EMBEDDING_MODEL_PROVIDER=${EMBEDDING_MODEL_PROVIDER:-proxy/openai}
       - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-text-embedding-3-small}
       - EMBEDDING_MODEL_API_URL=${EMBEDDING_MODEL_API_URL:-https://api.openai.com/v1/embeddings}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -122,13 +126,15 @@ services:
     ipc: host
   webserver:
     image: eosphorosai/dbgpt-openai:latest
-    command: python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c /app/configs/ha-webserver.toml
+    # command: python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c /app/configs/ha-webserver.toml
+    command: dbgpt start webserver -c /app/configs/ha-webserver.toml
     environment:
       - MYSQL_PASSWORD=aa123456
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
       - MYSQL_DATABASE=dbgpt
       - MYSQL_USER=root
+      - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-text-embedding-3-small}
       - CONTROLLER_ADDR=http://controller-1:8000,http://controller-2:8000
     depends_on:
       - controller-1

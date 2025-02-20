@@ -1764,7 +1764,7 @@ observability = [
     { name = "opentelemetry-sdk" },
 ]
 proxy-openai = [
-    { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "simple-framework"] },
+    { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "proxy-openai", "simple-framework"] },
     { name = "dbgpt-ext" },
 ]
 
@@ -1773,11 +1773,11 @@ requires-dist = [
     { name = "aiofiles" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
     { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'default'", editable = "packages/dbgpt-core" },
-    { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-core" },
+    { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code", "proxy-openai"], marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-core" },
     { name = "dbgpt-accelerator", editable = "packages/dbgpt-accelerator" },
     { name = "dbgpt-client", editable = "packages/dbgpt-client" },
     { name = "dbgpt-ext", editable = "packages/dbgpt-ext" },
-    { name = "dbgpt-ext", extras = ["proxy-openai"], marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-ext" },
+    { name = "dbgpt-ext", marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-ext", extras = ["rag"], marker = "extra == 'default'", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-ext", extras = ["storage-chromadb"], marker = "extra == 'default'", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-serve", editable = "packages/dbgpt-serve" },

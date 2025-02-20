@@ -9,8 +9,6 @@ from dbgpt.configs.model_config import LOGDIR
 from dbgpt.model.base import WorkerApplyType
 from dbgpt.model.parameter import (
     BaseParameters,
-    ModelAPIServerParameters,
-    ModelControllerParameters,
     ModelWorkerParameters,
 )
 from dbgpt.util import get_or_create_event_loop
@@ -19,8 +17,9 @@ from dbgpt.util.command_utils import (
     _run_current_with_daemon,
     _stop_service,
 )
+from dbgpt.util.console import CliLogger
+from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import (
-    EnvArgumentParser,
     _build_parameter_class,
     build_lazy_click_command,
 )
@@ -29,6 +28,8 @@ from dbgpt.util.parameter_utils import (
 MODEL_CONTROLLER_ADDRESS = "http://127.0.0.1:8000"
 
 logger = logging.getLogger("dbgpt_cli")
+
+cl = CliLogger()
 
 
 def _get_worker_manager(address: str):
@@ -303,18 +304,19 @@ def restart(model_name: str, model_type: str):
 
 @model_cli_group.command()
 @click.option(
+    "-m",
     "--model_name",
     type=str,
     default=None,
     required=True,
-    help=("The name of model"),
+    help=_("The name of model"),
 )
 @click.option(
     "--system",
     type=str,
     default=None,
     required=False,
-    help=("System prompt"),
+    help=_("System prompt"),
 )
 def chat(model_name: str, system: str):
     """Interact with your bot from the command line"""
@@ -337,37 +339,125 @@ def worker_apply(
 
 def _cli_chat(address: str, model_name: str, system_prompt: str = None):
     loop = get_or_create_event_loop()
-    worker_manager = worker_manager = _get_worker_manager(address)
+    worker_manager = _get_worker_manager(address)
     loop.run_until_complete(_chat_stream(worker_manager, model_name, system_prompt))
 
 
-async def _chat_stream(worker_manager, model_name: str, system_prompt: str = None):
+async def _chat_stream(
+    worker_manager,
+    model_name: str,
+    system_prompt: str = None,
+):
+    import os
+    import readline
+
     from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
     from dbgpt.model.cluster import PromptRequest
 
-    print(f"Chatbot started with model {model_name}. Type 'exit' to leave the chat.")
+    # Set up readline for history
+    histfile = os.path.join(os.path.expanduser("~"), ".dbgpt_cli_chat_history")
+    try:
+        readline.read_history_file(histfile)
+        readline.set_history_length(1000)
+    except FileNotFoundError:
+        pass
+
+    # Helper to clear screen
+    def clear_screen():
+        os.system("cls" if os.name == "nt" else "clear")
+
+    clear_screen()
+    cl.print(f"📢 Chatbot started with model {model_name}")
+    cl.print(
+        "Commands: /exit to leave, /clear to clear screen, /reset to reset conversation"
+    )
+
     hist = []
     previous_response = ""
+
     if system_prompt:
         hist.append(
             ModelMessage(role=ModelMessageRoleType.SYSTEM, content=system_prompt)
         )
+
     while True:
         previous_response = ""
-        user_input = input("\n\nYou: ")
-        if user_input.lower().strip() == "exit":
+        try:
+            print("\n")  # Add extra line break for clarity
+            user_input = input("You: ")
+        except UnicodeDecodeError:
+            cl.error("\n⚠️ Error reading input. Please try again.")
+            continue
+
+        # Handle commands
+        if user_input.lower().strip() == "/exit":
+            cl.info("\nGoodbye! 👋")
             break
+        elif user_input.lower().strip() == "/clear":
+            clear_screen()
+            continue
+        elif user_input.lower().strip() == "/reset":
+            hist = []
+            if system_prompt:
+                hist.append(
+                    ModelMessage(
+                        role=ModelMessageRoleType.SYSTEM, content=system_prompt
+                    )
+                )
+            clear_screen()
+            cl.info("Conversation has been reset!")
+            continue
+        elif not user_input.strip():
+            continue
+
         hist.append(ModelMessage(role=ModelMessageRoleType.HUMAN, content=user_input))
         request = PromptRequest(messages=hist, model=model_name, prompt="", echo=False)
         request = request.dict(exclude_none=True)
-        print("Bot: ", end="")
-        async for response in worker_manager.generate_stream(request):
-            incremental_output = response.text[len(previous_response) :]
-            print(incremental_output, end="", flush=True)
-            previous_response = response.text
-        hist.append(
-            ModelMessage(role=ModelMessageRoleType.AI, content=previous_response)
-        )
+
+        cl.print("Bot: ", end="")
+        try:
+            async for response in worker_manager.generate_stream(request):
+                incremental_output = response.text[len(previous_response) :]
+                # print(incremental_output, end="", flush=True)
+                cl.print(incremental_output, end="")
+                previous_response = response.text
+            hist.append(
+                ModelMessage(role=ModelMessageRoleType.AI, content=previous_response)
+            )
+        except Exception as e:
+            cl.error(f"\n⚠️ Error: {str(e)}")
+
+    # Save history
+    try:
+        readline.write_history_file(histfile)
+    except Exception as _e:
+        pass
+
+
+def add_start_server_options(func):
+    @click.option(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help=(_("The config file to start server")),
+    )
+    @click.option(
+        "-d",
+        "--daemon",
+        is_flag=True,
+        help=(
+            _(
+                "Run in daemon mode. It will run in the background. If you want to stop"
+                " it, use `dbgpt stop` command"
+            )
+        ),
+    )
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def add_stop_server_options(func):
@@ -386,17 +476,17 @@ def add_stop_server_options(func):
 
 
 @click.command(name="controller")
-@EnvArgumentParser.create_click_option(ModelControllerParameters)
-def start_model_controller(**kwargs):
+@add_start_server_options
+def start_model_controller(config: str, **kwargs):
     """Start model controller"""
 
-    if kwargs["daemon"]:
+    if "daemon" in kwargs and kwargs["daemon"]:
         log_file = os.path.join(LOGDIR, "model_controller_uvicorn.log")
         _run_current_with_daemon("ModelController", log_file)
     else:
         from dbgpt.model.cluster import run_model_controller
 
-        run_model_controller()
+        run_model_controller(config)
 
 
 @click.command(name="controller")
@@ -419,10 +509,9 @@ def _model_dynamic_factory() -> Callable[[None], List[Type]]:
     return fix_class
 
 
-@click.command(
-    name="worker", cls=build_lazy_click_command(_dynamic_factory=_model_dynamic_factory)
-)
-def start_model_worker(**kwargs):
+@click.command(name="worker")
+@add_start_server_options
+def start_model_worker(config: str, **kwargs):
     """Start model worker"""
     if kwargs["daemon"]:
         port = kwargs["port"]
@@ -432,12 +521,12 @@ def start_model_worker(**kwargs):
     else:
         from dbgpt.model.cluster import run_worker_manager
 
-        run_worker_manager()
+        run_worker_manager(config)
 
 
 @click.command(name="worker")
 @add_stop_server_options
-def stop_model_worker(port: int):
+def stop_model_worker(port: Optional[int] = None):
     """Stop model worker"""
     name = "ModelWorker"
     if port:
@@ -446,8 +535,8 @@ def stop_model_worker(port: int):
 
 
 @click.command(name="apiserver")
-@EnvArgumentParser.create_click_option(ModelAPIServerParameters)
-def start_apiserver(**kwargs):
+@add_start_server_options
+def start_apiserver(config: str, **kwargs):
     """Start apiserver"""
 
     if kwargs["daemon"]:
@@ -456,7 +545,7 @@ def start_apiserver(**kwargs):
     else:
         from dbgpt.model.cluster import run_apiserver
 
-        run_apiserver()
+        run_apiserver(config)
 
 
 @click.command(name="apiserver")
@@ -473,3 +562,4 @@ def _stop_all_model_server(**kwargs):
     """Stop all server"""
     _stop_service("worker", "ModelWorker")
     _stop_service("controller", "ModelController")
+    _stop_service("apiserver", "ModelAPIServer")

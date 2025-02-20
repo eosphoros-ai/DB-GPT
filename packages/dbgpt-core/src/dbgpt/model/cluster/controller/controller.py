@@ -327,7 +327,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def run_model_controller():
+def run_model_controller(config_file: str):
     from dbgpt.configs.model_config import LOGDIR, ROOT_PATH
     from dbgpt.util.configure import ConfigurationManager
     from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
@@ -335,9 +335,6 @@ def run_model_controller():
     cm = ConnectorManager(None)  # noqa: F841
     # pre import all datasource
     cm.on_init()
-
-    args = parse_args()
-    config_file = args.config
 
     if not os.path.isabs(config_file) and not os.path.exists(config_file):
         config_file = os.path.join(ROOT_PATH, config_file)
@@ -376,4 +373,7 @@ def run_model_controller():
 
 
 if __name__ == "__main__":
-    run_model_controller()
+    _args = parse_args()
+    _config_file = _args.config
+
+    run_model_controller(_config_file)
