@@ -295,7 +295,7 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_MAX_THREADS = int(os.getenv("KNOWLEDGE_MAX_THREADS", 1))
         # default recall similarity score, between 0 and 1
         self.KNOWLEDGE_SEARCH_RECALL_SCORE = float(
-            os.getenv("KNOWLEDGE_SEARCH_RECALL_SCORE", 0.3)
+            os.getenv("KNOWLEDGE_SEARCH_RECALL_SCORE", 0.0)
         )
         self.KNOWLEDGE_SEARCH_MAX_TOKEN = int(
             os.getenv("KNOWLEDGE_SEARCH_MAX_TOKEN", 2000)

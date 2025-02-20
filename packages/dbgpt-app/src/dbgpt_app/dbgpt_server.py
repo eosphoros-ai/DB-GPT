@@ -225,6 +225,8 @@ def run_webserver(config_file: str):
     trace_file = trace_config.file or os.path.join(
         "logs", "dbgpt_webserver_tracer.jsonl"
     )
+    config = system_app.config
+    config.configs["app_config"] = param
     initialize_tracer(
         trace_file,
         system_app=system_app,

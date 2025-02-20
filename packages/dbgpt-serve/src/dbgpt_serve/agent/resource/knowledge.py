@@ -2,15 +2,13 @@ import dataclasses
 import logging
 from typing import Any, List, Optional, Type, cast
 
-from dbgpt._private.config import Config
+from dbgpt import SystemApp
 from dbgpt.agent.resource.knowledge import (
     RetrieverResource,
     RetrieverResourceParameters,
 )
 from dbgpt.util import ParameterDescription
 from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
-
-CFG = Config()
 
 logger = logging.getLogger(__name__)
 
@@ -63,17 +61,22 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
 class KnowledgeSpaceRetrieverResource(RetrieverResource):
     """Knowledge Space retriever resource."""
 
-    def __init__(self, name: str, space_name: str, context: Optional[dict] = None):
+    def __init__(self, name: str,
+                 space_name: str,
+                 context: Optional[dict] = None,
+                 system_app: SystemApp = None,
+                 ):
         # TODO: Build the retriever in a thread pool, it will block the event loop
         retriever = KnowledgeSpaceRetriever(
             space_id=space_name,
             top_k=(
-                context.get("top_k", None) if context else CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+                context.get("top_k", None) if context is not None else None
             ),
+            system_app=system_app
         )
         super().__init__(name, retriever=retriever)
 
-        knowledge_spaces = get_knowledge_spaces_info(id=space_name)
+        knowledge_spaces = get_knowledge_spaces_info(name=space_name)
         if knowledge_spaces is not None and len(knowledge_spaces) > 0:
             self._retriever_name = knowledge_spaces[0].name
             self._retriever_desc = knowledge_spaces[0].desc

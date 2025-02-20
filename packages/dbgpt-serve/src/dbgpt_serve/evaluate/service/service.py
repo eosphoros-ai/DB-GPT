@@ -2,7 +2,6 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
 
-from dbgpt._private.config import Config
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core.interface.evaluation import (
@@ -32,7 +31,6 @@ from ..models.models import ServeDao, ServeEntity
 
 logger = logging.getLogger(__name__)
 
-CFG = Config()
 executor = ThreadPoolExecutor(max_workers=5)
 
 
@@ -52,7 +50,7 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
     def __init__(
         self, system_app: SystemApp, config: ServeConfig, dao: Optional[ServeDao] = None
     ):
-        self._system_app = None
+        self._system_app = system_app
         self._serve_config: ServeConfig = config
         self._dao: ServeDao = dao
         super().__init__(system_app)
@@ -102,27 +100,31 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
 
         results = []
         if EvaluationScene.RECALL.value == scene_key:
-            embedding_factory = CFG.SYSTEM_APP.get_component(
+            embedding_factory = self._system_app.get_component(
                 "embedding_factory", EmbeddingFactory
             )
             embeddings = embedding_factory.create(
-                EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+                EMBEDDING_MODEL_CONFIG[self._serve_config.embedding_model]
             )
 
             config = VectorStoreConfig(
                 name=scene_value,
                 embedding_fn=embeddings,
             )
+            space = self.rag_service.get({"space_id": str(scene_value)})
+            if not space:
+                raise ValueError(f"Space {scene_value} not found")
             vector_store_connector = VectorStoreConnector(
-                vector_store_type=CFG.VECTOR_STORE_TYPE,
+                vector_store_type=space.vector_type,
                 vector_store_config=config,
+                system_app=self._system_app,
             )
             evaluator = RetrieverEvaluator(
                 operator_cls=SpaceRetrieverOperator,
                 embeddings=embeddings,
                 operator_kwargs={
                     "space_id": str(scene_value),
-                    "top_k": CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
+                    "top_k": self._serve_config.knowledge_search_top_k,
                     "vector_store_connector": vector_store_connector,
                 },
             )
@@ -155,7 +157,7 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
             metric_name_list = evaluate_metrics
             for name in metric_name_list:
                 if name == AnswerRelevancyMetric.name():
-                    worker_manager = CFG.SYSTEM_APP.get_component(
+                    worker_manager = self._system_app.get_component(
                         ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
                     ).create()
                     llm_client = DefaultLLMClient(worker_manager=worker_manager)

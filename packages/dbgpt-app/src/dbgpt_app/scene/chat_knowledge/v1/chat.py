@@ -3,7 +3,7 @@ import os
 from functools import reduce
 from typing import Dict, List
 
-from dbgpt._private.config import Config
+from dbgpt import SystemApp
 from dbgpt.core import (
     ChatPromptTemplate,
     HumanPromptTemplate,
@@ -23,14 +23,12 @@ from dbgpt_serve.rag.models.document_db import (
 )
 from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 
-CFG = Config()
-
 
 class ChatKnowledge(BaseChat):
     chat_scene: str = ChatScene.ChatKnowledge.value()
     """KBQA Chat Module"""
 
-    def __init__(self, chat_param: Dict):
+    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
         """Chat Knowledge Module Initialization
         Args:
            - chat_param: Dict
@@ -43,9 +41,10 @@ class ChatKnowledge(BaseChat):
 
         self.knowledge_space = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatKnowledge
-        super().__init__(
-            chat_param=chat_param,
-        )
+        super().__init__(chat_param=chat_param, system_app=system_app)
+
+        self.rag_config = self.web_config.rag
+        self.graph_rag_config = self.web_config.graph_rag
         self.space_context = self.get_space_context(self.knowledge_space)
         self.top_k = (
             self.get_knowledge_search_top_size(self.knowledge_space)
@@ -53,14 +52,9 @@ class ChatKnowledge(BaseChat):
             else int(self.space_context["embedding"]["topk"])
         )
         self.recall_score = (
-            CFG.KNOWLEDGE_SEARCH_RECALL_SCORE
+            self.rag_config.knowledge_search_similarity_score
             if self.space_context is None
             else float(self.space_context["embedding"]["recall_score"])
-        )
-        self.max_token = (
-            CFG.KNOWLEDGE_SEARCH_MAX_TOKEN
-            if self.space_context is None or self.space_context.get("prompt") is None
-            else int(self.space_context["prompt"]["max_token"])
         )
         from dbgpt_serve.rag.models.models import (
             KnowledgeSpaceDao,
@@ -75,29 +69,38 @@ class ChatKnowledge(BaseChat):
         space = spaces[0]
 
         query_rewrite = None
-        if CFG.KNOWLEDGE_SEARCH_REWRITE:
+        if self.rag_config.knowledge_search_rewrite:
             query_rewrite = QueryRewrite(
                 llm_client=self.llm_client,
                 model_name=self.llm_model,
-                language=CFG.LANGUAGE,
+                language=self.system_app.config.configs.get(
+                    "dbgpt.app.global.language"
+                ),
             )
         reranker = None
         retriever_top_k = self.top_k
-        if CFG.RERANK_MODEL:
+        if self.model_config.default_reranker:
             rerank_embeddings = RerankEmbeddingFactory.get_instance(
-                CFG.SYSTEM_APP
+                self.system_app
             ).create()
-            reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=CFG.RERANK_TOP_K)
-            if retriever_top_k < CFG.RERANK_TOP_K or retriever_top_k < 20:
+            reranker = RerankEmbeddingsRanker(
+                rerank_embeddings, topk=self.rag_config.knowledge_rerank_top_k
+            )
+            if (
+                retriever_top_k < self.rag_config.knowledge_rerank_top_k
+                or retriever_top_k < 20
+            ):
                 # We use reranker, so if the top_k is less than 20,
                 # we need to set it to 20
-                retriever_top_k = max(CFG.RERANK_TOP_K, 20)
+                retriever_top_k = max(self.rag_config.knowledge_rerank_top_k, 20)
         self._space_retriever = KnowledgeSpaceRetriever(
             space_id=space.id,
+            embedding_model=self.model_config.default_embedding,
             top_k=retriever_top_k,
             query_rewrite=query_rewrite,
             rerank=reranker,
             llm_model=self.llm_model,
+            system_app=self.system_app,
         )
 
         self.prompt_template.template_is_strict = False
@@ -115,17 +118,6 @@ class ChatKnowledge(BaseChat):
         async for output in super().stream_call():
             last_output = output
             yield output
-
-        if (
-            CFG.KNOWLEDGE_CHAT_SHOW_RELATIONS
-            and last_output
-            and type(self.relations) is list
-            and len(self.relations) > 0
-            and hasattr(last_output, "text")
-        ):
-            last_output.text = (
-                last_output.text + "\n\nrelations:\n\n" + ",".join(self.relations)
-            )
         reference = f"\n\n{self.parse_source_view(self.chunks_with_score)}"
         last_output = last_output + reference
         yield last_output
@@ -245,9 +237,9 @@ class ChatKnowledge(BaseChat):
             from dbgpt_ext.storage import vector_store
 
             if spaces[0].vector_type in vector_store.__knowledge_graph__:
-                return CFG.KNOWLEDGE_GRAPH_SEARCH_TOP_SIZE
+                return self.graph_rag_config.knowledge_graph_search_top_k
 
-        return CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+        return self.rag_config.knowledge_search_top_k
 
     async def execute_similar_search(self, query):
         """execute similarity search"""

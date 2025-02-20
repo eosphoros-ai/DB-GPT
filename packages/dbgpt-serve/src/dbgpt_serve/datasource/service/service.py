@@ -46,7 +46,7 @@ class Service(
         config: ServeConfig,
         dao: Optional[ConnectConfigDao] = None,
     ):
-        self._system_app = None
+        self._system_app = system_app
         self._dao: ConnectConfigDao = dao
         self._dag_manager: Optional[DAGManager] = None
         self._db_summary_client = None
@@ -227,6 +227,7 @@ class Service(
         self._vector_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=vector_store_config,
+            system_app=self._system_app,
         )
         self._vector_connector.delete_vector_name(vector_name)
         if db_config:

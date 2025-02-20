@@ -1,12 +1,11 @@
 from typing import Dict
 
-from dbgpt._private.config import Config
+from dbgpt import SystemApp
 from dbgpt.agent.util.api_call import ApiCall
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
 from dbgpt_app.scene import BaseChat, ChatScene
-
-CFG = Config()
+from dbgpt_serve.datasource.manages import ConnectorManager
 
 
 class ChatWithDbAutoExecute(BaseChat):
@@ -14,7 +13,7 @@ class ChatWithDbAutoExecute(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_param: Dict):
+    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
         """Chat Data Module Initialization
         Args:
            - chat_param: Dict
@@ -27,9 +26,7 @@ class ChatWithDbAutoExecute(BaseChat):
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = chat_mode
         """ """
-        super().__init__(
-            chat_param=chat_param,
-        )
+        super().__init__(chat_param=chat_param, system_app=system_app)
         if not self.db_name:
             raise ValueError(
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
@@ -37,8 +34,8 @@ class ChatWithDbAutoExecute(BaseChat):
         with root_tracer.start_span(
             "ChatWithDbAutoExecute.get_connect", metadata={"db_name": self.db_name}
         ):
-            self.database = CFG.local_db_manager.get_connector(self.db_name)
-
+            local_db_manager = ConnectorManager.get_instance(self.system_app)
+            self.database = local_db_manager.get_connector(self.db_name)
         self.top_k: int = 50
         self.api_call = ApiCall()
 
@@ -51,7 +48,7 @@ class ChatWithDbAutoExecute(BaseChat):
             from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
-        client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
+        client = DBSummaryClient(system_app=self.system_app)
         table_infos = None
         try:
             with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
@@ -60,7 +57,7 @@ class ChatWithDbAutoExecute(BaseChat):
                     client.get_db_summary,
                     self.db_name,
                     self.current_user_input,
-                    CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
+                    self.web_config.rag.knowledge_search_top_k,
                 )
         except Exception as e:
             print("db summary find error!" + str(e))

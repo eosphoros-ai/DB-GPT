@@ -1,10 +1,8 @@
 from typing import Dict
 
-from dbgpt._private.config import Config
+from dbgpt import SystemApp
 from dbgpt.util.tracer import trace
 from dbgpt_app.scene import BaseChat, ChatScene
-
-CFG = Config()
 
 
 class ChatNormal(BaseChat):
@@ -14,12 +12,10 @@ class ChatNormal(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_param: Dict):
+    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
         """ """
         chat_param["chat_mode"] = ChatScene.ChatNormal
-        super().__init__(
-            chat_param=chat_param,
-        )
+        super().__init__(chat_param=chat_param, system_app=system_app)
 
     @trace()
     async def generate_input_values(self) -> Dict:

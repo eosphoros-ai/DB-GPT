@@ -210,7 +210,9 @@ class ResourceManager(BaseComponent):
             try:
                 parameter_cls = single_item.get_parameter_class()
                 param = parameter_cls.from_dict(agent_resource.to_dict())
-                resource_inst = single_item.resource_cls(**param.to_dict())
+                param_dict = param.to_dict()
+                param_dict["system_app"] = self.system_app
+                resource_inst = single_item.resource_cls(**param_dict)
                 return resource_inst
             except Exception as e:
                 logger.warning(f"Failed to build resource {single_item.key}: {str(e)}")
