@@ -32,6 +32,9 @@ T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
+_DEFAULT_ENV_VAR_PATTERN = re.compile(r"\${env:([^}]+)}")
+
+
 class PolymorphicMeta(abc.ABCMeta):
     def __new__(mcs, name, bases, namespace, **kwargs):
         """Metaclass that allows dataclasses to be used as type hints in other
@@ -68,6 +71,7 @@ class PolymorphicMeta(abc.ABCMeta):
                 # Get the registry from the immediate parent
                 registry = getattr(base_cls, "_type_registry", {})
 
+                type_value = _resolve_env_vars(type_value)
                 if type_value in registry:
                     raise ValueError(
                         f"Type value '{type_value}' already registered for "
@@ -175,6 +179,39 @@ class RegisterParameters(abc.ABC, metaclass=PolymorphicMeta):
         return cls.__name__.lower()
 
 
+def _resolve_env_vars(value: str, env_var_patten=None) -> str:
+    """Resolve environment variables in a string value.
+
+    Args:
+        value: String value that may contain environment variable references
+
+    Returns:
+        String with environment variables replaced with their values
+
+    Raises:
+        ValueError: If an environment variable is not found and no default is
+            specified
+    """
+
+    def replace_env_var(match):
+        env_var = match.group(1)
+        # Support default values using :- syntax
+        if ":-" in env_var:
+            env_name, default = env_var.split(":-", 1)
+        else:
+            env_name, default = env_var, None
+
+        value = os.environ.get(env_name)
+        if value is None:
+            if default is not None:
+                return default
+            raise ValueError(f"Environment variable {env_name} not found")
+        return value
+
+    env_var_patten = env_var_patten or _DEFAULT_ENV_VAR_PATTERN
+    return env_var_patten.sub(replace_env_var, value)
+
+
 def _get_concrete_class(base_class: Type[T], data: Dict[str, Any]) -> Type[T]:
     """Get the concrete subclass of a polymorphic dataclass.
 
@@ -188,9 +225,13 @@ def _get_concrete_class(base_class: Type[T], data: Dict[str, Any]) -> Type[T]:
     type_value = data.get(type_field)
     if not type_value:
         return base_class
+    type_value = _resolve_env_vars(type_value)
     real_cls = base_class.get_subclass(type_value)
     if not real_cls:
-        raise ValueError(f"Unknown type value: {type_value}")
+        raise ValueError(
+            f"Unknown type value: {type_value}, known types: "
+            f"{list(_get_all_subclasses(base_class).keys())}"
+        )
     return real_cls
 
 
@@ -337,23 +378,7 @@ class ConfigurationManager:
             >>> print(cm._resolve_env_vars("host: ${env:NONEXISTENT:-default}"))
             'host: default'
         """
-
-        def replace_env_var(match):
-            env_var = match.group(1)
-            # Support default values using :- syntax
-            if ":-" in env_var:
-                env_name, default = env_var.split(":-", 1)
-            else:
-                env_name, default = env_var, None
-
-            value = os.environ.get(env_name)
-            if value is None:
-                if default is not None:
-                    return default
-                raise ValueError(f"Environment variable {env_name} not found")
-            return value
-
-        return self.ENV_VAR_PATTERN.sub(replace_env_var, value)
+        return _resolve_env_vars(value, self.ENV_VAR_PATTERN)
 
     def _process_dataclass_env_vars(self, obj: Any) -> Any:
         """Process environment variables in a dataclass object's string fields.
@@ -526,6 +551,7 @@ class ConfigurationManager:
 
         def prepare_data_func(real_cls, dict_data: Dict[str, Any]):
             field_values = {}
+            real_cls = _get_concrete_class(real_cls, dict_data)
             type_hints = get_type_hints(real_cls)
 
             for fd in fields(real_cls):

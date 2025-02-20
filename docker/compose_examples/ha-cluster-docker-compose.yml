@@ -9,6 +9,15 @@
 # 1. run `cd docker/compose_examples`
 # 2. run `OPENAI_API_KEY="{your api key}" OPENAI_API_BASE="https://api.openai.com/v1" docker compose -f ha-cluster-docker-compose.yml up -d`
 # Note: Make sure you have set the environment variables OPENAI_API_KEY.
+# Optionally, if you want to use other provider(like proxy/siliconflow), you can set following environment variables:
+# LLM_MODEL_PROVIDER="proxy/siliconflow" \
+# LLM_MODEL_NAME="Qwen/Qwen2.5-Coder-32B-Instruct" \
+# OPENAI_API_BASE="https://api.siliconflow.cn/v1" \
+# OPENAI_API_KEY="${SILICONFLOW_API_KEY}" \
+# EMBEDDING_MODEL_PROVIDER="proxy/openai" \
+# EMBEDDING_MODEL_NAME="BAAI/bge-large-zh-v1.5" \
+# EMBEDDING_MODEL_API_URL="https://api.siliconflow.cn/v1/embeddings" \
+# docker compose -f ha-cluster-docker-compose.yml up -d
 version: '3.10'
 
 services:
@@ -39,9 +48,17 @@ services:
       - init
   controller-1:
     image: eosphorosai/dbgpt-openai:latest
-    command: dbgpt start controller --registry_type database  --registry_db_type mysql --registry_db_name dbgpt --registry_db_host db --registry_db_port 3306 --registry_db_user root --registry_db_password aa123456
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start controller -c /root/configs/ha-model-cluster.toml
+    environment:
+      - MYSQL_PASSWORD=aa123456
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=dbgpt
+      - MYSQL_USER=root
     volumes:
       - ../../:/app
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
@@ -49,9 +66,17 @@ services:
       - db
   controller-2:
     image: eosphorosai/dbgpt-openai:latest
-    command: dbgpt start controller --registry_type database  --registry_db_type mysql --registry_db_name dbgpt --registry_db_host db --registry_db_port 3306 --registry_db_user root --registry_db_password aa123456
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/controller/controller.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start controller -c /root/configs/ha-model-cluster.toml
+    environment:
+      - MYSQL_PASSWORD=aa123456
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=dbgpt
+      - MYSQL_USER=root
     volumes:
       - ../../:/app
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
@@ -59,46 +84,58 @@ services:
       - db
   llm-worker:
     image: eosphorosai/dbgpt-openai:latest
-    command: dbgpt start worker --model_type proxy --model_name chatgpt_proxyllm --model_path chatgpt_proxyllm --proxy_server_url ${OPENAI_API_BASE}/chat/completions --proxy_api_key ${OPENAI_API_KEY} --controller_addr "http://controller-1:8000,http://controller-2:8000"
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start worker -c /root/configs/ha-model-cluster.toml
     environment:
-      - DBGPT_LOG_LEVEL=DEBUG
-      # Your real openai model name, e.g. gpt-3.5-turbo, gpt-4o
-      - PROXYLLM_BACKEND=gpt-3.5-turbo
+      - WORKER_TYPE=llm
+      - LLM_MODEL_PROVIDER=${LLM_MODEL_PROVIDER:-proxy/openai}
+      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-gpt-4o}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CONTROLLER_ADDR=http://controller-1:8000,http://controller-2:8000
     depends_on:
       - controller-1
       - controller-2
     volumes:
       - ../../:/app
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
     ipc: host
   embedding-worker:
     image: eosphorosai/dbgpt-openai:latest
-    command: dbgpt start worker --worker_type text2vec --model_name proxy_http_openapi --model_path proxy_http_openapi --proxy_server_url ${OPENAI_API_BASE}/embeddings --proxy_api_key ${OPENAI_API_KEY} --controller_addr "http://controller-1:8000,http://controller-2:8000"
+    # command: python packages/dbgpt-core/src/dbgpt/model/cluster/worker/manager.py -c /root/configs/ha-model-cluster.toml
+    command: dbgpt start worker -c /root/configs/ha-model-cluster.toml
     environment:
-      - DBGPT_LOG_LEVEL=DEBUG
-      - proxy_http_openapi_proxy_backend=text-embedding-3-small
+      - WORKER_TYPE=text2vec
+      - EMBEDDING_MODEL_PROVIDER=${EMBEDDING_MODEL_PROVIDER:-proxy/openai}
+      - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-text-embedding-3-small}
+      - EMBEDDING_MODEL_API_URL=${EMBEDDING_MODEL_API_URL:-https://api.openai.com/v1/embeddings}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CONTROLLER_ADDR=http://controller-1:8000,http://controller-2:8000
     depends_on:
       - controller-1
       - controller-2
     volumes:
       - ../../:/app
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
     restart: unless-stopped
     networks:
       - dbgptnet
     ipc: host
   webserver:
     image: eosphorosai/dbgpt-openai:latest
-    command: dbgpt start webserver --light --remote_embedding --controller_addr "http://controller-1:8000,http://controller-2:8000"
+    # command: python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py -c /root/configs/ha-webserver.toml
+    command: dbgpt start webserver -c /root/configs/ha-webserver.toml
     environment:
-      - DBGPT_LOG_LEVEL=DEBUG
-      - LOCAL_DB_TYPE=mysql
-      - LOCAL_DB_HOST=db
-      - LOCAL_DB_USER=root
-      - LOCAL_DB_PASSWORD=aa123456
-      - LLM_MODEL=chatgpt_proxyllm
-      - EMBEDDING_MODEL=proxy_http_openapi
+      - MYSQL_PASSWORD=aa123456
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=dbgpt
+      - MYSQL_USER=root
+      - EMBEDDING_MODEL_NAME=${EMBEDDING_MODEL_NAME:-text-embedding-3-small}
+      - CONTROLLER_ADDR=http://controller-1:8000,http://controller-2:8000
     depends_on:
       - controller-1
       - controller-2
@@ -106,6 +143,7 @@ services:
       - embedding-worker
     volumes:
       - ../../:/app
+      - ./conf/ha-webserver.toml:/root/configs/ha-webserver.toml
       - dbgpt-data:/app/pilot/data
       - dbgpt-message:/app/pilot/message
     # env_file:

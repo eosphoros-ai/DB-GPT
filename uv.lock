@@ -334,6 +334,18 @@ wheels = [
 ]
 
 [[package]]
+name = "async-lru"
+version = "2.0.4"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cpu') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda121' and extra == 'extra-17-dbgpt-accelerator-cuda124')" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/80/e2/2b4651eff771f6fd900d233e175ddc5e2be502c7eb62c0c42f975c6d36cd/async-lru-2.0.4.tar.gz", hash = "sha256:b8a59a5df60805ff63220b2a0c5b5393da5521b113cd5465a44eb037d81a5627", size = 10019 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/fa/9f/3c3503693386c4b0f245eaf5ca6198e3b28879ca0a40bde6b0e319793453/async_lru-2.0.4-py3-none-any.whl", hash = "sha256:ff02944ce3c288c5be660c42dbcca0742b32c3b279d6dceda655190240b99224", size = 6111 },
+]
+
+[[package]]
 name = "async-timeout"
 version = "4.0.3"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -1446,11 +1458,14 @@ framework = [
     { name = "pymysql" },
     { name = "pyzmq" },
     { name = "seaborn" },
-    { name = "sentencepiece" },
     { name = "tokenizers" },
+    { name = "xlrd" },
+]
+hf = [
+    { name = "sentence-transformers" },
+    { name = "sentencepiece" },
     { name = "transformers", version = "4.48.0", source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }, marker = "sys_platform != 'linux' or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cpu') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda121' and extra == 'extra-17-dbgpt-accelerator-cuda124')" },
     { name = "transformers", version = "4.48.3", source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }, marker = "sys_platform != 'darwin' or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cpu') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda121' and extra == 'extra-17-dbgpt-accelerator-cuda124')" },
-    { name = "xlrd" },
 ]
 llama-cpp = [
     { name = "llama-cpp-python" },
@@ -1544,7 +1559,8 @@ requires-dist = [
     { name = "rich", marker = "extra == 'cli'" },
     { name = "schedule", marker = "extra == 'simple-framework'" },
     { name = "seaborn", marker = "extra == 'framework'" },
-    { name = "sentencepiece", marker = "extra == 'framework'" },
+    { name = "sentence-transformers", marker = "extra == 'hf'" },
+    { name = "sentencepiece", marker = "extra == 'hf'" },
     { name = "shortuuid", marker = "extra == 'simple-framework'" },
     { name = "snowflake-id" },
     { name = "sqlalchemy", marker = "extra == 'simple-framework'", specifier = ">=2.0.25,<2.0.29" },
@@ -1555,7 +1571,7 @@ requires-dist = [
     { name = "tokenizers", marker = "extra == 'framework'", specifier = ">=0.14" },
     { name = "tomli", specifier = ">=2.2.1" },
     { name = "tomlkit", marker = "extra == 'cli'" },
-    { name = "transformers", marker = "extra == 'framework'", specifier = ">=4.34.0" },
+    { name = "transformers", marker = "extra == 'hf'", specifier = ">=4.46.0" },
     { name = "typeguard" },
     { name = "typing-inspect" },
     { name = "uvicorn", marker = "extra == 'simple-framework'" },
@@ -1747,7 +1763,6 @@ dependencies = [
     { name = "dbgpt-ext" },
     { name = "dbgpt-serve" },
     { name = "pyparsing" },
-    { name = "sentence-transformers" },
 ]
 
 [package.optional-dependencies]
@@ -1764,7 +1779,7 @@ observability = [
     { name = "opentelemetry-sdk" },
 ]
 proxy-openai = [
-    { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "simple-framework"] },
+    { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "proxy-openai", "simple-framework"] },
     { name = "dbgpt-ext" },
 ]
 
@@ -1773,11 +1788,11 @@ requires-dist = [
     { name = "aiofiles" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
     { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'default'", editable = "packages/dbgpt-core" },
-    { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-core" },
+    { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code", "proxy-openai"], marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-core" },
     { name = "dbgpt-accelerator", editable = "packages/dbgpt-accelerator" },
     { name = "dbgpt-client", editable = "packages/dbgpt-client" },
     { name = "dbgpt-ext", editable = "packages/dbgpt-ext" },
-    { name = "dbgpt-ext", extras = ["proxy-openai"], marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-ext" },
+    { name = "dbgpt-ext", marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-ext", extras = ["rag"], marker = "extra == 'default'", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-ext", extras = ["storage-chromadb"], marker = "extra == 'default'", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-serve", editable = "packages/dbgpt-serve" },
@@ -1786,7 +1801,6 @@ requires-dist = [
     { name = "opentelemetry-sdk", marker = "extra == 'observability'" },
     { name = "pyparsing" },
     { name = "rocksdict", marker = "extra == 'cache'" },
-    { name = "sentence-transformers" },
 ]
 
 [package.metadata.requires-dev]
@@ -1915,6 +1929,7 @@ source = { virtual = "." }
 [package.dev-dependencies]
 dev = [
     { name = "asynctest" },
+    { name = "jupyter" },
     { name = "pip" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1933,6 +1948,7 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "asynctest", specifier = ">=0.13.0" },
+    { name = "jupyter" },
     { name = "pip" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest-asyncio" },
@@ -2986,6 +3002,22 @@ wheels = [
 ]
 
 [[package]]
+name = "ipywidgets"
+version = "8.1.5"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "comm" },
+    { name = "ipython" },
+    { name = "jupyterlab-widgets" },
+    { name = "traitlets" },
+    { name = "widgetsnbextension" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c7/4c/dab2a281b07596a5fc220d49827fe6c794c66f1493d7a74f1df0640f2cc5/ipywidgets-8.1.5.tar.gz", hash = "sha256:870e43b1a35656a80c18c9503bbf2d16802db1cb487eec6fab27d683381dde17", size = 116723 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/22/2d/9c0b76f2f9cc0ebede1b9371b6f317243028ed60b90705863d493bae622e/ipywidgets-8.1.5-py3-none-any.whl", hash = "sha256:3290f526f87ae6e77655555baba4f36681c555b8bdbbff430b70e52c34c86245", size = 139767 },
+]
+
+[[package]]
 name = "isoduration"
 version = "20.11.0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -3204,6 +3236,23 @@ wheels = [
 ]
 
 [[package]]
+name = "jupyter"
+version = "1.1.1"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "jupyter-console" },
+    { name = "jupyterlab" },
+    { name = "nbconvert" },
+    { name = "notebook" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/58/f3/af28ea964ab8bc1e472dba2e82627d36d470c51f5cd38c37502eeffaa25e/jupyter-1.1.1.tar.gz", hash = "sha256:d55467bceabdea49d7e3624af7e33d59c37fff53ed3a350e1ac957bed731de7a", size = 5714959 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/38/64/285f20a31679bf547b75602702f7800e74dbabae36ef324f716c02804753/jupyter-1.1.1-py2.py3-none-any.whl", hash = "sha256:7a59533c22af65439b24bbe60373a4e95af8f16ac65a6c00820ad378e3f7cc83", size = 2657 },
+]
+
+[[package]]
 name = "jupyter-client"
 version = "8.6.3"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -3217,6 +3266,25 @@ dependencies = [
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/71/22/bf9f12fdaeae18019a468b68952a60fe6dbab5d67cd2a103cac7659b41ca/jupyter_client-8.6.3.tar.gz", hash = "sha256:35b3a0947c4a6e9d589eb97d7d4cd5e90f910ee73101611f01283732bd6d9419", size = 342019 }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/11/85/b0394e0b6fcccd2c1eeefc230978a6f8cb0c5df1e4cd3e7625735a0d7d1e/jupyter_client-8.6.3-py3-none-any.whl", hash = "sha256:e8a19cc986cc45905ac3362915f410f3af85424b4c0905e94fa5f2cb08e8f23f", size = 106105 },
+]
+
+[[package]]
+name = "jupyter-console"
+version = "6.6.3"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "ipykernel" },
+    { name = "ipython" },
+    { name = "jupyter-client" },
+    { name = "jupyter-core" },
+    { name = "prompt-toolkit" },
+    { name = "pygments" },
+    { name = "pyzmq" },
+    { name = "traitlets" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/bd/2d/e2fd31e2fc41c14e2bcb6c976ab732597e907523f6b2420305f9fc7fdbdb/jupyter_console-6.6.3.tar.gz", hash = "sha256:566a4bf31c87adbfadf22cdf846e3069b59a71ed5da71d6ba4d8aaad14a53539", size = 34363 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ca/77/71d78d58f15c22db16328a476426f7ac4a60d3a5a7ba3b9627ee2f7903d4/jupyter_console-6.6.3-py3-none-any.whl", hash = "sha256:309d33409fcc92ffdad25f0bcdf9a4a9daa61b6f341177570fdac03de5352485", size = 24510 },
 ]
 
 [[package]]
@@ -3307,6 +3375,31 @@ wheels = [
 ]
 
 [[package]]
+name = "jupyterlab"
+version = "4.3.5"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "async-lru" },
+    { name = "httpx" },
+    { name = "ipykernel" },
+    { name = "jinja2" },
+    { name = "jupyter-core" },
+    { name = "jupyter-lsp" },
+    { name = "jupyter-server" },
+    { name = "jupyterlab-server" },
+    { name = "notebook-shim" },
+    { name = "packaging" },
+    { name = "setuptools" },
+    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cpu') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda121' and extra == 'extra-17-dbgpt-accelerator-cuda124')" },
+    { name = "tornado" },
+    { name = "traitlets" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/19/17/6f3d73c3e54b71bbaf03edcc4a54b0aa6328e0a134755f297ea87d425711/jupyterlab-4.3.5.tar.gz", hash = "sha256:c779bf72ced007d7d29d5bcef128e7fdda96ea69299e19b04a43635a7d641f9d", size = 21800023 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/73/6f/94d4c879b3e2b7b9bca1913ea6fbbef180f8b1ed065b46ade40d651ec54d/jupyterlab-4.3.5-py3-none-any.whl", hash = "sha256:571bbdee20e4c5321ab5195bc41cf92a75a5cff886be5e57ce78dfa37a5e9fdb", size = 11666944 },
+]
+
+[[package]]
 name = "jupyterlab-pygments"
 version = "0.3.0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -3331,6 +3424,15 @@ dependencies = [
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0a/c9/a883ce65eb27905ce77ace410d83587c82ea64dc85a48d1f7ed52bcfa68d/jupyterlab_server-2.27.3.tar.gz", hash = "sha256:eb36caca59e74471988f0ae25c77945610b887f777255aa21f8065def9e51ed4", size = 76173 }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/54/09/2032e7d15c544a0e3cd831c51d77a8ca57f7555b2e1b2922142eddb02a84/jupyterlab_server-2.27.3-py3-none-any.whl", hash = "sha256:e697488f66c3db49df675158a77b3b017520d772c6e1548c7d9bcc5df7944ee4", size = 59700 },
+]
+
+[[package]]
+name = "jupyterlab-widgets"
+version = "3.0.13"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/59/73/fa26bbb747a9ea4fca6b01453aa22990d52ab62dd61384f1ac0dc9d4e7ba/jupyterlab_widgets-3.0.13.tar.gz", hash = "sha256:a2966d385328c1942b683a8cd96b89b8dd82c8b8f81dda902bb2bc06d46f5bed", size = 203556 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a9/93/858e87edc634d628e5d752ba944c2833133a28fa87bb093e6832ced36a3e/jupyterlab_widgets-3.0.13-py3-none-any.whl", hash = "sha256:e3cda2c233ce144192f1e29914ad522b2f4c40e77214b0cc97377ca3d323db54", size = 214392 },
 ]
 
 [[package]]
@@ -4703,6 +4805,34 @@ wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/47/d3/5df43cc3570cdc9eb1dc79a39191f89fedf8bcefd8d30a161ff1dffb146c/nh3-0.2.20-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:813f1c8012dd64c990514b795508abb90789334f76a561fa0fd4ca32d2275330", size = 908539 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/4f/fd/aa000f6c76a832c488eac26f20d2e8a221ba2b965efce692f14ebc4290bf/nh3-0.2.20-cp38-abi3-win32.whl", hash = "sha256:47b2946c0e13057855209daeffb45dc910bd0c55daf10190bb0b4b60e2999784", size = 540439 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/19/31/d65594efd3b42b1de2335d576eb77525691fc320dbf8617948ee05c008e5/nh3-0.2.20-cp38-abi3-win_amd64.whl", hash = "sha256:da87573f03084edae8eb87cfe811ec338606288f81d333c07d2a9a0b9b976c0b", size = 541249 },
+]
+
+[[package]]
+name = "notebook"
+version = "7.3.2"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "jupyter-server" },
+    { name = "jupyterlab" },
+    { name = "jupyterlab-server" },
+    { name = "notebook-shim" },
+    { name = "tornado" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ea/04/ac488379d5afef43402b3fb4be2857db1a09804fecf98b9b714c741b225b/notebook-7.3.2.tar.gz", hash = "sha256:705e83a1785f45b383bf3ee13cb76680b92d24f56fb0c7d2136fe1d850cd3ca8", size = 12781804 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/22/9b/76e50ee18f183ea5fe1784a9eeaa50f2c71802e4740d6e959592b0993298/notebook-7.3.2-py3-none-any.whl", hash = "sha256:e5f85fc59b69d3618d73cf27544418193ff8e8058d5bf61d315ce4f473556288", size = 13163630 },
+]
+
+[[package]]
+name = "notebook-shim"
+version = "0.2.4"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "jupyter-server" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/54/d2/92fa3243712b9a3e8bafaf60aac366da1cada3639ca767ff4b5b3654ec28/notebook_shim-0.2.4.tar.gz", hash = "sha256:b4b2cfa1b65d98307ca24361f5b30fe785b53c3fd07b7a47e89acb5e6ac638cb", size = 13167 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/f9/33/bd5b9137445ea4b680023eb0469b2bb969d61303dedb2aac6560ff3d14a1/notebook_shim-0.2.4-py3-none-any.whl", hash = "sha256:411a5be4e9dc882a074ccbcae671eda64cceb068767e9a3419096986560e1cef", size = 13307 },
 ]
 
 [[package]]
@@ -9843,6 +9973,15 @@ wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/13/97/b76979401f2373af1fe3e08f960b265cecab112e7dac803446fb98351a52/websockets-14.1-pp310-pypy310_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:660c308dabd2b380807ab64b62985eaccf923a78ebc572bd485375b9ca2b7dc7", size = 160681 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/39/9c/16916d9a436c109a1d7ba78817e8fee357b78968be3f6e6f517f43afa43d/websockets-14.1-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:5a42d3ecbb2db5080fc578314439b1d79eef71d323dc661aa616fb492436af5d", size = 163316 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b0/0b/c7e5d11020242984d9d37990310520ed663b942333b83a033c2f20191113/websockets-14.1-py3-none-any.whl", hash = "sha256:4d4fc827a20abe6d544a119896f6b78ee13fe81cbfef416f3f2ddf09a03f0e2e", size = 156277 },
+]
+
+[[package]]
+name = "widgetsnbextension"
+version = "4.0.13"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/56/fc/238c424fd7f4ebb25f8b1da9a934a3ad7c848286732ae04263661eb0fc03/widgetsnbextension-4.0.13.tar.gz", hash = "sha256:ffcb67bc9febd10234a362795f643927f4e0c05d9342c727b65d2384f8feacb6", size = 1164730 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/21/02/88b65cc394961a60c43c70517066b6b679738caf78506a5da7b88ffcb643/widgetsnbextension-4.0.13-py3-none-any.whl", hash = "sha256:74b2692e8500525cc38c2b877236ba51d34541e6385eeed5aec15a70f88a6c71", size = 2335872 },
 ]
 
 [[package]]

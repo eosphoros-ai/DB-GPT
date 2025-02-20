@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from dataclasses import asdict, dataclass, fields
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
@@ -76,3 +77,7 @@ class BaseDatasourceParameters(BaseParameters, RegisterParameters):
             "database": "db_name",
             "path": "db_path",
         }
+
+    @abstractmethod
+    def db_url(self, ssl: bool = False, charset: Optional[str] = None) -> str:
+        """Return database engine url."""

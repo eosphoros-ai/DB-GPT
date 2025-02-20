@@ -1,7 +1,7 @@
 """Vertica connector."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
@@ -39,6 +39,12 @@ class VerticaParameters(RDBMSDatasourceParameters):
     """Vertica connection parameters."""
 
     __type__ = "vertica"
+    driver: str = field(
+        default="vertica+vertica_python",
+        metadata={
+            "help": _("Driver name for vertica, default is vertica+vertica_python")
+        },
+    )
 
     def create_connector(self) -> "VerticaConnector":
         """Create vertica connector"""

@@ -65,6 +65,12 @@ class HiveParameters(BaseDatasourceParameters):
     # http_path: str = field(
     #     default="", metadata={"help": _("HTTP path for HTTP transport mode")}
     # )
+    driver: str = field(
+        default="hive",
+        metadata={
+            "help": _("Driver name for Hive, default is hive."),
+        },
+    )
 
     def engine_args(self) -> Optional[Dict[str, Any]]:
         """Get engine args."""
@@ -83,6 +89,21 @@ class HiveParameters(BaseDatasourceParameters):
     def create_connector(self) -> "HiveConnector":
         """Create Hive connector."""
         return HiveConnector.from_parameters(self)
+
+    def db_url(self, ssl: bool = False, charset: Optional[str] = None):
+        """Return database engine url."""
+        if self.driver:
+            scheme = self.driver
+        elif self.transport_mode == "http":
+            scheme = "hive+http"
+        else:
+            scheme = "hive"
+
+        if self.username and self.password:
+            auth_str = f"{quote(self.username)}:{urlquote(self.password)}@"
+        else:
+            auth_str = ""
+        return f"{scheme}://{auth_str}{self.host}:{str(self.port)}/{self.database}"
 
 
 class HiveConnector(RDBMSConnector):
@@ -106,19 +127,7 @@ class HiveConnector(RDBMSConnector):
         More details:
         https://github.com/apache/kyuubi/blob/master/python/pyhive/hive.py
         """
-        if parameters.transport_mode == "http":
-            scheme = "hive+http"
-        else:
-            scheme = "hive"
-
-        if parameters.username and parameters.password:
-            auth_str = f"{quote(parameters.username)}:{urlquote(parameters.password)}@"
-        else:
-            auth_str = ""
-        host = parameters.host
-        port = parameters.port
-        database = parameters.database
-        db_url = f"{scheme}://{auth_str}{host}:{str(port)}/{database}"
+        db_url = parameters.db_url()
         engine_args = parameters.engine_args() or {}
         return cls(create_engine(db_url, **engine_args))
 

@@ -145,7 +145,8 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     # After init, when the database is ready
     system_app.after_init()
 
-    local_port = web_config.port
+    binding_port = web_config.port
+    binding_host = web_config.host
     if not web_config.light:
         from dbgpt.model.cluster.storage import ModelStorage
         from dbgpt_serve.model.serve import Serve as ModelServe
@@ -160,7 +161,8 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
             worker_params=param.service.model.worker,
             models_config=param.models,
             app=app,
-            local_port=local_port,
+            binding_port=binding_port,
+            binding_host=binding_host,
             start_listener=model_start_listener,
             system_app=system_app,
             model_storage=model_storage,
@@ -169,13 +171,17 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     else:
         # MODEL_SERVER is controller address now
         controller_addr = web_config.controller_addr
+        param.models.llms = []
+        param.models.rerankers = []
+        param.models.embeddings = []
         initialize_worker_manager_in_client(
             worker_params=param.service.model.worker,
             models_config=param.models,
             app=app,
             run_locally=False,
             controller_addr=controller_addr,
-            local_port=local_port,
+            binding_port=binding_port,
+            binding_host=binding_host,
             start_listener=model_start_listener,
             system_app=system_app,
         )
@@ -211,11 +217,16 @@ def run_uvicorn(param: ServiceWebParameters):
     )
 
 
-def run_webserver(param: ApplicationConfig):
+def run_webserver(config_file: str):
+    # Load configuration with specified config file
+    param = load_config(config_file)
+    set_default_language(param.system.language)
     trace_config = param.service.web.trace or param.trace
     trace_file = trace_config.file or os.path.join(
         "logs", "dbgpt_webserver_tracer.jsonl"
     )
+    config = system_app.config
+    config.configs["app_config"] = param
     initialize_tracer(
         trace_file,
         system_app=system_app,
@@ -291,10 +302,6 @@ def parse_args():
 
 if __name__ == "__main__":
     # Parse command line arguments
-    args = parse_args()
-    # Load configuration with specified config file
-    app_config = load_config(args.config)
-    config = system_app.config
-    config.configs["app_config"] = app_config
-    set_default_language(app_config.system.language)
-    run_webserver(app_config)
+    _args = parse_args()
+    _config_file = _args.config
+    run_webserver(_config_file)

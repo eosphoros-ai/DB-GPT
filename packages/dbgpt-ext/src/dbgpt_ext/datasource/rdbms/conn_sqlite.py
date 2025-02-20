@@ -53,9 +53,16 @@ class SQLiteConnectorParameters(BaseDatasourceParameters):
         },
     )
 
+    driver: str = dataclasses.field(
+        default="sqlite", metadata={"help": _("Driver name, default is sqlite")}
+    )
+
     def create_connector(self) -> "SQLiteConnector":
         """Create SQLite connector."""
         return SQLiteConnector.from_parameters(self)
+
+    def db_url(self, ssl: bool = False, charset: Optional[str] = None):
+        return f"{self.driver}:///{self.path}"
 
 
 class SQLiteConnector(RDBMSConnector):

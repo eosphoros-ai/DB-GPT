@@ -151,16 +151,9 @@ async def model_list(controller: BaseModelController = Depends(get_model_control
         for model in models:
             worker_name, worker_type = model.model_name.split("@")
             if worker_type in WorkerType.values():
-                manager_host = model.host if manager_map.get(model.host) else None
+                manager_host = model.host if manager_map.get(model.host) else ""
                 manager_port = (
-                    manager_map[model.host].port
-                    if manager_map.get(model.host)
-                    else None
-                )
-                last_heartbeat = (
-                    model.last_heartbeat.strftime("%Y-%m-%d %H:%M:%S")
-                    if model.last_heartbeat
-                    else None
+                    manager_map[model.host].port if manager_map.get(model.host) else -1
                 )
                 response = ModelResponse(
                     model_name=worker_name,
@@ -171,7 +164,7 @@ async def model_list(controller: BaseModelController = Depends(get_model_control
                     manager_port=manager_port,
                     healthy=model.healthy,
                     check_healthy=model.check_healthy,
-                    last_heartbeat=last_heartbeat,
+                    last_heartbeat=model.str_last_heartbeat,
                     prompt_template=model.prompt_template,
                 )
                 responses.append(response)

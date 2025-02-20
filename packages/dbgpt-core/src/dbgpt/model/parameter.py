@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from dbgpt.core.interface.parameter import (
     BaseServerParameters,
@@ -10,6 +10,8 @@ from dbgpt.core.interface.parameter import (
     LLMDeployModelParameters,
     RerankerDeployModelParameters,
 )
+from dbgpt.datasource.parameter import BaseDatasourceParameters
+from dbgpt.util.configure.manager import RegisterParameters
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
 
@@ -66,74 +68,42 @@ class WorkerType(str, Enum):
 
 
 @dataclass
+class BaseModelRegistryParameters(BaseParameters, RegisterParameters):
+    """Base model registry parameters."""
+
+    __type__ = "___model_registry_placeholder___"
+
+    @classmethod
+    def _from_dict_(
+        cls, data: Dict, prepare_data_func, converter
+    ) -> Optional["BaseModelRegistryParameters"]:
+        db = data.get("database", None)
+        if db:
+            real_data = prepare_data_func(BaseDatasourceParameters, data["database"])
+            real_data["type"] = data["database"]["type"]
+            database = converter(real_data, BaseDatasourceParameters)
+            return DBModelRegistryParameters(database=database)
+        return None
+
+
+@dataclass
+class DBModelRegistryParameters(BaseModelRegistryParameters):
+    """Database model registry parameters."""
+
+    database: Optional[BaseDatasourceParameters] = field(
+        default=None, metadata={"help": _("Database configuration for model registry")}
+    )
+
+
+@dataclass
 class ModelControllerParameters(BaseServerParameters):
     port: Optional[int] = field(
         default=8000, metadata={"help": "Model Controller deploy port"}
     )
-    registry_type: Optional[str] = field(
-        default="embedded",
-        metadata={
-            "help": "Registry type: embedded, database...",
-            "valid_values": ["embedded", "database"],
-        },
-    )
-    registry_db_type: Optional[str] = field(
-        default="mysql",
-        metadata={
-            "help": "Registry database type, now only support sqlite and mysql, it is "
-            "valid when registry_type is database",
-            "valid_values": ["mysql", "sqlite"],
-        },
-    )
-    registry_db_name: Optional[str] = field(
-        default="dbgpt",
-        metadata={
-            "help": "Registry database name, just for database, it is valid when "
-            "registry_type is database, please set to full database path for sqlite"
-        },
-    )
-    registry_db_host: Optional[str] = field(
+    registry: Optional[BaseModelRegistryParameters] = field(
         default=None,
         metadata={
-            "help": "Registry database host, just for database, it is valid when "
-            "registry_type is database"
-        },
-    )
-    registry_db_port: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": "Registry database port, just for database, it is valid when "
-            "registry_type is database"
-        },
-    )
-    registry_db_user: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Registry database user, just for database, it is valid when "
-            "registry_type is database"
-        },
-    )
-    registry_db_password: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Registry database password, just for database, it is valid when "
-            "registry_type is database. We recommend to use environment variable to "
-            "store password, you can set it in your environment variable like "
-            "export CONTROLLER_REGISTRY_DB_PASSWORD='your_password'"
-        },
-    )
-    registry_db_pool_size: Optional[int] = field(
-        default=5,
-        metadata={
-            "help": "Registry database pool size, just for database, it is valid when "
-            "registry_type is database"
-        },
-    )
-    registry_db_max_overflow: Optional[int] = field(
-        default=10,
-        metadata={
-            "help": "Registry database max overflow, just for database, it is valid "
-            "when registry_type is database"
+            "help": _("Model registry configuration. If None, use embedded registry")
         },
     )
 
@@ -148,34 +118,15 @@ class ModelControllerParameters(BaseServerParameters):
         },
     )
 
-    log_file: Optional[str] = field(
-        default="dbgpt_model_controller.log",
-        metadata={
-            "help": "The filename to store log",
-        },
-    )
-    tracer_file: Optional[str] = field(
-        default="dbgpt_model_controller_tracer.jsonl",
-        metadata={
-            "help": "The filename to store tracer span records",
-        },
-    )
-    tracer_storage_cls: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The storage class to storage tracer span records",
-        },
-    )
-
 
 @dataclass
 class ModelAPIServerParameters(BaseServerParameters):
     port: Optional[int] = field(
-        default=8100, metadata={"help": "Model API server deploy port"}
+        default=8100, metadata={"help": _("Model API server deploy port")}
     )
     controller_addr: Optional[str] = field(
         default="http://127.0.0.1:8000",
-        metadata={"help": "The Model controller address to connect"},
+        metadata={"help": _("The Model controller address to connect")},
     )
 
     api_keys: Optional[str] = field(

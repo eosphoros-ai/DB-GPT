@@ -39,6 +39,9 @@ class SparkParameters(BaseDatasourceParameters):
         """Create Spark connector."""
         return SparkConnector.from_parameters(self)
 
+    def db_url(self, ssl=False, charset=None):
+        raise NotImplementedError("Spark does not support db_url")
+
 
 class SparkConnector(BaseConnector):
     """Spark Connector.

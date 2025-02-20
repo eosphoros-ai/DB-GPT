@@ -100,7 +100,7 @@ def stop_all():
 
 cli.add_command(start)
 cli.add_command(stop)
-cli.add_command(install)
+# cli.add_command(install)
 cli.add_command(db)
 cli.add_command(new)
 cli.add_command(app)

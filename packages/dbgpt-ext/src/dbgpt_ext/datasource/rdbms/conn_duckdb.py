@@ -27,10 +27,20 @@ class DuckDbConnectorParameters(BaseDatasourceParameters):
 
     __type__ = "duckdb"
     path: str = field(metadata={"description": _("Path to the DuckDB file.")})
+    driver: str = field(
+        default="duckdb",
+        metadata={
+            "help": _("Driver name for DuckDB, default is duckdb."),
+        },
+    )
 
     def create_connector(self) -> "DuckDbConnector":
         """Create DuckDB connector."""
         return DuckDbConnector.from_parameters(self)
+
+    def db_url(self, ssl=False, charset=None):
+        """Get the database URL."""
+        return f"{self.driver}:///{self.path}"
 
 
 class DuckDbConnector(RDBMSConnector):
