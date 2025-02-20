@@ -194,8 +194,7 @@ class Service(
                 status_code=400,
                 detail=f"there is no datasource name:{db_name} exists",
             )
-        update_req = DatasourceServeRequest(**persisted_state)
-        res = self._dao.update({"id": datasources.id}, update_req)
+        res = self._dao.update({"id": datasources.id}, persisted_state)
         return self._to_query_response(res)
 
     def get(self, datasource_id: str) -> Optional[DatasourceQueryResponse]:
