@@ -1769,6 +1769,9 @@ dependencies = [
 cache = [
     { name = "rocksdict" },
 ]
+dbgpts = [
+    { name = "poetry" },
+]
 default = [
     { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "simple-framework"] },
     { name = "dbgpt-ext", extra = ["rag", "storage-chromadb"] },
@@ -1799,6 +1802,7 @@ requires-dist = [
     { name = "opentelemetry-api", marker = "extra == 'observability'" },
     { name = "opentelemetry-exporter-otlp", marker = "extra == 'observability'" },
     { name = "opentelemetry-sdk", marker = "extra == 'observability'" },
+    { name = "poetry", marker = "extra == 'dbgpts'" },
     { name = "pyparsing" },
     { name = "rocksdict", marker = "extra == 'cache'" },
 ]

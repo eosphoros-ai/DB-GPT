@@ -38,6 +38,7 @@ from dbgpt_serve.core import BaseService, blocking_func_to_async
 from ..api.schemas import FlowDebugRequest, FlowInfo, ServeRequest, ServerResponse
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
+from .compat_service import register_compat_flow
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def before_start(self):
         """Execute before the application starts"""
         super().before_start()
+        # Register the compat flow at the beginning
+        register_compat_flow()
         self._pre_load_dag_from_db()
         self._pre_load_dag_from_dbgpts()
 

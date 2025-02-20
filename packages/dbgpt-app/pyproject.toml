@@ -50,6 +50,10 @@ default = [
     "dbgpt-ext[rag]",
     "dbgpt-ext[storage_chromadb]",
 ]
+dbgpts = [
+    # For build dbgpts apps, we will be removed in the future.
+    "poetry"
+]
 
 [tool.uv]
 managed = true

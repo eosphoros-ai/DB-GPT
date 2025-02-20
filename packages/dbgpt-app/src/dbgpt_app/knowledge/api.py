@@ -520,6 +520,7 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
     vector_store_connector = VectorStoreConnector(
         vector_store_type=CFG.VECTOR_STORE_TYPE,
         vector_store_config=config,
+        system_app=CFG.SYSTEM_APP,
     )
     retriever = EmbeddingRetriever(
         top_k=query_request.top_k, index_store=vector_store_connector.index_client

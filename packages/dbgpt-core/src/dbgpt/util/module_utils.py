@@ -1,3 +1,4 @@
+import fnmatch
 import importlib
 import inspect
 import logging
@@ -55,6 +56,8 @@ class ScannerConfig:
     class_filter: Optional[Callable[[Type], bool]] = None
     recursive: bool = False
     specific_files: Optional[List[str]] = None
+    # eg: ["test_*.py", "*_test.py"]
+    skip_files: Optional[List[str]] = None
 
 
 class ModelScanner(Generic[T]):
@@ -103,6 +106,27 @@ class ModelScanner(Generic[T]):
             return False
 
         return True
+
+    def _should_skip_file(
+        self, file_name: str, skip_files: Optional[List[str]]
+    ) -> bool:
+        """Check if a file should be skipped based on skip_files patterns.
+
+        Args:
+            file_name: Name of the file to check
+            skip_files: List of file patterns to skip
+
+        Returns:
+            bool: True if the file should be skipped
+        """
+        if not skip_files:
+            return False
+
+        for pattern in skip_files:
+            if fnmatch.fnmatch(file_name, pattern):
+                return True
+
+        return False
 
     def _scan_module(
         self, module: ModuleType, config: ScannerConfig
@@ -179,6 +203,11 @@ class ModelScanner(Generic[T]):
             if item.name.startswith("__"):
                 continue
 
+            # Skip files that match any of the skip_files patterns
+            if self._should_skip_file(item.name, config.skip_files):
+                logger.debug(f"Skipping file {item.name} due to skip_files pattern")
+                continue
+
             try:
                 # Get the module name relative to the base module
                 module_file = os.path.relpath(str(item), base_dir)
@@ -189,7 +218,8 @@ class ModelScanner(Generic[T]):
 
                 module_results = self._scan_module(module, config)
                 for key, value in module_results.items():
-                    results[key] = value
+                    real_key = f"{full_module_path}.{key}"
+                    results[real_key] = value
             except Exception as e:
                 logger.warning(f"Error scanning module {full_module_path}: {str(e)}")
 

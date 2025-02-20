@@ -103,7 +103,7 @@ class ChatCompletionStreamResponse(BaseModel):
     choices: List[ChatCompletionResponseStreamChoice] = Field(
         ..., description="Chat completion response choices"
     )
-    usage: UsageInfo = Field(..., description="Usage info")
+    usage: UsageInfo = Field(default_factory=UsageInfo, description="Usage info")
 
 
 class ChatMessage(BaseModel):

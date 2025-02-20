@@ -129,13 +129,13 @@ class AppManager(BaseComponent, ABC):
             agent = await create_agent_from_gpt_detail(
                 record, llm_provider, context, agent_memory
             )
-            agent.name_prefix = gpts_app.app_name
+            # agent.name_prefix = gpts_app.app_name
             employees.append(agent)
 
         app_agent: ConversableAgent = await create_agent_of_gpts_app(
             gpts_app, llm_provider, context, agent_memory, employees
         )
-        app_agent.name_prefix = gpts_app.app_name
+        # app_agent.name_prefix = gpts_app.app_name
         return app_agent
 
     async def create_agent_by_app_code(

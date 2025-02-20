@@ -425,7 +425,9 @@ class KnowledgeService:
             conn_manager.delete_db(f"{space.name}_fin_report")
 
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type, vector_store_config=config
+            vector_store_type=space.vector_type,
+            vector_store_config=config,
+            system_app=CFG.SYSTEM_APP,
         )
         # delete vectors
         vector_store_connector.delete_vector_name(space.name)
@@ -470,7 +472,9 @@ class KnowledgeService:
                 model_name=None,
             )
             vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type, vector_store_config=config
+                vector_store_type=space.vector_type,
+                vector_store_config=config,
+                system_app=CFG.SYSTEM_APP,
             )
             # delete vector by ids
             vector_store_connector.delete_by_ids(vector_ids)
@@ -643,7 +647,9 @@ class KnowledgeService:
         )
 
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type, vector_store_config=config
+            vector_store_type=space.vector_type,
+            vector_store_config=config,
+            system_app=CFG.SYSTEM_APP,
         )
         graph = vector_store_connector.client.query_graph(limit=limit)
         res = {"nodes": [], "edges": []}

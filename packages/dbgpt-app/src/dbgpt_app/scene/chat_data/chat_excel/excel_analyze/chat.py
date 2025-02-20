@@ -1,14 +1,12 @@
 import logging
 from typing import Dict
 
-from dbgpt._private.config import Config
+from dbgpt import SystemApp
 from dbgpt.agent.util.api_call import ApiCall
 from dbgpt.util.tracer import root_tracer, trace
 from dbgpt_app.scene import BaseChat, ChatScene
 from dbgpt_app.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from dbgpt_app.scene.chat_data.chat_excel.excel_reader import ExcelReader
-
-CFG = Config()
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,7 @@ class ChatExcel(BaseChat):
     keep_start_rounds = 1
     keep_end_rounds = 2
 
-    def __init__(self, chat_param: Dict):
+    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
         """Chat Excel Module Initialization
         Args:
            - chat_param: Dict
@@ -41,7 +39,7 @@ class ChatExcel(BaseChat):
         )
 
         self.api_call = ApiCall()
-        super().__init__(chat_param=chat_param)
+        super().__init__(chat_param=chat_param, system_app=system_app)
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -65,7 +63,7 @@ class ChatExcel(BaseChat):
             "model_name": self.model_name,
             "user_name": self.chat_param.get("user_name", None),
         }
-        learn_chat = ExcelLearning(**chat_param)
+        learn_chat = ExcelLearning(**chat_param, system_app=self.system_app)
         result = await learn_chat.nostream_call()
         return result
 

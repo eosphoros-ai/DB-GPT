@@ -88,6 +88,11 @@ def net():
     pass
 
 
+@click.group()
+def tool():
+    """DB-GPT Tools."""
+
+
 stop_all_func_list = []
 
 
@@ -107,6 +112,7 @@ cli.add_command(app)
 cli.add_command(repo)
 cli.add_command(run)
 cli.add_command(net)
+cli.add_command(tool)
 add_command_alias(stop_all, name="all", parent_group=stop)
 
 try:
@@ -175,6 +181,7 @@ except ImportError as e:
 
 
 try:
+    from dbgpt.util.cli.flow_compat import tool_flow_cli_group
     from dbgpt.util.dbgpts.cli import (
         add_repo,
         list_installed_apps,
@@ -196,6 +203,7 @@ try:
     add_command_alias(app_list_remote, name="list-remote", parent_group=app)
     add_command_alias(list_installed_apps, name="list", parent_group=app)
     add_command_alias(new_dbgpts, name="app", parent_group=new)
+    add_command_alias(tool_flow_cli_group, name="flow", parent_group=tool)
 
 except ImportError as e:
     logging.warning(f"Integrating dbgpt dbgpts command line tool failed: {e}")
