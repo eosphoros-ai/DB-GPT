@@ -1,7 +1,6 @@
 from typing import List, Optional
 
-from dbgpt._private.config import Config
-from dbgpt.component import ComponentType
+from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import Chunk
 from dbgpt.model import DefaultLLMClient
@@ -16,8 +15,6 @@ from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
 from dbgpt_serve.rag.retriever.qa_retriever import QARetriever
 from dbgpt_serve.rag.retriever.retriever_chain import RetrieverChain
 
-CFG = Config()
-
 
 class KnowledgeSpaceRetriever(BaseRetriever):
     """Knowledge Space retriever."""
@@ -29,6 +26,8 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         query_rewrite: Optional[QueryRewrite] = None,
         rerank: Optional[Ranker] = None,
         llm_model: Optional[str] = None,
+        embedding_model: Optional[str] = None,
+        system_app: SystemApp = None,
     ):
         """
         Args:
@@ -40,21 +39,28 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         if space_id is None:
             raise ValueError("space_id is required")
         self._space_id = space_id
-        self._top_k = top_k
         self._query_rewrite = query_rewrite
         self._rerank = rerank
         self._llm_model = llm_model
-        embedding_factory = CFG.SYSTEM_APP.get_component(
+        app_config = system_app.config.configs.get("app_config")
+        self._top_k = top_k or app_config.service.web.rag.knowledge_search_top_k
+        self._embedding_model = embedding_model or app_config.models.default_embedding
+        self._system_app = system_app
+        embedding_factory = self._system_app.get_component(
             "embedding_factory", EmbeddingFactory
         )
         embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+            model_name=EMBEDDING_MODEL_CONFIG[self._embedding_model]
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         space_dao = KnowledgeSpaceDao()
         space = space_dao.get_one({"id": space_id})
-        worker_manager = CFG.SYSTEM_APP.get_component(
+        if space is None:
+            space = space_dao.get_one({"name": space_id})
+        if space is None:
+            raise ValueError(f"Knowledge space {space_id} not found")
+        worker_manager = self._system_app.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         llm_client = DefaultLLMClient(worker_manager=worker_manager)
@@ -68,17 +74,23 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         self._vector_store_connector = VectorStoreConnector(
             vector_store_type=space.vector_type,
             vector_store_config=config,
+            system_app=self._system_app,
         )
-        self._executor = CFG.SYSTEM_APP.get_component(
+        self._executor = self._system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
 
         self._retriever_chain = RetrieverChain(
             retrievers=[
-                QARetriever(space_id=space_id, top_k=top_k, embedding_fn=embedding_fn),
+                QARetriever(
+                    space_id=space_id,
+                    top_k=self._top_k,
+                    embedding_fn=embedding_fn,
+                    system_app=system_app,
+                ),
                 EmbeddingRetriever(
                     index_store=self._vector_store_connector.index_client,
-                    top_k=top_k,
+                    top_k=self._top_k,
                     query_rewrite=self._query_rewrite,
                     rerank=self._rerank,
                 ),

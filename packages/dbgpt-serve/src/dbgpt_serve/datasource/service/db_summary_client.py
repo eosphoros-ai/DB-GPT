@@ -4,18 +4,16 @@ import logging
 import traceback
 from typing import Tuple
 
-from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.summary.gdbms_db_summary import GdbmsSummary
 from dbgpt_ext.rag.summary.rdbms_db_summary import RdbmsSummary
+from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
 logger = logging.getLogger(__name__)
-
-CFG = Config()
 
 
 class DBSummaryClient:
@@ -35,11 +33,14 @@ class DBSummaryClient:
         self.system_app = system_app
         from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
+        self.app_config = self.system_app.config.configs.get("app_config")
+        llm_config = self.app_config.models
+        self.storage_config = self.app_config.service.web.storage
         embedding_factory: EmbeddingFactory = self.system_app.get_component(
             "embedding_factory", component_type=EmbeddingFactory
         )
         self.embeddings = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+            model_name=EMBEDDING_MODEL_CONFIG[llm_config.default_embedding]
         )
 
     def db_summary_embedding(self, dbname, db_type):
@@ -77,7 +78,8 @@ class DBSummaryClient:
 
     def init_db_summary(self):
         """Initialize db summary profile."""
-        db_mange = CFG.local_db_manager
+        local_db_manager = ConnectorManager.get_instance(self.system_app)
+        db_mange = local_db_manager
         dbs = db_mange.get_db_list()
         for item in dbs:
             try:
@@ -112,7 +114,7 @@ class DBSummaryClient:
                 table_vector_store_connector=table_vector_connector.index_client,
                 field_vector_store_connector=field_vector_connector.index_client,
                 chunk_parameters=chunk_parameters,
-                max_seq_length=CFG.EMBEDDING_MODEL_MAX_SEQ_LEN,
+                max_seq_length=self.app_config.service.web.embedding_model_max_seq_len,
             )
 
             if len(db_assembler.get_chunks()) > 0:
@@ -156,15 +158,17 @@ class DBSummaryClient:
         vector_store_name = dbname + "_profile"
         table_vector_store_config = VectorStoreConfig(name=vector_store_name)
         table_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
+            self.storage_config.vector_store_type,
             self.embeddings,
             vector_store_config=table_vector_store_config,
+            system_app=self.system_app,
         )
         field_vector_store_name = dbname + "_profile_field"
         field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
         field_vector_connector = VectorStoreConnector.from_default(
-            CFG.VECTOR_STORE_TYPE,
+            self.app_config.service.web.storage.vector_store_type,
             self.embeddings,
             vector_store_config=field_vector_store_config,
+            system_app=self.system_app,
         )
         return table_vector_connector, field_vector_connector

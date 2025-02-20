@@ -144,11 +144,25 @@ def register_serve_apps(
 
     from dbgpt_serve.rag.serve import Serve as RagServe
 
+    rag_config = app_config.service.web.rag
+    llm_configs = app_config.models
+
     # Register serve app
     system_app.register(
         RagServe,
         config=get_config(
-            serve_configs, RagServe.name, dbgpt_serve.rag.serve.ServeConfig
+            serve_configs,
+            RagServe.name,
+            dbgpt_serve.rag.serve.ServeConfig,
+            embedding_model=llm_configs.default_embedding,
+            rerank_model=llm_configs.default_reranker,
+            knowledge_chunk_size=rag_config.knowledge_chunk_size,
+            knowledge_chunk_overlap=rag_config.knowledge_chunk_overlap,
+            knowledge_search_top_k=rag_config.knowledge_search_top_k,
+            knowledge_search_rewrite=rag_config.knowledge_search_rewrite,
+            knowledge_max_chunks_once_load=rag_config.knowledge_max_chunks_once_load,
+            knowledge_max_threads=rag_config.knowledge_max_threads,
+            knowledge_rerank_top_k=rag_config.knowledge_rerank_top_k,
         ),
     )
 
@@ -227,11 +241,17 @@ def register_serve_apps(
     # ################################ Evaluate Serve Register Begin ##################
     from dbgpt_serve.evaluate.serve import Serve as EvaluateServe
 
+    rag_config = app_config.service.web.rag
+    llm_configs = app_config.models
     # Register serve Evaluate
     system_app.register(
         EvaluateServe,
         config=get_config(
-            serve_configs, EvaluateServe.name, dbgpt_serve.evaluate.serve.ServeConfig
+            serve_configs,
+            EvaluateServe.name,
+            dbgpt_serve.evaluate.serve.ServeConfig,
+            embedding_model=llm_configs.default_embedding,
+            knowledge_search_top_k=rag_config.knowledge_search_top_k,
         ),
     )
     # ################################ Evaluate Serve Register End ####################

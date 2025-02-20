@@ -294,5 +294,7 @@ if __name__ == "__main__":
     args = parse_args()
     # Load configuration with specified config file
     app_config = load_config(args.config)
+    config = system_app.config
+    config.configs["app_config"] = app_config
     set_default_language(app_config.system.language)
     run_webserver(app_config)
