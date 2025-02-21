@@ -72,7 +72,7 @@ class TuGraphStoreConfig(GraphStoreConfig):
         description="Enable graph community summary or not.",
     )
     enable_similarity_search: bool = Field(
-        default=True,
+        default=False,
         description="Enable the similarity search or not",
     )
 

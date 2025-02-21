@@ -13,7 +13,6 @@ from dbgpt.util.parameter_utils import BaseParameters
 from dbgpt.util.tracer import TracerParameters
 from dbgpt.util.utils import LoggingParameters
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
-from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt_serve.core import BaseServeConfig
 
 
@@ -48,14 +47,50 @@ class SystemParameters:
 
 
 @dataclass
+class StorageVectorConfig(BaseParameters):
+    type: str = field(
+        default="Chroma",
+        metadata={
+            "help": _("default vector type"),
+        },
+    )
+
+
+@dataclass
+class StorageGraphConfig(BaseParameters):
+    type: str = field(
+        default="TuGraph",
+        metadata={
+            "help": _("default graph type"),
+        },
+    )
+
+
+@dataclass
+class StorageConfig(BaseParameters):
+    vector: StorageVectorConfig = field(
+        default_factory=StorageVectorConfig,
+        metadata={
+            "help": _("default vector type"),
+        },
+    )
+    graph: StorageGraphConfig = field(
+        default_factory=StorageGraphConfig,
+        metadata={
+            "help": _("default graph type"),
+        },
+    )
+
+
+@dataclass
 class RagParameters(BaseParameters):
     """Rag configuration."""
 
-    knowledge_chunk_size: Optional[int] = field(
+    chunk_size: Optional[int] = field(
         default=500,
         metadata={"help": _("Whether to verify the SSL certificate of the database")},
     )
-    knowledge_chunk_overlap: Optional[int] = field(
+    chunk_overlap: Optional[int] = field(
         default=50,
         metadata={
             "help": _(
@@ -64,37 +99,35 @@ class RagParameters(BaseParameters):
             )
         },
     )
-    knowledge_search_top_k: Optional[int] = field(
+    similarity_top_k: Optional[int] = field(
         default=10,
         metadata={"help": _("knowledge search top k")},
     )
-    knowledge_search_similarity_score: Optional[int] = field(
+    similarity_score_threshold: Optional[int] = field(
         default=0.0,
         metadata={"help": _("knowledge search top similarity score")},
     )
-    knowledge_search_rewrite: Optional[bool] = field(
+    query_rewrite: Optional[bool] = field(
         default=False,
         metadata={"help": _("knowledge search rewrite")},
     )
-    knowledge_max_chunks_once_load: Optional[int] = field(
+    max_chunks_once_load: Optional[int] = field(
         default=10,
         metadata={"help": _("knowledge max chunks once load")},
     )
-    knowledge_max_threads: Optional[int] = field(
+    max_threads: Optional[int] = field(
         default=1,
         metadata={"help": _("knowledge max load thread")},
     )
-    knowledge_rerank_top_k: Optional[int] = field(
+    rerank_top_k: Optional[int] = field(
         default=3,
         metadata={"help": _("knowledge rerank top k")},
     )
-
-
-@dataclass
-class GraphRagParameters(BaseParameters):
-    """Graph Rag configuration."""
-
-    knowledge_graph_search_top_k: Optional[int] = field(
+    storage: StorageConfig = field(
+        default_factory=lambda: StorageConfig(),
+        metadata={"help": _("Storage configuration")},
+    )
+    graph_search_top_k: Optional[int] = field(
         default=3,
         metadata={"help": _("knowledge graph search top k")},
     )
@@ -102,17 +135,6 @@ class GraphRagParameters(BaseParameters):
         default=False,
         metadata={"help": _("graph community summary enabled")},
     )
-
-
-@dataclass
-class StorageConfig(BaseParameters):
-    vector_store_type: str = field(
-        default="Chroma",
-        metadata={
-            "help": _("default vector type"),
-        },
-    )
-    chroma: ChromaVectorConfig = field(default_factory=ChromaVectorConfig)
 
 
 @dataclass
@@ -153,14 +175,6 @@ class ServiceWebParameters(BaseParameters):
             ),
             "valid_values": ["database", "memory"],
         },
-    )
-    rag: RagParameters = field(
-        default_factory=lambda: RagParameters(),
-        metadata={"help": _("Rag Knowledge Parameters")},
-    )
-    graph_rag: GraphRagParameters = field(
-        default_factory=lambda: GraphRagParameters(),
-        metadata={"help": _("Graph Rag Parameters")},
     )
     trace: Optional[TracerParameters] = field(
         default=None,
@@ -235,10 +249,6 @@ class ServiceWebParameters(BaseParameters):
             "help": _("The max sequence length of the embedding model, default is 512")
         },
     )
-    storage: StorageConfig = field(
-        default_factory=StorageConfig,
-        metadata={"help": _("Storage configuration")},
-    )
 
 
 @dataclass
@@ -285,6 +295,10 @@ class ApplicationConfig:
         metadata={
             "help": _("Serve configuration"),
         },
+    )
+    rag: RagParameters = field(
+        default_factory=lambda: RagParameters(),
+        metadata={"help": _("Rag Knowledge Parameters")},
     )
     trace: TracerParameters = field(
         default_factory=TracerParameters,

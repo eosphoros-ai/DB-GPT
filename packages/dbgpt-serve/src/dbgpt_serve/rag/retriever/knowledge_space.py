@@ -42,7 +42,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         self._rerank = rerank
         self._llm_model = llm_model
         app_config = system_app.config.configs.get("app_config")
-        self._top_k = top_k or app_config.service.web.rag.knowledge_search_top_k
+        self._top_k = top_k or app_config.rag.similarity_top_k
         self._embedding_model = embedding_model or app_config.models.default_embedding
         self._system_app = system_app
         embedding_factory = self._system_app.get_component(

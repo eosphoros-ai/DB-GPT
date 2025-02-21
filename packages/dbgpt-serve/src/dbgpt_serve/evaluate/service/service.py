@@ -121,7 +121,7 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
                 embeddings=embeddings,
                 operator_kwargs={
                     "space_id": str(scene_value),
-                    "top_k": self._serve_config.knowledge_search_top_k,
+                    "top_k": self._serve_config.similarity_top_k,
                     "vector_store_connector": vector_store_connector,
                 },
             )

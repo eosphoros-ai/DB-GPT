@@ -229,12 +229,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
                 space_context = self.get_space_context(space_id)
                 chunk_parameters.chunk_size = (
-                    self._serve_config.knowledge_chunk_size
+                    self._serve_config.chunk_size
                     if space_context is None
                     else int(space_context["embedding"]["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
-                    self._serve_config.knowledge_chunk_overlap
+                    self._serve_config.chunk_overlap
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
@@ -478,12 +478,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
                 space_context = self.get_space_context(space_id)
                 chunk_parameters.chunk_size = (
-                    self._serve_config.knowledge_chunk_size
+                    self._serve_config.chunk_size
                     if space_context is None
                     else int(space_context["embedding"]["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
-                    self._serve_config.knowledge_chunk_overlap
+                    self._serve_config.chunk_overlap
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
@@ -508,8 +508,8 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         config = VectorStoreConfig(
             name=space.name,
             embedding_fn=embedding_fn,
-            max_chunks_once_load=self._serve_config.knowledge_max_chunks_once_load,
-            max_threads=self._serve_config.knowledge_max_threads,
+            max_chunks_once_load=self._serve_config.max_chunks_once_load,
+            max_threads=self._serve_config.max_threads,
             llm_client=self.llm_client,
             model_name=None,
         )
@@ -635,7 +635,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         reranker: Optional[RerankEmbeddingsRanker] = None
         top_k = request.top_k
         if self._serve_config.rerank_model:
-            reranker_top_k = self._serve_config.knowledge_rerank_top_k
+            reranker_top_k = self._serve_config.rerank_top_k
             rerank_embeddings = RerankEmbeddingFactory.get_instance(
                 self._system_app
             ).create()

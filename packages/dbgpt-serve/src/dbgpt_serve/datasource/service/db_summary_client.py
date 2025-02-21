@@ -34,7 +34,7 @@ class DBSummaryClient:
         self.system_app = system_app
 
         self.app_config = self.system_app.config.configs.get("app_config")
-        self.storage_config = self.app_config.service.web.storage
+        self.storage_config = self.app_config.rag.storage
 
     @property
     def embeddings(self) -> Embeddings:
@@ -159,7 +159,7 @@ class DBSummaryClient:
         vector_store_name = dbname + "_profile"
         table_vector_store_config = VectorStoreConfig(name=vector_store_name)
         table_vector_connector = VectorStoreConnector.from_default(
-            self.storage_config.vector_store_type,
+            self.storage_config.vector.type,
             self.embeddings,
             vector_store_config=table_vector_store_config,
             system_app=self.system_app,
@@ -167,7 +167,7 @@ class DBSummaryClient:
         field_vector_store_name = dbname + "_profile_field"
         field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
         field_vector_connector = VectorStoreConnector.from_default(
-            self.app_config.service.web.storage.vector_store_type,
+            self.storage_config.vector.type,
             self.embeddings,
             vector_store_config=field_vector_store_config,
             system_app=self.system_app,
