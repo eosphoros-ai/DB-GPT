@@ -120,11 +120,12 @@ llama_cpp_server = [
 ]
 proxy_ollama = ["ollama"]
 proxy_zhipuai = ["zhipuai"]
-proxy_tongyi = ["dashscope"]
+proxy_tongyi = ["openai"] # tongyi supported by openai package
 proxy_qianfan = ["qianfan"]
 proxy_openai = [
     "openai>=1.59.6",
     "tiktoken>=0.8.0",
+     "httpx[socks]",
 ]
 proxy_anthropic = ["anthropic"]
 

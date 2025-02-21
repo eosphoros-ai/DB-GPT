@@ -3,6 +3,8 @@
 from typing import List, Dict, Any
 import asyncio
 import os
+from pathlib import Path
+from typing import NamedTuple, List
 import argparse
 from dbgpt.core import (
     SystemPromptTemplate,
@@ -20,8 +22,8 @@ from dbgpt.core.awel import (
     JoinOperator,
     IteratorTrigger,
 )
+from dbgpt.model import AdaptiveLLMClient
 from dbgpt.model.operators import LLMOperator
-from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.model.proxy.base import TiktokenProxyTokenizer
 
 
@@ -65,6 +67,7 @@ msgstr ""
 - 以下是常见的 AI 相关术语词汇对应表：
 {vocabulary}
 - 如果已经存在对应的翻译( msgstr 不为空)，请你分析原文和翻译，看看是否有更好的翻译方式，如果有请进行修改。
+- 直接给我内容，不要包含在markdown代码块中，具体参考样例。
 
 
 策略：保持原有格式，不要遗漏任何信息，遵守原意的前提下让内容更通俗易懂、符合{language}表达习惯，但要保留原有格式不变。
@@ -168,6 +171,76 @@ vocabulary_map = {
 }
 
 
+class ModuleInfo(NamedTuple):
+    """Module information container"""
+    base_module: str    # Base module name (e.g., dbgpt)
+    sub_module: str     # Sub module name (e.g., core) or file name without .py
+    full_path: str      # Full path to the module or file
+
+def find_modules(root_path: str = None) -> List[ModuleInfo]:
+    """
+    Find all DBGpt modules, including:
+    1. First-level submodules (directories with __init__.py)
+    2. Python files directly under base module directory
+    
+    Args:
+        root_path: Root path containing the packages directory. If None, uses current ROOT_PATH
+        
+    Returns:
+        List of ModuleInfo containing module details
+    """
+    if root_path is None:
+        from dbgpt.configs.model_config import ROOT_PATH
+        root_path = ROOT_PATH
+        
+    base_path = Path(root_path) / "packages"
+    all_modules = []
+    
+    # Iterate through all packages
+    for pkg_dir in base_path.iterdir():
+        if not pkg_dir.is_dir():
+            continue
+            
+        src_dir = pkg_dir / "src"
+        if not src_dir.is_dir():
+            continue
+            
+        # Find the base module directory
+        try:
+            base_module_dir = next(src_dir.iterdir())
+            if not base_module_dir.is_dir():
+                continue
+                
+            # Check if it's a Python module
+            if not (base_module_dir / "__init__.py").exists():
+                continue
+            
+            # Scan first-level submodules (directories)
+            for item in base_module_dir.iterdir():
+                # Handle directories with __init__.py
+                if (item.is_dir() and 
+                    not item.name.startswith('__') and 
+                    (item / "__init__.py").exists()):
+                    all_modules.append(ModuleInfo(
+                        base_module=base_module_dir.name,
+                        sub_module=item.name,
+                        full_path=str(item.absolute())
+                    ))
+                # Handle Python files (excluding __init__.py and private files)
+                elif (item.is_file() and 
+                      item.suffix == '.py' and 
+                      not item.name.startswith('__')):
+                    all_modules.append(ModuleInfo(
+                        base_module=base_module_dir.name,
+                        sub_module=item.stem,  # filename without .py
+                        full_path=str(item.absolute())
+                    ))
+            
+        except StopIteration:
+            continue
+            
+    return sorted(all_modules, key=lambda x: (x.base_module, x.sub_module))
+
 class ReadPoFileOperator(MapOperator[str, List[str]]):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -222,13 +295,11 @@ def extract_messages_with_comments(lines: List[str]):
 class BatchOperator(JoinOperator[str]):
     def __init__(
         self,
-        llm_client: LLMClient,
-        model_name: str = "gpt-3.5-turbo",  # or "gpt-4"
+        model_name: str = "deepseek-chat",  # or "gpt-4"
         max_new_token: int = 4096,
         **kwargs,
     ):
         self._tokenizer = TiktokenProxyTokenizer()
-        self._llm_client = llm_client
         self._model_name = model_name
         self._max_new_token = max_new_token
         super().__init__(combine_function=self.batch_run, **kwargs)
@@ -236,25 +307,33 @@ class BatchOperator(JoinOperator[str]):
     async def batch_run(self, blocks: List[str], ext_dict: Dict[str, Any]) -> str:
         max_new_token = ext_dict.get("max_new_token", self._max_new_token)
         parallel_num = ext_dict.get("parallel_num", 5)
+        provider = ext_dict.get("provider", "proxy/deepseek")
         model_name = ext_dict.get("model_name", self._model_name)
-        batch_blocks = await self.split_blocks(blocks, model_name, max_new_token)
+        support_system_role = ext_dict.get("support_system_role", True)
+        llm_client = AdaptiveLLMClient(provider=provider, name=model_name)
+        batch_blocks = await self.split_blocks(llm_client, blocks, model_name, max_new_token)
         new_blocks = []
         for block in batch_blocks:
             new_blocks.append({"user_input": "".join(block), **ext_dict})
+        if support_system_role:
+            messages = [
+                SystemPromptTemplate.from_template(PROMPT_ZH),
+                HumanPromptTemplate.from_template("{user_input}"),
+            ]
+        else:
+            new_temp = PROMPT_ZH + "\n\n" + "{user_input}"
+            messages = [HumanPromptTemplate.from_template(new_temp)]
         with DAG("split_blocks_dag"):
             trigger = IteratorTrigger(data=InputSource.from_iterable(new_blocks))
             prompt_task = PromptBuilderOperator(
                 ChatPromptTemplate(
-                    messages=[
-                        SystemPromptTemplate.from_template(PROMPT_ZH),
-                        HumanPromptTemplate.from_template("{user_input}"),
-                    ],
+                    messages=messages,
                 )
             )
             model_pre_handle_task = RequestBuilderOperator(
                 model=model_name, temperature=0.1, max_new_tokens=4096
             )
-            llm_task = LLMOperator(OpenAILLMClient())
+            llm_task = LLMOperator(llm_client)
             out_parse_task = OutputParser()
 
             (
@@ -271,14 +350,14 @@ class BatchOperator(JoinOperator[str]):
         return "\n\n".join(outs)
 
     async def split_blocks(
-        self, blocks: List[str], model_nam: str, max_new_token: int
+        self, llm_client: AdaptiveLLMClient, blocks: List[str], model_nam: str, max_new_token: int
     ) -> List[List[str]]:
         batch_blocks = []
         last_block_end = 0
         while last_block_end < len(blocks):
             start = last_block_end
             split_point = await self.bin_search(
-                blocks[start:], model_nam, max_new_token
+                llm_client, blocks[start:], model_nam, max_new_token
             )
             new_end = start + split_point + 1
             batch_blocks.append(blocks[start:new_end])
@@ -289,7 +368,7 @@ class BatchOperator(JoinOperator[str]):
 
         # Check all blocks are within the token limit
         for block in batch_blocks:
-            block_tokens = await self._llm_client.count_token(model_nam, "".join(block))
+            block_tokens = await llm_client.count_token(model_nam, "".join(block))
             if block_tokens > max_new_token:
                 raise ValueError(
                     f"Block size {block_tokens} exceeds the max token limit "
@@ -298,13 +377,13 @@ class BatchOperator(JoinOperator[str]):
         return batch_blocks
 
     async def bin_search(
-        self, blocks: List[str], model_nam: str, max_new_token: int
+        self, llm_client: AdaptiveLLMClient, blocks: List[str], model_nam: str, max_new_token: int
     ) -> int:
         """Binary search to find the split point."""
         l, r = 0, len(blocks) - 1
         while l < r:
             mid = l + r + 1 >> 1
-            current_tokens = await self._llm_client.count_token(
+            current_tokens = await llm_client.count_token(
                 model_nam, "".join(blocks[: mid + 1])
             )
             if current_tokens <= max_new_token:
@@ -332,21 +411,26 @@ class SaveTranslatedPoFileOperator(JoinOperator[str]):
             self._save_file, translated_content, file_path
         )
 
-    def _save_file(self, translated_content: str, file_path: str) -> str:
+    def _save_file(self, translated_content: str, params) -> str:
+        file_path = params["file_path"]
+        override = params["override"]
         output_file = file_path.replace(".po", "_ai_translated.po")
         with open(output_file, "w") as f:
             f.write(translated_content)
+        if override:
+            # Override the original file
+            with open(file_path, "w") as f:
+                f.write(translated_content)
         return translated_content
 
 
 with DAG("translate_po_dag") as dag:
     # Define the nodes
-    llm_client = OpenAILLMClient()
     input_task = InputOperator(input_source=InputSource.from_callable())
     read_po_file_task = ReadPoFileOperator()
     parse_po_file_task = ParsePoFileOperator()
     # ChatGPT can't work if the max_new_token is too large
-    batch_task = BatchOperator(llm_client, max_new_token=1024)
+    batch_task = BatchOperator(max_new_token=1024)
     save_translated_po_file_task = SaveTranslatedPoFileOperator()
     (
         input_task
@@ -358,7 +442,7 @@ with DAG("translate_po_dag") as dag:
     input_task >> MapOperator(lambda x: x["ext_dict"]) >> batch_task
 
     batch_task >> save_translated_po_file_task
-    input_task >> MapOperator(lambda x: x["file_path"]) >> save_translated_po_file_task
+    input_task >> MapOperator(lambda x: {"file_path": x["file_path"], "override": x["override"]}) >> save_translated_po_file_task
 
 
 async def run_translate_po_dag(
@@ -368,11 +452,22 @@ async def run_translate_po_dag(
     module_name: str,
     max_new_token: int = 1024,
     parallel_num=10,
-    model_name: str = "gpt-3.5-turbo",
+    provider: int = "proxy/deepseek",
+    model_name: str = "deepseek-chat",
+    override: bool=False,
+    support_system_role: bool = True,
 ):
+    from dbgpt.configs.model_config import ROOT_PATH
+    if "zhipu" in provider:
+        support_system_role = False
+
+    module_name = module_name.replace(".", "_")
     full_path = os.path.join(
-        "./locales", language, "LC_MESSAGES", f"dbgpt_{module_name}.po"
+        ROOT_PATH, "i18n", "locales", language, "LC_MESSAGES", f"{module_name}.po"
     )
+    if not os.path.exists(full_path):
+        print(f"File {full_path} not exists.")
+        return
     vocabulary = vocabulary_map.get(language, vocabulary_map["default"])
     vocabulary_str = "\n".join([f"  * {k} -> {v}" for k, v in vocabulary.items()])
     ext_dict = {
@@ -386,32 +481,23 @@ async def run_translate_po_dag(
         "example_2_output": example_2_output,
         "max_new_token": max_new_token,
         "parallel_num": parallel_num,
+        "provider": provider,
         "model_name": model_name,
+        "support_system_role": support_system_role,
     }
     try:
-        result = await task.call({"file_path": full_path, "ext_dict": ext_dict})
+        result = await task.call({"file_path": full_path, "ext_dict": ext_dict, "override": override})
         return result
     except Exception as e:
         print(f"Error in {module_name}: {e}")
 
 
 if __name__ == "__main__":
-    all_modules = [
-        "agent",
-        "app",
-        "cli",
-        "client",
-        "configs",
-        "core",
-        "datasource",
-        "model",
-        "rag",
-        "serve",
-        "storage",
-        "train",
-        "util",
-        "vis",
-    ]
+
+    from dbgpt.configs.model_config import ROOT_PATH
+
+    all_modules = find_modules(ROOT_PATH)
+    str_all_modules = [f"{m.base_module}.{m.sub_module}" for m in all_modules]
     lang_map = {
         "zh_CN": "简体中文",
         "ja": "日本語",
@@ -424,7 +510,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--modules",
         type=str,
-        default=",".join(all_modules),
+        default=",".join(str_all_modules),
         help="Modules to translate, 'all' for all modules, split by ','.",
     )
     parser.add_argument(
@@ -435,16 +521,18 @@ if __name__ == "__main__":
     )
     parser.add_argument("--max_new_token", type=int, default=1024)
     parser.add_argument("--parallel_num", type=int, default=10)
-    parser.add_argument("--model_name", type=str, default="gpt-3.5-turbo")
+    parser.add_argument("--provider", type=str, default="proxy/deepseek")
+    parser.add_argument("--model_name", type=str, default="deepseek-chat")
+    parser.add_argument("--override", action="store_true")
 
     args = parser.parse_args()
     print(f"args: {args}")
 
-    # model_name = "gpt-3.5-turbo"
-    # model_name = "gpt-4"
+    provider = args.provider
     model_name = args.model_name
+    override = args.override
     # modules = ["app", "core", "model", "rag", "serve", "storage", "util"]
-    modules = all_modules if args.modules == "all" else args.modules.strip().split(",")
+    modules = str_all_modules if args.modules == "all" else args.modules.strip().split(",")
     max_new_token = args.max_new_token
     parallel_num = args.parallel_num
     langs = lang_map.keys() if args.lang == "all" else args.lang.strip().split(",")
@@ -466,6 +554,8 @@ if __name__ == "__main__":
                     module,
                     max_new_token,
                     parallel_num,
+                    provider,
                     model_name,
+                    override=override
                 )
             )

@@ -4,7 +4,7 @@ import gettext
 import inspect
 import os
 from functools import cache
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 from dbgpt.configs.model_config import LOCALES_DIR, ROOT_PATH
 
@@ -18,7 +18,7 @@ _LANGUAGE_MAPPING = {
 }
 
 
-def get_module_name(depth=2):
+def get_module_name(depth=2) -> Tuple[str, str]:
     """Get the module name of the caller."""
     frame = inspect.currentframe()
     try:
@@ -26,15 +26,18 @@ def get_module_name(depth=2):
             frame = frame.f_back
         module_path = inspect.getmodule(frame).__file__
         if module_path.startswith(ROOT_PATH):
-            module_path = module_path[len(ROOT_PATH) + 1 :]
-        module_path = module_path.split("/")[1]
-        if module_path.endswith(".py"):
-            module_path = module_path[:-3]
+            # Remove the root path
+            module_path = os.path.relpath(module_path, ROOT_PATH)
+        module_path = module_path.split(os.sep)[3:]
+        domain = module_path[0]
+        module = module_path[1]
+        if module.endswith(".py"):
+            module_path = module[:-3]
+        return domain, module
     except Exception:
-        module_path = ""
+        return _DOMAIN, ""
     finally:
         del frame
-    return module_path
 
 
 def set_default_language(language: str):
@@ -60,11 +63,11 @@ def get_translator(language: Optional[str] = None) -> Callable[[str], str]:
         if not language:
             language = _DEFAULT_LANGUAGE
         language = _LANGUAGE_MAPPING.get(language, language)
-        module_name = get_module_name(depth=2)
-        domain = (
-            f"{_DOMAIN}_{module_name.replace('.', '_')}" if module_name else _DOMAIN
+        domain, module_name = get_module_name(depth=2)
+        real_domain = (
+            f"{domain}_{module_name.replace('.', '_')}" if module_name else domain
         )
-        return _get_translator(domain, language)(message)
+        return _get_translator(real_domain, language)(message)
 
     return translator
 

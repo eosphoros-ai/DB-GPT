@@ -26,6 +26,7 @@ from dbgpt.core import (
     ModelRequest,
 )
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
+from dbgpt.util.configure.manager import _resolve_env_vars
 from dbgpt.util.executor_utils import blocking_func_to_async
 
 if TYPE_CHECKING:
@@ -162,6 +163,20 @@ class ProxyLLMClient(LLMClient):
         if not self._proxy_tokenizer:
             self._proxy_tokenizer = TiktokenProxyTokenizer()
         return self._proxy_tokenizer
+
+    @classmethod
+    def _resolve_env_vars(cls, value: Optional[str]) -> Optional[str]:
+        """Resolve environment variables in the value.
+
+        Args:
+            value (str): value to resolve
+
+        Returns:
+            str: resolved value
+        """
+        if not value:
+            return None
+        return _resolve_env_vars(value)
 
     @classmethod
     def param_class(cls) -> Type[LLMDeployModelParameters]:

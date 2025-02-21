@@ -54,7 +54,7 @@ class OllamaLLMClient(ProxyLLMClient):
         if not api_base:
             api_base = "http://localhost:11434"
         self._model = model
-        self._api_base = api_base
+        self._api_base = self._resolve_env_vars(api_base)
 
         super().__init__(
             model_names=[model, model_alias],

@@ -4,14 +4,19 @@ except ImportError:
     DefaultLLMClient = None
     RemoteLLMClient = None
 
+from .adapter.adaptive_client import AdaptiveLLMClient  # noqa: F401
 
-_exports = []
+_exports = [
+    "AdaptiveLLMClient",
+]
 if DefaultLLMClient:
     _exports.append("DefaultLLMClient")
 if RemoteLLMClient:
     _exports.append("RemoteLLMClient")
 
 __ALL__ = _exports
+
+_HAS_SCAN = False
 
 
 def scan_model_providers():
@@ -22,6 +27,10 @@ def scan_model_providers():
     )
     from dbgpt.util.module_utils import ModelScanner, ScannerConfig
 
+    global _HAS_SCAN
+
+    if _HAS_SCAN:
+        return
     scanner = ModelScanner[LLMDeployModelParameters]()
     config = ScannerConfig(
         module_path="dbgpt.model.adapter",
@@ -58,4 +67,5 @@ def scan_model_providers():
     scanner.scan_and_register(ext_embedding_config)
     scanner.scan_and_register(reranker_config)
 
+    _HAS_SCAN = True
     return scanner.get_registered_items()
