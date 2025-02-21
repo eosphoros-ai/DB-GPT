@@ -1,3 +1,4 @@
+import os
 from abc import abstractmethod
 from dataclasses import asdict, dataclass, fields
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
@@ -60,6 +61,15 @@ class BaseDatasourceParameters(BaseParameters, RegisterParameters):
                 ext_config[k] = v
         if ext_config:
             new_state["ext_config"] = ext_config
+        db_name = new_state.get("db_name")
+        db_path = new_state.get("db_path")
+        if not db_name and db_path:
+            # parse db_name from db_path
+            # For example, if db_path is /path/to/db.sqlite, then db_name is db
+            # For SQLite, Spark and DuckDB.
+            db_name = os.path.basename(db_path).split(".")[0]
+
+            new_state["db_name"] = f"{db_type}_{db_name}"
         return new_state
 
     @classmethod
