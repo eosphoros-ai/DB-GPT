@@ -42,7 +42,7 @@ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
 <TabItem value="python">
 
 ```python
-from dbgpt.client import Client
+from dbgpt_client import Client
 
 DBGPT_API_KEY = "dbgpt"
 FLOW_ID="{YOUR_FLOW_ID}"
@@ -117,8 +117,8 @@ FLOW_ID={YOUR_FLOW_ID}
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.flow import delete_flow
+from dbgpt_client import Client
+from dbgpt_client.flow import delete_flow
 
 DBGPT_API_KEY = "dbgpt"
 flow_id = "{your_flow_id}"
@@ -170,8 +170,8 @@ curl -X GET "http://localhost:5670/api/v2/serve/awel/flows/$FLOW_ID" -H "Authori
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.flow import get_flow
+from dbgpt_client import Client
+from dbgpt_client.flow import get_flow
 
 DBGPT_API_KEY = "dbgpt"
 flow_id = "{your_flow_id}"
@@ -224,8 +224,8 @@ curl -X GET "http://localhost:5670/api/v2/serve/awel/flows" -H "Authorization: B
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.flow import list_flow
+from dbgpt_client import Client
+from dbgpt_client.flow import list_flow
 
 DBGPT_API_KEY = "dbgpt"
 

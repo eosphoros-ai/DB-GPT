@@ -5,8 +5,11 @@ models/
 plugins/
 pilot/data
 pilot/message
+pilot/meta_data
 logs/
 venv/
+.venv/
+.venv.make/
 web/node_modules/
 web/.next/
 web/.env

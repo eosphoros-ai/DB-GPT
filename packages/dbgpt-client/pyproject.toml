@@ -1,0 +1,37 @@
+[project]
+name = "dbgpt-client"
+version = "0.7.0"
+description = "Add your description here"
+authors = [
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">= 3.10"
+
+dependencies = ["dbgpt-serve"]
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbgpt_client"]
+exclude = [
+    "src/dbgpt_client/**/tests",
+    "src/dbgpt_client/**/tests/*",
+    "src/dbgpt_client/tests",
+    "src/dbgpt_client/tests/*",
+    "src/dbgpt_client/**/examples",
+    "src/dbgpt_client/**/examples/*"
+]

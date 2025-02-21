@@ -1,15 +1,16 @@
 """AWEL: Simple dag example
 
-    DB-GPT will automatically load and execute the current file after startup.
+DB-GPT will automatically load and execute the current file after startup.
 
-    Example:
+Example:
 
-    .. code-block:: shell
+.. code-block:: shell
 
-        DBGPT_SERVER="http://127.0.0.1:5555"
-        curl -X GET $DBGPT_SERVER/api/v1/awel/trigger/examples/hello\?name\=zhangsan
+    DBGPT_SERVER="http://127.0.0.1:5555"
+    curl -X GET $DBGPT_SERVER/api/v1/awel/trigger/examples/hello\?name\=zhangsan
 
 """
+
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 

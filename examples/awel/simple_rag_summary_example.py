@@ -26,13 +26,14 @@ This example shows how to use AWEL to build a simple rag summary example.
             "url": "https://docs.dbgpt.site/docs/awel"
         }'
 """
+
 from typing import Dict
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.knowledge.base import KnowledgeType
-from dbgpt.rag.operators import KnowledgeOperator, SummaryAssemblerOperator
+from dbgpt_ext.rag.operators import KnowledgeOperator, SummaryAssemblerOperator
 
 
 class TriggerReqBody(BaseModel):

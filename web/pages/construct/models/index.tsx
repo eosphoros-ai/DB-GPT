@@ -1,11 +1,11 @@
-import { apiInterceptors, getModelList } from '@/client/api';
+import { apiInterceptors, getModelList, startModel, stopModel } from '@/client/api';
 import ModelForm from '@/components/model/model-form';
-import BlurredCard from '@/new-components/common/blurredCard';
+import BlurredCard, { InnerDropdown } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { IModelData } from '@/types/model';
 import { MODEL_ICON_DICT } from '@/utils/constants';
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Modal, Tag } from 'antd';
+import { Button, Modal, Tag, message } from 'antd';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,33 +14,74 @@ function Models() {
   const { t } = useTranslation();
   const [models, setModels] = useState<Array<IModelData>>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   async function getModels() {
     const [, res] = await apiInterceptors(getModelList());
     setModels(res ?? []);
   }
 
-  // TODO: delete unuesed function
-  // async function stopTheModel(info: IModelData) {
-  //   if (loading) {
-  //     return;
-  //   }
-  //   setLoading(true);
-  //   const [, res] = await apiInterceptors(
-  //     stopModel({
-  //       host: info.host,
-  //       port: info.port,
-  //       model: info.model_name,
-  //       worker_type: info.model_type,
-  //       params: {},
-  //     }),
-  //   );
-  //   setLoading(false);
-  //   if (res === true) {
-  //     message.success(t('stop_model_success'));
-  //   }
-  // }
+  async function startTheModel(info: IModelData) {
+    if (loading) return;
+    const content = t(`confirm_start_model`) + info.model_name;
+
+    showConfirm(t('start_model'), content, async () => {
+      setLoading(true);
+      const [, , res] = await apiInterceptors(
+        startModel({
+          host: info.host,
+          port: info.port,
+          model: info.model_name,
+          worker_type: info.worker_type,
+          delete_after: false,
+          params: {},
+        }),
+      );
+      setLoading(false);
+      if (res?.success) {
+        message.success(t('start_model_success'));
+        await getModels();
+      }
+    });
+  }
+
+  async function stopTheModel(info: IModelData, delete_after = false) {
+    if (loading) return;
+
+    const action = delete_after ? 'stop_and_delete' : 'stop';
+    const content = t(`confirm_${action}_model`) + info.model_name;
+    showConfirm(t(`${action}_model`), content, async () => {
+      setLoading(true);
+      const [, , res] = await apiInterceptors(
+        stopModel({
+          host: info.host,
+          port: info.port,
+          model: info.model_name,
+          worker_type: info.worker_type,
+          delete_after: delete_after,
+          params: {},
+        }),
+      );
+      setLoading(false);
+      if (res?.success === true) {
+        message.success(t(`${action}_model_success`));
+        await getModels();
+      }
+    });
+  }
+
+  const showConfirm = (title: string, content: string, onOk: () => Promise<void>) => {
+    Modal.confirm({
+      title,
+      content,
+      onOk: async () => {
+        await onOk();
+      },
+      okButtonProps: {
+        className: 'bg-button-gradient',
+      },
+    });
+  };
 
   useEffect(() => {
     getModels();
@@ -114,17 +155,49 @@ function Models() {
                   </div>
                   <div className='flex overflow-hidden'>
                     <p className='w-28 text-gray-500 mr-2'>Last Heart Beat:</p>
-                    <p className='flex-1 text-ellipsis'>{moment(item.last_heartbeat).format('YYYY-MM-DD')}</p>
+                    <p className='flex-1 text-ellipsis'>{moment(item.last_heartbeat).format('YYYY-MM-DD HH:mm:ss')}</p>
                   </div>
                 </div>
               }
               name={item.model_name}
               key={item.model_name}
+              RightTop={
+                <InnerDropdown
+                  menu={{
+                    items: [
+                      {
+                        key: 'stop_model',
+                        label: (
+                          <span className='text-red-400' onClick={() => stopTheModel(item)}>
+                            {t('stop_model')}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'start_model',
+                        label: (
+                          <span className='text-green-400' onClick={() => startTheModel(item)}>
+                            {t('start_model')}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'stop_and_delete_model',
+                        label: (
+                          <span className='text-red-400' onClick={() => stopTheModel(item, true)}>
+                            {t('stop_and_delete_model')}
+                          </span>
+                        ),
+                      },
+                    ],
+                  }}
+                />
+              }
               rightTopHover={false}
               Tags={
                 <div>
                   <Tag color={item.healthy ? 'green' : 'red'}>{item.healthy ? 'Healthy' : 'Unhealthy'}</Tag>
-                  <Tag>{item.model_type}</Tag>
+                  <Tag>{item.worker_type}</Tag>
                 </div>
               }
             />

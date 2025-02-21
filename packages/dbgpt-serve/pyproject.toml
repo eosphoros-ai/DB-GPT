@@ -1,0 +1,44 @@
+[project]
+name = "dbgpt-serve"
+version = "0.7.0"
+description = "Add your description here"
+authors = [
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">= 3.10"
+
+dependencies = [
+    "dbgpt-ext",
+]
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+managed = true
+dev-dependencies = []
+
+[project.optional-dependencies]
+libro = ["libro>=0.1.25"]
+dbgpts = ["poetry"]
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbgpt_serve"]
+exclude = [
+    "src/dbgpt_serve/**/tests",
+    "src/dbgpt_serve/**/tests/*",
+    "src/dbgpt_serve/tests",
+    "src/dbgpt_serve/tests/*",
+    "src/dbgpt_serve/**/examples",
+    "src/dbgpt_serve/**/examples/*"
+]

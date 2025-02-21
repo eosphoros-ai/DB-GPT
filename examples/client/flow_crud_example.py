@@ -26,10 +26,11 @@ Example:
         res = await list_flow(client)
 
 """
+
 import asyncio
 
-from dbgpt.client import Client
-from dbgpt.client.flow import list_flow
+from dbgpt_client import Client
+from dbgpt_client.flow import list_flow
 
 
 async def main():

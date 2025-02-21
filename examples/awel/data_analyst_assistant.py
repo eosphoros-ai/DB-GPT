@@ -71,7 +71,7 @@ from dbgpt.model.operators import (
     OpenAIStreamingOutputOperator,
     StreamingLLMOperator,
 )
-from dbgpt.serve.conversation.operators import ServePreChatHistoryLoadOperator
+from dbgpt_serve.conversation.operators import ServePreChatHistoryLoadOperator
 
 logger = logging.getLogger(__name__)
 
@@ -243,8 +243,8 @@ class PromptTemplateBuilderOperator(MapOperator[TriggerReqBody, ChatPromptTempla
         self._default_prompt_manager = PromptManager()
 
     async def map(self, input_value: TriggerReqBody) -> ChatPromptTemplate:
-        from dbgpt.serve.prompt.serve import SERVE_APP_NAME as PROMPT_SERVE_APP_NAME
-        from dbgpt.serve.prompt.serve import Serve as PromptServe
+        from dbgpt_serve.prompt.serve import SERVE_APP_NAME as PROMPT_SERVE_APP_NAME
+        from dbgpt_serve.prompt.serve import Serve as PromptServe
 
         prompt_serve = self.system_app.get_component(
             PROMPT_SERVE_APP_NAME, PromptServe, default_component=None

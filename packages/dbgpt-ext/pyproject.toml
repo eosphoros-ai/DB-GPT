@@ -1,0 +1,89 @@
+[project]
+name = "dbgpt-ext"
+version = "0.7.0"
+description = "Add your description here"
+authors = [
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">= 3.10"
+
+dependencies = [
+    "dbgpt>=0.7.0",
+    "pymysql",
+]
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.optional-dependencies]
+rag = [
+    "spacy==3.7",
+    "markdown",
+    "bs4",
+    "python-pptx",
+    "python-docx",
+    "pypdf",
+    "pdfplumber",
+    "sentence-transformers",
+]
+graph_rag = [
+    # For visualization in code
+    "networkx",
+    "dbgpt-tugraph-plugins>=0.1.1",
+    "neo4j"
+]
+datasource_mysql = [
+    # mysqlclient 2.2.x have pkg-config issue on 3.10+
+    # If you want to install psycopg2 and mysqlclient in ubuntu, you should install
+    # libpq-dev and libmysqlclient-dev first.
+    "mysqlclient==2.1.0",
+]
+datasource_postgres = [
+    # "psycopg2", # In production, you can install psycopg2 instead of psycopg2-binary
+    "psycopg2-binary",
+]
+datasource_clickhouse = [
+    "clickhouse-connect",
+]
+datasource_spark = ["pyspark"]
+datasource_mssql = ["pymssql"]
+datasource_hive = [
+    "pyhive",
+    "thrift",
+    "thrift_sasl",
+]
+datasource_vertica = ["vertica-python"]
+datasource_duckdb = [
+    "duckdb",
+    "duckdb-engine==0.9.1",
+]
+# datasource_doris = ["pydoris>=1.0.2,<2.0.0"]
+storage_milvus = ["pymilvus"]
+storage_weaviate = ["weaviate-client"]
+storage_chromadb = ["chromadb>=0.4.22"]
+
+[tool.uv]
+managed = true
+dev-dependencies = [
+    "pytest>=8.3.4",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbgpt_ext"]
+exclude = [
+    "src/dbgpt_ext/**/tests",
+    "src/dbgpt_ext/**/tests/*",
+    "src/dbgpt_ext/tests",
+    "src/dbgpt_ext/tests/*",
+    "src/dbgpt_ext/**/examples",
+    "src/dbgpt_ext/**/examples/*"
+]

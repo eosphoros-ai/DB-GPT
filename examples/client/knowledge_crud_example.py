@@ -62,11 +62,12 @@ Example:
         # 10. Delete a document
         res = await delete_document(client, "150")
 """
+
 import asyncio
 
-from dbgpt.client import Client
-from dbgpt.client.knowledge import create_space
-from dbgpt.client.schema import SpaceModel
+from dbgpt_client import Client
+from dbgpt_client.knowledge import create_space
+from dbgpt_client.schema import SpaceModel
 
 
 async def main():

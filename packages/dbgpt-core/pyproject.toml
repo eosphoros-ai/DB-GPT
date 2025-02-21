@@ -1,0 +1,152 @@
+[project]
+name = "dbgpt"
+version = "0.7.0"
+description = """DB-GPT is an experimental open-source project that uses localized GPT \
+large models to interact with your data and environment. With this solution, you can be\
+ assured that there is no risk of data leakage, and your data is 100% private and secure.\
+"""
+authors = [
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">= 3.10"
+dependencies = [
+    "aiohttp==3.8.4",
+    "chardet==5.1.0",
+    "importlib-resources==5.12.0",
+    "python-dotenv==1.0.0",
+    "cachetools",
+    "pydantic>=2.6.0",
+    # For AWEL type checking
+    "typeguard",
+    # Snowflake no additional dependencies.
+    "snowflake-id",
+    "typing_inspect",
+    "tomli>=2.2.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
+
+[project.optional-dependencies]
+client = [
+    "httpx",
+    "fastapi>=0.100.0,<0.113.0",
+    "tenacity<=8.3.0"
+]
+cli = [
+    "prettytable",
+    "click",
+    "psutil==5.9.4",
+    "colorama==0.4.6",
+    "tomlkit",
+    "rich",
+]
+agent = [
+    "termcolor",
+    "pandas==2.0.3",
+    # numpy should less than 2.0.0
+    "numpy>=1.21.0,<2.0.0",
+    "auto-gpt-plugin-template>=0.0.3",
+]
+simple_framework = [
+    "jinja2",
+    "uvicorn",
+    "shortuuid",
+    # 2.0.29 not support duckdb now
+    "SQLAlchemy>=2.0.25, <2.0.29",
+    # for cache
+    "msgpack",
+    # for AWEL operator serialization
+    "cloudpickle",
+    # for cache
+    # TODO: pympler has not been updated for a long time and needs to
+    #  find a new toolkit.
+    "pympler",
+    "duckdb",
+    "duckdb-engine==0.9.1",
+    # lightweight python library for scheduling jobs
+    "schedule",
+    # For datasource subpackage
+    "sqlparse==0.4.4",
+    "python-multipart",
+]
+framework = [
+    "coloredlogs",
+    "seaborn",
+    "auto-gpt-plugin-template",
+    "gTTS==2.3.1",
+    "pymysql",
+    "jsonschema",
+    # TODO move transformers to default
+    "tokenizers>=0.14",
+    "alembic==1.12.0",
+    # for excel
+    "openpyxl==3.1.2",
+    "xlrd==2.0.1",
+    "aiofiles",
+    # for agent
+    "GitPython",
+    # For AWEL dag visualization, graphviz is a small package, also we can move it to default.
+    "graphviz",
+    # For security
+    "cryptography",
+    # For high performance RPC communication in code execution
+    "pyzmq",
+]
+hf = [
+    "transformers>=4.46.0",
+    "sentencepiece",
+    "sentence-transformers",
+]
+code = [
+    "msgpack",
+    # for AWEL operator serialization
+    "cloudpickle",
+    "lyric-py>=0.1.6",
+    "lyric-py-worker>=0.1.6",
+    "lyric-js-worker>=0.1.6",
+    "lyric-component-ts-transpiling>=0.1.6",
+]
+llama_cpp = [
+    "llama-cpp-python"
+]
+llama_cpp_server = [
+    "llama-cpp-server-py"
+]
+proxy_ollama = ["ollama"]
+proxy_zhipuai = ["zhipuai"]
+proxy_tongyi = ["openai"] # tongyi supported by openai package
+proxy_qianfan = ["qianfan"]
+proxy_openai = [
+    "openai>=1.59.6",
+    "tiktoken>=0.8.0",
+     "httpx[socks]",
+]
+proxy_anthropic = ["anthropic"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+managed = true
+dev-dependencies = []
+default-groups = ["dev"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbgpt"]
+exclude = [
+    "src/dbgpt/**/tests",
+    "src/dbgpt/**/tests/*",
+    "src/dbgpt/tests",
+    "src/dbgpt/tests/*",
+    "src/dbgpt/**/examples",
+    "src/dbgpt/**/examples/*"
+]
+[project.scripts]
+dbgpt = "dbgpt.cli.cli_scripts:main"

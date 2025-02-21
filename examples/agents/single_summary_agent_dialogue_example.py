@@ -1,17 +1,17 @@
 """Agents: single agents about CodeAssistantAgent?
 
-    Examples:
-     
-        Execute the following command in the terminal:
-        Set env params.
-        .. code-block:: shell
+Examples:
 
-            export OPENAI_API_KEY=sk-xx
-            export OPENAI_API_BASE=https://xx:80/v1
+    Execute the following command in the terminal:
+    Set env params.
+    .. code-block:: shell
 
-        run example.
-        ..code-block:: shell
-            python examples/agents/single_summary_agent_dialogue_example.py
+        export OPENAI_API_KEY=sk-xx
+        export OPENAI_API_BASE=https://xx:80/v1
+
+    run example.
+    ..code-block:: shell
+        python examples/agents/single_summary_agent_dialogue_example.py
 """
 
 import asyncio

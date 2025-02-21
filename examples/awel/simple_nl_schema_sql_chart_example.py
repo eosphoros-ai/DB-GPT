@@ -8,12 +8,12 @@ from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.datasource.rdbms.base import RDBMSConnector
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.rag.operators.schema_linking import SchemaLinkingOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 from dbgpt.util.chat_util import run_async_tasks
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
+from dbgpt_ext.rag.operators.schema_linking import SchemaLinkingOperator
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 """AWEL: Simple nl-schemalinking-sql-chart operator example
 

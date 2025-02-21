@@ -1,0 +1,72 @@
+[project]
+name = "dbgpt-app"
+version = "0.7.0"
+description = "Add your description here"
+authors = [
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">= 3.10"
+
+dependencies = [
+    "dbgpt-accelerator",
+    "dbgpt",
+    "dbgpt-ext",
+    "dbgpt-serve",
+    "dbgpt-client",
+    "aiofiles",
+    "pyparsing",
+]
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.optional-dependencies]
+cache = [
+    "rocksdict",
+]
+
+observability = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp",
+]
+
+proxy_openai = [
+    "dbgpt[client,cli,agent,simple_framework,framework,code,proxy_openai]",
+    "dbgpt-ext"
+]
+
+default = [
+    "dbgpt[client,cli,agent,simple_framework,framework,code]",
+    "dbgpt-ext[rag]",
+    "dbgpt-ext[storage_chromadb]",
+]
+dbgpts = [
+    # For build dbgpts apps, we will be removed in the future.
+    "poetry"
+]
+
+[tool.uv]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dbgpt_app"]
+exclude = [
+    "src/dbgpt_app/**/tests",
+    "src/dbgpt_app/**/tests/*",
+    "src/dbgpt_app/tests",
+    "src/dbgpt_app/tests/*",
+    "src/dbgpt_app/**/examples",
+    "src/dbgpt_app/**/examples/*"
+]
+
