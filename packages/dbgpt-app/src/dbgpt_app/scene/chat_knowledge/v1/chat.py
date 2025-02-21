@@ -43,8 +43,7 @@ class ChatKnowledge(BaseChat):
         chat_param["chat_mode"] = ChatScene.ChatKnowledge
         super().__init__(chat_param=chat_param, system_app=system_app)
 
-        self.rag_config = self.web_config.rag
-        self.graph_rag_config = self.web_config.graph_rag
+        self.rag_config = self.app_config.rag
         self.space_context = self.get_space_context(self.knowledge_space)
         self.top_k = (
             self.get_knowledge_search_top_size(self.knowledge_space)
@@ -52,7 +51,7 @@ class ChatKnowledge(BaseChat):
             else int(self.space_context["embedding"]["topk"])
         )
         self.recall_score = (
-            self.rag_config.knowledge_search_similarity_score
+            self.rag_config.similarity_score_threshold
             if self.space_context is None
             else float(self.space_context["embedding"]["recall_score"])
         )
@@ -69,7 +68,7 @@ class ChatKnowledge(BaseChat):
         space = spaces[0]
 
         query_rewrite = None
-        if self.rag_config.knowledge_search_rewrite:
+        if self.rag_config.query_rewrite:
             query_rewrite = QueryRewrite(
                 llm_client=self.llm_client,
                 model_name=self.llm_model,
@@ -84,15 +83,12 @@ class ChatKnowledge(BaseChat):
                 self.system_app
             ).create()
             reranker = RerankEmbeddingsRanker(
-                rerank_embeddings, topk=self.rag_config.knowledge_rerank_top_k
+                rerank_embeddings, topk=self.rag_config.rerank_top_k
             )
-            if (
-                retriever_top_k < self.rag_config.knowledge_rerank_top_k
-                or retriever_top_k < 20
-            ):
+            if retriever_top_k < self.rag_config.rerank_top_k or retriever_top_k < 20:
                 # We use reranker, so if the top_k is less than 20,
                 # we need to set it to 20
-                retriever_top_k = max(self.rag_config.knowledge_rerank_top_k, 20)
+                retriever_top_k = max(self.rag_config.rerank_top_k, 20)
         self._space_retriever = KnowledgeSpaceRetriever(
             space_id=space.id,
             embedding_model=self.model_config.default_embedding,
@@ -237,9 +233,9 @@ class ChatKnowledge(BaseChat):
             from dbgpt_ext.storage import vector_store
 
             if spaces[0].vector_type in vector_store.__knowledge_graph__:
-                return self.graph_rag_config.knowledge_graph_search_top_k
+                return self.rag_config.graph_search_top_k
 
-        return self.rag_config.knowledge_search_top_k
+        return self.rag_config.similarity_top_k
 
     async def execute_similar_search(self, query):
         """execute similarity search"""

@@ -40,8 +40,8 @@ class ChatWithDbQA(BaseChat):
         else:
             print(self.database.db_type)
             self.top_k = (
-                self.web_config.rag.knowledge_search_top_k
-                if len(self.tables) > self.web_config.rag.knowledge_search_top_k
+                self.app_config.rag.similarity_top_k
+                if len(self.tables) > self.app_config.rag.similarity_top_k
                 else len(self.tables)
             )
 

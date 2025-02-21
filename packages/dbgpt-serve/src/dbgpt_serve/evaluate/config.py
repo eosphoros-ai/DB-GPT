@@ -23,7 +23,7 @@ class ServeConfig(BaseServeConfig):
         default="None",
         metadata={"help": _("Embedding Model")},
     )
-    knowledge_search_top_k: Optional[int] = field(
+    similarity_top_k: Optional[int] = field(
         default=10,
         metadata={"help": _("knowledge search top k")},
     )

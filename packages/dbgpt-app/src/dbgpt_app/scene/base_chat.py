@@ -92,9 +92,9 @@ class BaseChat(ABC):
             - select_param:(str) select param
         """
         self.system_app = system_app
-        app_config = self.system_app.config.configs.get("app_config")
-        self.web_config = app_config.service.web
-        self.model_config = app_config.models
+        self.app_config = self.system_app.config.configs.get("app_config")
+        self.web_config = self.app_config.service.web
+        self.model_config = self.app_config.models
         self.chat_session_id = chat_param["chat_session_id"]
         self.chat_mode = chat_param["chat_mode"]
         self.current_user_input: str = chat_param["current_user_input"]

@@ -25,11 +25,11 @@ class ServeConfig(BaseServeConfig):
         default="None",
         metadata={"help": _("Embedding Model")},
     )
-    knowledge_chunk_size: Optional[int] = field(
+    chunk_size: Optional[int] = field(
         default=500,
         metadata={"help": _("Whether to verify the SSL certificate of the database")},
     )
-    knowledge_chunk_overlap: Optional[int] = field(
+    chunk_overlap: Optional[int] = field(
         default=50,
         metadata={
             "help": _(
@@ -38,27 +38,29 @@ class ServeConfig(BaseServeConfig):
             )
         },
     )
-    knowledge_search_top_k: Optional[int] = field(
+    similarity_top_k: Optional[int] = field(
         default=10,
         metadata={"help": _("knowledge search top k")},
     )
-    knowledge_search_rewrite: Optional[bool] = field(
+    similarity_score_threshold: Optional[int] = field(
+        default=0.0,
+        metadata={"help": _("knowledge search top similarity score")},
+    )
+    query_rewrite: Optional[bool] = field(
         default=False,
         metadata={"help": _("knowledge search rewrite")},
     )
-    knowledge_max_chunks_once_load: Optional[int] = field(
+    max_chunks_once_load: Optional[int] = field(
         default=10,
         metadata={"help": _("knowledge max chunks once load")},
     )
-    knowledge_max_threads: Optional[int] = field(
+    max_threads: Optional[int] = field(
         default=1,
-        metadata={"help": _("knowledge max thread")},
+        metadata={"help": _("knowledge max load thread")},
     )
-    knowledge_rerank_top_k: Optional[int] = (
-        field(
-            default=3,
-            metadata={"help": _("knowledge rerank top k")},
-        ),
+    rerank_top_k: Optional[int] = field(
+        default=3,
+        metadata={"help": _("knowledge rerank top k")},
     )
 
 
