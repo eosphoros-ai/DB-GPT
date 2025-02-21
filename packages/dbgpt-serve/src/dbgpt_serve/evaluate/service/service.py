@@ -3,7 +3,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
 
 from dbgpt.component import ComponentType, SystemApp
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core.interface.evaluation import (
     EVALUATE_FILE_COL_ANSWER,
     EvaluationResult,
@@ -103,9 +102,7 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
             embedding_factory = self._system_app.get_component(
                 "embedding_factory", EmbeddingFactory
             )
-            embeddings = embedding_factory.create(
-                EMBEDDING_MODEL_CONFIG[self._serve_config.embedding_model]
-            )
+            embeddings = embedding_factory.create()
 
             config = VectorStoreConfig(
                 name=scene_value,

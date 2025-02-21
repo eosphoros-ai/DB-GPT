@@ -13,7 +13,6 @@ from fastapi import HTTPException
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core import Chunk, LLMClient
@@ -502,9 +501,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         embedding_factory = self._system_app.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[self._serve_config.embedding_model]
-        )
+        embedding_fn = embedding_factory.create()
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         space = self.get({"id": space_id})

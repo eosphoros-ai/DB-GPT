@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from dbgpt._private.config import Config
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core.awel.dag.dag_manager import DAGManager
@@ -513,9 +512,7 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
     )
     config = VectorStoreConfig(
         name=space_name,
-        embedding_fn=embedding_factory.create(
-            EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        ),
+        embedding_fn=embedding_factory.create(),
     )
     vector_store_connector = VectorStoreConnector(
         vector_store_type=CFG.VECTOR_STORE_TYPE,
