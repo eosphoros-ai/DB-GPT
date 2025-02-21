@@ -3,7 +3,7 @@ import os
 import uuid
 from typing import Dict, List
 
-from dbgpt._private.config import Config
+from dbgpt import SystemApp
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 from dbgpt_app.scene import BaseChat, ChatScene
@@ -12,8 +12,7 @@ from dbgpt_app.scene.chat_dashboard.data_preparation.report_schma import (
     ChartData,
     ReportData,
 )
-
-CFG = Config()
+from dbgpt_serve.datasource.manages import ConnectorManager
 
 
 class ChatDashboard(BaseChat):
@@ -21,7 +20,7 @@ class ChatDashboard(BaseChat):
     report_name: str
     """Chat Dashboard to generate dashboard chart"""
 
-    def __init__(self, chat_param: Dict):
+    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
         """Chat Dashboard Module Initialization
         Args:
            - chat_param: Dict
@@ -32,13 +31,13 @@ class ChatDashboard(BaseChat):
         """
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatDashboard
-        super().__init__(chat_param=chat_param)
+        super().__init__(chat_param=chat_param, system_app=system_app)
         if not self.db_name:
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
         self.db_name = self.db_name
         self.report_name = chat_param.get("report_name", "report")
-
-        self.database = CFG.local_db_manager.get_connector(self.db_name)
+        local_db_manager = ConnectorManager.get_instance(self.system_app)
+        self.database = local_db_manager.get_connector(self.db_name)
 
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(self.report_name)
@@ -59,7 +58,7 @@ class ChatDashboard(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
 
-        client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
+        client = DBSummaryClient(system_app=self.system_app)
         try:
             table_infos = await blocking_func_to_async(
                 self._executor,

@@ -501,7 +501,8 @@ class LocalWorkerManager(WorkerManager):
         ) as span:
             params["span_id"] = span.span_id
             try:
-                worker_run_data = await self._get_model(params, worker_type="text2vec")
+                worker_type = params.get("worker_type", WorkerType.TEXT2VEC.value)
+                worker_run_data = await self._get_model(params, worker_type=worker_type)
             except Exception as e:
                 raise e
             async with worker_run_data.semaphore:
@@ -513,7 +514,8 @@ class LocalWorkerManager(WorkerManager):
                     )
 
     def sync_embeddings(self, params: Dict) -> List[List[float]]:
-        worker_run_data = self._sync_get_model(params, worker_type="text2vec")
+        worker_type = params.get("worker_type", WorkerType.TEXT2VEC.value)
+        worker_run_data = self._sync_get_model(params, worker_type=worker_type)
         return worker_run_data.worker.embeddings(params)
 
     async def count_token(self, params: Dict) -> int:

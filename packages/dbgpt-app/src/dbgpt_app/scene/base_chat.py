@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Dict
 
 from dbgpt._private.config import Config
-from dbgpt.component import ComponentType
+from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core import (
     ChatPromptTemplate,
     HumanPromptTemplate,
@@ -82,7 +82,7 @@ class BaseChat(ABC):
     auto_convert_message: bool = True
 
     @trace("BaseChat.__init__")
-    def __init__(self, chat_param: Dict):
+    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
         """Chat Module Initialization
         Args:
            - chat_param: Dict
@@ -91,14 +91,20 @@ class BaseChat(ABC):
             - model_name:(str) llm model name
             - select_param:(str) select param
         """
+        self.system_app = system_app
+        self.app_config = self.system_app.config.configs.get("app_config")
+        self.web_config = self.app_config.service.web
+        self.model_config = self.app_config.models
         self.chat_session_id = chat_param["chat_session_id"]
         self.chat_mode = chat_param["chat_mode"]
         self.current_user_input: str = chat_param["current_user_input"]
         self.llm_model = (
-            chat_param["model_name"] if chat_param["model_name"] else CFG.LLM_MODEL
+            chat_param["model_name"]
+            if chat_param["model_name"]
+            else self.model_config.default_llm
         )
         self.llm_echo = False
-        self.worker_manager = CFG.SYSTEM_APP.get_component(
+        self.worker_manager = self.system_app.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         self.model_cache_enable = chat_param.get("model_cache_enable", False)
@@ -107,12 +113,13 @@ class BaseChat(ABC):
         self.prompt_template: AppScenePromptTemplateAdapter = (
             CFG.prompt_template_registry.get_prompt_template(
                 self.chat_mode.value(),
-                language=CFG.LANGUAGE,
+                language=self.system_app.config.configs.get(
+                    "dbgpt.app.global.language"
+                ),
                 model_name=self.llm_model,
-                proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
-        self._prompt_service = PromptService.get_instance(CFG.SYSTEM_APP)
+        self._prompt_service = PromptService.get_instance(self.system_app)
         if self.prompt_code:
             # adapt prompt template according to the prompt code
             prompt_template = self._prompt_service.get_template(self.prompt_code)
@@ -130,14 +137,14 @@ class BaseChat(ABC):
                 output_parser=self.prompt_template.output_parser,
                 need_historical_messages=False,
             )
-        self._conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+        self._conv_serve = ConversationServe.get_instance(self.system_app)
         self.current_message: StorageConversation = _build_conversation(
             self.chat_mode, chat_param, self.llm_model, self._conv_serve
         )
         self.history_messages = self.current_message.get_history_message()
         self.current_tokens_used: int = 0
         # The executor to submit blocking function
-        self._executor = CFG.SYSTEM_APP.get_component(
+        self._executor = self.system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
 
@@ -164,7 +171,7 @@ class BaseChat(ABC):
     @property
     def llm_client(self) -> LLMClient:
         """Return the LLM client."""
-        worker_manager = CFG.SYSTEM_APP.get_component(
+        worker_manager = self.system_app.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         return DefaultLLMClient(
@@ -172,13 +179,13 @@ class BaseChat(ABC):
         )
 
     async def call_llm_operator(self, request: ModelRequest) -> ModelOutput:
-        llm_task = build_cached_chat_operator(self.llm_client, False, CFG.SYSTEM_APP)
+        llm_task = build_cached_chat_operator(self.llm_client, False, self.system_app)
         return await llm_task.call(call_data=request)
 
     async def call_streaming_operator(
         self, request: ModelRequest
     ) -> AsyncIterator[ModelOutput]:
-        llm_task = build_cached_chat_operator(self.llm_client, True, CFG.SYSTEM_APP)
+        llm_task = build_cached_chat_operator(self.llm_client, True, self.system_app)
         async for out in await llm_task.call_stream(call_data=request):
             yield out
 

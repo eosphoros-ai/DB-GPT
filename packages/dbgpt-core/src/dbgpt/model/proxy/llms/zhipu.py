@@ -92,6 +92,8 @@ class ZhipuLLMClient(ProxyLLMClient):
             # Compatible with DB-GPT's config
             api_key = os.getenv("ZHIPU_PROXY_API_KEY")
 
+        api_key = self._resolve_env_vars(api_key)
+        api_base = self._resolve_env_vars(api_base)
         self._model = model
         self.client = ZhipuAI(api_key=api_key, base_url=api_base)
 

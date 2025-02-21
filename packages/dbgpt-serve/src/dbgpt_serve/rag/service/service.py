@@ -10,11 +10,9 @@ from typing import List, Optional, cast
 
 from fastapi import HTTPException
 
-from dbgpt._private.config import Config
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core import Chunk, LLMClient
@@ -56,7 +54,6 @@ from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from ..retriever.knowledge_space import KnowledgeSpaceRetriever
 
 logger = logging.getLogger(__name__)
-CFG = Config()
 
 
 class SyncStatus(Enum):
@@ -232,12 +229,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
                 space_context = self.get_space_context(space_id)
                 chunk_parameters.chunk_size = (
-                    CFG.KNOWLEDGE_CHUNK_SIZE
+                    self._serve_config.chunk_size
                     if space_context is None
                     else int(space_context["embedding"]["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
-                    CFG.KNOWLEDGE_CHUNK_OVERLAP
+                    self._serve_config.chunk_overlap
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
@@ -293,7 +290,9 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             name=space.name, llm_client=self.llm_client, model_name=None
         )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type, vector_store_config=config
+            vector_store_type=space.vector_type,
+            vector_store_config=config,
+            system_app=self._system_app,
         )
         # delete vectors
         vector_store_connector.delete_vector_name(space.name)
@@ -365,7 +364,9 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 name=space.name, llm_client=self.llm_client, model_name=None
             )
             vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type, vector_store_config=config
+                vector_store_type=space.vector_type,
+                vector_store_config=config,
+                system_app=self._system_app,
             )
             # delete vector by ids
             vector_store_connector.delete_by_ids(vector_ids)
@@ -477,12 +478,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
                 space_context = self.get_space_context(space_id)
                 chunk_parameters.chunk_size = (
-                    CFG.KNOWLEDGE_CHUNK_SIZE
+                    self._serve_config.chunk_size
                     if space_context is None
                     else int(space_context["embedding"]["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
-                    CFG.KNOWLEDGE_CHUNK_OVERLAP
+                    self._serve_config.chunk_overlap
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
@@ -497,25 +498,25 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         chunk_parameters: ChunkParameters,
     ) -> None:
         """sync knowledge document chunk into vector store"""
-        embedding_factory = CFG.SYSTEM_APP.get_component(
+        embedding_factory = self._system_app.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        )
+        embedding_fn = embedding_factory.create()
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         space = self.get({"id": space_id})
         config = VectorStoreConfig(
             name=space.name,
             embedding_fn=embedding_fn,
-            max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
-            max_threads=CFG.KNOWLEDGE_MAX_THREADS,
+            max_chunks_once_load=self._serve_config.max_chunks_once_load,
+            max_threads=self._serve_config.max_threads,
             llm_client=self.llm_client,
             model_name=None,
         )
         vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type, vector_store_config=config
+            vector_store_type=space.vector_type,
+            vector_store_config=config,
+            system_app=self._system_app,
         )
         knowledge = None
         if not space.domain_type or (
@@ -633,10 +634,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         """Retrieve the service."""
         reranker: Optional[RerankEmbeddingsRanker] = None
         top_k = request.top_k
-        if CFG.RERANK_MODEL:
-            reranker_top_k = CFG.RERANK_TOP_K
+        if self._serve_config.rerank_model:
+            reranker_top_k = self._serve_config.rerank_top_k
             rerank_embeddings = RerankEmbeddingFactory.get_instance(
-                CFG.SYSTEM_APP
+                self._system_app
             ).create()
             reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=reranker_top_k)
             if top_k < reranker_top_k or self._top_k < 20:
@@ -646,8 +647,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
 
         space_retriever = KnowledgeSpaceRetriever(
             space_id=space.id,
+            embedding_model=self._serve_config.embedding_model,
             top_k=top_k,
             rerank=reranker,
+            system_app=self._system_app,
         )
         return await space_retriever.aretrieve_with_scores(
             request.query, request.score_threshold

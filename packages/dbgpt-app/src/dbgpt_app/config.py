@@ -47,6 +47,97 @@ class SystemParameters:
 
 
 @dataclass
+class StorageVectorConfig(BaseParameters):
+    type: str = field(
+        default="Chroma",
+        metadata={
+            "help": _("default vector type"),
+        },
+    )
+
+
+@dataclass
+class StorageGraphConfig(BaseParameters):
+    type: str = field(
+        default="TuGraph",
+        metadata={
+            "help": _("default graph type"),
+        },
+    )
+
+
+@dataclass
+class StorageConfig(BaseParameters):
+    vector: StorageVectorConfig = field(
+        default_factory=StorageVectorConfig,
+        metadata={
+            "help": _("default vector type"),
+        },
+    )
+    graph: StorageGraphConfig = field(
+        default_factory=StorageGraphConfig,
+        metadata={
+            "help": _("default graph type"),
+        },
+    )
+
+
+@dataclass
+class RagParameters(BaseParameters):
+    """Rag configuration."""
+
+    chunk_size: Optional[int] = field(
+        default=500,
+        metadata={"help": _("Whether to verify the SSL certificate of the database")},
+    )
+    chunk_overlap: Optional[int] = field(
+        default=50,
+        metadata={
+            "help": _(
+                "The default thread pool size, If None, use default config of python "
+                "thread pool"
+            )
+        },
+    )
+    similarity_top_k: Optional[int] = field(
+        default=10,
+        metadata={"help": _("knowledge search top k")},
+    )
+    similarity_score_threshold: Optional[int] = field(
+        default=0.0,
+        metadata={"help": _("knowledge search top similarity score")},
+    )
+    query_rewrite: Optional[bool] = field(
+        default=False,
+        metadata={"help": _("knowledge search rewrite")},
+    )
+    max_chunks_once_load: Optional[int] = field(
+        default=10,
+        metadata={"help": _("knowledge max chunks once load")},
+    )
+    max_threads: Optional[int] = field(
+        default=1,
+        metadata={"help": _("knowledge max load thread")},
+    )
+    rerank_top_k: Optional[int] = field(
+        default=3,
+        metadata={"help": _("knowledge rerank top k")},
+    )
+    storage: StorageConfig = field(
+        default_factory=lambda: StorageConfig(),
+        metadata={"help": _("Storage configuration")},
+    )
+    graph_search_top_k: Optional[int] = field(
+        default=3,
+        metadata={"help": _("knowledge graph search top k")},
+    )
+    graph_community_summary_enabled: Optional[bool] = field(
+        default=False,
+        metadata={"help": _("graph community summary enabled")},
+    )
+
+
+@dataclass
 class ServiceWebParameters(BaseParameters):
     host: str = field(default="0.0.0.0", metadata={"help": _("Webserver deploy host")})
     port: int = field(
@@ -152,6 +243,12 @@ class ServiceWebParameters(BaseParameters):
         default_factory=ModelCacheParameters,
         metadata={"help": _("Model cache configuration")},
     )
+    embedding_model_max_seq_len: Optional[int] = field(
+        default=512,
+        metadata={
+            "help": _("The max sequence length of the embedding model, default is 512")
+        },
+    )
 
 
 @dataclass
@@ -198,6 +295,10 @@ class ApplicationConfig:
         metadata={
             "help": _("Serve configuration"),
         },
+    )
+    rag: RagParameters = field(
+        default_factory=lambda: RagParameters(),
+        metadata={"help": _("Rag Knowledge Parameters")},
     )
     trace: TracerParameters = field(
         default_factory=TracerParameters,

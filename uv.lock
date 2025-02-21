@@ -1480,6 +1480,7 @@ proxy-ollama = [
     { name = "ollama" },
 ]
 proxy-openai = [
+    { name = "httpx", extra = ["socks"] },
     { name = "openai" },
     { name = "tiktoken" },
 ]
@@ -1531,6 +1532,7 @@ requires-dist = [
     { name = "graphviz", marker = "extra == 'framework'" },
     { name = "gtts", marker = "extra == 'framework'", specifier = "==2.3.1" },
     { name = "httpx", marker = "extra == 'client'" },
+    { name = "httpx", extras = ["socks"], marker = "extra == 'proxy-openai'" },
     { name = "importlib-resources", specifier = "==5.12.0" },
     { name = "jinja2", marker = "extra == 'simple-framework'" },
     { name = "jsonschema", marker = "extra == 'framework'" },
@@ -1769,6 +1771,9 @@ dependencies = [
 cache = [
     { name = "rocksdict" },
 ]
+dbgpts = [
+    { name = "poetry" },
+]
 default = [
     { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "simple-framework"] },
     { name = "dbgpt-ext", extra = ["rag", "storage-chromadb"] },
@@ -1799,6 +1804,7 @@ requires-dist = [
     { name = "opentelemetry-api", marker = "extra == 'observability'" },
     { name = "opentelemetry-exporter-otlp", marker = "extra == 'observability'" },
     { name = "opentelemetry-sdk", marker = "extra == 'observability'" },
+    { name = "poetry", marker = "extra == 'dbgpts'" },
     { name = "pyparsing" },
     { name = "rocksdict", marker = "extra == 'cache'" },
 ]
@@ -2857,6 +2863,11 @@ dependencies = [
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/78/82/08f8c936781f67d9e6b9eeb8a0c8b4e406136ea4c3d1f89a5db71d42e0e6/httpx-0.27.2.tar.gz", hash = "sha256:f7c2be1d2f3c3c3160d441802406b206c2b76f5947b11115e6df10c6c65e66c2", size = 144189 }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/56/95/9377bcb415797e44274b51d46e3249eba641711cf3348050f76ee7b15ffc/httpx-0.27.2-py3-none-any.whl", hash = "sha256:7bb2708e112d8fdd7829cd4243970f0c223274051cb35ee80c03301ee29a3df0", size = 76395 },
+]
+
+[package.optional-dependencies]
+socks = [
+    { name = "socksio" },
 ]
 
 [[package]]
@@ -7714,6 +7725,15 @@ source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/7a/d0/91bd3d2e54ea849e8c4e73681ef75c1c93f37a8c9f0627b1553522267e08/snowflake_id-1.0.2.tar.gz", hash = "sha256:4a4cd49508599aaa16488311f4b9121e9ac3bac57edff3e9f71b1d79086dbfe8", size = 4497 }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/41/a4/ee0bdba1d1e98db21166381559d0061d752bbf66af2dd1cbbe4c2afdc4fa/snowflake_id-1.0.2-py3-none-any.whl", hash = "sha256:c3142752ed334b9d4632739a704461d13e97aa6fa71b65d5329829b4b5cc058c", size = 4795 },
+]
+
+[[package]]
+name = "socksio"
+version = "1.0.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/f8/5c/48a7d9495be3d1c651198fd99dbb6ce190e2274d0f28b9051307bdec6b85/socksio-1.0.0.tar.gz", hash = "sha256:f88beb3da5b5c38b9890469de67d0cb0f9d494b78b106ca1845f96c10b91c4ac", size = 19055 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/37/c3/6eeb6034408dac0fa653d126c9204ade96b819c936e136c5e8a6897eee9c/socksio-1.0.0-py3-none-any.whl", hash = "sha256:95dc1f15f9b34e8d7b16f06d74b8ccf48f609af32ab33c608d08761c5dcbb1f3", size = 12763 },
 ]
 
 [[package]]

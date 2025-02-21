@@ -272,7 +272,6 @@ def inner_copy_and_install(repo: str, name: str, package_path: Path):
         shutil.copytree(package_path, install_path)
         logger.info(f"Installing dbgpts '{name}' from {repo}...")
         os.chdir(install_path)
-        # subprocess.run(["poetry", "build"], check=True)
         process = subprocess.Popen(
             ["poetry", "build"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )

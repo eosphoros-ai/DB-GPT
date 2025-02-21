@@ -92,8 +92,8 @@ class SparkLLMClient(ProxyLLMClient):
         https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_3-%E8%AF%B7%E6%B1%82%E8%AF%B4%E6%98%8E
         """
         self._model = model or os.getenv("XUNFEI_SPARK_API_MODEL")
-        self._api_base = api_base
-        self._api_key = (
+        self._api_base = self._resolve_env_vars(api_base)
+        self._api_key = self._resolve_env_vars(
             api_key
             or os.getenv("XUNFEI_SPARK_API_KEY")
             or os.getenv("XUNFEI_SPARK_API_PASSWORD")

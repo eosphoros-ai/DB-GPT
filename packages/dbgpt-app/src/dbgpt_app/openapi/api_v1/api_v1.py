@@ -435,6 +435,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         get_executor(),
         CHAT_FACTORY.get_implementation,
         dialogue.chat_mode,
+        CFG.SYSTEM_APP,
         **{"chat_param": chat_param},
     )
     return chat

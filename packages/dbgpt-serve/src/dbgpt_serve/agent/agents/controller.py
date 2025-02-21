@@ -134,23 +134,6 @@ class MultiAgents(BaseComponent, ABC):
         if memory_key in self.agent_memory_map:
             return self.agent_memory_map[memory_key]
 
-        # embedding_factory = EmbeddingFactory.get_instance(CFG.SYSTEM_APP)
-        # embedding_fn = embedding_factory.create(
-        #     model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        # )
-        # vstore_name = f"_chroma_agent_memory_{dbgpts_name}_{conv_id}"
-        # Just use chroma store now
-        # vector_store_connector = VectorStoreConnector(
-        #     vector_store_type=CFG.VECTOR_STORE_TYPE,
-        #     vector_store_config=VectorStoreConfig(
-        #         name=vstore_name, embedding_fn=embedding_fn
-        #     ),
-        # )
-        # memory = HybridMemory[AgentMemoryFragment].from_chroma(
-        #     vstore_name=vstore_name,
-        #     embeddings=embedding_fn,
-        # )
-
         agent_memory = AgentMemory(gpts_memory=self.memory)
         self.agent_memory_map[memory_key] = agent_memory
         return agent_memory

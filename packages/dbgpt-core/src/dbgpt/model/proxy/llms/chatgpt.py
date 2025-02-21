@@ -144,10 +144,10 @@ class OpenAILLMClient(ProxyLLMClient):
         self.check_sdk_version(self._openai_version)
 
         self._init_params = OpenAIParameters(
-            api_type=api_type,
-            api_base=api_base,
-            api_key=api_key,
-            api_version=api_version,
+            api_type=self._resolve_env_vars(api_type),
+            api_base=self._resolve_env_vars(api_base),
+            api_key=self._resolve_env_vars(api_key),
+            api_version=self._resolve_env_vars(api_version),
             proxies=proxies,
             full_url=kwargs.get("full_url"),
         )

@@ -144,11 +144,25 @@ def register_serve_apps(
 
     from dbgpt_serve.rag.serve import Serve as RagServe
 
+    rag_config = app_config.rag
+    llm_configs = app_config.models
+
     # Register serve app
     system_app.register(
         RagServe,
         config=get_config(
-            serve_configs, RagServe.name, dbgpt_serve.rag.serve.ServeConfig
+            serve_configs,
+            RagServe.name,
+            dbgpt_serve.rag.serve.ServeConfig,
+            embedding_model=llm_configs.default_embedding,
+            rerank_model=llm_configs.default_reranker,
+            chunk_size=rag_config.chunk_size,
+            chunk_overlap=rag_config.chunk_overlap,
+            similarity_top_k=rag_config.similarity_top_k,
+            query_rewrite=rag_config.query_rewrite,
+            max_chunks_once_load=rag_config.max_chunks_once_load,
+            max_threads=rag_config.max_threads,
+            rerank_top_k=rag_config.rerank_top_k,
         ),
     )
 
@@ -227,11 +241,17 @@ def register_serve_apps(
     # ################################ Evaluate Serve Register Begin ##################
     from dbgpt_serve.evaluate.serve import Serve as EvaluateServe
 
+    rag_config = app_config.rag
+    llm_configs = app_config.models
     # Register serve Evaluate
     system_app.register(
         EvaluateServe,
         config=get_config(
-            serve_configs, EvaluateServe.name, dbgpt_serve.evaluate.serve.ServeConfig
+            serve_configs,
+            EvaluateServe.name,
+            dbgpt_serve.evaluate.serve.ServeConfig,
+            embedding_model=llm_configs.default_embedding,
+            similarity_top_k=rag_config.similarity_top_k,
         ),
     )
     # ################################ Evaluate Serve Register End ####################

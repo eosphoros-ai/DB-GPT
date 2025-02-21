@@ -1,12 +1,10 @@
 from typing import Dict
 
-from dbgpt._private.config import Config
-from dbgpt.component import logger
+from dbgpt.component import SystemApp, logger
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 from dbgpt_app.scene import BaseChat, ChatScene
-
-CFG = Config()
+from dbgpt_serve.datasource.manages import ConnectorManager
 
 
 class ChatWithDbQA(BaseChat):
@@ -16,7 +14,7 @@ class ChatWithDbQA(BaseChat):
 
     """As a DBA, Chat DB Module, chat with combine DB meta schema """
 
-    def __init__(self, chat_param: Dict):
+    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
         """Chat DB Module Initialization
         Args:
            - chat_param: Dict
@@ -27,10 +25,11 @@ class ChatWithDbQA(BaseChat):
         """
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatWithDbQA
-        super().__init__(chat_param=chat_param)
+        super().__init__(chat_param=chat_param, system_app=system_app)
 
         if self.db_name:
-            self.database = CFG.local_db_manager.get_connector(self.db_name)
+            local_db_manager = ConnectorManager.get_instance(self.system_app)
+            self.database = local_db_manager.get_connector(self.db_name)
             self.tables = self.database.get_table_names()
         if self.database.is_graph_type():
             # When the current graph database retrieves source data from ChatDB, the
@@ -41,8 +40,8 @@ class ChatWithDbQA(BaseChat):
         else:
             print(self.database.db_type)
             self.top_k = (
-                CFG.KNOWLEDGE_SEARCH_TOP_SIZE
-                if len(self.tables) > CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+                self.app_config.rag.similarity_top_k
+                if len(self.tables) > self.app_config.rag.similarity_top_k
                 else len(self.tables)
             )
 
@@ -53,7 +52,7 @@ class ChatWithDbQA(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
         if self.db_name:
-            client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
+            client = DBSummaryClient(system_app=self.system_app)
             try:
                 table_infos = await blocking_func_to_async(
                     self._executor,

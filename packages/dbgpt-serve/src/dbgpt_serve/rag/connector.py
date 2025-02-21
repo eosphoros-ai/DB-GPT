@@ -6,7 +6,7 @@ import os
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
-from dbgpt._private.config import Config
+from dbgpt import SystemApp
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
@@ -14,7 +14,6 @@ from dbgpt.storage.vector_store.filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
 
-CFG = Config()
 connector: Dict[str, Tuple[Type, Type]] = {}
 pools: DefaultDict[str, Dict] = defaultdict(dict)
 
@@ -42,6 +41,7 @@ class VectorStoreConnector:
         self,
         vector_store_type: str,
         vector_store_config: Optional[IndexStoreConfig] = None,
+        system_app: Optional[SystemApp] = None,
     ) -> None:
         """Create a VectorStoreConnector instance.
 
@@ -53,6 +53,8 @@ class VectorStoreConnector:
             raise Exception("vector_store_config is required")
 
         self._index_store_config = vector_store_config
+        self._system_app = system_app
+        self.app_config = self._system_app.config.configs.get("app_config")
         self._register()
 
         vector_store_type = self.__rewrite_index_store_type(vector_store_type)
@@ -87,7 +89,7 @@ class VectorStoreConnector:
 
     def __rewrite_index_store_type(self, index_store_type):
         # Rewrite Knowledge Graph Type
-        if CFG.GRAPH_COMMUNITY_SUMMARY_ENABLED:
+        if self.app_config.rag.graph_community_summary_enabled:
             if index_store_type == "KnowledgeGraph":
                 return "CommunitySummaryKnowledgeGraph"
         return index_store_type
@@ -98,6 +100,7 @@ class VectorStoreConnector:
         vector_store_type: Optional[str] = None,
         embedding_fn: Optional[Any] = None,
         vector_store_config: Optional[VectorStoreConfig] = None,
+        system_app: Optional[SystemApp] = None,
     ) -> "VectorStoreConnector":
         """Initialize default vector store connector."""
         vector_store_type = vector_store_type or os.getenv(
@@ -108,7 +111,7 @@ class VectorStoreConnector:
         vector_store_config = vector_store_config or ChromaVectorConfig()
         vector_store_config.embedding_fn = embedding_fn
         real_vector_store_type = cast(str, vector_store_type)
-        return cls(real_vector_store_type, vector_store_config)
+        return cls(real_vector_store_type, vector_store_config, system_app)
 
     @property
     def index_client(self):

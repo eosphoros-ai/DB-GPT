@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict
 
+from dbgpt import SystemApp
 from dbgpt.core.interface.message import AIMessage, ViewMessage
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.json_utils import EnhancedJSONEncoder
@@ -20,6 +21,7 @@ class ExcelLearning(BaseChat):
         excel_reader: Any = None,
         model_name: str = None,
         user_name: str = None,
+        system_app: SystemApp = None,
     ):
         chat_mode = ChatScene.ExcelLearning
         """ """
@@ -33,7 +35,7 @@ class ExcelLearning(BaseChat):
             "model_name": model_name,
             "user_name": user_name,
         }
-        super().__init__(chat_param=chat_param)
+        super().__init__(chat_param=chat_param, system_app=system_app)
         if parent_mode:
             self.current_message.chat_mode = parent_mode.value()
 

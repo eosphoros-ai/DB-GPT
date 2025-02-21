@@ -3,8 +3,7 @@ import json
 import logging
 from typing import Any, List, Optional
 
-from dbgpt._private.config import Config
-from dbgpt.component import ComponentType
+from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -16,7 +15,6 @@ from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
 from ..models.chunk_db import DocumentChunkDao, DocumentChunkEntity
 from ..models.document_db import KnowledgeDocumentDao
 
-CFG = Config()
 CHUNK_PAGE_SIZE = 1000
 logger = logging.getLogger(__name__)
 
@@ -30,6 +28,7 @@ class QARetriever(BaseRetriever):
         top_k: Optional[int] = 4,
         embedding_fn: Optional[Any] = 4,
         lambda_value: Optional[float] = 1e-5,
+        system_app: SystemApp = None,
     ):
         """
         Args:
@@ -38,6 +37,7 @@ class QARetriever(BaseRetriever):
         """
         if space_id is None:
             raise ValueError("space_id is required")
+        self._system_app = system_app
         self._top_k = top_k
         self._lambda_value = lambda_value
         self._space_dao = KnowledgeSpaceDao()
@@ -47,9 +47,11 @@ class QARetriever(BaseRetriever):
 
         space = self._space_dao.get_one({"id": space_id})
         if not space:
+            space = self._space_dao.get_one({"name": space_id})
+        if not space:
             raise ValueError("space not found")
         self.documents = self._document_dao.get_list({"space": space.name})
-        self._executor = CFG.SYSTEM_APP.get_component(
+        self._executor = self._system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
 
