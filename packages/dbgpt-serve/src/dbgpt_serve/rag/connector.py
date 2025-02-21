@@ -54,8 +54,7 @@ class VectorStoreConnector:
 
         self._index_store_config = vector_store_config
         self._system_app = system_app
-        app_config = self._system_app.config.configs.get("app_config")
-        self.web_config = app_config.service.web
+        self.app_config = self._system_app.config.configs.get("app_config")
         self._register()
 
         vector_store_type = self.__rewrite_index_store_type(vector_store_type)
@@ -90,7 +89,7 @@ class VectorStoreConnector:
 
     def __rewrite_index_store_type(self, index_store_type):
         # Rewrite Knowledge Graph Type
-        if self.web_config.graph_rag.graph_community_summary_enabled:
+        if self.app_config.rag.graph_community_summary_enabled:
             if index_store_type == "KnowledgeGraph":
                 return "CommunitySummaryKnowledgeGraph"
         return index_store_type

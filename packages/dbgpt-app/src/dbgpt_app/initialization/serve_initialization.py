@@ -144,7 +144,7 @@ def register_serve_apps(
 
     from dbgpt_serve.rag.serve import Serve as RagServe
 
-    rag_config = app_config.service.web.rag
+    rag_config = app_config.rag
     llm_configs = app_config.models
 
     # Register serve app
@@ -156,13 +156,13 @@ def register_serve_apps(
             dbgpt_serve.rag.serve.ServeConfig,
             embedding_model=llm_configs.default_embedding,
             rerank_model=llm_configs.default_reranker,
-            knowledge_chunk_size=rag_config.knowledge_chunk_size,
-            knowledge_chunk_overlap=rag_config.knowledge_chunk_overlap,
-            knowledge_search_top_k=rag_config.knowledge_search_top_k,
-            knowledge_search_rewrite=rag_config.knowledge_search_rewrite,
-            knowledge_max_chunks_once_load=rag_config.knowledge_max_chunks_once_load,
-            knowledge_max_threads=rag_config.knowledge_max_threads,
-            knowledge_rerank_top_k=rag_config.knowledge_rerank_top_k,
+            chunk_size=rag_config.chunk_size,
+            chunk_overlap=rag_config.chunk_overlap,
+            similarity_top_k=rag_config.similarity_top_k,
+            query_rewrite=rag_config.query_rewrite,
+            max_chunks_once_load=rag_config.max_chunks_once_load,
+            max_threads=rag_config.max_threads,
+            rerank_top_k=rag_config.rerank_top_k,
         ),
     )
 
@@ -241,7 +241,7 @@ def register_serve_apps(
     # ################################ Evaluate Serve Register Begin ##################
     from dbgpt_serve.evaluate.serve import Serve as EvaluateServe
 
-    rag_config = app_config.service.web.rag
+    rag_config = app_config.rag
     llm_configs = app_config.models
     # Register serve Evaluate
     system_app.register(
@@ -251,7 +251,7 @@ def register_serve_apps(
             EvaluateServe.name,
             dbgpt_serve.evaluate.serve.ServeConfig,
             embedding_model=llm_configs.default_embedding,
-            knowledge_search_top_k=rag_config.knowledge_search_top_k,
+            similarity_top_k=rag_config.similarity_top_k,
         ),
     )
     # ################################ Evaluate Serve Register End ####################

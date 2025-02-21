@@ -13,7 +13,6 @@ from fastapi import HTTPException
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core import Chunk, LLMClient
@@ -230,12 +229,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
                 space_context = self.get_space_context(space_id)
                 chunk_parameters.chunk_size = (
-                    self._serve_config.knowledge_chunk_size
+                    self._serve_config.chunk_size
                     if space_context is None
                     else int(space_context["embedding"]["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
-                    self._serve_config.knowledge_chunk_overlap
+                    self._serve_config.chunk_overlap
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
@@ -479,12 +478,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
                 space_context = self.get_space_context(space_id)
                 chunk_parameters.chunk_size = (
-                    self._serve_config.knowledge_chunk_size
+                    self._serve_config.chunk_size
                     if space_context is None
                     else int(space_context["embedding"]["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
-                    self._serve_config.knowledge_chunk_overlap
+                    self._serve_config.chunk_overlap
                     if space_context is None
                     else int(space_context["embedding"]["chunk_overlap"])
                 )
@@ -502,17 +501,15 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         embedding_factory = self._system_app.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[self._serve_config.embedding_model]
-        )
+        embedding_fn = embedding_factory.create()
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         space = self.get({"id": space_id})
         config = VectorStoreConfig(
             name=space.name,
             embedding_fn=embedding_fn,
-            max_chunks_once_load=self._serve_config.knowledge_max_chunks_once_load,
-            max_threads=self._serve_config.knowledge_max_threads,
+            max_chunks_once_load=self._serve_config.max_chunks_once_load,
+            max_threads=self._serve_config.max_threads,
             llm_client=self.llm_client,
             model_name=None,
         )
@@ -638,7 +635,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         reranker: Optional[RerankEmbeddingsRanker] = None
         top_k = request.top_k
         if self._serve_config.rerank_model:
-            reranker_top_k = self._serve_config.knowledge_rerank_top_k
+            reranker_top_k = self._serve_config.rerank_top_k
             rerank_embeddings = RerankEmbeddingFactory.get_instance(
                 self._system_app
             ).create()

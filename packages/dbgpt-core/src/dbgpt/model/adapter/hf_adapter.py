@@ -210,6 +210,12 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             )
         return model, tokenizer
 
+    def load_from_params(self, params: LLMDeployModelParameters):
+        """Load the model from the parameters."""
+        from .loader import huggingface_loader
+
+        return huggingface_loader(self, params)
+
     def get_generate_stream_function(
         self, model, deploy_model_params: LLMDeployModelParameters
     ):

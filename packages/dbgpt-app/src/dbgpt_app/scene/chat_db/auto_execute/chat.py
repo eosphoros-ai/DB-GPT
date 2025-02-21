@@ -57,7 +57,7 @@ class ChatWithDbAutoExecute(BaseChat):
                     client.get_db_summary,
                     self.db_name,
                     self.current_user_input,
-                    self.web_config.rag.knowledge_search_top_k,
+                    self.app_config.rag.similarity_top_k,
                 )
         except Exception as e:
             print("db summary find error!" + str(e))

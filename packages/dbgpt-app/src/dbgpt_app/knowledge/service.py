@@ -411,9 +411,7 @@ class KnowledgeService:
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        )
+        embedding_fn = embedding_factory.create()
         config = VectorStoreConfig(
             name=space.name,
             embedding_fn=embedding_fn,
@@ -462,9 +460,7 @@ class KnowledgeService:
             embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )
-            embedding_fn = embedding_factory.create(
-                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-            )
+            embedding_fn = embedding_factory.create()
             config = VectorStoreConfig(
                 name=space.name,
                 embedding_fn=embedding_fn,
@@ -630,9 +626,7 @@ class KnowledgeService:
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        )
+        embedding_fn = embedding_factory.create()
         spaces = self.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")

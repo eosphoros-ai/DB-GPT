@@ -2,6 +2,7 @@ from typing import List
 
 from dbgpt.core import Embeddings, RerankEmbeddings
 from dbgpt.model.cluster.manager_base import WorkerManager
+from dbgpt.model.parameter import WorkerType
 
 
 class RemoteEmbeddings(Embeddings):
@@ -39,6 +40,7 @@ class RemoteRerankEmbeddings(RerankEmbeddings):
             "model": self.model_name,
             "input": candidates,
             "query": query,
+            "worker_type": WorkerType.RERANKER.value,
         }
         return self.worker_manager.sync_embeddings(params)[0]
 
@@ -48,6 +50,7 @@ class RemoteRerankEmbeddings(RerankEmbeddings):
             "model": self.model_name,
             "input": candidates,
             "query": query,
+            "worker_type": WorkerType.RERANKER.value,
         }
         # Use embeddings interface to get scores of ranker
         scores = await self.worker_manager.embeddings(params)

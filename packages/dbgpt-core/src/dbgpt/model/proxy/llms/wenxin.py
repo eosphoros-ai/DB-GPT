@@ -148,8 +148,8 @@ class WenxinLLMClient(ProxyLLMClient):
         if not model_version:
             raise ValueError("model_version can't be empty")
         self._model = model
-        self._api_key = api_key
-        self._api_secret = api_secret
+        self._api_key = self._resolve_env_vars(api_key)
+        self._api_secret = self._resolve_env_vars(api_secret)
         self._model_version = model_version
 
         super().__init__(

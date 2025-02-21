@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from dbgpt.component import ComponentType, SystemApp
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import Chunk
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
@@ -43,15 +42,13 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         self._rerank = rerank
         self._llm_model = llm_model
         app_config = system_app.config.configs.get("app_config")
-        self._top_k = top_k or app_config.service.web.rag.knowledge_search_top_k
+        self._top_k = top_k or app_config.rag.similarity_top_k
         self._embedding_model = embedding_model or app_config.models.default_embedding
         self._system_app = system_app
         embedding_factory = self._system_app.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        embedding_fn = embedding_factory.create(
-            model_name=EMBEDDING_MODEL_CONFIG[self._embedding_model]
-        )
+        embedding_fn = embedding_factory.create()
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         space_dao = KnowledgeSpaceDao()

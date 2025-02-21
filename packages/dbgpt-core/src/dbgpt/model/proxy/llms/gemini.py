@@ -133,8 +133,10 @@ class GeminiLLMClient(ProxyLLMClient):
             ) from exc
         if not model:
             model = GEMINI_DEFAULT_MODEL
-        self._api_key = api_key if api_key else os.getenv("GEMINI_PROXY_API_KEY")
-        self._api_base = api_base if api_base else os.getenv("GEMINI_PROXY_API_BASE")
+        api_key = api_key if api_key else os.getenv("GEMINI_PROXY_API_KEY")
+        api_base = api_base if api_base else os.getenv("GEMINI_PROXY_API_BASE")
+        self._api_key = self._resolve_env_vars(api_key)
+        self._api_base = self._resolve_env_vars(api_base)
         self._model = model
         if not self._api_key:
             raise RuntimeError("api_key can't be empty")

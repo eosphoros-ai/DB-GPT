@@ -6,7 +6,6 @@ from typing import Any, Dict, Optional, cast
 
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter
-from dbgpt.model.base import ModelType
 from dbgpt.util import get_gpu_memory
 from dbgpt.util.parameter_utils import _genenv_ignoring_key_case
 
@@ -68,19 +67,7 @@ class ModelLoader:
         self, model_params: LLMDeployModelParameters, llm_adapter: LLMModelAdapter
     ):
         """Load model with model parameters."""
-        model_type = llm_adapter.model_type()
-        if model_type == ModelType.HF:
-            return huggingface_loader(llm_adapter, model_params)
-        elif model_type == ModelType.LLAMA_CPP:
-            return llm_adapter.load_from_params(model_params)
-        elif model_type == ModelType.PROXY:
-            return llm_adapter.load_from_params(model_params)
-        elif model_type == ModelType.VLLM:
-            return llm_adapter.load_from_params(model_params)
-        elif model_type == ModelType.LLAMA_CPP_SERVER:
-            return llm_adapter.load_from_params(model_params)
-        else:
-            raise Exception(f"Unkown model type {model_type}")
+        return llm_adapter.load_from_params(model_params)
 
 
 def huggingface_loader(

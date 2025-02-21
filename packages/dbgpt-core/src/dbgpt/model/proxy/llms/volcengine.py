@@ -1,17 +1,16 @@
-import logging
 import os
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
 from dbgpt.core import ModelMetadata
-from dbgpt.model.proxy.base import (
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
+from dbgpt.util.i18n_utils import _
+
+from ..base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
     register_proxy_model_adapter,
 )
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
-from dbgpt.util.i18n_utils import _
-
 from .chatgpt import OpenAICompatibleDeployModelParameters, OpenAILLMClient
 
 if TYPE_CHECKING:
@@ -20,44 +19,42 @@ if TYPE_CHECKING:
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
-logger = logging.getLogger(__name__)
-
-
-_DEFAULT_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-_DEFAULT_MODEL = "qwen-max-latest"
+_DEFAULT_MODEL = "deepseek-v3-241226"
 
 
 @dataclass
-class TongyiDeployModelParameters(OpenAICompatibleDeployModelParameters):
-    """Deploy model parameters for Tongyi."""
+class VolcengineDeployModelParameters(OpenAICompatibleDeployModelParameters):
+    """Deploy model parameters for Volcengine."""
 
-    provider: str = "proxy/tongyi"
+    provider: str = "proxy/volcengine"
 
     api_base: Optional[str] = field(
-        default=_DEFAULT_API_BASE,
+        default="${env:ARK_API_BASE:-https://ark.cn-beijing.volces.com/api/v3}",
         metadata={
-            "help": _("The base url of the tongyi API."),
+            "help": _("The base url of the Volcengine API."),
         },
     )
 
     api_key: Optional[str] = field(
-        default="${env:DASHSCOPE_API_KEY}",
+        default="${env:ARK_API_KEY}",
         metadata={
-            "help": _("The API key of the tongyi API."),
+            "help": _("The API key of the Volcengine API."),
         },
     )
 
 
-def tongyi_generate_stream(
+async def volcengine_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
-    client: TongyiLLMClient = model.proxy_llm_client
+    client: VolcengineLLMClient = cast(VolcengineLLMClient, model.proxy_llm_client)
     request = parse_model_request(params, client.default_model, stream=True)
-    for r in client.sync_generate_stream(request):
+    async for r in client.generate_stream(request):
         yield r
 
 
-class TongyiLLMClient(OpenAILLMClient):
+class VolcengineLLMClient(OpenAILLMClient):
+    """Volcengine LLM Client."""
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -73,9 +70,18 @@ class TongyiLLMClient(OpenAILLMClient):
         openai_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
-        api_base = api_base or os.getenv("DASHSCOPE_API_BASE") or _DEFAULT_API_BASE
-        api_key = api_key or os.getenv("DASHSCOPE_API_KEY")
+        api_base = (
+            api_base
+            or os.getenv("ARK_API_BASE")
+            or "https://ark.cn-beijing.volces.com/api/v3"
+        )
+        api_key = api_key or os.getenv("ARK_API_KEY")
         model = model or _DEFAULT_MODEL
+        if not api_key:
+            raise ValueError(
+                "Volceing API key is required, please set 'ARK_API_KEY' in "
+                "environment variable or pass it to the client."
+            )
         super().__init__(
             api_key=api_key,
             api_base=api_base,
@@ -94,7 +100,7 @@ class TongyiLLMClient(OpenAILLMClient):
     def check_sdk_version(self, version: str) -> None:
         if not version >= "1.0":
             raise ValueError(
-                "Tongyi API requires openai>=1.0, please upgrade it by "
+                "Volcengine API requires openai>=1.0, please upgrade it by "
                 "`pip install --upgrade 'openai>=1.0'`"
             )
 
@@ -106,44 +112,36 @@ class TongyiLLMClient(OpenAILLMClient):
         return model
 
     @classmethod
-    def param_class(cls) -> Type[TongyiDeployModelParameters]:
+    def param_class(cls) -> Type[VolcengineDeployModelParameters]:
         """Get the deploy model parameters class."""
-        return TongyiDeployModelParameters
+        return VolcengineDeployModelParameters
 
     @classmethod
     def generate_stream_function(
         cls,
     ) -> Optional[Union[GenerateStreamFunction, AsyncGenerateStreamFunction]]:
         """Get the generate stream function."""
-        return tongyi_generate_stream
+        return volcengine_generate_stream
 
 
 register_proxy_model_adapter(
-    TongyiLLMClient,
+    VolcengineLLMClient,
     supported_models=[
         ModelMetadata(
-            model=["qwen-max-latest", "qwen-max-2025-01-25", "qwen-max"],
-            context_length=32 * 1024,
-            description="Qwen Max by Qwen",
-            link="https://bailian.console.aliyun.com/#/model-market/detail/qwen-max-latest",  # noqa
+            model="deepseek-v3-241226",
+            context_length=64 * 1024,
+            max_output_length=8 * 1024,
+            description="DeepSeek-V3 by DeepSeek",
+            link="https://api-docs.deepseek.com/news/news1226",
             function_calling=True,
         ),
         ModelMetadata(
-            model="deepseek-r1",
+            model="deepseek-r1-250120",
             context_length=64 * 1024,
             max_output_length=8 * 1024,
             description="DeepSeek-R1 by DeepSeek",
-            link="https://bailian.console.aliyun.com/#/model-market/detail/deepseek-r1",
+            link="https://api-docs.deepseek.com/news/news250120",
             function_calling=True,
         ),
-        ModelMetadata(
-            model="deepseek-v3",
-            context_length=64 * 1024,
-            max_output_length=8 * 1024,
-            description="DeepSeek-R1 by DeepSeek",
-            link="https://bailian.console.aliyun.com/#/model-market/detail/deepseek-v3",
-            function_calling=True,
-        ),
-        # More models see: https://bailian.console.aliyun.com/#/model-market
     ],
 )
