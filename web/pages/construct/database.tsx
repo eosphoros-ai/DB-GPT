@@ -80,7 +80,7 @@ function Database() {
     
     Modal.confirm({
       title: 'Tips',
-      content: `Do you Want to delete the ${item.params?.database}?`,
+      content: `Do you Want to delete the database connection?`,
       onOk() {
         return new Promise<void>((resolve, reject) => {
           handleDelete(item.id, resolve, reject);
@@ -301,8 +301,8 @@ function Database() {
               </Button>
               {dbListByType[draw.type].map(item => (
                 <Card
-                  key={item.params?.database}
-                  title={item.params?.database}
+                  key={item.params?.database || ''}
+                  title={item.params?.database || '' }
                   extra={
                     <>
                       <RedoOutlined
@@ -330,9 +330,10 @@ function Database() {
                   className='mb-4'
                 >
                     <>
-                      <p>host: {item.params.host}</p>
-                      <p>username: {item.params.user}</p>
-                      <p>port: {item.params.port}</p>
+                    {Object.keys(item.params).map(key =>(
+                      <p>{key}: {item.params[key]}</p>
+                      )
+                    )}
                     </>
                   <p>remark: {item.description}</p>
                 </Card>
