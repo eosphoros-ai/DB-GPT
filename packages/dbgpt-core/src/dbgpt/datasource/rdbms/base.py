@@ -497,6 +497,7 @@ class RDBMSConnector(BaseConnector):
         logger.info(f"Query[{query}] with timeout={timeout}s")
         if not query:
             return [], None
+        query = self._format_sql(query)
 
         def _execute_query(session, sql_text):
             cursor = session.execute(sql_text)
@@ -591,12 +592,19 @@ class RDBMSConnector(BaseConnector):
                             f"Failed to reset timeout settings: {reset_error}"
                         )
 
+    def _format_sql(self, sql: str) -> str:
+        """Format SQL command."""
+        if not sql:
+            return sql
+        return sql.strip()
+
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
         logger.info("SQL:" + command)
         if not command or len(command) < 0:
             return []
         parsed, ttype, sql_type, table_name = self.__sql_parse(command)
+        command = self._format_sql(command)
         if ttype == sqlparse.tokens.DML:
             if sql_type == "SELECT":
                 return self._query(command, fetch)
