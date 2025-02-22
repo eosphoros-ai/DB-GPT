@@ -1,7 +1,7 @@
 import { apiInterceptors, getDbList, getDbSupportType, postDbDelete, postDbRefresh } from '@/client/api';
 import GPTCard from '@/components/common/gpt-card';
 import MuiLoading from '@/components/common/loading';
-import NewFormDialog from '@/components/database/new-form-dialog';
+import FormDialog from '@/components/database/form-dialog';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { DBOption, DBType, DbListResponse, DbSupportTypeResponse } from '@/types/db';
 import { dbMapper } from '@/utils';
@@ -189,7 +189,7 @@ function Database() {
             );
           })}
         </div>
-        <NewFormDialog
+        <FormDialog
           open={modal.open}
           dbTypeList={dbTypeList}
           getFromRenderData={getFromRenderData}
