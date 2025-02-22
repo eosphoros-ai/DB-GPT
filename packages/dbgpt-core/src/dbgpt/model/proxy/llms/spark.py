@@ -34,6 +34,7 @@ class SparkDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:XUNFEI_SPARK_API_KEY}",
         metadata={
             "help": _("The API key of the Spark API."),
+            "tags": "privacy",
         },
     )
 

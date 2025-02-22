@@ -43,6 +43,7 @@ class OpenAICompatibleDeployModelParameters(LLMDeployModelParameters):
         default="${env:OPENAI_API_KEY}",
         metadata={
             "help": _("The API key of the OpenAI API."),
+            "tags": "privacy",
         },
     )
     api_type: Optional[str] = field(

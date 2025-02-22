@@ -1,11 +1,12 @@
 import { apiInterceptors, createModel, getSupportModels } from '@/client/api';
 import { renderModelIcon } from '@/components/chat/header/model-selector';
-import { StartModelParams, SupportModel, SupportModelParams } from '@/types/model';
+import { ConfigurableParams } from '@/types/common';
+import { StartModelParams, SupportModel } from '@/types/model';
 import { AutoComplete, Button, Form, Select, Tooltip, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
-import ModelParams from './model-params';
+import ConfigurableForm from '../common/configurable-form';
 
 const { Option } = Select;
 const FormItem = Form.Item;
@@ -18,7 +19,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
   const [_, setModels] = useState<Array<SupportModel> | null>([]);
   const [selectedWorkerType, setSelectedWorkerType] = useState<string>();
   const [selectedProvider, setSelectedProvider] = useState<string>();
-  const [params, setParams] = useState<Array<SupportModelParams> | null>(null);
+  const [params, setParams] = useState<Array<ConfigurableParams> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [form] = Form.useForm();
 
@@ -215,7 +216,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
             />
           </FormItem>
 
-          <ModelParams params={params.filter(p => p.param_name !== 'name')} form={form} />
+          <ConfigurableForm params={params.filter(p => p.param_name !== 'name')} form={form} />
         </>
       )}
 

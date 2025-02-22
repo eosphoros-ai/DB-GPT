@@ -722,6 +722,8 @@ class ConfigurationManager:
                     for k, v in parent_tags.items()
                     if k not in ("help", "label", "valid_values")
                 }
+            if not desc.label:
+                desc.label = fd.name
 
             # Handle default values
             if fd.default is not MISSING:

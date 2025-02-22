@@ -24,7 +24,11 @@ from dbgpt.util.i18n_utils import _
 )
 @dataclass
 class DorisParameters(RDBMSDatasourceParameters):
-    """Doris connection parameters."""
+    """Doris connection parameters.
+
+    Doris has a same protocol with MySQL, so we suggest to use MySQL connector to
+    connect Doris.
+    """
 
     __type__ = "doris"
     driver: str = field(

@@ -47,12 +47,14 @@ class WenxinDeployModelParameters(LLMDeployModelParameters):
         default="${env:WEN_XIN_API_KEY}",
         metadata={
             "help": _("The API key of the Wenxin API."),
+            "tags": "privacy",
         },
     )
     api_secret: Optional[str] = field(
         default="${env:WEN_XIN_API_SECRET}",
         metadata={
             "help": _("The API secret key of the Wenxin API."),
+            "tags": "privacy",
         },
     )
 

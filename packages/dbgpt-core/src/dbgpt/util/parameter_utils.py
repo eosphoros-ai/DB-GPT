@@ -2,12 +2,24 @@ import argparse
 import os
 from collections import OrderedDict
 from dataclasses import MISSING, asdict, dataclass, field, fields, is_dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from dbgpt.util.annotations import Deprecated
 
 if TYPE_CHECKING:
     from dbgpt._private.pydantic import BaseModel
+
+T = TypeVar("T")
 
 MISSING_DEFAULT_VALUE = "__MISSING_DEFAULT_VALUE__"
 
@@ -64,9 +76,7 @@ class ParameterDescription:
 @dataclass
 class BaseParameters:
     @classmethod
-    def from_dict(
-        cls, data: dict, ignore_extra_fields: bool = False
-    ) -> "BaseParameters":
+    def from_dict(cls: Type[T], data: dict, ignore_extra_fields: bool = False) -> T:
         """Create an instance of the dataclass from a dictionary.
 
         Args:

@@ -1,3 +1,5 @@
+import { ConfigurableParams } from '@/types/common';
+
 export type IModelData = {
   chat_scene: string;
   model_name: string;
@@ -23,15 +25,6 @@ export type BaseModelParams = {
   params: any;
 };
 
-// export type ModelParams = {
-//   model_name: string;
-//   model_path: string;
-//   proxy_api_key: string;
-//   proxy_server_url: string;
-//   model_type: string;
-//   max_context_size: number;
-// };
-//
 export type ModelParams = {
   [key: string]: string | number | boolean;
 };
@@ -43,31 +36,6 @@ export type StartModelParams = {
   worker_type: string;
   params: ModelParams;
 };
-
-interface ExtMetadata {
-  tags: string;
-  order: number;
-  [key: string]: string | number | boolean;
-}
-
-type NestedField = {
-  [key: string]: SupportModelParams;
-};
-
-export type SupportModelParams = {
-  param_class: string;
-  param_name: string;
-  param_type: string;
-  default_value: string | boolean | number;
-  description: string;
-  required: boolean;
-  valid_values: null | string[];
-  ext_metadata: ExtMetadata;
-  is_array: boolean;
-  label: string;
-  nested_fields: NestedField | null;
-};
-
 export type SupportModel = {
   model: string;
   path: string;
@@ -77,7 +45,7 @@ export type SupportModel = {
   enabled: boolean;
   host: string;
   port: number;
-  params: SupportModelParams;
+  params: ConfigurableParams;
   provider: string;
   description: string;
 };

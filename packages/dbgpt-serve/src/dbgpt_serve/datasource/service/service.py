@@ -50,7 +50,6 @@ class Service(
         self._dao: ConnectConfigDao = dao
         self._dag_manager: Optional[DAGManager] = None
         self._db_summary_client = None
-        self._vector_connector = None
         self._serve_config = config
 
         super().__init__(system_app)
@@ -112,19 +111,23 @@ class Service(
             if isinstance(request, DatasourceCreateRequest)
             else request.db_type
         )
+        desc = ""
         if isinstance(request, DatasourceCreateRequest):
             connector_params: BaseDatasourceParameters = (
                 self.datasource_manager._create_parameters(request)
             )
             persisted_state = connector_params.persisted_state()
+            desc = request.description
         else:
             persisted_state = model_to_dict(request)
+            desc = request.comment
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
             persisted_state["ext_config"] = json.dumps(
                 persisted_state["ext_config"], ensure_ascii=False
             )
+        persisted_state["comment"] = desc
         db_name = persisted_state.get("db_name")
         datasource = self._dao.get_by_names(db_name)
         if datasource:
@@ -172,19 +175,23 @@ class Service(
             if isinstance(request, DatasourceCreateRequest)
             else request.db_type
         )
+        desc = ""
         if isinstance(request, DatasourceCreateRequest):
             connector_params: BaseDatasourceParameters = (
                 self.datasource_manager._create_parameters(request)
             )
             persisted_state = connector_params.persisted_state()
+            desc = request.description
         else:
             persisted_state = model_to_dict(request)
+            desc = request.comment
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
             persisted_state["ext_config"] = json.dumps(
                 persisted_state["ext_config"], ensure_ascii=False
             )
+        persisted_state["comment"] = desc
         db_name = persisted_state.get("db_name")
         if not db_name:
             raise HTTPException(status_code=400, detail="datasource name is required")
@@ -194,8 +201,7 @@ class Service(
                 status_code=400,
                 detail=f"there is no datasource name:{db_name} exists",
             )
-        update_req = DatasourceServeRequest(**persisted_state)
-        res = self._dao.update({"id": datasources.id}, update_req)
+        res = self._dao.update({"id": datasources.id}, persisted_state)
         return self._to_query_response(res)
 
     def get(self, datasource_id: str) -> Optional[DatasourceQueryResponse]:
@@ -224,12 +230,12 @@ class Service(
         db_config = self._dao.get_one({"id": datasource_id})
         vector_name = db_config.db_name + "_profile"
         vector_store_config = VectorStoreConfig(name=vector_name)
-        self._vector_connector = VectorStoreConnector(
+        _vector_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=vector_store_config,
             system_app=self._system_app,
         )
-        self._vector_connector.delete_vector_name(vector_name)
+        _vector_connector.delete_vector_name(vector_name)
         if db_config:
             self._dao.delete({"id": datasource_id})
         return db_config
@@ -282,3 +288,26 @@ class Service(
             bool: The test result
         """
         return self.datasource_manager.test_connection(request)
+
+    def refresh(self, datasource_id: str) -> bool:
+        """Refresh the datasource.
+
+        Args:
+            datasource_id (str): The datasource_id
+
+        Returns:
+            bool: The refresh result
+        """
+        db_config = self._dao.get_one({"id": datasource_id})
+        vector_name = db_config.db_name + "_profile"
+        vector_store_config = VectorStoreConfig(name=vector_name)
+        _vector_connector = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE,
+            vector_store_config=vector_store_config,
+            system_app=self._system_app,
+        )
+        _vector_connector.delete_vector_name(vector_name)
+        self._db_summary_client.db_summary_embedding(
+            db_config.db_name, db_config.db_type
+        )
+        return True

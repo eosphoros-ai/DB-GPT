@@ -50,6 +50,7 @@ class ClaudeDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:ANTHROPIC_API_KEY}",
         metadata={
             "help": _("The API key of the claude API."),
+            "tags": "privacy",
         },
     )
 

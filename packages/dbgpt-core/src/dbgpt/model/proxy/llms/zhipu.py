@@ -36,6 +36,7 @@ class ZhipuDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:ZHIPUAI_API_KEY}",
         metadata={
             "help": _("The API key of the Zhipu API."),
+            "tags": "privacy",
         },
     )
 

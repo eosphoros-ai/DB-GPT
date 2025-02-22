@@ -38,7 +38,8 @@ class TuGraphParameters(BaseDatasourceParameters):
                 "Database password, you can write your password directly, of course, "
                 "you can also use environment variables, such as "
                 "${env:DBGPT_DB_PASSWORD}"
-            )
+            ),
+            "tags": "privacy",
         },
     )
     port: int = field(

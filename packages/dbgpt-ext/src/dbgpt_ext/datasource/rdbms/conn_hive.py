@@ -50,7 +50,11 @@ class HiveParameters(BaseDatasourceParameters):
         default="", metadata={"help": _("Username for authentication")}
     )
     password: str = field(
-        default="", metadata={"help": _("Password for LDAP or CUSTOM auth")}
+        default="",
+        metadata={
+            "help": _("Password for LDAP or CUSTOM auth"),
+            "tags": "privacy",
+        },
     )
 
     # Kerberos parameters
@@ -170,3 +174,9 @@ class HiveConnector(RDBMSConnector):
     def get_charset(self):
         """Get character_set of current database."""
         return "UTF-8"
+
+    def _format_sql(self, sql: str) -> str:
+        """Format sql."""
+        sql = super()._format_sql(sql)
+        # remove ';' at the end of sql
+        return sql.rstrip(";")

@@ -39,6 +39,7 @@ class YiDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:YI_API_KEY}",
         metadata={
             "help": _("The API key of the Yi API."),
+            "tags": "privacy",
         },
     )
 
