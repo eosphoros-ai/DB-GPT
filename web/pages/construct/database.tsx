@@ -1,7 +1,7 @@
 import { apiInterceptors, getDbList, getDbSupportType, postDbDelete, postDbRefresh } from '@/client/api';
 import GPTCard from '@/components/common/gpt-card';
 import MuiLoading from '@/components/common/loading';
-import FormDialog from '@/components/database/form-dialog';
+import NewFormDialog from '@/components/database/new-form-dialog';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { DBOption, DBType, DbListResponse, DbSupportTypeResponse } from '@/types/db';
 import { dbMapper } from '@/utils';
@@ -30,6 +30,7 @@ function Database() {
     info?: string;
     dbType?: DBType;
     dbTypeData?: any[];
+    description?: string;
   }>({ open: false });
   const [draw, setDraw] = useState<{
     open: boolean;
@@ -73,7 +74,7 @@ function Database() {
         element.default_value = item.params[element.param_name];
       }
     }
-    setModal({ open: true, info: item.id, dbType: item.type });
+    setModal({ open: true, info: item.id, dbType: item.type, description: item.description });
   };
 
   const onDelete = (item: DBItem) => {
@@ -139,6 +140,13 @@ function Database() {
     setRefreshLoading(false);
   };
 
+  const getFileName = (path: string) => {
+    if (!path) return '';
+    // Handle Windows and Unix style paths
+    const parts = path.split(/[/\\]/);
+    return parts[parts.length - 1];
+  };
+
   return (
     <ConstructLayout>
       <div className='relative min-h-full overflow-y-auto px-6 max-h-[90vh]'>
@@ -181,10 +189,11 @@ function Database() {
             );
           })}
         </div>
-        <FormDialog
+        <NewFormDialog
           open={modal.open}
           dbTypeList={dbTypeList}
           getFromRenderData={getFromRenderData}
+          description={modal.description}
           choiceDBType={modal.dbType}
           editValue={modal.info}
           dbTypeData={modal.dbTypeData}
@@ -219,8 +228,8 @@ function Database() {
               </Button>
               {dbListByType[draw.type].map(item => (
                 <Card
-                  key={item.params?.database || ''}
-                  title={item.params?.database || ''}
+                  key={item.params?.database || item.params?.path || ''}
+                  title={item.params?.database || getFileName(item.params?.path) || ''}
                   extra={
                     <>
                       <RedoOutlined
@@ -248,13 +257,18 @@ function Database() {
                   className='mb-4'
                 >
                   <>
-                    {Object.keys(item.params).map(key => (
-                      <p>
-                        {key}: {item.params[key]}
-                      </p>
-                    ))}
+                    {['host', 'port', 'path', 'user', 'database', 'schema']
+                      // Just handle these keys
+                      .filter(key => Object.prototype.hasOwnProperty.call(item.params, key))
+                      .map(key => (
+                        <p key={key}>
+                          {key}: {key === 'path' ? getFileName(item.params[key]) : item.params[key]}
+                        </p>
+                      ))}
                   </>
-                  <p>remark: {item.description}</p>
+                  <p>
+                    {t('description')}: {item.description}
+                  </p>
                 </Card>
               ))}
             </Spin>

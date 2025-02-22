@@ -1,4 +1,4 @@
-import { ConfigurableParams } from '@/types/model';
+import { ConfigurableParams } from '@/types/common';
 
 export type DBOption = {
   label: string;
@@ -7,6 +7,7 @@ export type DBOption = {
   isFileDb?: boolean;
   icon: string;
   desc?: string;
+  parameters?: ConfigurableParams[];
 };
 
 export type DBType =
@@ -49,7 +50,6 @@ export type IChatDbSchema = {
 export type DbListResponse = IChatDbSchema[];
 export type IChatDbSupportTypeSchema = {
   db_type: DBType;
-  is_file_db: boolean;
   name: string;
   params: ConfigurableParams;
   types: any[];
@@ -70,18 +70,6 @@ export type ChatFeedBackSchema = {
   score: number;
   ques_type: string;
   messages: string;
-};
-
-export type PromptProps = {
-  id: number;
-  chat_scene: string;
-  sub_chat_scene: string;
-  prompt_type: string;
-  content: string;
-  user_name: string;
-  prompt_name: string;
-  gmt_created: string;
-  gmt_modified: string;
 };
 
 export type PostDbRefreshParams = {

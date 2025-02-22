@@ -1,4 +1,4 @@
-import { ConfigurableParams } from '@/types/model';
+import { ConfigurableParams } from '@/types/common';
 import { Checkbox, Form, FormInstance, Input, InputNumber, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
 
