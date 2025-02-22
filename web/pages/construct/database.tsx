@@ -139,46 +139,12 @@ function Database() {
     setRefreshLoading(false);
   };
 
-  // TODO: unused function call
-  // const handleChat = async (item: IChatDbSchema) => {
-  //   const [, data] = await apiInterceptors(
-  //     newDialogue({
-  //       chat_mode: 'chat_with_db_execute',
-  //     }),
-  //   );
-  //   // 知识库对话都默认私有知识库应用下
-  //   if (data?.conv_uid) {
-  //     setCurrentDialogInfo?.({
-  //       chat_scene: data.chat_mode,
-  //       app_code: data.chat_mode,
-  //     });
-  //     localStorage.setItem(
-  //       'cur_dialog_info',
-  //       JSON.stringify({
-  //         chat_scene: data.chat_mode,
-  //         app_code: data.chat_mode,
-  //       }),
-  //     );
-  //     router.push(`/chat?scene=chat_with_db_execute&id=${data?.conv_uid}&db_name=${item.db_name}`);
-  //   }
-  // };
-
   return (
     <ConstructLayout>
       <div className='relative min-h-full overflow-y-auto px-6 max-h-[90vh]'>
         <MuiLoading visible={loading} />
         <div className='flex justify-between items-center mb-6'>
-          <div className='flex items-center gap-4'>
-            {/* <Input
-              variant="filled"
-              prefix={<SearchOutlined />}
-              placeholder={t('please_enter_the_keywords')}
-              // onChange={onSearch}
-              // onPressEnter={onSearch}
-              allowClear
-              className="w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60"
-            /> */}
-          </div>
+          <div className='flex items-center gap-4'></div>
 
           <div className='flex items-center gap-4'>
             <Button
@@ -212,52 +178,6 @@ function Database() {
                   }}
                 />
               </Badge>
-              // <BlurredCard
-              //   description={item.db_path ?? ''}
-              //   name={item.db_name}
-              //   key={item.db_name}
-              //   logo={targetDBType?.icon}
-              //   RightTop={
-              //     <InnerDropdown
-              //       menu={{
-              //         items: [
-              //           {
-              //             key: 'del',
-              //             label: (
-              //               <span
-              //                 className="text-red-400"
-              //                 onClick={() => {
-              //                   onDelete(item);
-              //                 }}
-              //               >
-              //                 {t('Delete_Btn')}
-              //               </span>
-              //             ),
-              //           },
-              //         ],
-              //       }}
-              //     />
-              //   }
-              //   rightTopHover={false}
-              //   Tags={
-              //     <div>
-              //       <Tag>{item.db_type}</Tag>
-              //     </div>
-              //   }
-              //   RightBottom={
-              //     <ChatButton
-              //       text={t('start_chat')}
-              //       onClick={() => {
-              //         handleChat(item);
-              //       }}
-              //     />
-              //   }
-              //   onClick={() => {
-              //     // if (targetDBType?.disabled) return;
-              //     // handleDbTypeClick(targetDBType);
-              //     onModify(item);
-              //   }}
-              // />
             );
           })}
         </div>

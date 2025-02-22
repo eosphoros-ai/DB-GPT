@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt_app.scene.chat_dashboard.data_preparation.report_schma import ValueItem
@@ -9,7 +9,7 @@ class DataNode(BaseModel):
     key: Optional[str]
 
     type: Optional[str] = ""
-    default_value: Optional[str] = None
+    default_value: Optional[Any] = None
     can_null: Optional[str] = "YES"
     comment: Optional[str] = None
     children: Optional[List] = []

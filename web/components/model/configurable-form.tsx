@@ -1,4 +1,4 @@
-import { SupportModelParams } from '@/types/model';
+import { ConfigurableParams } from '@/types/model';
 import { Checkbox, Form, FormInstance, Input, InputNumber, Select } from 'antd';
 import { useEffect } from 'react';
 import NestedFormFields from './nested-form-fields';
@@ -7,7 +7,7 @@ interface ParamValues {
   [key: string]: string | number | boolean | Record<string, any>;
 }
 
-function ModelParams({ params, form }: { params: Array<SupportModelParams> | null; form: FormInstance<any> }) {
+function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> | null; form: FormInstance<any> }) {
   useEffect(() => {
     if (params) {
       const initialValues: ParamValues = {};
@@ -62,12 +62,12 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
     originalSubmit.call(form);
   };
 
-  function renderItem(param: SupportModelParams) {
+  function renderItem(param: ConfigurableParams) {
     if (param.nested_fields) {
       return (
         <NestedFormFields
           parentName={param.param_name}
-          fields={param.nested_fields as Record<string, SupportModelParams[]>}
+          fields={param.nested_fields as Record<string, ConfigurableParams[]>}
           form={form}
         />
       );
@@ -101,7 +101,7 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
 
   return (
     <div className='space-y-4'>
-      {params?.map((param: SupportModelParams) => (
+      {params?.map((param: ConfigurableParams) => (
         <Form.Item
           key={param.param_name}
           label={<p className='whitespace-normal overflow-wrap-break-word'>{param.label || param.param_name}</p>}
@@ -122,4 +122,4 @@ function ModelParams({ params, form }: { params: Array<SupportModelParams> | nul
   );
 }
 
-export default ModelParams;
+export default ConfigurableForm;

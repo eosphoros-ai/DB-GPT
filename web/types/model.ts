@@ -51,10 +51,10 @@ interface ExtMetadata {
 }
 
 type NestedField = {
-  [key: string]: SupportModelParams;
+  [key: string]: ConfigurableParams;
 };
 
-export type SupportModelParams = {
+export type ConfigurableParams = {
   param_class: string;
   param_name: string;
   param_type: string;
@@ -77,7 +77,7 @@ export type SupportModel = {
   enabled: boolean;
   host: string;
   port: number;
-  params: SupportModelParams;
+  params: ConfigurableParams;
   provider: string;
   description: string;
 };

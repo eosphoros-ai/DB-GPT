@@ -133,7 +133,7 @@ class SparkConnector(BaseConnector):
             rows.append(row)
         return rows
 
-    def query_ex(self, sql: str):
+    def query_ex(self, sql: str, timeout: Optional[float] = None):
         """Execute sql command."""
         rows = self.run(sql)
         field_names = rows[0]

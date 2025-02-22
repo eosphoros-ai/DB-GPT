@@ -1,10 +1,10 @@
-import { SupportModelParams } from '@/types/model';
+import { ConfigurableParams } from '@/types/model';
 import { Checkbox, Form, FormInstance, Input, InputNumber, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
 
 interface NestedFormFieldsProps {
   parentName: string;
-  fields: Record<string, SupportModelParams[]>;
+  fields: Record<string, ConfigurableParams[]>;
   form: FormInstance;
 }
 const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields, form }) => {
@@ -39,7 +39,7 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
     });
   };
 
-  const renderFormItem = (param: SupportModelParams) => {
+  const renderFormItem = (param: ConfigurableParams) => {
     const type = param.param_type.toLowerCase();
     // Use the complete field path
     const fieldPath = [parentName, param.param_name];

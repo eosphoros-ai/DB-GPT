@@ -137,6 +137,8 @@ function FormDialog({
       }
     }
     if (!editValue && dbNames.some(item => item === params.db_name)) {
+      console.log('current dbNames:', dbNames);
+      console.log('current params:', params);
       message.error('The database already exists!');
       return;
     }

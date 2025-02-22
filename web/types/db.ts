@@ -1,3 +1,5 @@
+import { ConfigurableParams } from '@/types/model';
+
 export type DBOption = {
   label: string;
   value: DBType;
@@ -45,21 +47,11 @@ export type IChatDbSchema = {
 };
 
 export type DbListResponse = IChatDbSchema[];
-export type ParamsData = {
-  label: string;
-  param_name: string;
-  param_type: string;
-  param_class: string;
-  description: Boolean;
-  required: Boolean;
-  is_array: Boolean;
-  default_value: any;
-};
 export type IChatDbSupportTypeSchema = {
   db_type: DBType;
   is_file_db: boolean;
   name: string;
-  params: ParamsData;
+  params: ConfigurableParams;
   types: any[];
   label: string;
   description: string;

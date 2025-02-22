@@ -50,7 +50,11 @@ class HiveParameters(BaseDatasourceParameters):
         default="", metadata={"help": _("Username for authentication")}
     )
     password: str = field(
-        default="", metadata={"help": _("Password for LDAP or CUSTOM auth")}
+        default="",
+        metadata={
+            "help": _("Password for LDAP or CUSTOM auth"),
+            "tags": "privacy",
+        },
     )
 
     # Kerberos parameters
