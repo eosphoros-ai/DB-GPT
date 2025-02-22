@@ -1,4 +1,4 @@
-import { ConfigurableParams } from '@/types/model';
+import { ConfigurableParams } from '@/types/common';
 import { Checkbox, Form, FormInstance, Input, InputNumber, Select } from 'antd';
 import { useEffect } from 'react';
 import NestedFormFields from './nested-form-fields';
@@ -53,6 +53,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
     });
     return normalized;
   };
+
   // Override the original submit method of the form
   const originalSubmit = form.submit;
   form.submit = () => {
@@ -75,8 +76,10 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
 
     const type = param.param_type.toLowerCase();
     const isFixed = param.ext_metadata?.tags?.includes('fixed');
+    const isPrivacy = param.ext_metadata?.tags?.includes('privacy');
 
     if (type === 'str' || type === 'string') {
+      // Handle dropdown selection box
       if (param.valid_values) {
         return (
           <Select disabled={isFixed}>
@@ -88,14 +91,24 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
           </Select>
         );
       }
+
+      // Handle password input box
+      if (isPrivacy) {
+        return <Input.Password disabled={isFixed} autoComplete='new-password' placeholder='请输入密码' />;
+      }
+
+      // Handle normal text input box
       return <Input disabled={isFixed} />;
     }
+
     if (type === 'int' || type === 'integer' || type === 'number' || type === 'float') {
       return <InputNumber className='w-full' disabled={isFixed} />;
     }
+
     if (type === 'bool' || type === 'boolean') {
       return <Checkbox disabled={isFixed} />;
     }
+
     return <Input disabled={isFixed} />;
   }
 

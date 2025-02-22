@@ -1,11 +1,12 @@
 import { apiInterceptors, createModel, getSupportModels } from '@/client/api';
 import { renderModelIcon } from '@/components/chat/header/model-selector';
-import { ConfigurableParams, StartModelParams, SupportModel } from '@/types/model';
+import { ConfigurableParams } from '@/types/common';
+import { StartModelParams, SupportModel } from '@/types/model';
 import { AutoComplete, Button, Form, Select, Tooltip, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
-import ConfigurableForm from './configurable-form';
+import ConfigurableForm from '../common/configurable-form';
 
 const { Option } = Select;
 const FormItem = Form.Item;
