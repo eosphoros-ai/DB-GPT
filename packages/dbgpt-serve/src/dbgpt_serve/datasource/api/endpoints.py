@@ -236,6 +236,32 @@ async def test_connection(
     return Result.succ(res)
 
 
+@router.post(
+    "/datasources/{datasource_id}/refresh",
+    dependencies=[Depends(check_api_key)],
+    response_model=Result[bool],
+)
+async def refresh_datasource(
+    datasource_id: str, service: Service = Depends(get_service)
+) -> Result[bool]:
+    """Refresh a datasource by its ID
+
+    Args:
+        datasource_id (str): The ID of the datasource to refresh
+        service (Service): The service instance
+
+    Returns:
+        Result[bool]: The refresh result, True if the refresh was successful
+
+    Raises:
+        HTTPException: When the refresh operation fails
+    """
+    res = await blocking_func_to_async(
+        global_system_app, service.refresh, datasource_id
+    )
+    return Result.succ(res)
+
+
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app

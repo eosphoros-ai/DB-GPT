@@ -50,7 +50,6 @@ class Service(
         self._dao: ConnectConfigDao = dao
         self._dag_manager: Optional[DAGManager] = None
         self._db_summary_client = None
-        self._vector_connector = None
         self._serve_config = config
 
         super().__init__(system_app)
@@ -223,12 +222,12 @@ class Service(
         db_config = self._dao.get_one({"id": datasource_id})
         vector_name = db_config.db_name + "_profile"
         vector_store_config = VectorStoreConfig(name=vector_name)
-        self._vector_connector = VectorStoreConnector(
+        _vector_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=vector_store_config,
             system_app=self._system_app,
         )
-        self._vector_connector.delete_vector_name(vector_name)
+        _vector_connector.delete_vector_name(vector_name)
         if db_config:
             self._dao.delete({"id": datasource_id})
         return db_config
@@ -281,3 +280,26 @@ class Service(
             bool: The test result
         """
         return self.datasource_manager.test_connection(request)
+
+    def refresh(self, datasource_id: str) -> bool:
+        """Refresh the datasource.
+
+        Args:
+            datasource_id (str): The datasource_id
+
+        Returns:
+            bool: The refresh result
+        """
+        db_config = self._dao.get_one({"id": datasource_id})
+        vector_name = db_config.db_name + "_profile"
+        vector_store_config = VectorStoreConfig(name=vector_name)
+        _vector_connector = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE,
+            vector_store_config=vector_store_config,
+            system_app=self._system_app,
+        )
+        _vector_connector.delete_vector_name(vector_name)
+        self._db_summary_client.db_summary_embedding(
+            db_config.db_name, db_config.db_type
+        )
+        return True
