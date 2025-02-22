@@ -16,7 +16,7 @@ type DBItem = DbListResponse[0];
 export function isFileDb(dbTypeList: DBOption[], dbType: DBType) {
   return dbTypeList.find(item => item.value === dbType)?.isFileDb;
 }
-let getFromRenderData:any = []
+let getFromRenderData: any = [];
 function Database() {
   // const { setCurrentDialogInfo } = useContext(ChatContext);  // unused
   // const router = useRouter(); // unused
@@ -70,14 +70,13 @@ function Database() {
     for (let index = 0; index < getFromRenderData.length; index++) {
       const element = getFromRenderData[index];
       if (item.params[element.param_name]) {
-        element.default_value = item.params[element.param_name]
+        element.default_value = item.params[element.param_name];
       }
-    }    
+    }
     setModal({ open: true, info: item.id, dbType: item.type });
   };
 
   const onDelete = (item: DBItem) => {
-    
     Modal.confirm({
       title: 'Tips',
       content: `Do you Want to delete the database connection?`,
@@ -123,9 +122,8 @@ function Database() {
 
   const handleDbTypeClick = (info: DBOption) => {
     const dbItems = dbList.filter(item => item.type === info.value);
-    getFromRenderData = info?.parameters
-   
-   
+    getFromRenderData = info?.parameters;
+
     setDraw({
       open: true,
       dbList: dbItems,
@@ -136,7 +134,7 @@ function Database() {
 
   const onRefresh = async (item: DBItem) => {
     setRefreshLoading(true);
-    const [, res] = await apiInterceptors(postDbRefresh({ db_name: item.params.database, db_type: item.type }));
+    const [, res] = await apiInterceptors(postDbRefresh({ id: item.id }));
     if (res) message.success(t('refreshSuccess'));
     setRefreshLoading(false);
   };
@@ -189,8 +187,8 @@ function Database() {
               onClick={() => {
                 console.log(dbList);
                 console.log(dbTypeList);
-                
-                setModal({ open: true ,dbTypeData:dbTypeList});
+
+                setModal({ open: true, dbTypeData: dbTypeList });
               }}
             >
               {t('Add_Datasource')}
@@ -302,7 +300,7 @@ function Database() {
               {dbListByType[draw.type].map(item => (
                 <Card
                   key={item.params?.database || ''}
-                  title={item.params?.database || '' }
+                  title={item.params?.database || ''}
                   extra={
                     <>
                       <RedoOutlined
@@ -329,12 +327,13 @@ function Database() {
                   }
                   className='mb-4'
                 >
-                    <>
-                    {Object.keys(item.params).map(key =>(
-                      <p>{key}: {item.params[key]}</p>
-                      )
-                    )}
-                    </>
+                  <>
+                    {Object.keys(item.params).map(key => (
+                      <p>
+                        {key}: {item.params[key]}
+                      </p>
+                    ))}
+                  </>
                   <p>remark: {item.description}</p>
                 </Card>
               ))}

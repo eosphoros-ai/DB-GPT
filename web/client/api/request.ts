@@ -50,7 +50,7 @@ import {
 } from '@/types/knowledge';
 import { BaseModelParams, IModelData, StartModelParams, SupportModel } from '@/types/model';
 import { AxiosRequestConfig } from 'axios';
-import { GET, POST, PUT, DELETE } from '.';
+import { DELETE, GET, POST, PUT } from '.';
 
 /** App */
 export const postScenes = () => {
@@ -87,7 +87,7 @@ export const postDbTestConnect = (data: PostDbParams) => {
   return POST<PostDbParams, null>('/api/v2/serve/datasources/test-connection', data);
 };
 export const postDbRefresh = (data: PostDbRefreshParams) => {
-  return POST<PostDbRefreshParams, boolean>('/api/v1/chat/db/refresh', data);
+  return POST<PostDbRefreshParams, boolean>(`/api/v2/serve/datasources/${data.id}/refresh`);
 };
 
 /** Chat Page */
