@@ -111,19 +111,23 @@ class Service(
             if isinstance(request, DatasourceCreateRequest)
             else request.db_type
         )
+        desc = ""
         if isinstance(request, DatasourceCreateRequest):
             connector_params: BaseDatasourceParameters = (
                 self.datasource_manager._create_parameters(request)
             )
             persisted_state = connector_params.persisted_state()
+            desc = request.description
         else:
             persisted_state = model_to_dict(request)
+            desc = request.comment
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
             persisted_state["ext_config"] = json.dumps(
                 persisted_state["ext_config"], ensure_ascii=False
             )
+        persisted_state["comment"] = desc
         db_name = persisted_state.get("db_name")
         datasource = self._dao.get_by_names(db_name)
         if datasource:
@@ -171,19 +175,23 @@ class Service(
             if isinstance(request, DatasourceCreateRequest)
             else request.db_type
         )
+        desc = ""
         if isinstance(request, DatasourceCreateRequest):
             connector_params: BaseDatasourceParameters = (
                 self.datasource_manager._create_parameters(request)
             )
             persisted_state = connector_params.persisted_state()
+            desc = request.description
         else:
             persisted_state = model_to_dict(request)
+            desc = request.comment
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
             persisted_state["ext_config"] = json.dumps(
                 persisted_state["ext_config"], ensure_ascii=False
             )
+        persisted_state["comment"] = desc
         db_name = persisted_state.get("db_name")
         if not db_name:
             raise HTTPException(status_code=400, detail="datasource name is required")

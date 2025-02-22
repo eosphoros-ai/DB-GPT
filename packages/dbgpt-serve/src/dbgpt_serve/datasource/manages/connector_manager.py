@@ -195,7 +195,8 @@ class ConnectorManager(BaseComponent):
             raise ValueError("Unsupported Db Type！" + request.type)
         cls = support_types[db_type.value()]
         param_cls = cls.param_class()
-        return param_cls(**request.params)
+        # ignore_extra_fields is used to ignore extra fields in the request
+        return param_cls.from_dict(request.params, ignore_extra_fields=True)
 
     def _get_param_cls(self, db_type: str) -> Type[BaseDatasourceParameters]:
         """Get param class."""
