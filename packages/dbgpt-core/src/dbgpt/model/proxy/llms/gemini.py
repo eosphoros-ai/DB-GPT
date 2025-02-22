@@ -58,6 +58,7 @@ class GeminiDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:GEMINI_PROXY_API_KEY}",
         metadata={
             "help": _("The API key of the gemini API."),
+            "tags": "privacy",
         },
     )
 

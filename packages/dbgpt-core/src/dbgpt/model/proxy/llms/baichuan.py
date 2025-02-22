@@ -39,6 +39,7 @@ class BaichuanDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:BAICHUAN_API_KEY}",
         metadata={
             "help": _("The API key of the Baichuan API."),
+            "tags": "privacy",
         },
     )
 

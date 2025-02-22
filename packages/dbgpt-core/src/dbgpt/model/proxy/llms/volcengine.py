@@ -39,6 +39,7 @@ class VolcengineDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:ARK_API_KEY}",
         metadata={
             "help": _("The API key of the Volcengine API."),
+            "tags": "privacy",
         },
     )
 

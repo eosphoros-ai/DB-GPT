@@ -40,6 +40,7 @@ class DeepSeekDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:DEEPSEEK_API_KEY}",
         metadata={
             "help": _("The API key of the DeepSeek API."),
+            "tags": "privacy",
         },
     )
 

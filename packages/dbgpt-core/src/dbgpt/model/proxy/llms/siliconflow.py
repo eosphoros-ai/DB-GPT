@@ -40,6 +40,7 @@ class SiliconFlowDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:SILICONFLOW_API_KEY}",
         metadata={
             "help": _("The API key of the SiliconFlow API."),
+            "tags": "privacy",
         },
     )
 

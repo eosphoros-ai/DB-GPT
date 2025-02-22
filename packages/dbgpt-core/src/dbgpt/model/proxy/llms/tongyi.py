@@ -44,6 +44,7 @@ class TongyiDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:DASHSCOPE_API_KEY}",
         metadata={
             "help": _("The API key of the tongyi API."),
+            "tags": "privacy",
         },
     )
 

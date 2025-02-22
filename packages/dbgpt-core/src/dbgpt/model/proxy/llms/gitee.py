@@ -40,6 +40,7 @@ class GiteeDeployModelParameters(OpenAICompatibleDeployModelParameters):
         default="${env:GITEE_API_KEY}",
         metadata={
             "help": _("The API key of the Gitee API."),
+            "tags": "privacy",
         },
     )
 
