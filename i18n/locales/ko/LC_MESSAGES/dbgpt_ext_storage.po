@@ -1,0 +1,462 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:26
+msgid "Graph Name"
+msgstr "그래프 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:29
+msgid "The name of Graph, if not set, will use the default name."
+msgstr "그래프의 이름입니다. 설정하지 않으면 기본 이름이 사용됩니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:34
+msgid "Embedding Function"
+msgstr "임베딩 함수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:38
+msgid ""
+"The embedding function of vector store, if not set, will use the default "
+"embedding function."
+msgstr "벡터 저장소의 임베딩 함수입니다. 설정하지 않으면 기본 임베딩 함수가 사용됩니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:45
+msgid "Max Chunks Once Load"
+msgstr "한 번에 로드할 최대 청크 수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:49
+msgid ""
+"The max number of chunks to load at once. If your document is large, you can "
+"set this value to a larger number to speed up the loading process. Default "
+"is 10."
+msgstr "한 번에 로드할 최대 청크 수입니다. 문서가 크다면 이 값을 더 크게 설정하여 로드 프로세스를 가속화할 수 있습니다. 기본값은 10입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:57
+msgid "Max Threads"
+msgstr "최대 스레드 수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:61
+msgid ""
+"The max number of threads to use. Default is 1. If you set this bigger than "
+"1, please make sure your vector store is thread-safe."
+msgstr "사용할 최대 스레드 수입니다. 기본값은 1입니다. 이 값을 1보다 크게 설정하는 경우 벡터 저장소가 스레드 안전한지 확인하세요."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:71
+msgid "Builtin Graph Config"
+msgstr "기본 그래프 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:74
+msgid "knowledge graph config."
+msgstr "지식 그래프 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:78
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:39
+msgid "Knowledge Graph Type"
+msgstr "지식 그래프 유형"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:81
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:42
+msgid "graph store type."
+msgstr "그래프 저장 유형."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:86
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:47
+msgid "LLM Client"
+msgstr "LLM 클라이언트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:89
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:50
+msgid "llm client for extract graph triplets."
+msgstr "그래프 트리플 추출을 위한 LLM 클라이언트."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:92
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:53
+msgid "LLM Model Name"
+msgstr "LLM 모델 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:95
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:56
+msgid "llm model name."
+msgstr "LLM 모델 이름."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:116
+msgid "Builtin Knowledge Graph"
+msgstr "기본 지식 그래프"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:119
+msgid "Builtin Knowledge Graph."
+msgstr "기본 지식 그래프."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:122
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:125
+msgid "Builtin Knowledge Graph Config."
+msgstr "기본 지식 그래프 구성."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:32
+msgid "Community Summary KG Config"
+msgstr "커뮤니티 요약 지식 그래프 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:35
+msgid "community Summary kg Config."
+msgstr "커뮤니티 요약 지식 그래프 구성."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:61
+msgid "Vector Store Type"
+msgstr "벡터 저장 유형"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:64
+msgid "vector store type."
+msgstr "벡터 저장 유형."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:69
+msgid "Topk of Knowledge Graph Extract"
+msgstr "지식 그래프 추출의 상위 k개"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:72
+msgid "Topk of knowledge graph extract"
+msgstr "지식 그래프 추출의 상위 k개"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:77
+msgid "Recall Score of Knowledge Graph Extract"
+msgstr "지식 그래프 추출의 재현율 점수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:80
+msgid "Recall score of knowledge graph extract"
+msgstr "지식 그래프 추출의 재현율 점수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:85
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:93
+msgid "Recall Score of Community Search in Knowledge Graph"
+msgstr "지식 그래프에서 커뮤니티 검색의 재현율 점수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:88
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:96
+msgid "Recall score of community search in knowledge graph"
+msgstr "지식 그래프에서 커뮤니티 검색의 재현율 점수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:101
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:109
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:112
+msgid "Enable the graph search for documents and chunks"
+msgstr "문서 및 청크에 대한 그래프 검색 활성화"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:104
+msgid "Enable the graph search for triplets"
+msgstr "트리플에 대한 그래프 검색 활성화"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:117
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:120
+msgid "Top size of knowledge graph chunk search"
+msgstr "지식 그래프 청크 검색의 상위 크기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:125
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:128
+msgid "Batch size of triplets extraction from the text"
+msgstr "텍스트에서 삼중항 추출의 배치 크기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:133
+msgid "Batch size of parallel community building process"
+msgstr "병렬 커뮤니티 구축 프로세스의 배치 크기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:136
+msgid "TBatch size of parallel community building process"
+msgstr "병렬 커뮤니티 구축 프로세스의 T배치 크기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:216
+msgid "Community Summary Knowledge Graph"
+msgstr "커뮤니티 요약 지식 그래프"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:219
+msgid "Community Summary Knowledge Graph."
+msgstr "커뮤니티 요약 지식 그래프입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:222
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:225
+msgid "Community Summary Knowledge Graph Config."
+msgstr "커뮤니티 요약 지식 그래프 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:21
+msgid "PGVector Config"
+msgstr "PGVector 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:27
+msgid "Connection String"
+msgstr "연결 문자열"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:31
+msgid ""
+"The connection string of vector store, if not set, will use the default "
+"connection string."
+msgstr "벡터 저장소의 연결 문자열입니다. 설정하지 않으면 기본 연결 문자열을 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:53
+msgid "PG Vector Store"
+msgstr "PG 벡터 저장소"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:56
+msgid "PG vector store."
+msgstr "PG 벡터 저장소입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:59
+msgid "PG Config"
+msgstr "PG 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:62
+msgid "the pg config of vector store."
+msgstr "벡터 저장소의 PG 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:22
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:70
+msgid "Weaviate Config"
+msgstr "Weaviate 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:25
+msgid "Weaviate vector config."
+msgstr "Weaviate 벡터 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:29
+msgid "Weaviate URL"
+msgstr "Weaviate URL"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:33
+msgid "weaviate url address, if not set, will use the default url."
+msgstr "weaviate URL 주소입니다. 설정하지 않으면 기본 URL을 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:39
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:36
+msgid "Persist Path"
+msgstr "영구 저장 경로"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:42
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:39
+msgid "the persist path of vector store."
+msgstr "벡터 저장소의 영구 저장 경로입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:64
+msgid "Weaviate Vector Store"
+msgstr "Weaviate 벡터 저장소"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:67
+msgid "Weaviate vector store."
+msgstr "Weaviate 벡터 저장소입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:73
+msgid "the weaviate config of vector store."
+msgstr "벡터 저장소의 Weaviate 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:25
+msgid "Elastic Vector Config"
+msgstr "Elastic 벡터 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:31
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:32
+msgid "Uri"
+msgstr "URI"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:35
+msgid "The uri of elasticsearch store, if not set, will use the default uri."
+msgstr "Elasticsearch 저장소의 URI입니다. 설정하지 않으면 기본 URI를 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:41
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:42
+msgid "Port"
+msgstr "포트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:45
+msgid "The port of elasticsearch store, if not set, will use the default port."
+msgstr "Elasticsearch 저장소의 포트입니다. 설정하지 않으면 기본 포트가 사용됩니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:52
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:52
+msgid "Alias"
+msgstr "별칭"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:56
+msgid ""
+"The alias of elasticsearch store, if not set, will use the default alias."
+msgstr "Elasticsearch 저장소의 별칭입니다. 설정하지 않으면 기본 별칭이 사용됩니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:63
+msgid "Index Name"
+msgstr "인덱스 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:67
+msgid ""
+"The index name of elasticsearch store, if not set, will use the default "
+"index name."
+msgstr "Elasticsearch 저장소의 인덱스 이름입니다. 설정하지 않으면 기본 인덱스 이름이 사용됩니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:74
+msgid "Elasticsearch vector config."
+msgstr "Elasticsearch 벡터 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:119
+msgid "Elastic Vector Store"
+msgstr "Elastic 벡터 저장소"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:122
+msgid "Elastic vector store."
+msgstr "Elastic 벡터 저장소입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:125
+msgid "Elastic Config"
+msgstr "Elastic 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:128
+msgid "the elastic config of vector store."
+msgstr "벡터 저장소의 Elastic 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:26
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:150
+msgid "Milvus Config"
+msgstr "Milvus 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:36
+msgid "The uri of milvus store, if not set, will use the default uri."
+msgstr "Milvus 저장소의 URI입니다. 설정하지 않으면 기본 URI를 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:46
+msgid "The port of milvus store, if not set, will use the default port."
+msgstr "Milvus 저장소의 포트입니다. 설정하지 않으면 기본 포트를 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:56
+msgid "The alias of milvus store, if not set, will use the default alias."
+msgstr "Milvus 저장소의 별칭입니다. 설정하지 않으면 기본 별칭을 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:62
+msgid "Primary Field"
+msgstr "기본 필드"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:66
+msgid ""
+"The primary field of milvus store, if not set, will use the default primary "
+"field."
+msgstr "Milvus 저장소의 기본 필드입니다. 설정하지 않으면 기본 기본 필드를 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:73
+msgid "Text Field"
+msgstr "텍스트 필드"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:77
+msgid ""
+"The text field of milvus store, if not set, will use the default text field."
+msgstr "Milvus 저장소의 텍스트 필드입니다. 설정하지 않으면 기본 텍스트 필드를 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:84
+msgid "Embedding Field"
+msgstr "임베딩 필드"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:88
+msgid ""
+"The embedding field of milvus store, if not set, will use the default "
+"embedding field."
+msgstr "Milvus 저장소의 임베딩 필드입니다. 설정하지 않으면 기본 임베딩 필드를 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:95
+msgid "Milvus vector config."
+msgstr "Milvus 벡터 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:144
+msgid "Milvus Vector Store"
+msgstr "Milvus 벡터 저장소"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:147
+msgid "Milvus vector store."
+msgstr "Milvus 벡터 저장소입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:153
+msgid "the milvus config of vector store."
+msgstr "벡터 저장소의 Milvus 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:29
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:68
+msgid "Chroma Config"
+msgstr "Chroma 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:32
+msgid "Chroma vector store config."
+msgstr "Chroma 벡터 저장소 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:62
+msgid "Chroma Vector Store"
+msgstr "Chroma 벡터 저장소"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:65
+msgid "Chroma vector store."
+msgstr "Chroma 벡터 저장소입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:71
+msgid "the chroma config of vector store."
+msgstr "벡터 저장소의 Chroma 구성입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:77
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:163
+msgid "OceanBase Config"
+msgstr "OceanBase 구성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:83
+msgid "OceanBase Host"
+msgstr "OceanBase 호스트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:86
+msgid "oceanbase host"
+msgstr "OceanBase 호스트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:91
+msgid "OceanBase Port"
+msgstr "OceanBase 포트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:94
+msgid "oceanbase port"
+msgstr "OceanBase 포트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:99
+msgid "OceanBase User"
+msgstr "OceanBase 사용자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:102
+msgid "user to login"
+msgstr "로그인할 사용자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:107
+msgid "OceanBase Password"
+msgstr "OceanBase 비밀번호"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:110
+msgid "password to login"
+msgstr "로그인용 비밀번호"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:115
+msgid "OceanBase Database"
+msgstr "OceanBase 데이터베이스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:118
+msgid "database for vector tables"
+msgstr "벡터 테이블용 데이터베이스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:157
+msgid "OceanBase Vector Store"
+msgstr "OceanBase 벡터 저장소"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:160
+msgid "OceanBase vector store."
+msgstr "OceanBase 벡터 저장소입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:166
+msgid "the ob config of vector store."
+msgstr "벡터 저장소의 OB 구성입니다."

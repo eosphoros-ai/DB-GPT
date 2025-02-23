@@ -22,6 +22,7 @@ else:
         ValidationError,
         WithJsonSchema,
         field_validator,
+        model_serializer,
         model_validator,
         root_validator,
         validator,

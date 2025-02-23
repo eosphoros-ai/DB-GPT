@@ -1,0 +1,52 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:88
+msgid "Datasource Resource"
+msgstr "데이터 소스 리소스"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:92
+msgid ""
+"Connect to a datasource(retrieve table schemas and execute SQL to fetch "
+"data)."
+msgstr "데이터 소스에 연결합니다(테이블 스키마를 검색하고 SQL을 실행하여 데이터를 가져옵니다)."
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:97
+msgid "Datasource Name"
+msgstr "데이터 소스 이름"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:102
+msgid "The name of the datasource, default is 'datasource'."
+msgstr "데이터 소스의 이름입니다. 기본값은 'datasource'입니다."
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:105
+msgid "DB Name"
+msgstr "데이터베이스 이름"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:108
+msgid "The name of the database."
+msgstr "데이터베이스의 이름입니다."
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:112
+msgid "Prompt Template"
+msgstr "프롬프트 템플릿"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:121
+msgid "The prompt template to build a database prompt."
+msgstr "데이터베이스 프롬프트를 구성하는 데 사용되는 프롬프트 템플릿입니다."

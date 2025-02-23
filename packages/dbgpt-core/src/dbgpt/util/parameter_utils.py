@@ -72,6 +72,10 @@ class ParameterDescription:
     nested_fields: Optional[Dict[str, List["ParameterDescription"]]] = None
     param_order: Optional[int] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the parameter description to a dictionary."""
+        return asdict(self)
+
 
 @dataclass
 class BaseParameters:

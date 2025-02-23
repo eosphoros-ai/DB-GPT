@@ -34,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_ENV_VAR_PATTERN = re.compile(r"\${env:([^}]+)}")
 
+CHECK_I18N_PARAMETER_DESC = (
+    os.getenv("CHECK_I18N_PARAMETER_DESC", "false").lower() == "true"
+)
+
 
 class PolymorphicMeta(abc.ABCMeta):
     def __new__(mcs, name, bases, namespace, **kwargs):
@@ -696,6 +700,15 @@ class ConfigurationManager:
                 description = parent_descriptions[fd.name].description
             if fd.name in parent_descriptions:
                 parent_tags = parent_descriptions[fd.name].ext_metadata
+            if description and CHECK_I18N_PARAMETER_DESC:
+                from ..i18n_utils import is_i18n_string
+
+                if not is_i18n_string(description):
+                    raise ValueError(
+                        f"Parameter description for {fd.name} in {target_cls.__name__} "
+                        "is not i18n compliant"
+                    )
+
             desc = ParameterDescription(
                 param_name=fd.name,
                 param_class=f"{target_cls.__module__}.{target_cls.__name__}",

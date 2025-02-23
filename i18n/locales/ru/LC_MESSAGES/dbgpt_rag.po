@@ -1,15 +1,14 @@
-# Russian translations for PACKAGE package
-# Английские переводы для пакета PACKAGE.
-# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2024.
+# Automatically generated, 2025.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
-"PO-Revision-Date: 2024-03-23 11:22+0800\n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: ru\n"
@@ -19,528 +18,442 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ../dbgpt/rag/operators/embedding.py:25
-msgid "Embedding Retriever Operator"
-msgstr "Оператор извлечения вложений"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embedding_factory.py:245
+msgid "Default Embeddings"
+msgstr "Параметры эмбеддинга по умолчанию"
 
-#: ../dbgpt/rag/operators/embedding.py:27
-msgid "Retrieve candidates from vector store."
-msgstr "Извлечение кандидатов из векторного хранилища."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embedding_factory.py:249
+msgid "Default embeddings(using default embedding model of current system)"
+msgstr "Параметры эмбеддинга по умолчанию (используется модель эмбеддинга по умолчанию текущей системы)"
 
-#: ../dbgpt/rag/operators/embedding.py:31
-#: ../dbgpt/rag/operators/embedding.py:130
-msgid "Vector Store Connector"
-msgstr "Коннектор векторного хранилища"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:42
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:29
+msgid "The path of the model, if you want to deploy a local model."
+msgstr "Путь к модели, если вы хотите развернуть локальную модель."
 
-#: ../dbgpt/rag/operators/embedding.py:34
-#: ../dbgpt/rag/operators/embedding.py:133
-msgid "The vector store connector."
-msgstr "Коннектор векторного хранилища."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:50
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:37
+msgid "Device to run model. If None, the device is automatically determined"
+msgstr "Устройство для запуска модели. Если не указано, устройство определяется автоматически"
 
-#: ../dbgpt/rag/operators/embedding.py:37
-msgid "Top K"
-msgstr "Топ K"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:57
+msgid "Path of the cache folder."
+msgstr "Путь к папке кэша."
 
-#: ../dbgpt/rag/operators/embedding.py:40
-msgid "The number of candidates."
-msgstr "Количество кандидатов."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:64
+msgid "Normalize embeddings."
+msgstr "Нормализовать эмбеддинги."
 
-#: ../dbgpt/rag/operators/embedding.py:43
-msgid "Score Threshold"
-msgstr "Порог оценки"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:70
+msgid "Run encode() on multiple GPUs."
+msgstr "Запустить функцию encode() на нескольких графических процессорах."
 
-#: ../dbgpt/rag/operators/embedding.py:47
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:76
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:53
+msgid "Keyword arguments to pass to the model."
+msgstr "Ключевые аргументы, передаваемые модели."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:82
+msgid "Keyword arguments to pass when calling the `encode` method."
+msgstr "Ключевые аргументы, передаваемые при вызове метода `encode`."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:89
+msgid "Instruction to use for embedding documents. Just for Instructor model."
+msgstr "Инструкция для эмбеддинга документов. Только для модели Instructor."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:97
+msgid "Instruction to use for embedding query. Just for Instructor model."
+msgstr "Инструкция для эмбеддинга запроса. Только для модели Instructor."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:136
+msgid "HuggingFace Embeddings"
+msgstr "Параметры эмбеддинга HuggingFace"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:139
+msgid "HuggingFace sentence_transformers embedding models."
+msgstr "Модели встраивания HuggingFace sentence_transformers."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:142
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:274
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:537
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:703
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:32
+msgid "Model Name"
+msgstr "Название модели"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:147
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:279
+msgid "Model name to use."
+msgstr "Название модели для использования."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:268
+msgid "HuggingFace Instructor Embeddings"
+msgstr "Встраивания HuggingFace Instructor"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:271
+msgid "HuggingFace Instructor embeddings."
+msgstr "Встраивания HuggingFace Instructor."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:282
+msgid "Embed Instruction"
+msgstr "Инструкция по встраиванию"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:287
+msgid "Instruction to use for embedding documents."
+msgstr "Инструкция для встраивания документов."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:290
+msgid "Query Instruction"
+msgstr "Инструкция по запросу"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:295
+msgid "Instruction to use for embedding query."
+msgstr "Инструкция для встраивания запроса."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:525
+msgid "HuggingFace Inference API Embeddings"
+msgstr "Встраивания HuggingFace Inference API"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:528
+msgid "HuggingFace Inference API embeddings."
+msgstr "Встраивания HuggingFace Inference API."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:531
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:695
+msgid "API Key"
+msgstr "API-ключ"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:534
+msgid "Your API key for the HuggingFace Inference API."
+msgstr "Ваш API-ключ для HuggingFace Inference API."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:542
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:708
+msgid "The name of the model to use for text embeddings."
+msgstr "Название модели, используемой для текстовых эмбеддингов."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:648
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:692
+msgid "The URL of the embeddings API."
+msgstr "URL-адрес API эмбеддингов."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:654
+msgid "The API key for the embeddings API."
+msgstr "API-ключ для API эмбеддингов."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:661
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:186
 msgid ""
-"The score threshold, if score of candidate is less than it, it will be "
-"filtered."
-msgstr ""
-"Порог оценки, если оценка кандидата меньше, чем он, он будет отфильтрован."
+"The real model name to pass to the provider, default is None. If backend is "
+"None, use name as the real model name."
+msgstr "Реальное название модели, которое нужно передать провайдеру, по умолчанию None. Если бэкенд равен None, использовать название в качестве реального названия модели."
 
-#: ../dbgpt/rag/operators/embedding.py:54 ../dbgpt/rag/retriever/rewrite.py:24
-msgid "Query Rewrite"
-msgstr "Переписывание запроса"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:670
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:716
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:195
+msgid "The timeout for the request in seconds."
+msgstr "Тайм-аут запроса в секундах."
 
-#: ../dbgpt/rag/operators/embedding.py:57
-msgid "The query rewrite resource."
-msgstr "Ресурс переписывания запроса."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:681
+msgid "OpenAPI Embeddings"
+msgstr "OpenAPI эмбеддинги"
 
-#: ../dbgpt/rag/operators/embedding.py:62
-msgid "Rerank"
-msgstr "Переранжирование"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:684
+msgid "OpenAPI embeddings."
+msgstr "OpenAPI эмбеддинги."
 
-#: ../dbgpt/rag/operators/embedding.py:65
-msgid "The rerank."
-msgstr "Переранжирование."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:687
+msgid "API URL"
+msgstr "URL-адрес API"
 
-#: ../dbgpt/rag/operators/embedding.py:72
-msgid "Query"
-msgstr "Запрос"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:700
+msgid "Your API key for the Open API."
+msgstr "Ваш API-ключ для Open API."
 
-#: ../dbgpt/rag/operators/embedding.py:75
-msgid "The query to retrieve."
-msgstr "Запрос для извлечения."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:711
+msgid "Timeout"
+msgstr "Тайм-аут"
 
-#: ../dbgpt/rag/operators/embedding.py:80
-msgid "Candidates"
-msgstr "Кандидаты"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:913
+msgid "The GTE models are trained by Alibaba DAMO Academy, supporting Chinese."
+msgstr "Модели GTE были обучены Академией DAMO Alibaba и поддерживают китайский язык."
 
-#: ../dbgpt/rag/operators/embedding.py:83
-msgid "The retrieved candidates."
-msgstr "Извлеченные кандидаты."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:923
+msgid "The GTE models are trained by Alibaba DAMO Academy, supporting English."
+msgstr "Модели GTE были обучены Академией DAMO Alibaba и поддерживают английский язык."
 
-#: ../dbgpt/rag/operators/embedding.py:124
-msgid "Embedding Assembler Operator"
-msgstr "Оператор сборки вложений"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:933
+msgid ""
+"The embedding model are trained by MokaAI, this version support English and "
+"Chinese."
+msgstr "Модель эмбеддинга была обучена MokaAI. Эта версия поддерживает английский и китайский языки."
 
-#: ../dbgpt/rag/operators/embedding.py:126
-msgid "Load knowledge and assemble embedding chunks to vector store."
-msgstr "Загрузка знаний и сборка фрагментов вложений в векторное хранилище."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:943
+msgid ""
+"The embedding model are trained by MokaAI, this version support Chinese."
+msgstr "Модель эмбеддинга была обучена MokaAI. Эта версия поддерживает китайский язык."
 
-#: ../dbgpt/rag/operators/embedding.py:136 ../dbgpt/rag/chunk_manager.py:24
-msgid "Chunk Parameters"
-msgstr "Параметры фрагмента"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:958
+msgid "The embedding model are trained by HKUNLP, it support English."
+msgstr "Модель эмбеддинга была обучена HKUNLP и поддерживает английский язык."
 
-#: ../dbgpt/rag/operators/embedding.py:139
-msgid "The chunk parameters."
-msgstr "Параметры фрагмента."
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:976
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:986
+msgid "The embedding model are trained by OpenAI, it support English."
+msgstr "Модель эмбеддинга была обучена OpenAI и поддерживает английский язык."
 
-#: ../dbgpt/rag/operators/embedding.py:146 ../dbgpt/rag/operators/summary.py:23
-#: ../dbgpt/rag/operators/knowledge.py:39
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:45
+msgid "Max length for input sequences. Longer sequences will be truncated."
+msgstr "Максимальная длина входных последовательностей. Более длинные последовательности будут усечены."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:173
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:333
+msgid "The URL of the rerank API."
+msgstr "URL API переранжирования."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:179
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:339
+msgid "The API key for the rerank API."
+msgstr "Ключ API для API переранжирования."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:18
+msgid "Chunk Manager Operator"
+msgstr "Оператор менеджера чанков"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:20
+msgid " Split Knowledge Documents into chunks."
+msgstr " Разделить документы с знаниями на чанки."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:24
+msgid "Chunk Split Parameters"
+msgstr "Параметры разделения на фрагменты"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:27
+msgid "Chunk Split Parameters."
+msgstr "Параметры разделения на фрагменты."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:35
 msgid "Knowledge"
-msgstr "Знание"
+msgstr "Знания"
 
-#: ../dbgpt/rag/operators/embedding.py:149
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:38
 msgid "The knowledge to be loaded."
-msgstr "Знание для загрузки."
+msgstr "Знания, которые необходимо загрузить."
 
-#: ../dbgpt/rag/operators/embedding.py:154
-#: ../dbgpt/rag/operators/knowledge.py:121
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:43
 msgid "Chunks"
 msgstr "Фрагменты"
 
-#: ../dbgpt/rag/operators/embedding.py:158
-msgid "The assembled chunks, it has been persisted to vector store."
-msgstr "Собранные фрагменты, они были сохранены в векторном хранилище."
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:46
+msgid "The split chunks by chunk manager."
+msgstr "Разделенные фрагменты менеджером фрагментов."
 
-#: ../dbgpt/rag/operators/summary.py:17
-msgid "Summary Operator"
-msgstr "Оператор сводки"
-
-#: ../dbgpt/rag/operators/summary.py:20
-msgid "The summary assembler operator."
-msgstr "Оператор сборки сводки."
-
-#: ../dbgpt/rag/operators/summary.py:23
-msgid "Knowledge datasource"
-msgstr "Источник знаний"
-
-#: ../dbgpt/rag/operators/summary.py:28
-msgid "Document summary"
-msgstr "Сводка документа"
-
-#: ../dbgpt/rag/operators/summary.py:36 ../dbgpt/rag/operators/rewrite.py:36
-#: ../dbgpt/rag/retriever/rewrite.py:36
-msgid "LLM Client"
-msgstr "Клиент LLM"
-
-#: ../dbgpt/rag/operators/summary.py:41 ../dbgpt/rag/operators/rewrite.py:39
-msgid "The LLM Client."
-msgstr "Клиент LLM."
-
-#: ../dbgpt/rag/operators/summary.py:44 ../dbgpt/rag/operators/rewrite.py:42
-msgid "Model name"
-msgstr "Название модели"
-
-#: ../dbgpt/rag/operators/summary.py:49
-msgid "LLM model name"
-msgstr "Название модели LLM"
-
-#: ../dbgpt/rag/operators/summary.py:52 ../dbgpt/rag/operators/summary.py:57
-#: ../dbgpt/rag/operators/summary.py:65
-msgid "prompt language"
-msgstr "Язык запроса"
-
-#: ../dbgpt/rag/operators/summary.py:60
-msgid "Max iteration with LLM"
-msgstr "Максимальное количество итераций с LLM"
-
-#: ../dbgpt/rag/operators/summary.py:68
-msgid "Concurrency limit with LLM"
-msgstr "Предел параллелизма с LLM"
-
-#: ../dbgpt/rag/operators/summary.py:73
-msgid "The concurrency limit with llm"
-msgstr "Предел параллелизма с LLM"
-
-#: ../dbgpt/rag/operators/rewrite.py:16
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:16
 msgid "Query Rewrite Operator"
-msgstr "Оператор переписывания запроса"
+msgstr "Оператор перезаписи запроса"
 
-#: ../dbgpt/rag/operators/rewrite.py:19
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:19
 msgid "Query rewrite operator."
-msgstr "Оператор переписывания запроса."
+msgstr "Оператор перезаписи запроса."
 
-#: ../dbgpt/rag/operators/rewrite.py:22
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:22
 msgid "Query context"
 msgstr "Контекст запроса"
 
-#: ../dbgpt/rag/operators/rewrite.py:22
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:22
 msgid "query context"
-msgstr "контекст запроса"
+msgstr "Контекст запроса"
 
-#: ../dbgpt/rag/operators/rewrite.py:27 ../dbgpt/rag/operators/rewrite.py:31
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:27
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:31
 msgid "Rewritten queries"
-msgstr "Переписанные запросы"
+msgstr "Перезаписанные запросы"
 
-#: ../dbgpt/rag/operators/rewrite.py:47
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:36
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:38
+msgid "LLM Client"
+msgstr "LLM 客户端"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:39
+msgid "The LLM Client."
+msgstr "LLM 客户端。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:42
+msgid "Model name"
+msgstr "Название модели"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:47
 msgid "LLM model name."
-msgstr "Имя модели LLM."
+msgstr "Название LLM модели."
 
-#: ../dbgpt/rag/operators/rewrite.py:50
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:50
 msgid "Prompt language"
-msgstr "Язык подсказки"
+msgstr "Язык промпта"
 
-#: ../dbgpt/rag/operators/rewrite.py:55
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:55
 msgid "Prompt language."
-msgstr "Язык подсказки."
+msgstr "Язык промпта."
 
-#: ../dbgpt/rag/operators/rewrite.py:58
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:58
 msgid "Number of results"
 msgstr "Количество результатов"
 
-#: ../dbgpt/rag/operators/rewrite.py:63
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:63
 msgid "rewrite query number."
-msgstr "номер переписанного запроса."
+msgstr "Число перезаписанных запросов."
 
-#: ../dbgpt/rag/operators/knowledge.py:23
-msgid "Knowledge Operator"
-msgstr "Оператор знаний"
-
-#: ../dbgpt/rag/operators/knowledge.py:27
-msgid "The knowledge operator, which can create knowledge from datasource."
-msgstr "Оператор знаний, который может создавать знания из источника данных."
-
-#: ../dbgpt/rag/operators/knowledge.py:31
-msgid "knowledge datasource"
-msgstr "источник знаний"
-
-#: ../dbgpt/rag/operators/knowledge.py:34
-msgid "knowledge datasource, which can be a document, url, or text."
-msgstr "источник знаний, который может быть документом, URL-адресом или текстом."
-
-#: ../dbgpt/rag/operators/knowledge.py:42
-msgid "Knowledge object."
-msgstr "Объект знаний."
-
-#: ../dbgpt/rag/operators/knowledge.py:47
-msgid "Default datasource"
-msgstr "Источник данных по умолчанию"
-
-#: ../dbgpt/rag/operators/knowledge.py:52
-msgid "Default datasource."
-msgstr "Источник данных по умолчанию."
-
-#: ../dbgpt/rag/operators/knowledge.py:55
-msgid "Knowledge type"
-msgstr "Тип знаний"
-
-#: ../dbgpt/rag/operators/knowledge.py:71
-msgid "Knowledge type."
-msgstr "Тип знаний."
-
-#: ../dbgpt/rag/operators/knowledge.py:105
-msgid "Chunks To String Operator"
-msgstr "Оператор преобразования чанков в строку"
-
-#: ../dbgpt/rag/operators/knowledge.py:107
-msgid "Convert chunks to string."
-msgstr "Преобразовать чанки в строку."
-
-#: ../dbgpt/rag/operators/knowledge.py:111 ../dbgpt/rag/chunk_manager.py:71
-#: ../dbgpt/rag/text_splitter/text_splitter.py:211
-#: ../dbgpt/rag/text_splitter/text_splitter.py:422
-#: ../dbgpt/rag/text_splitter/text_splitter.py:804
-msgid "Separator"
-msgstr "Разделитель"
-
-#: ../dbgpt/rag/operators/knowledge.py:114
-msgid "The separator between chunks."
-msgstr "Разделитель между чанками."
-
-#: ../dbgpt/rag/operators/knowledge.py:124
-msgid "The input chunks."
-msgstr "Входные чанки."
-
-#: ../dbgpt/rag/operators/knowledge.py:130
-msgid "String"
-msgstr "Строка"
-
-#: ../dbgpt/rag/operators/knowledge.py:133
-msgid "The output string."
-msgstr "Выходная строка."
-
-#: ../dbgpt/rag/embedding/embedding_factory.py:230
-msgid "Default Embeddings"
-msgstr "Эмбеддинги по умолчанию"
-
-#: ../dbgpt/rag/embedding/embedding_factory.py:234
-msgid "Default embeddings(using default embedding model of current system)"
-msgstr "Эмбеддинги по умолчанию (используя модель эмбеддинга по умолчанию текущей системы)"
-
-#: ../dbgpt/rag/embedding/embeddings.py:28
-msgid "HuggingFace Embeddings"
-msgstr "Эмбеддинги HuggingFace"
-
-#: ../dbgpt/rag/embedding/embeddings.py:31
-msgid "HuggingFace sentence_transformers embedding models."
-msgstr "Модели эмбеддингов HuggingFace sentence_transformers."
-
-#: ../dbgpt/rag/embedding/embeddings.py:34
-#: ../dbgpt/rag/embedding/embeddings.py:141
-#: ../dbgpt/rag/embedding/embeddings.py:348
-#: ../dbgpt/rag/embedding/embeddings.py:461
-#: ../dbgpt/rag/embedding/embeddings.py:553
-#: ../dbgpt/rag/retriever/rewrite.py:30
-msgid "Model Name"
-msgstr "Имя модели"
-
-#: ../dbgpt/rag/embedding/embeddings.py:39
-#: ../dbgpt/rag/embedding/embeddings.py:146
-msgid "Model name to use."
-msgstr "Имя модели для использования."
-
-#: ../dbgpt/rag/embedding/embeddings.py:135
-msgid "HuggingFace Instructor Embeddings"
-msgstr "Эмбеддинги HuggingFace Instructor"
-
-#: ../dbgpt/rag/embedding/embeddings.py:138
-msgid "HuggingFace Instructor embeddings."
-msgstr "Эмбеддинги HuggingFace Instructor."
-
-#: ../dbgpt/rag/embedding/embeddings.py:149
-msgid "Embed Instruction"
-msgstr "Инструкция для эмбеддинга"
-
-#: ../dbgpt/rag/embedding/embeddings.py:154
-msgid "Instruction to use for embedding documents."
-msgstr "Инструкция для использования при эмбеддинге документов."
-
-#: ../dbgpt/rag/embedding/embeddings.py:157
-msgid "Query Instruction"
-msgstr "Инструкция для запроса"
-
-#: ../dbgpt/rag/embedding/embeddings.py:162
-msgid "Instruction to use for embedding query."
-msgstr "Инструкция для использования при эмбеддинге запроса."
-
-#: ../dbgpt/rag/embedding/embeddings.py:336
-msgid "HuggingFace Inference API Embeddings"
-msgstr "Векторные представления HuggingFace Inference API"
-
-#: ../dbgpt/rag/embedding/embeddings.py:339
-msgid "HuggingFace Inference API embeddings."
-msgstr "Векторные представления HuggingFace Inference API."
-
-#: ../dbgpt/rag/embedding/embeddings.py:342
-#: ../dbgpt/rag/embedding/embeddings.py:455
-#: ../dbgpt/rag/embedding/embeddings.py:545
-msgid "API Key"
-msgstr "Ключ API"
-
-#: ../dbgpt/rag/embedding/embeddings.py:345
-msgid "Your API key for the HuggingFace Inference API."
-msgstr "Ваш ключ API для HuggingFace Inference API."
-
-#: ../dbgpt/rag/embedding/embeddings.py:353
-#: ../dbgpt/rag/embedding/embeddings.py:466
-#: ../dbgpt/rag/embedding/embeddings.py:558
-msgid "The name of the model to use for text embeddings."
-msgstr "Название модели для использования в текстовых векторных представлениях."
-
-#: ../dbgpt/rag/embedding/embeddings.py:449
-msgid "Jina AI Embeddings"
-msgstr "Векторные представления Jina AI"
-
-#: ../dbgpt/rag/embedding/embeddings.py:452
-msgid "Jina AI embeddings."
-msgstr "Векторные представления Jina AI."
-
-#: ../dbgpt/rag/embedding/embeddings.py:458
-msgid "Your API key for the Jina AI API."
-msgstr "Ваш ключ API для Jina AI API."
-
-#: ../dbgpt/rag/embedding/embeddings.py:531
-msgid "OpenAPI Embeddings"
-msgstr "Векторные представления OpenAPI"
-
-#: ../dbgpt/rag/embedding/embeddings.py:534
-msgid "OpenAPI embeddings."
-msgstr "Векторные представления OpenAPI."
-
-#: ../dbgpt/rag/embedding/embeddings.py:537
-msgid "API URL"
-msgstr "URL API"
-
-#: ../dbgpt/rag/embedding/embeddings.py:542
-msgid "The URL of the embeddings API."
-msgstr "URL для векторных представлений API."
-
-#: ../dbgpt/rag/embedding/embeddings.py:550
-msgid "Your API key for the Open API."
-msgstr "Ваш ключ API для Open API."
-
-#: ../dbgpt/rag/embedding/embeddings.py:561
-msgid "Timeout"
-msgstr "Время ожидания"
-
-#: ../dbgpt/rag/embedding/embeddings.py:566
-msgid "The timeout for the request in seconds."
-msgstr "Время ожидания запроса в секундах."
-
-#: ../dbgpt/rag/chunk_manager.py:29
-msgid "Chunk Strategy"
-msgstr "Стратегия фрагментации"
-
-#: ../dbgpt/rag/chunk_manager.py:32
-msgid "chunk strategy"
-msgstr "стратегия фрагментации"
-
-#: ../dbgpt/rag/chunk_manager.py:37
-msgid "Text Splitter"
-msgstr "Разделитель текста"
-
-#: ../dbgpt/rag/chunk_manager.py:41
-msgid "Text splitter, if not set, will use the default text splitter."
-msgstr "Разделитель текста, если не установлен, будет использовать стандартный разделитель текста."
-
-#: ../dbgpt/rag/chunk_manager.py:47
-msgid "Splitter Type"
-msgstr "Тип разделителя"
-
-#: ../dbgpt/rag/chunk_manager.py:50
-msgid "Splitter type"
-msgstr "Тип разделителя"
-
-#: ../dbgpt/rag/chunk_manager.py:55
-#: ../dbgpt/rag/text_splitter/text_splitter.py:406
-msgid "Chunk Size"
-msgstr "Размер фрагмента"
-
-#: ../dbgpt/rag/chunk_manager.py:58
-msgid "Chunk size"
-msgstr "Размер фрагмента"
-
-#: ../dbgpt/rag/chunk_manager.py:63
-msgid "Chunk Overlap"
-msgstr "Перекрытие фрагментов"
-
-#: ../dbgpt/rag/chunk_manager.py:74
-msgid "Chunk separator"
-msgstr "Разделитель фрагментов"
-
-#: ../dbgpt/rag/chunk_manager.py:79
-msgid "Enable Merge"
-msgstr "Включить объединение"
-
-#: ../dbgpt/rag/chunk_manager.py:82
-msgid "Enable chunk merge by chunk_size."
-msgstr "Включить объединение фрагментов по размеру фрагмента."
-
-#: ../dbgpt/rag/retriever/rerank.py:56
-msgid "Default Ranker"
-msgstr "Стандартный ранжировщик"
-
-#: ../dbgpt/rag/retriever/rerank.py:59
-msgid "Default ranker(Rank by score)."
-msgstr "Стандартный ранжировщик (ранжировать по оценке)."
-
-#: ../dbgpt/rag/retriever/rerank.py:62
-msgid "Top k"
-msgstr "Лучшие k"
-
-#: ../dbgpt/rag/retriever/rerank.py:65
-msgid "The number of top k documents."
-msgstr "Количество лучших k документов."
-
-#: ../dbgpt/rag/retriever/rewrite.py:27
-msgid "Query rewrite."
-msgstr "Переписывание запроса."
-
-#: ../dbgpt/rag/retriever/rewrite.py:33
-msgid "The LLM model name."
-msgstr "Название модели LLM."
-
-#: ../dbgpt/rag/retriever/rewrite.py:39
-msgid "The llm client."
-msgstr "Клиент LLM."
-
-#: ../dbgpt/rag/retriever/rewrite.py:42
-msgid "Language"
-msgstr "Язык"
-
-#: ../dbgpt/rag/retriever/rewrite.py:45
-msgid "The language of the query rewrite prompt."
-msgstr "Язык запроса на переписывание."
-
-#: ../dbgpt/rag/text_splitter/text_splitter.py:206
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:212
 msgid "Character Text Splitter"
 msgstr "Разделитель текста по символам"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:214
-#: ../dbgpt/rag/text_splitter/text_splitter.py:425
-#: ../dbgpt/rag/text_splitter/text_splitter.py:807
-#: ../dbgpt/rag/text_splitter/text_splitter.py:850
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:217
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:428
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:830
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:873
+msgid "Separator"
+msgstr "Разделитель"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:220
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:431
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:833
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:876
 msgid "Separator to split the text."
 msgstr "Разделитель для разделения текста."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:251
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:257
 msgid "Recursive Character Text Splitter"
-msgstr "Рекурсивный разделитель текста по символам."
+msgstr "Рекурсивный разделитель текста по символам"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:265
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:271
 msgid "Split text by characters recursively."
-msgstr "Разделить текст рекурсивно по символам."
+msgstr "Разделить текст по символам рекурсивно."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:330
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:336
 msgid "Spacy Text Splitter"
-msgstr "Spacy разделитель текста."
+msgstr "Разделитель текста Spacy"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:338
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:341
+msgid "Pipeline"
+msgstr "Конвейер"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:344
 msgid "Spacy pipeline to use for tokenization."
-msgstr "Spacy конвейер для токенизации."
+msgstr "Конвейер Spacy для токенизации."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:343
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:349
 msgid "Split text by sentences using Spacy."
 msgstr "Разделить текст на предложения с использованием Spacy."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:393
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:399
 msgid "Markdown Header Text Splitter"
-msgstr "Разделитель текста заголовков Markdown."
+msgstr "Разделитель текста по заголовкам Markdown"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:401
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:404
+msgid "Return Each Line"
+msgstr "Вернуть каждую строку"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:407
 msgid "Return each line with associated headers."
 msgstr "Вернуть каждую строку с соответствующими заголовками."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:409
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:412
+msgid "Chunk Size"
+msgstr "Размер фрагмента"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:415
 msgid "Size of each chunk."
 msgstr "Размер каждого фрагмента."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:430
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:420
+msgid "Chunk Overlap"
+msgstr "Перекрытие фрагментов"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:423
+msgid "Overlap between chunks."
+msgstr "Перекрытие между фрагментами."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:436
 msgid "Split markdown text by headers."
 msgstr "Разделить текст Markdown по заголовкам."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:799
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:825
 msgid "Separator Text Splitter"
-msgstr "Разделитель текста."
+msgstr "Разделитель текста по разделителям"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:812
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:838
 msgid "Split text by separator."
 msgstr "Разделить текст по разделителю."
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:842
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:868
 msgid "Page Text Splitter"
-msgstr "Разделитель текста страницы."
+msgstr "Разделитель текста по страницам"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:855
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:881
 msgid "Split text by page."
-msgstr "Разделить текст по странице."
+msgstr "Разделить текст по страницам."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:26
+msgid "Query Rewrite"
+msgstr "Перезапись запроса"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:29
+msgid "Query rewrite."
+msgstr "Перезапись запроса."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:35
+msgid "The LLM model name."
+msgstr "Название модели LLM."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:41
+msgid "The llm client."
+msgstr "Клиент LLM."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:44
+msgid "Language"
+msgstr "Язык"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:47
+msgid "The language of the query rewrite prompt."
+msgstr "Язык запроса для перезаписи подсказки."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:88
+msgid "Default Ranker"
+msgstr "Ранжировщик по умолчанию"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:91
+msgid "Default ranker(Rank by score)."
+msgstr "Ранжировщик по умолчанию (Ранжирование по баллам)."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:94
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:184
+msgid "Top k"
+msgstr "Топ k"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:97
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:187
+msgid "The number of top k documents."
+msgstr "Количество топ k документов."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:178
+msgid "CrossEncoder Rerank"
+msgstr "Перекодирующий переранжировщик"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:181
+msgid "CrossEncoder ranker."
+msgstr "Ранжировщик CrossEncoder."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:190
+msgid "Rerank Model"
+msgstr "Модель переранжирования"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:193
+msgid "rerank model name, e.g., 'BAAI/bge-reranker-base'."
+msgstr "Название модели переранжирования, например, 'BAAI/bge-reranker-base'."
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:196
+msgid "device"
+msgstr "устройство"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:199
+msgid "device name, e.g., 'cpu'."
+msgstr "имя устройства, например, 'cpu'."

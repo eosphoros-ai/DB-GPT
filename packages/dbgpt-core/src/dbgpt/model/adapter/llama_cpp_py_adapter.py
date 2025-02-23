@@ -35,48 +35,59 @@ class LlamaCppModelParameters(LLMDeployModelParameters):
         },
     )
     seed: Optional[int] = field(
-        default=-1, metadata={"help": "Random seed for llama-cpp models. -1 for random"}
+        default=-1,
+        metadata={"help": _("Random seed for llama-cpp models. -1 for random")},
     )
     n_threads: Optional[int] = field(
         default=None,
         metadata={
-            "help": "Number of threads to use. If None, the number of threads is "
-            "automatically determined"
+            "help": _(
+                "Number of threads to use. If None, the number of threads is "
+                "automatically determined"
+            )
         },
     )
     n_batch: Optional[int] = field(
         default=512,
         metadata={
-            "help": "Maximum number of prompt tokens to batch together when calling "
-            "llama_eval"
+            "help": _(
+                "Maximum number of prompt tokens to batch together when calling "
+                "llama_eval"
+            )
         },
     )
     n_gpu_layers: Optional[int] = field(
         default=1000000000,
         metadata={
-            "help": "Number of layers to offload to the GPU, Set this to 1000000000 to "
-            "offload all layers to the GPU."
+            "help": _(
+                "Number of layers to offload to the GPU, Set this to 1000000000 to "
+                "offload all layers to the GPU."
+            )
         },
     )
     n_gqa: Optional[int] = field(
         default=None,
-        metadata={"help": "Grouped-query attention. Must be 8 for llama-2 70b."},
+        metadata={"help": _("Grouped-query attention. Must be 8 for llama-2 70b.")},
     )
     rms_norm_eps: Optional[float] = field(
-        default=5e-06, metadata={"help": "5e-6 is a good value for llama-2 models."}
+        default=5e-06, metadata={"help": _("5e-6 is a good value for llama-2 models.")}
     )
     cache_capacity: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided "
-            "without units, bytes will be assumed. "
+            "help": _(
+                "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided "
+                "without units, bytes will be assumed. "
+            )
         },
     )
     prefer_cpu: Optional[bool] = field(
         default=False,
         metadata={
-            "help": "If a GPU is available, it will be preferred by default, unless "
-            "prefer_cpu=False is configured."
+            "help": _(
+                "If a GPU is available, it will be preferred by default, unless "
+                "prefer_cpu=False is configured."
+            )
         },
     )
 

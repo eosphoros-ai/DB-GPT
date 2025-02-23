@@ -1,0 +1,65 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:362
+msgid "Agent Branch Operator"
+msgstr "에이전트 분기 연산자"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:367
+msgid ""
+"Branch the workflow based on the agent actionreport nexspeakers of the "
+"request."
+msgstr "요청의 에이전트 액션 보고서 다음 발화자에 따라 워크플로를 분기합니다."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:372
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:380
+msgid "Agent Request"
+msgstr "에이전트 요청"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:375
+msgid "The input value of the operator."
+msgstr "연산자의 입력 값입니다."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:383
+msgid "The agent request to agent Operator."
+msgstr "에이전트 연산자에 대한 에이전트 요청입니다."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:427
+msgid "Agent Branch Join Operator"
+msgstr "에이전트 분기 결합 연산자"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:431
+msgid "Just keep the first non-empty output."
+msgstr "첫 번째 비어 있지 않은 출력만 유지합니다."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:435
+msgid "Agent Output"
+msgstr "에이전트 출력"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:438
+msgid "The Agent output."
+msgstr "에이전트 출력입니다."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:443
+msgid "Branch Output"
+msgstr "분기 출력"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:446
+msgid "The output value of the operator."
+msgstr "연산자의 출력 값입니다."

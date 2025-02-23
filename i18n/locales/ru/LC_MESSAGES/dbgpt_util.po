@@ -1,15 +1,14 @@
-# Russian translations for PACKAGE package
-# Английские переводы для пакета PACKAGE.
-# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2024.
+# Automatically generated, 2025.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
-"PO-Revision-Date: 2024-03-24 22:53+0800\n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: ru\n"
@@ -19,10 +18,115 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ../dbgpt/util/serialization/json_serialization.py:23
-msgid "Json Serializer"
-msgstr "Сериализатор JSON"
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:30
+msgid ""
+"The module to scan, if not set, will scan all DB-GPT "
+"modules('dbgpt,dbgpt_client,dbgpt_ext,dbgpt_serve,dbgpt_app')."
+msgstr ""
+"Модуль для сканирования. Если не задан, будут просканированы все "
+"модули DB-GPT ('dbgpt,dbgpt_client,dbgpt_ext,dbgpt_serve,dbgpt_app')."
 
-#: ../dbgpt/util/serialization/json_serialization.py:26
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:40
+msgid ""
+"The output path, if not set, will print to packages/dbgpt-serve/src/"
+"dbgpt_serve/flow/compat/"
+msgstr ""
+"Путь для вывода. Если не задан, вывод будет осуществлен в "
+"packages/dbgpt-serve/src/dbgpt_serve/flow/compat/"
+
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:50
+msgid ""
+"The current version of the flow, if not set, will read from dbgpt.__version__"
+msgstr ""
+"Текущая версия потока. Если не задано, будет прочитано из dbgpt.__version__"
+
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:59
+msgid ""
+"The last version to compatible, if not set, will big than the current "
+"version by one minor version."
+msgstr ""
+"Последняя совместимая версия. Если не задано, будет на одну "
+"неосновную версию больше текущей."
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:75
+msgid "Repos"
+msgstr "Репозитории"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:76
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:408
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:498
+msgid "Repository"
+msgstr "Репозиторий"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:77
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:499
+msgid "Path"
+msgstr "Путь"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:406
+msgid "dbgpts In All Repos"
+msgstr "dbgpts во всех репозиториях"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:409
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:497
+msgid "Type"
+msgstr "Тип"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:410
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:496
+msgid "Name"
+msgstr "Имя"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:494
+msgid "Installed dbgpts"
+msgstr "Установленные DB-GPT"
+
+#:../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:23
+msgid "Json Serializer"
+msgstr "JSON-сериализатор"
+
+#:../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:26
 msgid "The serializer for serializing data with json format."
 msgstr "Сериализатор для сериализации данных в формате JSON."
+
+#:../packages/dbgpt-core/src/dbgpt/util/utils.py:40
+msgid "Logging level, just support FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+msgstr "Уровень логирования, поддерживаются только FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+
+#:../packages/dbgpt-core/src/dbgpt/util/utils.py:56
+msgid "The filename to store logs"
+msgstr "Имя файла для хранения журналов"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:249
+msgid "The file to store the tracer, e.g. dbgpt_webserver_tracer.jsonl"
+msgstr "Файл для хранения трассировщика, например, dbgpt_webserver_tracer.jsonl"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:256
+msgid "The root operation name of the tracer"
+msgstr "Корневое имя операции трассировщика"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:262
+msgid "The exporter of the tracer, e.g. telemetry"
+msgstr "Экспортер трассировщика, например, телеметрия"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:269
+msgid ""
+"The endpoint of the OpenTelemetry Protocol, you can set '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}' to use the environment variable"
+msgstr "Конечная точка протокола OpenTelemetry. Вы можете установить '${env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}', чтобы использовать переменную окружения"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:279
+msgid ""
+"Whether to use insecure connection, you can set '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}' to use the environment "
+msgstr "Использовать ли незащищенное соединение. Вы можете установить '${env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}', чтобы использовать переменную окружения"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:288
+msgid ""
+"The timeout of the connection, in seconds, you can set '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}' to use the environment "
+msgstr "Тайм-аут соединения в секундах. Вы можете установить '${env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}', чтобы использовать переменную окружения"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:296
+msgid "The class of the tracer storage"
+msgstr "Класс хранилища трассировщика"

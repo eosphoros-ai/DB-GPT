@@ -1,0 +1,66 @@
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:362
+msgid "Agent Branch Operator"
+msgstr "Агентский ветвящий оператор"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:367
+msgid ""
+"Branch the workflow based on the agent actionreport nexspeakers of the "
+"request."
+msgstr "Ветвить рабочий процесс на основе следующих участников в отчете о действиях агента по запросу."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:372
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:380
+msgid "Agent Request"
+msgstr "Запрос агента"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:375
+msgid "The input value of the operator."
+msgstr "Входное значение оператора."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:383
+msgid "The agent request to agent Operator."
+msgstr "Запрос агента к агентскому оператору."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:427
+msgid "Agent Branch Join Operator"
+msgstr "Агентский оператор объединения ветвей"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:431
+msgid "Just keep the first non-empty output."
+msgstr "Просто сохраняйте первый непустой вывод."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:435
+msgid "Agent Output"
+msgstr "Вывод агента"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:438
+msgid "The Agent output."
+msgstr "Вывод агента."
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:443
+msgid "Branch Output"
+msgstr "Вывод ветви"
+
+#:../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:446
+msgid "The output value of the operator."
+msgstr "Выходное значение оператора."

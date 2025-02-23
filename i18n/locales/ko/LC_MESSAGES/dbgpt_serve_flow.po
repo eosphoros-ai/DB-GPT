@@ -1,0 +1,106 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:32
+msgid "All AWEL Flows"
+msgstr "모든 AWEL 흐름"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:33
+msgid "Fetch all AWEL flows in the system"
+msgstr "시스템 내 모든 AWEL 흐름 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:40
+msgid "All AWEL Flow Nodes"
+msgstr "모든 AWEL 흐름 노드"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:41
+msgid "Fetch all AWEL flow nodes in the system"
+msgstr "시스템 내 모든 AWEL 흐름 노드 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:48
+msgid "All Variables"
+msgstr "모든 변수"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:49
+msgid "Fetch all variables in the system"
+msgstr "시스템 내 모든 변수 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:56
+msgid "All Secrets"
+msgstr "모든 비밀 정보"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:57
+msgid "Fetch all secrets in the system"
+msgstr "시스템 내 모든 비밀 정보 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:64
+msgid "All LLMs"
+msgstr "모든 대형 언어 모델"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:65
+msgid "Fetch all LLMs in the system"
+msgstr "시스템 내 모든 대형 언어 모델 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:72
+msgid "All Embeddings"
+msgstr "모든 임베딩"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:73
+msgid "Fetch all embeddings models in the system"
+msgstr "시스템 내 모든 임베딩 모델 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:80
+msgid "All Rerankers"
+msgstr "모든 재정렬기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:81
+msgid "Fetch all rerankers in the system"
+msgstr "시스템 내 모든 재정렬기 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:88
+msgid "All Data Sources"
+msgstr "모든 데이터 소스"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:89
+msgid "Fetch all data sources in the system"
+msgstr "시스템 내 모든 데이터 소스 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:96
+msgid "All Agents"
+msgstr "모든 에이전트"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:97
+msgid "Fetch all agents in the system"
+msgstr "시스템 내 모든 에이전트 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:104
+msgid "All Knowledge Spaces"
+msgstr "모든 지식 공간"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:105
+msgid "Fetch all knowledge spaces in the system"
+msgstr "시스템 내 모든 지식 공간 가져오기"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:26
+msgid "Interval to load dbgpts from installed packages"
+msgstr "설치된 패키지에서 DB-GPT를 로드하는 간격"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:29
+msgid "The key to encrypt the data"
+msgstr "데이터를 암호화하는 키"

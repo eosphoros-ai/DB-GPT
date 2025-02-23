@@ -1,0 +1,276 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:22
+msgid "Apache Spark datasource"
+msgstr "Apache Spark 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:25
+msgid "Unified engine for large-scale data analytics."
+msgstr "用于大规模数据分析的统一引擎。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:34
+msgid "The file path of the data source."
+msgstr "数据源的文件路径。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:18
+msgid "TuGraph datasource"
+msgstr "TuGraph 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:22
+msgid ""
+"TuGraph is a high-performance graph database jointly developed by Ant Group "
+"and Tsinghua University."
+msgstr "TuGraph 是由蚂蚁集团和清华大学联合开发的高性能图数据库。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:32
+msgid "TuGraph server host"
+msgstr "TuGraph 服务器主机"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:33
+msgid "TuGraph server user"
+msgstr "TuGraph 服务器用户"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:38
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:46
+msgid ""
+"Database password, you can write your password directly, of course, you can "
+"also use environment variables, such as ${env:DBGPT_DB_PASSWORD}"
+msgstr "数据库密码，你可以直接写入密码，当然也可以使用环境变量，例如 ${env:DBGPT_DB_PASSWORD}"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:46
+msgid "TuGraph server port, default 7687"
+msgstr "TuGraph 服务器端口，默认 7687"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:49
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:38
+msgid "Database name, default 'default'"
+msgstr "数据库名称，默认为 'default'"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:21
+msgid "Apache Hive datasource"
+msgstr "Apache Hive 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:24
+msgid "A distributed fault-tolerant data warehouse system."
+msgstr "一个分布式容错数据仓库系统。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:33
+msgid "Hive server host"
+msgstr "Hive 服务器主机"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:35
+msgid "Hive server port, default 10000"
+msgstr "Hive 服务器端口，默认 10000"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:45
+msgid "Authentication mode: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
+msgstr "认证模式：NONE、NOSASL、LDAP、KERBEROS、CUSTOM"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:50
+msgid "Username for authentication"
+msgstr "用于认证的用户名"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:55
+msgid "Password for LDAP or CUSTOM auth"
+msgstr "LDAP 或 CUSTOM 认证的密码"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:62
+msgid "Kerberos service name"
+msgstr "Kerberos 服务名称"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:67
+msgid "Transport mode: binary or http"
+msgstr "传输模式：二进制或 HTTP"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:75
+msgid "Driver name for Hive, default is hive."
+msgstr "Hive 的驱动程序名称，默认为 hive。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:22
+msgid "StarRocks datasource"
+msgstr "StarRocks 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:25
+msgid "An Open-Source, High-Performance Analytical Database."
+msgstr "一个开源的高性能分析型数据库。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:36
+msgid "Driver name for starrocks, default is starrocks."
+msgstr "StarRocks 的驱动程序名称，默认为 starrocks。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:16
+msgid "MySQL datasource"
+msgstr "MySQL 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:20
+msgid ""
+"Fast, reliable, scalable open-source relational database management system."
+msgstr "快速、可靠、可扩展的开源关系型数据库管理系统。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:32
+msgid "Driver name for MySQL, default is mysql+pymysql."
+msgstr "MySQL 的驱动名称，默认是 mysql+pymysql。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:24
+msgid "SQLite datasource"
+msgstr "SQLite 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:28
+msgid ""
+"Lightweight embedded relational database with simplicity and portability."
+msgstr "轻量级嵌入式关系型数据库，具有简单性和便携性。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:45
+msgid "SQLite database file path. Use ':memory:' for in-memory database"
+msgstr "SQLite 数据库文件路径。使用 ':memory:' 表示内存数据库"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:54
+msgid ""
+"Check same thread or not, default is False. Set False to allow sharing "
+"connection across threads"
+msgstr "是否检查同一线程，默认为 False。设置为 False 可允许跨线程共享连接。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:61
+msgid "Driver name, default is sqlite"
+msgstr "驱动名称，默认是 sqlite"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:18
+msgid "MSSQL datasource"
+msgstr "MSSQL 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:22
+msgid "Powerful, scalable, secure relational database system by Microsoft."
+msgstr "由 Microsoft 提供的强大、可扩展、安全的关系型数据库系统。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:33
+msgid "Driver name for MSSQL, default is mssql+pymssql."
+msgstr "MSSQL 的驱动名称，默认是 mssql+pymssql。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:20
+msgid "Apache Doris datasource"
+msgstr "Apache Doris 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:23
+msgid "A new-generation open-source real-time data warehouse."
+msgstr "新一代开源实时数据仓库。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:37
+msgid "Driver name for Doris, default is doris."
+msgstr "Doris 的驱动名称，默认为 doris。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:29
+msgid "Vertica datasource"
+msgstr "Vertica 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:33
+msgid ""
+"Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built "
+"for the scale and complexity of today`s data-driven world."
+msgstr "Vertica 是一个强一致性的、ACID 兼容的 SQL 数据仓库，专为当今数据驱动世界的大规模和复杂性而构建。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:45
+msgid "Driver name for vertica, default is vertica+vertica_python"
+msgstr "Vertica 的驱动名称，默认为 vertica+vertica_python。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:19
+msgid "OceanBase datasource"
+msgstr "OceanBase 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:22
+msgid "An Ultra-Fast & Cost-Effective Distributed SQL Database."
+msgstr "超快速且经济高效的分布式 SQL 数据库。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:32
+msgid "Driver name for oceanbase, default is mysql+ob."
+msgstr "OceanBase 的驱动名称，默认为 mysql+ob。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:25
+msgid "Clickhouse datasource"
+msgstr "ClickHouse 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:29
+msgid "Columnar database for high-performance analytics and real-time queries."
+msgstr "用于高性能分析和实时查询的列式数据库。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:38
+msgid "Database host, e.g., localhost"
+msgstr "数据库主机，例如 localhost"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:39
+msgid "Database port, e.g., 3306"
+msgstr "数据库端口，例如 3306"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:40
+msgid "Database user to connect"
+msgstr "用于连接数据库的用户"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:41
+msgid "Database name"
+msgstr "数据库名称"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:54
+msgid "http pool maxsize"
+msgstr "HTTP 连接池最大大小"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:57
+msgid "http pool num_pools"
+msgstr "HTTP 连接池数量"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:60
+msgid "Database connect timeout, default 15s"
+msgstr "数据库连接超时，默认 15 秒"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:63
+msgid "Distributed ddl task timeout, default 300s"
+msgstr "分布式 DDL 任务超时，默认 300 秒"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:23
+msgid "PostreSQL datasource"
+msgstr "PostgreSQL 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:27
+msgid ""
+"Powerful open-source relational database with extensibility and SQL "
+"standards."
+msgstr "功能强大的开源关系型数据库，具有可扩展性和 SQL 标准。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:36
+msgid "Database schema, defaults to 'public'"
+msgstr "数据库模式，默认为 'public'"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:41
+msgid "Driver name for postgres, default is postgresql+psycopg2."
+msgstr "Postgres 驱动程序名称，默认为 postgresql+psycopg2。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:19
+msgid "DuckDB datasource"
+msgstr "DuckDB 数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:22
+msgid "In-memory analytical database with efficient query processing."
+msgstr "内存中的分析型数据库，具有高效的查询处理能力。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:29
+msgid "Path to the DuckDB file."
+msgstr "DuckDB 文件路径。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:33
+msgid "Driver name for DuckDB, default is duckdb."
+msgstr "DuckDB 的驱动名称，默认是 duckdb。"

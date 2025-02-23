@@ -26,7 +26,7 @@ class DuckDbConnectorParameters(BaseDatasourceParameters):
     """DuckDB connection parameters."""
 
     __type__ = "duckdb"
-    path: str = field(metadata={"description": _("Path to the DuckDB file.")})
+    path: str = field(metadata={"help": _("Path to the DuckDB file.")})
     driver: str = field(
         default="duckdb",
         metadata={

@@ -1,0 +1,477 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:24
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:138
+msgid "Chunk Parameters"
+msgstr "청크 매개변수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:29
+msgid "Chunk Strategy"
+msgstr "청크 전략"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:32
+msgid "chunk strategy"
+msgstr "청크 전략"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:37
+msgid "Text Splitter"
+msgstr "텍스트 분할기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:41
+msgid "Text splitter, if not set, will use the default text splitter."
+msgstr "텍스트 분할기가 설정되지 않으면 기본 텍스트 분할기를 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:47
+msgid "Splitter Type"
+msgstr "분할기 유형"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:50
+msgid "Splitter type"
+msgstr "분할기 유형"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:55
+msgid "Chunk Size"
+msgstr "청크 크기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:58
+msgid "Chunk size"
+msgstr "청크 크기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:63
+msgid "Chunk Overlap"
+msgstr "청크 중첩"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:71
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:112
+msgid "Separator"
+msgstr "구분자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:74
+msgid "Chunk separator"
+msgstr "청크 구분자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:79
+msgid "Enable Merge"
+msgstr "병합 사용"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:82
+msgid "Enable chunk merge by chunk_size."
+msgstr "청크 크기에 따라 청크 병합을 사용하도록 설정합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:21
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:20
+msgid "The API key for the embeddings API."
+msgstr "임베딩 API용 API 키입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:26
+msgid "The Secret key for the embeddings API. It's the sk for qianfan."
+msgstr "임베딩 API용 비밀 키입니다. 이것은 Qianfan의 sk입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:33
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:29
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:26
+msgid ""
+"The real model name to pass to the provider, default is None. If backend is "
+"None, use name as the real model name."
+msgstr "공급자에게 전달할 실제 모델 이름입니다. 기본값은 None입니다. 백엔드가 None인 경우 이름을 실제 모델 이름으로 사용합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:169
+msgid "Embedding-V1 by Baidu Qianfan. "
+msgstr "Baidu Qianfan의 Embedding-V1입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:22
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:26
+msgid "The URL of the embeddings API."
+msgstr "임베딩 API의 URL입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:157
+msgid ""
+"The embedding model are trained by BAAI, it support more than 100 working "
+"languages."
+msgstr "임베딩 모델은 BAAI에서 학습되었으며 100가지 이상의 작업 언어를 지원합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:33
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:57
+msgid "The name of the model to use for text embeddings."
+msgstr "텍스트 임베딩에 사용할 모델의 이름입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:40
+msgid "Jina AI Embeddings"
+msgstr "Jina AI 임베딩"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:43
+msgid "Jina AI embeddings."
+msgstr "Jina AI 임베딩입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:46
+msgid "API Key"
+msgstr "API 키"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:49
+msgid "Your API key for the Jina AI API."
+msgstr "Jina AI API용 API 키입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:52
+msgid "Model Name"
+msgstr "모델 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:159
+msgid ""
+"The embedding model are trained by TongYi, it support more than 50 working "
+"languages."
+msgstr "임베딩 모델은 TongYi에서 학습되었으며 50가지 이상의 작업 언어를 지원합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:17
+msgid "Knowledge Graph Operator"
+msgstr "지식 그래프 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:19
+msgid "Extract Documents and persist into graph database."
+msgstr "문서를 추출하여 그래프 데이터베이스에 저장합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:23
+msgid "Knowledge Graph Connector"
+msgstr "지식 그래프 연결기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:26
+msgid "The knowledge graph."
+msgstr "지식 그래프입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:32
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:41
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:156
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:122
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:43
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:50
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:57
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:145
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:32
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:41
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:32
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:41
+msgid "Chunks"
+msgstr "조각들"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:35
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:35
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:35
+msgid "The text split chunks by chunk manager."
+msgstr "텍스트는 청크 관리자에 의해 청크로 분할됩니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:45
+msgid "The assembled chunks, it has been persisted to graph store."
+msgstr "조립된 청크는 그래프 저장소에 저장되었습니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:17
+msgid "Summary Operator"
+msgstr "요약 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:20
+msgid "The summary assembler operator."
+msgstr "요약 조립 연산자입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:148
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:39
+msgid "Knowledge"
+msgstr "지식"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+msgid "Knowledge datasource"
+msgstr "지식 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:28
+msgid "Document summary"
+msgstr "문서 요약"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:36
+msgid "LLM Client"
+msgstr "LLM 클라이언트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:41
+msgid "The LLM Client."
+msgstr "LLM 클라이언트입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:44
+msgid "Model name"
+msgstr "모델 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:49
+msgid "LLM model name"
+msgstr "LLM 모델 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:52
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:57
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:65
+msgid "prompt language"
+msgstr "프롬프트 언어"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:60
+msgid "Max iteration with LLM"
+msgstr "LLM과의 최대 반복 횟수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:68
+msgid "Concurrency limit with LLM"
+msgstr "LLM과의 동시성 제한"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:73
+msgid "The concurrency limit with llm"
+msgstr "LLM과의 동시성 제한"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:25
+msgid "Embedding Retriever Operator"
+msgstr "임베딩 검색 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:27
+msgid "Retrieve candidates from vector store."
+msgstr "벡터 저장소에서 후보를 검색합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:31
+msgid "Storage Index Store"
+msgstr "저장 인덱스 저장소"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:34
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:134
+msgid "The vector store connector."
+msgstr "벡터 저장소 연결기입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:38
+msgid "Top K"
+msgstr "상위 K개"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:41
+msgid "The number of candidates."
+msgstr "후보의 수입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:44
+msgid "Score Threshold"
+msgstr "점수 임계값"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:48
+msgid ""
+"The score threshold, if score of candidate is less than it, it will be "
+"filtered."
+msgstr "점수 임계값입니다. 후보의 점수가 이 값보다 낮으면 필터링됩니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:55
+msgid "Query Rewrite"
+msgstr "쿼리 재작성"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:58
+msgid "The query rewrite resource."
+msgstr "쿼리 재작성 리소스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:63
+msgid "Rerank"
+msgstr "재정렬"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:66
+msgid "The rerank."
+msgstr "재정렬입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:73
+msgid "Query"
+msgstr "쿼리"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:76
+msgid "The query to retrieve."
+msgstr "검색할 쿼리입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:81
+msgid "Candidates"
+msgstr "후보"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:84
+msgid "The retrieved candidates."
+msgstr "검색된 후보입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:125
+msgid "Embedding Assembler Operator"
+msgstr "임베딩 어셈블러 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:127
+msgid "Load knowledge and assemble embedding chunks to vector store."
+msgstr "지식을 로드하고 임베딩 청크를 벡터 저장소에 조립합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:131
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:23
+msgid "Vector Store Connector"
+msgstr "벡터 저장소 연결기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:141
+msgid "The chunk parameters."
+msgstr "청크 매개변수입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:151
+msgid "The knowledge to be loaded."
+msgstr "로드할 지식입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:160
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:45
+msgid "The assembled chunks, it has been persisted to vector store."
+msgstr "조립된 청크는 벡터 저장소에 저장되었습니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:23
+msgid "Knowledge Loader Operator"
+msgstr "지식 로더 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:27
+msgid "The knowledge operator, which can create knowledge from datasource."
+msgstr "데이터 소스에서 지식을 생성할 수 있는 지식 연산자입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:31
+msgid "knowledge datasource"
+msgstr "지식 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:34
+msgid "knowledge datasource, which can be a document, url, or text."
+msgstr "문서, URL 또는 텍스트일 수 있는 지식 데이터 소스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:42
+msgid "Knowledge object."
+msgstr "지식 객체입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:47
+msgid "Default datasource"
+msgstr "기본 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:52
+msgid "Default datasource."
+msgstr "기본 데이터 소스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:55
+msgid "Knowledge type"
+msgstr "지식 유형"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:71
+msgid "Knowledge type."
+msgstr "지식 유형입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:106
+msgid "Chunks To String Operator"
+msgstr "조각을 문자열로 변환하는 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:108
+msgid "Convert chunks to string."
+msgstr "조각을 문자열로 변환합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:115
+msgid "The separator between chunks."
+msgstr "조각 사이의 구분자입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:125
+msgid "The input chunks."
+msgstr "입력된 조각입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:131
+msgid "String"
+msgstr "문자열"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:134
+msgid "The output string."
+msgstr "출력된 문자열입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:26
+msgid "Knowledge Process Branch Operator"
+msgstr "지식 처리 분기 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:30
+msgid "Branch the workflow based on the stream flag of the request."
+msgstr "요청의 스트림 플래그를 기준으로 워크플로를 분기합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:34
+msgid "Document Chunks"
+msgstr "문서 조각"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:37
+msgid "The input value of the operator."
+msgstr "연산자의 입력 값입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:46
+msgid "Chunks for Vector Storage Connector."
+msgstr "벡터 저장 연결기용 조각입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:53
+msgid "Chunks for Knowledge Graph Connector."
+msgstr "지식 그래프 커넥터용 청크입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:60
+msgid "Chunks for Full Text Connector."
+msgstr "전체 텍스트 커넥터용 청크입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:119
+msgid "Knowledge Process Join Operator"
+msgstr "지식 처리 결합 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:124
+msgid "Join Branch the workflow based on the Knowledge Process Results."
+msgstr "지식 처리 결과를 기반으로 워크플로우의 분기를 결합합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:129
+msgid "Vector Storage Results"
+msgstr "벡터 저장 결과"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:132
+msgid "vector storage results."
+msgstr "벡터 저장 결과입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:136
+msgid "Knowledge Graph Storage Results"
+msgstr "지식 그래프 저장 결과"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:139
+msgid "knowledge graph storage results."
+msgstr "지식 그래프 저장 결과입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:148
+msgid "Knowledge Process Results."
+msgstr "지식 처리 결과입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:17
+msgid "Full Text Storage Operator"
+msgstr "전체 텍스트 저장 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:19
+msgid "Persist embeddings into full text storage."
+msgstr "임베딩을 전체 텍스트 저장소에 저장합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:23
+msgid "Full Text Connector"
+msgstr "전체 텍스트 커넥터"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:26
+msgid "The full text store."
+msgstr "전체 텍스트 저장소입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:45
+msgid "The assembled chunks, it has been persisted to full text store."
+msgstr "조립된 청크는 전체 텍스트 저장소에 저장되었습니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:17
+msgid "Vector Storage Operator"
+msgstr "벡터 저장 연산자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:19
+msgid "Persist embeddings into vector storage."
+msgstr "임베딩을 벡터 저장소에 저장합니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:26
+msgid "The vector store."
+msgstr "벡터 저장소입니다."

@@ -83,13 +83,17 @@ def setup_logging_level(
 
 def setup_logging(
     logger_name: str,
-    log_config: LoggingParameters,
+    log_config: Optional[LoggingParameters] = None,
     default_logger_level: Optional[str] = None,
     default_logger_filename: Optional[str] = None,
     redirect_stdio: bool = False,
 ):
-    logging_level = log_config.level or default_logger_level
-    logger_filename = log_config.get_real_log_file() or default_logger_filename
+    if log_config:
+        logging_level = log_config.level or default_logger_level
+        logger_filename = log_config.get_real_log_file() or default_logger_filename
+    else:
+        logging_level = default_logger_level
+        logger_filename = default_logger_filename
     if not logging_level:
         logging_level = _get_logging_level()
     logger_filename = resolve_root_path(logger_filename)

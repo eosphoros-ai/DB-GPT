@@ -119,6 +119,7 @@ class TiktokenProxyTokenizer(ProxyTokenizer):
             logger.warning(
                 f"{model_name}'s tokenizer not found, using cl100k_base encoding."
             )
+            encoding_model = tiktoken.model.get_encoding("cl100k_base")
         if encoding_model:
             self._cache[model_name] = encoding_model
         return encoding_model

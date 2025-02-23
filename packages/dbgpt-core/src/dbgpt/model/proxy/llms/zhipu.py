@@ -1,3 +1,4 @@
+import logging
 import os
 from concurrent.futures import Executor
 from dataclasses import dataclass, field
@@ -17,6 +18,8 @@ from dbgpt.util.i18n_utils import _
 from .chatgpt import OpenAICompatibleDeployModelParameters
 
 _DEFAULT_MODEL = "glm-4-plus"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -144,18 +147,32 @@ class ZhipuLLMClient(ProxyLLMClient):
 
         model = request.model or self._model
         try:
+            logger.debug(
+                f"Send request to zhipu ai, model: {model}, request: {request}"
+            )
             response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=request.temperature,
+                max_tokens=request.max_new_tokens,
                 top_p=request.top_p,
                 stream=True,
             )
             partial_text = ""
             for chunk in response:
+                if not chunk.choices or not chunk.choices[0].delta:
+                    continue
                 delta_content = chunk.choices[0].delta.content
+                finish_reason = chunk.choices[0].finish_reason
                 partial_text += delta_content
-                yield ModelOutput(text=partial_text, error_code=0)
+                if logger.isEnabledFor(logging.DEBUG):
+                    print(delta_content, end="")
+                yield ModelOutput(
+                    text=partial_text, error_code=0, finish_reason=finish_reason
+                )
+            if not partial_text:
+                yield ModelOutput(text="**LLMServer Generate Empty.**", error_code=1)
+
         except Exception as e:
             yield ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",

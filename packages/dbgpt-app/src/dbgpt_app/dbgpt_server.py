@@ -33,7 +33,7 @@ from dbgpt_app.base import (
 
 # initialize_components import time cost about 0.1s
 from dbgpt_app.component_configs import initialize_components
-from dbgpt_app.config import ApplicationConfig, ServiceWebParameters
+from dbgpt_app.config import ApplicationConfig, ServiceWebParameters, SystemParameters
 from dbgpt_serve.core import add_exception_handler
 
 logger = logging.getLogger(__name__)
@@ -220,7 +220,6 @@ def run_uvicorn(param: ServiceWebParameters):
 def run_webserver(config_file: str):
     # Load configuration with specified config file
     param = load_config(config_file)
-    set_default_language(param.system.language)
     trace_config = param.service.web.trace or param.trace
     trace_file = trace_config.file or os.path.join(
         "logs", "dbgpt_webserver_tracer.jsonl"
@@ -258,8 +257,24 @@ def run_webserver(config_file: str):
 
 def load_config(config_file: str = None) -> ApplicationConfig:
     from dbgpt.configs.model_config import ROOT_PATH as DBGPT_ROOT_PATH
-    from dbgpt.model import scan_model_providers
+
+    if config_file is None:
+        config_file = os.path.join(DBGPT_ROOT_PATH, "configs", "dbgpt-siliconflow.toml")
+    elif not os.path.isabs(config_file):
+        # If config_file is a relative path, make it relative to DBGPT_ROOT_PATH
+        config_file = os.path.join(DBGPT_ROOT_PATH, config_file)
+
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"Configuration file not found: {config_file}")
     from dbgpt.util.configure import ConfigurationManager
+
+    logger.info(f"Loading configuration from: {config_file}")
+    cfg = ConfigurationManager.from_file(config_file)
+    sys_config = cfg.parse_config(SystemParameters, prefix="system")
+    # Must set default language before any i18n usage
+    set_default_language(sys_config.language)
+
+    from dbgpt.model import scan_model_providers
     from dbgpt_app.initialization.serve_initialization import scan_serve_configs
     from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
 
@@ -271,17 +286,6 @@ def load_config(config_file: str = None) -> ApplicationConfig:
     # Register all serve configs
     scan_serve_configs()
 
-    if config_file is None:
-        config_file = os.path.join(DBGPT_ROOT_PATH, "configs", "dbgpt-siliconflow.toml")
-    elif not os.path.isabs(config_file):
-        # If config_file is a relative path, make it relative to DBGPT_ROOT_PATH
-        config_file = os.path.join(DBGPT_ROOT_PATH, config_file)
-
-    if not os.path.exists(config_file):
-        raise FileNotFoundError(f"Configuration file not found: {config_file}")
-
-    logger.info(f"Loading configuration from: {config_file}")
-    cfg = ConfigurationManager.from_file(config_file)
     app_config = cfg.parse_config(ApplicationConfig, hook_section="hooks")
     return app_config
 

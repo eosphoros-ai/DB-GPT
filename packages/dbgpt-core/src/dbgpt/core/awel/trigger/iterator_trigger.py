@@ -1,6 +1,7 @@
 """Trigger for iterator data."""
 
 import asyncio
+import logging
 from typing import Any, AsyncIterator, Iterator, List, Optional, Tuple, Union, cast
 
 from ..operators.base import BaseOperator
@@ -8,6 +9,7 @@ from ..task.base import InputSource, TaskState
 from ..task.task_impl import DefaultTaskContext, _is_async_iterator, _is_iterable
 from .base import Trigger
 
+logger = logging.getLogger(__name__)
 IterDataType = Union[InputSource, Iterator, AsyncIterator, Any]
 
 
@@ -47,6 +49,9 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
         parallel_num: int = 1,
         streaming_call: bool = False,
         show_progress: bool = True,
+        max_retries: int = 0,  # New: Maximum retry attempts for non-streaming
+        retry_delay: float = 1.0,  # New: Delay between retries in seconds
+        timeout: Optional[float] = None,  # New: Timeout per task in seconds
         **kwargs,
     ):
         """Create a IteratorTrigger.
@@ -57,11 +62,22 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
                 Defaults to 1.
             streaming_call (bool, optional): Whether the dag is a streaming call.
                 Defaults to False.
+            show_progress (bool, optional): Whether to show progress bar.
+                Defaults to True.
+            max_retries (int, optional): Maximum retry attempts for non-streaming calls.
+                Defaults to 0 (no retries).
+            retry_delay (float, optional): Delay between retries in seconds.
+                Defaults to 1.0.
+            timeout (Optional[float], optional): Timeout per task in seconds.
+                Defaults to None (no timeout).
         """
         self._iter_data = data
         self._parallel_num = parallel_num
         self._streaming_call = streaming_call
         self._show_progress = show_progress
+        self._max_retries = max_retries
+        self._retry_delay = retry_delay
+        self._timeout = timeout
         super().__init__(**kwargs)
 
     async def trigger(
@@ -130,6 +146,7 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
         streaming_call = self._streaming_call
         semaphore = asyncio.Semaphore(parallel_num or self._parallel_num)
         task_id = self.node_id
+        max_retries = self._max_retries
 
         async def call_stream(call_data: Any):
             try:
@@ -138,15 +155,41 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
             finally:
                 await dag._after_dag_end(end_node.current_event_loop_task_id)
 
-        async def run_node(call_data: Any) -> Tuple[Any, Any]:
+        async def run_node_with_control(call_data: Any) -> Tuple[Any, Any]:
             async with semaphore:
                 if streaming_call:
-                    task_output = call_stream(call_data)
-                else:
-                    task_output = await end_node.call(call_data)
-                    # No streaming call, not need call dag._after_dag_end(), it will be
-                    # called in workflow runner
-                return call_data, task_output
+                    # Streaming calls don't support retries
+                    if self._timeout:
+                        task_output = await asyncio.wait_for(
+                            call_stream(call_data), timeout=self._timeout
+                        )
+                    else:
+                        task_output = call_stream(call_data)
+                    return call_data, task_output
+
+                # Non-streaming call with retry logic
+                nonlocal max_retries
+                attempts = 0
+                while True:
+                    try:
+                        if self._timeout:
+                            task_output = await asyncio.wait_for(
+                                end_node.call(call_data), timeout=self._timeout
+                            )
+                        else:
+                            task_output = await end_node.call(call_data)
+                        return call_data, task_output
+                    except (Exception, asyncio.TimeoutError) as e:
+                        attempts += 1
+                        if attempts > max_retries:
+                            raise RuntimeError(
+                                f"Failed after {max_retries} retries: {str(e)}"
+                            ) from e
+                        await asyncio.sleep(self._retry_delay)
+                        logger.warning(
+                            f"Failed attempt {attempts}/{max_retries} for task "
+                            f"{end_node.node_id}: {str(e)}"
+                        )
 
         tasks = []
 
@@ -158,6 +201,6 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
             async_module = asyncio  # type: ignore
 
         async for data in _to_async_iterator(self._iter_data, task_id):
-            tasks.append(run_node(data))
+            tasks.append(run_node_with_control(data))
         results: List[Tuple[Any, Any]] = await async_module.gather(*tasks)
         return results

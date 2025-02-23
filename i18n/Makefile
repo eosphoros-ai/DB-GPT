@@ -65,7 +65,7 @@ po: pot
 					msgmerge --update $(LOCALEDIR)/$$lang/LC_MESSAGES/$$domain.po $$pot; \
 				else \
 					echo "Creating $$lang translation for $$domain"; \
-					msginit --no-translator -l $$lang -o $(LOCALEDIR)/$$lang/LC_MESSAGES/$$domain.po -i $$pot; \
+					msginit --no-translator -l $$lang -o $(LOCALEDIR)/$$lang/LC_MESSAGES/$$domain.po -i $$pot --locale=$$lang.UTF-8; \
 				fi; \
 			fi; \
 		done; \
@@ -83,10 +83,26 @@ mo:
 			fi; \
 		done; \
 	done
-
+# Fix encoding issues in .po files
+fix-encoding:
+	@echo "Fixing encoding issues in .po files..."
+	@for lang in $(LANGUAGES); do \
+		echo "Processing language: $$lang"; \
+		for po in $(LOCALEDIR)/$$lang/LC_MESSAGES/*.po; do \
+			if [ -f "$$po" ]; then \
+				echo "  Fixing $$po..."; \
+				# Ensure charset is UTF-8 \
+				sed -i 's/charset=.*/charset=UTF-8\\n"/' "$$po"; \
+				# Ensure Content-Transfer-Encoding is 8bit \
+				sed -i 's/Content-Transfer-Encoding: .*/Content-Transfer-Encoding: 8bit\\n"/' "$$po"; \
+			fi; \
+		done; \
+	done
+	@echo "Encoding fixes complete."
 # Clean up generated files
 clean:
 	@find $(LOCALEDIR) -type f -name "*.mo" -delete
+	@find $(LOCALEDIR) -type f -name "*.po" -delete
 	@rm -rf $(LOCALEDIR)/pot
 	@echo "Cleanup complete."
 
@@ -95,6 +111,7 @@ help:
 	@echo "  pot  - Generate POT files for each package module."
 	@echo "  po   - Update existing .po files or create them if they don't exist."
 	@echo "  mo   - Compile .po files into .mo files for use in the application."
+	@echo "  fix-encoding - Fix charset and encoding issues in .po files."
 	@echo "  clean - Clean up generated files."
 	@echo "  help - Show this help message."
 	@echo ""

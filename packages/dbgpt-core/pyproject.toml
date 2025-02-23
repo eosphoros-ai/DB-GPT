@@ -119,7 +119,7 @@ llama_cpp_server = [
     "llama-cpp-server-py"
 ]
 proxy_ollama = ["ollama"]
-proxy_zhipuai = ["zhipuai"]
+proxy_zhipuai = ["zhipuai>=2.1.5"]
 proxy_tongyi = ["openai"] # tongyi supported by openai package
 proxy_qianfan = ["qianfan"]
 proxy_openai = [

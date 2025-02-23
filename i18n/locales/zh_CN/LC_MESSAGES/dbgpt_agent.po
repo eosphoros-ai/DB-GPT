@@ -1,15 +1,15 @@
 # Chinese translations for PACKAGE package
 # PACKAGE 软件包的简体中文翻译.
-# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2024.
+# Automatically generated, 2025.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-06 16:14+0800\n"
-"PO-Revision-Date: 2024-09-06 16:14+0800\n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: zh_CN\n"
@@ -17,50 +17,49 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:353
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:362
 msgid "Agent Branch Operator"
 msgstr "智能体分支算子"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:358
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:367
 msgid ""
 "Branch the workflow based on the agent actionreport nexspeakers of the "
 "request."
-msgstr "根据智能体的操作报告和请求的下一步执行者来分支工作流。"
+msgstr "根据请求的智能体操作报告中的 nexspeakers 分支工作流。"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:363
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:371
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:372
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:380
 msgid "Agent Request"
 msgstr "智能体请求"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:366
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:375
 msgid "The input value of the operator."
 msgstr "算子的输入值。"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:374
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:383
 msgid "The agent request to agent Operator."
-msgstr "智能体请求智能体算子。"
+msgstr "发送给智能体算子的请求。"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:418
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:427
 msgid "Agent Branch Join Operator"
 msgstr "智能体分支合并算子"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:422
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:431
 msgid "Just keep the first non-empty output."
-msgstr "只保留第一个非空输出。"
+msgstr "仅保留第一个非空输出。"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:426
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:435
 msgid "Agent Output"
 msgstr "智能体输出"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:429
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:438
 msgid "The Agent output."
 msgstr "智能体的输出。"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:434
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:443
 msgid "Branch Output"
 msgstr "分支输出"
 
-#: ../dbgpt/agent/core/plan/awel/agent_operator.py:437
+#: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:446
 msgid "The output value of the operator."
 msgstr "算子的输出值。"
