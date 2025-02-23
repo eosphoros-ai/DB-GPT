@@ -83,23 +83,18 @@ class TuGraphStore(GraphStoreBase):
     def __init__(self, config: TuGraphStoreConfig) -> None:
         """Initialize the TuGraphStore with connection details."""
         self._config = config
-        self._host = os.getenv("TUGRAPH_HOST", config.host)
-        self._port = int(os.getenv("TUGRAPH_PORT", config.port))
-        self._username = os.getenv("TUGRAPH_USERNAME", config.username)
-        self._password = os.getenv("TUGRAPH_PASSWORD", config.password)
-        self.enable_summary = (
+        self._host = config.host or os.getenv("TUGRAPH_HOST")
+        self._port = int(config.port or os.getenv("TUGRAPH_PORT"))
+        self._username = config.username or os.getenv("TUGRAPH_USERNAME")
+        self._password = config.password or os.getenv("TUGRAPH_PASSWORD")
+        self.enable_summary = config.enable_summary or (
             os.getenv("GRAPH_COMMUNITY_SUMMARY_ENABLED", "").lower() == "true"
-            if "GRAPH_COMMUNITY_SUMMARY_ENABLED" in os.environ
-            else config.enable_summary
         )
-        self.enable_similarity_search = (
-            os.environ["SIMILARITY_SEARCH_ENABLED"].lower() == "true"
-            if "SIMILARITY_SEARCH_ENABLED" in os.environ
-            else config.enable_similarity_search
+        self.enable_similarity_search = config.enable_similarity_search or (
+            os.getenv("SIMILARITY_SEARCH_ENABLED", "").lower() == "true"
         )
-        self._plugin_names = (
+        self._plugin_names = config.plugin_names or (
             os.getenv("TUGRAPH_PLUGIN_NAMES", "leiden").split(",")
-            or config.plugin_names
         )
 
         self._graph_name = config.name

@@ -107,9 +107,7 @@ class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
 
     model_name: str = Field(default=None, description="The name of llm model.")
 
-    graph_store_type: str = Field(
-        default="TuGraph", description="The type of graph store."
-    )
+    type: str = Field(default="TuGraph", description="The type of graph store.")
 
 
 @register_resource(
@@ -151,8 +149,8 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             cfg.name = config.name
             cfg.embedding_fn = config.embedding_fn
 
-        graph_store_type = os.getenv("GRAPH_STORE_TYPE") or config.graph_store_type
-        return GraphStoreFactory.create(graph_store_type, configure)
+        graph_store_type = os.getenv("GRAPH_STORE_TYPE") or config.type
+        return GraphStoreFactory.create(graph_store_type, configure, config.dict())
 
     def __init_graph_store_adapter(self):
         return GraphStoreAdapterFactory.create(self._graph_store)

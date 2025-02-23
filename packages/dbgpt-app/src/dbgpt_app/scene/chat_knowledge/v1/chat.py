@@ -230,9 +230,9 @@ class ChatKnowledge(BaseChat):
         request = KnowledgeSpaceRequest(name=space_name)
         spaces = service.get_knowledge_space(request)
         if len(spaces) == 1:
-            from dbgpt_ext.storage import vector_store
+            from dbgpt_ext.storage import __knowledge_graph__ as graph_storages
 
-            if spaces[0].vector_type in vector_store.__knowledge_graph__:
+            if spaces[0].vector_type in graph_storages:
                 return self.rag_config.graph_search_top_k
 
         return self.rag_config.similarity_top_k

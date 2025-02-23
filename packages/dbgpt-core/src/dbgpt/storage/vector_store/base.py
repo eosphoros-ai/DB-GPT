@@ -107,6 +107,10 @@ class VectorStoreConfig(IndexStoreConfig):
         default=0.3,
         description="Recall score of vector search",
     )
+    type: Optional[str] = Field(
+        default=None,
+        description="vector storage type",
+    )
 
 
 class VectorStoreBase(IndexStoreBase, ABC):

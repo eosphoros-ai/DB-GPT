@@ -4,10 +4,6 @@ import logging
 import os
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
-from chromadb import PersistentClient
-from chromadb.api.client import SharedSystemClient
-from chromadb.config import Settings
-
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core import Chunk
@@ -85,7 +81,10 @@ class ChromaStore(VectorStoreBase):
         """
         super().__init__()
         self._vector_store_config = vector_store_config
-
+        try:
+            from chromadb import PersistentClient, Settings
+        except ImportError:
+            raise ImportError("Please install chroma package first.")
         chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
@@ -203,8 +202,11 @@ class ChromaStore(VectorStoreBase):
 
     def delete_vector_name(self, vector_name: str):
         """Delete vector name."""
+        try:
+            from chromadb.api.client import SharedSystemClient
+        except ImportError:
+            raise ImportError("Please install chroma package first.")
         logger.info(f"chroma vector_name:{vector_name} begin delete...")
-        # self.vector_store_client.delete_collection()
         self._chroma_client.delete_collection(self._collection.name)
         SharedSystemClient.clear_system_cache()
         self._clean_persist_folder()
