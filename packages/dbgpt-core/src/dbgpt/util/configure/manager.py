@@ -255,6 +255,13 @@ def _get_all_subclasses(base_class: Type[T]) -> Dict[str, Type[T]]:
     return base_class.get_register_class() or {}
 
 
+def _is_base_config(target_cls):
+    return (
+        hasattr(target_cls, "__config_type__")
+        and getattr(target_cls, "__config_type__") == "base"
+    )
+
+
 class ConfigurationManager:
     """A unified configuration manager that supports loading configuration from files
     and converting them to dataclass objects.
@@ -651,7 +658,7 @@ class ConfigurationManager:
 
     @classmethod
     def parse_description(
-        cls, target_cls: Type[T], cache_enable: bool = True
+        cls, target_cls: Type[T], cache_enable: bool = True, skip_base: bool = False
     ) -> List[ParameterDescription]:
         """Parse configuration description into a list of ParameterDescription.
 
@@ -667,6 +674,13 @@ class ConfigurationManager:
             List of ParameterDescription objects describing the fields
         """
         from ..function_utils import type_to_string
+
+        if (
+            skip_base
+            and hasattr(target_cls, "__config_type__")
+            and getattr(target_cls, "__config_type__") == "base"
+        ):
+            return []
 
         if not is_dataclass(target_cls):
             raise ValueError(f"{target_cls.__name__} is not a dataclass")
@@ -767,13 +781,15 @@ class ConfigurationManager:
                 if isinstance(element_type, PolymorphicMeta):
                     implementations = _get_all_subclasses(element_type)
                     desc.nested_fields = {
-                        type_value: cls.parse_description(impl_cls)
+                        type_value: cls.parse_description(
+                            impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                        )
                         for type_value, impl_cls in implementations.items()
                     }
                 else:
                     desc.nested_fields = {
                         element_type.__name__.lower(): cls.parse_description(
-                            element_type
+                            element_type, cache_enable=cache_enable, skip_base=skip_base
                         )
                     }
 
@@ -784,13 +800,17 @@ class ConfigurationManager:
                     if isinstance(value_type, PolymorphicMeta):
                         implementations = _get_all_subclasses(value_type)
                         desc.nested_fields = {
-                            type_value: cls.parse_description(impl_cls)
+                            type_value: cls.parse_description(
+                                impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                            )
                             for type_value, impl_cls in implementations.items()
                         }
                     else:
                         desc.nested_fields = {
                             value_type.__name__.lower(): cls.parse_description(
-                                value_type
+                                value_type,
+                                cache_enable=cache_enable,
+                                skip_base=skip_base,
                             )
                         }
 
@@ -799,12 +819,16 @@ class ConfigurationManager:
                 if isinstance(field_type, PolymorphicMeta):
                     implementations = _get_all_subclasses(field_type)
                     desc.nested_fields = {
-                        type_value: cls.parse_description(impl_cls)
+                        type_value: cls.parse_description(
+                            impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                        )
                         for type_value, impl_cls in implementations.items()
                     }
                 else:
                     desc.nested_fields = {
-                        field_type.__name__.lower(): cls.parse_description(field_type)
+                        field_type.__name__.lower(): cls.parse_description(
+                            field_type, cache_enable=cache_enable, skip_base=skip_base
+                        )
                     }
 
             descriptions.append(desc)

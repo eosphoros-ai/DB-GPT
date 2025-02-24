@@ -1,7 +1,7 @@
 from dbgpt.core import LLMClient
 
 
-class AdaptiveLLMClient(LLMClient):
+class AutoLLMClient(LLMClient):
     def __init__(self, provider: str, name: str, **kwargs):
         from dbgpt.model import scan_model_providers
         from dbgpt.model.adapter.base import get_model_adapter
@@ -43,14 +43,3 @@ class AdaptiveLLMClient(LLMClient):
 
     def models(self, *args, **kwargs):
         return self._client_impl.models(*args, **kwargs)
-
-
-if __name__ == "__main__":
-    import os
-
-    lc = AdaptiveLLMClient(
-        provider="proxy/siliconflow",
-        name="Qwen/Qwen2.5-Coder-32B-Instruct",
-        api_key=os.getenv("SILICONFLOW_API_KEY"),
-    )
-    print(lc("hello"))

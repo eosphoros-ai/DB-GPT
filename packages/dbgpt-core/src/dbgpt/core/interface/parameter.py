@@ -175,6 +175,7 @@ class BitsandbytesQuantization(BaseHFQuantization):
     """Bits and bytes quantization parameters."""
 
     __type__ = "bitsandbytes"
+    __config_type__ = "base"
 
     load_in_8bits: bool = field(
         default=False,

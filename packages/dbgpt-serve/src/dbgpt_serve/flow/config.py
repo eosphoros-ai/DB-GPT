@@ -1,6 +1,11 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.util.i18n_utils import _
 from dbgpt_serve.core import BaseServeConfig
 
@@ -15,6 +20,13 @@ SERVER_APP_TABLE_NAME = "dbgpt_serve_flow"
 SERVER_APP_VARIABLES_TABLE_NAME = "dbgpt_serve_variables"
 
 
+@auto_register_resource(
+    label=_("AWEL Flow Serve Configurations"),
+    category=ResourceCategory.COMMON,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("This configuration is for the flow serve module."),
+    show_in_ui=False,
+)
 @dataclass
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""

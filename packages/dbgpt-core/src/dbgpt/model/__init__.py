@@ -4,10 +4,10 @@ except ImportError:
     DefaultLLMClient = None
     RemoteLLMClient = None
 
-from .adapter.adaptive_client import AdaptiveLLMClient  # noqa: F401
+from .adapter.auto_client import AutoLLMClient  # noqa: F401
 
 _exports = [
-    "AdaptiveLLMClient",
+    "AutoLLMClient",
 ]
 if DefaultLLMClient:
     _exports.append("DefaultLLMClient")

@@ -1081,6 +1081,7 @@ def register_resource(
             for parent_cls in mro
             if parent_cls is not object and parent_cls != abc.ABC
         ]
+        metadata_attr = f"_resource_metadata_{cls.__name__}"
 
         resource_metadata = ResourceMetadata(
             label=label,
@@ -1099,7 +1100,7 @@ def register_resource(
         _register_alias_types(cls, alias_ids)
         _register_resource(cls, resource_metadata, alias_ids)
         # Attach the metadata to the class
-        cls._resource_metadata = resource_metadata
+        setattr(cls, metadata_attr, resource_metadata)
         return cls
 
     return decorator
@@ -1137,8 +1138,9 @@ def auto_register_resource(
     def decorator(cls):
         if not is_dataclass(cls):
             raise ValueError("auto_register_resource only works with dataclasses")
+        metadata_attr = f"_resource_metadata_{cls.__name__}"
 
-        if not hasattr(cls, "_resource_metadata"):
+        if not hasattr(cls, metadata_attr):
             # Create parameters from dataclass fields
             fields_desc_list = _get_parameter_descriptions(cls)
             parameters: List[Parameter] = []
@@ -1207,7 +1209,7 @@ def auto_register_resource(
                 _register_resource(cls, resource_metadata, alias_ids)
 
             # Attach the metadata to the class
-            cls._resource_metadata = resource_metadata
+            setattr(cls, metadata_attr, resource_metadata)
         return cls
 
     return decorator

@@ -35,7 +35,7 @@ export function ConfigDetail({ config }) {
           <p>{description}</p>
           {documentationUrl && (
             <p>
-              详细文档请参考：
+              Details can be found in: <br />
               <Link
                 to={documentationUrl}
                 style={styles.documentationLink}
@@ -49,14 +49,14 @@ export function ConfigDetail({ config }) {
         </div>
       )}
 
-      <h2>参数列表</h2>
+      <h2>Parameters </h2>
       <table>
         <thead>
           <tr>
-            <th>参数名</th>
-            <th>类型</th>
-            <th>必填</th>
-            <th>描述</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
           </tr>
         </thead>
         <tbody>
@@ -87,7 +87,7 @@ export function ConfigDetail({ config }) {
                 <div>{param.description}</div>
                 {param.validValues && (
                   <div>
-                    有效值：
+                    Valid values:
                     {param.validValues.map((value, idx) => (
                       <React.Fragment key={idx}>
                         {idx > 0 && ', '}
@@ -98,7 +98,7 @@ export function ConfigDetail({ config }) {
                 )}
                 {param.defaultValue && (
                   <div>
-                    默认值：<CodeValue value={param.defaultValue} />
+                    Defaults：<CodeValue value={param.defaultValue} />
                   </div>
                 )}
               </td>

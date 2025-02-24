@@ -22,7 +22,7 @@ from dbgpt.core.awel import (
     MapOperator,
 )
 from dbgpt.core.operators import PromptBuilderOperator, RequestBuilderOperator
-from dbgpt.model import AdaptiveLLMClient
+from dbgpt.model import AutoLLMClient
 from dbgpt.model.operators import LLMOperator
 from dbgpt.model.proxy.base import TiktokenProxyTokenizer
 
@@ -333,7 +333,7 @@ class BatchOperator(JoinOperator[str]):
         model_name = ext_dict.get("model_name", self._model_name)
         count_token_model = ext_dict.get("count_token_model", "cl100k_base")
         support_system_role = ext_dict.get("support_system_role", True)
-        llm_client = AdaptiveLLMClient(provider=provider, name=model_name)
+        llm_client = AutoLLMClient(provider=provider, name=model_name)
         batch_blocks = await self.split_blocks(
             llm_client, blocks, count_token_model, input_token
         )
@@ -391,7 +391,7 @@ class BatchOperator(JoinOperator[str]):
 
     async def split_blocks(
         self,
-        llm_client: AdaptiveLLMClient,
+        llm_client: AutoLLMClient,
         blocks: List[str],
         model_name: str,
         input_token: int,
@@ -422,7 +422,7 @@ class BatchOperator(JoinOperator[str]):
 
     async def bin_search(
         self,
-        llm_client: AdaptiveLLMClient,
+        llm_client: AutoLLMClient,
         blocks: List[str],
         model_name: str,
         input_token: int,
