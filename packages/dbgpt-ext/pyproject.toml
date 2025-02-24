@@ -70,6 +70,8 @@ datasource_duckdb = [
 storage_milvus = ["pymilvus"]
 storage_weaviate = ["weaviate-client"]
 storage_chromadb = ["chromadb>=0.4.22"]
+storage_elasticsearch = ["elasticsearch"]
+storage_obvector = ["pyobvector"]
 
 [tool.uv]
 managed = true

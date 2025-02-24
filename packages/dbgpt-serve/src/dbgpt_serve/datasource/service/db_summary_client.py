@@ -159,7 +159,7 @@ class DBSummaryClient:
         vector_store_name = dbname + "_profile"
         table_vector_store_config = VectorStoreConfig(name=vector_store_name)
         table_vector_connector = VectorStoreConnector.from_default(
-            self.storage_config.vector.type,
+            self.storage_config.vector.get("type"),
             self.embeddings,
             vector_store_config=table_vector_store_config,
             system_app=self.system_app,
@@ -167,7 +167,7 @@ class DBSummaryClient:
         field_vector_store_name = dbname + "_profile_field"
         field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
         field_vector_connector = VectorStoreConnector.from_default(
-            self.storage_config.vector.type,
+            self.storage_config.vector.get("type"),
             self.embeddings,
             vector_store_config=field_vector_store_config,
             system_app=self.system_app,

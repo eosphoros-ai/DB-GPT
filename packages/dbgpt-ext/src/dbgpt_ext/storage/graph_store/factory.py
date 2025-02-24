@@ -1,7 +1,7 @@
 """Graph store factory."""
 
 import logging
-from typing import Tuple, Type
+from typing import Optional, Tuple, Type
 
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt_ext.storage import graph_store
@@ -13,7 +13,11 @@ class GraphStoreFactory:
     """Factory for graph store."""
 
     @staticmethod
-    def create(graph_store_type: str, graph_store_configure=None) -> GraphStoreBase:
+    def create(
+        graph_store_type: str,
+        graph_store_configure=None,
+        graph_config: Optional[dict] = None,
+    ) -> GraphStoreBase:
         """Create a GraphStore instance.
 
         Args:
@@ -23,7 +27,10 @@ class GraphStoreFactory:
         store_cls, cfg_cls = GraphStoreFactory.__find_type(graph_store_type)
 
         try:
-            config = cfg_cls()
+            if graph_config:
+                config = cfg_cls(**graph_config)
+            else:
+                config = cfg_cls()
             if graph_store_configure:
                 graph_store_configure(config)
             return store_cls(config)

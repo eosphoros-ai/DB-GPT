@@ -19,6 +19,11 @@ class IndexStoreConfig(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
+    type: Optional[str] = Field(
+        default=None,
+        description="storage type",
+    )
+
     name: str = Field(
         default="dbgpt_collection",
         description="The name of index store, if not set, will use the default name.",
