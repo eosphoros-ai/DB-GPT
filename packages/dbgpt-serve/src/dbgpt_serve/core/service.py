@@ -26,6 +26,11 @@ class BaseService(BaseComponent, Generic[T, REQ, RES], ABC):
         self._system_app = system_app
 
     @property
+    def system_app(self) -> SystemApp:
+        """Returns system_app."""
+        return self._system_app
+
+    @property
     @abstractmethod
     def dao(self) -> BaseDao[T, REQ, RES]:
         """Returns the internal DAO."""
