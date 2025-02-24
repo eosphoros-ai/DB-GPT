@@ -4,6 +4,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
 from dbgpt.core import ModelMetadata
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
@@ -27,6 +32,14 @@ _DEFAULT_API_BASE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 _DEFAULT_MODEL = "qwen-max-latest"
 
 
+@auto_register_resource(
+    label=_("Tongyi Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Tongyi proxy LLM configuration."),
+    documentation_url="https://help.aliyun.com/zh/model-studio/getting-started/first-api-call-to-qwen",
+    show_in_ui=False,
+)
 @dataclass
 class TongyiDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Tongyi."""

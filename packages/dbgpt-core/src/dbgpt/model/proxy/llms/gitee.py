@@ -3,6 +3,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
 from dbgpt.core import ModelMetadata
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -23,6 +28,14 @@ if TYPE_CHECKING:
 _GITEE_DEFAULT_MODEL = "Qwen2.5-72B-Instruct"
 
 
+@auto_register_resource(
+    label=_("Gitee Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Gitee proxy LLM configuration."),
+    documentation_url="https://ai.gitee.com/docs/getting-started/intro",
+    show_in_ui=False,
+)
 @dataclass
 class GiteeDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for DeepSeek."""

@@ -5,6 +5,11 @@ from dataclasses import dataclass, field
 from typing import Iterator, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
@@ -22,6 +27,14 @@ _DEFAULT_MODEL = "glm-4-plus"
 logger = logging.getLogger(__name__)
 
 
+@auto_register_resource(
+    label=_("Zhipu Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Zhipu proxy LLM configuration."),
+    documentation_url="https://open.bigmodel.cn/dev/api/normal-model/glm-4#overview",
+    show_in_ui=False,
+)
 @dataclass
 class ZhipuDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Zhipu."""

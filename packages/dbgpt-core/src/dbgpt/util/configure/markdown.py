@@ -86,17 +86,19 @@ class MDXDocGenerator:
 
         return links, generated_files
 
-    def _parse_class_doc(self, param_cls: Type) -> Tuple[str, str]:
+    def _parse_class_doc(self, param_cls: Type) -> Tuple[str, str, str]:
         if hasattr(param_cls, "_resource_metadata"):
             from dbgpt.core.awel.flow import ResourceMetadata
 
             flow_metadata: ResourceMetadata = param_cls._resource_metadata  # type: ignore
             label = flow_metadata.label
             description = flow_metadata.description
+            documentation_url = flow_metadata.documentation_url
         else:
             label = param_cls.__name__
             description = param_cls.__doc__.strip() if param_cls.__doc__ else ""
-        return label, description
+            documentation_url = ""
+        return label, description, documentation_url
 
     def generate_class_doc(self, cls: Type, output_dir: Path) -> List[str]:
         """生成类的文档"""
@@ -112,7 +114,7 @@ class MDXDocGenerator:
         output_path = output_dir / filename
         generated_files.append(filename)
 
-        cls_label, cls_desc = self._parse_class_doc(cls)
+        cls_label, cls_desc, cls_doc_url = self._parse_class_doc(cls)
 
         with open(output_path, "w", encoding="utf-8") as f:
             # 添加 frontmatter 来设置页面标题
@@ -127,6 +129,7 @@ class MDXDocGenerator:
             config_data = {
                 "name": cls.__name__,
                 "description": cls_desc,
+                "documentationUrl": cls_doc_url,
                 "parameters": [],
             }
 

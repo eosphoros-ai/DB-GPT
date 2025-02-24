@@ -32,6 +32,8 @@ _DEFAULT_MODEL = "Baichuan4-Turbo"
     category=ResourceCategory.LLM_CLIENT,
     tags={"order": TAGS_ORDER_HIGH},
     description=_("Baichuan Proxy LLM"),
+    documentation_url="https://platform.baichuan-ai.com/docs/api",
+    show_in_ui=False,
 )
 @dataclass
 class BaichuanDeployModelParameters(OpenAICompatibleDeployModelParameters):

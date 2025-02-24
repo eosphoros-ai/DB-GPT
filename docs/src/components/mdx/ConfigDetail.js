@@ -1,11 +1,9 @@
 import React from 'react';
 import Link from '@docusaurus/Link';
 
-// The component that displays code and default values
 function CodeValue({ value }) {
   if (!value) return null;
-  // 如果是多行或很长的内容，使用代码块
-  // If it is multi-line or very long content, use code block
+  
   if (value.includes('\n') || value.length > 50) {
     return (
       <pre>
@@ -13,26 +11,52 @@ function CodeValue({ value }) {
       </pre>
     );
   }
-
-  // Otherwise, use inline code
+  
   return <code>{value}</code>;
 }
 
 export function ConfigDetail({ config }) {
-  const { name, description, parameters } = config;
+  const styles = {
+    descriptionSection: {
+      marginBottom: '2rem',
+    },
+    documentationLink: {
+      color: 'var(--ifm-color-primary)',
+      textDecoration: 'none',
+    }
+  };
+
+  const { name, description, documentationUrl, parameters } = config;
 
   return (
     <div>
-      {description && <p>{description}</p>}
+      {description && (
+        <div style={styles.descriptionSection}>
+          <p>{description}</p>
+          {documentationUrl && (
+            <p>
+              详细文档请参考：
+              <Link
+                to={documentationUrl}
+                style={styles.documentationLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {documentationUrl}
+              </Link>
+            </p>
+          )}
+        </div>
+      )}
 
-      <h2>Parameters</h2>
+      <h2>参数列表</h2>
       <table>
         <thead>
           <tr>
-            <th>Parameter Name</th>
-            <th>Type</th>
-            <th>Required</th>
-            <th>Description</th>
+            <th>参数名</th>
+            <th>类型</th>
+            <th>必填</th>
+            <th>描述</th>
           </tr>
         </thead>
         <tbody>
@@ -63,7 +87,7 @@ export function ConfigDetail({ config }) {
                 <div>{param.description}</div>
                 {param.validValues && (
                   <div>
-                    Available values:
+                    有效值：
                     {param.validValues.map((value, idx) => (
                       <React.Fragment key={idx}>
                         {idx > 0 && ', '}
@@ -74,7 +98,7 @@ export function ConfigDetail({ config }) {
                 )}
                 {param.defaultValue && (
                   <div>
-                    Default Value: <CodeValue value={param.defaultValue} />
+                    默认值：<CodeValue value={param.defaultValue} />
                   </div>
                 )}
               </td>

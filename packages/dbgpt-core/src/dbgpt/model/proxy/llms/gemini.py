@@ -10,6 +10,11 @@ from dbgpt.core import (
     ModelOutput,
     ModelRequest,
 )
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.core.interface.message import parse_model_messages
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
@@ -41,6 +46,14 @@ safety_settings = [
 ]
 
 
+@auto_register_resource(
+    label=_("Gemini Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Google Gemini proxy LLM configuration."),
+    documentation_url="https://ai.google.dev/gemini-api/docs",
+    show_in_ui=False,
+)
 @dataclass
 class GeminiDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Gemini."""

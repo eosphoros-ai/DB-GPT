@@ -3,6 +3,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
 from dbgpt.core import ModelMetadata
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -22,6 +27,14 @@ if TYPE_CHECKING:
 _MOONSHOT_DEFAULT_MODEL = "moonshot-v1-8k"
 
 
+@auto_register_resource(
+    label=_("Moonshot Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Moonshot proxy LLM configuration."),
+    documentation_url="https://platform.moonshot.cn/docs/api/chat#%E5%85%AC%E5%BC%80%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%9C%B0%E5%9D%80",  # noqa
+    show_in_ui=False,
+)
 @dataclass
 class MoonshotDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Moonshot."""

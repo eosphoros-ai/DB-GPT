@@ -288,6 +288,9 @@ def load_config(config_file: str = None) -> ApplicationConfig:
     # Must set default language before any i18n usage
     set_default_language(sys_config.language)
 
+    # Scan all configs
+    scan_configs()
+
     app_config = cfg.parse_config(ApplicationConfig, hook_section="hooks")
     return app_config
 
