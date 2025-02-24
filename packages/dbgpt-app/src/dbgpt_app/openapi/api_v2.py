@@ -9,7 +9,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import JSONResponse, StreamingResponse
 
 from dbgpt._private.pydantic import model_to_dict, model_to_json
-from dbgpt.component import logger
+from dbgpt.component import SystemApp, logger
 from dbgpt.core.awel import CommonLLMHttpRequestBody
 from dbgpt.core.schema.api import (
     ChatCompletionResponse,
@@ -72,6 +72,7 @@ async def check_api_key(
 @router.post("/v2/chat/completions", dependencies=[Depends(check_api_key)])
 async def chat_completions(
     request: ChatCompletionRequestBody = Body(),
+    service=Depends(get_service),
 ):
     """Chat V2 completions
     Args:
@@ -133,7 +134,7 @@ async def chat_completions(
             span_type=SpanType.CHAT,
             metadata=model_to_dict(request),
         ):
-            chat: BaseChat = await get_chat_instance(request)
+            chat: BaseChat = await get_chat_instance(request, service.system_app)
 
         if not request.stream:
             return await no_stream_wrapper(request, chat)
@@ -158,11 +159,14 @@ async def chat_completions(
         )
 
 
-async def get_chat_instance(dialogue: ChatCompletionRequestBody = Body()) -> BaseChat:
+async def get_chat_instance(
+    dialogue: ChatCompletionRequestBody = Body(), system_app: SystemApp = None
+) -> BaseChat:
     """
     Get chat instance
     Args:
         dialogue (OpenAPIChatCompletionRequest): The chat request.
+        system_app (SystemApp): system app.
     """
     logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
@@ -191,6 +195,7 @@ async def get_chat_instance(dialogue: ChatCompletionRequestBody = Body()) -> Bas
         get_executor(),
         CHAT_FACTORY.get_implementation,
         dialogue.chat_mode,
+        system_app,
         **{"chat_param": chat_param},
     )
     return chat

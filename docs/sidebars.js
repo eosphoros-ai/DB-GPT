@@ -229,6 +229,28 @@ const sidebars = {
           id: 'installation/sourcecode',
         },
         {
+//          type: 'doc',
+//          id: 'installation/integrations',
+              type: "category",
+              label: "Integrations",
+              collapsed: false,
+              collapsible: false,
+              items: [
+                {
+                  type: "doc",
+                  id: "installation/integrations"
+                },
+                {
+                  type: "doc",
+                  id: "installation/graph_rag_install"
+                },
+                {
+                  type: "doc",
+                  id: "installation/milvus_rag_install"
+                }
+              ]
+        },
+        {
           type: 'doc',
           id: 'installation/docker',
         },

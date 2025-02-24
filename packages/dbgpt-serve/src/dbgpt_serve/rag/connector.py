@@ -8,9 +8,11 @@ from typing import Any, DefaultDict, Dict, List, Optional, Tuple, Type, cast
 
 from dbgpt import SystemApp
 from dbgpt.core import Chunk, Embeddings
-from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
+from dbgpt.storage.base import IndexStoreConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt_ext.storage import __knowledge_graph__ as supported_kg_store_list
+from dbgpt_ext.storage import __vector_store__ as supported_vector_store_list
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,11 @@ class VectorStoreConnector:
         self._embeddings = vector_store_config.embedding_fn
 
         config_dict = {}
+        storage_config = self.app_config.rag.storage
+        if vector_store_type in supported_vector_store_list:
+            config_dict = storage_config.vector
+        elif vector_store_type in supported_kg_store_list:
+            config_dict = storage_config.graph
         for key in vector_store_config.to_dict().keys():
             value = getattr(vector_store_config, key)
             if value is not None:
@@ -268,11 +275,9 @@ class VectorStoreConnector:
         return bool(connector.get(vector_store_type))
 
     def _register(self):
-        from dbgpt_ext.storage import vector_store
+        from dbgpt_ext.storage import __all__ as rag_storages
+        from dbgpt_ext.storage import _select_rag_storage
 
-        for cls in vector_store.__all__:
-            store_cls, config_cls = getattr(vector_store, cls)
-            if issubclass(store_cls, IndexStoreBase) and issubclass(
-                config_cls, IndexStoreConfig
-            ):
-                connector[cls] = (store_cls, config_cls)
+        for cls_name in rag_storages:
+            store_cls, config_cls = _select_rag_storage(cls_name)
+            connector[cls_name] = (store_cls, config_cls)

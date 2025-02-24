@@ -10,7 +10,12 @@ You can refer to the python example file `DB-GPT/examples/rag/graph_rag_example.
 First, you need to install the `dbgpt` library.
 
 ```bash
-pip install "dbgpt[graph_rag]>=0.6.1"
+uv sync --all-packages --frozen \
+--extra "proxy_openai" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts"
+--extra "graph_rag"
 ````
 
 ### Prepare Graph Database
@@ -52,11 +57,7 @@ import TabItem from '@theme/TabItem';
   ]}>
   <TabItem value="openai">
 
-First, you should install the `openai` library. 
 
-```bash
-pip install openai
-```
 Then set your API key in the environment `OPENAI_API_KEY`.
 
 ```python
@@ -70,19 +71,9 @@ llm_client = OpenAILLMClient()
 
 You should have a YI account and get the API key from the YI official website.
 
-First, you should install the `openai` library.
-
-```bash
-pip install openai
-```
 
 Then set your API key in the environment variable `YI_API_KEY`.
 
-```python
-from dbgpt.model.proxy import YiLLMClient
-
-llm_client = YiLLMClient()
-```
   </TabItem>
 
   <TabItem value="model_service">

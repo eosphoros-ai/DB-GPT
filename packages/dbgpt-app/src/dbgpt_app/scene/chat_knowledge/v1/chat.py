@@ -42,11 +42,20 @@ class ChatKnowledge(BaseChat):
         self.knowledge_space = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatKnowledge
         super().__init__(chat_param=chat_param, system_app=system_app)
+        from dbgpt_serve.rag.models.models import (
+            KnowledgeSpaceDao,
+        )
 
+        space_dao = KnowledgeSpaceDao()
+        space = space_dao.get_one({"name": self.knowledge_space})
+        if not space:
+            space = space_dao.get_one({"id": self.knowledge_space})
+        if not space:
+            raise Exception(f"have not found knowledge space:{self.knowledge_space}")
         self.rag_config = self.app_config.rag
-        self.space_context = self.get_space_context(self.knowledge_space)
+        self.space_context = self.get_space_context(space.name)
         self.top_k = (
-            self.get_knowledge_search_top_size(self.knowledge_space)
+            self.get_knowledge_search_top_size(space.name)
             if self.space_context is None
             else int(self.space_context["embedding"]["topk"])
         )
@@ -55,17 +64,6 @@ class ChatKnowledge(BaseChat):
             if self.space_context is None
             else float(self.space_context["embedding"]["recall_score"])
         )
-        from dbgpt_serve.rag.models.models import (
-            KnowledgeSpaceDao,
-            KnowledgeSpaceEntity,
-        )
-
-        spaces = KnowledgeSpaceDao().get_knowledge_space(
-            KnowledgeSpaceEntity(name=self.knowledge_space)
-        )
-        if len(spaces) != 1:
-            raise Exception(f"invalid space name:{self.knowledge_space}")
-        space = spaces[0]
 
         query_rewrite = None
         if self.rag_config.query_rewrite:
@@ -230,9 +228,9 @@ class ChatKnowledge(BaseChat):
         request = KnowledgeSpaceRequest(name=space_name)
         spaces = service.get_knowledge_space(request)
         if len(spaces) == 1:
-            from dbgpt_ext.storage import vector_store
+            from dbgpt_ext.storage import __knowledge_graph__ as graph_storages
 
-            if spaces[0].vector_type in vector_store.__knowledge_graph__:
+            if spaces[0].vector_type in graph_storages:
                 return self.rag_config.graph_search_top_k
 
         return self.rag_config.similarity_top_k

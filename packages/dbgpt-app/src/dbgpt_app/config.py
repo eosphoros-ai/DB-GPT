@@ -7,12 +7,16 @@ from dbgpt.model.parameter import (
     ModelServiceConfig,
 )
 from dbgpt.storage.cache.manager import ModelCacheParameters
+from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.configure import HookConfig
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
 from dbgpt.util.tracer import TracerParameters
 from dbgpt.util.utils import LoggingParameters
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
+from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
+    BuiltinKnowledgeGraphConfig,
+)
 from dbgpt_serve.core import BaseServeConfig
 
 
@@ -68,14 +72,20 @@ class StorageGraphConfig(BaseParameters):
 
 @dataclass
 class StorageConfig(BaseParameters):
-    vector: StorageVectorConfig = field(
-        default_factory=StorageVectorConfig,
+    vector: VectorStoreConfig = field(
+        default_factory=VectorStoreConfig,
         metadata={
             "help": _("default vector type"),
         },
     )
-    graph: StorageGraphConfig = field(
-        default_factory=StorageGraphConfig,
+    graph: BuiltinKnowledgeGraphConfig = field(
+        default_factory=BuiltinKnowledgeGraphConfig,
+        metadata={
+            "help": _("default graph type"),
+        },
+    )
+    full_text: BuiltinKnowledgeGraphConfig = field(
+        default_factory=BuiltinKnowledgeGraphConfig,
         metadata={
             "help": _("default graph type"),
         },

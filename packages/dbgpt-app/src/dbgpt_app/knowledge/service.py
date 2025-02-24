@@ -77,6 +77,11 @@ class KnowledgeService:
         ).create()
         return DefaultLLMClient(worker_manager, True)
 
+    @property
+    def rag_config(self):
+        rag_config = CFG.SYSTEM_APP.config.configs.get("app_config").rag
+        return rag_config
+
     def create_knowledge_space(self, request: KnowledgeSpaceRequest):
         """create knowledge space
         Args:
@@ -86,7 +91,7 @@ class KnowledgeService:
             name=request.name,
         )
         if request.vector_type == "VectorStore":
-            request.vector_type = CFG.VECTOR_STORE_TYPE
+            request.vector_type = self.rag_config.storage.vector.get("type")
         if request.vector_type == "KnowledgeGraph":
             knowledge_space_name_pattern = r"^[a-zA-Z0-9\u4e00-\u9fa5]+$"
             if not re.match(knowledge_space_name_pattern, request.name):
