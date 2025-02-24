@@ -1,0 +1,35 @@
+---
+title: "StorageConfig Configuration"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "StorageConfig",
+  "description": "StorageConfig(vector: dbgpt.storage.vector_store.base.VectorStoreConfig = <factory>, graph: dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig = <factory>, full_text: dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig = <factory>)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "graph",
+      "type": "BuiltinKnowledgeGraphConfig",
+      "required": false,
+      "description": "default graph type",
+      "defaultValue": "type='TuGraph' name='dbgpt_collection' embedding_fn=None max_chunks_once_load=10 max_threads=1 llm_client=None model_name=None"
+    },
+    {
+      "name": "full_text",
+      "type": "BuiltinKnowledgeGraphConfig",
+      "required": false,
+      "description": "default graph type",
+      "defaultValue": "type='TuGraph' name='dbgpt_collection' embedding_fn=None max_chunks_once_load=10 max_threads=1 llm_client=None model_name=None"
+    },
+    {
+      "name": "vector",
+      "type": "VectorStoreConfig",
+      "required": false,
+      "description": "default vector type",
+      "defaultValue": "type=None name='dbgpt_collection' embedding_fn=None max_chunks_once_load=10 max_threads=1 user=None password=None topk=5 score_threshold=0.3"
+    }
+  ]
+}} />
+

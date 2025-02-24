@@ -1,0 +1,34 @@
+---
+title: "Evaluate Serve Configurations Configuration"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ServeConfig",
+  "description": "This configuration is for the evaluate serve module.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "embedding_model",
+      "type": "string",
+      "required": false,
+      "description": "Embedding Model",
+      "defaultValue": "None"
+    },
+    {
+      "name": "similarity_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge search top k",
+      "defaultValue": "10"
+    },
+    {
+      "name": "api_keys",
+      "type": "string",
+      "required": false,
+      "description": "API keys for the endpoint, if None, allow all"
+    }
+  ]
+}} />
+

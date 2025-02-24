@@ -1,0 +1,57 @@
+---
+title: "SystemParameters Configuration"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "SystemParameters",
+  "description": "System parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "log_level",
+      "type": "string",
+      "required": false,
+      "description": "Logging level",
+      "defaultValue": "INFO",
+      "validValues": [
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ]
+    },
+    {
+      "name": "api_keys",
+      "type": "string",
+      "required": false,
+      "description": "API keys",
+      "defaultValue": "[]"
+    },
+    {
+      "name": "encrypt_key",
+      "type": "string",
+      "required": false,
+      "description": "The key to encrypt the data",
+      "defaultValue": "your_secret_key"
+    },
+    {
+      "name": "language",
+      "type": "string",
+      "required": false,
+      "description": "Language setting",
+      "defaultValue": "en",
+      "validValues": [
+        "en",
+        "zh",
+        "fr",
+        "ja",
+        "ko",
+        "ru"
+      ]
+    }
+  ]
+}} />
+

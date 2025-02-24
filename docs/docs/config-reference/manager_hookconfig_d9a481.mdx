@@ -1,0 +1,41 @@
+---
+title: "HookConfig Configuration"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "HookConfig",
+  "description": "Hook configuration.\n\n    You can define a hook configuration with a path and optional parameters.\n    It will be used to dynamically load and execute a hook function or a callable\n    object.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "init_params",
+      "type": "object",
+      "required": false,
+      "description": "Hook init params to pass to the hook constructor(Just for class hook), must be key-value pairs",
+      "defaultValue": "{}"
+    },
+    {
+      "name": "params",
+      "type": "object",
+      "required": false,
+      "description": "Hook params to pass to the hook, must be key-value pairs",
+      "defaultValue": "{}"
+    },
+    {
+      "name": "enabled",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether the hook is enabled, default is True",
+      "defaultValue": "True"
+    },
+    {
+      "name": "path",
+      "type": "string",
+      "required": true,
+      "description": "Hook path, it can be a class path or a function path. eg: 'dbgpt.config.hooks.env_var_hook'"
+    }
+  ]
+}} />
+
