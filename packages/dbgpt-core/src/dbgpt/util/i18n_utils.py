@@ -101,13 +101,18 @@ def _find(domain, localedir=None, languages=None, all=False):
     return result
 
 
+# a mapping between absolute .mo file path and Translation object
+_translations = {}
+_unspecified = ["unspecified"]
+
+
 def _translation(
     domain,
     localedir=None,
     languages=None,
     class_=None,
     fallback=False,
-    codeset=gettext._unspecified,
+    codeset=_unspecified,
 ):
     if class_ is None:
         class_ = gettext.GNUTranslations
@@ -123,10 +128,10 @@ def _translation(
     result = None
     for mofile in mofiles:
         key = (class_, os.path.abspath(mofile))
-        t = gettext._translations.get(key)
+        t = _translations.get(key)
         if t is None:
             with open(mofile, "rb") as fp:
-                t = gettext._translations.setdefault(key, class_(fp))
+                t = _translations.setdefault(key, class_(fp))
         # Copy the translation object to allow setting fallbacks and
         # output charset. All other instance data is shared with the
         # cached object.
@@ -135,7 +140,7 @@ def _translation(
         import copy
 
         t = copy.copy(t)
-        if codeset is not gettext._unspecified:
+        if codeset is not _unspecified:
             import warnings
 
             warnings.warn("parameter codeset is deprecated", DeprecationWarning, 2)
