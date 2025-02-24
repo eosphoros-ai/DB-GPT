@@ -14,6 +14,11 @@ from dbgpt.core import (
     ModelRequest,
     ModelRequestContext,
 )
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
@@ -37,6 +42,14 @@ _DEFAULT_MODEL = "ERNIE-Bot"
 logger = logging.getLogger(__name__)
 
 
+@auto_register_resource(
+    label=_("Baidu Wenxin Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Baidu Wenxin proxy LLM configuration."),
+    documentation_url="https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t",
+    show_in_ui=False,
+)
 @dataclass
 class WenxinDeployModelParameters(LLMDeployModelParameters):
     """Deploy model parameters for Wenxin."""

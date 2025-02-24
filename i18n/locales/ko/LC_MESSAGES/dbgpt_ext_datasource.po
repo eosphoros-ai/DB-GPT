@@ -1,0 +1,276 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:22
+msgid "Apache Spark datasource"
+msgstr "Apache Spark 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:25
+msgid "Unified engine for large-scale data analytics."
+msgstr "대규모 데이터 분석을 위한 통합 엔진입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:34
+msgid "The file path of the data source."
+msgstr "데이터 소스의 파일 경로입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:18
+msgid "TuGraph datasource"
+msgstr "TuGraph 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:22
+msgid ""
+"TuGraph is a high-performance graph database jointly developed by Ant Group "
+"and Tsinghua University."
+msgstr "TuGraph는 Ant Group과 Tsinghua University가 공동 개발한 고성능 그래프 데이터베이스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:32
+msgid "TuGraph server host"
+msgstr "TuGraph 서버 호스트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:33
+msgid "TuGraph server user"
+msgstr "TuGraph 서버 사용자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:38
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:46
+msgid ""
+"Database password, you can write your password directly, of course, you can "
+"also use environment variables, such as ${env:DBGPT_DB_PASSWORD}"
+msgstr "데이터베이스 비밀번호입니다. 직접 비밀번호를 입력하거나 환경 변수(예: ${env:DBGPT_DB_PASSWORD})를 사용할 수도 있습니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:46
+msgid "TuGraph server port, default 7687"
+msgstr "TuGraph 서버 포트, 기본값 7687"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:49
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:38
+msgid "Database name, default 'default'"
+msgstr "데이터베이스 이름, 기본값 'default'"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:21
+msgid "Apache Hive datasource"
+msgstr "Apache Hive 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:24
+msgid "A distributed fault-tolerant data warehouse system."
+msgstr "분산형 내결함성 데이터 웨어하우스 시스템입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:33
+msgid "Hive server host"
+msgstr "Hive 서버 호스트"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:35
+msgid "Hive server port, default 10000"
+msgstr "Hive 서버 포트, 기본값 10000"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:45
+msgid "Authentication mode: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
+msgstr "인증 모드: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:50
+msgid "Username for authentication"
+msgstr "인증용 사용자 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:55
+msgid "Password for LDAP or CUSTOM auth"
+msgstr "LDAP 또는 CUSTOM 인증용 비밀번호"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:62
+msgid "Kerberos service name"
+msgstr "Kerberos 서비스 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:67
+msgid "Transport mode: binary or http"
+msgstr "전송 모드: binary 또는 http"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:75
+msgid "Driver name for Hive, default is hive."
+msgstr "Hive용 드라이버 이름, 기본값은 hive입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:22
+msgid "StarRocks datasource"
+msgstr "StarRocks 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:25
+msgid "An Open-Source, High-Performance Analytical Database."
+msgstr "오픈 소스, 고성능 분석 데이터베이스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:36
+msgid "Driver name for starrocks, default is starrocks."
+msgstr "StarRocks용 드라이버 이름, 기본값은 starrocks입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:16
+msgid "MySQL datasource"
+msgstr "MySQL 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:20
+msgid ""
+"Fast, reliable, scalable open-source relational database management system."
+msgstr "빠르고, 신뢰성이 높으며, 확장 가능한 오픈 소스 관계형 데이터베이스 관리 시스템입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:32
+msgid "Driver name for MySQL, default is mysql+pymysql."
+msgstr "MySQL용 드라이버 이름, 기본값은 mysql+pymysql입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:24
+msgid "SQLite datasource"
+msgstr "SQLite 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:28
+msgid ""
+"Lightweight embedded relational database with simplicity and portability."
+msgstr "간단하고 휴대성이 좋은 경량 임베디드 관계형 데이터베이스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:45
+msgid "SQLite database file path. Use ':memory:' for in-memory database"
+msgstr "SQLite 데이터베이스 파일 경로입니다. 메모리 내 데이터베이스를 사용하려면 ':memory:'를 사용하세요."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:54
+msgid ""
+"Check same thread or not, default is False. Set False to allow sharing "
+"connection across threads"
+msgstr "동일한 스레드인지 확인합니다. 기본값은 False입니다. False로 설정하면 스레드 간에 연결을 공유할 수 있습니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:61
+msgid "Driver name, default is sqlite"
+msgstr "드라이버 이름, 기본값은 sqlite입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:18
+msgid "MSSQL datasource"
+msgstr "MSSQL 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:22
+msgid "Powerful, scalable, secure relational database system by Microsoft."
+msgstr "Microsoft에서 제공하는 강력하고 확장 가능하며 안전한 관계형 데이터베이스 시스템입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:33
+msgid "Driver name for MSSQL, default is mssql+pymssql."
+msgstr "MSSQL용 드라이버 이름, 기본값은 mssql+pymssql입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:20
+msgid "Apache Doris datasource"
+msgstr "Apache Doris 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:23
+msgid "A new-generation open-source real-time data warehouse."
+msgstr "새로운 세대의 오픈 소스 실시간 데이터 웨어하우스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:37
+msgid "Driver name for Doris, default is doris."
+msgstr "Doris용 드라이버 이름, 기본값은 doris입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:29
+msgid "Vertica datasource"
+msgstr "Vertica 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:33
+msgid ""
+"Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built "
+"for the scale and complexity of today`s data-driven world."
+msgstr "Vertica는 강력한 일관성과 ACID 규칙을 준수하는 SQL 데이터 웨어하우스로, 오늘날 데이터 주도 세상의 규모와 복잡성에 맞게 구축되었습니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:45
+msgid "Driver name for vertica, default is vertica+vertica_python"
+msgstr "Vertica용 드라이버 이름, 기본값은 vertica+vertica_python입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:19
+msgid "OceanBase datasource"
+msgstr "OceanBase 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:22
+msgid "An Ultra-Fast & Cost-Effective Distributed SQL Database."
+msgstr "초고속이며 비용 효율적인 분산 SQL 데이터베이스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:32
+msgid "Driver name for oceanbase, default is mysql+ob."
+msgstr "OceanBase용 드라이버 이름, 기본값은 mysql+ob입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:25
+msgid "Clickhouse datasource"
+msgstr "Clickhouse 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:29
+msgid "Columnar database for high-performance analytics and real-time queries."
+msgstr "고성능 분석 및 실시간 쿼리를 위한 칼럼형 데이터베이스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:38
+msgid "Database host, e.g., localhost"
+msgstr "데이터베이스 호스트, 예: localhost"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:39
+msgid "Database port, e.g., 3306"
+msgstr "데이터베이스 포트, 예: 3306"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:40
+msgid "Database user to connect"
+msgstr "연결할 데이터베이스 사용자"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:41
+msgid "Database name"
+msgstr "데이터베이스 이름"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:54
+msgid "http pool maxsize"
+msgstr "HTTP 풀 최대 크기"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:57
+msgid "http pool num_pools"
+msgstr "HTTP 풀의 풀 개수"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:60
+msgid "Database connect timeout, default 15s"
+msgstr "데이터베이스 연결 제한 시간, 기본값 15초"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:63
+msgid "Distributed ddl task timeout, default 300s"
+msgstr "분산 DDL 작업 제한 시간, 기본값 300초"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:23
+msgid "PostreSQL datasource"
+msgstr "PostreSQL 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:27
+msgid ""
+"Powerful open-source relational database with extensibility and SQL "
+"standards."
+msgstr "확장성과 SQL 표준을 지원하는 강력한 오픈 소스 관계형 데이터베이스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:36
+msgid "Database schema, defaults to 'public'"
+msgstr "데이터베이스 스키마, 기본값은 'public'"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:41
+msgid "Driver name for postgres, default is postgresql+psycopg2."
+msgstr "Postgres용 드라이버 이름, 기본값은 postgresql+psycopg2입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:19
+msgid "DuckDB datasource"
+msgstr "DuckDB 데이터 소스"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:22
+msgid "In-memory analytical database with efficient query processing."
+msgstr "효율적인 쿼리 처리가 가능한 인메모리 분석용 데이터베이스입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:29
+msgid "Path to the DuckDB file."
+msgstr "DuckDB 파일의 경로입니다."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:33
+msgid "Driver name for DuckDB, default is duckdb."
+msgstr "DuckDB용 드라이버 이름, 기본값은 duckdb입니다."

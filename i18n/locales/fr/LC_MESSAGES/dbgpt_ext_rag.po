@@ -1,0 +1,480 @@
+# French translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:24
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:138
+msgid "Chunk Parameters"
+msgstr "Paramètres de segmentation"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:29
+msgid "Chunk Strategy"
+msgstr "Stratégie de segmentation"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:32
+msgid "chunk strategy"
+msgstr "stratégie de segmentation"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:37
+msgid "Text Splitter"
+msgstr "Diviseur de texte"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:41
+msgid "Text splitter, if not set, will use the default text splitter."
+msgstr "Diviseur de texte. Si non défini, le diviseur de texte par défaut sera utilisé."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:47
+msgid "Splitter Type"
+msgstr "Type de diviseur"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:50
+msgid "Splitter type"
+msgstr "type de diviseur"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:55
+msgid "Chunk Size"
+msgstr "Taille de segmentation"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:58
+msgid "Chunk size"
+msgstr "taille de segmentation"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:63
+msgid "Chunk Overlap"
+msgstr "Chevauchement de segmentation"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:71
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:112
+msgid "Separator"
+msgstr "Séparateur"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:74
+msgid "Chunk separator"
+msgstr "Séparateur de segmentation"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:79
+msgid "Enable Merge"
+msgstr "Activer la fusion"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:82
+msgid "Enable chunk merge by chunk_size."
+msgstr "Activer la fusion des segments par taille de segment."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:21
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:20
+msgid "The API key for the embeddings API."
+msgstr "La clé API pour l'API d'incorporation."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:26
+msgid "The Secret key for the embeddings API. It's the sk for qianfan."
+msgstr "La clé secrète pour l'API d'incorporation. C'est la clé secrète pour Qianfan."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:33
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:29
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:26
+msgid ""
+"The real model name to pass to the provider, default is None. If backend is "
+"None, use name as the real model name."
+msgstr ""
+"Le véritable nom du modèle à passer au fournisseur, la valeur par défaut est None. "
+"Si le backend est None, utilisez le nom comme véritable nom du modèle."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:169
+msgid "Embedding-V1 by Baidu Qianfan. "
+msgstr "Embedding-V1 par Baidu Qianfan. "
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:22
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:26
+msgid "The URL of the embeddings API."
+msgstr "L'URL de l'API d'incorporation."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:157
+msgid ""
+"The embedding model are trained by BAAI, it support more than 100 working "
+"languages."
+msgstr ""
+"Le modèle d'incorporation est entraîné par BAAI, il prend en charge plus de 100 langues de travail."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:33
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:57
+msgid "The name of the model to use for text embeddings."
+msgstr "Le nom du modèle à utiliser pour les incorporations de texte."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:40
+msgid "Jina AI Embeddings"
+msgstr "Incorporations Jina AI"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:43
+msgid "Jina AI embeddings."
+msgstr "Incorporations Jina AI."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:46
+msgid "API Key"
+msgstr "Clé API"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:49
+msgid "Your API key for the Jina AI API."
+msgstr "Votre clé API pour l'API Jina AI."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:52
+msgid "Model Name"
+msgstr "Nom du modèle"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:159
+msgid ""
+"The embedding model are trained by TongYi, it support more than 50 working "
+"languages."
+msgstr "Le modèle d'incorporation est entraîné par TongYi et prend en charge plus de 50 langues de travail."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:17
+msgid "Knowledge Graph Operator"
+msgstr "Opérateur de graphe de connaissances"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:19
+msgid "Extract Documents and persist into graph database."
+msgstr "Extraire les documents et les conserver dans une base de données de graphe."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:23
+msgid "Knowledge Graph Connector"
+msgstr "Connecteur de graphe de connaissances"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:26
+msgid "The knowledge graph."
+msgstr "Le graphe de connaissances."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:32
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:41
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:156
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:122
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:43
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:50
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:57
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:145
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:32
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:41
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:32
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:41
+msgid "Chunks"
+msgstr "Morceaux"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:35
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:35
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:35
+msgid "The text split chunks by chunk manager."
+msgstr "Le texte divisé en segments par le gestionnaire de segments."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:45
+msgid "The assembled chunks, it has been persisted to graph store."
+msgstr "Les segments assemblés ont été persistés dans le magasin de graphes."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:17
+msgid "Summary Operator"
+msgstr "Opérateur de synthèse"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:20
+msgid "The summary assembler operator."
+msgstr "L'opérateur d'assemblage de synthèse."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:148
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:39
+msgid "Knowledge"
+msgstr "Connaissance"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+msgid "Knowledge datasource"
+msgstr "Source de données de connaissances"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:28
+msgid "Document summary"
+msgstr "Synthèse de document"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:36
+msgid "LLM Client"
+msgstr "Client LLM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:41
+msgid "The LLM Client."
+msgstr "Le client LLM."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:44
+msgid "Model name"
+msgstr "Nom du modèle"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:49
+msgid "LLM model name"
+msgstr "Nom du modèle LLM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:52
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:57
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:65
+msgid "prompt language"
+msgstr "Langue de l'invite"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:60
+msgid "Max iteration with LLM"
+msgstr "Nombre maximal d'itérations avec le LLM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:68
+msgid "Concurrency limit with LLM"
+msgstr "Limite de concurrence avec le LLM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:73
+msgid "The concurrency limit with llm"
+msgstr "La limite de concurrence avec le LLM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:25
+msgid "Embedding Retriever Operator"
+msgstr "Opérateur de récupération d'embeddings"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:27
+msgid "Retrieve candidates from vector store."
+msgstr "Récupérer les candidats depuis le stockage vectoriel."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:31
+msgid "Storage Index Store"
+msgstr "Stockage d'index de stockage"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:34
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:134
+msgid "The vector store connector."
+msgstr "Le connecteur du stockage vectoriel."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:38
+msgid "Top K"
+msgstr "Top K"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:41
+msgid "The number of candidates."
+msgstr "Le nombre de candidats."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:44
+msgid "Score Threshold"
+msgstr "Seuil de score"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:48
+msgid ""
+"The score threshold, if score of candidate is less than it, it will be "
+"filtered."
+msgstr "Le seuil de score. Si le score d'un candidat est inférieur à ce seuil, il sera filtré."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:55
+msgid "Query Rewrite"
+msgstr "Réécriture de requête"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:58
+msgid "The query rewrite resource."
+msgstr "La ressource de réécriture de requête."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:63
+msgid "Rerank"
+msgstr "Réclassement"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:66
+msgid "The rerank."
+msgstr "Le réclassement."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:73
+msgid "Query"
+msgstr "Requête"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:76
+msgid "The query to retrieve."
+msgstr "La requête à récupérer."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:81
+msgid "Candidates"
+msgstr "Candidats"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:84
+msgid "The retrieved candidates."
+msgstr "Les candidats récupérés."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:125
+msgid "Embedding Assembler Operator"
+msgstr "Opérateur d'assemblage d'embeddings"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:127
+msgid "Load knowledge and assemble embedding chunks to vector store."
+msgstr "Charger les connaissances et assembler les morceaux d'embeddings dans le stockage vectoriel."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:131
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:23
+msgid "Vector Store Connector"
+msgstr "Connecteur de stockage vectoriel"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:141
+msgid "The chunk parameters."
+msgstr "Les paramètres des morceaux."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:151
+msgid "The knowledge to be loaded."
+msgstr "Les connaissances à charger."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:160
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:45
+msgid "The assembled chunks, it has been persisted to vector store."
+msgstr "Les morceaux assemblés ont été persistés dans le stockage vectoriel."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:23
+msgid "Knowledge Loader Operator"
+msgstr "Opérateur de chargement de connaissances"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:27
+msgid "The knowledge operator, which can create knowledge from datasource."
+msgstr "L'opérateur de connaissances, qui peut créer des connaissances à partir d'une source de données."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:31
+msgid "knowledge datasource"
+msgstr "Source de données de connaissances"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:34
+msgid "knowledge datasource, which can be a document, url, or text."
+msgstr "Source de données de connaissances, qui peut être un document, une URL ou un texte."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:42
+msgid "Knowledge object."
+msgstr "Objet de connaissance."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:47
+msgid "Default datasource"
+msgstr "Source de données par défaut"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:52
+msgid "Default datasource."
+msgstr "Source de données par défaut."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:55
+msgid "Knowledge type"
+msgstr "Type de connaissance"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:71
+msgid "Knowledge type."
+msgstr "Type de connaissance."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:106
+msgid "Chunks To String Operator"
+msgstr "Opérateur de conversion de segments en chaîne"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:108
+msgid "Convert chunks to string."
+msgstr "Convertir les segments en chaîne."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:115
+msgid "The separator between chunks."
+msgstr "Le séparateur entre les segments."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:125
+msgid "The input chunks."
+msgstr "Les segments d'entrée."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:131
+msgid "String"
+msgstr "Chaîne"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:134
+msgid "The output string."
+msgstr "La chaîne de sortie."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:26
+msgid "Knowledge Process Branch Operator"
+msgstr "Opérateur de branchement du processus de connaissance"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:30
+msgid "Branch the workflow based on the stream flag of the request."
+msgstr "Brancher le flux de travail en fonction du drapeau de flux de la demande."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:34
+msgid "Document Chunks"
+msgstr "Segments de document"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:37
+msgid "The input value of the operator."
+msgstr "La valeur d'entrée de l'opérateur."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:46
+msgid "Chunks for Vector Storage Connector."
+msgstr "Segments pour le connecteur de stockage vectoriel."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:53
+msgid "Chunks for Knowledge Graph Connector."
+msgstr "Morceaux pour le connecteur de graphe de connaissances."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:60
+msgid "Chunks for Full Text Connector."
+msgstr "Morceaux pour le connecteur de texte intégral."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:119
+msgid "Knowledge Process Join Operator"
+msgstr "Opérateur de jointure de traitement des connaissances"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:124
+msgid "Join Branch the workflow based on the Knowledge Process Results."
+msgstr "Joindre une branche du flux de travail en fonction des résultats du traitement des connaissances."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:129
+msgid "Vector Storage Results"
+msgstr "Résultats du stockage vectoriel"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:132
+msgid "vector storage results."
+msgstr "résultats du stockage vectoriel."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:136
+msgid "Knowledge Graph Storage Results"
+msgstr "Résultats du stockage du graphe de connaissances"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:139
+msgid "knowledge graph storage results."
+msgstr "résultats du stockage du graphe de connaissances."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:148
+msgid "Knowledge Process Results."
+msgstr "Résultats du traitement des connaissances."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:17
+msgid "Full Text Storage Operator"
+msgstr "Opérateur de stockage de texte intégral"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:19
+msgid "Persist embeddings into full text storage."
+msgstr "Conserver les incorporations dans le stockage de texte intégral."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:23
+msgid "Full Text Connector"
+msgstr "Connecteur de texte intégral"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:26
+msgid "The full text store."
+msgstr "Le stockage de texte intégral."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:45
+msgid "The assembled chunks, it has been persisted to full text store."
+msgstr "Les morceaux assemblés ont été enregistrés dans le stockage de texte intégral."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:17
+msgid "Vector Storage Operator"
+msgstr "Opérateur de stockage vectoriel"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:19
+msgid "Persist embeddings into vector storage."
+msgstr "Conserver les incorporations dans le stockage vectoriel."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:26
+msgid "The vector store."
+msgstr "Le stockage de vecteurs."

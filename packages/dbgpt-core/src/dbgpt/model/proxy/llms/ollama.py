@@ -4,6 +4,11 @@ from dataclasses import dataclass, field
 from typing import Iterator, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
@@ -17,6 +22,14 @@ from dbgpt.util.i18n_utils import _
 logger = logging.getLogger(__name__)
 
 
+@auto_register_resource(
+    label=_("Ollama Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Ollama proxy LLM configuration."),
+    documentation_url="https://ollama.com/library",
+    show_in_ui=False,
+)
 @dataclass
 class OllamaDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Ollama."""

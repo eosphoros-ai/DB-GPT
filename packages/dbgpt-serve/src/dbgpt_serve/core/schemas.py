@@ -1,12 +1,12 @@
 import logging
 import sys
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, List
 
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field, model_serializer
 from dbgpt.core.schema.api import Result
 from dbgpt.util.parameter_utils import ParameterDescription
 
@@ -81,6 +81,16 @@ class ResourceParameters(BaseModel):
     parameters: List[ParameterDescription] = Field(
         default_factory=list, description="Resource parameters."
     )
+
+    @model_serializer
+    def ser_model(self) -> dict[str, Any]:
+        """Serialize the model to a dict."""
+        return {
+            "name": self.name,
+            "label": self.label,
+            "description": self.description,
+            "parameters": [p.to_dict() for p in self.parameters],
+        }
 
 
 class ResourceTypes(BaseModel):

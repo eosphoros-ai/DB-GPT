@@ -124,8 +124,9 @@ class ConnectorManager(BaseComponent):
                 parameters = _get_parameter_descriptions(param_cls)
                 label = db_type.value()
                 description = label
-                if hasattr(param_cls, "_resource_metadata"):
-                    flow_metadata: ResourceMetadata = param_cls._resource_metadata  # type: ignore
+                metadata_name = f"_resource_metadata_{param_cls.__name__}"
+                if hasattr(param_cls, metadata_name):
+                    flow_metadata: ResourceMetadata = getattr(param_cls, metadata_name)
                     label = flow_metadata.label
                     description = flow_metadata.description
                 support_type_params.append(

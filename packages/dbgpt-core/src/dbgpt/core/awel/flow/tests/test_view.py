@@ -131,7 +131,8 @@ async def test_create_with_resource():
         async def map(self, input_value: str) -> str:
             return f"User: {input_value}\nAI: Hello"
 
-    resource_metadata: ResourceMetadata = MyLLMClient._resource_metadata
+    metadata_name = f"_resource_metadata_{MyLLMClient.__name__}"
+    resource_metadata: ResourceMetadata = getattr(MyLLMClient, metadata_name)
     resource_metadata_dict = resource_metadata.to_dict()
     resource_metadata_dict["parameters"][0]["value"] = "dummy_api_key"
     resource_data_id = "uuid_resource_123"

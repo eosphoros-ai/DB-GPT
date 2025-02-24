@@ -19,6 +19,7 @@ from typing import (
     get_type_hints,
 )
 
+from ..i18n_utils import _
 from ..parameter_utils import ParameterDescription
 
 try:
@@ -33,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 
 _DEFAULT_ENV_VAR_PATTERN = re.compile(r"\${env:([^}]+)}")
+
+CHECK_I18N_PARAMETER_DESC = (
+    os.getenv("CHECK_I18N_PARAMETER_DESC", "false").lower() == "true"
+)
 
 
 class PolymorphicMeta(abc.ABCMeta):
@@ -94,23 +99,30 @@ class HookConfig:
 
     path: str = field(
         metadata={
-            "help": "Hook path, it can be a class path or a function path. "
-            "eg: 'dbgpt.config.hooks.env_var_hook'"
+            "help": _(
+                "Hook path, it can be a class path or a function path. "
+                "eg: 'dbgpt.config.hooks.env_var_hook'"
+            )
         }
     )
     init_params: Dict[str, Any] = field(
         default_factory=dict,
         metadata={
-            "help": "Hook init params to pass to the hook constructor(Just for class "
-            "hook), must be key-value pairs"
+            "help": _(
+                "Hook init params to pass to the hook constructor(Just for class "
+                "hook), must be key-value pairs"
+            )
         },
     )
     params: Dict[str, Any] = field(
         default_factory=dict,
-        metadata={"help": "Hook params to pass to the hook, must be key-value pairs"},
+        metadata={
+            "help": _("Hook params to pass to the hook, must be key-value pairs")
+        },
     )
     enabled: bool = field(
-        default=True, metadata={"help": "Whether the hook is enabled, default is True"}
+        default=True,
+        metadata={"help": _("Whether the hook is enabled, default is True")},
     )
 
 
@@ -243,6 +255,13 @@ def _get_all_subclasses(base_class: Type[T]) -> Dict[str, Type[T]]:
     return base_class.get_register_class() or {}
 
 
+def _is_base_config(target_cls):
+    return (
+        hasattr(target_cls, "__config_type__")
+        and getattr(target_cls, "__config_type__") == "base"
+    )
+
+
 class ConfigurationManager:
     """A unified configuration manager that supports loading configuration from files
     and converting them to dataclass objects.
@@ -269,6 +288,8 @@ class ConfigurationManager:
     """
 
     ENV_VAR_PATTERN = re.compile(r"\${env:([^}]+)}")
+
+    _description_cache: ClassVar[Dict[str, List[ParameterDescription]]] = {}
 
     def __init__(
         self, config_dict: Optional[Dict] = None, resolve_env_vars: bool = True
@@ -636,7 +657,9 @@ class ConfigurationManager:
         return self._convert_to_dataclass(cls, config_section)
 
     @classmethod
-    def parse_description(cls, target_cls: Type[T]) -> List[ParameterDescription]:
+    def parse_description(
+        cls, target_cls: Type[T], cache_enable: bool = True, skip_base: bool = False
+    ) -> List[ParameterDescription]:
         """Parse configuration description into a list of ParameterDescription.
 
         This method analyzes a dataclass and returns descriptions of its fields. For
@@ -652,8 +675,18 @@ class ConfigurationManager:
         """
         from ..function_utils import type_to_string
 
+        if (
+            skip_base
+            and hasattr(target_cls, "__config_type__")
+            and getattr(target_cls, "__config_type__") == "base"
+        ):
+            return []
+
         if not is_dataclass(target_cls):
             raise ValueError(f"{target_cls.__name__} is not a dataclass")
+        cache_key = f"{target_cls.__module__}.{target_cls.__name__}"
+        if cache_key in cls._description_cache and cache_enable:
+            return cls._description_cache[cache_key]
 
         descriptions = []
         type_hints = get_type_hints(target_cls)
@@ -696,6 +729,15 @@ class ConfigurationManager:
                 description = parent_descriptions[fd.name].description
             if fd.name in parent_descriptions:
                 parent_tags = parent_descriptions[fd.name].ext_metadata
+            if description and CHECK_I18N_PARAMETER_DESC:
+                from ..i18n_utils import is_i18n_string
+
+                if not is_i18n_string(description):
+                    raise ValueError(
+                        f"Parameter description for {fd.name} in {target_cls.__name__} "
+                        "is not i18n compliant"
+                    )
+
             desc = ParameterDescription(
                 param_name=fd.name,
                 param_class=f"{target_cls.__module__}.{target_cls.__name__}",
@@ -739,13 +781,15 @@ class ConfigurationManager:
                 if isinstance(element_type, PolymorphicMeta):
                     implementations = _get_all_subclasses(element_type)
                     desc.nested_fields = {
-                        type_value: cls.parse_description(impl_cls)
+                        type_value: cls.parse_description(
+                            impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                        )
                         for type_value, impl_cls in implementations.items()
                     }
                 else:
                     desc.nested_fields = {
                         element_type.__name__.lower(): cls.parse_description(
-                            element_type
+                            element_type, cache_enable=cache_enable, skip_base=skip_base
                         )
                     }
 
@@ -756,13 +800,17 @@ class ConfigurationManager:
                     if isinstance(value_type, PolymorphicMeta):
                         implementations = _get_all_subclasses(value_type)
                         desc.nested_fields = {
-                            type_value: cls.parse_description(impl_cls)
+                            type_value: cls.parse_description(
+                                impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                            )
                             for type_value, impl_cls in implementations.items()
                         }
                     else:
                         desc.nested_fields = {
                             value_type.__name__.lower(): cls.parse_description(
-                                value_type
+                                value_type,
+                                cache_enable=cache_enable,
+                                skip_base=skip_base,
                             )
                         }
 
@@ -771,18 +819,23 @@ class ConfigurationManager:
                 if isinstance(field_type, PolymorphicMeta):
                     implementations = _get_all_subclasses(field_type)
                     desc.nested_fields = {
-                        type_value: cls.parse_description(impl_cls)
+                        type_value: cls.parse_description(
+                            impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                        )
                         for type_value, impl_cls in implementations.items()
                     }
                 else:
                     desc.nested_fields = {
-                        field_type.__name__.lower(): cls.parse_description(field_type)
+                        field_type.__name__.lower(): cls.parse_description(
+                            field_type, cache_enable=cache_enable, skip_base=skip_base
+                        )
                     }
 
             descriptions.append(desc)
 
         # Sort descriptions by order
         descriptions.sort(key=lambda d: d.param_order)
+        cls._description_cache[cache_key] = descriptions
         return descriptions
 
 

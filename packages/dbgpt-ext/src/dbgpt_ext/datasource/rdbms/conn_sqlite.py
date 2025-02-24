@@ -41,15 +41,19 @@ class SQLiteConnectorParameters(BaseDatasourceParameters):
 
     path: str = dataclasses.field(
         metadata={
-            "help": "SQLite database file path. Use ':memory:' for in-memory database",
+            "help": _(
+                "SQLite database file path. Use ':memory:' for in-memory database"
+            ),
             "required": True,
         }
     )
     check_same_thread: bool = dataclasses.field(
         default=False,
         metadata={
-            "help": "Check same thread or not, default is False. Set False to allow "
-            "sharing connection across threads"
+            "help": _(
+                "Check same thread or not, default is False. Set False to allow "
+                "sharing connection across threads"
+            )
         },
     )
 

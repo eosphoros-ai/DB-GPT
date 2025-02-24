@@ -59,7 +59,10 @@ class OptionValue(Serializable, BaseModel):
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        return self.dict()
+        dict_value = self.dict()
+        # Force invoke the __str__ method of the value(i18n)
+        dict_value["label"] = str(dict_value["label"])
+        return dict_value
 
 
 class BaseDynamicOptions(Serializable, BaseModel, ABC):

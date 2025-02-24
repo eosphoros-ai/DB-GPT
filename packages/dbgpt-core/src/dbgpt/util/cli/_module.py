@@ -20,9 +20,9 @@ def _is_flow_operator(cls):
 
 
 def _is_flow_resource(cls):
-    return hasattr(cls, "_resource_metadata") and isinstance(
-        cls._resource_metadata, ResourceMetadata
-    )
+    metadata_name = f"_resource_metadata_{cls.__name__}"
+    metadata = getattr(cls, metadata_name, None)
+    return metadata is not None and isinstance(metadata, ResourceMetadata)
 
 
 def _scan_awel_flow(modules: Optional[List[str]] = None):
@@ -44,7 +44,8 @@ def _scan_awel_flow(modules: Optional[List[str]] = None):
         if _is_flow_operator(cls):
             metadata = cast(ViewMetadata, cls.metadata)
         else:
-            metadata = cls._resource_metadata
+            metadata_name = f"_resource_metadata_{cls.__name__}"
+            metadata = getattr(cls, metadata_name)
         parameters = []
         outputs = []
         inputs = []

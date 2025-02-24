@@ -175,6 +175,7 @@ class BitsandbytesQuantization(BaseHFQuantization):
     """Bits and bytes quantization parameters."""
 
     __type__ = "bitsandbytes"
+    __config_type__ = "base"
 
     load_in_8bits: bool = field(
         default=False,
@@ -378,13 +379,13 @@ class BitsandbytesQuantization4bits(BitsandbytesQuantization):
 @dataclass
 class BaseServerParameters(BaseParameters):
     host: Optional[str] = field(
-        default="0.0.0.0", metadata={"help": "The host IP address to bind to."}
+        default="0.0.0.0", metadata={"help": _("The host IP address to bind to.")}
     )
     port: Optional[int] = field(
-        default=None, metadata={"help": "The port number to bind to."}
+        default=None, metadata={"help": _("The port number to bind to.")}
     )
     daemon: Optional[bool] = field(
-        default=False, metadata={"help": "Run the server as a daemon."}
+        default=False, metadata={"help": _("Run the server as a daemon.")}
     )
     log: LoggingParameters = field(
         default_factory=LoggingParameters,

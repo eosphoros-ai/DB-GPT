@@ -3,6 +3,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
 from dbgpt.core import ModelMetadata
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -22,6 +27,14 @@ if TYPE_CHECKING:
 _YI_DEFAULT_MODEL = "yi-lightning"
 
 
+@auto_register_resource(
+    label=_("Yi Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Yi proxy LLM configuration."),
+    documentation_url="https://platform.lingyiwanwu.com/docs",
+    show_in_ui=False,
+)
 @dataclass
 class YiDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Yi."""

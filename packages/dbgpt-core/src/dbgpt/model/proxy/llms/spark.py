@@ -5,6 +5,11 @@ from dataclasses import dataclass, field
 from typing import Iterator, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
@@ -17,6 +22,14 @@ from dbgpt.util.i18n_utils import _
 from .chatgpt import OpenAICompatibleDeployModelParameters
 
 
+@auto_register_resource(
+    label=_("Xunfei Spark Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Xunfei Spark proxy LLM configuration."),
+    documentation_url="https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E",
+    show_in_ui=False,
+)
 @dataclass
 class SparkDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Spark."""

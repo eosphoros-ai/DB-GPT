@@ -52,6 +52,8 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
 class RDBMSDatasourceParameters(BaseDatasourceParameters):
     """RDBMS datasource parameters."""
 
+    __config_type__ = "base"
+
     host: str = field(metadata={"help": _("Database host, e.g., localhost")})
     port: int = field(metadata={"help": _("Database port, e.g., 3306")})
     user: str = field(metadata={"help": _("Database user to connect")})

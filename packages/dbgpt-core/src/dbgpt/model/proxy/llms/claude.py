@@ -15,6 +15,11 @@ from typing import (
 )
 
 from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
@@ -33,6 +38,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@auto_register_resource(
+    label=_("Claude Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Claude Proxy LLM"),
+    documentation_url="https://docs.anthropic.com/en/api/getting-started",
+    show_in_ui=False,
+)
 @dataclass
 class ClaudeDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Claude."""

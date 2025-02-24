@@ -5,7 +5,13 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, Type, Union
 
 from dbgpt.core import MessageConverter, ModelMetadata, ModelOutput, ModelRequest
-from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    Parameter,
+    ResourceCategory,
+    auto_register_resource,
+    register_resource,
+)
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
@@ -26,6 +32,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@auto_register_resource(
+    label=_("OpenAI Compatible Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("OpenAI Compatible Proxy LLM"),
+    documentation_url="https://platform.openai.com/docs/api-reference/chat",
+    show_in_ui=False,
+)
 @dataclass
 class OpenAICompatibleDeployModelParameters(LLMDeployModelParameters):
     """OpenAI compatible deploy model parameters."""

@@ -1,0 +1,73 @@
+# French translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:45
+msgid "The path of the AWEL flow"
+msgstr "Le chemin du flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:63
+msgid "The name of the AWEL flow"
+msgstr "Le nom du flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:70
+msgid "The uid of the AWEL flow"
+msgstr "L'UID du flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:88
+msgid "The messages to run AWEL flow"
+msgstr "Les messages pour exécuter le flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:95
+msgid "The model name of AWEL flow"
+msgstr "Le nom du modèle du flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:104
+msgid "Whether use stream mode to run AWEL flow"
+msgstr "Si l'on doit utiliser le mode stream pour exécuter le flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:112
+msgid "The temperature to run AWEL flow"
+msgstr "La température pour exécuter le flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:119
+msgid "The max new tokens to run AWEL flow"
+msgstr "Le nombre maximum de nouveaux tokens pour exécuter le flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:126
+msgid "The conversation id of the AWEL flow"
+msgstr "L'ID de conversation du flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:134
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:199
+msgid "The json data to run AWEL flow, if set, will overwrite other options"
+msgstr "Les données JSON pour exécuter le flux AWEL, si elles sont définies, écraseront les autres options"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:142
+msgid "The extra json data to run AWEL flow."
+msgstr "Les données JSON supplémentaires pour exécuter le flux AWEL."
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:151
+msgid "Whether use interactive mode to run AWEL flow"
+msgstr "Si l'on doit utiliser le mode interactif pour exécuter le flux AWEL"
+
+#:../packages/dbgpt-client/src/dbgpt_client/_cli.py:207
+msgid ""
+"The output key of the AWEL flow, if set, it will try to get the output by "
+"the key"
+msgstr "La clé de sortie du flux AWEL, si elle est définie, le système tentera d'obtenir la sortie à l'aide de cette clé"

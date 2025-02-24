@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Literal, Optional, Type, TypeVar, Union, cas
 
 from dbgpt._private.pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     ValidationError,
     model_to_dict,
@@ -23,6 +24,7 @@ from dbgpt.core.awel.util.parameter_util import (
 )
 from dbgpt.core.interface.serialization import Serializable
 from dbgpt.util.executor_utils import DefaultExecutorFactory, blocking_func_to_async
+from dbgpt.util.i18n_utils import LazyTranslatedString
 
 from .exceptions import FlowMetadataException, FlowParameterMetadataException
 from .ui import UIComponent
@@ -338,7 +340,9 @@ class BaseDynamic(BaseModel):
 class Parameter(BaseDynamic, TypeMetadata, Serializable):
     """Parameter for build operator."""
 
-    label: str = Field(
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    label: Union[str, LazyTranslatedString] = Field(
         ..., description="The label to display in UI", examples=["OpenAI API Key"]
     )
     name: str = Field(
@@ -368,7 +372,7 @@ class Parameter(BaseDynamic, TypeMetadata, Serializable):
     placeholder: Optional[DefaultParameterType] = Field(
         None, description="The placeholder of the parameter"
     )
-    description: Optional[str] = Field(
+    description: Optional[Union[str, LazyTranslatedString]] = Field(
         None, description="The description of the parameter"
     )
     options: Optional[Union[BaseDynamicOptions, List[OptionValue]]] = Field(
@@ -545,6 +549,9 @@ class Parameter(BaseDynamic, TypeMetadata, Serializable):
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
         dict_value = model_to_dict(self, exclude={"options", "alias", "ui"})
+        # Force invoke to __str__ (i18n)
+        dict_value["label"] = str(dict_value["label"])
+        dict_value["description"] = str(dict_value["description"])
         if not self.options:
             dict_value["options"] = None
         elif isinstance(self.options, BaseDynamicOptions):
@@ -664,7 +671,9 @@ class Parameter(BaseDynamic, TypeMetadata, Serializable):
 class BaseResource(Serializable, BaseModel):
     """The base resource."""
 
-    label: str = Field(
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    label: Union[str, LazyTranslatedString] = Field(
         ...,
         description="The label to display in UI",
         examples=["LLM Operator", "OpenAI LLM Client"],
@@ -679,7 +688,7 @@ class BaseResource(Serializable, BaseModel):
         description="The name of the operator",
         examples=["llm_operator", "openai_llm_client"],
     )
-    description: str = Field(
+    description: Union[str, LazyTranslatedString] = Field(
         ...,
         description="The description of the field",
         examples=["The LLM operator.", "OpenAI LLM Client"],
@@ -687,7 +696,11 @@ class BaseResource(Serializable, BaseModel):
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        return model_to_dict(self)
+        dict_value = model_to_dict(self)
+        # Force invoke to __str__ (i18n)
+        dict_value["label"] = str(dict_value["label"])
+        dict_value["description"] = str(dict_value["description"])
+        return dict_value
 
 
 class Resource(BaseResource, TypeMetadata):
@@ -912,6 +925,10 @@ class BaseMetadata(BaseResource):
         from .ui import _size_to_order
 
         dict_value = model_to_dict(self, exclude={"parameters"})
+        # Force invoke to __str__ (i18n)
+        dict_value["label"] = str(dict_value["label"])
+        dict_value["category_label"] = str(dict_value["category_label"])
+        dict_value["description"] = str(dict_value["description"])
         tags = dict_value.get("tags")
         if not tags:
             tags = {"ui_version": "flow2.0"}
@@ -1064,6 +1081,7 @@ def register_resource(
             for parent_cls in mro
             if parent_cls is not object and parent_cls != abc.ABC
         ]
+        metadata_attr = f"_resource_metadata_{cls.__name__}"
 
         resource_metadata = ResourceMetadata(
             label=label,
@@ -1082,7 +1100,7 @@ def register_resource(
         _register_alias_types(cls, alias_ids)
         _register_resource(cls, resource_metadata, alias_ids)
         # Attach the metadata to the class
-        cls._resource_metadata = resource_metadata
+        setattr(cls, metadata_attr, resource_metadata)
         return cls
 
     return decorator
@@ -1095,6 +1113,7 @@ def auto_register_resource(
     description: Optional[str] = None,
     alias: Optional[List[str]] = None,
     tags: Optional[Dict[str, str]] = None,
+    show_in_ui: bool = True,
     **decorator_kwargs,
 ):
     """Auto register the resource.
@@ -1119,8 +1138,9 @@ def auto_register_resource(
     def decorator(cls):
         if not is_dataclass(cls):
             raise ValueError("auto_register_resource only works with dataclasses")
+        metadata_attr = f"_resource_metadata_{cls.__name__}"
 
-        if not hasattr(cls, "_resource_metadata"):
+        if not hasattr(cls, metadata_attr):
             # Create parameters from dataclass fields
             fields_desc_list = _get_parameter_descriptions(cls)
             parameters: List[Parameter] = []
@@ -1182,13 +1202,14 @@ def auto_register_resource(
                 **decorator_kwargs,
             )
 
-            # Register alias
-            alias_ids = resource_metadata.new_alias(alias)
-            _register_alias_types(cls, alias_ids)
-            _register_resource(cls, resource_metadata, alias_ids)
+            if show_in_ui:
+                # Register alias
+                alias_ids = resource_metadata.new_alias(alias)
+                _register_alias_types(cls, alias_ids)
+                _register_resource(cls, resource_metadata, alias_ids)
 
             # Attach the metadata to the class
-            cls._resource_metadata = resource_metadata
+            setattr(cls, metadata_attr, resource_metadata)
         return cls
 
     return decorator

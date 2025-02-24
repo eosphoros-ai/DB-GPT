@@ -1,0 +1,553 @@
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:35
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:145
+msgid "Context Key"
+msgstr "Ключ контекста"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:40
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:150
+msgid "The key of the context, it will be used in building the prompt"
+msgstr "Ключ контекста, который будет использован при построении запроса"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:43
+msgid "Top K"
+msgstr "Топ K"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:48
+msgid "The number of chunks to retrieve"
+msgstr "Количество фрагментов для извлечения"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:51
+msgid "Minimum Match Score"
+msgstr "Минимальный балл совпадения"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:58
+msgid ""
+"The minimum match score for the retrieved chunks, it will be dropped if the "
+"match score is less than the threshold"
+msgstr "Минимальный балл совпадения для извлеченных фрагментов. Фрагмент будет отброшен, если балл совпадения меньше порогового значения"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:66
+msgid "Reranker Enabled"
+msgstr "Переранжировщик включен"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:71
+msgid "Whether to enable the reranker"
+msgstr "Включать ли переранжировщик"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:74
+msgid "Reranker Top K"
+msgstr "Топ K переранжировщика"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:79
+msgid "The top k for the reranker"
+msgstr "Топ k для переранжировщика"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:83
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:153
+msgid "User question"
+msgstr "Вопрос пользователя"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:86
+msgid "The user question to retrieve the knowledge"
+msgstr "Вопрос пользователя для извлечения знаний"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:89
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:159
+msgid "Retrieved context"
+msgstr "Извлеченный контекст"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:92
+msgid "The retrieved context from the knowledge space"
+msgstr "Извлеченный контекст из пространства знаний"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:107
+msgid "Knowledge Space Operator"
+msgstr "Оператор пространства знаний"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:111
+msgid "Knowledge Space Operator, retrieve your knowledge from knowledge space"
+msgstr "Оператор пространства знаний, извлеките свои знания из пространства знаний"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:115
+msgid "Knowledge Space Name"
+msgstr "Название пространства знаний"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:119
+msgid "The name of the knowledge space"
+msgstr "Название пространства знаний"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:133
+msgid "Chunks"
+msgstr "Части"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:137
+msgid "The retrieved chunks from the knowledge space"
+msgstr "Извлеченные части из пространства знаний"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:15
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:40
+msgid "String"
+msgstr "Строка"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:18
+msgid "The string to be converted to other types."
+msgstr "Строка, которая будет преобразована в другие типы."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:21
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:46
+msgid "Integer"
+msgstr "Целое число"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:24
+msgid "The integer to be converted to other types."
+msgstr "Целое число, которое будет преобразовано в другие типы."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:27
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:52
+msgid "Float"
+msgstr "Число с плавающей точкой"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:30
+msgid "The float to be converted to other types."
+msgstr "Число с плавающей точкой, которое будет преобразовано в другие типы."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:33
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:58
+msgid "Boolean"
+msgstr "Логическое значение"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:36
+msgid "The boolean to be converted to other types."
+msgstr "Логическое значение, которое должно быть преобразовано в другие типы."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:43
+msgid "The string converted from other types."
+msgstr "Строка, полученная в результате преобразования из других типов."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:49
+msgid "The integer converted from other types."
+msgstr "Целое число, полученное в результате преобразования из других типов."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:55
+msgid "The float converted from other types."
+msgstr "Число с плавающей точкой, полученное в результате преобразования из других типов."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:61
+msgid "The boolean converted from other types."
+msgstr "Логическое значение, полученное в результате преобразования из других типов."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:69
+msgid "String to Integer"
+msgstr "Преобразование строки в целое число"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:71
+msgid "Converts a string to an integer."
+msgstr "Преобразует строку в целое число."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:88
+msgid "String to Float"
+msgstr "Преобразование строки в число с плавающей точкой"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:90
+msgid "Converts a string to a float."
+msgstr "Преобразует строку в число с плавающей точкой."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:107
+msgid "String to Boolean"
+msgstr "Преобразование строки в логическое значение"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:109
+msgid "Converts a string to a boolean, true: 'true', '1', 'y'"
+msgstr "Преобразует строку в логическое значение, истинные значения: 'true', '1', 'y'"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:113
+msgid "True Values"
+msgstr "Истинные значения"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:118
+msgid "Comma-separated values that should be treated as True."
+msgstr "Значения, разделенные запятыми, которые должны быть восприниматься как истинные."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:137
+msgid "Integer to String"
+msgstr "Преобразование целого числа в строку"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:139
+msgid "Converts an integer to a string."
+msgstr "Преобразует целое число в строку."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:156
+msgid "Float to String"
+msgstr "Преобразование числа с плавающей точкой в строку"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:158
+msgid "Converts a float to a string."
+msgstr "Преобразует число с плавающей точкой в строку."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:175
+msgid "Boolean to String"
+msgstr "Преобразование булевого значения в строку"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:177
+msgid "Converts a boolean to a string."
+msgstr "Преобразует булево значение в строку."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:194
+msgid "Model Output to Dict"
+msgstr "Преобразование выходных данных модели в словарь"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:196
+msgid "Converts a model output to a dictionary."
+msgstr "Преобразует выходные данные модели в словарь."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:199
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:374
+msgid "Model Output"
+msgstr "Выходные данные модели"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:200
+msgid "Dictionary"
+msgstr "Словарь"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:103
+msgid "Datasource"
+msgstr "Источник данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:106
+msgid "The datasource to retrieve the context"
+msgstr "Источник данных для получения контекста"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:109
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:268
+msgid "Prompt Template"
+msgstr "Шаблон запроса"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:114
+msgid "The prompt template to build a database prompt"
+msgstr "Шаблон запроса для создания запроса к базе данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:118
+msgid "Display Type"
+msgstr "Тип отображения"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:123
+msgid "The display type for the data"
+msgstr "Тип отображения данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:127
+msgid "Max Number of Results"
+msgstr "Максимальное количество результатов"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:132
+msgid "The maximum number of results to return"
+msgstr "Максимальное количество возвращаемых результатов"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:135
+msgid "Response Format"
+msgstr "Формат ответа"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:140
+msgid "The response format, default is a JSON format"
+msgstr "Формат ответа, по умолчанию - формат JSON"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:156
+msgid "The user question to retrieve table schemas from the datasource"
+msgstr "Вопрос пользователя для получения схем таблиц из источника данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:162
+msgid "The retrieved context from the datasource"
+msgstr "Полученный контекст из источника данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:166
+msgid "SQL dict"
+msgstr "Словарь SQL"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:169
+msgid "The SQL to be executed wrapped in a dictionary, generated by LLM"
+msgstr "SQL-запрос, обернутый в словарь и сгенерированный Large Language Model"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:172
+msgid "SQL result"
+msgstr "Результат SQL-запроса"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:175
+msgid "The result of the SQL execution"
+msgstr "Результат выполнения SQL-запроса"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:179
+msgid "SQL dict list"
+msgstr "Список словарей SQL"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:183
+msgid "The SQL list to be executed wrapped in a dictionary, generated by LLM"
+msgstr "Список SQL-запросов, обернутых в словарь и сгенерированный Large Language Model"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:212
+msgid "Datasource Retriever Operator"
+msgstr "Оператор извлечения данных из источника"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:214
+msgid "Retrieve the table schemas from the datasource."
+msgstr "Извлечь схемы таблиц из источника данных."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:228
+msgid "Retrieved schema chunks"
+msgstr "Полученные фрагменты схемы"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:232
+msgid "The retrieved schema chunks from the datasource"
+msgstr "Полученные фрагменты схемы из источника данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:290
+msgid "Datasource Executor Operator"
+msgstr "Оператор выполнения запросов к источнику данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:292
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:329
+msgid "Execute the context from the datasource."
+msgstr "Выполнить контекст из источника данных."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:327
+msgid "Datasource Dashboard Operator"
+msgstr "Оператор панели мониторинга источника данных"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:60
+msgid "Code Map Operator"
+msgstr "Оператор карты кода"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:63
+msgid ""
+"Handle input dictionary with code and return output dictionary after "
+"execution."
+msgstr "Обработать входной словарь с кодом и вернуть выходной словарь после выполнения."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:69
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:211
+msgid "Code Editor"
+msgstr "Редактор кода"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:74
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:216
+msgid "Please input your code"
+msgstr "Пожалуйста, введите ваш код"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:75
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:217
+msgid "The code to be executed."
+msgstr "Код, который необходимо выполнить."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:81
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:223
+msgid "Language"
+msgstr "Язык"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:86
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:228
+msgid "Please select the language"
+msgstr "Пожалуйста, выберите язык"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:87
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:229
+msgid "The language of the code."
+msgstr "Язык кода."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:97
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:239
+msgid "Call Name"
+msgstr "Название вызова"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:102
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:244
+msgid "Please input the call name"
+msgstr "Пожалуйста, введите название вызова"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:103
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:245
+msgid "The call name of the function."
+msgstr "Имя вызова функции."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:108
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:250
+msgid "Input Data"
+msgstr "Входные данные"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:111
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:253
+msgid "The input dictionary."
+msgstr "Входной словарь."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:116
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:258
+msgid "Output Data"
+msgstr "Выходные данные"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:119
+msgid "The output dictionary."
+msgstr "Выходной словарь."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:202
+msgid "Code Dict to Model Request Operator"
+msgstr "Оператор преобразования словаря кода в запрос модели"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:205
+msgid ""
+"Handle input dictionary with code and return output ModelRequest after "
+"execution."
+msgstr "Обработать входной словарь с кодом и вернуть выходной запрос модели (ModelRequest) после выполнения."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:261
+msgid "The output ModelRequest."
+msgstr "Выходной запрос модели (ModelRequest)."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:50
+msgid "The context key can be used as the key for formatting prompt."
+msgstr "Ключ контекста может быть использован в качестве ключа для форматирования промпта."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:54
+msgid "The context."
+msgstr "Контекст."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:271
+msgid "The prompt template for the conversation."
+msgstr "Шаблон промпта для разговора."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:274
+msgid "Model Name"
+msgstr "Название модели"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:279
+msgid "The model name."
+msgstr "Название модели."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:283
+msgid "LLM Client"
+msgstr "LLM 客户端"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:289
+msgid ""
+"The LLM Client, how to connect to the LLM model, if not provided, it will "
+"use the default client deployed by DB-GPT."
+msgstr "LLM 客户端，如何连接到 LLM 模型，如果未提供，将使用 DB-GPT 部署的默认客户端。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:294
+msgid "History Message Merge Mode"
+msgstr "历史消息合并模式"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:305
+msgid ""
+"The history merge mode, supports 'none', 'window' and 'token'. 'none': no "
+"history merge, 'window': merge by conversation window, 'token': merge by "
+"token length."
+msgstr "历史合并模式，支持 'none'、'window' 和 'token'。'none'：不进行历史合并；'window'：按对话窗口合并；'token'：按 Token 长度合并。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:312
+msgid "User Message Key"
+msgstr "用户消息键"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:318
+msgid "The key of the user message in your prompt, default is 'user_input'."
+msgstr "提示中用户消息的键，默认为 'user_input'。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:322
+msgid "History Key"
+msgstr "历史记录键"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:328
+msgid ""
+"The chat history key, with chat history message pass to prompt template, if "
+"not provided, it will parse the prompt template to get the key."
+msgstr "聊天历史记录键，将聊天历史消息传递给提示模板，如果未提供，将解析提示模板以获取该键。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:333
+msgid "Keep Start Rounds"
+msgstr "保留起始轮数"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:338
+msgid "The start rounds to keep in the chat history."
+msgstr "聊天历史记录中要保留的起始轮数。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:341
+msgid "Keep End Rounds"
+msgstr "保留结束轮数"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:346
+msgid "The end rounds to keep in the chat history."
+msgstr "聊天历史记录中要保留的结束轮数。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:349
+msgid "Max Token Limit"
+msgstr "最大 Token 限制"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:354
+msgid "The max token limit to keep in the chat history."
+msgstr "聊天历史记录中要保留的最大 Token 限制。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:358
+msgid "Common LLM Request Body"
+msgstr "Общее тело запроса LLM"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:361
+msgid "The common LLM request body."
+msgstr "Общее тело запроса LLM."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:364
+msgid "Extra Context"
+msgstr "Дополнительный контекст"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:368
+msgid ""
+"Extra context for building prompt(Knowledge context, database schema, etc), "
+"you can add multiple context."
+msgstr "Дополнительный контекст для создания промпта (контекст знаний, схема базы данных и т. д.), вы можете добавить несколько контекстов."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:377
+msgid "The model output."
+msgstr "Вывод модели."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:380
+msgid "Streaming Model Output"
+msgstr "Потоковый вывод модели"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:384
+msgid "The streaming model output."
+msgstr "Потоковый вывод модели."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:390
+msgid "LLM Operator"
+msgstr "LLM Оператор"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:394
+msgid ""
+"High-level LLM operator, supports multi-round conversation (conversation "
+"window, token length and no multi-round)."
+msgstr "Высокоуровневый LLM оператор, поддерживает многоразовые диалоги (окно диалога, длина токена и отсутствие многоразовых диалогов)."
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:424
+msgid "Streaming LLM Operator"
+msgstr "Потоковый LLM Оператор"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:428
+msgid ""
+"High-level streaming LLM operator, supports multi-round conversation "
+"(conversation window, token length and no multi-round)."
+msgstr "Высокоуровневый потоковый LLM оператор, поддерживает многоразовые диалоги (окно диалога, длина токена и отсутствие многоразовых диалогов)."

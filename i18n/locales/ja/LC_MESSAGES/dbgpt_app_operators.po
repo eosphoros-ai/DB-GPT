@@ -1,0 +1,552 @@
+# Japanese translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:35
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:145
+msgid "Context Key"
+msgstr "コンテキストキー"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:40
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:150
+msgid "The key of the context, it will be used in building the prompt"
+msgstr "コンテキストのキーです。プロンプトの構築に使用されます。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:43
+msgid "Top K"
+msgstr "トップK"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:48
+msgid "The number of chunks to retrieve"
+msgstr "取得するチャンクの数"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:51
+msgid "Minimum Match Score"
+msgstr "最小一致スコア"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:58
+msgid ""
+"The minimum match score for the retrieved chunks, it will be dropped if the "
+"match score is less than the threshold"
+msgstr "取得したチャンクの最小一致スコアです。一致スコアが閾値を下回る場合は破棄されます。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:66
+msgid "Reranker Enabled"
+msgstr "再ランキング機能有効"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:71
+msgid "Whether to enable the reranker"
+msgstr "再ランキング機能を有効にするかどうか"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:74
+msgid "Reranker Top K"
+msgstr "再ランキングトップK"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:79
+msgid "The top k for the reranker"
+msgstr "再ランキングのトップK"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:83
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:153
+msgid "User question"
+msgstr "ユーザーの質問"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:86
+msgid "The user question to retrieve the knowledge"
+msgstr "知識を取得するためのユーザーの質問"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:89
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:159
+msgid "Retrieved context"
+msgstr "取得したコンテキスト"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:92
+msgid "The retrieved context from the knowledge space"
+msgstr "知識空間から取得したコンテキスト"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:107
+msgid "Knowledge Space Operator"
+msgstr "知識空間オペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:111
+msgid "Knowledge Space Operator, retrieve your knowledge from knowledge space"
+msgstr "知識空間オペレーター。知識空間から知識を取得します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:115
+msgid "Knowledge Space Name"
+msgstr "知識空間名"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:119
+msgid "The name of the knowledge space"
+msgstr "知識空間の名前"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:133
+msgid "Chunks"
+msgstr "チャンク"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:137
+msgid "The retrieved chunks from the knowledge space"
+msgstr "知識空間から取得したチャンク"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:15
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:40
+msgid "String"
+msgstr "文字列"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:18
+msgid "The string to be converted to other types."
+msgstr "他の型に変換する文字列です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:21
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:46
+msgid "Integer"
+msgstr "整数"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:24
+msgid "The integer to be converted to other types."
+msgstr "他の型に変換する整数です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:27
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:52
+msgid "Float"
+msgstr "浮動小数点数"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:30
+msgid "The float to be converted to other types."
+msgstr "他の型に変換する浮動小数点数です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:33
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:58
+msgid "Boolean"
+msgstr "ブール値"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:36
+msgid "The boolean to be converted to other types."
+msgstr "他の型に変換するブール値。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:43
+msgid "The string converted from other types."
+msgstr "他の型から変換された文字列。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:49
+msgid "The integer converted from other types."
+msgstr "他の型から変換された整数。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:55
+msgid "The float converted from other types."
+msgstr "他の型から変換された浮動小数点数。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:61
+msgid "The boolean converted from other types."
+msgstr "他の型から変換されたブール値。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:69
+msgid "String to Integer"
+msgstr "文字列から整数へ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:71
+msgid "Converts a string to an integer."
+msgstr "文字列を整数に変換します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:88
+msgid "String to Float"
+msgstr "文字列から浮動小数点数へ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:90
+msgid "Converts a string to a float."
+msgstr "文字列を浮動小数点数に変換します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:107
+msgid "String to Boolean"
+msgstr "文字列からブール値へ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:109
+msgid "Converts a string to a boolean, true: 'true', '1', 'y'"
+msgstr "文字列をブール値に変換します。真の値: 'true', '1', 'y'"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:113
+msgid "True Values"
+msgstr "真の値"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:118
+msgid "Comma-separated values that should be treated as True."
+msgstr "カンマ区切りで、真として扱うべき値。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:137
+msgid "Integer to String"
+msgstr "整数から文字列へ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:139
+msgid "Converts an integer to a string."
+msgstr "整数を文字列に変換します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:156
+msgid "Float to String"
+msgstr "浮動小数点数から文字列へ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:158
+msgid "Converts a float to a string."
+msgstr "浮動小数点数を文字列に変換します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:175
+msgid "Boolean to String"
+msgstr "ブール値から文字列へ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:177
+msgid "Converts a boolean to a string."
+msgstr "ブール値を文字列に変換します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:194
+msgid "Model Output to Dict"
+msgstr "モデル出力から辞書へ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:196
+msgid "Converts a model output to a dictionary."
+msgstr "モデルの出力を辞書に変換します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:199
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:374
+msgid "Model Output"
+msgstr "モデル出力"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:200
+msgid "Dictionary"
+msgstr "辞書"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:103
+msgid "Datasource"
+msgstr "データソース"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:106
+msgid "The datasource to retrieve the context"
+msgstr "コンテキストを取得するデータソース"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:109
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:268
+msgid "Prompt Template"
+msgstr "プロンプトテンプレート"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:114
+msgid "The prompt template to build a database prompt"
+msgstr "データベースプロンプトを作成するためのプロンプトテンプレート"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:118
+msgid "Display Type"
+msgstr "表示タイプ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:123
+msgid "The display type for the data"
+msgstr "データの表示タイプ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:127
+msgid "Max Number of Results"
+msgstr "最大結果数"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:132
+msgid "The maximum number of results to return"
+msgstr "返す最大結果数"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:135
+msgid "Response Format"
+msgstr "レスポンス形式"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:140
+msgid "The response format, default is a JSON format"
+msgstr "レスポンス形式で、デフォルトはJSON形式です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:156
+msgid "The user question to retrieve table schemas from the datasource"
+msgstr "データソースからテーブルスキーマを取得するためのユーザーの質問"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:162
+msgid "The retrieved context from the datasource"
+msgstr "データソースから取得したコンテキスト"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:166
+msgid "SQL dict"
+msgstr "SQL辞書"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:169
+msgid "The SQL to be executed wrapped in a dictionary, generated by LLM"
+msgstr "LLMによって生成され、辞書にラップされた実行対象のSQL"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:172
+msgid "SQL result"
+msgstr "SQL実行結果"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:175
+msgid "The result of the SQL execution"
+msgstr "SQLの実行結果"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:179
+msgid "SQL dict list"
+msgstr "SQL辞書リスト"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:183
+msgid "The SQL list to be executed wrapped in a dictionary, generated by LLM"
+msgstr "LLMによって生成され、辞書にラップされた実行対象のSQLリスト"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:212
+msgid "Datasource Retriever Operator"
+msgstr "データソース取得オペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:214
+msgid "Retrieve the table schemas from the datasource."
+msgstr "データソースからテーブルスキーマを取得します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:228
+msgid "Retrieved schema chunks"
+msgstr "取得したスキーマチャンク"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:232
+msgid "The retrieved schema chunks from the datasource"
+msgstr "データソースから取得したスキーマチャンク"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:290
+msgid "Datasource Executor Operator"
+msgstr "データソース実行オペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:292
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:329
+msgid "Execute the context from the datasource."
+msgstr "データソースからのコンテキストを実行します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:327
+msgid "Datasource Dashboard Operator"
+msgstr "データソースダッシュボードオペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:60
+msgid "Code Map Operator"
+msgstr "コードマップオペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:63
+msgid ""
+"Handle input dictionary with code and return output dictionary after "
+"execution."
+msgstr "コードを含む入力辞書を処理し、実行後の出力辞書を返します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:69
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:211
+msgid "Code Editor"
+msgstr "コードエディター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:74
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:216
+msgid "Please input your code"
+msgstr "コードを入力してください。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:75
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:217
+msgid "The code to be executed."
+msgstr "実行するコードです。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:81
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:223
+msgid "Language"
+msgstr "言語"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:86
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:228
+msgid "Please select the language"
+msgstr "言語を選択してください。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:87
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:229
+msgid "The language of the code."
+msgstr "コードの言語です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:97
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:239
+msgid "Call Name"
+msgstr "呼び出し名"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:102
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:244
+msgid "Please input the call name"
+msgstr "呼び出し名を入力してください。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:103
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:245
+msgid "The call name of the function."
+msgstr "関数の呼び出し名。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:108
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:250
+msgid "Input Data"
+msgstr "入力データ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:111
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:253
+msgid "The input dictionary."
+msgstr "入力辞書。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:116
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:258
+msgid "Output Data"
+msgstr "出力データ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:119
+msgid "The output dictionary."
+msgstr "出力辞書。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:202
+msgid "Code Dict to Model Request Operator"
+msgstr "コード辞書からモデルリクエストへのオペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:205
+msgid ""
+"Handle input dictionary with code and return output ModelRequest after "
+"execution."
+msgstr "コードで入力辞書を処理し、実行後に出力モデルリクエストを返します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/code.py:261
+msgid "The output ModelRequest."
+msgstr "出力モデルリクエスト。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:50
+msgid "The context key can be used as the key for formatting prompt."
+msgstr "コンテキストキーは、プロンプトをフォーマットするためのキーとして使用できます。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:54
+msgid "The context."
+msgstr "コンテキスト。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:271
+msgid "The prompt template for the conversation."
+msgstr "会話用のプロンプトテンプレート。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:274
+msgid "Model Name"
+msgstr "モデル名"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:279
+msgid "The model name."
+msgstr "モデル名。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:283
+msgid "LLM Client"
+msgstr "LLM クライアント"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:289
+msgid ""
+"The LLM Client, how to connect to the LLM model, if not provided, it will "
+"use the default client deployed by DB-GPT."
+msgstr "LLM クライアント、LLM モデルへの接続方法。指定されない場合は、DB-GPT がデプロイしたデフォルトのクライアントを使用します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:294
+msgid "History Message Merge Mode"
+msgstr "履歴メッセージのマージモード"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:305
+msgid ""
+"The history merge mode, supports 'none', 'window' and 'token'. 'none': no "
+"history merge, 'window': merge by conversation window, 'token': merge by "
+"token length."
+msgstr "履歴マージモードは、'none'、'window'、'token' をサポートします。'none': 履歴をマージしない、'window': 会話ウィンドウでマージする、'token': トークン長でマージする。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:312
+msgid "User Message Key"
+msgstr "ユーザーメッセージキー"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:318
+msgid "The key of the user message in your prompt, default is 'user_input'."
+msgstr "プロンプト内のユーザーメッセージのキー。デフォルトは 'user_input' です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:322
+msgid "History Key"
+msgstr "履歴キー"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:328
+msgid ""
+"The chat history key, with chat history message pass to prompt template, if "
+"not provided, it will parse the prompt template to get the key."
+msgstr "チャット履歴キー。チャット履歴メッセージをプロンプトテンプレートに渡します。指定されない場合は、プロンプトテンプレートを解析してキーを取得します。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:333
+msgid "Keep Start Rounds"
+msgstr "開始ラウンドを保持する"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:338
+msgid "The start rounds to keep in the chat history."
+msgstr "チャット履歴で保持する開始ラウンド。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:341
+msgid "Keep End Rounds"
+msgstr "終了ラウンドを保持する"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:346
+msgid "The end rounds to keep in the chat history."
+msgstr "チャット履歴で保持する終了ラウンド。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:349
+msgid "Max Token Limit"
+msgstr "最大トークン制限"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:354
+msgid "The max token limit to keep in the chat history."
+msgstr "チャット履歴で保持する最大トークン制限。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:358
+msgid "Common LLM Request Body"
+msgstr "一般的なLLMリクエストボディ"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:361
+msgid "The common LLM request body."
+msgstr "一般的なLLMリクエストボディです。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:364
+msgid "Extra Context"
+msgstr "追加コンテキスト"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:368
+msgid ""
+"Extra context for building prompt(Knowledge context, database schema, etc), "
+"you can add multiple context."
+msgstr "プロンプトを構築するための追加コンテキスト（知識コンテキスト、データベーススキーマなど）です。複数のコンテキストを追加できます。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:377
+msgid "The model output."
+msgstr "モデルの出力です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:380
+msgid "Streaming Model Output"
+msgstr "ストリーミングモデル出力"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:384
+msgid "The streaming model output."
+msgstr "ストリーミングモデルの出力です。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:390
+msgid "LLM Operator"
+msgstr "LLMオペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:394
+msgid ""
+"High-level LLM operator, supports multi-round conversation (conversation "
+"window, token length and no multi-round)."
+msgstr "高度なLLMオペレーターで、多ラウンド会話（会話ウィンドウ、トークン長、非多ラウンド）をサポートします。"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:424
+msgid "Streaming LLM Operator"
+msgstr "ストリーミングLLMオペレーター"
+
+#:../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:428
+msgid ""
+"High-level streaming LLM operator, supports multi-round conversation "
+"(conversation window, token length and no multi-round)."
+msgstr "高度なストリーミングLLMオペレーターで、多ラウンド会話（会話ウィンドウ、トークン長、非多ラウンド）をサポートします。"

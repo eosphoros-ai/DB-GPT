@@ -3,6 +3,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
 from dbgpt.core import ModelMetadata
+from dbgpt.core.awel.flow import (
+    TAGS_ORDER_HIGH,
+    ResourceCategory,
+    auto_register_resource,
+)
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -22,6 +27,14 @@ if TYPE_CHECKING:
 _DEFAULT_MODEL = "deepseek-v3-241226"
 
 
+@auto_register_resource(
+    label=_("Volcengine Proxy LLM"),
+    category=ResourceCategory.LLM_CLIENT,
+    tags={"order": TAGS_ORDER_HIGH},
+    description=_("Volcengine proxy LLM configuration."),
+    documentation_url="https://www.volcengine.com/docs/82379/1298454",
+    show_in_ui=False,
+)
 @dataclass
 class VolcengineDeployModelParameters(OpenAICompatibleDeployModelParameters):
     """Deploy model parameters for Volcengine."""

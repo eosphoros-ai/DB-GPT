@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
@@ -57,6 +57,11 @@ class VerticaConnector(RDBMSConnector):
     driver = "vertica+vertica_python"
     db_type = "vertica"
     db_dialect = "vertica"
+
+    @classmethod
+    def param_class(cls) -> Type[VerticaParameters]:
+        """Return the parameter class."""
+        return VerticaParameters
 
     @classmethod
     def from_uri_db(

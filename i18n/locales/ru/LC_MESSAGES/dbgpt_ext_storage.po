@@ -1,0 +1,463 @@
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:26
+msgid "Graph Name"
+msgstr "Название графа"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:29
+msgid "The name of Graph, if not set, will use the default name."
+msgstr "Название графа. Если не задано, будет использовано имя по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:34
+msgid "Embedding Function"
+msgstr "Функция эмбеддинга"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:38
+msgid ""
+"The embedding function of vector store, if not set, will use the default "
+"embedding function."
+msgstr "Функция эмбеддинга векторного хранилища. Если не задана, будет использована функция эмбеддинга по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:45
+msgid "Max Chunks Once Load"
+msgstr "Максимальное количество чанков при одном загрузке"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:49
+msgid ""
+"The max number of chunks to load at once. If your document is large, you can "
+"set this value to a larger number to speed up the loading process. Default "
+"is 10."
+msgstr "Максимальное количество чанков, которое можно загрузить за один раз. Если ваш документ большой, вы можете установить это значение большим, чтобы ускорить процесс загрузки. По умолчанию равно 10."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:57
+msgid "Max Threads"
+msgstr "Максимальное количество потоков"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:61
+msgid ""
+"The max number of threads to use. Default is 1. If you set this bigger than "
+"1, please make sure your vector store is thread-safe."
+msgstr "Максимальное количество потоков для использования. По умолчанию равно 1. Если вы установите это значение больше 1, убедитесь, что ваше векторное хранилище потокобезопасно."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:71
+msgid "Builtin Graph Config"
+msgstr "Встроенная конфигурация графа"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:74
+msgid "knowledge graph config."
+msgstr "Конфигурация знания графа."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:78
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:39
+msgid "Knowledge Graph Type"
+msgstr "Тип знания графа"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:81
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:42
+msgid "graph store type."
+msgstr "Тип хранилища графа."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:86
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:47
+msgid "LLM Client"
+msgstr "LLM 客户端"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:89
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:50
+msgid "llm client for extract graph triplets."
+msgstr "LLM 客户端用于提取图三元组。"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:92
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:53
+msgid "LLM Model Name"
+msgstr "Название модели LLM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:95
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:56
+msgid "llm model name."
+msgstr "Название модели LLM."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:116
+msgid "Builtin Knowledge Graph"
+msgstr "Встроенный граф знаний"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:119
+msgid "Builtin Knowledge Graph."
+msgstr "Встроенный граф знаний."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:122
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:125
+msgid "Builtin Knowledge Graph Config."
+msgstr "Конфигурация встроенного графа знаний."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:32
+msgid "Community Summary KG Config"
+msgstr "Конфигурация графа знаний обобщения сообщества"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:35
+msgid "community Summary kg Config."
+msgstr "Конфигурация графа знаний обобщения сообщества."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:61
+msgid "Vector Store Type"
+msgstr "Тип векторного хранилища"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:64
+msgid "vector store type."
+msgstr "Тип векторного хранилища."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:69
+msgid "Topk of Knowledge Graph Extract"
+msgstr "Топ-K извлечения знаний из графа."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:72
+msgid "Topk of knowledge graph extract"
+msgstr "Топ-K извлечения знаний из графа."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:77
+msgid "Recall Score of Knowledge Graph Extract"
+msgstr "Показатель полноты извлечения знаний из графа."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:80
+msgid "Recall score of knowledge graph extract"
+msgstr "Показатель полноты извлечения знаний из графа."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:85
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:93
+msgid "Recall Score of Community Search in Knowledge Graph"
+msgstr "Показатель полноты поиска сообщества в графе знаний."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:88
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:96
+msgid "Recall score of community search in knowledge graph"
+msgstr "Показатель полноты поиска сообщества в графе знаний."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:101
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:109
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:112
+msgid "Enable the graph search for documents and chunks"
+msgstr "Включить поиск в графе для документов и фрагментов."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:104
+msgid "Enable the graph search for triplets"
+msgstr "Включить поиск в графе для троек."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:117
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:120
+msgid "Top size of knowledge graph chunk search"
+msgstr "Максимальный размер поиска фрагментов в графе знаний."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:125
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:128
+msgid "Batch size of triplets extraction from the text"
+msgstr "Размер пакета для извлечения триплетов из текста"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:133
+msgid "Batch size of parallel community building process"
+msgstr "Размер пакета для параллельного процесса построения сообщества"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:136
+msgid "TBatch size of parallel community building process"
+msgstr "Размер пакета для параллельного процесса построения сообщества"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:216
+msgid "Community Summary Knowledge Graph"
+msgstr "Граф знаний по сводке сообщества"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:219
+msgid "Community Summary Knowledge Graph."
+msgstr "Граф знаний по сводке сообщества."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:222
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:225
+msgid "Community Summary Knowledge Graph Config."
+msgstr "Конфигурация графа знаний по сводке сообщества."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:21
+msgid "PGVector Config"
+msgstr "Конфигурация PGVector"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:27
+msgid "Connection String"
+msgstr "Строка подключения"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:31
+msgid ""
+"The connection string of vector store, if not set, will use the default "
+"connection string."
+msgstr "Строка подключения векторного хранилища. Если не задана, будет использоваться строка подключения по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:53
+msgid "PG Vector Store"
+msgstr "PG Векторное хранилище"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:56
+msgid "PG vector store."
+msgstr "PG Векторное хранилище."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:59
+msgid "PG Config"
+msgstr "Конфигурация PG"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:62
+msgid "the pg config of vector store."
+msgstr "Конфигурация PG для векторного хранилища."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:22
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:70
+msgid "Weaviate Config"
+msgstr "Конфигурация Weaviate"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:25
+msgid "Weaviate vector config."
+msgstr "Конфигурация векторов Weaviate."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:29
+msgid "Weaviate URL"
+msgstr "URL-адрес Weaviate"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:33
+msgid "weaviate url address, if not set, will use the default url."
+msgstr "URL-адрес Weaviate. Если не задан, будет использован URL по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:39
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:36
+msgid "Persist Path"
+msgstr "Путь для сохранения"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:42
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:39
+msgid "the persist path of vector store."
+msgstr "Путь для сохранения векторного хранилища."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:64
+msgid "Weaviate Vector Store"
+msgstr "Векторное хранилище Weaviate"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:67
+msgid "Weaviate vector store."
+msgstr "Векторное хранилище Weaviate."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:73
+msgid "the weaviate config of vector store."
+msgstr "Конфигурация Weaviate для векторного хранилища."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:25
+msgid "Elastic Vector Config"
+msgstr "Конфигурация векторов Elastic"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:31
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:32
+msgid "Uri"
+msgstr "URI"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:35
+msgid "The uri of elasticsearch store, if not set, will use the default uri."
+msgstr "URI хранилища Elasticsearch. Если не задан, будет использован URI по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:41
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:42
+msgid "Port"
+msgstr "Порт"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:45
+msgid "The port of elasticsearch store, if not set, will use the default port."
+msgstr "Порт хранилища Elasticsearch. Если не задан, будет использован порт по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:52
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:52
+msgid "Alias"
+msgstr "Алиас"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:56
+msgid ""
+"The alias of elasticsearch store, if not set, will use the default alias."
+msgstr "Алиас хранилища Elasticsearch. Если не задан, будет использован алиас по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:63
+msgid "Index Name"
+msgstr "Имя индекса"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:67
+msgid ""
+"The index name of elasticsearch store, if not set, will use the default "
+"index name."
+msgstr "Имя индекса хранилища Elasticsearch. Если не задано, будет использовано имя индекса по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:74
+msgid "Elasticsearch vector config."
+msgstr "Конфигурация векторов Elasticsearch."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:119
+msgid "Elastic Vector Store"
+msgstr "Elastic Векторное хранилище"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:122
+msgid "Elastic vector store."
+msgstr "Elastic векторное хранилище."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:125
+msgid "Elastic Config"
+msgstr "Конфигурация Elastic"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:128
+msgid "the elastic config of vector store."
+msgstr "Конфигурация Elastic для векторного хранилища."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:26
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:150
+msgid "Milvus Config"
+msgstr "Конфигурация Milvus"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:36
+msgid "The uri of milvus store, if not set, will use the default uri."
+msgstr "URI хранилища Milvus. Если не задано, будет использоваться значение по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:46
+msgid "The port of milvus store, if not set, will use the default port."
+msgstr "Порт хранилища Milvus. Если не задано, будет использоваться порт по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:56
+msgid "The alias of milvus store, if not set, will use the default alias."
+msgstr "Псевдоним хранилища Milvus. Если не задано, будет использоваться псевдоним по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:62
+msgid "Primary Field"
+msgstr "Основное поле"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:66
+msgid ""
+"The primary field of milvus store, if not set, will use the default primary "
+"field."
+msgstr "Основное поле хранилища Milvus. Если не задано, будет использоваться основное поле по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:73
+msgid "Text Field"
+msgstr "Текстовое поле"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:77
+msgid ""
+"The text field of milvus store, if not set, will use the default text field."
+msgstr "Текстовое поле хранилища Milvus. Если не задано, будет использоваться текстовое поле по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:84
+msgid "Embedding Field"
+msgstr "Поле эмбеддинга"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:88
+msgid ""
+"The embedding field of milvus store, if not set, will use the default "
+"embedding field."
+msgstr "Поле эмбеддинга хранилища Milvus. Если не задано, будет использоваться поле эмбеддинга по умолчанию."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:95
+msgid "Milvus vector config."
+msgstr "Конфигурация векторов Milvus."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:144
+msgid "Milvus Vector Store"
+msgstr "Векторное хранилище Milvus"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:147
+msgid "Milvus vector store."
+msgstr "Векторное хранилище Milvus."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:153
+msgid "the milvus config of vector store."
+msgstr "Конфигурация Milvus для векторного хранилища."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:29
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:68
+msgid "Chroma Config"
+msgstr "Конфигурация Chroma"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:32
+msgid "Chroma vector store config."
+msgstr "Конфигурация векторного хранилища Chroma."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:62
+msgid "Chroma Vector Store"
+msgstr "Векторное хранилище Chroma"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:65
+msgid "Chroma vector store."
+msgstr "Векторное хранилище Chroma."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:71
+msgid "the chroma config of vector store."
+msgstr "Конфигурация Chroma для векторного хранилища."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:77
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:163
+msgid "OceanBase Config"
+msgstr "Конфигурация OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:83
+msgid "OceanBase Host"
+msgstr "Хост OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:86
+msgid "oceanbase host"
+msgstr "Хост OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:91
+msgid "OceanBase Port"
+msgstr "Порт OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:94
+msgid "oceanbase port"
+msgstr "Порт OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:99
+msgid "OceanBase User"
+msgstr "Пользователь OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:102
+msgid "user to login"
+msgstr "Пользователь для входа"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:107
+msgid "OceanBase Password"
+msgstr "Пароль OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:110
+msgid "password to login"
+msgstr "Пароль для входа"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:115
+msgid "OceanBase Database"
+msgstr "База данных OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:118
+msgid "database for vector tables"
+msgstr "База данных для векторных таблиц"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:157
+msgid "OceanBase Vector Store"
+msgstr "Хранилище векторов OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:160
+msgid "OceanBase vector store."
+msgstr "Хранилище векторов OceanBase."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:166
+msgid "the ob config of vector store."
+msgstr "Конфигурация OB хранилища векторов."
