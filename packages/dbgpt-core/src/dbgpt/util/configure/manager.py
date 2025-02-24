@@ -19,6 +19,7 @@ from typing import (
     get_type_hints,
 )
 
+from ..i18n_utils import _
 from ..parameter_utils import ParameterDescription
 
 try:
@@ -98,23 +99,30 @@ class HookConfig:
 
     path: str = field(
         metadata={
-            "help": "Hook path, it can be a class path or a function path. "
-            "eg: 'dbgpt.config.hooks.env_var_hook'"
+            "help": _(
+                "Hook path, it can be a class path or a function path. "
+                "eg: 'dbgpt.config.hooks.env_var_hook'"
+            )
         }
     )
     init_params: Dict[str, Any] = field(
         default_factory=dict,
         metadata={
-            "help": "Hook init params to pass to the hook constructor(Just for class "
-            "hook), must be key-value pairs"
+            "help": _(
+                "Hook init params to pass to the hook constructor(Just for class "
+                "hook), must be key-value pairs"
+            )
         },
     )
     params: Dict[str, Any] = field(
         default_factory=dict,
-        metadata={"help": "Hook params to pass to the hook, must be key-value pairs"},
+        metadata={
+            "help": _("Hook params to pass to the hook, must be key-value pairs")
+        },
     )
     enabled: bool = field(
-        default=True, metadata={"help": "Whether the hook is enabled, default is True"}
+        default=True,
+        metadata={"help": _("Whether the hook is enabled, default is True")},
     )
 
 
@@ -273,6 +281,8 @@ class ConfigurationManager:
     """
 
     ENV_VAR_PATTERN = re.compile(r"\${env:([^}]+)}")
+
+    _description_cache: ClassVar[Dict[str, List[ParameterDescription]]] = {}
 
     def __init__(
         self, config_dict: Optional[Dict] = None, resolve_env_vars: bool = True
@@ -640,7 +650,9 @@ class ConfigurationManager:
         return self._convert_to_dataclass(cls, config_section)
 
     @classmethod
-    def parse_description(cls, target_cls: Type[T]) -> List[ParameterDescription]:
+    def parse_description(
+        cls, target_cls: Type[T], cache_enable: bool = True
+    ) -> List[ParameterDescription]:
         """Parse configuration description into a list of ParameterDescription.
 
         This method analyzes a dataclass and returns descriptions of its fields. For
@@ -658,6 +670,9 @@ class ConfigurationManager:
 
         if not is_dataclass(target_cls):
             raise ValueError(f"{target_cls.__name__} is not a dataclass")
+        cache_key = f"{target_cls.__module__}.{target_cls.__name__}"
+        if cache_key in cls._description_cache and cache_enable:
+            return cls._description_cache[cache_key]
 
         descriptions = []
         type_hints = get_type_hints(target_cls)
@@ -796,6 +811,7 @@ class ConfigurationManager:
 
         # Sort descriptions by order
         descriptions.sort(key=lambda d: d.param_order)
+        cls._description_cache[cache_key] = descriptions
         return descriptions
 
 

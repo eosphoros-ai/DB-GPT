@@ -1112,6 +1112,7 @@ def auto_register_resource(
     description: Optional[str] = None,
     alias: Optional[List[str]] = None,
     tags: Optional[Dict[str, str]] = None,
+    show_in_ui: bool = True,
     **decorator_kwargs,
 ):
     """Auto register the resource.
@@ -1199,10 +1200,11 @@ def auto_register_resource(
                 **decorator_kwargs,
             )
 
-            # Register alias
-            alias_ids = resource_metadata.new_alias(alias)
-            _register_alias_types(cls, alias_ids)
-            _register_resource(cls, resource_metadata, alias_ids)
+            if show_in_ui:
+                # Register alias
+                alias_ids = resource_metadata.new_alias(alias)
+                _register_alias_types(cls, alias_ids)
+                _register_resource(cls, resource_metadata, alias_ids)
 
             # Attach the metadata to the class
             cls._resource_metadata = resource_metadata

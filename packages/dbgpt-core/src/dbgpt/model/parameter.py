@@ -98,7 +98,7 @@ class DBModelRegistryParameters(BaseModelRegistryParameters):
 @dataclass
 class ModelControllerParameters(BaseServerParameters):
     port: Optional[int] = field(
-        default=8000, metadata={"help": "Model Controller deploy port"}
+        default=8000, metadata={"help": _("Model Controller deploy port")}
     )
     registry: Optional[BaseModelRegistryParameters] = field(
         default=None,
@@ -108,13 +108,16 @@ class ModelControllerParameters(BaseServerParameters):
     )
 
     heartbeat_interval_secs: Optional[int] = field(
-        default=20, metadata={"help": "The interval for checking heartbeats (seconds)"}
+        default=20,
+        metadata={"help": _("The interval for checking heartbeats (seconds)")},
     )
     heartbeat_timeout_secs: Optional[int] = field(
         default=60,
         metadata={
-            "help": "The timeout for checking heartbeats (seconds), it will be set "
-            "unhealthy if the worker is not responding in this time"
+            "help": _(
+                "The timeout for checking heartbeats (seconds), it will be set "
+                "unhealthy if the worker is not responding in this time"
+            )
         },
     )
 
@@ -131,13 +134,13 @@ class ModelAPIServerParameters(BaseServerParameters):
 
     api_keys: Optional[str] = field(
         default=None,
-        metadata={"help": "Optional list of comma separated API keys"},
+        metadata={"help": _("Optional list of comma separated API keys")},
     )
     embedding_batch_size: Optional[int] = field(
-        default=None, metadata={"help": "Embedding batch size"}
+        default=None, metadata={"help": _("Embedding batch size")}
     )
     ignore_stop_exceeds_error: Optional[bool] = field(
-        default=False, metadata={"help": "Ignore exceeds stop words error"}
+        default=False, metadata={"help": _("Ignore exceeds stop words error")}
     )
 
 
@@ -145,38 +148,44 @@ class ModelAPIServerParameters(BaseServerParameters):
 class ModelWorkerParameters(BaseServerParameters):
     worker_type: Optional[str] = field(
         default=None,
-        metadata={"valid_values": WorkerType.values(), "help": "Worker type"},
+        metadata={"valid_values": WorkerType.values(), "help": _("Worker type")},
     )
     worker_class: Optional[str] = field(
         default=None,
-        metadata={"help": "Model worker class, dbgpt.model.cluster.DefaultModelWorker"},
+        metadata={
+            "help": _("Model worker class, dbgpt.model.cluster.DefaultModelWorker")
+        },
     )
 
     port: Optional[int] = field(
-        default=8001, metadata={"help": "Model worker deploy port"}
+        default=8001, metadata={"help": _("Model worker deploy port")}
     )
     standalone: Optional[bool] = field(
         default=False,
-        metadata={"help": "Standalone mode. If True, embedded Run ModelController"},
+        metadata={"help": _("Standalone mode. If True, embedded Run ModelController")},
     )
     register: Optional[bool] = field(
-        default=True, metadata={"help": "Register current worker to model controller"}
+        default=True,
+        metadata={"help": _("Register current worker to model controller")},
     )
     worker_register_host: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The ip address of current worker to register to ModelController. "
-            "If None, the address is automatically determined"
+            "help": _(
+                "The ip address of current worker to register to ModelController. "
+                "If None, the address is automatically determined"
+            )
         },
     )
     controller_addr: Optional[str] = field(
-        default=None, metadata={"help": "The Model controller address to register"}
+        default=None, metadata={"help": _("The Model controller address to register")}
     )
     send_heartbeat: Optional[bool] = field(
-        default=True, metadata={"help": "Send heartbeat to model controller"}
+        default=True, metadata={"help": _("Send heartbeat to model controller")}
     )
     heartbeat_interval: Optional[int] = field(
-        default=20, metadata={"help": "The interval for sending heartbeats (seconds)"}
+        default=20,
+        metadata={"help": _("The interval for sending heartbeats (seconds)")},
     )
 
 
@@ -229,19 +238,28 @@ class ModelsDeployParameters(BaseParameters):
     llms: List[LLMDeployModelParameters] = field(
         default_factory=list,
         metadata={
-            "help": "LLM model deploy configuration",
+            "help": _(
+                "LLM model deploy configuration. If you deploy in cluster mode, you "
+                "just deploy one model."
+            )
         },
     )
     embeddings: List[EmbeddingDeployModelParameters] = field(
         default_factory=list,
         metadata={
-            "help": "Embedding model deploy configuration",
+            "help": _(
+                "Embedding model deploy configuration. If you deploy in cluster "
+                "mode, you just deploy one model."
+            )
         },
     )
     rerankers: List[RerankerDeployModelParameters] = field(
         default_factory=list,
         metadata={
-            "help": "Reranker model deploy configuration",
+            "help": _(
+                "Reranker model deploy configuration. If you deploy in cluster "
+                "mode, you just deploy one model."
+            )
         },
     )
 

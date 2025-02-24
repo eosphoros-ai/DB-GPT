@@ -255,6 +255,20 @@ def run_webserver(config_file: str):
         run_uvicorn(param.service.web)
 
 
+def scan_configs():
+    from dbgpt.model import scan_model_providers
+    from dbgpt_app.initialization.serve_initialization import scan_serve_configs
+    from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
+
+    cm = ConnectorManager(system_app)
+    # pre import all connectors
+    cm.on_init()
+    # Register all model providers
+    scan_model_providers()
+    # Register all serve configs
+    scan_serve_configs()
+
+
 def load_config(config_file: str = None) -> ApplicationConfig:
     from dbgpt.configs.model_config import ROOT_PATH as DBGPT_ROOT_PATH
 
@@ -273,18 +287,6 @@ def load_config(config_file: str = None) -> ApplicationConfig:
     sys_config = cfg.parse_config(SystemParameters, prefix="system")
     # Must set default language before any i18n usage
     set_default_language(sys_config.language)
-
-    from dbgpt.model import scan_model_providers
-    from dbgpt_app.initialization.serve_initialization import scan_serve_configs
-    from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
-
-    cm = ConnectorManager(system_app)
-    # pre import all connectors
-    cm.on_init()
-    # Register all model providers
-    scan_model_providers()
-    # Register all serve configs
-    scan_serve_configs()
 
     app_config = cfg.parse_config(ApplicationConfig, hook_section="hooks")
     return app_config
