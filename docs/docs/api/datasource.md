@@ -34,7 +34,7 @@ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
-    -d "{\"messages\":\"show space datas limit 5\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_data\", \"chat_param\": \"$DB_NAME\"}"
+    -d "{\"messages\":\"show space datas limit 5\",\"model\":\"gpt-4o\", \"chat_mode\": \"chat_data\", \"chat_param\": \"$DB_NAME\"}"
 
 ```
  </TabItem>
@@ -50,7 +50,7 @@ DB_NAME="{your_db_name}"
 client = Client(api_key=DBGPT_API_KEY)
 res = client.chat(
     messages="show space datas limit 5", 
-    model="chatgpt_proxyllm", 
+    model="gpt-4o", 
     chat_mode="chat_data", 
     chat_param=DB_NAME
 )
@@ -64,7 +64,7 @@ res = client.chat(
     "id": "2bb80fdd-e47e-4083-8bc9-7ca66ee0931b",
     "object": "chat.completion",
     "created": 1711509733,
-    "model": "chatgpt_proxyllm",
+    "model": "gpt-4o",
     "choices": [
         {
             "index": 0,

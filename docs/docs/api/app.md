@@ -34,7 +34,7 @@ import TabItem from '@theme/TabItem';
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
-    -d "{\"messages\":\"Hello\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_app\", \"chat_param\": \"$APP_ID\"}"
+    -d "{\"messages\":\"Hello\",\"model\":\"gpt-4o\", \"chat_mode\": \"chat_app\", \"chat_param\": \"$APP_ID\"}"
 
 ```
  </TabItem>
@@ -51,7 +51,7 @@ client = Client(api_key=DBGPT_API_KEY)
 
 async for data in client.chat_stream(
     messages="Introduce AWEL", 
-    model="chatgpt_proxyllm", 
+    model="gpt-4o", 
     chat_mode="chat_app", 
     chat_param=APP_ID
 ):
@@ -63,7 +63,7 @@ async for data in client.chat_stream(
 
 ### Chat Completion Stream Response
 ```commandline
-data: {"id": "109bfc28-fe87-452c-8e1f-d4fe43283b7d", "created": 1710919480, "model": "chatgpt_proxyllm", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "```agent-plans\n[{\"name\": \"Introduce Awel\", \"num\": 2, \"status\": \"complete\", \"agent\": \"Human\", \"markdown\": \"```agent-messages\\n[{\\\"sender\\\": \\\"Summarizer\\\", \\\"receiver\\\": \\\"Human\\\", \\\"model\\\": \\\"chatgpt_proxyllm\\\", \\\"markdown\\\": \\\"Agentic Workflow Expression Language (AWEL) is a specialized language designed for developing large model applications with intelligent agent workflows. It offers flexibility and functionality, allowing developers to focus on business logic for LLMs applications without getting bogged down in model and environment details. AWEL uses a layered API design architecture, making it easier to work with. You can find examples and source code to get started with AWEL, and it supports various operators and environments. AWEL is a powerful tool for building native data applications through workflows and agents.\"}]\n```"}}]}
+data: {"id": "109bfc28-fe87-452c-8e1f-d4fe43283b7d", "created": 1710919480, "model": "gpt-4o", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "```agent-plans\n[{\"name\": \"Introduce Awel\", \"num\": 2, \"status\": \"complete\", \"agent\": \"Human\", \"markdown\": \"```agent-messages\\n[{\\\"sender\\\": \\\"Summarizer\\\", \\\"receiver\\\": \\\"Human\\\", \\\"model\\\": \\\"gpt-4o\\\", \\\"markdown\\\": \\\"Agentic Workflow Expression Language (AWEL) is a specialized language designed for developing large model applications with intelligent agent workflows. It offers flexibility and functionality, allowing developers to focus on business logic for LLMs applications without getting bogged down in model and environment details. AWEL uses a layered API design architecture, making it easier to work with. You can find examples and source code to get started with AWEL, and it supports various operators and environments. AWEL is a powerful tool for building native data applications through workflows and agents.\"}]\n```"}}]}
 
 data: [DONE]
 ```
