@@ -331,9 +331,13 @@ class OpenAILLMClient(ProxyLLMClient):
         chat_completion = await self.client.chat.completions.create(
             messages=messages, **payload
         )
+        reasoning_content = ""
+        message_obj = chat_completion.choices[0].message
+        if hasattr(message_obj, "reasoning_content"):
+            reasoning_content = message_obj.reasoning_content
         text = chat_completion.choices[0].message.content
         usage = chat_completion.usage.dict()
-        return ModelOutput(text=text, error_code=0, usage=usage)
+        return ModelOutput.build(text, reasoning_content, usage=usage)
 
     async def generate_less_then_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
@@ -354,16 +358,23 @@ class OpenAILLMClient(ProxyLLMClient):
             messages=messages, **payload
         )
         text = ""
+        reasoning_content = ""
+        usage = None
         async for r in chat_completion:
             if len(r.choices) == 0:
                 continue
             # Check for empty 'choices' issue in Azure GPT-4o responses
             if r.choices[0] is not None and r.choices[0].delta is None:
                 continue
+            delta_obj = r.choices[0].delta
+            if hasattr(delta_obj, "reasoning_content"):
+                reasoning_content += delta_obj.reasoning_content or ""
             if r.choices[0].delta.content is not None:
-                content = r.choices[0].delta.content
-                text += content
-                yield ModelOutput(text=text, error_code=0)
+                text += r.choices[0].delta.content
+            if text or reasoning_content:
+                if hasattr(r, "usage") and r.usage is not None:
+                    usage = r.usage.dict()
+                yield ModelOutput.build(text, reasoning_content, usage=usage)
 
     async def generate_stream_less_then_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]

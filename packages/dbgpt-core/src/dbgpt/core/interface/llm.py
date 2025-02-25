@@ -6,7 +6,18 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
-from typing import Any, AsyncIterator, Coroutine, Dict, List, Optional, Tuple, Union
+from enum import Enum
+from typing import (
+    Any,
+    AsyncIterator,
+    Coroutine,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from cachetools import TTLCache
 
@@ -14,6 +25,7 @@ from dbgpt._private.pydantic import BaseModel, model_to_dict
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.util import BaseParameters
 from dbgpt.util.annotations import PublicAPI
+from dbgpt.util.i18n_utils import _
 from dbgpt.util.model_utils import GPUInfo
 
 logger = logging.getLogger(__name__)
@@ -115,6 +127,141 @@ class ModelInferenceMetrics:
         return asdict(self)
 
 
+MEDIA_DATA_TYPE = Union[str, bytes]
+
+
+@dataclass
+class MediaObject:
+    """Media object for the model output or model request."""
+
+    data: MEDIA_DATA_TYPE = field(metadata={"help": _("The media data")})
+    format: str = field(default="text", metadata={"help": _("The format of the media")})
+
+
+class MediaContentType(str, Enum):
+    """The media content type."""
+
+    TEXT = "text"
+    THINKING = "thinking"
+    IMAGE = "image"
+    AUDIO = "audio"
+    VIDEO = "video"
+
+
+@dataclass
+class MediaContent:
+    """Media content for the model output or model request.
+
+    Examples:
+        .. code-block:: python
+
+        simple_text = MediaContent(
+            type="text",
+            object=MediaObject(
+                data="Hello, world!",
+                format="text",
+            )
+        )
+        thinking_text = MediaContent(
+            type="thinking",
+            object=MediaObject(
+                data="Thinking...",
+                format="text",
+            )
+        )
+
+        url_image1 = MediaContent(
+            type="image",
+            object=MediaObject(
+                data="https://example.com/image.jpg",
+                format="url",
+            )
+        )
+        # Url with image type: 'image/jpeg'
+        url_image2 = MediaContent(
+            type="image",
+            object=MediaObject(
+                data="https://example.com/image.jpg",
+                format="url@image/jpeg",
+            )
+        )
+
+        # With image type: 'image/jpeg'
+        base64_image1 = MediaContent(
+            type="image",
+            object=MediaObject(
+                data="base64_string",
+                format="base64@image/jpeg",
+            )
+        )
+        # No image type
+        base64_image2 = MediaContent(
+            type="image",
+            object=MediaObject(
+                data="base64_string",
+                format="base64",
+            )
+        )
+
+        # Video
+        url_video1 = MediaContent(
+            type="video",
+            object=MediaObject(
+                data="https://example.com/video.mp4",
+                format="url",
+            )
+        )
+        url_video2 = MediaContent(
+            type="video",
+            object=MediaObject(
+                data="https://example.com/video.mp4",
+                format="url@video/mp4",
+            )
+        )
+        binary_video = MediaContent(
+            type="video",
+            object=MediaObject(
+                data=b"binary_data",
+                format="binary@video/mp4",
+            )
+        )
+        binary_audio = MediaContent(
+            type="audio",
+            object=MediaObject(
+                data=b"binary_data",
+                format="binary@audio/mpeg",
+            )
+        )
+    """
+
+    object: MediaObject = field(metadata={"help": _("The media object")})
+    type: Literal["text", "thinking", "image", "audio", "video"] = field(
+        default="text", metadata={"help": _("The type of the model media content")}
+    )
+
+    @classmethod
+    def build_text(cls, text: str) -> "MediaContent":
+        """Create a MediaContent object from text."""
+        return cls(type="text", object=MediaObject(data=text, format="text"))
+
+    @classmethod
+    def build_thinking(cls, text: str) -> "MediaContent":
+        """Create a MediaContent object from thinking."""
+        return cls(type="thinking", object=MediaObject(data=text, format="text"))
+
+    def get_text(self) -> str:
+        """Get the text."""
+        if self.type == MediaContentType.TEXT:
+            return self.object.data
+        raise ValueError("The content type is not text")
+
+    def get_thinking(self) -> str:
+        """Get the thinking."""
+        if self.type == MediaContentType.THINKING:
+            return self.object.data
+        raise ValueError("The content type is not thinking")
+
+
 @dataclass
 @PublicAPI(stability="beta")
 class ModelRequestContext:
@@ -154,9 +301,9 @@ class ModelRequestContext:
 @dataclass
 @PublicAPI(stability="beta")
 class ModelOutput:
-    """A class to represent the output of a LLM.""" ""
+    """A class to represent the output of a LLM."""
 
-    text: str
+    content: Union[MediaContent, List[MediaContent]]
     """The generated text."""
     error_code: int
     """The error code of the model inference. If the model inference is successful,
@@ -168,6 +315,32 @@ class ModelOutput:
     metrics: Optional[ModelInferenceMetrics] = None
     """Some metrics for model inference"""
 
+    def __init__(
+        self,
+        error_code: int,
+        text: Optional[str] = None,
+        content: Optional[MediaContent] = None,
+        **kwargs,
+    ):
+        if text is not None and content is not None:
+            raise ValueError("Cannot pass both text and content")
+        elif text is not None:
+            self.content = MediaContent.build_text(text)
+        elif content is not None:
+            self.content = content
+        else:
+            raise ValueError("Must pass either text or content")
+        self.error_code = error_code
+        for k, v in kwargs.items():
+            if k in [
+                "incremental",
+                "model_context",
+                "finish_reason",
+                "usage",
+                "metrics",
+            ]:
+                setattr(self, k, v)
+
     def to_dict(self) -> Dict:
         """Convert the model output to dict."""
         return asdict(self)
@@ -176,6 +349,110 @@ class ModelOutput:
     def success(self) -> bool:
         """Check if the model inference is successful."""
         return self.error_code == 0
+
+    @property
+    def has_text(self) -> bool:
+        """Check if the model output has text content."""
+        if isinstance(self.content, MediaContent):
+            return self.content.type == MediaContentType.TEXT
+        elif isinstance(self.content, list):
+            return any(c.type == MediaContentType.TEXT for c in self.content)
+        return False
+
+    @property
+    def text(self) -> str:
+        """The generated text."""
+        if isinstance(self.content, MediaContent):
+            return self.content.get_text()
+        elif isinstance(self.content, list) and all(
+            isinstance(c, MediaContent) for c in self.content
+        ):
+            text_content = [c for c in self.content if c.type == MediaContentType.TEXT]
+            if not text_content:
+                raise ValueError("There is no text content")
+            # Return the last text content
+            return text_content[-1].get_text()
+        raise ValueError("The content is not text")
+
+    @property
+    def has_thinking(self) -> bool:
+        """Check if the model output has thinking content."""
+        if isinstance(self.content, MediaContent):
+            return self.content.type == MediaContentType.THINKING
+        elif isinstance(self.content, list) and self.content:
+            return any(c.type == MediaContentType.THINKING for c in self.content)
+        else:
+            return False
+
+    @property
+    def thinking_text(self) -> Optional[str]:
+        """The reasoning content."""
+        if not self.content:
+            return None
+        if isinstance(self.content, MediaContent):
+            if self.content.type == MediaContentType.THINKING:
+                return self.content.get_thinking()
+            return None
+        elif isinstance(self.content, list) and all(
+            isinstance(c, MediaContent) for c in self.content
+        ):
+            # In most cases, just one thinking content
+            thinking_content = [
+                c for c in self.content if c.type == MediaContentType.THINKING
+            ]
+            if not thinking_content:
+                return None
+            # Return the last thinking content
+            return thinking_content[-1].get_thinking()
+        return None
+
+    @text.setter
+    def text(self, value: str):
+        """Set the generated text."""
+        if not isinstance(value, str):
+            raise ValueError("text must be a string")
+        # Build a new MediaContent object and assign it to content
+        self.content = MediaContent(
+            type="text",
+            object=MediaObject(data=value, format="text"),
+        )
+
+    @classmethod
+    def build_thinking(cls, thinking: str, error_code: int = 0) -> "ModelOutput":
+        """Create a ModelOutput object from thinking."""
+        return cls(
+            error_code=error_code,
+            content=MediaContent.build_thinking(thinking),
+        )
+
+    @classmethod
+    def build(
+        cls,
+        text: Optional[str] = None,
+        thinking: Optional[str] = None,
+        error_code: int = 0,
+        usage: Optional[Dict[str, Any]] = None,
+        finish_reason: Optional[str] = None,
+    ) -> "ModelOutput":
+        if thinking and text:
+            # Has thinking and text
+            content = [
+                # First thinking
+                MediaContent.build_thinking(thinking),
+                MediaContent.build_text(text),
+            ]
+        elif text:
+            # Only text
+            content = MediaContent.build_text(text)
+        else:
+            # Build a empty thinking content
+            content = MediaContent.build_thinking(thinking)
+        return cls(
+            error_code=error_code,
+            content=content,
+            usage=usage,
+            finish_reason=finish_reason,
+        )
 
 
 _ModelMessageType = Union[List[ModelMessage], List[Dict[str, Any]]]
