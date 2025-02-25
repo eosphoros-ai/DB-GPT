@@ -445,31 +445,40 @@ class DefaultModelWorker(ModelWorker):
     ):
         finish_reason = None
         usage = None
-        error_code = 0
         if isinstance(output, dict):
             finish_reason = output.get("finish_reason")
             usage = output.get("usage")
-            output = output["text"]
             if finish_reason is not None:
                 logger.info(f"finish_reason: {finish_reason}")
+            error_code = output.get("error_code", 0)
+            model_output = ModelOutput.build(
+                output["text"],
+                thinking=None,
+                error_code=error_code,
+                usage=usage,
+                finish_reason=finish_reason,
+            )
         elif isinstance(output, ModelOutput):
             finish_reason = output.finish_reason
             usage = output.usage
-            error_code = output.error_code
-            output = output.text
-        incremental_output = output[len(previous_response) :]
+            model_output = output
+        elif isinstance(output, str):
+            # Output is string
+            model_output = ModelOutput.build(output)
+        else:
+            raise ValueError(f"Invalid output type: {type(output)}")
+        current_output = ""
+        if model_output.has_thinking:
+            current_output = model_output.thinking_text or ""
+        if model_output.has_text:
+            current_output += model_output.text
+        incremental_output = current_output[len(previous_response) :]
         print(incremental_output, end="", flush=True)
 
         metrics = _new_metrics_from_model_output(last_metrics, is_first_generate, usage)
-        model_output = ModelOutput(
-            text=output,
-            error_code=error_code,
-            model_context=model_context,
-            finish_reason=finish_reason,
-            usage=usage,
-            metrics=metrics,
-        )
-        return model_output, incremental_output, output, metrics
+        model_output.metrics = metrics
+        model_output.model_context = model_context
+        return model_output, incremental_output, current_output, metrics
 
     def _handle_exception(self, e):
         # Check if the exception is a torch.cuda.CudaError and if torch was imported.

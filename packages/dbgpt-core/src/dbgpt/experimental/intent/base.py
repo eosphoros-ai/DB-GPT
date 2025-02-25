@@ -178,9 +178,7 @@ class BaseIntentDetection(ABC):
         model_request = ModelRequest.build_request(model, messages=[model_messages])
         model_output = await self.llm_client.generate(model_request)
         output_parser = BaseOutputParser()
-        str_out = output_parser.parse_model_nostream_resp(
-            model_output, "#########################"
-        )
+        str_out = output_parser.parse_model_nostream_resp(model_output)
         json_out = output_parser.parse_prompt_response(str_out)
         dict_out = json.loads(json_out)
         return response_schema.model_validate(dict_out)
