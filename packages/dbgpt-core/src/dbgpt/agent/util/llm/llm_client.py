@@ -5,7 +5,7 @@ import logging
 import traceback
 from typing import Any, Callable, Dict, Optional, Union
 
-from dbgpt.core import LLMClient, ModelRequestContext
+from dbgpt.core import LLMClient, ModelOutput, ModelRequestContext
 from dbgpt.core.interface.output_parser import BaseOutputParser
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.util.tracer import root_tracer
@@ -198,7 +198,7 @@ class AIWrapper:
         try:
             model_request = _build_model_request(payload)
             str_prompt = model_request.messages_to_string()
-            model_output = None
+            model_output: Optional[ModelOutput] = None
             async for output in self._llm_client.generate_stream(model_request.copy()):  # type: ignore # noqa
                 model_output = output
                 if memory and stream_out:
@@ -208,9 +208,7 @@ class AIWrapper:
                         "sender": sender,
                         "receiver": "?",
                         "model": llm_model,
-                        "markdown": self._output_parser.parse_model_nostream_resp(
-                            model_output
-                        ),
+                        "markdown": model_output.gen_text_with_thinking(),
                     }
                     await memory.push_message(
                         conv_id,
@@ -218,7 +216,7 @@ class AIWrapper:
                     )
             if not model_output:
                 raise ValueError("LLM generate stream is null!")
-            parsed_output = self._output_parser.parse_model_nostream_resp(model_output)
+            parsed_output = model_output.gen_text_with_thinking()
             parsed_output = parsed_output.strip().replace("\\n", "\n")
 
             if verbose:

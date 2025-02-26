@@ -39,7 +39,7 @@ class ChatDashboardOutputParser(BaseOutputParser):
         return chart_items
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
-        return json.dumps(data.prepare_dict())
+        return json.dumps(data.prepare_dict(), ensure_ascii=False)
 
     @property
     def _type(self) -> str:

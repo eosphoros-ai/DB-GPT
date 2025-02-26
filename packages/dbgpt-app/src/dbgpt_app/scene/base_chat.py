@@ -312,14 +312,7 @@ class BaseChat(ABC):
                         text_output=False,
                     )
                 )
-                msg = ""
-                if output.has_thinking:
-                    msg = model_output.thinking_text or ""
-                    msg_lines = msg.split("\n")
-                    # add > to thinking text
-                    msg = "\n".join([f"> {line}" for line in msg_lines])
-                if output.has_text:
-                    msg += model_output.text or ""
+                msg = model_output.gen_text_with_thinking()
                 view_msg = self.stream_plugin_call(msg)
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
@@ -381,9 +374,6 @@ class BaseChat(ABC):
         parsed_output = self.prompt_template.output_parser.parse_model_nostream_resp(
             model_output, text_output=False
         )
-        thinking_text = ""
-        if parsed_output.has_thinking:
-            thinking_text = model_output.thinking_text or ""
         ai_response_text = parsed_output.text
         prompt_define_response = (
             self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
@@ -401,9 +391,6 @@ class BaseChat(ABC):
             )
 
         speak_to_user = self.get_llm_speak(prompt_define_response)
-        if thinking_text:
-            speak_to_user = f"{thinking_text}\n\n{speak_to_user}"
-
         view_message = await blocking_func_to_async(
             self._executor,
             self.prompt_template.output_parser.parse_view_response,
@@ -411,6 +398,8 @@ class BaseChat(ABC):
             result,
             prompt_define_response,
         )
+        if parsed_output.has_thinking:
+            view_message = parsed_output.gen_text_with_thinking(new_text=view_message)
         return ai_response_text, view_message.replace("\n", "\\n")
 
     @Deprecated(version="0.7.0", remove_version="0.8.0")
