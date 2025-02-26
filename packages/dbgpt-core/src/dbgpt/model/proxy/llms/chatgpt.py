@@ -107,7 +107,7 @@ async def chatgpt_generate_stream(
     parameters=[
         Parameter.build_from(
             label=_("OpenAI API Key"),
-            name="apk_key",
+            name="api_key",
             type=str,
             optional=True,
             default=None,

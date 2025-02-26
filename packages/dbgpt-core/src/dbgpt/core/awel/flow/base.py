@@ -346,7 +346,7 @@ class Parameter(BaseDynamic, TypeMetadata, Serializable):
         ..., description="The label to display in UI", examples=["OpenAI API Key"]
     )
     name: str = Field(
-        ..., description="The name of the parameter", examples=["apk_key"]
+        ..., description="The name of the parameter", examples=["api_key"]
     )
     is_list: bool = Field(
         default=False,
