@@ -30,6 +30,17 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 
+try:
+    import transformers
+
+    if not hasattr(transformers, "is_torch_npu_available"):
+        # Fix https://github.com/UKPLab/sentence-transformers/issues/2895
+        from transformers.utils import is_torch_npu_available
+
+        transformers.is_torch_npu_available = is_torch_npu_available
+except ImportError:
+    pass
+
 
 @dataclass
 class HFEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
