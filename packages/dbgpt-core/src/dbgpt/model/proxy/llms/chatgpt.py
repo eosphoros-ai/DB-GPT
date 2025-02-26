@@ -1,4 +1,3 @@
-import importlib.metadata as metadata
 import logging
 from concurrent.futures import Executor
 from dataclasses import dataclass, field
@@ -154,9 +153,6 @@ class OpenAILLMClient(ProxyLLMClient):
                 "Could not import python package: openai "
                 "Please install openai by command `pip install openai"
             ) from exc
-        self._openai_version = metadata.version("openai")
-        self._openai_less_then_v1 = not self._openai_version >= "1.0.0"
-        self.check_sdk_version(self._openai_version)
 
         self._init_params = OpenAIParameters(
             api_type=self._resolve_env_vars(api_type),
@@ -177,15 +173,9 @@ class OpenAILLMClient(ProxyLLMClient):
         self._openai_kwargs = openai_kwargs or {}
         super().__init__(model_names=[model_alias], context_length=context_length)
 
-        if self._openai_less_then_v1:
-            from dbgpt.model.utils.chatgpt_utils import _initialize_openai
-
-            _initialize_openai(self._init_params)
-
-        if not self._openai_less_then_v1:
-            # Prepare openai client and cache default headers
-            # It will block the main thread in some cases
-            _ = self.client.default_headers
+        # Prepare openai client and cache default headers
+        # It will block the main thread in some cases
+        _ = self.client.default_headers
 
     @classmethod
     def param_class(cls) -> Type[OpenAICompatibleDeployModelParameters]:
@@ -231,21 +221,8 @@ class OpenAILLMClient(ProxyLLMClient):
         """
         return chatgpt_generate_stream
 
-    def check_sdk_version(self, version: str) -> None:
-        """Check the sdk version of the client.
-
-        Raises:
-            ValueError: If check failed.
-        """
-        pass
-
     @property
     def client(self) -> "ClientType":
-        if self._openai_less_then_v1:
-            raise ValueError(
-                "Current model (Load by OpenAILLMClient) require "
-                "openai.__version__>=1.0.0"
-            )
         if self._client is None:
             from dbgpt.model.utils.chatgpt_utils import _build_openai_client
 
@@ -266,10 +243,7 @@ class OpenAILLMClient(ProxyLLMClient):
     ) -> Dict[str, Any]:
         payload = {"stream": stream}
         model = request.model or self.default_model
-        if self._openai_less_then_v1 and self._api_type == "azure":
-            payload["engine"] = model
-        else:
-            payload["model"] = model
+        payload["model"] = model
         # Apply openai kwargs
         for k, v in self._openai_kwargs.items():
             payload[k] = v
@@ -292,14 +266,10 @@ class OpenAILLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
         payload = self._build_request(request)
         logger.info(
-            f"Send request to openai({self._openai_version}), payload: {payload}\n\n "
-            f"messages:\n{messages}"
+            f"Send request to openai, payload: {payload}\n\n " f"messages:\n{messages}"
         )
         try:
-            if self._openai_less_then_v1:
-                return await self.generate_less_then_v1(messages, payload)
-            else:
-                return await self.generate_v1(messages, payload)
+            return await self.generate_v1(messages, payload)
         except Exception as e:
             return ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
@@ -315,15 +285,10 @@ class OpenAILLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
         payload = self._build_request(request, stream=True)
         logger.info(
-            f"Send request to openai({self._openai_version}), payload: {payload}\n\n "
-            f"messages:\n{messages}"
+            f"Send request to openai, payload: {payload}\n\n " f"messages:\n{messages}"
         )
-        if self._openai_less_then_v1:
-            async for r in self.generate_stream_less_then_v1(messages, payload):
-                yield r
-        else:
-            async for r in self.generate_stream_v1(messages, payload):
-                yield r
+        async for r in self.generate_stream_v1(messages, payload):
+            yield r
 
     async def generate_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
@@ -338,18 +303,6 @@ class OpenAILLMClient(ProxyLLMClient):
         text = chat_completion.choices[0].message.content
         usage = chat_completion.usage.dict()
         return ModelOutput.build(text, reasoning_content, usage=usage)
-
-    async def generate_less_then_v1(
-        self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
-    ) -> ModelOutput:
-        import openai
-
-        chat_completion = await openai.ChatCompletion.acreate(
-            messages=messages, **payload
-        )
-        text = chat_completion.choices[0].message.content
-        usage = chat_completion.usage.to_dict()
-        return ModelOutput(text=text, error_code=0, usage=usage)
 
     async def generate_stream_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
@@ -375,21 +328,6 @@ class OpenAILLMClient(ProxyLLMClient):
                 if hasattr(r, "usage") and r.usage is not None:
                     usage = r.usage.dict()
                 yield ModelOutput.build(text, reasoning_content, usage=usage)
-
-    async def generate_stream_less_then_v1(
-        self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
-    ) -> AsyncIterator[ModelOutput]:
-        import openai
-
-        res = await openai.ChatCompletion.acreate(messages=messages, **payload)
-        text = ""
-        async for r in res:
-            if not r.get("choices"):
-                continue
-            if r["choices"][0]["delta"].get("content") is not None:
-                content = r["choices"][0]["delta"]["content"]
-                text += content
-                yield ModelOutput(text=text, error_code=0)
 
     async def models(self) -> List[ModelMetadata]:
         model_metadata = ModelMetadata(
