@@ -66,7 +66,7 @@ class ProxyLLMModelAdapter(LLMModelAdapter):
         if not dynamic_llm_client_class:
             dynamic_llm_client_class = self.get_llm_client_class(params)
         logger.info(
-            f"Load model from params: {params}, llm client class: "
+            f"Load model from params: {params}llm client class: "
             f"{dynamic_llm_client_class}"
         )
         proxy_llm_client = dynamic_llm_client_class.new_client(params)
