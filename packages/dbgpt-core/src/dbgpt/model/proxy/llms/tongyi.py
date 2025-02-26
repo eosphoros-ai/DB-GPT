@@ -62,12 +62,12 @@ class TongyiDeployModelParameters(OpenAICompatibleDeployModelParameters):
     )
 
 
-def tongyi_generate_stream(
+async def tongyi_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
     client: TongyiLLMClient = model.proxy_llm_client
     request = parse_model_request(params, client.default_model, stream=True)
-    for r in client.sync_generate_stream(request):
+    async for r in client.generate_stream(request):
         yield r
 
 

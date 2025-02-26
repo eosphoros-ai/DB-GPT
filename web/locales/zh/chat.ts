@@ -27,4 +27,5 @@ export const ChatZh: Resources['translation'] = {
   temperature_tip: '当前应用暂不支持温度配置',
   max_new_tokens_tip: '当前应用暂不支持max_new_tokens配置',
   extend_tip: '当前应用暂不支持拓展配置',
+  cot_title: '思考',
 } as const;

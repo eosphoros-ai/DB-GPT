@@ -406,6 +406,20 @@ class ModelOutput:
             return thinking_content[-1].get_thinking()
         return None
 
+    def gen_text_with_thinking(self, new_text: Optional[str] = None) -> str:
+        from dbgpt.vis.tags.vis_thinking import VisThinking
+
+        msg = ""
+        if self.has_thinking:
+            msg = self.thinking_text or ""
+            msg = VisThinking().sync_display(content=msg)
+            msg += "\n"
+        if new_text:
+            msg += new_text
+        elif self.has_text:
+            msg += self.text or ""
+        return msg
+
     @text.setter
     def text(self, value: str):
         """Set the generated text."""

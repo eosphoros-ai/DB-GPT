@@ -11,6 +11,7 @@ from .tags.vis_chart import VisChart
 from .tags.vis_code import VisCode
 from .tags.vis_dashboard import VisDashboard
 from .tags.vis_plugin import VisPlugin
+from .tags.vis_thinking import VisThinking
 
 
 class VisClient:
@@ -45,6 +46,7 @@ vis_client.register(VisAgentMessages)
 vis_client.register(VisPlugin)
 vis_client.register(VisAppLink)
 vis_client.register(VisApiResponse)
+vis_client.register(VisThinking)
 
 
 def vis_name_change(vis_message: str) -> str:
