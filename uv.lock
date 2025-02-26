@@ -2137,6 +2137,9 @@ storage-chromadb = [
 storage-elasticsearch = [
     { name = "elasticsearch" },
 ]
+storage-elasticsearch = [
+    { name = "elasticsearch" },
+]
 storage-milvus = [
     { name = "pymilvus" },
 ]
