@@ -266,7 +266,7 @@ class OpenAILLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
         payload = self._build_request(request)
         logger.info(
-            f"Send request to openai, payload: {payload}\n\n " f"messages:\n{messages}"
+            f"Send request to openai, payload: {payload}\n\n messages:\n{messages}"
         )
         try:
             return await self.generate_v1(messages, payload)
@@ -285,7 +285,7 @@ class OpenAILLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
         payload = self._build_request(request, stream=True)
         logger.info(
-            f"Send request to openai, payload: {payload}\n\n " f"messages:\n{messages}"
+            f"Send request to openai, payload: {payload}\n\n messages:\n{messages}"
         )
         async for r in self.generate_stream_v1(messages, payload):
             yield r
