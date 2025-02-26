@@ -124,10 +124,15 @@ class LlamaCppModel:
         )
 
         text = ""
+        reasoning_content = ""
+        usage = None
         for r in completion_chunks:
             if not r.get("choices"):
                 continue
             if r["choices"][0]["delta"].get("content") is not None:
                 content = r["choices"][0]["delta"]["content"]
                 text += content
-                yield ModelOutput(text=text, error_code=0)
+            if text:
+                if hasattr(r, "usage") and r.usage is not None:
+                    usage = r.usage.dict()
+                yield ModelOutput.build(text, reasoning_content, usage=usage)

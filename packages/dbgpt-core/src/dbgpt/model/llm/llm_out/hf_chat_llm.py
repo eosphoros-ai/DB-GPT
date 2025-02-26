@@ -4,6 +4,8 @@ from threading import Thread
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
+from dbgpt.core import ModelOutput
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,11 +60,26 @@ def huggingface_chat_generate_stream(
     generate_kwargs = {"input_ids": input_ids, **base_kwargs}
     thread = Thread(target=model.generate, kwargs=generate_kwargs)
     thread.start()
-    out = ""
+    reasoning_content = ""
+    text = ""
+    usage = None
+    if "r1" in params["model"] or "reasoner" in params["model"]:
+        is_thinking = True
+    else:
+        is_thinking = False
+
     for new_text in streamer:
-        out += new_text
+        if is_thinking:
+            reasoning_content += new_text
+            if "</think>" in reasoning_content:
+                parts = reasoning_content.split("</think>")
+                reasoning_content = parts[0]
+                text = parts[1]
+                is_thinking = False
+        else:
+            text += new_text
         if custom_stop_words:
             for stop_word in custom_stop_words:
-                if out.endswith(stop_word):
-                    out = out[: -len(stop_word)]
-        yield out
+                if text.endswith(stop_word):
+                    text = text[: -len(stop_word)]
+        yield ModelOutput.build(text, reasoning_content, usage=usage)
