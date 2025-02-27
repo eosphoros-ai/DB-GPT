@@ -6,8 +6,8 @@ import re
 from typing import Dict, List, Union
 
 from dbgpt.core import BaseMessage, HumanPromptTemplate
-from dbgpt.rag.transformer.llm_translator import LLMTranslator
 from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
+from dbgpt.rag.transformer.llm_translator import LLMTranslator
 
 LOCAL_TEXT_TO_GQL_PT = """
 A question written in graph query language style is provided below. Given the question, translate the question into a cypher query that can be executed on the given knowledge graph. Make sure the syntax of the translated cypher query is correct.
@@ -32,7 +32,7 @@ class LocalText2GQL(LLMTranslator):
     def _format_messages(self, text: str, history: str = None) -> List[BaseMessage]:
         # translate intention to gql with single prompt only.
         intention: Dict[str, Union[str, List[str]]] = json.loads(text)
-        question = intention.get("rewritten_question", "") 
+        question = intention.get("rewritten_question", "")
         schema = intention.get("schema", "")
 
         template = HumanPromptTemplate.from_template(self._prompt_template)

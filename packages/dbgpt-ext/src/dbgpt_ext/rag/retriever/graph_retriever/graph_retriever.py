@@ -4,7 +4,6 @@ import logging
 import os
 from typing import List, Tuple, Union
 
-from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 
@@ -105,7 +104,12 @@ class GraphRetriever(GraphRetrieverBase):
             similarity_search_score_threshold,
         )
         self._text_based_graph_retriever = TextBasedGraphRetriever(
-            graph_store_adapter, triplet_topk, llm_client, model_name, text2gql_model_enabled, text2gql_model_name
+            graph_store_adapter,
+            triplet_topk,
+            llm_client,
+            model_name,
+            text2gql_model_enabled,
+            text2gql_model_name,
         )
         self._document_graph_retriever = DocumentGraphRetriever(
             graph_store_adapter,
