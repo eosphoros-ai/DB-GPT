@@ -210,6 +210,10 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         default=False,
         description="Enable text2gql search or not.",
     )
+    text_search_model: str = Field(
+        default=None,
+        description="LLM Model for text2gql translation.",
+    )
 
 
 @register_resource(

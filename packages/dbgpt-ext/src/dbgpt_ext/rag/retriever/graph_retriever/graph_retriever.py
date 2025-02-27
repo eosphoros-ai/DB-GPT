@@ -21,6 +21,7 @@ from .text_based_graph_retriever import (
 from .vector_based_graph_retriever import (
     VectorBasedGraphRetriever,
 )
+from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,12 @@ class GraphRetriever(GraphRetrieverBase):
             if "TEXT_SEARCH_ENABLED" in os.environ
             else config.enable_text_search
         )
+        text_search_model = (
+            os.getenv(
+                "TEXT_SEARCH_MODEL",
+                config.text_search_model,
+            )
+        )
 
         self._keyword_extractor = KeywordExtractor(llm_client, model_name)
         self._text_embedder = TextEmbedder(config.embedding_fn)
@@ -94,9 +101,14 @@ class GraphRetriever(GraphRetrieverBase):
             similarity_search_topk,
             similarity_search_score_threshold,
         )
-        self._text_based_graph_retriever = TextBasedGraphRetriever(
-            graph_store_adapter, triplet_topk, llm_client, model_name
-        )
+        if text_search_model:
+            self._text_based_graph_retriever = TextBasedGraphRetriever(
+                graph_store_adapter, triplet_topk, OllamaLLMClient(), text_search_model
+            )
+        else:
+            self._text_based_graph_retriever = TextBasedGraphRetriever(
+                graph_store_adapter, triplet_topk, llm_client, model_name
+            )
         self._document_graph_retriever = DocumentGraphRetriever(
             graph_store_adapter,
             document_topk,
