@@ -82,9 +82,14 @@ class GraphRetriever(GraphRetrieverBase):
             if "TEXT_SEARCH_ENABLED" in os.environ
             else config.enable_text_search
         )
-        text_search_model = os.getenv(
-            "TEXT_SEARCH_MODEL",
-            config.text_search_model,
+        text2gql_model_enabled = (
+            os.environ["TEXT2GQL_MODEL_ENABLED"].lower() == "true"
+            if "TEXT2GQL_MODEL_ENABLED" in os.environ
+            else config.text2gql_model_enabled
+        )
+        text2gql_model_name = os.getenv(
+            "TEXT2GQL_MODEL_NAME",
+            config.text2gql_model_name,
         )
 
         self._keyword_extractor = KeywordExtractor(llm_client, model_name)
@@ -99,14 +104,9 @@ class GraphRetriever(GraphRetrieverBase):
             similarity_search_topk,
             similarity_search_score_threshold,
         )
-        if text_search_model:
-            self._text_based_graph_retriever = TextBasedGraphRetriever(
-                graph_store_adapter, triplet_topk, OllamaLLMClient(), text_search_model
-            )
-        else:
-            self._text_based_graph_retriever = TextBasedGraphRetriever(
-                graph_store_adapter, triplet_topk, llm_client, model_name
-            )
+        self._text_based_graph_retriever = TextBasedGraphRetriever(
+            graph_store_adapter, triplet_topk, llm_client, model_name, text2gql_model_enabled, text2gql_model_name
+        )
         self._document_graph_retriever = DocumentGraphRetriever(
             graph_store_adapter,
             document_topk,
