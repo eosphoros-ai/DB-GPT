@@ -107,10 +107,8 @@ class GraphRetriever(GraphRetrieverBase):
         self._text_based_graph_retriever = TextBasedGraphRetriever(
             graph_store_adapter,
             triplet_topk,
-            llm_client,
-            model_name,
-            text2gql_model_enabled,
-            text2gql_model_name,
+            intent_interpreter,
+            text2gql,
         )
         self._document_graph_retriever = DocumentGraphRetriever(
             graph_store_adapter,
