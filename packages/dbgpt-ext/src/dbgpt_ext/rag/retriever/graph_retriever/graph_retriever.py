@@ -76,6 +76,15 @@ class GraphRetriever(GraphRetrieverBase):
         text2gql_model_name = config.text2gql_model_name or os.getenv(
             "TEXT2GQL_MODEL_NAME"
         )
+        text2gql_model_enabled = (
+            os.environ["TEXT2GQL_MODEL_ENABLED"].lower() == "true"
+            if "TEXT2GQL_MODEL_ENABLED" in os.environ
+            else config.text2gql_model_enabled
+        )
+        text2gql_model_name = os.getenv(
+            "TEXT2GQL_MODEL_NAME",
+            config.text2gql_model_name,
+        )
 
         self._keyword_extractor = KeywordExtractor(llm_client, model_name)
         self._text_embedder = TextEmbedder(config.embedding_fn)
