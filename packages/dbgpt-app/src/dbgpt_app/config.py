@@ -51,26 +51,6 @@ class SystemParameters:
 
 
 @dataclass
-class StorageVectorConfig(BaseParameters):
-    type: str = field(
-        default="Chroma",
-        metadata={
-            "help": _("default vector type"),
-        },
-    )
-
-
-@dataclass
-class StorageGraphConfig(BaseParameters):
-    type: str = field(
-        default="TuGraph",
-        metadata={
-            "help": _("default graph type"),
-        },
-    )
-
-
-@dataclass
 class StorageConfig(BaseParameters):
     vector: VectorStoreConfig = field(
         default_factory=VectorStoreConfig,

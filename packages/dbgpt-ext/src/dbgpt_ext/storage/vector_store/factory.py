@@ -3,8 +3,9 @@
 import logging
 from typing import Tuple, Type
 
-from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt_ext.storage import __vector_store__ as vector_store_list
+from dbgpt_ext.storage import _select_rag_storage
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,9 @@ class VectorStoreFactory:
 
     @staticmethod
     def __find_type(vector_store_type: str) -> Tuple[Type, Type]:
-        for t in vector_store.__vector_store__:
+        for t in vector_store_list:
             if t.lower() == vector_store_type.lower():
-                store_cls, cfg_cls = getattr(vector_store, t)
+                store_cls, cfg_cls = _select_rag_storage(t)
                 if issubclass(store_cls, VectorStoreBase) and issubclass(
                     cfg_cls, VectorStoreConfig
                 ):
