@@ -105,14 +105,9 @@ class GraphRetriever(GraphRetrieverBase):
             similarity_search_topk,
             similarity_search_score_threshold,
         )
-        if text_search_model:
-            self._text_based_graph_retriever = TextBasedGraphRetriever(
-                graph_store_adapter, triplet_topk, OllamaLLMClient(), text_search_model
-            )
-        else:
-            self._text_based_graph_retriever = TextBasedGraphRetriever(
-                graph_store_adapter, triplet_topk, llm_client, model_name
-            )
+        self._text_based_graph_retriever = TextBasedGraphRetriever(
+            graph_store_adapter, triplet_topk, llm_client, model_name, text2gql_model_enabled, text2gql_model_name
+        )
         self._document_graph_retriever = DocumentGraphRetriever(
             graph_store_adapter,
             document_topk,
