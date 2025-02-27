@@ -24,6 +24,7 @@ from .text_based_graph_retriever import (
 from .vector_based_graph_retriever import (
     VectorBasedGraphRetriever,
 )
+from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
 
 logger = logging.getLogger(__name__)
 
