@@ -1371,6 +1371,19 @@ wheels = [
 ]
 
 [[package]]
+name = "dashscope"
+version = "1.22.1"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "requests" },
+    { name = "websocket-client" },
+]
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/fe/19/50bbf79851dcc96d125208f373b7817384715307717907f9e58f0c00348a/dashscope-1.22.1-py3-none-any.whl", hash = "sha256:3073f526980e39092cfdc3d57ad4541c3fa794c4318686a797daddeed6f751cf", size = 1276372 },
+]
+
+[[package]]
 name = "dataclasses-json"
 version = "0.6.7"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -1480,6 +1493,7 @@ llama-cpp = [
 ]
 llama-cpp-server = [
     { name = "llama-cpp-server-py" },
+    { name = "llama-cpp-server-py-core" },
 ]
 proxy-anthropic = [
     { name = "anthropic" },
@@ -1544,7 +1558,8 @@ requires-dist = [
     { name = "jinja2", marker = "extra == 'simple-framework'" },
     { name = "jsonschema", marker = "extra == 'framework'" },
     { name = "llama-cpp-python", marker = "extra == 'llama-cpp'" },
-    { name = "llama-cpp-server-py", marker = "extra == 'llama-cpp-server'" },
+    { name = "llama-cpp-server-py", marker = "extra == 'llama-cpp-server'", specifier = ">=0.1.3" },
+    { name = "llama-cpp-server-py-core", marker = "extra == 'llama-cpp-server'", specifier = ">=0.1.3" },
     { name = "lyric-component-ts-transpiling", marker = "extra == 'code'", specifier = ">=0.1.6" },
     { name = "lyric-js-worker", marker = "extra == 'code'", specifier = ">=0.1.6" },
     { name = "lyric-py", marker = "extra == 'code'", specifier = ">=0.1.6" },
@@ -1872,6 +1887,9 @@ graph-rag = [
     { name = "neo4j" },
     { name = "networkx" },
 ]
+proxy-tongyi = [
+    { name = "dashscope" },
+]
 rag = [
     { name = "bs4" },
     { name = "markdown" },
@@ -1908,6 +1926,7 @@ requires-dist = [
     { name = "bs4", marker = "extra == 'rag'" },
     { name = "chromadb", marker = "extra == 'storage-chromadb'", specifier = ">=0.4.22" },
     { name = "clickhouse-connect", marker = "extra == 'datasource-clickhouse'" },
+    { name = "dashscope", marker = "extra == 'proxy-tongyi'" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
     { name = "dbgpt-tugraph-plugins", marker = "extra == 'graph-rag'", specifier = ">=0.1.1" },
     { name = "duckdb", marker = "extra == 'datasource-duckdb'" },
@@ -3812,18 +3831,18 @@ sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a6/38/7a47b1fb1d83ea
 
 [[package]]
 name = "llama-cpp-server-py"
-version = "0.1.2"
+version = "0.1.3"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "llama-cpp-server-py-core" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/45/e8/e4b7e5fdcfe56c97143dedb2b7f503df5675828dfb8ce58a6d8487bc370f/llama_cpp_server_py-0.1.2.tar.gz", hash = "sha256:295b7283e214f75c27ab6d40e218b9356342d1baabc2665aa9ef1f23f9a60905", size = 758 }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/81/ed/2f50f5730bcdf45427838e13f7e6dc975fc4b86b732b8f4041defb191819/llama_cpp_server_py-0.1.3.tar.gz", hash = "sha256:4cb1b6b0a898e2e66a5779fdba1f02b18823e452b994e8ce8365bd3c8180e1e4", size = 822 }
 
 [[package]]
 name = "llama-cpp-server-py-core"
-version = "0.1.2"
+version = "0.1.3"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e9/af/068376aa50a4312f67121b06f3ff360c98a9692b5b7e99f3ea7e41989512/llama_cpp_server_py_core-0.1.2.tar.gz", hash = "sha256:5d1ca66d351286c7995ca47c4aaa7cb8d117120a35cfb52d97b5b45f34c7a9dc", size = 33850015 }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/2b/b0/8a543e5f3aa24b968ad3178b7f27d7ff05c24ea880eb04b1e116be9849bb/llama_cpp_server_py_core-0.1.3.tar.gz", hash = "sha256:3b753c521a655b54edef52909da30d40c68ba2af0083e9f4e59f9d558c00e487", size = 34000672 }
 
 [[package]]
 name = "lm-format-enforcer"
