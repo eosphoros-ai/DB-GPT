@@ -6,8 +6,8 @@ import re
 from typing import Dict, List, Union
 
 from dbgpt.core import BaseMessage, HumanPromptTemplate
-from dbgpt.rag.transformer.llm_translator import LLMTranslator
 from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
+from dbgpt.rag.transformer.llm_translator import LLMTranslator
 
 LOCAL_TEXT_TO_GQL_PT = """
 A question written in graph query language style is provided below. Given the question, translate the question into a cypher query that can be executed on the given knowledge graph. Make sure the syntax of the translated cypher query is correct.
