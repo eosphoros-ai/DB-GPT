@@ -5,7 +5,10 @@ import os
 from typing import List, Tuple, Union
 
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
+from dbgpt.rag.transformer.simple_intent_translator import SimpleIntentTranslator
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
+from dbgpt_ext.rag.transformer.local_text2gql import LocalText2GQL
+from dbgpt_ext.rag.transformer.text2gql import Text2GQL
 
 from ...transformer.text_embedder import TextEmbedder
 from .base import GraphRetrieverBase
@@ -94,6 +97,12 @@ class GraphRetriever(GraphRetrieverBase):
         self._keyword_extractor = KeywordExtractor(llm_client, model_name)
         self._text_embedder = TextEmbedder(config.embedding_fn)
 
+        intent_interpreter = SimpleIntentTranslator(llm_client, model_name)
+        if text2gql_model_enabled:
+            text2gql = LocalText2GQL(text2gql_model_name)
+        else:
+            text2gql = Text2GQL(llm_client, model_name)
+
         self._keyword_based_graph_retriever = KeywordBasedGraphRetriever(
             graph_store_adapter, triplet_topk
         )
@@ -106,10 +115,8 @@ class GraphRetriever(GraphRetrieverBase):
         self._text_based_graph_retriever = TextBasedGraphRetriever(
             graph_store_adapter,
             triplet_topk,
-            llm_client,
-            model_name,
-            text2gql_model_enabled,
-            text2gql_model_name,
+            intent_interpreter,
+            text2gql,
         )
         self._document_graph_retriever = DocumentGraphRetriever(
             graph_store_adapter,
