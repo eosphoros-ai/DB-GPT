@@ -4,7 +4,6 @@ import logging
 import os
 from typing import List, Tuple, Union
 
-from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.simple_intent_translator import SimpleIntentTranslator
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
