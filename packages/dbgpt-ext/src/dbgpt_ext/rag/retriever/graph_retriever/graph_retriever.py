@@ -4,6 +4,7 @@ import logging
 import os
 from typing import List, Tuple, Union
 
+from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
 
@@ -21,7 +22,6 @@ from .text_based_graph_retriever import (
 from .vector_based_graph_retriever import (
     VectorBasedGraphRetriever,
 )
-from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +82,9 @@ class GraphRetriever(GraphRetrieverBase):
             if "TEXT_SEARCH_ENABLED" in os.environ
             else config.enable_text_search
         )
-        text_search_model = (
-            os.getenv(
-                "TEXT_SEARCH_MODEL",
-                config.text_search_model,
-            )
+        text_search_model = os.getenv(
+            "TEXT_SEARCH_MODEL",
+            config.text_search_model,
         )
 
         self._keyword_extractor = KeywordExtractor(llm_client, model_name)
