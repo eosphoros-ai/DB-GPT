@@ -74,7 +74,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
         """
         self.data_schema = data_schema
 
-    def __post_process_code(self, code):
+    def _post_process_code(self, code):
         sep = "\n```"
         if sep in code:
             blocks = code.split(sep)
@@ -84,67 +84,61 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             code = sep.join(blocks)
         return code
 
-    def parse_model_stream_resp_ex(self, chunk: ResponseTye, skip_echo_len):
+    def parse_model_stream_resp_ex(
+        self, data: ModelOutput, text_output: bool = True, skip_echo_len: int = 0
+    ):
         """Parse the output of an LLM call.
 
         Args:
-            chunk (ResponseTye): The output of an LLM call.
+            chunk (ModelOutput): The output of an LLM call.
             skip_echo_len (int): The length of the prompt to skip.
         """
-        data = _parse_model_response(chunk)
+        # data = _parse_model_response(chunk)
         # TODO: Multi mode output handler, rewrite this for multi model, use adapter
         #  mode.
 
-        model_context = data.get("model_context")
+        model_context = data.model_context
         has_echo = False
         if model_context and "prompt_echo_len_char" in model_context:
             prompt_echo_len_char = int(model_context.get("prompt_echo_len_char", -1))
             has_echo = bool(model_context.get("echo", False))
             if prompt_echo_len_char != -1:
                 skip_echo_len = prompt_echo_len_char
+        if not text_output:
+            # TODO, process code: self._post_process_code(output)
+            return data
 
-        if data.get("error_code", 0) == 0:
+        if data.success:
             if has_echo:
-                # TODO Judging from model_context
-                output = data["text"][skip_echo_len:].strip()
+                output = data.text[skip_echo_len:].strip()
             else:
                 output = data["text"].strip()
-
-            output = self.__post_process_code(output)
+            output = self._post_process_code(output)
             return output
         else:
             output = data["text"] + f" (error_code: {data['error_code']})"
             return output
 
-    def parse_model_nostream_resp(self, response: ResponseTye, sep: str):
+    def parse_model_nostream_resp(
+        self, response: ModelOutput, text_output: bool = True
+    ) -> Union[str, ModelOutput]:
         """Parse the output of an LLM call."""
-        resp_obj_ex = _parse_model_response(response)
-        if isinstance(resp_obj_ex, str):
-            resp_obj_ex = json.loads(resp_obj_ex)
-        if resp_obj_ex["error_code"] == 0:
-            all_text = resp_obj_ex["text"]
-            # Parse the returned text to get the AI reply part
-            tmp_resp = all_text.split(sep)
-            last_index = -1
-            for i in range(len(tmp_resp)):
-                if tmp_resp[i].find("assistant:") != -1:
-                    last_index = i
-            ai_response = tmp_resp[last_index]
-            ai_response = ai_response.replace("assistant:", "")
-            ai_response = ai_response.replace("Assistant:", "")
-            ai_response = ai_response.replace("ASSISTANT:", "")
-            ai_response = ai_response.replace("\\_", "_")
-            ai_response = ai_response.replace("\\*", "*")
-            ai_response = ai_response.replace("\t", "")
-
-            # ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
-            # print("un_stream ai response:", ai_response)
-            return ai_response
-        else:
+        if response is None:
+            raise ValueError("Internal error! The response is None.")
+        if not isinstance(response, ModelOutput):
             raise ValueError(
-                f"Model server error!code={resp_obj_ex['error_code']}, error msg is "
-                f"{resp_obj_ex['text']}"
+                "Internal error! The response type is not ModelOutput, but "
+                f"{type(response)}"
             )
+        if not response.success:
+            raise ValueError(
+                f"Model server error!code={response.error_code}, error msg is "
+                f"{response.text}"
+            )
+        if text_output:
+            return response.text
+        else:
+            return response
 
     def _illegal_json_ends(self, s):
         temp_json = s
@@ -279,7 +273,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
         if self.current_dag_context.streaming_call:
             return self.parse_model_stream_resp_ex(input_value, 0)
         else:
-            return self.parse_model_nostream_resp(input_value, "#####################")
+            return self.parse_model_nostream_resp(input_value)
 
 
 def _parse_model_response(response: ResponseTye):
@@ -330,9 +324,9 @@ class SQLOutputParser(BaseOutputParser):
         """Create a new SQL output parser."""
         super().__init__(is_stream_out=is_stream_out, **kwargs)
 
-    def parse_model_nostream_resp(self, response: ResponseTye, sep: str):
+    def parse_model_nostream_resp(self, response: ResponseTye):
         """Parse the output of an LLM call."""
-        model_out_text = super().parse_model_nostream_resp(response, sep)
+        model_out_text = super().parse_model_nostream_resp(response)
         clean_str = super().parse_prompt_response(model_out_text)
         return json.loads(clean_str, strict=True)
 
@@ -372,11 +366,11 @@ class SQLListOutputParser(BaseOutputParser):
         """Create a new SQL list output parser."""
         super().__init__(is_stream_out=is_stream_out, **kwargs)
 
-    def parse_model_nostream_resp(self, response: ResponseTye, sep: str):
+    def parse_model_nostream_resp(self, response: ResponseTye):
         """Parse the output of an LLM call."""
         from dbgpt.util.json_utils import find_json_objects
 
-        model_out_text = super().parse_model_nostream_resp(response, sep)
+        model_out_text = super().parse_model_nostream_resp(response)
         json_objects = find_json_objects(model_out_text)
         json_count = len(json_objects)
         if json_count < 1:

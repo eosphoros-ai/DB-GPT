@@ -4,6 +4,10 @@ from threading import Thread
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
+from dbgpt.core import ModelOutput
+
+from ...utils.parse_utils import ParsedChatMessage, parse_chat_message
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,11 +62,21 @@ def huggingface_chat_generate_stream(
     generate_kwargs = {"input_ids": input_ids, **base_kwargs}
     thread = Thread(target=model.generate, kwargs=generate_kwargs)
     thread.start()
-    out = ""
+    text = ""
+    usage = None
+    msg = ParsedChatMessage()
     for new_text in streamer:
-        out += new_text
+        text += new_text
+        msg, _ = parse_chat_message(
+            new_text, extract_reasoning=True, is_streaming=True, streaming_state=msg
+        )
         if custom_stop_words:
             for stop_word in custom_stop_words:
-                if out.endswith(stop_word):
-                    out = out[: -len(stop_word)]
-        yield out
+                if text.endswith(stop_word):
+                    text = text[: -len(stop_word)]
+        yield ModelOutput.build(
+            msg.content,
+            msg.reasoning_content,
+            error_code=0,
+            usage=usage,
+        )

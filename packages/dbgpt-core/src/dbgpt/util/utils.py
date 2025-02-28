@@ -150,7 +150,7 @@ def _build_logger(
         logger_dir = os.path.dirname(logger_filename)
         os.makedirs(logger_dir, exist_ok=True)
         handler = logging.handlers.TimedRotatingFileHandler(
-            logger_filename, when="D", utc=True
+            logger_filename, when="D", utc=True, encoding="utf-8"
         )
         handler.setFormatter(formatter)
 
@@ -167,9 +167,9 @@ def _build_logger(
                 logging.getLogger(name).debug(f"Skipping non-logger: {name}")
 
         if redirect_stdio:
-            stdout_handler = logging.StreamHandler(sys.stdout)
+            stdout_handler = logging.StreamHandler(sys.stdout, encoding="utf-8")
             stdout_handler.setFormatter(formatter)
-            stderr_handler = logging.StreamHandler(sys.stderr)
+            stderr_handler = logging.StreamHandler(sys.stderr, encoding="utf-8")
             stderr_handler.setFormatter(formatter)
 
             root_logger = logging.getLogger()

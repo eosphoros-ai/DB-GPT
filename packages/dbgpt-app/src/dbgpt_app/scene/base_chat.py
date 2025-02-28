@@ -33,7 +33,7 @@ from dbgpt_app.scene.operators.app_operator import (
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
 from dbgpt_serve.prompt.service.service import Service as PromptService
 
-from .exceptions import BaseAppException
+from .exceptions import BaseAppException, ContextAppException
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -306,9 +306,13 @@ class BaseChat(ABC):
             view_msg = msg
             async for output in self.call_streaming_operator(payload):
                 # Plugin research in result generation
-                msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(
-                    output, 0
+                model_output = (
+                    self.prompt_template.output_parser.parse_model_stream_resp_ex(
+                        output,
+                        text_output=False,
+                    )
                 )
+                msg = model_output.gen_text_with_thinking()
                 view_msg = self.stream_plugin_call(msg)
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
@@ -345,7 +349,7 @@ class BaseChat(ABC):
             self.message_adjust()
             span.end()
         except BaseAppException as e:
-            self.current_message.add_view_message(e.view)
+            self.current_message.add_view_message(e.get_ui_error())
             span.end(metadata={"error": str(e)})
         except Exception as e:
             view_message = f"<span style='color:red'>ERROR!</span> {str(e)}"
@@ -367,9 +371,10 @@ class BaseChat(ABC):
         with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
             model_output = await self.call_llm_operator(payload)
 
-        ai_response_text = self.prompt_template.output_parser.parse_model_nostream_resp(
-            model_output, self.prompt_template.sep
+        parsed_output = self.prompt_template.output_parser.parse_model_nostream_resp(
+            model_output, text_output=False
         )
+        ai_response_text = parsed_output.text
         prompt_define_response = (
             self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
         )
@@ -380,21 +385,35 @@ class BaseChat(ABC):
                 prompt_define_response
             ),
         }
-        with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
-            result = await blocking_func_to_async(
-                self._executor, self.do_action, prompt_define_response
+        try:
+            with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
+                result = await blocking_func_to_async(
+                    self._executor, self.do_action, prompt_define_response
+                )
+
+            speak_to_user = self.get_llm_speak(prompt_define_response)
+            view_message = await blocking_func_to_async(
+                self._executor,
+                self.prompt_template.output_parser.parse_view_response,
+                speak_to_user,
+                result,
+                prompt_define_response,
             )
+            if parsed_output.has_thinking:
+                view_message = parsed_output.gen_text_with_thinking(
+                    new_text=view_message
+                )
+            return ai_response_text, view_message.replace("\n", "\\n")
+        except BaseAppException as e:
+            raise ContextAppException(e.message, e.view, model_output) from e
 
-        speak_to_user = self.get_llm_speak(prompt_define_response)
-
-        view_message = await blocking_func_to_async(
-            self._executor,
-            self.prompt_template.output_parser.parse_view_response,
-            speak_to_user,
-            result,
-            prompt_define_response,
-        )
-        return ai_response_text, view_message.replace("\n", "\\n")
+        except Exception as e:
+            logger.error("model response parse failed！" + str(e))
+            raise ContextAppException(
+                f"model response parse failed！{str(e)}\n  {ai_response_text}",
+                f"<span style='color:red'>ERROR!</span> {str(e)}",
+                model_output,
+            )
 
     @Deprecated(version="0.7.0", remove_version="0.8.0")
     async def get_llm_response(self):
@@ -407,7 +426,7 @@ class BaseChat(ABC):
             ### output parse
             ai_response_text = (
                 self.prompt_template.output_parser.parse_model_nostream_resp(
-                    model_output, self.prompt_template.sep
+                    model_output
                 )
             )
             ### model result deal
