@@ -244,56 +244,41 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         super().__init__(config)
         self._config = config
 
-        self._vector_store_type = os.getenv(
-            "VECTOR_STORE_TYPE", config.vector_store_type
+        self._vector_store_type = config.vector_store_type or os.getenv(
+            "VECTOR_STORE_TYPE"
         )
         self._extract_topk = int(
-            os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE", config.extract_topk)
+            config.extract_topk or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE")
         )
         self._extract_score_threshold = float(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE",
-                config.extract_score_threshold,
-            )
+            config.extract_score_threshold
+            or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE")
         )
         self._community_topk = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE", config.community_topk
-            )
+            config.community_topk
+            or os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE")
         )
         self._community_score_threshold = float(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE",
-                config.community_score_threshold,
-            )
+            config.community_score_threshold
+            or os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE")
         )
-        self._document_graph_enabled = (
-            os.environ["DOCUMENT_GRAPH_ENABLED"].lower() == "true"
-            if "DOCUMENT_GRAPH_ENABLED" in os.environ
-            else config.document_graph_enabled
+        self._document_graph_enabled = config.document_graph_enabled or (
+            os.getenv("DOCUMENT_GRAPH_ENABLED", "").lower() == "true"
         )
-        self._triplet_graph_enabled = (
-            os.environ["TRIPLET_GRAPH_ENABLED"].lower() == "true"
-            if "TRIPLET_GRAPH_ENABLED" in os.environ
-            else config.triplet_graph_enabled
+        self._triplet_graph_enabled = config.triplet_graph_enabled or (
+            os.getenv("TRIPLET_GRAPH_ENABLED", "").lower() == "true"
         )
         self._triplet_extraction_batch_size = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_EXTRACTION_BATCH_SIZE",
-                config.knowledge_graph_extraction_batch_size,
-            )
+            config.knowledge_graph_extraction_batch_size
+            or os.getenv("KNOWLEDGE_GRAPH_EXTRACTION_BATCH_SIZE")
         )
         self._triplet_embedding_batch_size = int(
-            os.getenv(
-                "KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE",
-                config.knowledge_graph_embedding_batch_size,
-            )
+            config.knowledge_graph_embedding_batch_size
+            or os.getenv("KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE")
         )
         self._community_summary_batch_size = int(
-            os.getenv(
-                "COMMUNITY_SUMMARY_BATCH_SIZE",
-                config.community_summary_batch_size,
-            )
+            config.community_summary_batch_size
+            or os.getenv("COMMUNITY_SUMMARY_BATCH_SIZE")
         )
 
         def extractor_configure(name: str, cfg: VectorStoreConfig):
