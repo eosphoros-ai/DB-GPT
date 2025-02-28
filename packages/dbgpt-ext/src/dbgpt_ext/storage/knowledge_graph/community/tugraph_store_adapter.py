@@ -382,9 +382,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             GraphElemType.ENTITY.value,
         )
 
-    def delete_document(self, chunk_ids: str) -> None:
+    def delete_document(self, chunk_id: str) -> None:
         """Delete document in the graph."""
-        chunkids_list = [uuid.strip() for uuid in chunk_ids.split(",")]
+        chunkids_list = [uuid.strip() for uuid in chunk_id.split(",")]
         del_chunk_gql = (
             f"MATCH(m:{GraphElemType.DOCUMENT.value})-[r]->"
             f"(n:{GraphElemType.CHUNK.value}) WHERE n.id IN {chunkids_list} DELETE n"
