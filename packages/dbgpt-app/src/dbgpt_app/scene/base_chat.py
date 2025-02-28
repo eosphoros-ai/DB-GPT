@@ -33,7 +33,7 @@ from dbgpt_app.scene.operators.app_operator import (
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
 from dbgpt_serve.prompt.service.service import Service as PromptService
 
-from .exceptions import BaseAppException
+from .exceptions import BaseAppException, ContextAppException
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -349,7 +349,7 @@ class BaseChat(ABC):
             self.message_adjust()
             span.end()
         except BaseAppException as e:
-            self.current_message.add_view_message(e.view)
+            self.current_message.add_view_message(e.get_ui_error())
             span.end(metadata={"error": str(e)})
         except Exception as e:
             view_message = f"<span style='color:red'>ERROR!</span> {str(e)}"
@@ -385,22 +385,35 @@ class BaseChat(ABC):
                 prompt_define_response
             ),
         }
-        with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
-            result = await blocking_func_to_async(
-                self._executor, self.do_action, prompt_define_response
-            )
+        try:
+            with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
+                result = await blocking_func_to_async(
+                    self._executor, self.do_action, prompt_define_response
+                )
 
-        speak_to_user = self.get_llm_speak(prompt_define_response)
-        view_message = await blocking_func_to_async(
-            self._executor,
-            self.prompt_template.output_parser.parse_view_response,
-            speak_to_user,
-            result,
-            prompt_define_response,
-        )
-        if parsed_output.has_thinking:
-            view_message = parsed_output.gen_text_with_thinking(new_text=view_message)
-        return ai_response_text, view_message.replace("\n", "\\n")
+            speak_to_user = self.get_llm_speak(prompt_define_response)
+            view_message = await blocking_func_to_async(
+                self._executor,
+                self.prompt_template.output_parser.parse_view_response,
+                speak_to_user,
+                result,
+                prompt_define_response,
+            )
+            if parsed_output.has_thinking:
+                view_message = parsed_output.gen_text_with_thinking(
+                    new_text=view_message
+                )
+            return ai_response_text, view_message.replace("\n", "\\n")
+        except BaseAppException as e:
+            raise ContextAppException(e.message, e.view, model_output) from e
+
+        except Exception as e:
+            logger.error("model response parse failed！" + str(e))
+            raise ContextAppException(
+                f"model response parse failed！{str(e)}\n  {ai_response_text}",
+                f"<span style='color:red'>ERROR!</span> {str(e)}",
+                model_output,
+            )
 
     @Deprecated(version="0.7.0", remove_version="0.8.0")
     async def get_llm_response(self):

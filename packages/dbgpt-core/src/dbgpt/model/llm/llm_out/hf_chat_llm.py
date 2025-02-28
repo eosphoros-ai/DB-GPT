@@ -6,6 +6,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 
 from dbgpt.core import ModelOutput
 
+from ...utils.parse_utils import ParsedChatMessage, parse_chat_message
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,26 +62,21 @@ def huggingface_chat_generate_stream(
     generate_kwargs = {"input_ids": input_ids, **base_kwargs}
     thread = Thread(target=model.generate, kwargs=generate_kwargs)
     thread.start()
-    reasoning_content = ""
     text = ""
     usage = None
-    if "r1" in params["model"] or "reasoner" in params["model"]:
-        is_thinking = True
-    else:
-        is_thinking = False
-
+    msg = ParsedChatMessage()
     for new_text in streamer:
-        if is_thinking:
-            reasoning_content += new_text
-            if "</think>" in reasoning_content:
-                parts = reasoning_content.split("</think>")
-                reasoning_content = parts[0]
-                text = parts[1]
-                is_thinking = False
-        else:
-            text += new_text
+        text += new_text
+        msg, _ = parse_chat_message(
+            new_text, extract_reasoning=True, is_streaming=True, streaming_state=msg
+        )
         if custom_stop_words:
             for stop_word in custom_stop_words:
                 if text.endswith(stop_word):
                     text = text[: -len(stop_word)]
-        yield ModelOutput.build(text, reasoning_content, usage=usage)
+        yield ModelOutput.build(
+            msg.content,
+            msg.reasoning_content,
+            error_code=0,
+            usage=usage,
+        )

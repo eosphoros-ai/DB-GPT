@@ -27,7 +27,7 @@ export function VisThinking({ content }: Props) {
       {expanded && (
         <div className='p-4 bg-white dark:bg-gray-900 border-t dark:border-gray-700'>
           <div className='py-2 px-4 border-l-4 border-blue-600 rounded bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300'>
-            {content}
+            {content || ''}
           </div>
         </div>
       )}

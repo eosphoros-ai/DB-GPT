@@ -5,6 +5,10 @@ from vllm import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
+from dbgpt.core import ModelOutput
+
+from ...utils.parse_utils import _DEFAULT_THINK_START_TOKEN, parse_chat_message
+
 _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 
@@ -26,6 +30,8 @@ async def generate_stream(
     # use_beam_search = params.get("use_beam_search", False)
     best_of = params.get("best_of", None)
     stop_str = params.get("stop", None)
+    think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    # think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
 
     stop_token_ids = params.get("stop_token_ids", None) or []
     if tokenizer.eos_token_id is not None:
@@ -68,8 +74,11 @@ async def generate_stream(
         best_of=best_of,
         **gen_params,
     )
+    # vocab = tokenizer.get_vocab()
 
     results_generator = model.generate(prompt, sampling_params, request_id)
+    usage = None
+    finish_reason = None
     async for request_output in results_generator:
         prompt = request_output.prompt
         if echo:
@@ -93,9 +102,18 @@ async def generate_stream(
             if len(request_output.outputs) == 1
             else [output.finish_reason for output in request_output.outputs]
         )
-        yield {
-            "text": text_outputs,
-            "error_code": 0,
-            "usage": usage,
-            "finish_reason": finish_reason,
-        }
+        if text_outputs:
+            # Tempora
+            if prompt.rstrip().endswith(think_start_token):
+                text_outputs = think_start_token + "\n" + text_outputs
+            msg = parse_chat_message(
+                text_outputs,
+                extract_reasoning=True,
+            )
+            yield ModelOutput.build(
+                msg.content,
+                msg.reasoning_content,
+                error_code=0,
+                usage=usage,
+                finish_reason=finish_reason,
+            )

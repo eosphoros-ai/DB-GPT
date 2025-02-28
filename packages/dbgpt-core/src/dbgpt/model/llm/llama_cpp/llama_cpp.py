@@ -4,7 +4,7 @@ Fork from text-generation-webui https://github.com/oobabooga/text-generation-web
 
 import logging
 import re
-from typing import Dict
+from typing import Dict, Optional
 
 import llama_cpp
 import torch
@@ -12,6 +12,8 @@ import torch
 from dbgpt.core import ModelOutput
 from dbgpt.model.adapter.llama_cpp_py_adapter import LlamaCppModelParameters
 from dbgpt.model.utils.llm_utils import parse_model_request
+
+from ...utils.parse_utils import ParsedChatMessage, parse_chat_message
 
 logger = logging.getLogger(__name__)
 
@@ -124,15 +126,30 @@ class LlamaCppModel:
         )
 
         text = ""
-        reasoning_content = ""
         usage = None
+        msg = ParsedChatMessage()
+        finish_reason: Optional[str] = None
         for r in completion_chunks:
             if not r.get("choices"):
                 continue
-            if r["choices"][0]["delta"].get("content") is not None:
-                content = r["choices"][0]["delta"]["content"]
+            delta = r["choices"][0]["delta"]
+            if delta.get("content") is not None:
+                content = delta["content"]
                 text += content
+                msg, _ = parse_chat_message(
+                    content,
+                    extract_reasoning=True,
+                    is_streaming=True,
+                    streaming_state=msg,
+                )
+                finish_reason = delta.get("finish_reason")
             if text:
                 if hasattr(r, "usage") and r.usage is not None:
                     usage = r.usage.dict()
-                yield ModelOutput.build(text, reasoning_content, usage=usage)
+                yield ModelOutput.build(
+                    msg.content,
+                    msg.reasoning_content,
+                    error_code=0,
+                    usage=usage,
+                    finish_reason=finish_reason,
+                )

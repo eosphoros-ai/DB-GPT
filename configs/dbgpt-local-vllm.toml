@@ -1,0 +1,47 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-zh}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+[rag.storage]
+[rag.storage.vector]
+type = "Chroma"
+persist_path = "pilot/data"
+
+# Model Configurations
+[models]
+[[models.llms]]
+name = "Qwen2.5-Coder-0.5B-Instruct"
+provider = "vllm"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+path = "/data/models/Qwen2.5-Coder-0.5B-Instruct"
+# dtype="float32"
+
+# [[models.llms]]
+# name = "DeepSeek-R1-Distill-Qwen-1.5B"
+# provider = "vllm"
+# # If not provided, the model will be downloaded from the Hugging Face model hub
+# # uncomment the following line to specify the model path in the local file system
+# # path = "the-model-path-in-the-local-file-system"
+# path = "/data/models/DeepSeek-R1-Distill-Qwen-1.5B"
+
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+path = "/data/models/bge-large-zh-v1.5"
+
