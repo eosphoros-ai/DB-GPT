@@ -36,9 +36,13 @@ class ClickhouseParameters(BaseDatasourceParameters):
     __type__ = "clickhouse"
 
     host: str = field(metadata={"help": _("Database host, e.g., localhost")})
-    port: int = field(metadata={"help": _("Database port, e.g., 3306")})
+    port: int = field(metadata={"help": _("Database port, e.g., 8123")})
     user: str = field(metadata={"help": _("Database user to connect")})
     database: str = field(metadata={"help": _("Database name")})
+    engine: str = field(
+        default="MergeTree", 
+        metadata={"help": _("Storage engine, e.g., MergeTree")}
+    )
     password: str = field(
         default="${env:DBGPT_DB_PASSWORD}",
         metadata={
@@ -118,6 +122,7 @@ class ClickhouseConnector(RDBMSConnector):
             parameters.http_pool_num_pools,
             parameters.connect_timeout,
             parameters.distributed_ddl_task_timeout,
+            parameters.engine,
         )
 
     @classmethod
@@ -132,7 +137,7 @@ class ClickhouseConnector(RDBMSConnector):
         http_pool_num_pools: int = 12,
         connect_timeout: int = 15,
         distributed_ddl_task_timeout: int = 300,
-        engine_args: Optional[dict] = None,
+        engine: str = "MergeTree",
         **kwargs: Any,
     ) -> "ClickhouseConnector":
         """Create a new ClickhouseConnector from host, port, user, pwd, db_name."""
@@ -156,7 +161,7 @@ class ClickhouseConnector(RDBMSConnector):
         )
 
         cls.client = client
-        return cls(client, **kwargs)
+        return cls(client, engine=engine, **kwargs)
 
     def get_table_names(self):
         """Get all table names."""
