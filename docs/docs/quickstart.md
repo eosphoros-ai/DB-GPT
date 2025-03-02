@@ -90,6 +90,7 @@ uv --version
 ```bash
 # Use uv to install dependencies needed for OpenAI proxy
 uv sync --all-packages --frozen \
+--extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \
 --extra "storage_chromadb" \
@@ -177,9 +178,10 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 # Use uv to install dependencies needed for GLM4
 # Install core dependencies and select desired extensions
 uv sync --all-packages --frozen \
+--extra "base" \
+--extra "hf" \
 --extra "rag" \
 --extra "storage_chromadb" \
---extra "hf" \
 --extra "quant_bnb" \
 --extra "dbgpts"
 ```
