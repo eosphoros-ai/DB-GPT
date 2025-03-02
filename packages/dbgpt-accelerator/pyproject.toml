@@ -42,7 +42,6 @@ auto = [
     "torchvision>=0.17.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
     "torchvision>=0.17.1,<0.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
-
 cpu = [
     # Starting from PyTorch 2.3.0, the minimum requirement for macOS is macOS 11.0+ ARM64.
     "torch>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
@@ -52,7 +51,6 @@ cpu = [
     "torchvision>=0.17.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
     "torchvision>=0.17.1,<0.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
-
 cuda118 = [
     "torch>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
     "torchvision>=0.17.1; sys_platform == 'win32' or sys_platform == 'linux'",
@@ -69,7 +67,6 @@ cuda124 = [
     "torchvision>=0.17.1; sys_platform == 'win32' or sys_platform == 'linux'",
     "torchaudio>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
 ]
-
 #rocm60 = [
 #    "torch>=2.3.0,<2.4.0;sys_platform == 'linux'",
 #    "torchvision>=0.18.0,<0.19.0;sys_platform == 'linux'",
@@ -179,7 +176,6 @@ torch = [
     { index = "pytorch-cu124", marker = "platform_system == 'Linux'", extra = "cuda124" },
 #    { index = "pytorch-rocm60", marker = "platform_system == 'Linux'", extra = "rocm60" },
 ]
-
 torchvision = [
     { index = "pytorch-cpu", marker = "platform_system == 'Darwin'" },
     { index = "pytorch-cpu", marker = "platform_system == 'Windows'", extra = "cpu" },

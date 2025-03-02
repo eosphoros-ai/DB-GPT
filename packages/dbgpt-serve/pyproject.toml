@@ -31,7 +31,6 @@ dev-dependencies = []
 libro = ["libro>=0.1.25"]
 dbgpts = ["poetry"]
 
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt_serve"]
 exclude = [

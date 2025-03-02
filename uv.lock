@@ -2066,38 +2066,29 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+base = [
+    { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "simple-framework"] },
+]
 cache = [
     { name = "rocksdict" },
 ]
 dbgpts = [
     { name = "poetry" },
 ]
-default = [
-    { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "simple-framework"] },
-    { name = "dbgpt-ext", extra = ["rag", "storage-chromadb"] },
-]
 observability = [
     { name = "opentelemetry-api" },
     { name = "opentelemetry-exporter-otlp" },
     { name = "opentelemetry-sdk" },
-]
-proxy-openai = [
-    { name = "dbgpt", extra = ["agent", "cli", "client", "code", "framework", "proxy-openai", "simple-framework"] },
-    { name = "dbgpt-ext" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "aiofiles" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
-    { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'default'", editable = "packages/dbgpt-core" },
-    { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code", "proxy-openai"], marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-core" },
+    { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'base'", editable = "packages/dbgpt-core" },
     { name = "dbgpt-accelerator", editable = "packages/dbgpt-accelerator" },
     { name = "dbgpt-client", editable = "packages/dbgpt-client" },
     { name = "dbgpt-ext", editable = "packages/dbgpt-ext" },
-    { name = "dbgpt-ext", marker = "extra == 'proxy-openai'", editable = "packages/dbgpt-ext" },
-    { name = "dbgpt-ext", extras = ["rag"], marker = "extra == 'default'", editable = "packages/dbgpt-ext" },
-    { name = "dbgpt-ext", extras = ["storage-chromadb"], marker = "extra == 'default'", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-serve", editable = "packages/dbgpt-serve" },
     { name = "opentelemetry-api", marker = "extra == 'observability'" },
     { name = "opentelemetry-exporter-otlp", marker = "extra == 'observability'" },
@@ -2106,7 +2097,7 @@ requires-dist = [
     { name = "pyparsing" },
     { name = "rocksdict", marker = "extra == 'cache'" },
 ]
-provides-extras = ["cache", "observability", "proxy-openai", "default", "dbgpts"]
+provides-extras = ["cache", "observability", "base", "dbgpts"]
 
 [package.metadata.requires-dev]
 dev = []
