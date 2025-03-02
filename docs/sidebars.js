@@ -38,44 +38,44 @@ const sidebars = {
       collapsed: false,
       collapsible: false,
       items: [
-//        {
-//          type: 'doc',
-//          id: 'installation/sourcecode',
-//        },
+        {
+          type: 'doc',
+          id: 'installation/sourcecode',
+        },
         {
 //          type: 'doc',
 //          id: 'installation/integrations',
               type: "category",
-              label: "Integrations",
-              collapsed: false,
-              collapsible: false,
+              label: "Other Integrations",
+              collapsed: true,
+              collapsible: true,
               items: [
                 {
                   type: "doc",
                   id: "installation/integrations"
                 },
-                 {
-              type: "category",
-              label: "LLM Integrations",
-              items: [
-                {
-                  type: "doc",
-                  id: "installation/integrations/deepseek_llm_install"
-                },{
-                  type: "doc",
-                  id: "installation/integrations/ollama_llm_install"
-                },{
-                  type: "doc",
-                  id: "installation/integrations/claude_llm_install"
-                },{
-                  type: "doc",
-                  id: "installation/integrations/siliconflow_llm_install"
-                },{
-                  type: "doc",
-                  id: "installation/integrations/gitee_llm_install"
-                },
-              ]
-               },
+//                 {
+//              type: "category",
+//              label: "LLM Integrations",
+//              items: [
+//                {
+//                  type: "doc",
+//                  id: "installation/integrations/deepseek_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/ollama_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/claude_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/siliconflow_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/gitee_llm_install"
+//                },
+//              ]
+//               },
                {
               type: "category",
               label: "Datasource Integrations",
@@ -83,6 +83,15 @@ const sidebars = {
                 {
                   type: "doc",
                   id: "installation/integrations/clickhouse_install"
+                },{
+                  type: "doc",
+                  id: "installation/integrations/postgres_install"
+                },{
+                  type: "doc",
+                  id: "installation/integrations/duckdb_install"
+                },{
+                  type: "doc",
+                  id: "installation/integrations/mssql_install"
                 },
               ]
                },

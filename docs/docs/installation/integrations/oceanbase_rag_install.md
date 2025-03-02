@@ -10,6 +10,7 @@ First, you need to install the `dbgpt Oceanbase Vector storage` library.
 
 ```bash
 uv sync --all-packages --frozen \
+--extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \
 --extra "storage_obvector" \
