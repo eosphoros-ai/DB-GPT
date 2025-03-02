@@ -1,4 +1,4 @@
-# Milvus RAG Installation
+# Milvus RAG
 
 
 In this example, we will show how to use the Milvus as in DB-GPT RAG Storage. Using a graph database to implement RAG can, to some extent, alleviate the uncertainty and interpretability issues brought about by vector database retrieval.

@@ -1,4 +1,4 @@
-# Graph RAG Installation
+# Graph RAG
 
 
 In this example, we will show how to use the Graph RAG framework in DB-GPT. Using a graph database to implement RAG can, to some extent, alleviate the uncertainty and interpretability issues brought about by vector database retrieval.
@@ -67,42 +67,4 @@ Optionally, you can also use the following command to start the webserver:
 uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-openai.toml
 
 
-
-
-### Load into Knowledge Graph
-
-When using a graph database as the underlying knowledge storage platform, it is necessary to build a knowledge graph to facilitate the archiving and retrieval of documents. DB-GPT leverages the capabilities of large language models to implement an integrated knowledge graph, while still maintaining the flexibility to freely connect to other knowledge graph systems and graph database systems. 
-
-We created a knowledge graph with graph community summaries based on `CommunitySummaryKnowledgeGraph`.
-
-
-
-### Chat Knowledge via GraphRAG
-
-> Note: The current test data is in Chinese.
-
-Here we demonstrate how to achieve chat knowledge through Graph RAG on web page.
-
-First, create a knowledge base using the `Knowledge Graph` type. 
-
-
-<p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/create_knowledge_graph.png'} width="1000px"/>
-</p>
-
-Then, upload the documents ([graphrag-test.md](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/test_files/graphrag-test.md)) and process them automatically (markdown header by default).
-
-<p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/upload_file.png'} width="1000px"/>
-</p>
-
-After indexing, the graph data may look like this.
-<p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/graph_data.png'} width="1000px"/>
-</p>
-
-Start to chat on knowledge graph.
-<p align="left">
-  <img src={'/img/chat_knowledge/graph_rag/graph_rag_chat.png'} width="1000px"/>
-</p>
 
