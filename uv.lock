@@ -1720,52 +1720,16 @@ framework = [
     { name = "xlrd" },
 ]
 hf = [
-    { name = "cloudpickle" },
-    { name = "duckdb" },
-    { name = "duckdb-engine" },
-    { name = "jinja2" },
-    { name = "msgpack" },
-    { name = "pympler" },
-    { name = "python-multipart" },
-    { name = "schedule" },
     { name = "sentence-transformers" },
     { name = "sentencepiece" },
-    { name = "shortuuid" },
-    { name = "sqlalchemy" },
-    { name = "sqlparse" },
     { name = "transformers" },
-    { name = "uvicorn" },
 ]
 llama-cpp = [
-    { name = "cloudpickle" },
-    { name = "duckdb" },
-    { name = "duckdb-engine" },
-    { name = "jinja2" },
     { name = "llama-cpp-python" },
-    { name = "msgpack" },
-    { name = "pympler" },
-    { name = "python-multipart" },
-    { name = "schedule" },
-    { name = "shortuuid" },
-    { name = "sqlalchemy" },
-    { name = "sqlparse" },
-    { name = "uvicorn" },
 ]
 llama-cpp-server = [
-    { name = "cloudpickle" },
-    { name = "duckdb" },
-    { name = "duckdb-engine" },
-    { name = "jinja2" },
     { name = "llama-cpp-server-py" },
     { name = "llama-cpp-server-py-core" },
-    { name = "msgpack" },
-    { name = "pympler" },
-    { name = "python-multipart" },
-    { name = "schedule" },
-    { name = "shortuuid" },
-    { name = "sqlalchemy" },
-    { name = "sqlparse" },
-    { name = "uvicorn" },
 ]
 proxy-anthropic = [
     { name = "anthropic" },
@@ -1818,9 +1782,6 @@ requires-dist = [
     { name = "colorama", marker = "extra == 'cli'", specifier = "==0.4.6" },
     { name = "coloredlogs", marker = "extra == 'framework'" },
     { name = "cryptography", marker = "extra == 'framework'" },
-    { name = "dbgpt", extras = ["simple-framework"], marker = "extra == 'hf'", editable = "packages/dbgpt-core" },
-    { name = "dbgpt", extras = ["simple-framework"], marker = "extra == 'llama-cpp'", editable = "packages/dbgpt-core" },
-    { name = "dbgpt", extras = ["simple-framework"], marker = "extra == 'llama-cpp-server'", editable = "packages/dbgpt-core" },
     { name = "duckdb", marker = "extra == 'simple-framework'" },
     { name = "duckdb-engine", marker = "extra == 'simple-framework'", specifier = "==0.9.1" },
     { name = "fastapi", marker = "extra == 'client'", specifier = ">=0.100.0,<0.113.0" },
@@ -1947,7 +1908,6 @@ quant-gptqmodel = [
     { name = "tokenicer" },
 ]
 vllm = [
-    { name = "dbgpt", extra = ["simple-framework"] },
     { name = "vllm", marker = "sys_platform == 'linux' or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cpu') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-auto' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda118') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cpu' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda121') or (extra == 'extra-17-dbgpt-accelerator-cuda118' and extra == 'extra-17-dbgpt-accelerator-cuda124') or (extra == 'extra-17-dbgpt-accelerator-cuda121' and extra == 'extra-17-dbgpt-accelerator-cuda124')" },
 ]
 
@@ -1985,7 +1945,6 @@ requires-dist = [
     { name = "auto-gptq", marker = "extra == 'quant-gptq'" },
     { name = "autoawq", marker = "extra == 'quant-awq'" },
     { name = "bitsandbytes", marker = "(sys_platform == 'linux' and extra == 'quant-bnb') or (sys_platform == 'win32' and extra == 'quant-bnb')", specifier = ">=0.39.0" },
-    { name = "dbgpt", extras = ["simple-framework"], marker = "extra == 'vllm'", editable = "packages/dbgpt-core" },
     { name = "device-smi", marker = "extra == 'quant-gptqmodel'", specifier = ">=0.3.3" },
     { name = "gptqmodel", marker = "extra == 'quant-gptqmodel'" },
     { name = "optimum", marker = "extra == 'quant-gptq'" },
