@@ -130,6 +130,7 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 ```bash
 # Use uv to install dependencies needed for OpenAI proxy
 uv sync --all-packages --frozen \
+--extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \
 --extra "storage_chromadb" \

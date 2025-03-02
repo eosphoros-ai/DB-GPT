@@ -12,6 +12,7 @@ First, you need to install the `dbgpt graph_rag` library.
 
 ```bash
 uv sync --all-packages --frozen \
+--extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \
 --extra "storage_chromadb" \
