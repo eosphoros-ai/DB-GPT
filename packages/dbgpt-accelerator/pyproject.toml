@@ -74,7 +74,7 @@ cuda124 = [
 #]
 vllm = [
     # Just support GPU version on Linux
-    "vllm>=0.7.0; sys_platform == 'linux'"
+    "vllm>=0.7.0; sys_platform == 'linux'",
 ]
 #vllm_pascal = [
 #    # https://github.com/sasha0552/pascal-pkgs-ci

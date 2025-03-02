@@ -104,7 +104,7 @@ This tutorial assumes that you can establish network communication with the depe
 
 ```bash
 # Use uv to install dependencies needed for OpenAI proxy
-uv sync --all-packages \
+uv sync --all-packages --frozen \
 --extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \
@@ -192,7 +192,7 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 ```bash
 # Use uv to install dependencies needed for GLM4
 # Install core dependencies and select desired extensions
-uv sync --all-packages \
+uv sync --all-packages --frozen \
 --extra "base" \
 --extra "hf" \
 --extra "rag" \
