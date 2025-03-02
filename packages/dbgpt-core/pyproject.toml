@@ -113,11 +113,11 @@ code = [
     "lyric-component-ts-transpiling>=0.1.6",
 ]
 llama_cpp = [
-    "llama-cpp-python"
+    "llama-cpp-python",
 ]
 llama_cpp_server = [
     "llama-cpp-server-py-core>=0.1.3",
-    "llama-cpp-server-py>=0.1.3"
+    "llama-cpp-server-py>=0.1.3",
 ]
 proxy_ollama = ["ollama"]
 proxy_zhipuai = ["zhipuai>=2.1.5"]
