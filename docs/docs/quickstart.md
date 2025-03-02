@@ -144,8 +144,7 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 
 ```bash
 # Use uv to install dependencies needed for OpenAI proxy
-uv sync --all-packages \
---extra "base" \
+uv sync --all-packages --frozen \
 --extra "proxy_openai" \
 --extra "rag" \
 --extra "storage_chromadb" \
@@ -156,17 +155,8 @@ uv sync --all-packages \
 
 To run DB-GPT with DeepSeek proxy, you must provide the DeepSeek API key in the `configs/dbgpt-proxy-deepseek.toml`.
 
-And you can specify your embedding model in the `configs/dbgpt-proxy-deepseek.toml` configuration file, the default embedding model is `BAAI/bge-large-zh-v1.5`. If you want to use other embedding models, you can modify the `configs/dbgpt-proxy-deepseek.toml` configuration file and specify the `name` and `provider` of the embedding model in the `[[models.embeddings]]` section. The provider can be `hf`.Finally, you need to append `--extra "hf"` at the end of the dependency installation command. Here's the updated command:
-```bash
-uv sync --all-packages \
---extra "base" \
---extra "proxy_openai" \
---extra "rag" \
---extra "storage_chromadb" \
---extra "dbgpts" \
---extra "hf" 
-```
-**Model Configurations**:
+And you can specify your embedding model in the `configs/dbgpt-proxy-deepseek.toml` configuration file, the default embedding model is `BAAI/bge-large-zh-v1.5`. If you want to use other embedding models, you can modify the `configs/dbgpt-proxy-deepseek.toml` configuration file and specify the `name` and `provider` of the embedding model in the `[[models.embeddings]]` section. The provider can be `hf`.
+
 ```toml
 # Model Configurations
 [models]
