@@ -81,6 +81,7 @@ uv --version
   defaultValue="openai"
   values={[
     {label: 'OpenAI (proxy)', value: 'openai'},
+    {label: 'DeepSeek (proxy)', value: 'deepseek'},
     {label: 'GLM4 (local)', value: 'glm-4'},
   ]}>
 
@@ -121,6 +122,54 @@ In the above command, `--config` specifies the configuration file, and `configs/
 Optionally, you can also use the following command to start the webserver:
 ```bash
 uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-openai.toml
+```
+
+  </TabItem>
+<TabItem value="deepseek" label="DeepSeek(proxy)">
+
+```bash
+# Use uv to install dependencies needed for OpenAI proxy
+uv sync --all-packages --frozen \
+--extra "base" \
+--extra "proxy_openai" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts"
+```
+
+### Run Webserver
+
+To run DB-GPT with DeepSeek proxy, you must provide the DeepSeek API key in the `configs/dbgpt-proxy-deepseek.toml`.
+
+And you can specify your embedding model in the `configs/dbgpt-proxy-deepseek.toml` configuration file, the default embedding model is `BAAI/bge-large-zh-v1.5`. If you want to use other embedding models, you can modify the `configs/dbgpt-proxy-deepseek.toml` configuration file and specify the `name` and `provider` of the embedding model in the `[[models.embeddings]]` section. The provider can be `hf`.
+
+```toml
+# Model Configurations
+[models]
+[[models.llms]]
+# name = "deepseek-chat"
+name = "deepseek-reasoner"
+provider = "proxy/deepseek"
+api_key = "your-deepseek-api-key"
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+path = "/data/models/bge-large-zh-v1.5"
+```
+
+Then run the following command to start the webserver:
+
+```bash
+uv run dbgpt start webserver --config configs/dbgpt-proxy-deepseek.toml
+```
+In the above command, `--config` specifies the configuration file, and `configs/dbgpt-proxy-deepseek.toml` is the configuration file for the DeepSeek proxy model, you can also use other configuration files or create your own configuration file according to your needs.
+
+Optionally, you can also use the following command to start the webserver:
+```bash
+uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-deepseek.toml
 ```
 
   </TabItem>

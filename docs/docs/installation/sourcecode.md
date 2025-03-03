@@ -8,365 +8,224 @@
 |     Local model          |    8C * 32G     |       24G      |  It is best to start locally with a GPU of 24G or above   |
 
 
+## Environment Preparation
 
-
-
-
-### Download source code
+### Download Source Code
 
 :::tip
 Download DB-GPT
 :::
 
-
-
 ```bash
 git clone https://github.com/eosphoros-ai/DB-GPT.git
 ```
 
-### Miniconda environment installation
-
-- The default database uses SQLite, so there is no need to install a database in the default startup mode. If you need to use other databases, you can read the [advanced tutorials](/docs/application_manual/advanced_tutorial) below. We recommend installing the Python virtual environment through the conda virtual environment. For the installation of Miniconda environment, please refer to the [Miniconda installation tutorial](https://docs.conda.io/projects/miniconda/en/latest/).
-
-:::tip
-Create a Python virtual environment
-:::
-
-```bash
-python >= 3.10
-conda create -n dbgpt_env python=3.10
-conda activate dbgpt_env
-
-# it will take some minutes
-pip install -e ".[default]"
-```
-
-:::tip
-Copy environment variables
-:::
-```bash
-cp .env.template  .env
-```
-
-
-## Model deployment
-
-DB-GPT can be deployed on servers with lower hardware through proxy model, or as a private local model under the GPU environment. If your hardware configuration is low, you can use third-party large language model API services, such as OpenAI, Azure, Qwen, ERNIE Bot, etc.
-
 :::info note
-
-⚠️  You need to ensure that git-lfs is installed
-```bash
-● CentOS installation: yum install git-lfs
-● Ubuntu installation: apt-get install git-lfs
-● MacOS installation: brew install git-lfs
-```
+There are some ways to install uv:
 :::
-### Proxy model
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs
+  defaultValue="uv_sh"
+  values={[
+    {label: 'Command (macOS And Linux)', value: 'uv_sh'},
+    {label: 'PyPI', value: 'uv_pypi'},
+    {label: 'Other', value: 'uv_other'},
+  ]}>
+  <TabItem value="uv_sh" label="Command">
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+  </TabItem>
+
+  <TabItem value="uv_pypi" label="Pypi">
+Install uv using pipx.
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install --upgrade pipx
+python -m pipx ensurepath
+pipx install uv --global
+```
+  </TabItem>
+
+  <TabItem value="uv_other" label="Other">
+
+You can see more installation methods on the [uv installation](https://docs.astral.sh/uv/getting-started/installation/)
+  </TabItem>
+
+</Tabs>
+
+Then, you can run `uv --version` to check if uv is installed successfully.
+
+```bash
+uv --version
+```
+
+## Deploy DB-GPT 
+
+### Install Dependencies
+
+<Tabs
   defaultValue="openai"
   values={[
-    {label: 'Open AI', value: 'openai'},
-    {label: 'Qwen', value: 'qwen'},
-    {label: 'ChatGLM', value: 'chatglm'},
-    {label: 'WenXin', value: 'erniebot'},
-    {label: 'Yi', value: 'yi'},
+    {label: 'OpenAI (proxy)', value: 'openai'},
+    {label: 'DeepSeek (proxy)', value: 'deepseek'},
+    {label: 'GLM4 (local)', value: 'glm-4'},
   ]}>
-  <TabItem value="openai" label="open ai">
-  Install dependencies
+
+  <TabItem value="openai" label="OpenAI(proxy)">
 
 ```bash
-pip install  -e ".[openai]"
+# Use uv to install dependencies needed for OpenAI proxy
+uv sync --all-packages --frozen \
+--extra "base" \
+--extra "proxy_openai" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts"
 ```
 
-Download embedding model
+### Run Webserver
+
+To run DB-GPT with OpenAI proxy, you must provide the OpenAI API key in the `configs/dbgpt-proxy-openai.toml` configuration file or privide it in the environment variable with key `OPENAI_API_KEY`.
+
+```toml
+# Model Configurations
+[models]
+[[models.llms]]
+...
+api_key = "your-openai-api-key"
+[[models.embeddings]]
+...
+api_key = "your-openai-api-key"
+```
+
+Then run the following command to start the webserver:
 
 ```bash
-cd DB-GPT
-mkdir models and cd models
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
+uv run dbgpt start webserver --config configs/dbgpt-proxy-openai.toml
 ```
+In the above command, `--config` specifies the configuration file, and `configs/dbgpt-proxy-openai.toml` is the configuration file for the OpenAI proxy model, you can also use other configuration files or create your own configuration file according to your needs.
 
-Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
-
+Optionally, you can also use the following command to start the webserver:
 ```bash
-# .env
-LLM_MODEL=chatgpt_proxyllm
-PROXY_API_KEY={your-openai-sk}
-PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
-# If you use gpt-4
-# PROXYLLM_BACKEND=gpt-4
+uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-openai.toml
 ```
+
   </TabItem>
-  <TabItem value="qwen" label="通义千问">
-Install dependencies
+<TabItem value="deepseek" label="DeepSeek(proxy)">
 
 ```bash
-pip install dashscope
+# Use uv to install dependencies needed for OpenAI proxy
+uv sync --all-packages --frozen \
+--extra "base" \
+--extra "proxy_openai" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts"
 ```
 
-Download embedding model
+### Run Webserver
+
+To run DB-GPT with DeepSeek proxy, you must provide the DeepSeek API key in the `configs/dbgpt-proxy-deepseek.toml`.
+
+And you can specify your embedding model in the `configs/dbgpt-proxy-deepseek.toml` configuration file, the default embedding model is `BAAI/bge-large-zh-v1.5`. If you want to use other embedding models, you can modify the `configs/dbgpt-proxy-deepseek.toml` configuration file and specify the `name` and `provider` of the embedding model in the `[[models.embeddings]]` section. The provider can be `hf`.
+
+```toml
+# Model Configurations
+[models]
+[[models.llms]]
+# name = "deepseek-chat"
+name = "deepseek-reasoner"
+provider = "proxy/deepseek"
+api_key = "your-deepseek-api-key"
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+path = "/data/models/bge-large-zh-v1.5"
+```
+
+Then run the following command to start the webserver:
 
 ```bash
-cd DB-GPT
-mkdir models and cd models
-
-# embedding model
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-or
-git clone https://huggingface.co/moka-ai/m3e-large
+uv run dbgpt start webserver --config configs/dbgpt-proxy-deepseek.toml
 ```
+In the above command, `--config` specifies the configuration file, and `configs/dbgpt-proxy-deepseek.toml` is the configuration file for the DeepSeek proxy model, you can also use other configuration files or create your own configuration file according to your needs.
 
-Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
-
+Optionally, you can also use the following command to start the webserver:
 ```bash
-# .env
-# Aliyun tongyiqianwen
-LLM_MODEL=tongyi_proxyllm
-TONGYI_PROXY_API_KEY={your-tongyi-sk}
-PROXY_SERVER_URL={your_service_url}
+uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-deepseek.toml
 ```
+
   </TabItem>
-  <TabItem value="chatglm" label="chatglm" >
-Install dependencies
+  <TabItem value="glm-4" label="GLM4(local)">
 
 ```bash
-pip install zhipuai
+# Use uv to install dependencies needed for GLM4
+# Install core dependencies and select desired extensions
+uv sync --all-packages --frozen \
+--extra "base" \
+--extra "hf" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "quant_bnb" \
+--extra "dbgpts"
 ```
 
-Download embedding model
+### Run Webserver
+
+To run DB-GPT with the local model. You can modify the `configs/dbgpt-local-glm.toml` configuration file to specify the model path and other parameters.
+
+```toml
+# Model Configurations
+[models]
+[[models.llms]]
+name = "THUDM/glm-4-9b-chat-hf"
+provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+```
+In the above configuration file, `[[models.llms]]` specifies the LLM model, and `[[models.embeddings]]` specifies the embedding model. If you not provide the `path` parameter, the model will be downloaded from the Hugging Face model hub according to the `name` parameter.
+
+Then run the following command to start the webserver:
 
 ```bash
-cd DB-GPT
-mkdir models and cd models
-
-# embedding model
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-or
-git clone https://huggingface.co/moka-ai/m3e-large
+uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 ```
 
-Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
-
-```bash
-# .env
-LLM_MODEL=zhipu_proxyllm
-PROXY_SERVER_URL={your_service_url}
-ZHIPU_MODEL_VERSION={version}
-ZHIPU_PROXY_API_KEY={your-zhipu-sk}
-```
-  </TabItem>
-
-  <TabItem value="erniebot" label="文心一言" default>
-
-Download embedding model
-
-```bash
-cd DB-GPT
-mkdir models and cd models
-
-# embedding model
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-or
-git clone https://huggingface.co/moka-ai/m3e-large
-```
-
-Configure the proxy and modify LLM_MODEL, MODEL_VERSION, API_KEY and API_SECRET in the `.env`file
-
-```bash
-# .env
-LLM_MODEL=wenxin_proxyllm
-WEN_XIN_MODEL_VERSION={version} # ERNIE-Bot or ERNIE-Bot-turbo
-WEN_XIN_API_KEY={your-wenxin-sk}
-WEN_XIN_API_SECRET={your-wenxin-sct}
-```
-  </TabItem>
-  <TabItem value="yi" label="Yi">
-  Install dependencies
-
-Yi's API is compatible with OpenAI's API, so you can use the same dependencies as OpenAI's API.
-
-```bash
-pip install  -e ".[openai]"
-```
-
-Download embedding model
-
-```shell
-cd DB-GPT
-mkdir models and cd models
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-```
-
-Configure the proxy and modify LLM_MODEL, YI_API_BASE and YI_API_KEY in the `.env`file
-
-```shell
-# .env
-LLM_MODEL=yi_proxyllm
-YI_MODEL_VERSION=yi-34b-chat-0205
-YI_API_BASE=https://api.lingyiwanwu.com/v1
-YI_API_KEY={your-yi-api-key}
-```
   </TabItem>
 </Tabs>
 
 
-:::info note
+## Visit Website
 
-⚠️ Be careful not to overwrite the contents of the `.env` configuration file
-:::
+Open your browser and visit [`http://localhost:5670`](http://localhost:5670)
 
+### (Optional) Run Web Front-end Separately
 
-### Local model
-<Tabs
-  defaultValue="vicuna"
-  values={[
-    {label: 'ChatGLM', value: 'chatglm'},
-    {label: 'Vicuna', value: 'vicuna'},
-    {label: 'Baichuan', value: 'baichuan'},
-  ]}>
-  <TabItem value="vicuna" label="vicuna">
-
-##### Hardware requirements description
-| Model    		    |   Quantize   |  VRAM Size   	| 
-|------------------ |--------------|----------------|
-|Vicuna-7b-1.5     	|   4-bit      |  8GB         	|
-|Vicuna-7b-1.5 		|   8-bit	   |  12GB        	|
-|Vicuna-13b-v1.5   	|   4-bit      |  12GB        	|
-|Vicuna-13b-v1.5    |   8-bit      |  24GB          |
-
-##### Download LLM
+You can also run the web front-end separately:
 
 ```bash
-cd DB-GPT
-mkdir models and cd models
-
-# embedding model
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-or
-git clone https://huggingface.co/moka-ai/m3e-large
-
-# llm model, if you use openai or Azure or tongyi llm api service, you don't need to download llm model
-git clone https://huggingface.co/lmsys/vicuna-13b-v1.5
-
+cd web && npm install
+cp .env.template .env
+// Set API_BASE_URL to your DB-GPT server address, usually http://localhost:5670
+npm run dev
 ```
-##### Environment variable configuration, configure the LLM_MODEL parameter in the `.env` file
-```bash
-# .env
-LLM_MODEL=vicuna-13b-v1.5
-```
-  </TabItem>
-
-  <TabItem value="baichuan" label="baichuan">
-
-##### Hardware requirements description
-| Model    		    |   Quantize   |  VRAM Size   	| 
-|------------------ |--------------|----------------|
-|Baichuan-7b     	|   4-bit      |  8GB         	|
-|Baichuan-7b  		|   8-bit	   |  12GB          |
-|Baichuan-13b     	|   4-bit      |  12GB        	|
-|Baichuan-13b       |   8-bit      |  20GB          |
-
-##### Download LLM
-
-
-```bash
-cd DB-GPT
-mkdir models and cd models
-
-# embedding model
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-or
-git clone https://huggingface.co/moka-ai/m3e-large
-
-# llm model
-git clone https://huggingface.co/baichuan-inc/Baichuan2-7B-Chat
-or
-git clone https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat
-
-```
-##### Environment variable configuration, configure the LLM_MODEL parameter in the `.env` file
-```bash
-# .env
-LLM_MODEL=baichuan2-13b
-```
-  </TabItem>
-
-  <TabItem value="chatglm" label="chatglm">
-
-##### Hardware requirements description
-| Model    		        | Quantize    | VRAM Size   	  | 
-|--------------------|-------------|----------------|
-| glm-4-9b-chat     	 | Not support | 16GB         	 |
-| ChatGLM-6b     	   | 4-bit       | 7GB         	  |
-| ChatGLM-6b 	  	    | 8-bit	      | 9GB            |
-| ChatGLM-6b       	 | FP16        | 14GB        	  |
-
-
-##### Download LLM
-
-```bash
-cd DB-GPT
-mkdir models and cd models
-
-# embedding model
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-or
-git clone https://huggingface.co/moka-ai/m3e-large
-
-# llm model
-git clone https://huggingface.co/THUDM/glm-4-9b-chat
-
-```
-##### Environment variable configuration, configure the LLM_MODEL parameter in the `.env` file
-```bash
-# .env
-LLM_MODEL=glm-4-9b-chat
-```
-  </TabItem>
-
-</Tabs>
-
-
-### llama.cpp(CPU)
-:::info note
-⚠️ llama.cpp can be run on Mac M1 or Mac M2
-:::
-
-DB-GPT also supports the lower-cost inference framework llama.cpp, which can be used through llama-cpp-python.
-
-
-#### Document preparation
-Before using llama.cpp, you first need to prepare the model file in gguf format. There are two ways to obtain it. You can choose one method to obtain the corresponding file.
-
-:::tip
-Method 1: Download the converted model
-:::
-
-If you want to use [Vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5), you can download the converted file [TheBloke/vicuna-13B-v1.5-GGUF](https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF), only this one file is needed. Download the file and put it in the model path. You need to rename the model to: `ggml-model-q4_0.gguf`.
-```bash
-wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf
-```
-
-:::tip
-Method 2: Convert files yourself
-:::
-During use, you can also convert the model file yourself according to the instructions in [llama.cpp#prepare-data–run](https://github.com/ggerganov/llama.cpp#prepare-data--run), and place the converted file in the models directory and name it `ggml-model-q4_0.gguf`.
-
-
-#### Install dependencies
-llama.cpp is an optional installation item in DB-GPT. You can install it with the following command.
-
-```bash
-pip install -e ".[llama_cpp]"
-```
-
-#### Modify configuration file
-Modify the `.env` file to use llama.cpp, and then you can start the service by running the [command](../quickstart.md)
+Open your browser and visit [`http://localhost:3000`](http://localhost:3000)
 
 
 #### More descriptions
@@ -441,27 +300,6 @@ bash ./scripts/examples/load_examples.sh
 
 ```bash
 .\scripts\examples\load_examples.bat
-```
-
-## Run service
-The DB-GPT service is packaged into a server, and the entire DB-GPT service can be started through the following command.
-```bash
-python dbgpt/app/dbgpt_server.py
-```
-:::info NOTE
-### Run service
-
-If you are running version v0.4.3 or earlier, please start with the following command:
-
-```bash
-python pilot/server/dbgpt_server.py
-```
-### Run DB-GPT with command `dbgpt`
-
-If you want to run DB-GPT with the command `dbgpt`:
-
-```bash
-dbgpt start webserver
 ```
 
 :::

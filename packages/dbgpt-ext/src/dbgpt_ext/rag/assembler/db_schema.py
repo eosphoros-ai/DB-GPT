@@ -159,8 +159,8 @@ class DBSchemaAssembler(BaseAssembler):
                 table_chunks.append(chunk)
 
         if self._field_vector_store_connector and field_chunks:
-            self._field_vector_store_connector.load_document(field_chunks)
-        return self._table_vector_store_connector.load_document(table_chunks)
+            self._field_vector_store_connector.load_document_with_limit(field_chunks)
+        return self._table_vector_store_connector.load_document_with_limit(table_chunks)
 
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""
