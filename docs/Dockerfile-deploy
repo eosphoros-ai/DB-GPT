@@ -41,7 +41,7 @@ ENV NUM_VERSION=$NUM_VERSION
 # Sometimes, we just want to test the changes in the Dockerfile
 RUN git config --global user.email "dbgpt@example.com" && \
     git config --global user.name "DB-GPT" && \
-    git add . && git commit --no-verify -m "Commit message"
+    git add . && git commit --no-verify -m "Commit message" || exit 1
 
 # New logic for building versions directly in Dockerfile
 RUN git config --global --add safe.directory /app && \
@@ -80,12 +80,12 @@ RUN git config --global --add safe.directory /app && \
         cd /app-build/docs && npm run docusaurus docs:version $TAG || exit 1; \
     done && \
     # Return to the original position, build dev version
-    cd /app/docs && git checkout $CURRENT_POSITION && \
+    cd /app/docs && git checkout . && git checkout $CURRENT_POSITION && \
     rm -rf /app-build/docs/docs /app-build/docs/sidebars.js /app-build/docs/static /app-build/docs/src && \
     cp -r /app/docs/docs /app-build/docs/ && \
     cp /app/docs/sidebars.js /app-build/docs/ && \
     cp -r /app/docs/static /app-build/docs/ && \
-    cp -r /app/docs/src /app-build/docs/; \
+    cp -r /app/docs/src /app-build/docs/ || exit 1; \
     cd /app-build/docs && npm run build && \
     echo $TAGS | tr ' ' '\n' | tac > /app-build/docs/build/versions.txt && \
     echo "latest" >> /app-build/docs/build/versions.txt && \
