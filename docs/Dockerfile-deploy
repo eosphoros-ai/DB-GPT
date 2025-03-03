@@ -25,7 +25,13 @@ COPY . /app
 
 # Make sure we have the latest version of the repository
 RUN if [ "$CI" = "true" ]; then \
-        git fetch --prune --unshallow; \
+        # Check if the repo is shallow before trying to unshallow it
+        if git rev-parse --is-shallow-repository | grep -q 'true'; then \
+            git fetch --prune --unshallow; \
+        else \
+            echo "Repository is already complete, skipping unshallow"; \
+            git fetch --prune; \
+        fi; \
     fi
 
 ARG NUM_VERSION=2
