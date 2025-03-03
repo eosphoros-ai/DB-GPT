@@ -53,5 +53,3 @@ name = "${env:EMBEDDING_MODEL_NAME:-text-embedding-3-small}"
 provider = "${env:EMBEDDING_MODEL_PROVIDER:-proxy/openai}"
 api_url = "${env:EMBEDDING_MODEL_API_URL:-https://api.openai.com/v1/embeddings}"
 api_key = "${env:OPENAI_API_KEY}"
-
-

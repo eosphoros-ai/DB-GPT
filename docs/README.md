@@ -7,7 +7,7 @@
 - Install docusaurus dependencies, generate node_modules folder.
 
 ```
-sudo yarn install
+yarn install
 ```
 
 ### launch
