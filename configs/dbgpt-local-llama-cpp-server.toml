@@ -33,8 +33,8 @@ path = "models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf"
 name = "DeepSeek-R1-Distill-Qwen-1.5B"
 provider = "llama.cpp.server"
 # https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF
-path = "/data/models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf"
-
+# path = "the-model-path-in-the-local-file-system"
+path = "models/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf"
 
 [[models.embeddings]]
 name = "BAAI/bge-large-zh-v1.5"
