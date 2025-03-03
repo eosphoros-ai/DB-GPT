@@ -1,5 +1,4 @@
 name: Build and push docs image
-
 on:
   push:
     branches:
@@ -14,15 +13,29 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-
+    inputs:
+      branch:
+        description: 'Branch to build (default: main)'
+        required: true
+        default: 'main'
+        type: string
 permissions:
   contents: read
-
 jobs:
   build-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref }}
+      
+      - name: Debug git status 
+        run: |
+            echo "Current commit: $(git rev-parse HEAD)"
+            echo "Current branch: $(git rev-parse --abbrev-ref HEAD || echo 'detached HEAD')"
+            echo "Main branch commit: $(git rev-parse origin/main)"
+            echo "Using branch: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}"
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -47,6 +60,7 @@ jobs:
           file: ./docs/Dockerfile-deploy
           platforms: linux/amd64
           push: false
+      
       # Only run when it is not a PR, build and push the image
       - name: Build and push
         if: github.event_name != 'pull_request'
@@ -56,4 +70,4 @@ jobs:
           file: ./docs/Dockerfile-deploy
           platforms: linux/amd64
           push: true
-          tags: eosphorosai/dbgpt-docs:${{ github.ref_name }},eosphorosai/dbgpt-docs:latest
+          tags: eosphorosai/dbgpt-docs:${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }},eosphorosai/dbgpt-docs:latest
