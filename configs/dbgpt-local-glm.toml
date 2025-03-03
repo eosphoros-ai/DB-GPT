@@ -26,6 +26,7 @@ provider = "hf"
 # If not provided, the model will be downloaded from the Hugging Face model hub
 # uncomment the following line to specify the model path in the local file system
 # path = "the-model-path-in-the-local-file-system"
+path = "models/THUDM/glm-4-9b-chat-hf"
 
 [[models.embeddings]]
 name = "BAAI/bge-large-zh-v1.5"
@@ -33,4 +34,4 @@ provider = "hf"
 # If not provided, the model will be downloaded from the Hugging Face model hub
 # uncomment the following line to specify the model path in the local file system
 # path = "the-model-path-in-the-local-file-system"
-
+path = "models/BAAI/glm-4-9b-chat-hf"
