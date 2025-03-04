@@ -96,7 +96,7 @@ class VectorStoreConnector:
 
     def __rewrite_index_store_type(self, index_store_type):
         # Rewrite Knowledge Graph Type
-        if self.app_config.rag.graph_community_summary_enabled:
+        if self.app_config.rag.storage.graph.get("enable_summary").lower() == "true":
             if index_store_type == "KnowledgeGraph":
                 return "CommunitySummaryKnowledgeGraph"
         return index_store_type
