@@ -95,7 +95,7 @@ logger = logging.getLogger(__name__)
             float,
             description=_("Recall score of community search in knowledge graph"),
             optional=True,
-            default=0.0,
+            default=0.3,
         ),
         Parameter.build_from(
             _("Enable the graph search for documents and chunks"),
@@ -171,7 +171,7 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
         description="Topk of community search in knowledge graph",
     )
     community_score_threshold: float = Field(
-        default=0.0,
+        default=0.3,
         description="Recall score of community search in knowledge graph",
     )
     triplet_graph_enabled: bool = Field(
