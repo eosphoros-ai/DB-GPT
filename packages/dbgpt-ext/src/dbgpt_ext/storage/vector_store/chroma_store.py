@@ -5,7 +5,7 @@ import os
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from dbgpt._private.pydantic import ConfigDict, Field
-from dbgpt.configs.model_config import PILOT_PATH
+from dbgpt.configs.model_config import PILOT_PATH, resolve_root_path
 from dbgpt.core import Chunk
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -90,7 +90,7 @@ class ChromaStore(VectorStoreBase):
             "persist_path", os.path.join(PILOT_PATH, "data")
         )
         self.persist_dir = os.path.join(
-            chroma_path, vector_store_config.name + ".vectordb"
+            resolve_root_path(chroma_path), vector_store_config.name + ".vectordb"
         )
         self.embeddings = vector_store_config.embedding_fn
         chroma_settings = Settings(
