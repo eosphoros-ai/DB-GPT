@@ -13,16 +13,22 @@ readme = "README.md"
 requires-python = ">= 3.10"
 
 [tool.uv.sources]
-dbgpt-accelerator = { workspace = true }
 dbgpt = { workspace = true }
 dbgpt-client = { workspace = true }
 dbgpt-ext = { workspace = true }
 dbgpt-serve = { workspace = true }
 dbgpt-app = { workspace = true }
+dbgpt-acc-auto = { workspace = true }
+dbgpt-acc-flash-attn = { workspace = true }
 
 [tool.uv.workspace]
 members = [
-  "packages/dbgpt-*"
+  "packages/dbgpt-app", 
+  "packages/dbgpt-client",
+  "packages/dbgpt-core", 
+  "packages/dbgpt-ext", 
+  "packages/dbgpt-serve", 
+  "packages/dbgpt-accelerator/*"
 ]
 
 [tool.uv]
@@ -65,4 +71,4 @@ select = ["E", "F", "I"]
 
 [tool.ruff.isort]
 # Specify the local modules (first-party)
-known-first-party = ["dbgpt", "dbgpt_accelerator", "dbgpt_client", "dbgpt_ext", "dbgpt_serve", "dbgpt_app"]
+known-first-party = ["dbgpt", "dbgpt_acc_auto", "dbgpt_client", "dbgpt_ext", "dbgpt_serve", "dbgpt_app"]

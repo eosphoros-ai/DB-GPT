@@ -301,15 +301,15 @@ class LlamaServerParameters(LLMDeployModelParameters):
                 config_dict[fd.name] = curr_config[fd.name]
 
         if (
-            "device" in config_dict
-            and config_dict["device"] == "cuda"
+            self.real_device
+            and self.real_device == "cuda"
             and ("n_gpu_layers" not in config_dict or not config_dict["n_gpu_layers"])
         ):
             # Set n_gpu_layers to a large number to use all layers
             logger.info("Set n_gpu_layers to a large number to use all layers")
             config_dict["n_gpu_layers"] = 1000000000
         config_dict["model_alias"] = self.name
-        config_dict["model_file"] = self.path
+        config_dict["model_file"] = self._resolve_root_path(self.path)
         model_file = config_dict.get("model_file")
         model_url = config_dict.get("model_url")
         model_hf_repo = config_dict.get("model_hf_repo")

@@ -128,13 +128,13 @@ def process_streaming_chunk(
             if end_marker in remaining_chunk:
                 end_idx = remaining_chunk.find(end_marker)
                 # Output reasoning content event
-                if end_idx > 0:
-                    reasoning_part = remaining_chunk[:end_idx]
-                    events.append(
-                        StreamingEvent(type="reasoning_content", content=reasoning_part)
-                    )
-                    # Append reasoning content instead of replacing
-                    msg.reasoning_content += reasoning_part
+                # if end_idx > 0:
+                reasoning_part = remaining_chunk[:end_idx]
+                events.append(
+                    StreamingEvent(type="reasoning_content", content=reasoning_part)
+                )
+                # Append reasoning content instead of replacing
+                msg.reasoning_content += reasoning_part
 
                 # Output reasoning end event
                 events.append(StreamingEvent(type="reasoning_end", content=""))
@@ -220,6 +220,49 @@ def process_streaming_chunk(
                 remaining_chunk = ""
             continue
 
+        # Check for reasoning end markers without matching start markers
+        # This is the special case to handle
+        found_end_marker = False
+        for pattern in reasoning_patterns:
+            start_marker = pattern["start"]
+            end_marker = pattern["end"]
+            if end_marker in remaining_chunk and not state["in_reasoning"]:
+                end_idx = remaining_chunk.find(end_marker)
+                start_idx = 0
+                if start_marker in remaining_chunk:
+                    start_idx = remaining_chunk.find(start_marker) + len(start_marker)
+
+                # This is content that should be treated as reasoning but didn't have a
+                # start tag
+                # if end_idx > 0:
+                reasoning_part = remaining_chunk[start_idx:end_idx]
+                # Clear regular content
+                reasoning_part = msg.content + reasoning_part
+                msg.content = ""
+
+                # First, emit a reasoning_start event
+                events.append(StreamingEvent(type="reasoning_start", content=""))
+
+                # Then emit the content as reasoning content
+                events.append(
+                    StreamingEvent(type="reasoning_content", content=reasoning_part)
+                )
+
+                # Add to reasoning content
+                msg.reasoning_content += reasoning_part
+
+                # Emit the reasoning_end event
+                events.append(StreamingEvent(type="reasoning_end", content=""))
+                # Move past the end marker
+                remaining_chunk = remaining_chunk[end_idx + len(end_marker) :]
+                found_end_marker = True
+                state["reasoning_pattern"] = None
+                break
+
+        # If we found an end marker, continue to the next iteration
+        if found_end_marker:
+            continue
+
         # Check for reasoning start markers
         reasoning_start_found = False
         for pattern in reasoning_patterns:
@@ -228,10 +271,10 @@ def process_streaming_chunk(
                 start_idx = remaining_chunk.find(start_marker)
 
                 # Output regular content before the marker
-                if start_idx > 0:
-                    content_part = remaining_chunk[:start_idx]
-                    events.append(StreamingEvent(type="content", content=content_part))
-                    msg.content += content_part
+                # if start_idx > 0:
+                content_part = remaining_chunk[:start_idx]
+                events.append(StreamingEvent(type="content", content=content_part))
+                msg.content += content_part
 
                 # Output reasoning start event
                 events.append(StreamingEvent(type="reasoning_start", content=""))
@@ -257,12 +300,10 @@ def process_streaming_chunk(
                     start_idx = remaining_chunk.find(start_marker)
 
                     # Output regular content before the marker
-                    if start_idx > 0:
-                        content_part = remaining_chunk[:start_idx]
-                        events.append(
-                            StreamingEvent(type="content", content=content_part)
-                        )
-                        msg.content += content_part
+                    # if start_idx > 0:
+                    content_part = remaining_chunk[:start_idx]
+                    events.append(StreamingEvent(type="content", content=content_part))
+                    msg.content += content_part
 
                     # Output tool call start event
                     events.append(StreamingEvent(type="tool_call_start", content=""))
@@ -355,6 +396,7 @@ def parse_chat_message(
     reasoning_content = ""
     content = input_text
 
+    # First check for the normal case with proper start and end markers
     for pattern in reasoning_patterns:
         start_marker = pattern["start"]
         end_marker = pattern["end"]
@@ -370,6 +412,44 @@ def parse_chat_message(
                 # Remove reasoning part from original content
                 if extract_reasoning:
                     content = content[:start_idx] + content[end_idx + len(end_marker) :]
+                break
+
+    # If no reasoning content was found with the standard pattern, check for the
+    # special case
+    # where content starts with reasoning but has no start marker
+    if not reasoning_content:
+        for pattern in reasoning_patterns:
+            start_marker = pattern["start"]
+            end_marker = pattern["end"]
+
+            if end_marker in content:
+                # Check if this is at the beginning of the content or
+                # if there's no matching start marker before it
+                end_idx = content.find(end_marker)
+                start_marker = pattern["start"]
+                start_idx = content.find(start_marker)
+
+                # If no start marker or end marker appears before start marker
+                if start_idx == -1 or end_idx < start_idx:
+                    # This is our special case - treat the content up to the end marker
+                    # as reasoning
+                    reasoning_content = string_strip(content[:end_idx])
+
+                    # Remove reasoning part from original content
+                    if extract_reasoning:
+                        content = content[end_idx + len(end_marker) :]
+                    break
+            elif start_marker in content:
+                # If there's a start marker but no end marker, treat the content
+                # as reasoning content
+                start_idx = content.find(start_marker)
+                reasoning_content = string_strip(
+                    content[start_idx + len(start_marker) :]
+                )
+
+                # Remove reasoning part from original content
+                if extract_reasoning:
+                    content = ""
                 break
 
     # Parse tool calls

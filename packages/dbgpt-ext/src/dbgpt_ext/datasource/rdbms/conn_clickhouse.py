@@ -40,8 +40,7 @@ class ClickhouseParameters(BaseDatasourceParameters):
     user: str = field(metadata={"help": _("Database user to connect")})
     database: str = field(metadata={"help": _("Database name")})
     engine: str = field(
-        default="MergeTree", 
-        metadata={"help": _("Storage engine, e.g., MergeTree")}
+        default="MergeTree", metadata={"help": _("Storage engine, e.g., MergeTree")}
     )
     password: str = field(
         default="${env:DBGPT_DB_PASSWORD}",

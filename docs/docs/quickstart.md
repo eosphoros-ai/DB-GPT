@@ -285,8 +285,23 @@ uv run dbgpt start webserver --config configs/dbgpt-local-vllm.toml
 ```
 
   </TabItem>
-      <TabItem value="llama_cpp" label="LLAMA_CPP(local)">
+  <TabItem value="llama_cpp" label="LLAMA_CPP(local)">
 
+If you has a Nvidia GPU, you can enable the CUDA support by setting the environment variable `CMAKE_ARGS="-DGGML_CUDA=ON"`.
+
+```bash
+# Use uv to install dependencies needed for llama-cpp
+# Install core dependencies and select desired extensions
+CMAKE_ARGS="-DGGML_CUDA=ON" uv sync --all-packages \
+--extra "base" \
+--extra "llama_cpp" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "quant_bnb" \
+--extra "dbgpts"
+```
+
+Otherwise, run the following command to install dependencies without CUDA support.
 ```bash
 # Use uv to install dependencies needed for llama-cpp
 # Install core dependencies and select desired extensions

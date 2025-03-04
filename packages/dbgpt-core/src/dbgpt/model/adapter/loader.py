@@ -143,6 +143,8 @@ def huggingface_loader(
     if "device_map" in kwargs and "low_cpu_mem_usage" not in kwargs:
         # Must set low_cpu_mem_usage to True when device_map is set
         kwargs["low_cpu_mem_usage"] = True
+    if model_params.attn_implementation:
+        kwargs["attn_implementation"] = model_params.attn_implementation
 
     model, tokenizer = _hf_try_load_default_quantization_model(
         model_path, llm_adapter, device, num_gpus, model_params, kwargs

@@ -613,39 +613,41 @@ class LocalWorkerManager(WorkerManager):
         )
 
     async def _start_all_worker(
-        self, apply_req: WorkerApplyRequest
+        self, apply_req: WorkerApplyRequest, parallel_num: int = 1
     ) -> WorkerApplyOutput:
         from httpx import TimeoutException, TransportError
 
         # TODO avoid start twice
         start_time = time.time()
         logger.info(f"Begin start all worker, apply_req: {apply_req}")
+        semaphore = asyncio.Semaphore(parallel_num)
 
         async def _start_worker(worker_run_data: WorkerRunData):
             _start_time = time.time()
             info = worker_run_data._to_print_key()
             out = WorkerApplyOutput("")
             try:
-                await self.run_blocking_func(
-                    worker_run_data.worker.start,
-                    worker_run_data.command_args,
-                )
-                worker_run_data.stop_event.clear()
-                if worker_run_data.worker_params.register and self.register_func:
-                    # Register worker to controller
-                    await self.register_func(worker_run_data)
-                    if (
-                        worker_run_data.worker_params.send_heartbeat
-                        and self.send_heartbeat_func
-                    ):
-                        asyncio.create_task(
-                            _async_heartbeat_sender(
-                                worker_run_data,
-                                worker_run_data.worker_params.heartbeat_interval,
-                                self.send_heartbeat_func,
+                async with semaphore:
+                    await self.run_blocking_func(
+                        worker_run_data.worker.start,
+                        worker_run_data.command_args,
+                    )
+                    worker_run_data.stop_event.clear()
+                    if worker_run_data.worker_params.register and self.register_func:
+                        # Register worker to controller
+                        await self.register_func(worker_run_data)
+                        if (
+                            worker_run_data.worker_params.send_heartbeat
+                            and self.send_heartbeat_func
+                        ):
+                            asyncio.create_task(
+                                _async_heartbeat_sender(
+                                    worker_run_data,
+                                    worker_run_data.worker_params.heartbeat_interval,
+                                    self.send_heartbeat_func,
+                                )
                             )
-                        )
-                out.message = f"{info} start successfully"
+                    out.message = f"{info} start successfully"
             except TimeoutException:
                 out.success = False
                 out.message = (
