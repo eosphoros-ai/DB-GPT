@@ -66,7 +66,7 @@ def _generate_key_from_password(
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
-        iterations=100000,
+        iterations=800000,
     )
     key = base64.urlsafe_b64encode(kdf.derive(password))
     return key, salt
