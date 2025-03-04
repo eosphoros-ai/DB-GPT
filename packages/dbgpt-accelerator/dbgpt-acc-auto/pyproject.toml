@@ -1,5 +1,5 @@
 [project]
-name = "dbgpt-accelerator"
+name = "dbgpt-acc-auto"
 version = "0.7.0"
 description = "Add your description here"
 authors = [
@@ -15,21 +15,6 @@ Homepage = "https://github.com/eosphoros-ai/DB-GPT"
 Documentation = "http://docs.dbgpt.cn/docs/overview"
 Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
 Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/dbgpt_accelerator"]
-exclude = [
-    "src/dbgpt_accelerator/**/tests",
-    "src/dbgpt_accelerator/**/tests/*",
-    "src/dbgpt_accelerator/tests",
-    "src/dbgpt_accelerator/tests/*",
-    "src/dbgpt_accelerator/**/examples",
-    "src/dbgpt_accelerator/**/examples/*"
-]
 
 [project.optional-dependencies]
 # Auto install dependencies
@@ -76,10 +61,10 @@ vllm = [
     # Just support GPU version on Linux
     "vllm>=0.7.0; sys_platform == 'linux'",
 ]
-#vllm_pascal = [
+# vllm_pascal = [
 #    # https://github.com/sasha0552/pascal-pkgs-ci
 #    "vllm-pascal==0.7.2; sys_platform == 'linux'"
-#]
+# ]
 quant_bnb = [
     "bitsandbytes>=0.39.0; sys_platform == 'win32' or sys_platform == 'linux'",
     "accelerate"
@@ -102,6 +87,10 @@ quant_gptqmodel = [
 quant_gptq = [
     "optimum",
     "auto-gptq",
+]
+flash_attn = [
+    # "torch>=2.2.1",
+    "dbgpt-acc-flash-attn"
 ]
 
 [dependency-groups]

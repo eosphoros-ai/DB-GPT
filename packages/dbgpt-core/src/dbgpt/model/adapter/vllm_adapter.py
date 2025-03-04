@@ -62,6 +62,9 @@ class VLLMDeployModelParameters(LLMDeployModelParameters):
         model = data.get("path", None)
         if not model:
             model = data.get("name", None)
+        else:
+            # Path is specified, so we use it as the model
+            model = self._resolve_root_path(model)
         if not model:
             raise ValueError(
                 "Model is required, please specify the model path or name."

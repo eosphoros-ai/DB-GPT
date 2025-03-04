@@ -251,6 +251,27 @@ class LLMModelAdapter(ABC):
         """Load the model and tokenizer according to the given parameters"""
         raise NotImplementedError
 
+    def is_reasoning_model(
+        self,
+        deploy_model_params: LLMDeployModelParameters,
+        lower_model_name_or_path: Optional[str] = None,
+    ) -> bool:
+        """Whether the model is a reasoning model"""
+        if (
+            deploy_model_params.reasoning_model is not None
+            and deploy_model_params.reasoning_model
+        ):
+            return True
+        return (
+            lower_model_name_or_path
+            and "deepseek" in lower_model_name_or_path
+            and (
+                "r1" in lower_model_name_or_path
+                or "reasoning" in lower_model_name_or_path
+                or "reasoner" in lower_model_name_or_path
+            )
+        )
+
     def support_async(self) -> bool:
         """Whether the loaded model supports asynchronous calls"""
         return False

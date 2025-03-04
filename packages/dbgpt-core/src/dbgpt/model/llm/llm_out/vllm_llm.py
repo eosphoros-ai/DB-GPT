@@ -31,6 +31,7 @@ async def generate_stream(
     best_of = params.get("best_of", None)
     stop_str = params.get("stop", None)
     think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    is_reasoning_model = params.get("is_reasoning_model", False)
     # think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
 
     stop_token_ids = params.get("stop_token_ids", None) or []
@@ -104,11 +105,11 @@ async def generate_stream(
         )
         if text_outputs:
             # Tempora
-            if prompt.rstrip().endswith(think_start_token):
+            if prompt.rstrip().endswith(think_start_token) and is_reasoning_model:
                 text_outputs = think_start_token + "\n" + text_outputs
             msg = parse_chat_message(
                 text_outputs,
-                extract_reasoning=True,
+                extract_reasoning=is_reasoning_model,
             )
             yield ModelOutput.build(
                 msg.content,

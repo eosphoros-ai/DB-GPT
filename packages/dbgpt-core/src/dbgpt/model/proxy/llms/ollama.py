@@ -9,13 +9,13 @@ from dbgpt.core.awel.flow import (
     ResourceCategory,
     auto_register_resource,
 )
+from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.proxy.base import (
     AsyncGenerateStreamFunction,
     GenerateStreamFunction,
     ProxyLLMClient,
     register_proxy_model_adapter,
 )
-from dbgpt.model.proxy.llms.chatgpt import OpenAICompatibleDeployModelParameters
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
     show_in_ui=False,
 )
 @dataclass
-class OllamaDeployModelParameters(OpenAICompatibleDeployModelParameters):
+class OllamaDeployModelParameters(LLMDeployModelParameters):
     """Deploy model parameters for Ollama."""
 
     provider: str = "proxy/ollama"

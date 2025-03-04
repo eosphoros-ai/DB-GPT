@@ -102,6 +102,15 @@ class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
             )
         },
     )
+    reasoning_model: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Whether the model is a reasoning model. If None, it is "
+                "automatically determined from model."
+            )
+        },
+    )
 
     @property
     def real_provider_model_name(self) -> str:
@@ -202,8 +211,10 @@ class BitsandbytesQuantization(BaseHFQuantization):
         real_cls = cls
         if load_in_8bits:
             real_cls = BitsandbytesQuantization8bits
+            data["type"] = BitsandbytesQuantization8bits.__type__
         if load_in_4bits:
             real_cls = BitsandbytesQuantization4bits
+            data["type"] = BitsandbytesQuantization4bits.__type__
         real_data = prepare_data_func(real_cls, data)
         return real_cls(**real_data)
 

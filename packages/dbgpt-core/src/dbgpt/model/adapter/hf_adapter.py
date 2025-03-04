@@ -88,6 +88,15 @@ class HFLLMDeployModelParameters(LLMDeployModelParameters):
             "valid_values": ["auto", "float16", "bfloat16", "float", "float32"],
         },
     )
+    attn_implementation: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The attention implementation, only valid in multi-GPU configuration"
+            ),
+            "valid_values": ["flash_attention_2"],
+        },
+    )
 
     @property
     def real_model_path(self) -> Optional[str]:

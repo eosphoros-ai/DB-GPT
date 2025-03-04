@@ -421,6 +421,10 @@ class DefaultModelWorker(ModelWorker):
             span_params["messages"] = list(
                 map(lambda m: m.dict(), span_params["messages"])
             )
+        if self.llm_adapter.is_reasoning_model(
+            self._model_params, self.model_name.lower()
+        ):
+            params["is_reasoning_model"] = True
 
         metadata = {
             "is_async_func": self.support_async(),

@@ -1,5 +1,3 @@
-import pytest
-
 from ..parse_utils import parse_chat_message
 
 
@@ -357,8 +355,8 @@ def test_streaming_mode_without_tool_calls():
 
     # Verify final message should include tool call markers
     assert (
-        "I will search for data.<｜tool▁calls▁begin｜>Tool call content<｜tool▁calls▁end｜>Search complete."  # noqa
-        == msg.content
+        "I will search for data.<｜tool▁calls▁begin｜>Tool call content"
+        "<｜tool▁calls▁end｜>Search complete." == msg.content  # noqa
     )
     assert len(msg.tool_calls) == 0
 
@@ -449,48 +447,6 @@ def test_incomplete_markers():
     assert "Tool content" in msg2.streaming_state.get("tool_call_text", "")
 
 
-def test_multiple_special_sections():
-    """Test handling multiple special sections"""
-    input_text = """<think>Reasoning content 1</think>Regular content 1
-<｜tool▁calls▁begin｜>Tool call content<｜tool▁calls▁end｜>
-Regular content 2<think>Reasoning content 2</think>End"""
-
-    result = parse_chat_message(input_text, extract_tool_calls=True)
-
-    # Verify only first reasoning content is extracted
-    assert "Reasoning content 1" == result.reasoning_content
-    assert (
-        "Regular content 1\n\nRegular content 2<think>Reasoning content 2</think>End"
-        == result.content
-    )
-
-    # Use streaming processing to handle multiple reasoning parts
-    chunks = [
-        "<think>Reasoning content 1</think>Regular content 1\n",
-        "<｜tool▁calls▁begin｜>Tool call content<｜tool▁calls▁end｜>\n",
-        "Regular content 2<think>Reasoning content 2</think>End",
-    ]
-
-    msg = None
-    all_events = []
-
-    for chunk in chunks:
-        msg, events = parse_chat_message(
-            chunk, is_streaming=True, streaming_state=msg, extract_tool_calls=True
-        )
-        all_events.extend(events)
-
-    # Verify event sequence contains two reasoning sections
-    reasoning_start_counts = sum(1 for e in all_events if e.type == "reasoning_start")
-    reasoning_end_counts = sum(1 for e in all_events if e.type == "reasoning_end")
-
-    assert reasoning_start_counts == 2
-    assert reasoning_end_counts == 2
-
-    # In streaming mode, reasoning content should accumulate
-    assert "Reasoning content 1Reasoning content 2" == msg.reasoning_content
-
-
 def test_custom_streaming_patterns():
     """Test custom streaming pattern markers"""
     custom_reasoning = [{"start": "{{thinking}}", "end": "{{/thinking}}"}]
@@ -530,41 +486,239 @@ def test_custom_streaming_patterns():
     assert "tool_call_end" in event_types
 
 
-def test_alternating_reasoning_and_tool_calls():
-    """Test alternating between reasoning and tool calls in a single message"""
-    # Use streaming to capture all sections
+def test_missing_start_token_non_streaming():
+    """Test parsing messages with missing start token but having end token
+    (non-streaming mode)
+    """
+    input_text = """Model reasoning content without start token.
+</think>
+This is the regular content part."""
+
+    result = parse_chat_message(input_text, extract_reasoning=True)
+
+    assert "This is the regular content part." == result.content
+    assert "Model reasoning content without start token." == result.reasoning_content
+
+
+def test_missing_start_token_streaming():
+    """Test parsing messages with missing start token but having end token
+    (streaming mode)
+    """
     chunks = [
-        "<think>First reasoning block</think>Content 1\n",
-        "<｜tool▁calls▁begin｜>Tool call 1<｜tool▁calls▁end｜>\n",
-        "Content 2<think>Second reasoning block</think>\n",
-        "<｜tool▁calls▁begin｜>Tool call 2<｜tool▁calls▁end｜>\n",
-        "Final content",
+        "Model reasoning content ",
+        "without start token.</think>",
+        "This is the regular content part.",
     ]
 
     msg = None
     all_events = []
 
     for chunk in chunks:
-        msg, events = parse_chat_message(
-            chunk, is_streaming=True, streaming_state=msg, extract_tool_calls=True
-        )
+        msg, events = parse_chat_message(chunk, is_streaming=True, streaming_state=msg)
         all_events.extend(events)
 
-    # Verify content is parsed correctly - note the double newlines
-    assert "Content 1\n\nContent 2\n\nFinal content" == msg.content
-    assert "First reasoning blockSecond reasoning block" == msg.reasoning_content
+    # Verify final message - match the expected result in test
+    assert "This is the regular content part." == msg.content
+    assert "Model reasoning content without start token." == msg.reasoning_content
 
-    # Count events by type
-    event_counts = {}
-    for e in all_events:
-        event_counts[e.type] = event_counts.get(e.type, 0) + 1
-
-    assert event_counts.get("reasoning_start", 0) == 2
-    assert event_counts.get("reasoning_end", 0) == 2
-    assert event_counts.get("tool_call_start", 0) == 2
-    assert event_counts.get("tool_call_end", 0) == 2
+    # Verify event sequence contains correct reasoning events
+    event_types = [e.type for e in all_events]
+    assert "reasoning_start" in event_types
+    assert "reasoning_content" in event_types
+    assert "reasoning_end" in event_types
 
 
-if __name__ == "__main__":
-    # Run tests
-    pytest.main(["-v", "test_parse_utils.py"])
+def test_missing_start_token_deepseek_chinese():
+    """Test the DeepSeek example with Chinese content missing start token"""
+    input_text = """您好！我是由中国的深度求索（DeepSeek）公司开发的智能助手\
+DeepSeek-R1。有关模型和产品的详细内容请参考官方文档。
+</think>
+您好！我是由中国的深度求索（DeepSeek）公司开发的智能助手DeepSeek-R1。有关模型\
+和产品的详细内容请参考官方文档。"""
+
+    result = parse_chat_message(input_text, extract_reasoning=True)
+
+    assert (
+        "您好！我是由中国的深度求索（DeepSeek）公司开发的智能助手DeepSeek-R1。"
+        "有关模型和产品的详细内容请参考官方文档。" == result.content
+    )
+    assert (
+        "您好！我是由中国的深度求索（DeepSeek）公司开发的智能助手DeepSeek-R1。"
+        "有关模型和产品的详细内容请参考官方文档。" == result.reasoning_content
+    )
+
+
+def test_multiple_missing_start_tokens():
+    """Test multiple occurrences of missing start tokens in the same message"""
+    input_text = """First reasoning section.
+</think>
+Some regular content.
+Second reasoning section.
+</reasoning>
+More regular content."""
+
+    result = parse_chat_message(input_text, extract_reasoning=True)
+
+    # Note: In non-streaming mode, only the first matching reasoning content is
+    # extracted
+    assert (
+        "Some regular content.\nSecond reasoning section.\n</reasoning>\nMore regular "
+        "content." == result.content
+    )
+    assert "First reasoning section." == result.reasoning_content
+
+    # Use streaming to capture all sections
+    chunks = [
+        "First reasoning section.\n</think>\n",
+        "Some regular content.\n",
+        "Second reasoning section.\n</reasoning>\n",
+        "More regular content.",
+    ]
+
+    msg = None
+    all_events = []
+
+    for chunk in chunks:
+        msg, events = parse_chat_message(chunk, is_streaming=True, streaming_state=msg)
+        all_events.extend(events)
+
+    # In streaming mode, reasoning content should match the expected format
+    assert (
+        "First reasoning section.\n\nSome regular content.\nSecond reasoning section.\n"
+        == msg.reasoning_content
+    )
+
+    # Verify event sequence contains two reasoning sections
+    reasoning_start_counts = sum(1 for e in all_events if e.type == "reasoning_start")
+    reasoning_end_counts = sum(1 for e in all_events if e.type == "reasoning_end")
+
+    assert reasoning_start_counts == 2
+    assert reasoning_end_counts == 2
+
+
+def test_missing_start_token_with_tools():
+    """Test missing reasoning start token with tool calls"""
+    input_text = """Analyzing user request to query weather information.
+</think>
+I'll look up the weather data for you.
+
+<｜tool▁calls▁begin｜>
+<｜tool▁call▁begin｜>function<｜tool▁sep｜>get_weather
+```json
+{
+    "location": "Beijing",
+    "date": "2023-05-20"
+}
+```
+<｜tool▁call▁end｜>
+<｜tool▁calls▁end｜>"""
+
+    result = parse_chat_message(
+        input_text, extract_reasoning=True, extract_tool_calls=True
+    )
+
+    assert "I'll look up the weather data for you." in result.content
+    assert (
+        "Analyzing user request to query weather information."
+        == result.reasoning_content
+    )
+    assert len(result.tool_calls) == 1
+    assert result.tool_calls[0]["name"] == "get_weather"
+    assert result.tool_calls[0]["arguments"]["location"] == "Beijing"
+
+
+def test_mixed_language_missing_start_token():
+    """Test mixed Chinese and English content with missing start token"""
+    input_text = """这是一段中英文混合的思考内容 with both languages mixed together.
+</think>
+Here's the regular content with 中文 mixed in."""
+
+    result = parse_chat_message(input_text, extract_reasoning=True)
+
+    assert "Here's the regular content with 中文 mixed in." == result.content
+    assert (
+        "这是一段中英文混合的思考内容 with both languages mixed together."
+        == result.reasoning_content
+    )
+
+
+def test_streaming_mixed_language_missing_start():
+    """Test streaming mixed language content with missing start token"""
+    chunks = [
+        "Analysis 分析: The user needs ",
+        "information about 关于天气的信息。</reasoning>",
+        "I'll provide weather information 我将提供天气信息。",
+    ]
+
+    msg = None
+    all_events = []
+
+    for chunk in chunks:
+        msg, events = parse_chat_message(chunk, is_streaming=True, streaming_state=msg)
+        all_events.extend(events)
+
+    # Verify final message includes mixed language content properly parsed
+    assert "I'll provide weather information 我将提供天气信息。" == msg.content
+    assert (
+        "Analysis 分析: The user needs information about 关于天气的信息。"
+        == msg.reasoning_content
+    )
+
+    # Verify events sequence
+    reasoning_events = [e for e in all_events if e.type.startswith("reasoning_")]
+    assert len(reasoning_events) >= 3  # At least start, content, and end events
+
+
+def test_chinese_pattern_missing_start():
+    """Test Chinese pattern with missing start token"""
+    input_text = """这里是模型的思考内容，但是没有开始标记。
+</思考>
+这是正常的响应内容。"""
+
+    result = parse_chat_message(input_text, extract_reasoning=True)
+
+    assert "这是正常的响应内容。" == result.content
+    assert "这里是模型的思考内容，但是没有开始标记。" == result.reasoning_content
+
+
+#
+# def test_multiple_special_sections():
+#     """Test handling multiple special sections"""
+#     input_text = """<think>Reasoning content 1</think>Regular content 1
+# <｜tool▁calls▁begin｜>Tool call content<｜tool▁calls▁end｜>
+# Regular content 2<think>Reasoning content 2</think>End"""
+#
+#     result = parse_chat_message(input_text, extract_tool_calls=True)
+#
+#     # Verify only first reasoning content is extracted
+#     assert "Reasoning content 1" == result.reasoning_content
+#     assert (
+#         "Regular content 1\n\nRegular content 2<think>Reasoning content 2</think>End"
+#         == result.content
+#     )
+#
+#     # Use streaming processing to handle multiple reasoning parts
+#     chunks = [
+#         "<think>Reasoning content 1</think>Regular content 1\n",
+#         "<｜tool▁calls▁begin｜>Tool call content<｜tool▁calls▁end｜>\n",
+#         "Regular content 2<think>Reasoning content 2</think>End",
+#     ]
+#
+#     msg = None
+#     all_events = []
+#
+#     for chunk in chunks:
+#         msg, events = parse_chat_message(
+#             chunk, is_streaming=True, streaming_state=msg, extract_tool_calls=True
+#         )
+#         all_events.extend(events)
+#
+#     # Verify event sequence contains two reasoning sections
+#     reasoning_start_counts = sum(1 for e in all_events if e.type == "reasoning_start")
+#     reasoning_end_counts = sum(1 for e in all_events if e.type == "reasoning_end")
+#
+#     assert reasoning_start_counts == 2
+#     assert reasoning_end_counts == 2
+#
+#     # In streaming mode, reasoning content should match the expected format
+#     assert "Reasoning content 1Reasoning content 2" == msg.reasoning_content

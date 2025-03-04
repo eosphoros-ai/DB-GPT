@@ -17,7 +17,11 @@ from typing import Dict, Optional
 
 from dbgpt.core import ModelOutput
 
-from ...utils.parse_utils import ParsedChatMessage, parse_chat_message
+from ...utils.parse_utils import (
+    _DEFAULT_THINK_START_TOKEN,
+    ParsedChatMessage,
+    parse_chat_message,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +82,10 @@ def chat_generate_stream(
 ):
     req = _build_chat_completion_request(params, stream=True)
     text = ""
+    think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    is_reasoning_model = params.get("is_reasoning_model", False)
     msg = ParsedChatMessage()
+    is_first = True
     for r in model.stream_chat_completion(req):
         if len(r.choices) == 0:
             continue
@@ -86,13 +93,17 @@ def chat_generate_stream(
         if r.choices[0] is not None and r.choices[0].delta is None:
             continue
         content = r.choices[0].delta.content
+        if content is None:
+            continue
+
+        text += content
+        if is_reasoning_model and not text.startswith(think_start_token) and is_first:
+            text = think_start_token + "\n" + text
+            is_first = False
+
+        msg = parse_chat_message(text, extract_reasoning=is_reasoning_model)
         finish_reason = _parse_finish_reason(r.choices[0].finish_reason)
 
-        if content is not None:
-            text += content
-            msg, _ = parse_chat_message(
-                content, extract_reasoning=True, is_streaming=True, streaming_state=msg
-            )
         yield ModelOutput.build(
             msg.content,
             msg.reasoning_content,

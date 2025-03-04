@@ -6,7 +6,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStream
 
 from dbgpt.core import ModelOutput
 
-from ...utils.parse_utils import ParsedChatMessage, parse_chat_message
+from ...utils.parse_utils import (
+    _DEFAULT_THINK_START_TOKEN,
+    ParsedChatMessage,
+    parse_chat_message,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +31,8 @@ def huggingface_chat_generate_stream(
     stop_token_ids = params.get("stop_token_ids", [])
     do_sample = params.get("do_sample", True)
     custom_stop_words = params.get("custom_stop_words", [])
+    think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    is_reasoning_model = params.get("is_reasoning_model", False)
 
     input_ids = tokenizer(prompt).input_ids
     # input_ids = input_ids.to(device)
@@ -65,15 +71,23 @@ def huggingface_chat_generate_stream(
     text = ""
     usage = None
     msg = ParsedChatMessage()
+    is_first = True
     for new_text in streamer:
         text += new_text
-        msg, _ = parse_chat_message(
-            new_text, extract_reasoning=True, is_streaming=True, streaming_state=msg
-        )
         if custom_stop_words:
             for stop_word in custom_stop_words:
                 if text.endswith(stop_word):
                     text = text[: -len(stop_word)]
+
+        if (
+            prompt.rstrip().endswith(think_start_token)
+            and is_reasoning_model
+            and is_first
+        ):
+            text = think_start_token + "\n" + text
+            is_first = False
+
+        msg = parse_chat_message(text, extract_reasoning=is_reasoning_model)
         yield ModelOutput.build(
             msg.content,
             msg.reasoning_content,
