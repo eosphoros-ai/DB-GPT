@@ -39,6 +39,7 @@ class DBResource(Resource[P], Generic[P]):
         dialect: Optional[str] = None,
         executor: Optional[Executor] = None,
         prompt_template: str = _DEFAULT_PROMPT_TEMPLATE,
+        **kwargs,
     ):
         """Initialize the DB resource."""
         self._name = name
