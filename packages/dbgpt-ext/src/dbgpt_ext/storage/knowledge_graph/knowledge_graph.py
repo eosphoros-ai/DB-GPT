@@ -149,7 +149,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             cfg.name = config.name
             cfg.embedding_fn = config.embedding_fn
 
-        graph_store_type = os.getenv("GRAPH_STORE_TYPE") or config.type
+        graph_store_type = config.type or os.getenv("GRAPH_STORE_TYPE")
         return GraphStoreFactory.create(graph_store_type, configure, config.dict())
 
     def __init_graph_store_adapter(self):

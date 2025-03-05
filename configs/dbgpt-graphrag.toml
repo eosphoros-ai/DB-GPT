@@ -35,8 +35,26 @@ host="127.0.0.1"
 port=7687
 username="admin"
 password="73@TuGraph"
-#enable_summary="True"
-#enable_similarity_search="True"
+
+# enable_summary="True"
+# community_topk=20
+# community_score_threshold=0.3
+
+# triplet_graph_enabled="True"
+# extract_topk=20
+
+# document_graph_enabled="True"
+# knowledge_graph_chunk_search_top_size=20
+# knowledge_graph_extraction_batch_size=20
+
+# enable_similarity_search="True"
+# knowledge_graph_embedding_batch_size=20
+# similarity_search_topk=5
+# extract_score_threshold=0.7
+
+# enable_text_search="True"
+# text2gql_model_enabled="True"
+# text2gql_model_name="qwen2.5:latest"
 
 
 
