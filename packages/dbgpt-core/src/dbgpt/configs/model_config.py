@@ -57,6 +57,9 @@ def get_device() -> str:
     except ModuleNotFoundError:
         return "cpu"
 
+    except Exception:
+        return "cpu"
+
 
 LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),

@@ -43,6 +43,7 @@ base = [
 ]
 dbgpts = [
     # For build dbgpts apps, we will be removed in the future.
+    "build",
     "poetry"
 ]
 

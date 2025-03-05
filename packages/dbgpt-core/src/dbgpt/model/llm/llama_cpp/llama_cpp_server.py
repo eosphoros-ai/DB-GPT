@@ -110,6 +110,7 @@ def chat_generate_stream(
             error_code=0,
             finish_reason=finish_reason,
             usage=r.usage,
+            is_reasoning_model=is_reasoning_model,
         )
 
 

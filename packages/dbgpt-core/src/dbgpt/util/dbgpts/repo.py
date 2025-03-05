@@ -1,8 +1,11 @@
 import functools
+import importlib.metadata
+import importlib.util
 import logging
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import List, Tuple
 
@@ -26,6 +29,183 @@ cl = CliLogger()
 _DEFAULT_REPO = "eosphoros/dbgpts"
 
 logger = logging.getLogger(__name__)
+
+
+def _is_poetry_project(package_path: Path) -> bool:
+    """Check if the project uses poetry build system by examining pyproject.toml
+
+    Args:
+        package_path (Path): Path to the package directory
+
+    Returns:
+        bool: True if the project uses poetry, False otherwise
+    """
+    pyproject_path = package_path / "pyproject.toml"
+    if not pyproject_path.exists():
+        return False
+
+    try:
+        import tomli  # Python 3.11+ uses tomllib from stdlib
+    except ImportError:
+        try:
+            import tomlkit as tomli
+        except ImportError:
+            import tomli
+
+    with open(pyproject_path, "rb") as f:
+        pyproject_data = tomli.load(f)
+
+    # Check if poetry is defined in build-system
+    build_system = pyproject_data.get("build-system", {})
+    build_backend = build_system.get("build-backend", "")
+    requires = build_system.get("requires", [])
+
+    return (
+        "poetry" in build_backend.lower()
+        or any("poetry" in req.lower() for req in requires)
+        or "tool" in pyproject_data
+        and "poetry" in pyproject_data.get("tool", {})
+    )
+
+
+def _is_module_installed(module_name: str) -> bool:
+    """Check if a Python module is installed
+
+    Args:
+        module_name (str): Module name to check
+
+    Returns:
+        bool: True if installed, False otherwise
+    """
+    try:
+        importlib.metadata.distribution(module_name)
+        return True
+    except importlib.metadata.PackageNotFoundError:
+        return False
+
+
+def _build_package(
+    install_path: Path, is_poetry: bool, log_func=logger.info, error_func=logger.error
+) -> tuple[bool, str]:
+    """Build package using poetry or build module
+
+    Args:
+        install_path (Path): Path to the package
+        is_poetry (bool): Whether to use poetry for build
+        log_func: Function to use for logging info
+        error_func: Function to use for logging errors
+
+    Returns:
+        tuple: (success, error_message)
+    """
+    python_executable = sys.executable
+    os.chdir(install_path)
+
+    if is_poetry and shutil.which("poetry"):
+        log_func("Building with poetry...")
+        process = subprocess.Popen(
+            ["poetry", "build"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+    else:
+        # Check if build module is available
+        if _is_module_installed("build"):
+            log_func("Building with python -m build...")
+            process = subprocess.Popen(
+                [python_executable, "-m", "build", "--wheel"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        else:
+            # Fallback to setuptools directly if available
+            if (install_path / "setup.py").exists():
+                log_func("Building with setuptools directly...")
+                process = subprocess.Popen(
+                    [python_executable, "setup.py", "bdist_wheel"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+            else:
+                error_msg = (
+                    "No suitable build method found. Please install build: "
+                    "pip install build"
+                )
+                error_func(error_msg)
+                return False, error_msg
+
+    out, err = process.communicate()
+    log_func(f"Build output: {out.decode('utf-8', errors='replace')}")
+    if err:
+        error_msg = f"Build warnings/errors: {err.decode('utf-8', errors='replace')}"
+        log_func(error_msg)
+
+    return process.returncode == 0, "" if process.returncode == 0 else error_msg
+
+
+def _install_wheel(
+    wheel_path: str, log_func=logger.info, error_func=logger.error
+) -> tuple[bool, str]:
+    """Install wheel file using the best available method
+
+    Args:
+        wheel_path (str): Path to the wheel file
+        log_func: Function to use for logging info
+        error_func: Function to use for logging errors
+
+    Returns:
+        tuple: (success, error_message)
+    """
+    python_executable = sys.executable
+
+    # Try uv first if available (faster)
+    if shutil.which("uv"):
+        log_func(f"Installing wheel with uv: {wheel_path}")
+        process = subprocess.Popen(
+            ["uv", "pip", "install", wheel_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out, err = process.communicate()
+        if process.returncode == 0:
+            return True, ""
+        log_func(f"uv install failed: {err.decode('utf-8', errors='replace')}")
+        # Fall through to pip if uv fails
+
+    # Try pip
+    if shutil.which("pip") or _is_module_installed("pip"):
+        log_func(f"Installing wheel with pip: {wheel_path}")
+        process = subprocess.Popen(
+            [python_executable, "-m", "pip", "install", wheel_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out, err = process.communicate()
+        if process.returncode == 0:
+            return True, ""
+        log_func(f"Pip install failed: {err.decode('utf-8', errors='replace')}")
+
+    # Alternative: Try using importlib directly
+    try:
+        import site
+        import zipfile
+
+        log_func(f"Attempting manual wheel installation for {wheel_path}")
+
+        # Get the site-packages directory
+        site_packages = site.getsitepackages()[0]
+
+        # Extract the wheel contents to site-packages
+        with zipfile.ZipFile(wheel_path, "r") as wheel_zip:
+            # Extract only the Python modules (*.py, *.so, etc.)
+            for file in wheel_zip.namelist():
+                if ".dist-info/" not in file and file.endswith((".py", ".so", ".pyd")):
+                    wheel_zip.extract(file, site_packages)
+
+        log_func(f"Manual installation to {site_packages} completed")
+        return True, ""
+    except Exception as e:
+        error_msg = f"Manual installation failed: {str(e)}"
+        error_func(error_msg)
+        return False, error_msg
 
 
 @functools.cache
@@ -234,6 +414,20 @@ def uninstall(name: str):
     cl.info(f"Uninstalling dbgpt '{name}'...")
 
 
+def reinstall(
+    name: str,
+    repo: str | None = None,
+    with_update: bool = True,
+):
+    """Reinstall the specified dbgpt
+
+    Args:
+        name (str): The name of the dbgpt
+    """
+    uninstall(name)
+    install(name, repo, with_update=with_update)
+
+
 def inner_uninstall(name: str):
     """Uninstall the specified dbgpt
 
@@ -271,35 +465,34 @@ def inner_copy_and_install(repo: str, name: str, package_path: Path):
     try:
         shutil.copytree(package_path, install_path)
         logger.info(f"Installing dbgpts '{name}' from {repo}...")
-        os.chdir(install_path)
-        process = subprocess.Popen(
-            ["poetry", "build"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        out, err = process.communicate()
-        logger.info(f"{out},{err}")
+
+        # Check if it's a poetry project
+        is_poetry = _is_poetry_project(install_path)
+
+        # Build the package
+        build_success = _build_package(install_path, is_poetry)
+        if not build_success:
+            raise ValueError("Failed to build the package")
 
         wheel_files = list(install_path.glob("dist/*.whl"))
         if not wheel_files:
-            logger.error(
-                "No wheel file found after building the package.",
-            )
+            logger.error("No wheel file found after building the package.")
             raise ValueError("No wheel file found after building the package.")
-        # Install the wheel file using pip
+
+        # Install the wheel file
         wheel_file = wheel_files[0]
         logger.info(
             f"Installing dbgpts '{name}' wheel file {_print_path(wheel_file)}..."
         )
-        # subprocess.run(["pip", "install", str(wheel_file)], check=True)
-        process = subprocess.Popen(
-            ["pip", "install", str(wheel_file)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        out, err = process.communicate()
-        logger.info(f"{out},{err}")
+
+        install_success = _install_wheel(str(wheel_file))
+        if not install_success:
+            raise ValueError(f"Failed to install wheel file: {wheel_file}")
+
         _write_install_metadata(name, repo, install_path)
         logger.info(f"Installed dbgpts at {_print_path(install_path)}.")
         logger.info(f"dbgpts '{name}' installed successfully.")
+        return True
     except Exception as e:
         if install_path.exists():
             shutil.rmtree(install_path)
@@ -307,6 +500,15 @@ def inner_copy_and_install(repo: str, name: str, package_path: Path):
 
 
 def copy_and_install(repo: str, name: str, package_path: Path):
+    """Install the specified dbgpt from a repository
+
+    This function reuses the inner implementation but provides CLI feedback
+
+    Args:
+        repo (str): The name of the repo
+        name (str): The name of the dbgpt
+        package_path (Path): The path to the package
+    """
     if not package_path.exists():
         cl.error(
             f"The specified dbgpt '{name}' does not exist in the {repo} tap.",
@@ -322,15 +524,33 @@ def copy_and_install(repo: str, name: str, package_path: Path):
     try:
         shutil.copytree(package_path, install_path)
         cl.info(f"Installing dbgpts '{name}' from {repo}...")
-        os.chdir(install_path)
-        subprocess.run(["poetry", "build"], check=True)
+
+        # Check if it's a poetry project
+        is_poetry = _is_poetry_project(install_path)
+
+        # Build the package using the shared implementation but with CLI logging
+        build_success, build_error = _build_package(
+            install_path, is_poetry, log_func=cl.info, error_func=cl.error
+        )
+
+        if not build_success:
+            cl.error(f"Failed to build the package: {build_error}", exit_code=1)
+
         wheel_files = list(install_path.glob("dist/*.whl"))
         if not wheel_files:
             cl.error("No wheel file found after building the package.", exit_code=1)
-        # Install the wheel file using pip
+
+        # Install the wheel file using the shared implementation but with CLI logging
         wheel_file = wheel_files[0]
         cl.info(f"Installing dbgpts '{name}' wheel file {_print_path(wheel_file)}...")
-        subprocess.run(["pip", "install", str(wheel_file)], check=True)
+
+        install_success, install_error = _install_wheel(
+            str(wheel_file), log_func=cl.info, error_func=cl.error
+        )
+
+        if not install_success:
+            cl.error(f"Failed to install wheel file: {install_error}", exit_code=1)
+
         _write_install_metadata(name, repo, install_path)
         cl.success(f"Installed dbgpts at {_print_path(install_path)}.")
         cl.success(f"dbgpts '{name}' installed successfully.")

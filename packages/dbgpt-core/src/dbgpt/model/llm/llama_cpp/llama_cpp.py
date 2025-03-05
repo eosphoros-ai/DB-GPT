@@ -164,4 +164,5 @@ class LlamaCppModel:
                     error_code=0,
                     usage=usage,
                     finish_reason=finish_reason,
+                    is_reasoning_model=is_reasoning_model,
                 )

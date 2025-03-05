@@ -1,4 +1,5 @@
 import functools
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -10,23 +11,95 @@ from .base import DEFAULT_PACKAGE_TYPES
 cl = CliLogger()
 
 
-def check_poetry_installed():
+def check_build_tools_installed():
+    """Check if any supported build tools are installed (uv, poetry, build, or
+    setuptools)
+
+    Warns if uv is not installed but does not exit.
+    Only exits if no build tools are available.
+    """
+    tools_available = []
+
+    # Check for uv (preferred tool)
+    if shutil.which("uv"):
+        try:
+            subprocess.run(
+                ["uv", "--version"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            tools_available.append("uv")
+        except subprocess.CalledProcessError:
+            pass
+
+    # Check for poetry
+    if shutil.which("poetry"):
+        try:
+            subprocess.run(
+                ["poetry", "--version"],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            tools_available.append("poetry")
+        except subprocess.CalledProcessError:
+            pass
+
+    # Check for build package
     try:
-        # Check if poetry is installed
-        subprocess.run(
-            ["poetry", "--version"],
+        # Check if python and build are available
+        result = subprocess.run(
+            ["python", "-c", "import build; print('yes')"],
             check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
         )
+        if "yes" in result.stdout:
+            tools_available.append("build")
     except (subprocess.CalledProcessError, FileNotFoundError):
-        cl.error("Poetry is not installed. Please install Poetry to proceed.")
-        # Exit with error
+        pass
+
+    # Check for python with setuptools
+    try:
+        # Check if python and setuptools are available for basic package building
+        result = subprocess.run(
+            ["python", "-c", "import setuptools; print('yes')"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        if "yes" in result.stdout:
+            tools_available.append("setuptools")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+
+    # Provide appropriate feedback based on available tools
+    if not tools_available:
+        cl.error("No build tools found. Please install one of the following:")
+        cl.error(" - uv: A fast Python package installer and resolver (recommended)")
+        cl.error(" - poetry: A Python package and dependency manager")
+        cl.error(" - build: A PEP 517 compatible Python package builder")
+        cl.error(" - setuptools: A classic Python package build system")
         cl.error(
-            "Visit https://python-poetry.org/docs/#installation for installation "
-            "instructions.",
+            "For uv: https://github.com/astral-sh/uv\n"
+            "For poetry: https://python-poetry.org/docs/#installation\n"
+            "For build: pip install build\n"
+            "For setuptools: pip install setuptools",
             exit_code=1,
         )
+    elif "uv" not in tools_available:
+        cl.warning(
+            "uv is not installed. We recommend using uv for better performance."
+            " Install with: 'pip install uv' or visit https://github.com/astral-sh/uv"
+        )
+        if "build" not in tools_available:
+            cl.warning(
+                "build package is not installed. For better compatibility without uv,"
+                " we recommend installing it with: 'pip install build'"
+            )
+
+    return tools_available
 
 
 def add_tap_options(func):
@@ -77,7 +150,7 @@ def install(repo: str | None, update: bool, names: list[str]):
     """Install your dbgpts(operators,agents,workflows or apps)"""
     from .repo import _install_default_repos_if_no_repos, install
 
-    check_poetry_installed()
+    check_build_tools_installed()
     _install_default_repos_if_no_repos()
     for name in names:
         install(name, repo, with_update=update)
@@ -91,6 +164,17 @@ def uninstall(names: list[str]):
 
     for name in names:
         uninstall(name)
+
+
+@click.command(name="reinstall")
+@add_add_common_options
+@click.argument("names", type=str, nargs=-1)
+def reinstall(repo: str | None, update: bool, names: list[str]):
+    """Reinstall your dbgpts(operators,agents,workflows or apps)"""
+    from .repo import reinstall
+
+    for name in names:
+        reinstall(name, repo, with_update=update)
 
 
 @click.command(name="list-remote")
@@ -253,7 +337,7 @@ def new_dbgpts(
             type=click.Path(exists=True, file_okay=False, dir_okay=True),
         )
 
-    check_poetry_installed()
+    check_build_tools_installed()
     from .template import create_template
 
     create_template(name, label, description, type, definition_type, directory)

@@ -120,7 +120,7 @@ def get_device_info() -> Tuple[str, str, str, int, str]:
             device_count = torch.cuda.device_count()
         elif torch.backends.mps.is_available():
             device = "mps"
-    except ModuleNotFoundError:
+    except Exception:
         pass
 
     if not device_version:

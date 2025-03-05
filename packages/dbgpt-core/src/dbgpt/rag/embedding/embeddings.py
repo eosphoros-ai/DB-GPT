@@ -38,7 +38,7 @@ try:
         from transformers.utils import is_torch_npu_available
 
         transformers.is_torch_npu_available = is_torch_npu_available
-except ImportError:
+except Exception:
     pass
 
 
