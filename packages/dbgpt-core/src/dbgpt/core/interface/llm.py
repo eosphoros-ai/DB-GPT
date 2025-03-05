@@ -447,6 +447,7 @@ class ModelOutput:
         error_code: int = 0,
         usage: Optional[Dict[str, Any]] = None,
         finish_reason: Optional[str] = None,
+        is_reasoning_model: bool = False,
     ) -> "ModelOutput":
         if thinking and text:
             # Has thinking and text
@@ -460,7 +461,12 @@ class ModelOutput:
             content = MediaContent.build_text(text)
         else:
             # Build a empty thinking content
-            content = MediaContent.build_thinking(thinking)
+            # Handle empty data
+            content = (
+                MediaContent.build_thinking(thinking)
+                if is_reasoning_model
+                else MediaContent.build_text("")
+            )
         return cls(
             error_code=error_code,
             content=content,

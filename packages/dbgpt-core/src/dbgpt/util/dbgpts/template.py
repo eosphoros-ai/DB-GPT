@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -90,7 +91,9 @@ def _create_flow_template(
     if definition_type == "json":
         json_dict["json_config"] = {"file_path": "definition/flow_definition.json"}
 
-    _create_poetry_project(working_directory, name)
+    # Create project structure
+    _create_project_structure(working_directory, name, base_metadata.get("description"))
+
     _write_dbgpts_toml(working_directory, name, json_dict)
     _write_manifest_file(working_directory, name, mod_name)
 
@@ -120,8 +123,9 @@ def _create_operator_template(
             f"Unsupported definition type: {definition_type} for dbgpts type: "
             f"{dbgpts_type}"
         )
+    # Create project structure
+    _create_project_structure(working_directory, name, base_metadata.get("description"))
 
-    _create_poetry_project(working_directory, name)
     _write_dbgpts_toml(working_directory, name, json_dict)
     _write_operator_init_file(working_directory, name, mod_name)
     _write_manifest_file(working_directory, name, mod_name)
@@ -146,7 +150,9 @@ def _create_agent_template(
             f"{dbgpts_type}"
         )
 
-    _create_poetry_project(working_directory, name)
+    # Create project structure
+    _create_project_structure(working_directory, name, base_metadata.get("description"))
+
     _write_dbgpts_toml(working_directory, name, json_dict)
     _write_agent_init_file(working_directory, name, mod_name)
     _write_manifest_file(working_directory, name, mod_name)
@@ -171,17 +177,122 @@ def _create_resource_template(
             f"{dbgpts_type}"
         )
 
-    _create_poetry_project(working_directory, name)
+    # Create project structure
+    _create_project_structure(working_directory, name, base_metadata.get("description"))
+
     _write_dbgpts_toml(working_directory, name, json_dict)
     _write_resource_init_file(working_directory, name, mod_name)
     _write_manifest_file(working_directory, name, mod_name)
 
 
-def _create_poetry_project(working_directory: str, name: str):
-    """Create a new poetry project"""
+def _create_project_structure(
+    working_directory: str, name: str, description: str = None
+):
+    """Create a new project using uv, poetry or manual file creation
 
+    Args:
+        working_directory (str): Directory to create the project in
+        name (str): Name of the project
+        description (str, optional): Project description
+
+    Returns:
+        bool: True if project created successfully
+    """
     os.chdir(working_directory)
-    subprocess.run(["poetry", "new", name, "-n"], check=True)
+
+    # Try uv first
+    if shutil.which("uv"):
+        try:
+            cmd = ["uv", "init", "--no-workspace"]
+
+            if description:
+                cmd.extend(["--description", description])
+
+            cmd.append(name)
+
+            subprocess.run(cmd, check=True)
+            return True
+        except subprocess.CalledProcessError:
+            click.echo("Warning: Failed to create project with uv, trying poetry...")
+
+    # Try poetry next
+    if shutil.which("poetry"):
+        try:
+            subprocess.run(["poetry", "new", name, "-n"], check=True)
+
+            # If description provided, update pyproject.toml
+            if description:
+                pyproject_path = Path(working_directory) / name / "pyproject.toml"
+                if pyproject_path.exists():
+                    _update_pyproject_description(pyproject_path, description)
+
+            return True
+        except subprocess.CalledProcessError:
+            click.echo(
+                "Warning: Failed to create project with poetry, creating files "
+                "manually..."
+            )
+
+    # Manual creation as fallback
+    project_dir = Path(working_directory) / name
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create basic project structure
+    _create_manual_project_structure(project_dir, name, description)
+
+    return True
+
+
+def _update_pyproject_description(pyproject_path, description):
+    """Update description in pyproject.toml file"""
+    try:
+        import tomlkit
+
+        with open(pyproject_path, "r") as f:
+            pyproject = tomlkit.parse(f.read())
+
+        if "tool" in pyproject and "poetry" in pyproject["tool"]:
+            pyproject["tool"]["poetry"]["description"] = description
+        elif "project" in pyproject:
+            pyproject["project"]["description"] = description
+
+        with open(pyproject_path, "w") as f:
+            f.write(tomlkit.dumps(pyproject))
+    except Exception as e:
+        click.echo(f"Warning: Failed to update description in pyproject.toml: {e}")
+
+
+def _create_manual_project_structure(project_dir, name, description=None):
+    """Create manual project structure with necessary files"""
+    mod_name = name.replace("-", "_")
+
+    # Create module directory
+    module_dir = project_dir / mod_name
+    module_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create __init__.py
+    with open(module_dir / "__init__.py", "w") as f:
+        f.write(f'"""Main module for {name}."""\n\n')
+
+    # Create pyproject.toml
+    pyproject_content = f"""[project]
+name = "{name}"
+version = "0.1.0"
+description = "{description or f"A {name} package"}"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+"""
+    with open(project_dir / "pyproject.toml", "w") as f:
+        f.write(pyproject_content)
+
+    # Create README.md
+    with open(project_dir / "README.md", "w") as f:
+        f.write(f"# {name}\n\n{description or f'A {name} package'}\n")
 
 
 def _write_dbgpts_toml(working_directory: str, name: str, json_data: dict):

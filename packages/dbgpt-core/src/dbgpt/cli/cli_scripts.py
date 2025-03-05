@@ -187,6 +187,7 @@ try:
         list_installed_apps,
         list_repos,
         new_dbgpts,
+        reinstall,
         remove_repo,
         update_repo,
     )
@@ -200,6 +201,7 @@ try:
     add_command_alias(update_repo, name="update", parent_group=repo)
     add_command_alias(app_install, name="install", parent_group=app)
     add_command_alias(app_uninstall, name="uninstall", parent_group=app)
+    add_command_alias(reinstall, name="reinstall", parent_group=app)
     add_command_alias(app_list_remote, name="list-remote", parent_group=app)
     add_command_alias(list_installed_apps, name="list", parent_group=app)
     add_command_alias(new_dbgpts, name="app", parent_group=new)

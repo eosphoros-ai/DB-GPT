@@ -93,4 +93,5 @@ def huggingface_chat_generate_stream(
             msg.reasoning_content,
             error_code=0,
             usage=usage,
+            is_reasoning_model=is_reasoning_model,
         )
