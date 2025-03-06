@@ -233,6 +233,8 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
 
         cleaned_output = (
             cleaned_output.strip()
+            .replace("\\r\\n", " ")
+            .replace("\r\n", " ")
             .replace("\\n", " ")
             .replace("\n", " ")
             .replace("\\", " ")

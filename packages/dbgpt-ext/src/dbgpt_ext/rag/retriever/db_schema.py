@@ -13,7 +13,11 @@ from dbgpt.storage.vector_store.filters import MetadataFilter, MetadataFilters
 from dbgpt.util.chat_util import run_tasks
 from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 
-from ..summary.rdbms_db_summary import _parse_db_summary
+from ..summary.rdbms_db_summary import (
+    _DEFAULT_COLUMN_SEPARATOR,
+    _parse_db_summary,
+    _parse_table_detail,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +32,7 @@ class DBSchemaRetriever(BaseRetriever):
         table_vector_store_connector: VectorStoreBase,
         field_vector_store_connector: VectorStoreBase = None,
         separator: str = "--table-field-separator--",
+        column_separator: str = _DEFAULT_COLUMN_SEPARATOR,
         top_k: int = 4,
         connector: Optional[BaseConnector] = None,
         query_rewrite: bool = False,
@@ -100,6 +105,7 @@ class DBSchemaRetriever(BaseRetriever):
                 print(f"db struct rag example results:{result}")
         """
         self._separator = separator
+        self._column_separator = column_separator
         self._top_k = top_k
         self._connector = connector
         self._query_rewrite = query_rewrite
@@ -186,9 +192,11 @@ class DBSchemaRetriever(BaseRetriever):
         field_chunks = self._field_vector_store_connector.similar_search_with_scores(
             query, self._top_k, 0, MetadataFilters(filters=filters)
         )
-        field_contents = [chunk.content for chunk in field_chunks]
-        table_chunk.content += "\n" + self._separator + "\n" + "\n".join(field_contents)
-        return table_chunk
+        field_contents = [chunk.content.strip() for chunk in field_chunks]
+        table_chunk.content += (
+            "\n" + self._separator + "\n" + self._column_separator.join(field_contents)
+        )
+        return self._deserialize_table_chunk(table_chunk)
 
     def _similarity_search(
         self, query, filters: Optional[MetadataFilters] = None
@@ -198,6 +206,7 @@ class DBSchemaRetriever(BaseRetriever):
             query, self._top_k, 0, filters
         )
 
+        # Find all table chunks which are not separated
         not_sep_chunks = [
             chunk for chunk in table_chunks if not chunk.metadata.get("separated")
         ]
@@ -205,9 +214,11 @@ class DBSchemaRetriever(BaseRetriever):
             chunk for chunk in table_chunks if chunk.metadata.get("separated")
         ]
         if not separated_chunks:
-            return not_sep_chunks
+            return [self._deserialize_table_chunk(chunk) for chunk in not_sep_chunks]
 
         # Create tasks list
+        # The fields of table is too large, and it has to be separated into chunks,
+        # so we need to retrieve fields of each table separately
         tasks = [
             lambda c=chunk: self._retrieve_field(c, query) for chunk in separated_chunks
         ]
@@ -216,3 +227,32 @@ class DBSchemaRetriever(BaseRetriever):
 
         # Combine and return results
         return not_sep_chunks + separated_result
+
+    def _deserialize_table_chunk(self, chunk: Chunk) -> Chunk:
+        """Deserialize table chunk."""
+        db_summary_version = chunk.metadata.get("db_summary_version")
+        if not db_summary_version:
+            return chunk
+        parts = chunk.content.split(self._separator)
+        table_part, field_part = parts[0].strip(), parts[1].strip()
+        table_detail = _parse_table_detail(table_part)
+        table_name = table_detail.get("table_name")
+        table_comment = table_detail.get("table_comment")
+        index_keys = table_detail.get("index_keys")
+
+        table_name = table_name.strip() if table_name else table_name
+        table_comment = table_comment.strip() if table_comment else table_comment
+        index_keys = index_keys.strip() if index_keys else index_keys
+        if not table_name:
+            return chunk
+
+        create_statement = f'CREATE TABLE "{table_name}"\r\n(\r\n    '
+        create_statement += field_part
+        create_statement += "\r\n)"
+        if table_comment:
+            create_statement += f' COMMENT "{table_comment}"\r\n'
+        if index_keys:
+            create_statement += f"Index keys: {index_keys}"
+
+        chunk.content = create_statement
+        return chunk

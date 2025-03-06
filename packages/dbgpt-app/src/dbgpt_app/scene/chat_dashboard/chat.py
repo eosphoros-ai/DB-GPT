@@ -70,11 +70,12 @@ class ChatDashboard(BaseChat):
             print("dashboard vector find tables:{}", table_infos)
         except Exception as e:
             print("db summary find error!" + str(e))
+            table_infos = self.database.table_simple_info()
 
         input_values = {
             "input": self.current_user_input,
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(),
+            "table_info": table_infos,
             "supported_chat_type": self.dashboard_template["supported_chart_type"],
         }
 

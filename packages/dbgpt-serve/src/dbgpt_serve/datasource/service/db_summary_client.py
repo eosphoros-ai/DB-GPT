@@ -106,9 +106,13 @@ class DBSummaryClient:
         )
         if not table_vector_connector.vector_name_exists():
             from dbgpt_ext.rag.assembler.db_schema import DBSchemaAssembler
+            from dbgpt_ext.rag.summary.rdbms_db_summary import _DEFAULT_COLUMN_SEPARATOR
 
             chunk_parameters = ChunkParameters(
-                text_splitter=RDBTextSplitter(separator="--table-field-separator--")
+                text_splitter=RDBTextSplitter(
+                    column_separator=_DEFAULT_COLUMN_SEPARATOR,
+                    separator="--table-field-separator--",
+                )
             )
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connector=db_summary_client.db,

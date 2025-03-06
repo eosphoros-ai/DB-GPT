@@ -13,6 +13,35 @@ if TYPE_CHECKING:
 CFG = Config()
 
 
+_DEFAULT_SUMMARY_TEMPLATE = """\
+table_name: {table_name}\r\n\
+table_comment: {table_comment}\r\n\
+index_keys: {index_keys}\r\n\
+"""
+_DEFAULT_SUMMARY_TEMPLATE_PATTEN = (
+    r"table_name:\s*(?P<table_name>.*)\s*"
+    r"table_comment:\s*(?P<table_comment>.*)\s*"
+    r"index_keys:\s*(?P<index_keys>.*)\s*"
+)
+_DEFAULT_COLUMN_SEPARATOR = ",\r\n    "
+
+
+def _parse_table_detail(table_desc_str: str) -> Dict[str, Any]:
+    """Parse table detail string.
+
+    Args:
+        table_desc_str (str): table detail string
+
+    Returns:
+        Dict[str, Any]: A dictionary containing table_name, table_comment, and
+            index_keys.
+    """
+    matched = re.match(_DEFAULT_SUMMARY_TEMPLATE_PATTEN, table_desc_str)
+    if matched:
+        return matched.groupdict()
+    return {}
+
+
 class RdbmsSummary(DBSummary):
     """Get rdbms db table summary template.
 
@@ -83,8 +112,9 @@ def _parse_db_summary(
 
 def _parse_db_summary_with_metadata(
     conn: BaseConnector,
-    summary_template: str = "table_name: {table_name}",
+    summary_template: str = _DEFAULT_SUMMARY_TEMPLATE,
     separator: str = "--table-field-separator--",
+    column_separator: str = _DEFAULT_COLUMN_SEPARATOR,
     model_dimension: int = 512,
 ) -> List[Tuple[str, Dict[str, Any]]]:
     """Get db summary for database.
@@ -99,14 +129,21 @@ def _parse_db_summary_with_metadata(
     tables = conn.get_table_names()
     table_info_summaries = [
         _parse_table_summary_with_metadata(
-            conn, summary_template, separator, table_name, model_dimension
+            conn,
+            summary_template,
+            separator,
+            table_name,
+            model_dimension,
+            column_separator=column_separator,
         )
         for table_name in tables
     ]
     return table_info_summaries
 
 
-def _split_columns_str(columns: List[str], model_dimension: int):
+def _split_columns_str(
+    columns: List[str], model_dimension: int, column_separator: str = ",\r\n    "
+):
     """Split columns str.
 
     Args:
@@ -129,7 +166,7 @@ def _split_columns_str(columns: List[str], model_dimension: int):
         else:
             # If current string is empty, add element directly
             if current_string:
-                current_string += "," + element_str
+                current_string += column_separator + element_str
             else:
                 current_string = element_str
             current_length += element_length + 1  # Add length of space
@@ -147,6 +184,8 @@ def _parse_table_summary_with_metadata(
     separator,
     table_name: str,
     model_dimension=512,
+    column_separator: str = _DEFAULT_COLUMN_SEPARATOR,
+    db_summary_version: str = "v1.0",
 ) -> Tuple[str, Dict[str, Any]]:
     """Get table summary for table.
 
@@ -168,17 +207,26 @@ def _parse_table_summary_with_metadata(
         (column4,comment), (column5, comment), (column6, comment)
     """
     columns = []
-    metadata = {"table_name": table_name, "separated": 0}
+    metadata = {
+        "table_name": table_name,
+        "separated": 0,
+        "db_summary_version": db_summary_version,
+    }
     for column in conn.get_columns(table_name):
-        if column.get("comment"):
-            columns.append(f"{column['name']} ({column.get('comment')})")
-        else:
-            columns.append(f"{column['name']}")
+        col_name = column["name"]
+        col_type = str(column["type"]) if "type" in column else None
+        col_comment = column.get("comment")
+        column_def = f'"{col_name}" {col_type.upper()}'
+        if col_comment:
+            column_def += f' COMMENT "{col_comment}"'
+        columns.append(column_def)
     metadata.update({"field_num": len(columns)})
-    separated_columns = _split_columns_str(columns, model_dimension=model_dimension)
+    separated_columns = _split_columns_str(
+        columns, model_dimension=model_dimension, column_separator=column_separator
+    )
     if len(separated_columns) > 1:
         metadata["separated"] = 1
-    column_str = "\n".join(separated_columns)
+    column_str = column_separator.join(separated_columns)
     # Obtain index information
     index_keys = []
     raw_indexes = conn.get_indexes(table_name)
@@ -193,18 +241,19 @@ def _parse_table_summary_with_metadata(
         else:
             key_str = ", ".join(index["column_names"])
             index_keys.append(f"{index['name']}(`{key_str}`) ")
-    table_str = summary_template.format(table_name=table_name)
+
+    table_comment = ""
 
     try:
         comment = conn.get_table_comment(table_name)
+        table_comment = comment.get("text")
     except Exception:
-        comment = dict(text=None)
-    if comment.get("text"):
-        table_str += f"\ntable_comment: {comment.get('text')}"
+        pass
 
-    if len(index_keys) > 0:
-        index_key_str = ", ".join(index_keys)
-        table_str += f"\nindex_keys: {index_key_str}"
+    index_key_str = ", ".join(index_keys)
+    table_str = summary_template.format(
+        table_name=table_name, table_comment=table_comment, index_keys=index_key_str
+    )
     table_str += f"\n{separator}\n{column_str}"
     return table_str, metadata
 

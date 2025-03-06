@@ -59,7 +59,7 @@ class VectorStoreConnector:
         self.app_config = self._system_app.config.configs.get("app_config")
         self._register()
 
-        vector_store_type = self.__rewrite_index_store_type(vector_store_type)
+        vector_store_type = self._rewrite_index_store_type(vector_store_type)
         if self._match(vector_store_type):
             self.connector_class, self.config_class = connector[vector_store_type]
         else:
@@ -94,11 +94,16 @@ class VectorStoreConnector:
             logger.error("connect vector store failed: %s", e)
             raise e
 
-    def __rewrite_index_store_type(self, index_store_type):
+    def _rewrite_index_store_type(self, index_store_type):
         # Rewrite Knowledge Graph Type
-        if self.app_config.rag.storage.graph.get("enable_summary").lower() == "true":
-            if index_store_type == "KnowledgeGraph":
-                return "CommunitySummaryKnowledgeGraph"
+        if self.app_config.rag.storage.graph:
+            graph_dict = self.app_config.rag.storage.graph
+            if (
+                isinstance(graph_dict, dict)
+                and graph_dict.get("enable_summary", "false").lower() == "true"
+            ):
+                if index_store_type == "KnowledgeGraph":
+                    return "CommunitySummaryKnowledgeGraph"
         return index_store_type
 
     @classmethod
