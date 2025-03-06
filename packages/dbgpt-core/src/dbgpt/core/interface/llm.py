@@ -459,14 +459,13 @@ class ModelOutput:
         elif text:
             # Only text
             content = MediaContent.build_text(text)
-        else:
+        elif is_reasoning_model or thinking:
             # Build a empty thinking content
             # Handle empty data
-            content = (
-                MediaContent.build_thinking(thinking)
-                if is_reasoning_model
-                else MediaContent.build_text("")
-            )
+            content = MediaContent.build_thinking(thinking)
+        else:
+            content = MediaContent.build_text("")
+
         return cls(
             error_code=error_code,
             content=content,
