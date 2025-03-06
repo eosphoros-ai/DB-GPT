@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, Optional, Type, TypeVar
 
 import dbgpt_serve.datasource.serve
 from dbgpt.component import SystemApp
@@ -82,8 +82,10 @@ def register_serve_apps(
     serve_configs = {s.get_type_value(): s for s in app_config.serves}
 
     system_app.config.set("dbgpt.app.global.language", app_config.system.language)
+    global_api_keys: Optional[str] = None
     if app_config.system.api_keys:
-        system_app.config.set("dbgpt.app.global.api_keys", app_config.system.api_keys)
+        global_api_keys = ",".join(app_config.system.api_keys)
+        system_app.config.set("dbgpt.app.global.api_keys", global_api_keys)
     if app_config.system.encrypt_key:
         system_app.config.set(
             "dbgpt.app.global.encrypt_key", app_config.system.encrypt_key
@@ -104,6 +106,7 @@ def register_serve_apps(
             dbgpt_serve.prompt.serve.ServeConfig,
             default_user="dbgpt",
             default_sys_code="dbgpt",
+            api_keys=global_api_keys,
         ),
     )
     # ################################ Prompt Serve Register End ######################
@@ -120,6 +123,7 @@ def register_serve_apps(
             ConversationServe.name,
             dbgpt_serve.conversation.serve.ServeConfig,
             default_model=app_config.models.default_llm,
+            api_keys=global_api_keys,
         ),
     )
     # ################################ Conversation Serve Register End ################
@@ -135,6 +139,7 @@ def register_serve_apps(
             FlowServe.name,
             dbgpt_serve.flow.serve.ServeConfig,
             encrypt_key=app_config.system.encrypt_key,
+            api_keys=global_api_keys,
         ),
     )
 
@@ -163,6 +168,7 @@ def register_serve_apps(
             max_chunks_once_load=rag_config.max_chunks_once_load,
             max_threads=rag_config.max_threads,
             rerank_top_k=rag_config.rerank_top_k,
+            api_keys=global_api_keys,
         ),
     )
 
@@ -179,6 +185,7 @@ def register_serve_apps(
             serve_configs,
             DatasourceServe.name,
             dbgpt_serve.datasource.serve.ServeConfig,
+            api_keys=global_api_keys,
         ),
     )
 
@@ -191,7 +198,10 @@ def register_serve_apps(
     system_app.register(
         FeedbackServe,
         config=get_config(
-            serve_configs, FeedbackServe.name, dbgpt_serve.feedback.serve.ServeConfig
+            serve_configs,
+            FeedbackServe.name,
+            dbgpt_serve.feedback.serve.ServeConfig,
+            api_keys=global_api_keys,
         ),
     )
     # ################################ Chat Feedback Register End #####################
@@ -203,7 +213,10 @@ def register_serve_apps(
     system_app.register(
         DbgptsHubServe,
         config=get_config(
-            serve_configs, DbgptsHubServe.name, dbgpt_serve.dbgpts.hub.serve.ServeConfig
+            serve_configs,
+            DbgptsHubServe.name,
+            dbgpt_serve.dbgpts.hub.serve.ServeConfig,
+            api_keys=global_api_keys,
         ),
     )
     # Register serve dbgptsmy
@@ -212,7 +225,10 @@ def register_serve_apps(
     system_app.register(
         DbgptsMyServe,
         config=get_config(
-            serve_configs, DbgptsMyServe.name, dbgpt_serve.dbgpts.my.serve.ServeConfig
+            serve_configs,
+            DbgptsMyServe.name,
+            dbgpt_serve.dbgpts.my.serve.ServeConfig,
+            api_keys=global_api_keys,
         ),
     )
     # ################################ DbGpts Register End ############################
@@ -233,6 +249,7 @@ def register_serve_apps(
             host=webserver_host,
             port=webserver_port,
             local_storage_path=local_storage_path,
+            api_keys=global_api_keys,
         ),
     )
 
@@ -252,6 +269,7 @@ def register_serve_apps(
             dbgpt_serve.evaluate.serve.ServeConfig,
             embedding_model=llm_configs.default_embedding,
             similarity_top_k=rag_config.similarity_top_k,
+            api_keys=global_api_keys,
         ),
     )
     # ################################ Evaluate Serve Register End ####################
@@ -263,7 +281,10 @@ def register_serve_apps(
     system_app.register(
         LibroServe,
         config=get_config(
-            serve_configs, LibroServe.name, dbgpt_serve.libro.serve.ServeConfig
+            serve_configs,
+            LibroServe.name,
+            dbgpt_serve.libro.serve.ServeConfig,
+            api_keys=global_api_keys,
         ),
     )
 
@@ -280,5 +301,6 @@ def register_serve_apps(
             ModelServe.name,
             dbgpt_serve.model.serve.ServeConfig,
             model_storage=app_config.service.web.model_storage,
+            api_keys=global_api_keys,
         ),
     )
