@@ -7,6 +7,7 @@ from dbgpt.component import SystemApp
 from dbgpt_serve.core.tests.conftest import (  # noqa: F401
     asystem_app,
     client,
+    config,
     system_app,
 )
 
@@ -42,9 +43,10 @@ def mock_chunk_dao():
 
 
 @pytest.fixture
-def service(system_app: SystemApp, mock_dao, mock_document_dao, mock_chunk_dao):
+def service(system_app: SystemApp, mock_dao, mock_document_dao, mock_chunk_dao, config):
     return Service(
         system_app=system_app,
+        config=config,
         dao=mock_dao,
         document_dao=mock_document_dao,
         chunk_dao=mock_chunk_dao,

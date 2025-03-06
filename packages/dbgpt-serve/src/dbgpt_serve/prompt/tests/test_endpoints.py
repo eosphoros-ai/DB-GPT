@@ -5,7 +5,8 @@ from httpx import AsyncClient
 from dbgpt.component import SystemApp
 from dbgpt.storage.metadata import db
 from dbgpt.util import PaginationResult
-from dbgpt_serve.core.tests.conftest import asystem_app, client  # noqa: F401
+from dbgpt_serve.core import BaseServeConfig
+from dbgpt_serve.core.tests.conftest import asystem_app, client, config  # noqa: F401
 
 from ..api.endpoints import init_endpoints, router
 from ..api.schemas import ServerResponse
@@ -19,9 +20,9 @@ def setup_and_teardown():
     yield
 
 
-def client_init_caller(app: FastAPI, system_app: SystemApp):
+def client_init_caller(app: FastAPI, system_app: SystemApp, config: BaseServeConfig):
     app.include_router(router)
-    init_endpoints(system_app)
+    init_endpoints(system_app, config)
 
 
 async def _create_and_validate(

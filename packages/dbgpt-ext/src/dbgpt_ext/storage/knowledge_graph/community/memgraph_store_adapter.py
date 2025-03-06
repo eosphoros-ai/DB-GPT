@@ -17,7 +17,10 @@ from dbgpt.storage.graph_store.memgraph_store import (
     MemoryGraphStoreConfig,
 )
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
-from dbgpt.storage.knowledge_graph.community.base import Community, GraphStoreAdapter
+from dbgpt_ext.storage.knowledge_graph.community.base import (
+    Community,
+    GraphStoreAdapter,
+)
 
 logger = logging.getLogger(__name__)
 

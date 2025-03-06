@@ -2,9 +2,11 @@ import pytest
 
 from dbgpt.component import SystemApp
 from dbgpt.storage.metadata import db
+from dbgpt_serve.core import BaseServeConfig
 from dbgpt_serve.core.tests.conftest import (  # noqa: F401
     asystem_app,
     client,
+    config,
     system_app,
 )
 
@@ -19,8 +21,8 @@ def setup_and_teardown():
 
 
 @pytest.fixture
-def service(system_app: SystemApp):
-    instance = Service(system_app)
+def service(system_app: SystemApp, config: BaseServeConfig):
+    instance = Service(system_app, config)
     instance.init_app(system_app)
     return instance
 
