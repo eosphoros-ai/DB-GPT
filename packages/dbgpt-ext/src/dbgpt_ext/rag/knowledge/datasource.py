@@ -11,7 +11,11 @@ from dbgpt.rag.knowledge.base import (
     KnowledgeType,
 )
 
-from ..summary.rdbms_db_summary import _parse_db_summary_with_metadata
+from ..summary.rdbms_db_summary import (
+    _DEFAULT_COLUMN_SEPARATOR,
+    _DEFAULT_SUMMARY_TEMPLATE,
+    _parse_db_summary_with_metadata,
+)
 
 
 class DatasourceKnowledge(Knowledge):
@@ -20,8 +24,9 @@ class DatasourceKnowledge(Knowledge):
     def __init__(
         self,
         connector: BaseConnector,
-        summary_template: str = "table_name: {table_name}",
+        summary_template: str = _DEFAULT_SUMMARY_TEMPLATE,
         separator: str = "--table-field-separator--",
+        column_separator: str = _DEFAULT_COLUMN_SEPARATOR,
         knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
         metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         model_dimension: int = 512,
@@ -40,6 +45,7 @@ class DatasourceKnowledge(Knowledge):
             model_dimension(int, optional): The threshold for splitting field string
         """
         self._separator = separator
+        self._column_separator = column_separator
         self._connector = connector
         self._summary_template = summary_template
         self._model_dimension = model_dimension
@@ -52,7 +58,8 @@ class DatasourceKnowledge(Knowledge):
             self._connector,
             self._summary_template,
             self._separator,
-            self._model_dimension,
+            column_separator=self._column_separator,
+            model_dimension=self._model_dimension,
         )
         for summary, table_metadata in db_summary_with_metadata:
             metadata = {"source": "database"}

@@ -270,7 +270,7 @@ class LLMModelAdapter(ABC):
                 or "reasoning" in lower_model_name_or_path
                 or "reasoner" in lower_model_name_or_path
             )
-        )
+        ) or (lower_model_name_or_path and "qwq" in lower_model_name_or_path)
 
     def support_async(self) -> bool:
         """Whether the loaded model supports asynchronous calls"""

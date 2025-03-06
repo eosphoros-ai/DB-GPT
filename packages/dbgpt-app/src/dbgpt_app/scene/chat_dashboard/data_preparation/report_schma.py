@@ -6,7 +6,7 @@ from dbgpt._private.pydantic import BaseModel
 class ValueItem(BaseModel):
     name: str
     type: Optional[str] = None
-    value: float
+    value: Any = None
 
     def dict(self, *args, **kwargs):
         return {"name": self.name, "type": self.type, "value": self.value}

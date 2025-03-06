@@ -25,9 +25,10 @@ import MonacoEditor from './monaco-editor';
 type Props = {
   messages: IChatDialogueMessageSchema[];
   onSubmit: (message: string, otherQueryBody?: Record<string, any>) => Promise<void>;
+  onFormatContent?: (content: any) => any; // Callback for extracting thinking part
 };
 
-const Completion = ({ messages, onSubmit }: Props) => {
+const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
   const { dbParam, currentDialogue, scene, model, refreshDialogList, chatId, agent, docId } = useContext(ChatContext);
   const { t } = useTranslation();
   const searchParams = useSearchParams();
@@ -78,18 +79,23 @@ const Completion = ({ messages, onSubmit }: Props) => {
     }
   };
 
-  const handleJson2Obj = (jsonStr: string) => {
-    try {
-      return JSON.parse(jsonStr);
-    } catch {
-      return jsonStr;
+  // Process message content - if onFormatContent is provided and this is a dashboard chat,
+  // we'll extract the thinking part from vis-thinking code blocks
+  const processMessageContent = (content: any) => {
+    if (isChartChat && onFormatContent && typeof content === 'string') {
+      return onFormatContent(content);
     }
+    return content;
   };
 
   const [messageApi, contextHolder] = message.useMessage();
 
   const onCopyContext = async (context: any) => {
-    const pureStr = context?.replace(/\trelations:.*/g, '');
+    // If we have a formatting function and this is a string, apply it before copying
+    const contentToCopy =
+      isChartChat && onFormatContent && typeof context === 'string' ? onFormatContent(context) : context;
+
+    const pureStr = contentToCopy?.replace(/\trelations:.*/g, '');
     const result = copy(pureStr);
     if (result) {
       if (pureStr) {
@@ -124,14 +130,25 @@ const Completion = ({ messages, onSubmit }: Props) => {
     let tempMessage: IChatDialogueMessageSchema[] = messages;
     if (isChartChat) {
       tempMessage = cloneDeep(messages).map(item => {
-        if (item?.role === 'view' && typeof item?.context === 'string') {
-          item.context = handleJson2Obj(item?.context);
+        if (item?.role === 'view') {
+          if (typeof item?.context === 'string') {
+            // Try to parse JSON first
+            try {
+              item.context = JSON.parse(item.context);
+            } catch {
+              // If JSON parsing fails and we have a formatting function,
+              // it might be a vis-thinking block, so process it
+              if (onFormatContent) {
+                item.context = processMessageContent(item.context);
+              }
+            }
+          }
         }
         return item;
       });
     }
     setShowMessages(tempMessage.filter(item => ['view', 'human'].includes(item.role)));
-  }, [isChartChat, messages]);
+  }, [isChartChat, messages, onFormatContent]);
 
   useEffect(() => {
     apiInterceptors(getChatFeedBackSelect())

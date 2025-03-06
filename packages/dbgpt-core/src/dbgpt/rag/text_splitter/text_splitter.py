@@ -916,8 +916,9 @@ class PageTextSplitter(TextSplitter):
 class RDBTextSplitter(TextSplitter):
     """Split relational database tables and fields."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, column_separator: str = "\n", **kwargs):
         """Create a new TextSplitter."""
+        self._column_separator = column_separator
         super().__init__(**kwargs)
 
     def split_text(self, text: str, **kwargs):
@@ -942,7 +943,7 @@ class RDBTextSplitter(TextSplitter):
                 field_metadata["part"] = "field"  # identify of field_chunk
                 table_chunk = Chunk(content=table_part, metadata=table_metadata)
                 chunks.append(table_chunk)
-                field_parts = field_part.split("\n")
+                field_parts = field_part.split(self._column_separator)
                 for i, sub_part in enumerate(field_parts):
                     sub_metadata = copy.deepcopy(field_metadata)
                     sub_metadata["part_index"] = i
