@@ -245,7 +245,7 @@ def _run_flow_cmd_local(
                 if not out.success:
                     cl.error(out.text)
                 else:
-                    cl.print(out.text, end="")
+                    cl.print(out.gen_text_with_thinking(), end="")
         except Exception as e:
             cl.error(f"Failed to run flow: {e}", exit_code=1)
         finally:
@@ -436,7 +436,7 @@ def _run_flow_chat_local(
                 cl.error(f"Error: {out.text}")
                 raise Exception(out.text)
             else:
-                yield out.text
+                yield out.gen_text_with_thinking()
 
     async def _call(_call_body: Dict[str, Any]):
         nonlocal dag, dag_metadata
@@ -466,6 +466,9 @@ def _run_flow_chat_stream(
         async for out in client.chat_stream(**_call_body):
             if out.choices:
                 text = out.choices[0].delta.content
+                reasoning_content = out.choices[0].delta.reasoning_content
+                if reasoning_content:
+                    yield reasoning_content
                 if text:
                     yield text
 
@@ -482,6 +485,13 @@ def _run_flow_chat(
         res = await client.chat(**_call_body)
         if res.choices:
             text = res.choices[0].message.content
+            if res.choices[0].message.reasoning_content:
+                reasoning_content = res.choices[0].message.reasoning_content
+                # For each line, add '>' at the beginning
+                reasoning_content = "\n".join(
+                    [f"> {line}" for line in reasoning_content.split("\n")]
+                )
+                text = reasoning_content + "\n\n" + text
             return text
 
     loop.run_until_complete(_chat(_call, interactive, json_data))

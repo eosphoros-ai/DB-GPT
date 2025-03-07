@@ -1,8 +1,6 @@
 import socket
-import time
-import uuid
 from enum import Enum
-from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
@@ -115,24 +113,6 @@ class MessageVo(BaseModel):
     model_name
     """
     model_name: str
-
-
-class DeltaMessage(BaseModel):
-    role: Optional[str] = None
-    content: Optional[str] = None
-
-
-class ChatCompletionResponseStreamChoice(BaseModel):
-    index: Optional[int]
-    delta: Optional[DeltaMessage]
-    finish_reason: Optional[Literal["stop", "length"]] = None
-
-
-class ChatCompletionStreamResponse(BaseModel):
-    id: Optional[str] = Field(default_factory=lambda: f"chatcmpl-{str(uuid.uuid1())}")
-    created: Optional[int] = Field(default_factory=lambda: int(time.time()))
-    model: Optional[str] = None
-    choices: Optional[List[ChatCompletionResponseStreamChoice]]
 
 
 class ChatContext(BaseModel):

@@ -184,37 +184,54 @@ const ChatContainer = () => {
   );
 
   return (
-    <>
+    <div className='flex flex-col h-screen w-full overflow-hidden'>
       <MuiLoading visible={loading} />
-      <Header
-        refreshHistory={getHistory}
-        modelChange={(newModel: string) => {
-          setModel(newModel);
-        }}
-      />
-      <div className='px-4 flex flex-1 flex-wrap overflow-hidden relative'>
+
+      <div className='flex-none'>
+        <Header
+          refreshHistory={getHistory}
+          modelChange={(newModel: string) => {
+            setModel(newModel);
+          }}
+        />
+      </div>
+
+      {/* Use flex-auto to ensure the remaining height is filled */}
+      <div className='flex-auto flex overflow-hidden'>
+        {/* Left chart area */}
         {!!chartsData?.length && (
-          <div className='w-full pb-4 xl:w-3/4 h-1/2 xl:pr-4 xl:h-full overflow-y-auto'>
+          <div
+            className={classNames('overflow-auto', {
+              'w-full h-1/2 md:h-full md:w-3/4 pb-4 md:pr-4': scene === 'chat_dashboard',
+            })}
+          >
             <Chart chartsData={chartsData} />
           </div>
         )}
-        {!chartsData?.length && scene === 'chat_dashboard' && <MyEmpty className='w-full xl:w-3/4 h-1/2 xl:h-full' />}
-        {/** chat panel */}
+        {!chartsData?.length && scene === 'chat_dashboard' && (
+          <div
+            className={classNames('flex items-center justify-center', {
+              'w-full h-1/2 md:h-full md:w-3/4': scene === 'chat_dashboard',
+            })}
+          >
+            <MyEmpty />
+          </div>
+        )}
+
         <div
-          className={classNames('flex flex-1 flex-col overflow-hidden', {
-            'px-0 xl:pl-4 h-1/2 w-full xl:w-auto xl:h-full border-t xl:border-t-0 xl:border-l dark:border-gray-800':
+          className={classNames('flex flex-col overflow-hidden', {
+            'w-full h-1/2 md:h-full md:w-1/4 border-t md:border-t-0 md:border-l dark:border-gray-800':
               scene === 'chat_dashboard',
-            'h-full lg:px-8': scene !== 'chat_dashboard',
+            'w-full h-full px-4 lg:px-8': scene !== 'chat_dashboard',
           })}
         >
-          <Completion
-            messages={history}
-            onSubmit={handleChat}
-            onFormatContent={formatToVisThinking} // Pass the formatting function to Completion
-          />
+          {/* Wrap the Completion component in a container with a specific height */}
+          <div className='h-full overflow-hidden'>
+            <Completion messages={history} onSubmit={handleChat} onFormatContent={formatToVisThinking} />
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

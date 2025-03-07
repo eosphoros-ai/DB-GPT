@@ -47,6 +47,7 @@ async def safe_chat_with_dag_task(
         metrics = None
         error_code = 0
         text = ""
+        thinking_text = ""
         async for output in safe_chat_stream_with_dag_task(
             task, request, False, covert_to_str=covert_to_str
         ):
@@ -54,10 +55,14 @@ async def safe_chat_with_dag_task(
             usage = output.usage
             metrics = output.metrics
             error_code = output.error_code
-            text = output.text
-        return ModelOutput(
+            if output.has_text:
+                text = output.text
+            if output.has_thinking:
+                thinking_text = output.thinking_text
+        return ModelOutput.build(
+            text,
+            thinking_text,
             error_code=error_code,
-            text=text,
             metrics=metrics,
             usage=usage,
             finish_reason=finish_reason,
@@ -147,18 +152,31 @@ async def chat_stream_with_dag_task(
             task, OpenAIStreamingOutputOperator
         ):
             full_text = ""
+            full_thinking_text = ""
             async for output in await task.call_stream(request):
                 model_output = parse_openai_output(output)
                 # The output of the OpenAI streaming API is incremental
-                full_text += model_output.text
+                if model_output.has_thinking:
+                    full_thinking_text += model_output.thinking_text
+                if model_output.has_text:
+                    full_text += model_output.text
                 model_output.incremental = incremental
-                model_output.text = model_output.text if incremental else full_text
+                if not incremental:
+                    model_output = ModelOutput.build(
+                        full_text,
+                        full_thinking_text,
+                        error_code=model_output.error_code,
+                        usage=model_output.usage,
+                        finish_reason=model_output.finish_reason,
+                    )
                 yield model_output
                 if not model_output.success:
                     break
         else:
             full_text = ""
+            full_thinking_text = ""
             previous_text = ""
+            previous_thinking_text = ""
             async for output in await task.call_stream(request):
                 model_output = parse_single_output(
                     output, is_sse, covert_to_str=covert_to_str
@@ -166,13 +184,26 @@ async def chat_stream_with_dag_task(
                 model_output.incremental = incremental
                 if task.incremental_output:
                     # Output is incremental, append the text
-                    full_text += model_output.text
+                    if model_output.has_thinking:
+                        full_thinking_text += model_output.thinking_text
+                    if model_output.has_text:
+                        full_text += model_output.text
                 else:
                     # Output is not incremental, last output is the full text
-                    full_text = model_output.text
+                    if model_output.has_thinking:
+                        full_thinking_text = model_output.thinking_text
+
+                    if model_output.has_text:
+                        full_text = model_output.text
                 if not incremental:
                     # Return the full text
-                    model_output.text = full_text
+                    model_output = ModelOutput.build(
+                        full_text,
+                        full_thinking_text,
+                        error_code=model_output.error_code,
+                        usage=model_output.usage,
+                        finish_reason=model_output.finish_reason,
+                    )
                 else:
                     # Return the incremental text
                     delta_text = full_text[len(previous_text) :]
@@ -181,7 +212,21 @@ async def chat_stream_with_dag_task(
                         if len(full_text) > len(previous_text)
                         else previous_text
                     )
-                    model_output.text = delta_text
+                    delta_thinking_text = full_thinking_text[
+                        len(previous_thinking_text) :
+                    ]
+                    previous_thinking_text = (
+                        full_thinking_text
+                        if len(full_thinking_text) > len(previous_thinking_text)
+                        else previous_thinking_text
+                    )
+                    model_output = ModelOutput.build(
+                        delta_text,
+                        delta_thinking_text,
+                        error_code=model_output.error_code,
+                        usage=model_output.usage,
+                        finish_reason=model_output.finish_reason,
+                    )
                 yield model_output
                 if not model_output.success:
                     break
@@ -221,11 +266,12 @@ def parse_single_output(
             error_code = 0
             text = output
     elif isinstance(output, ModelOutput):
-        error_code = output.error_code
-        text = output.text
-        finish_reason = output.finish_reason
-        usage = output.usage
-        metrics = output.metrics
+        # error_code = output.error_code
+        # text = output.text
+        # finish_reason = output.finish_reason
+        # usage = output.usage
+        # metrics = output.metrics
+        return output
     elif isinstance(output, CommonLLMHttpResponseBody):
         error_code = output.error_code
         text = output.text
@@ -288,13 +334,16 @@ def parse_openai_output(output: Any) -> ModelOutput:
         )
     choices = dict_data["choices"]
     finish_reason: Optional[str] = None
+    reasoning_content: Optional[str] = None
     if choices:
         choice = choices[0]
         delta_data = ChatCompletionResponseStreamChoice(**choice)
         if delta_data.delta.content:
             text = delta_data.delta.content
+        if delta_data.delta.reasoning_content:
+            reasoning_content = delta_data.delta.reasoning_content
         finish_reason = delta_data.finish_reason
-    return ModelOutput(error_code=0, text=text, finish_reason=finish_reason)
+    return ModelOutput.build(text, reasoning_content, finish_reason=finish_reason)
 
 
 def parse_sse_data(output: str) -> Optional[str]:
