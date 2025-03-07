@@ -1545,10 +1545,10 @@ requires-dist = [
     { name = "llama-cpp-python", marker = "extra == 'llama-cpp'" },
     { name = "llama-cpp-server-py", marker = "extra == 'llama-cpp-server'", specifier = ">=0.1.3" },
     { name = "llama-cpp-server-py-core", marker = "extra == 'llama-cpp-server'", specifier = ">=0.1.3" },
-    { name = "lyric-component-ts-transpiling", marker = "extra == 'code'", specifier = ">=0.1.6" },
-    { name = "lyric-js-worker", marker = "extra == 'code'", specifier = ">=0.1.6" },
-    { name = "lyric-py", marker = "extra == 'code'", specifier = ">=0.1.6" },
-    { name = "lyric-py-worker", marker = "extra == 'code'", specifier = ">=0.1.6" },
+    { name = "lyric-component-ts-transpiling", marker = "extra == 'code'", specifier = ">=0.1.7rc0" },
+    { name = "lyric-js-worker", marker = "extra == 'code'", specifier = ">=0.1.7rc0" },
+    { name = "lyric-py", marker = "extra == 'code'", specifier = ">=0.1.7rc0" },
+    { name = "lyric-py-worker", marker = "extra == 'code'", specifier = ">=0.1.7rc0" },
     { name = "msgpack", marker = "extra == 'code'" },
     { name = "msgpack", marker = "extra == 'simple-framework'" },
     { name = "numpy", marker = "extra == 'agent'", specifier = ">=1.21.0,<2.0.0" },
@@ -3971,73 +3971,74 @@ wheels = [
 
 [[package]]
 name = "lyric-component-ts-transpiling"
-version = "0.1.6"
+version = "0.1.7rc0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "lyric-task" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ba/ad/92307adcf9c29495246b0c537493f3524cb8f654e1a3b60b64a8eee29d28/lyric_component_ts_transpiling-0.1.6.tar.gz", hash = "sha256:7943f2344bf8aaa4ac8f76f9a21dfb00ebaa502c9417e6e2a125955968afec1c", size = 1785105 }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/87/7b/ae751c249f7c0f49b9d8332162ed3cbf27b14de5f364af22d875d86e403c/lyric_component_ts_transpiling-0.1.7rc0.tar.gz", hash = "sha256:d87fe969a6d76f0e320a5e5fb774e6f845bb99f0078d69011f35a470d3747537", size = 1796524 }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/d6/33/28c417a6d22e676ca199150c40afcf36ee7b351701c4feeb427209f657ec/lyric_component_ts_transpiling-0.1.6-py3-none-any.whl", hash = "sha256:0e7ec03ce596cdffd802602e0a0257bea700160e74110c0f0185a5ed6b1bcb7f", size = 1804154 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c7/59/04941941277f791d264affc36890aa66ad9d2d14d28349747a4212aaf922/lyric_component_ts_transpiling-0.1.7rc0-py3-none-any.whl", hash = "sha256:dc235861143cb49d8b12b0bdcda52eb992245649bd7b235f94efad308b6aecfd", size = 1815811 },
 ]
 
 [[package]]
 name = "lyric-js-worker"
-version = "0.1.6"
+version = "0.1.7rc0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "lyric-task" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a9/10/cd5efa45b8a45a532d0d5caeee2ac3a44e66e2ca5b86f5d9933807ada34e/lyric_js_worker-0.1.6.tar.gz", hash = "sha256:55ef0b14cfb329bb5daffb2971e6cd6bfcf0e4f822614d759baa2dbc7e80abe1", size = 3515998 }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b8/9a/c23325b8ee6ad0d5cd605950a0896660fdfad507fd9f33fbb0166af6a4e1/lyric_js_worker-0.1.7rc0.tar.gz", hash = "sha256:c3a86d189c66030261ecc5de6eabe6da7b165af2a67f45a1c2d657e904368e33", size = 3472221 }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/d8/38/4ae980dc62d7112052f9737f567117958d27647c4219dece7cfd3f93d964/lyric_js_worker-0.1.6-py3-none-any.whl", hash = "sha256:6dc10a6f54966610b70a512e01663d718f4b30af1f59087d8a479a5f7a4a493a", size = 3533291 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/bc/54/c8ac53a2d931dd71d03e295f79f525f89b2fa8a106244858c368fa85e65d/lyric_js_worker-0.1.7rc0-py3-none-any.whl", hash = "sha256:12998e55a2935ce592bb47a34dc5297ca0164958424b7e592cf3523321b86c4a", size = 3489140 },
 ]
 
 [[package]]
 name = "lyric-py"
-version = "0.1.6"
+version = "0.1.7rc0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "cloudpickle" },
     { name = "lyric-task" },
     { name = "msgpack" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/f2/bc/dd46085d1cf48674aaf7d6e8f1a42181fe0c073d4517b7239c8682b4a706/lyric_py-0.1.6.tar.gz", hash = "sha256:e19c923de38ea1d02abdc7f1d067fdd792859d5bb8326f545ff069476d573fbe", size = 158210 }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/73/77/943fcd492efbb718ddcb93d0fd2f3f3ed0b5400e40b10c15e692d06fb7dc/lyric_py-0.1.7rc0.tar.gz", hash = "sha256:d979988598c827d4b903fb24bf17446e5048129ba8a2b3fbbb4a6cd7efc649af", size = 158862 }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e3/38/953c0bac1fe969873d15c6ed42144b9e3005556a4439e4e2cbabd4cf89de/lyric_py-0.1.6-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:1ae41537bc2cbf2a42c7a03bc8839eec5efbd6465de6bc7a9a9d720ed855e059", size = 11802514 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/60/92/e67cdd030260064eebb75e8d8d63da0a587d606146efd53a73562a3966ae/lyric_py-0.1.6-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:709bc1b566b2a12c392c554af88c95586cc632ad04c7f941b472cc3a238fea7b", size = 11233222 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a1/8d/754f9d1b325be7106284aeedc70d05130edf1eed1754829b606c96ed47b7/lyric_py-0.1.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fb8ccb024eb648702ea6e7606592c6141c650f2e5f69b8f9e27ae3b23722e70d", size = 13442010 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c6/fb/52ddd2c577fc2abe886b86a238af5e76433473f7f70b7e07235080489055/lyric_py-0.1.6-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:c710de7674ad01e43f0da582876856083c3a539656494816c0691ea8059642d8", size = 13604617 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/30/e6/8e34425f3f94acd10210b5afce8bf6df59599c80e0a092be405abbb0c0dc/lyric_py-0.1.6-cp310-cp310-win_amd64.whl", hash = "sha256:e76fc5466f7dc2329d5bae05f3ea9493e0858f396ef60183086b7f305fc8defd", size = 10584958 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c2/c9/fb43584ef6a12cf500b3191900764fbcfd2dd8fb34be2c498ebd5c1c495f/lyric_py-0.1.6-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:d5da24ebf6feca5c1bb4958caab13f82722ee7d70337dad6ccfe8dd3ec2f00f4", size = 11800821 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/d1/8d/28df5f9a6f749851d61c0f09c6377356dea5c05a9a53d10c59caabe848bd/lyric_py-0.1.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:bada26006eabaf5d5aa9db87651f61b6a1d5dd40e14614957f83cc4d170c77be", size = 11219244 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/2c/d8/69d01acff0e99a0d9744786734f442f476c72a973ca08b17867a13c24317/lyric_py-0.1.6-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d5335d1a9488006e836cca8b59cf333e1d1ef0787eec27a13689e17b4075eca8", size = 13444593 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b1/e1/ef571022f9c5709515779d5200aed42acb28198fd6c16f560b818423abb9/lyric_py-0.1.6-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:204bcfae17ccdf805be1a7a0c334a97323f7b3132046cde76d42fa41b1420661", size = 13605010 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ea/0e/98c1269ad3b6276c918bad85a5f19b57c9a6c112347deb1ff3a41feb29c6/lyric_py-0.1.6-cp311-cp311-win_amd64.whl", hash = "sha256:c35c4b5d7f2590ada2c89015a599e541d5beabbbabfde452246c1c9897448b92", size = 10585231 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c4/03/76ad6843405cfc35f12bd70ae8cdfca3a230906f8cbba4aede9406388f35/lyric_py-0.1.6-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:431ab0c555ee46a4eedea52f0e3ff463b573ce87482ac6f67c0f98d48b71a506", size = 11825665 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/96/aa/73303a495f491c501664a7ad6d686279bddb5f13dc594bdacc4985bb8703/lyric_py-0.1.6-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:ad7b12fa512ad04ac95dcf78b9d1ec8d6868b6f3ccaf2756f45242d3b022bfe7", size = 11236323 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/92/04/ce83045ce7e931c615c0aa3a02e1360ff70a7f2b8a0154a22cba3c8019af/lyric_py-0.1.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6d7070240f3ebfacd687c61d9ddf65e3c133e4276ee477099838e8898fb11d21", size = 13453373 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/54/4a/63aa116a61f037fc6dcff44b28a75ba3c26a08b5347ca5be94ff71734296/lyric_py-0.1.6-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:3599376399fc8d7a0f270532a8bb6c468f123fe91d373b543035d1d67f86222d", size = 13614294 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/6f/e9/e134c3dfd76de41d3f843465ff6ca8602531209e559ec7bf80d1ba87f3e7/lyric_py-0.1.6-cp312-cp312-win_amd64.whl", hash = "sha256:c0764655b0f9e5b7700ee32b09e9679287b8adc2698cd878729ada4d262ad272", size = 10585555 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/56/7c/3b7ac26b9de23fcc7bb0050c0e2ce0c7a49f0a62aa647c055af802d0d186/lyric_py-0.1.6-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:933de25cfacde516c58f77a3f332dd3d3ef75cc24d94d2a20e10c9a5e4447f31", size = 11824843 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/1f/f5/95cf2a49c81a66aaabe535b9c855cc20fe875133eb94000696ac5fa69efa/lyric_py-0.1.6-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:d7a31683a515ff21ff247b417c345d9bb6df496c13ba2e81696a19c6aaef3f04", size = 11235466 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c8/a6/15019eec166c3d08ad419be2b11f31e0cdd4f11df89ed9cc842db393616f/lyric_py-0.1.6-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:13e0f2647b27fb17dcabeec95f37dab4f8b2e4279db3aef0e6e3625aef2190a2", size = 13452946 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0f/90/5caba3918b6af80cd1f2e0ea4bf3bad698d94747cd3e5e4bb48a7fc77694/lyric_py-0.1.6-pp310-pypy310_pp73-macosx_10_12_x86_64.whl", hash = "sha256:7d83b99ff296b210d73bf1c704f81cb3dbc27ab7d73d4b04b3818340c8cbe633", size = 11823490 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/f2/07/881956dac7cea2a1a3cae86ab04f348b1280a321bd0eb1f1cee4b4734bba/lyric_py-0.1.6-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:2f8a0cc61ade01ebe0a34e627ca31d8d90c314092d901e59ba2b7a1741598f70", size = 11233496 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/59/b6/196733f136ec05b78c5f3881c1d36e82249c923d78b906daf5ffe269b537/lyric_py-0.1.6-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b8ea792800f669d0be5bce07d033a474b6359500928ea0961d93f76822c40d80", size = 13413087 },
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/5b/dc/4dae2df04612e1db9387780f0d2ce28914a4c4f163bc49d24135385339bb/lyric_py-0.1.6-pp310-pypy310_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:490bf43e06b7e79955546331421d3ed573bb8d0b0f72aabec515c5fae2fa33fc", size = 13577253 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/f8/45/27e242de48a4c678b40ca5fd9c30690af2c1dc98339c2653e988c2514346/lyric_py-0.1.7rc0-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:e85e49925858496df0b713fb0f8a8bfc94ec8948d6a92f0d98b28530695f6a70", size = 12246263 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/57/9d/da022135c016ad947ad431be8186231be939298ea30ae135b158e106e19e/lyric_py-0.1.7rc0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f55dfb8c8fbfa2ef5627c62b51bf188f851b5a2477dac3fb2657c0e18cc7c3fd", size = 11673629 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ed/7a/30b86172fe31517fbdb751f22cde523d5b9a15b9cc8f3d62b99948e4727f/lyric_py-0.1.7rc0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:821b0e76410ced544f13687e0fe8bc6cf42ac8ce14c046a651ba4109df503a9b", size = 13541958 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0f/9b/603cfd081a97ba29412bf820627c794ebda0b93d66d5a6df8177116ad9fd/lyric_py-0.1.7rc0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:bdb9214350b26c77fa5e4c34c952fca1dbeebae65842e2ad3eb1fdff309abecc", size = 13707959 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/37/9f/6e87cb2239a87ca60d6ecb13d98a19f8e20672a50b8c0615693432b54a08/lyric_py-0.1.7rc0-cp310-cp310-win_amd64.whl", hash = "sha256:a950e7e91e44b6f289d2df6fc45edecfc2ed919d492e19dfe0899b80b8cd817c", size = 10667631 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/5f/4c/e637818cf8cb162a886ee2878e102b8ebeaafa33011ac6d43bc426a7a051/lyric_py-0.1.7rc0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:546e32bcb67c0a1f85404e5e1966dc69a55e155aad012851506e2d8275a43c9b", size = 12235882 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/7e/54/c0a5635d1fedaa4bd653ef6913f4f9df819aca1a197fcf05c88c1c5a752a/lyric_py-0.1.7rc0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d7d1fa031c2c41a789a2d2423d35d9adffcb4bd0c1b87c17fb5ac042ff39ce38", size = 11670360 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/5a/6d/ae5439ae5a6c50ca241a2df08ea4e5b06bb573fbecc9419a65fb154f42f9/lyric_py-0.1.7rc0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f0311141e33e00df54ac5942fde8bbc47263ac9c8fb95747fca178c71d001c6c", size = 13549473 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/fc/bb/6b1acb09ece4187bb6805b635018abf59816b05e1aa935059e4043e6fdd2/lyric_py-0.1.7rc0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:d6a943b349e0fba77526bb76abcde258a94f4e9c148a81fe2bb1754e7a89226a", size = 13710846 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/78/24/3a2c49e8fc71672f95d20407715919557ba97e9038c70598f6f762a935bb/lyric_py-0.1.7rc0-cp311-cp311-win_amd64.whl", hash = "sha256:4af2fb4f727e6fc6aba5e74cfd721a17e7d5dcf1279b9175de0e49e102b3c45a", size = 10669142 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/96/47/ff105288ec48557e0fa38d2a11e1ff281c642beaff55acf708d4e26a788b/lyric_py-0.1.7rc0-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:d8e0f70bbba90b6904ceae8d962a5b1625c34f8ec25e8b95c3f9051aa014d813", size = 12246437 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/44/5b/6993e70f9284d3204fe50751158a03f01815b171970118453de1fd988024/lyric_py-0.1.7rc0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:fbcb20ea05aee9c2119812c5914a7739b39179fb5eed90a8164d1da42d0ade57", size = 11638092 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/93/d3/c684c7c78048fc0f30ecea1747217e60d4e2acf0c0cd497c6ccea364a65f/lyric_py-0.1.7rc0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:952e3e0c1d35355d57cb4ff157c9a3ba1a0aa04fb8262286e3198f1421e8e1ad", size = 13553789 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0b/84/046644ec4c2f5476d96f3bca8cbcf84f9fe0a7a426e4768f12b4625cf6a0/lyric_py-0.1.7rc0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:f1cbc0517ec709368cf7abda095a34dbebd7759202c683065169b9f83651cc8a", size = 13716242 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/4b/32/02c53749fde4ccbd0a37b736ee2cb8194fbda8c0af67cd26680700d30c8f/lyric_py-0.1.7rc0-cp312-cp312-win_amd64.whl", hash = "sha256:3addb063c80992fdc3b7aa943ee3b6dcf14109057e81734b6489b27ab539bed3", size = 10665653 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/dd/bf/d369a2eea50df25dd02d41e4ac7df9848c7153a3a2982e9fae03706f31d3/lyric_py-0.1.7rc0-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:0b9034b87418aab64be11ccc73fa918fc264dce0d553af1be3988d16d59c269c", size = 12246037 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a8/93/476b0b1697a9285ba0c99c5600071f347b1bb58887486f578b75144e7968/lyric_py-0.1.7rc0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:4297520c177b100bd2d29e7fa3c34fa024fce7b5a13ef8a27c75cc4fa9a88094", size = 11637795 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/07/dc/6cf536c3a11d88f41d7b251977013ce27174c634f72c7aa55bb7094765b7/lyric_py-0.1.7rc0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4d99980b8522c08c22a11a724d40e5226c8d16cda4e283e7758aca492bbe17bc", size = 13553737 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/37/b5/c523cbbfd3b05d8c6a51df2a29a4f1f283ac0e55353d8949790c1d85119a/lyric_py-0.1.7rc0-cp313-cp313-win_amd64.whl", hash = "sha256:428f8b08169dd19936533674fa3deaddb5d68bc47653d30f2880c98358125138", size = 10665592 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/37/77/a500c5f054efb9b225f65ffa9d6709e37b5a5ae1bf47deb2d26446808300/lyric_py-0.1.7rc0-pp310-pypy310_pp73-macosx_10_12_x86_64.whl", hash = "sha256:d4b68964c52e69ffc44223b01833c1dc5d51463a2d2fcc7248236b21adf9f0d5", size = 12274277 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0d/19/53acc9659db9b8f2a34c141758931c1d0f1c3446648624e1d6ec0b064df1/lyric_py-0.1.7rc0-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:8339a19e70a36bb18eac8f789052f89482b8d55a88de17bd9453331e1fb11ea4", size = 11674071 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/35/70/5ee1163f21ba965278a2082901b1b480f348249f4e5bc4ca59f6e72d907c/lyric_py-0.1.7rc0-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:35da9a1fe118777a25fb9103c2518be8140f541155f77d0e7e35f6eda12a1687", size = 13547992 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/27/8f/fc53ac11eb9f749b17916db43b9a2003f94a2d547794024e122fcb4d9063/lyric_py-0.1.7rc0-pp310-pypy310_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:3e85bc1552c0771d0e3ca7d017893a6b9e329f311a563461c41a2dbfd1476fc9", size = 13709922 },
 ]
 
 [[package]]
 name = "lyric-py-worker"
-version = "0.1.6"
+version = "0.1.7rc0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "lyric-task" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/fa/d0/371b179784e326144e60ce6f4c12ebc98a0f97ec584da8926060b0d39146/lyric_py_worker-0.1.6.tar.gz", hash = "sha256:7041cd2526bc6483c2955b7c53b416e09ee2c282ade716326225ac87496e3274", size = 10842724 }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/30/23/266504f14d149c6e5d073950b55550542b9a0b39b4af43df49e191ff25af/lyric_py_worker-0.1.7rc0.tar.gz", hash = "sha256:e7e39fa3a231caf680d66cc6c9694bf29ca8b6e5512a66559d27a956b22595ba", size = 10812622 }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/1e/66/71a0ebbbcdf6a5710b351ff254a45504ef63c5e33a774a147a2bcf990ab2/lyric_py_worker-0.1.6-py3-none-any.whl", hash = "sha256:7f64d70f328e3a1ac4804abe7a2bc7874a4a213c9022f5bfa8ffcbdc3302fb8e", size = 10947553 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/67/99/a48e5de3c61bb4b4c557a8c2892d26bfe9a08b1de7b7e59606e170ff8860/lyric_py_worker-0.1.7rc0-py3-none-any.whl", hash = "sha256:357595c8b192239b45b06adee8b7e62964cacadec5d6225bb2a49cd632922f95", size = 10920751 },
 ]
 
 [[package]]
