@@ -10,6 +10,7 @@ from dbgpt.core import (
     MessagesPlaceholder,
     SystemPromptTemplate,
 )
+from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.tracer import root_tracer, trace
@@ -107,14 +108,16 @@ class ChatKnowledge(BaseChat):
         if len(documents) > 0:
             self.document_ids = [document.id for document in documents]
 
-    async def stream_call(self):
-        last_output = None
-        async for output in super().stream_call():
-            last_output = output
-            yield output
+    async def _handle_final_output(
+        self, final_output: ModelOutput, incremental: bool = False
+    ):
         reference = f"\n\n{self.parse_source_view(self.chunks_with_score)}"
-        last_output = last_output + reference
-        yield last_output
+        view_message = final_output.text
+        view_message = view_message + reference
+
+        if final_output.has_thinking and not incremental:
+            view_message = final_output.gen_text_with_thinking(new_text=view_message)
+        return final_output.text, view_message
 
     def stream_call_reinforce_fn(self, text):
         """return reference"""

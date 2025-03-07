@@ -448,6 +448,7 @@ class ModelOutput:
         usage: Optional[Dict[str, Any]] = None,
         finish_reason: Optional[str] = None,
         is_reasoning_model: bool = False,
+        metrics: Optional[ModelInferenceMetrics] = None,
     ) -> "ModelOutput":
         if thinking and text:
             # Has thinking and text
@@ -471,6 +472,7 @@ class ModelOutput:
             content=content,
             usage=usage,
             finish_reason=finish_reason,
+            metrics=metrics,
         )
 
 

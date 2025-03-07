@@ -237,8 +237,8 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             .replace("\r\n", " ")
             .replace("\\n", " ")
             .replace("\n", " ")
-            .replace("\\", " ")
-            .replace("\\_", "_")
+            # .replace("\\", " ")
+            # .replace("\\_", "_")
         )
         cleaned_output = self._illegal_json_ends(cleaned_output)
         return cleaned_output

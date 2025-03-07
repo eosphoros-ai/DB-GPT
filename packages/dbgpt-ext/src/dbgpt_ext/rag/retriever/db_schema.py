@@ -246,7 +246,7 @@ class DBSchemaRetriever(BaseRetriever):
         if not table_name:
             return chunk
 
-        create_statement = f'CREATE TABLE "{table_name}"\r\n(\r\n    '
+        create_statement = f"CREATE TABLE `{table_name}`\r\n(\r\n    "
         create_statement += field_part
         create_statement += "\r\n)"
         if table_comment:
