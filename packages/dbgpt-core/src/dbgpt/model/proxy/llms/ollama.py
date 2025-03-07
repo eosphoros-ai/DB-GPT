@@ -19,6 +19,10 @@ from dbgpt.model.proxy.base import (
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel, parse_model_request
 from dbgpt.util.i18n_utils import _
 
+from ...utils.parse_utils import (
+    parse_chat_message,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -103,6 +107,9 @@ class OllamaLLMClient(ProxyLLMClient):
     def default_model(self) -> str:
         return self._model
 
+    def is_reasoning_model(self, model: str) -> bool:
+        return any(keyword in model for keyword in ["r1", "qwq"])
+
     def sync_generate_stream(
         self,
         request: ModelRequest,
@@ -120,6 +127,7 @@ class OllamaLLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
 
         model = request.model or self._model
+        is_reasoning_model = self.is_reasoning_model(model)
         client = Client(self._api_base)
         try:
             stream = client.chat(
@@ -130,9 +138,12 @@ class OllamaLLMClient(ProxyLLMClient):
             content = ""
             for chunk in stream:
                 content = content + chunk["message"]["content"]
-                yield ModelOutput(text=content, error_code=0)
+                msg = parse_chat_message(content, extract_reasoning=is_reasoning_model)
+                yield ModelOutput.build(
+                    text=msg.content, thinking=msg.reasoning_content, error_code=0
+                )
         except ollama.ResponseError as e:
-            yield ModelOutput(
+            yield ModelOutput.build(
                 text=f"**Ollama Response Error, Please CheckErrorInfo.**: {e}",
                 error_code=-1,
             )
