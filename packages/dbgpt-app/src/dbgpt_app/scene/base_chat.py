@@ -2,7 +2,7 @@ import datetime
 import logging
 import traceback
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Dict
+from typing import Any, AsyncIterator, Dict, Optional, Union
 
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType, SystemApp
@@ -291,7 +291,9 @@ class BaseChat(ABC):
         )
         return metadata
 
-    async def stream_call(self):
+    async def stream_call(
+        self, text_output: bool = True, incremental: bool = False
+    ) -> AsyncIterator[Union[ModelOutput, str]]:
         # TODO Retry when server connection error
         payload = await self._build_model_request()
 
@@ -301,11 +303,16 @@ class BaseChat(ABC):
             "BaseChat.stream_call", metadata=payload.to_dict()
         )
         payload.span_id = span.span_id
+        full_text = ""
+        full_thinking_text = ""
+        previous_text = ""
+        previous_thinking_text = ""
         try:
             msg = "<span style='color:red'>ERROR!</span> No response from model"
-            view_msg = msg
+            final_output: Optional[ModelOutput] = None
             async for output in self.call_streaming_operator(payload):
                 # Plugin research in result generation
+                final_output = output
                 model_output = (
                     self.prompt_template.output_parser.parse_model_stream_resp_ex(
                         output,
@@ -315,18 +322,91 @@ class BaseChat(ABC):
                 msg = model_output.gen_text_with_thinking()
                 view_msg = self.stream_plugin_call(msg)
                 view_msg = view_msg.replace("\n", "\\n")
-                yield view_msg
-            self.current_message.add_ai_message(msg)
-            view_msg = self.stream_call_reinforce_fn(view_msg)
+
+                if text_output:
+                    full_text = view_msg
+                    # Return the incremental text
+                    delta_text = full_text[len(previous_text) :]
+                    previous_text = (
+                        full_text
+                        if len(full_text) > len(previous_text)
+                        else previous_text
+                    )
+                    yield delta_text if incremental else full_text
+                else:
+                    if model_output.has_thinking:
+                        full_thinking_text = model_output.thinking_text
+                    if model_output.has_text:
+                        full_text = model_output.text
+                    if not incremental:
+                        yield ModelOutput.build(
+                            full_text,
+                            full_thinking_text,
+                            error_code=model_output.error_code,
+                            usage=model_output.usage,
+                            finish_reason=model_output.finish_reason,
+                            metrics=model_output.metrics,
+                        )
+                    else:
+                        # Return the incremental text
+                        delta_text = full_text[len(previous_text) :]
+                        previous_text = (
+                            full_text
+                            if len(full_text) > len(previous_text)
+                            else previous_text
+                        )
+                        delta_thinking_text = full_thinking_text[
+                            len(previous_thinking_text) :
+                        ]
+                        previous_thinking_text = (
+                            full_thinking_text
+                            if len(full_thinking_text) > len(previous_thinking_text)
+                            else previous_thinking_text
+                        )
+                        yield ModelOutput.build(
+                            delta_text,
+                            delta_thinking_text,
+                            error_code=model_output.error_code,
+                            usage=model_output.usage,
+                            finish_reason=model_output.finish_reason,
+                            metrics=model_output.metrics,
+                        )
+            ai_response_text, view_message = await self._handle_final_output(
+                final_output, incremental=incremental
+            )
+            if text_output:
+                full_text = view_message
+                # Return the incremental text
+                delta_text = full_text[len(previous_text) :]
+                yield delta_text if incremental else full_text
+            else:
+                yield ModelOutput.build(
+                    view_message,
+                    "",
+                    error_code=final_output.error_code,
+                    usage=final_output.usage,
+                    finish_reason=final_output.finish_reason,
+                    metrics=final_output.metrics,
+                )
+
+            self.current_message.add_ai_message(ai_response_text)
+            view_msg = self.stream_call_reinforce_fn(view_message)
             self.current_message.add_view_message(view_msg)
             span.end()
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parse failed！" + str(e))
-            self.current_message.add_view_message(
-                f"""<span style=\"color:red\">ERROR!</span>{str(e)}
-{ai_response_text} """
-            )
+            if not text_output:
+                yield ModelOutput.build(
+                    f"{str(e)}",
+                    "",
+                    error_code=-1,
+                )
+            else:
+                err_view_meg = (
+                    f'<span style="color:red">ERROR!</span>{str(e)}\n{ai_response_text}'
+                )
+                yield err_view_meg
             ### store current conversation
             span.end(metadata={"error": str(e)})
         await blocking_func_to_async(
@@ -370,7 +450,12 @@ class BaseChat(ABC):
     async def _no_streaming_call_with_retry(self, payload):
         with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
             model_output = await self.call_llm_operator(payload)
+        return await self._handle_final_output(model_output)
 
+    async def _handle_final_output(
+        self, final_output: ModelOutput, incremental: bool = False
+    ):
+        model_output = final_output
         parsed_output = self.prompt_template.output_parser.parse_model_nostream_resp(
             model_output, text_output=False
         )
@@ -399,7 +484,7 @@ class BaseChat(ABC):
                 result,
                 prompt_define_response,
             )
-            if parsed_output.has_thinking:
+            if parsed_output.has_thinking and not incremental:
                 view_message = parsed_output.gen_text_with_thinking(
                     new_text=view_message
                 )

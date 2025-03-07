@@ -64,7 +64,7 @@ prompt = ChatPromptTemplate(
 prompt_adapter = AppScenePromptTemplateAdapter(
     prompt=prompt,
     template_scene=ChatScene.ChatDashboard.value(),
-    stream_out=PROMPT_NEED_STREAM_OUT,
+    stream_out=True,
     output_parser=ChatDashboardOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
     need_historical_messages=False,
 )

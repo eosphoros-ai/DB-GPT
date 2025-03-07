@@ -460,7 +460,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         # Must be non-incremental
         request.incremental = False
         async for output in self.safe_chat_stream_flow(flow_uid, request):
-            text = output.text
+            text = output.gen_text_with_thinking()
             if text:
                 text = text.replace("\n", "\\n")
             if output.error_code != 0:
@@ -491,9 +491,14 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 yield f"data: {json.dumps(output.to_dict(), ensure_ascii=False)}\n\n"
                 yield "data: [DONE]\n\n"
                 return
+            text = output.text if output.has_text else ""
             choice_data = ChatCompletionResponseStreamChoice(
                 index=0,
-                delta=DeltaMessage(role="assistant", content=output.text),
+                delta=DeltaMessage(
+                    role="assistant",
+                    content=text,
+                    reasoning_content=output.thinking_text,
+                ),
             )
             chunk = ChatCompletionStreamResponse(
                 id=conv_uid,

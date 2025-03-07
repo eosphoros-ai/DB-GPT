@@ -14,9 +14,19 @@ from fastapi.responses import StreamingResponse
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_CHAT_DOMAIN_TYPE
+from dbgpt.core import ModelOutput
 from dbgpt.core.awel import BaseOperator, CommonLLMHttpRequestBody
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.core.awel.util.chat_util import safe_chat_stream_with_dag_task
+from dbgpt.core.schema.api import (
+    ChatCompletionResponse,
+    ChatCompletionResponseChoice,
+    ChatCompletionResponseStreamChoice,
+    ChatCompletionStreamResponse,
+    ChatMessage,
+    DeltaMessage,
+    UsageInfo,
+)
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt.util.executor_utils import (
@@ -29,11 +39,8 @@ from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_app.knowledge.service import KnowledgeService
 from dbgpt_app.openapi.api_view_model import (
-    ChatCompletionResponseStreamChoice,
-    ChatCompletionStreamResponse,
     ChatSceneVo,
     ConversationVo,
-    DeltaMessage,
     MessageVo,
     Result,
 )
@@ -397,7 +404,7 @@ async def file_read(
 
 
 def get_hist_messages(conv_uid: str, user_name: str = None):
-    from dbgpt_serve.conversation.serve import Service as ConversationService
+    from dbgpt_serve.conversation.service.service import Service as ConversationService
 
     instance: ConversationService = ConversationService.get_instance(CFG.SYSTEM_APP)
     return instance.get_history_messages({"conv_uid": conv_uid, "user_name": user_name})
@@ -540,7 +547,12 @@ async def chat_completions(
                 )
             else:
                 return StreamingResponse(
-                    stream_generator(chat, dialogue.incremental, dialogue.model_name),
+                    stream_generator(
+                        chat,
+                        dialogue.incremental,
+                        dialogue.model_name,
+                        openai_format=dialogue.incremental,
+                    ),
                     headers=headers,
                     media_type="text/plain",
                 )
@@ -657,7 +669,14 @@ async def no_stream_generator(chat):
         yield f"data: {msg}\n\n"
 
 
-async def stream_generator(chat, incremental: bool, model_name: str):
+async def stream_generator(
+    chat,
+    incremental: bool,
+    model_name: str,
+    text_output: bool = True,
+    openai_format: bool = False,
+    conv_uid: str = None,
+):
     """Generate streaming responses
 
     Our goal is to generate an openai-compatible streaming responses.
@@ -676,33 +695,76 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
-    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
-    previous_response = ""
-    async for chunk in chat.stream_call():
-        if chunk:
-            msg = chunk.replace("\ufffd", "")
-            if incremental:
-                incremental_output = msg[len(previous_response) :]
-                choice_data = ChatCompletionResponseStreamChoice(
-                    index=0,
-                    delta=DeltaMessage(role="assistant", content=incremental_output),
-                )
-                chunk = ChatCompletionStreamResponse(
-                    id=stream_id, choices=[choice_data], model=model_name
-                )
-                _content = json.dumps(
-                    chunk.dict(exclude_unset=True), ensure_ascii=False
-                )
-                yield f"data:{_content}\n\n"
+    stream_id = conv_uid or f"chatcmpl-{str(uuid.uuid1())}"
+    try:
+        if incremental and not openai_format:
+            raise ValueError("Incremental response must be openai-compatible format.")
+        async for chunk in chat.stream_call(
+            text_output=text_output, incremental=incremental
+        ):
+            if not chunk:
+                await asyncio.sleep(0.02)
+                continue
+
+            if openai_format:
+                # Must be ModelOutput
+                output: ModelOutput = cast(ModelOutput, chunk)
+                text = None
+                think_text = None
+                if output.has_text:
+                    text = output.text
+                if output.has_thinking:
+                    think_text = output.thinking_text
+                if incremental:
+                    choice_data = ChatCompletionResponseStreamChoice(
+                        index=0,
+                        delta=DeltaMessage(
+                            role="assistant", content=text, reasoning_content=think_text
+                        ),
+                    )
+                    chunk = ChatCompletionStreamResponse(
+                        id=stream_id, choices=[choice_data], model=model_name
+                    )
+                    _content = json.dumps(
+                        chunk.dict(exclude_unset=True), ensure_ascii=False
+                    )
+                    yield f"data: {_content}\n\n"
+                else:
+                    choice_data = ChatCompletionResponseChoice(
+                        index=0,
+                        message=ChatMessage(
+                            role="assistant",
+                            content=output.text,
+                            reasoning_content=output.thinking_text,
+                        ),
+                    )
+                    if output.usage:
+                        usage = UsageInfo(**output.usage)
+                    else:
+                        usage = UsageInfo()
+                    _content = ChatCompletionResponse(
+                        id=stream_id,
+                        choices=[choice_data],
+                        model=model_name,
+                        usage=usage,
+                    )
+                    _content = json.dumps(
+                        chunk.dict(exclude_unset=True), ensure_ascii=False
+                    )
+                    yield f"data: {_content}\n\n"
             else:
-                # TODO generate an openai-compatible streaming responses
+                msg = chunk.replace("\ufffd", "")
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
-            previous_response = msg
             await asyncio.sleep(0.02)
-    if incremental:
-        yield "data: [DONE]\n\n"
-    span.end()
+        if incremental:
+            yield "data: [DONE]\n\n"
+        span.end()
+    except Exception as e:
+        logger.exception("stream_generator error")
+        yield f"data: [SERVER_ERROR]{str(e)}\n\n"
+        if incremental:
+            yield "data: [DONE]\n\n"
 
 
 def message2Vo(message: dict, order, model_name) -> MessageVo:
@@ -764,7 +826,7 @@ async def chat_with_domain_flow(dialogue: ConversationVo, domain_type: str):
         incremental=dialogue.incremental,
     )
     async for output in safe_chat_stream_with_dag_task(end_task, request, False):
-        text = output.text
+        text = output.gen_text_with_thinking()
         if text:
             text = text.replace("\n", "\\n")
         if output.error_code != 0:

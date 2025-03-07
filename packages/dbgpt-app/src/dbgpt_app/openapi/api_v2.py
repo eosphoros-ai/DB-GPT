@@ -10,7 +10,6 @@ from starlette.responses import JSONResponse, StreamingResponse
 
 from dbgpt._private.pydantic import model_to_dict, model_to_json
 from dbgpt.component import SystemApp, logger
-from dbgpt.core.awel import CommonLLMHttpRequestBody
 from dbgpt.core.schema.api import (
     ChatCompletionResponse,
     ChatCompletionResponseChoice,
@@ -128,6 +127,7 @@ async def chat_completions(
         or request.chat_mode == ChatMode.CHAT_NORMAL.value
         or request.chat_mode == ChatMode.CHAT_KNOWLEDGE.value
         or request.chat_mode == ChatMode.CHAT_DATA.value
+        or request.chat_mode == ChatMode.CHAT_DB_QA.value
     ):
         with root_tracer.start_span(
             "get_chat_instance",
@@ -137,12 +137,19 @@ async def chat_completions(
             chat: BaseChat = await get_chat_instance(request, service.system_app)
 
         if not request.stream:
+            # TODO: Adapt to the new chat interface
             return await no_stream_wrapper(request, chat)
         else:
             return StreamingResponse(
-                stream_generator(chat, request.incremental, request.model),
+                stream_generator(
+                    chat,
+                    request.incremental,
+                    request.model,
+                    text_output=False,
+                    openai_format=True,
+                ),
                 headers=headers,
-                media_type="text/plain",
+                media_type="text/event-stream",
             )
     else:
         raise HTTPException(
@@ -185,7 +192,7 @@ async def get_chat_instance(
         "chat_session_id": dialogue.conv_uid,
         "user_name": dialogue.user_name,
         "sys_code": dialogue.sys_code,
-        "current_user_input": dialogue.messages,
+        "current_user_input": dialogue.single_prompt(),
         "select_param": dialogue.chat_param,
         "model_name": dialogue.model,
         "temperature": dialogue.temperature,
@@ -232,7 +239,7 @@ async def chat_app_stream_wrapper(request: ChatCompletionRequestBody = None):
     async for output in multi_agents.app_agent_chat(
         conv_uid=request.conv_uid,
         gpts_name=request.chat_param,
-        user_query=request.messages,
+        user_query=request.single_prompt(),
         user_code=request.user_name,
         sys_code=request.sys_code,
     ):
@@ -262,7 +269,7 @@ async def chat_app_stream_wrapper(request: ChatCompletionRequestBody = None):
 
 async def chat_flow_wrapper(request: ChatCompletionRequestBody):
     flow_service = get_chat_flow()
-    flow_req = CommonLLMHttpRequestBody(**model_to_dict(request))
+    flow_req = request.to_common_llm_http_request_body()
     flow_uid = request.chat_param
     output = await flow_service.safe_chat_flow(flow_uid, flow_req)
     if not output.success:
@@ -273,7 +280,11 @@ async def chat_flow_wrapper(request: ChatCompletionRequestBody):
     else:
         choice_data = ChatCompletionResponseChoice(
             index=0,
-            message=ChatMessage(role="assistant", content=output.text),
+            message=ChatMessage(
+                role="assistant",
+                content=output.text,
+                reasoning_content=output.thinking_text,
+            ),
         )
         if output.usage:
             usage = UsageInfo(**output.usage)
@@ -292,7 +303,7 @@ async def chat_flow_stream_wrapper(
         request (OpenAPIChatCompletionRequest): request
     """
     flow_service = get_chat_flow()
-    flow_req = CommonLLMHttpRequestBody(**model_to_dict(request))
+    flow_req = request.to_common_llm_http_request_body()
     flow_uid = request.chat_param
 
     async for output in flow_service.chat_stream_openai(flow_uid, flow_req):

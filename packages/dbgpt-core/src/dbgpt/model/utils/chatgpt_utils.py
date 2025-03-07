@@ -215,8 +215,10 @@ async def _to_openai_stream(
         id=id, choices=[choice_data], model=model or ""
     )
     yield transform_to_sse(chunk)
-
+    delta_text = ""
     previous_text = ""
+    thinking_text = ""
+    previous_thinking_text = ""
     finish_stream_events = []
     async for model_output in output_iter:
         if model_caller is not None:
@@ -229,23 +231,34 @@ async def _to_openai_stream(
             yield transform_to_sse(model_output.to_dict())
             yield transform_to_sse("[DONE]")
             return
-        decoded_unicode = model_output.text.replace("\ufffd", "")
-        delta_text = decoded_unicode[len(previous_text) :]
-        previous_text = (
-            decoded_unicode
-            if len(decoded_unicode) > len(previous_text)
-            else previous_text
-        )
+        if model_output.has_text:
+            decoded_unicode = model_output.text.replace("\ufffd", "")
+            delta_text = decoded_unicode[len(previous_text) :]
+            previous_text = (
+                decoded_unicode
+                if len(decoded_unicode) > len(previous_text)
+                else previous_text
+            )
+        if model_output.has_thinking:
+            decoded_unicode = model_output.thinking_text.replace("\ufffd", "")
+            thinking_text = decoded_unicode[len(previous_thinking_text) :]
+            previous_thinking_text = (
+                decoded_unicode
+                if len(decoded_unicode) > len(previous_thinking_text)
+                else previous_thinking_text
+            )
 
-        if len(delta_text) == 0:
+        if not delta_text:
             delta_text = None
+        if not thinking_text:
+            thinking_text = None
         choice_data = ChatCompletionResponseStreamChoice(
             index=0,
-            delta=DeltaMessage(content=delta_text),
+            delta=DeltaMessage(content=delta_text, reasoning_content=thinking_text),
             finish_reason=model_output.finish_reason,
         )
         chunk = ChatCompletionStreamResponse(id=id, choices=[choice_data], model=model)
-        if delta_text is None:
+        if delta_text is None and thinking_text is None:
             if model_output.finish_reason is not None:
                 finish_stream_events.append(chunk)
             continue
