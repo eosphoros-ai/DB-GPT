@@ -107,10 +107,10 @@ code = [
     "msgpack",
     # for AWEL operator serialization
     "cloudpickle",
-    "lyric-py>=0.1.6",
-    "lyric-py-worker>=0.1.6",
-    "lyric-js-worker>=0.1.6",
-    "lyric-component-ts-transpiling>=0.1.6",
+    "lyric-py>=0.1.7rc0",
+    "lyric-py-worker>=0.1.7rc0",
+    "lyric-js-worker>=0.1.7rc0",
+    "lyric-component-ts-transpiling>=0.1.7rc0",
 ]
 llama_cpp = [
     "llama-cpp-python",
