@@ -107,9 +107,6 @@ class OllamaLLMClient(ProxyLLMClient):
     def default_model(self) -> str:
         return self._model
 
-    def is_reasoning_model(self, model: str) -> bool:
-        return any(keyword in model for keyword in ["r1", "qwq"])
-
     def sync_generate_stream(
         self,
         request: ModelRequest,
@@ -127,7 +124,7 @@ class OllamaLLMClient(ProxyLLMClient):
         messages = request.to_common_messages()
 
         model = request.model or self._model
-        is_reasoning_model = self.is_reasoning_model(model)
+        is_reasoning_model = getattr(request.context, "is_reasoning_model", False)
         client = Client(self._api_base)
         try:
             stream = client.chat(
