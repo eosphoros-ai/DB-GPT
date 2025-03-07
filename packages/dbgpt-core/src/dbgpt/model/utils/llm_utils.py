@@ -91,6 +91,7 @@ def parse_model_request(
         stream=stream,
         user_name=params.get("user_name"),
         request_id=params.get("request_id"),
+        is_reasoning_model=params.get("is_reasoning_model", False),
     )
     request = ModelRequest.build_request(
         default_model,

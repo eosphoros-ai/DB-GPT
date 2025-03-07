@@ -297,6 +297,9 @@ class ModelRequestContext:
     request_id: Optional[str] = None
     """The request id of the model inference."""
 
+    is_reasoning_model: Optional[bool] = False
+    """Whether the model is a reasoning model."""
+
 
 @dataclass
 @PublicAPI(stability="beta")
