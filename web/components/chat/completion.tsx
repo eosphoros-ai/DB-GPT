@@ -169,7 +169,7 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
   return (
     <>
       {contextHolder}
-      <div ref={scrollableRef} className='flex flex-1 overflow-y-auto pb-8 w-full flex-col'>
+      <div ref={scrollableRef} className='flex flex-1 overflow-y-auto h-full w-full flex-col'>
         <div className='flex items-center flex-1 flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7'>
           {showMessages.length ? (
             showMessages.map((content, index) => {
@@ -230,7 +230,7 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
       </div>
       <div
         className={classNames(
-          'relative after:absolute after:-top-8 after:h-8 after:w-full after:bg-gradient-to-t after:from-theme-light after:to-transparent dark:after:from-theme-dark',
+          'relative sticky bottom-0 bg-theme-light dark:bg-theme-dark after:absolute after:-top-8 after:h-8 after:w-full after:bg-gradient-to-t after:from-theme-light after:to-transparent dark:after:from-theme-dark',
           {
             'cursor-not-allowed': scene === 'chat_excel' && !currentDialogue?.select_param,
           },
