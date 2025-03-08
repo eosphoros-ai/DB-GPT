@@ -98,6 +98,7 @@ This tutorial assumes that you can establish network communication with the depe
     {label: 'GLM4 (local)', value: 'glm-4'},
     {label: 'VLLM (local)', value: 'vllm'},
     {label: 'LLAMA_CPP (local)', value: 'llama_cpp'},
+    {label: 'Ollama (proxy)', value: 'ollama'},
   ]}>
 
   <TabItem value="openai" label="OpenAI(proxy)">
@@ -341,6 +342,46 @@ Then run the following command to start the webserver:
 
 ```bash
 uv run dbgpt start webserver --config configs/dbgpt-local-llama-cpp.toml
+```
+
+  </TabItem>
+    <TabItem value="ollama" label="Ollama(proxy)">
+
+```bash
+# Use uv to install dependencies needed for Ollama proxy
+uv sync --all-packages \
+--extra "base" \
+--extra "proxy_ollama" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts"
+```
+
+### Run Webserver
+
+To run DB-GPT with Ollama proxy, you must provide the Ollama API base in the `configs/dbgpt-proxy-ollama.toml` configuration file.
+
+```toml
+# Model Configurations
+[models]
+[[models.llms]]
+...
+api_base = "your-ollama-api-base"
+[[models.embeddings]]
+...
+api_base = "your-ollama-api-base"
+```
+
+Then run the following command to start the webserver:
+
+```bash
+uv run dbgpt start webserver --config configs/dbgpt-proxy-ollama.toml
+```
+In the above command, `--config` specifies the configuration file, and `configs/dbgpt-proxy-ollama.toml` is the configuration file for the Ollama proxy model, you can also use other configuration files or create your own configuration file according to your needs.
+
+Optionally, you can also use the following command to start the webserver:
+```bash
+uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-ollama.toml
 ```
 
   </TabItem>
