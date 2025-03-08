@@ -98,7 +98,7 @@ This tutorial assumes that you can establish network communication with the depe
     {label: 'GLM4 (local)', value: 'glm-4'},
     {label: 'VLLM (local)', value: 'vllm'},
     {label: 'LLAMA_CPP (local)', value: 'llama_cpp'},
-    {label: 'Ollama (local)', value: 'ollama'},
+    {label: 'Ollama (proxy)', value: 'ollama'},
   ]}>
 
   <TabItem value="openai" label="OpenAI(proxy)">
