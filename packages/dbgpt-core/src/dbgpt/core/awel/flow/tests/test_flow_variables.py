@@ -241,6 +241,14 @@ def json_flow():
     ],
     indirect=["variables_provider"],
 )
+@pytest.fixture
+def variables_provider():
+    from dbgpt_serve.flow.api.variables_provider import BuiltinFlowVariablesProvider
+
+    provider = BuiltinFlowVariablesProvider()
+    yield provider
+
+
 async def test_build_flow(json_flow, variables_provider):
     DAGVar.set_variables_provider(variables_provider)
     flow_data = FlowData(**json_flow)

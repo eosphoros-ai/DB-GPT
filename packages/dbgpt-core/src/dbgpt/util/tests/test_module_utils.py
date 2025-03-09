@@ -125,8 +125,8 @@ class TestModelScanner:
         # Check if classes were found
         assert len(results) == 2
         assert all(issubclass(cls, TestBaseClass) for cls in results.values())
-        assert "testimpl1" in results
-        assert "testimpl2" in results
+        assert "test_modules.module1.testimpl1" in results
+        assert "test_modules.module2.testimpl2" in results
 
     def test_recursive_scanning(self):
         """Test recursive directory scanning"""
@@ -176,7 +176,7 @@ class TestModelScanner:
 
         results = scanner.scan_and_register(config)
         assert len(results) == 1
-        assert "testimpl1" in results
+        assert "test_modules.module1.testimpl1" in results
 
     def test_multiple_base_classes(self):
         """Test scanning for multiple different base classes"""
@@ -198,8 +198,8 @@ class TestModelScanner:
 
         assert len(results1) == 1
         assert len(results2) == 1
-        assert "testimpl1" in results1
-        assert "testparamsimpl1" in results2
+        assert "test_modules.module1.testimpl1" in results1
+        assert "test_modules.module1.testparamsimpl1" in results2
 
     def test_error_handling(self):
         """Test error handling for invalid modules and paths"""

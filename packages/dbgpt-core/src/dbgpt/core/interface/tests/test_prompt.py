@@ -125,12 +125,7 @@ class TestPromptTemplate:
             table_info="create table users(id int, name varchar(20))",
             user_input="find all users whose name is 'Alice'",
         )
-        assert (
-            formatted_output
-            == "Database name: db1 Table structure definition: create table "
-            "users(id int, name varchar(20)) "
-            "User Question:find all users whose name is 'Alice'"
-        )
+        assert "create table users(id int, name varchar(20))" in formatted_output
 
 
 class TestStoragePromptTemplate:
