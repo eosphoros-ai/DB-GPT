@@ -68,7 +68,7 @@ class Serve(BaseServe):
         # application starts
         from .models.models import ServeEntity as _  # noqa: F401
 
-    def before_start(self):
+    def after_init(self):
         """Called before the start of the application."""
         from dbgpt.core.interface.file import (
             FileStorageSystem,
@@ -104,8 +104,20 @@ class Serve(BaseServe):
             check_hash=self._serve_config.check_hash,
         )
         self._file_storage_client = FileStorageClient(
-            system_app=self._system_app, storage_system=fs
+            system_app=self._system_app,
+            storage_system=fs,
+            save_chunk_size=self._serve_config.save_chunk_size,
         )
+        self._system_app.register_instance(self._file_storage_client)
+
+        try:
+            import fsspec
+
+            from .service.fsspec_impl import DBGPTFileSystem
+
+            fsspec.register_implementation("dbgpt-fs", DBGPTFileSystem)
+        except ImportError:
+            pass
 
     @property
     def file_storage_client(self) -> FileStorageClient:

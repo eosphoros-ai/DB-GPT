@@ -270,6 +270,7 @@ def scan_configs():
 
 
 def load_config(config_file: str = None) -> ApplicationConfig:
+    from dbgpt._private.config import Config
     from dbgpt.configs.model_config import ROOT_PATH as DBGPT_ROOT_PATH
 
     if config_file is None:
@@ -287,6 +288,8 @@ def load_config(config_file: str = None) -> ApplicationConfig:
     sys_config = cfg.parse_config(SystemParameters, prefix="system")
     # Must set default language before any i18n usage
     set_default_language(sys_config.language)
+    _CFG = Config()
+    _CFG.LANGUAGE = sys_config.language
 
     # Scan all configs
     scan_configs()

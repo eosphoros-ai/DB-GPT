@@ -1,159 +1,33 @@
 import io
-import json
 import logging
 import os
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
 
 import chardet
 import duckdb
 import numpy as np
 import pandas as pd
 import sqlparse
-from pyparsing import (
-    CaselessKeyword,
-    Forward,
-    Literal,
-    Optional,
-    Regex,
-    Word,
-    alphanums,
-    delimitedList,
-)
 
 from dbgpt.util.file_client import FileClient
 from dbgpt.util.pd_utils import csv_colunm_foramt
-from dbgpt.util.string_utils import is_chinese_include_number
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from duckdb import DuckDBPyConnection
+
+
+class TransformedExcelResponse(NamedTuple):
+    description: str
+    columns: List[Dict[str, str]]
+    plans: List[str]
 
 
 def excel_colunm_format(old_name: str) -> str:
     new_column = old_name.strip()
     new_column = new_column.replace(" ", "_")
     return new_column
-
-
-def detect_encoding(file_path):
-    # 读取文件的二进制数据
-    with open(file_path, "rb") as f:
-        data = f.read()
-    # 使用 chardet 来检测文件编码
-    result = chardet.detect(data)
-    encoding = result["encoding"]
-    confidence = result["confidence"]
-    return encoding, confidence
-
-
-def add_quotes_ex(sql: str, column_names):
-    sql = sql.replace("`", '"')
-    for column_name in column_names:
-        if sql.find(column_name) != -1 and sql.find(f'"{column_name}"') == -1:
-            sql = sql.replace(column_name, f'"{column_name}"')
-    return sql
-
-
-def parse_sql(sql):
-    # 定义关键字和标识符
-    select_stmt = Forward()
-    column = Regex(r"[\w一-龥]*")
-    table = Word(alphanums)
-    join_expr = Forward()
-    where_expr = Forward()
-    group_by_expr = Forward()
-    order_by_expr = Forward()
-
-    select_keyword = CaselessKeyword("SELECT")
-    from_keyword = CaselessKeyword("FROM")
-    join_keyword = CaselessKeyword("JOIN")
-    on_keyword = CaselessKeyword("ON")
-    where_keyword = CaselessKeyword("WHERE")
-    group_by_keyword = CaselessKeyword("GROUP BY")
-    order_by_keyword = CaselessKeyword("ORDER BY")
-    and_keyword = CaselessKeyword("AND")
-    # or_keyword = CaselessKeyword("OR")
-    # in_keyword = CaselessKeyword("IN")
-    # not_in_keyword = CaselessKeyword("NOT IN")
-
-    # 定义语法规则
-    select_stmt <<= (
-        select_keyword
-        + delimitedList(column)
-        + from_keyword
-        + delimitedList(table)
-        + Optional(join_expr)
-        + Optional(where_keyword + where_expr)
-        + Optional(group_by_keyword + group_by_expr)
-        + Optional(order_by_keyword + order_by_expr)
-    )
-
-    join_expr <<= join_keyword + table + on_keyword + column + Literal("=") + column
-
-    where_expr <<= (
-        column + Literal("=") + Word(alphanums) + Optional(and_keyword + where_expr)
-        | column + Literal(">") + Word(alphanums) + Optional(and_keyword + where_expr)
-        | column + Literal("<") + Word(alphanums) + Optional(and_keyword + where_expr)
-    )
-
-    group_by_expr <<= delimitedList(column)
-
-    order_by_expr <<= column + Optional(Literal("ASC") | Literal("DESC"))
-
-    # 解析 SQL 语句
-    parsed_result = select_stmt.parseString(sql)
-
-    return parsed_result.asList()
-
-
-def add_quotes(sql, column_names=[]):
-    sql = sql.replace("`", "")
-    sql = sql.replace("'", "")
-    parsed = sqlparse.parse(sql)
-    for stmt in parsed:
-        for token in stmt.tokens:
-            deep_quotes(token, column_names)
-    return str(parsed[0])
-
-
-def deep_quotes(token, column_names=[]):
-    if hasattr(token, "tokens"):
-        for token_child in token.tokens:
-            deep_quotes(token_child, column_names)
-    else:
-        if is_chinese_include_number(token.value):
-            new_value = token.value.replace("`", "").replace("'", "")
-            token.value = f'"{new_value}"'
-
-
-def get_select_clause(sql):
-    parsed = sqlparse.parse(sql)[0]  # 解析 SQL 语句，获取第一个语句块
-
-    select_tokens = []
-    is_select = False
-
-    for token in parsed.tokens:
-        if token.is_keyword and token.value.upper() == "SELECT":
-            is_select = True
-        elif is_select:
-            if token.is_keyword and token.value.upper() == "FROM":
-                break
-            select_tokens.append(token)
-    return "".join(str(token) for token in select_tokens)
-
-
-def parse_select_fields(sql):
-    parsed = sqlparse.parse(sql)[0]  # 解析 SQL 语句，获取第一个语句块
-    fields = []
-
-    for token in parsed.tokens:
-        # 使用 flatten() 方法合并 '2022' 和 '年' 为一个 token
-        if token.match(sqlparse.tokens.Literal.String.Single):
-            token.flatten()
-        if isinstance(token, sqlparse.sql.Identifier):
-            fields.append(token.get_real_name())
-
-    # 处理中文
-    fields = [field.replace("field", f'"{field}"') for field in fields]
-
-    return fields
 
 
 def add_quotes_to_chinese_columns(sql, column_names=[]):
@@ -229,127 +103,179 @@ def is_chinese(text):
     return False
 
 
-class ExcelReader:
-    def __init__(self, conv_uid: str, file_param: str):
-        self.conv_uid = conv_uid
-        self.file_param = file_param
-        if isinstance(file_param, str) and os.path.isabs(file_param):
-            file_name = os.path.basename(file_param)
-            self.file_name_without_extension = os.path.splitext(file_name)[0]
-            encoding, confidence = detect_encoding(file_param)
+def read_from_df(
+    db: "DuckDBPyConnection",
+    file_path,
+    file_name: str,
+    table_name: str,
+):
+    file_client = FileClient()
+    file_info = file_client.read_file(conv_uid=None, file_key=file_path)
 
-            self.excel_file_name = file_name
-            self.extension = os.path.splitext(file_name)[1]
+    result = chardet.detect(file_info)
+    encoding = result["encoding"]
+    confidence = result["confidence"]
 
-            file_info = file_param
-        else:
-            if isinstance(file_param, dict):
-                file_path = file_param.get("file_path", None)
-                if not file_path:
-                    raise ValueError("Not find file path!")
-                else:
-                    file_name = os.path.basename(file_path.replace(f"{conv_uid}_", ""))
-
-            else:
-                temp_obj = json.loads(file_param)
-                file_path = temp_obj.get("file_path", None)
-                file_name = os.path.basename(file_path.replace(f"{conv_uid}_", ""))
-
-            self.file_name_without_extension = os.path.splitext(file_name)[0]
-
-            self.excel_file_name = file_name
-            self.extension = os.path.splitext(file_name)[1]
-
-            file_client = FileClient()
-            file_info = file_client.read_file(
-                conv_uid=self.conv_uid, file_key=file_path
-            )
-
-            result = chardet.detect(file_info)
-            encoding = result["encoding"]
-            confidence = result["confidence"]
-
-        logger.info(
-            f"File Info:{len(file_info)},Detected Encoding: {encoding} "
-            f"(Confidence: {confidence})"
+    logger.info(
+        f"File Info:{len(file_info)},Detected Encoding: {encoding} "
+        f"(Confidence: {confidence})"
+    )
+    # read excel file
+    if file_name.endswith(".xlsx") or file_name.endswith(".xls"):
+        df_tmp = pd.read_excel(file_info, index_col=False)
+        df = pd.read_excel(
+            file_info,
+            index_col=False,
+            converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
         )
+    elif file_name.endswith(".csv"):
+        df_tmp = pd.read_csv(
+            file_info if isinstance(file_info, str) else io.BytesIO(file_info),
+            index_col=False,
+            encoding=encoding,
+        )
+        df = pd.read_csv(
+            file_info if isinstance(file_info, str) else io.BytesIO(file_info),
+            index_col=False,
+            encoding=encoding,
+            converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
+        )
+    else:
+        raise ValueError("Unsupported file format.")
 
-        # read excel file
-        if file_name.endswith(".xlsx") or file_name.endswith(".xls"):
-            df_tmp = pd.read_excel(file_info, index_col=False)
-            self.df = pd.read_excel(
-                file_info,
-                index_col=False,
-                converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
-            )
-        elif file_name.endswith(".csv"):
-            df_tmp = pd.read_csv(
-                file_info if isinstance(file_info, str) else io.BytesIO(file_info),
-                index_col=False,
-                encoding=encoding,
-            )
-            self.df = pd.read_csv(
-                file_info if isinstance(file_info, str) else io.BytesIO(file_info),
-                index_col=False,
-                encoding=encoding,
-                converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
-            )
-        else:
-            raise ValueError("Unsupported file format.")
+    df.replace("", np.nan, inplace=True)
 
-        self.df.replace("", np.nan, inplace=True)
+    unnamed_columns_tmp = [
+        col
+        for col in df_tmp.columns
+        if col.startswith("Unnamed") and df_tmp[col].isnull().all()
+    ]
+    df_tmp.drop(columns=unnamed_columns_tmp, inplace=True)
 
-        # 修改的部分
+    df = df[df_tmp.columns.values]
 
-        unnamed_columns_tmp = [
-            col
-            for col in df_tmp.columns
-            if col.startswith("Unnamed") and df_tmp[col].isnull().all()
-        ]
-        df_tmp.drop(columns=unnamed_columns_tmp, inplace=True)
-
-        self.df = self.df[df_tmp.columns.values]
-        #
-
-        self.columns_map = {}
-        for column_name in df_tmp.columns:
-            self.df[column_name] = self.df[column_name].astype(str)
-            self.columns_map.update({column_name: excel_colunm_format(column_name)})
+    columns_map = {}
+    for column_name in df_tmp.columns:
+        df[column_name] = df[column_name].astype(str)
+        columns_map.update({column_name: excel_colunm_format(column_name)})
+        try:
+            df[column_name] = pd.to_datetime(df[column_name]).dt.strftime("%Y-%m-%d")
+        except ValueError:
             try:
-                self.df[column_name] = pd.to_datetime(self.df[column_name]).dt.strftime(
-                    "%Y-%m-%d"
-                )
+                df[column_name] = pd.to_numeric(df[column_name])
             except ValueError:
                 try:
-                    self.df[column_name] = pd.to_numeric(self.df[column_name])
-                except ValueError:
-                    try:
-                        self.df[column_name] = self.df[column_name].astype(str)
-                    except Exception:
-                        print("Can't transform column: " + column_name)
+                    df[column_name] = df[column_name].astype(str)
+                except Exception:
+                    print("Can't transform column: " + column_name)
 
-        self.df = self.df.rename(columns=lambda x: x.strip().replace(" ", "_"))
+    df = df.rename(columns=lambda x: x.strip().replace(" ", "_"))
+    # write data in duckdb
+    db.register(table_name, df)
+    return table_name
 
+
+def read_direct(
+    db: "DuckDBPyConnection",
+    file_path: str,
+    file_name: str,
+    table_name: str,
+):
+    try:
+        # Try to import data automatically, It will automatically detect from the file
+        # extension
+        db.sql(f"create table {table_name} as SELECT * FROM '{file_path}'")
+        return
+    except Exception as e:
+        logger.warning(f"Error while reading file: {str(e)}")
+    file_extension = os.path.splitext(file_path)[1]
+    load_params = {}
+    if file_extension == ".csv":
+        load_func = "read_csv"
+        load_params = {}
+    elif file_extension == ".xlsx":
+        load_func = "read_xlsx"
+        load_params["empty_as_varchar"] = "true"
+        load_params["ignore_errors"] = "true"
+    elif file_extension == ".xls":
+        return read_from_df(db, file_path, file_name, table_name)
+    elif file_extension == ".json":
+        load_func = "read_json_auto"
+    elif file_extension == ".parquet":
+        load_func = "read_parquet"
+    else:
+        raise ValueError(f"Unsupported file format: {file_extension}")
+
+    func_args = ", ".join([f"{k}={v}" for k, v in load_params.items()])
+    if func_args:
+        from_exp = f"FROM {load_func}('{file_path}', {func_args})"
+    else:
+        from_exp = f"FROM {load_func}('{file_path}')"
+    load_sql = f"create table {table_name} as SELECT * {from_exp}"
+    try:
+        db.sql(load_sql)
+    except Exception as e:
+        logger.warning(f"Error while reading file: {str(e)}")
+        return read_from_df(db, file_path, file_name, table_name)
+
+
+class ExcelReader:
+    def __init__(
+        self,
+        conv_uid: str,
+        file_path: str,
+        file_name: Optional[str] = None,
+        read_type: str = "df",
+        database_name: str = ":memory:",
+        table_name: str = "data_analysis_table",
+    ):
+        if not file_name:
+            file_name = os.path.basename(file_path)
+        self.conv_uid = conv_uid
         # connect DuckDB
-        self.db = duckdb.connect(database=":memory:", read_only=False)
 
-        self.table_name = "excel_data"
-        # write data in duckdb
-        self.db.register(self.table_name, self.df)
+        db_exists = os.path.exists(database_name)
 
-        # 获取结果并打印表结构信息
-        result = self.db.execute(f"DESCRIBE {self.table_name}")
+        self.db = duckdb.connect(database=database_name, read_only=False)
+
+        self.temp_table_name = "temp_table"
+        self.table_name = table_name
+
+        self.excel_file_name = file_name
+
+        if not db_exists:
+            curr_table = self.temp_table_name
+            if read_type == "df":
+                read_from_df(self.db, file_path, file_name, curr_table)
+            else:
+                read_direct(self.db, file_path, file_name, curr_table)
+        else:
+            curr_table = self.table_name
+
+        # Print table schema
+        result = self.db.sql(f"DESCRIBE {curr_table}")
         columns = result.fetchall()
         for column in columns:
             print(column)
 
-    def run(self, sql):
+    def close(self):
+        if self.db:
+            self.db.close()
+            self.db = None
+
+    def __del__(self):
+        self.close()
+
+    def run(self, sql, table_name: str, df_res: bool = False, transform: bool = True):
         try:
-            if f'"{self.table_name}"' in sql:
-                sql = sql.replace(f'"{self.table_name}"', self.table_name)
-            sql = add_quotes_to_chinese_columns(sql)
-            print(f"excute sql:{sql}")
-            results = self.db.execute(sql)
+            if f'"{table_name}"' in sql:
+                sql = sql.replace(f'"{table_name}"', table_name)
+            if transform:
+                sql = add_quotes_to_chinese_columns(sql)
+            logger.info(f"To be executed SQL: {sql}")
+            if df_res:
+                return self.db.sql(sql).df()
+            results = self.db.sql(sql)
             colunms = []
             for descrip in results.description:
                 colunms.append(descrip[0])
@@ -358,9 +284,141 @@ class ExcelReader:
             logger.error(f"excel sql run error!, {str(e)}")
             raise ValueError(f"Data Query Exception!\\nSQL[{sql}].\\nError:{str(e)}")
 
-    def get_df_by_sql_ex(self, sql):
-        colunms, values = self.run(sql)
-        return pd.DataFrame(values, columns=colunms)
+    def get_df_by_sql_ex(self, sql: str, table_name: Optional[str] = None):
+        table_name = table_name or self.table_name
+        return self.run(sql, table_name, df_res=True)
 
-    def get_sample_data(self):
-        return self.run(f"SELECT * FROM {self.table_name} LIMIT 5;")
+    def get_sample_data(self, table_name: str):
+        columns, datas = self.run(
+            f"SELECT * FROM {table_name} USING SAMPLE 5;",
+            table_name=table_name,
+            transform=False,
+        )
+        return columns, datas
+
+    def get_columns(self, table_name: str):
+        sql = f"""
+        SELECT 
+    dc.column_name,
+    dc.data_type AS column_type,
+    CASE WHEN dc.is_nullable THEN 'YES' ELSE 'NO' END AS "null",
+    '' AS key,
+    '' AS default,
+    '' AS "extra",
+    dc.comment
+FROM duckdb_columns() dc
+WHERE dc.table_name = '{table_name}'
+AND dc.schema_name = 'main';
+"""
+        columns, datas = self.run(sql, table_name, transform=False)
+        return columns, datas
+
+    def get_create_table_sql(self, table_name: str) -> str:
+        sql = f"""SELECT comment, table_name, database_name FROM duckdb_tables() \
+        where table_name = '{table_name}'"""
+
+        columns, datas = self.run(sql, table_name, transform=False)
+        table_comment = datas[0][0]
+        cl_columns, cl_datas = self.get_columns(table_name)
+        ddl_sql = f"CREATE TABLE {table_name} (\n"
+        column_strs = []
+        for cl_data in cl_datas:
+            column_name = cl_data[0]
+            column_type = cl_data[1]
+            nullable = cl_data[2]
+            column_key = cl_data[3]
+            column_default = cl_data[4]
+            column_comment = cl_data[6]
+            curr_sql = f"    {column_name} {column_type}"
+            if column_key and column_key == "PRI":
+                curr_sql += " PRIMARY KEY"
+            elif nullable and str(nullable).lower() == "no":
+                curr_sql += " NOT NULL"
+            elif column_default:
+                curr_sql += f" DEFAULT {column_default}"
+            elif column_comment:
+                curr_sql += f" COMMENT '{column_comment}'"
+            column_strs.append(curr_sql)
+        ddl_sql += ",\n".join(column_strs)
+        if table_comment:
+            ddl_sql += f"\n) COMMENT '{table_comment}';"
+        else:
+            ddl_sql += "\n);"
+
+        return ddl_sql
+
+    def get_summary(self, table_name: str) -> str:
+        data = self.run(
+            f"SUMMARIZE {table_name}", table_name, transform=False, df_res=True
+        ).to_json(force_ascii=False)
+        return data
+
+    def transform_table(
+        self,
+        old_table_name: str,
+        new_table_name: str,
+        transform: TransformedExcelResponse,
+    ):
+        table_comment = transform.description
+        select_sql_list = []
+        new_table = new_table_name
+
+        _, cl_datas = self.get_columns(old_table_name)
+        old_col_name_to_type = {cl_data[0]: cl_data[1] for cl_data in cl_datas}
+
+        create_columns = []
+        for col_transform in transform.columns:
+            old_column_name = col_transform["old_column_name"]
+            new_column_name = col_transform["new_column_name"]
+            new_column_type = old_col_name_to_type[old_column_name]
+            old_column_name = f'"{old_column_name}"'  # 使用双引号括起列名
+            select_sql_list.append(f"{old_column_name} AS {new_column_name}")
+            create_columns.append(f"{new_column_name} {new_column_type}")
+
+        select_sql = ", ".join(select_sql_list)
+        create_columns_str = ", ".join(create_columns)
+        create_table_str = f"CREATE TABLE {new_table}(\n{create_columns_str}\n);"
+        sql = f"""
+    {create_table_str}
+    INSERT INTO {new_table} SELECT {select_sql}
+    from {old_table_name};
+    """
+        logger.info("Begin to transform table, SQL: \n" + sql)
+        self.db.sql(sql)
+
+        # Transform single quotes in table comments, then execute separately
+        escaped_table_comment = table_comment.replace("'", "''")
+        table_comment_sql = ""
+        try:
+            table_comment_sql = (
+                f"COMMENT ON TABLE {new_table} IS '{escaped_table_comment}';"
+            )
+            self.db.sql(table_comment_sql)
+            logger.info(f"Added comment to table {new_table}")
+        except Exception as e:
+            logger.warning(
+                f"Error while adding table comment: {str(e)}\nSQL: {table_comment_sql}"
+            )
+
+        for col_transform in transform.columns:
+            column_comment_sql = ""
+            new_column_name = ""
+            try:
+                new_column_name = col_transform["new_column_name"]
+                column_description = col_transform["column_description"]
+                # In SQL, single quotes within single quotes need to be escaped with
+                # two single quotes
+                escaped_description = column_description.replace("'", "''")
+                column_comment_sql = (
+                    f"COMMENT ON COLUMN {new_table}.{new_column_name}"
+                    f" IS '{escaped_description}';"
+                )
+                self.db.sql(column_comment_sql)
+                logger.debug(f"Added comment to column {new_table}.{new_column_name}")
+            except Exception as e:
+                logger.warning(
+                    f"Error while adding comment to column {new_column_name}:"
+                    f" {str(e)}\nSQL: {column_comment_sql}"
+                )
+
+        return new_table
