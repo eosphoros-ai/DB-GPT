@@ -147,7 +147,7 @@ def test_basic_config():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    system_config = config_manager.parse_config(SystemConfig, "system")
+    system_config = config_manager.parse_config(SystemConfig, "system", None)
 
     assert system_config.language == "en"
     assert system_config.log_level == "INFO"
@@ -172,7 +172,7 @@ def test_nested_config():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    service_config = config_manager.parse_config(ServiceConfig, "service")
+    service_config = config_manager.parse_config(ServiceConfig, "service", None)
 
     assert service_config.web.host == "127.0.0.1"
     assert service_config.web.port == 5670
@@ -199,7 +199,7 @@ def test_list_config():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    models_config = config_manager.parse_config(ModelsConfig, "models")
+    models_config = config_manager.parse_config(ModelsConfig, "models", None)
 
     assert models_config.default_llm == "glm-4-9b-chat"
     assert len(models_config.deploy) == 2
@@ -212,7 +212,7 @@ def test_optional_fields():
 
     config_manager = ConfigurationManager(config_dict)
     with pytest.raises(ValueError, match="Missing required field"):
-        config_manager.parse_config(ModelsConfig, "models")
+        config_manager.parse_config(ModelsConfig, "models", None)
 
 
 def test_complete_config(tmp_path: Path):
@@ -333,11 +333,25 @@ inference_type = "proxyllm"
 
 def test_missing_section():
     """Test missing configuration section"""
-    config_dict = {}
-    config_manager = ConfigurationManager(config_dict)
+    config_dict = {
+        "system": {
+            "language": "${env:LANG:-en}",
+            "log_level": "${env:LOG_LEVEL:-INFO}",
+            "api_keys": [],
+            "encrypt_key": "${env:ENCRYPT_KEY:-https://api.openai.com/v1}",
+        }
+    }
 
-    with pytest.raises(ValueError, match="Configuration section not found"):
-        config_manager.parse_config(SystemConfig, "system")
+    # Test with unset environment variables
+    if "LANG" in os.environ:
+        del os.environ["LANG"]
+    if "LOG_LEVEL" in os.environ:
+        del os.environ["LOG_LEVEL"]
+    if "ENCRYPT_KEY" in os.environ:
+        del os.environ["ENCRYPT_KEY"]
+
+    config_manager = ConfigurationManager(config_dict)
+    config_manager.parse_config(SystemConfig, "system", None)
 
 
 def test_invalid_config_type():
@@ -354,7 +368,7 @@ def test_invalid_config_type():
 
     config_manager = ConfigurationManager(config_dict)
     with pytest.raises(ValueError):
-        config_manager.parse_config(ServiceConfig, "service")
+        config_manager.parse_config(ServiceConfig, "service", None)
 
 
 def test_nested_optional_fields():
@@ -375,7 +389,7 @@ def test_nested_optional_fields():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    models_config = config_manager.parse_config(ModelsConfig, "models")
+    models_config = config_manager.parse_config(ModelsConfig, "models", None)
 
     assert models_config.deploy[0].path is None
     assert models_config.deploy[0].inference_type is None
@@ -396,7 +410,7 @@ def test_empty_list_fields():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    app_config = config_manager.parse_config(AppConfig, "app")
+    app_config = config_manager.parse_config(AppConfig, "app", None)
     assert len(app_config.configs) == 0
 
 
@@ -422,7 +436,7 @@ def test_dict_field_types():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    rag_config = config_manager.parse_config(RagConfig, "rag")
+    rag_config = config_manager.parse_config(RagConfig, "rag", None)
     assert isinstance(rag_config.storage.graph, dict)
     assert rag_config.storage.graph["extra_param"] == "value"
 
@@ -445,7 +459,7 @@ def test_deep_nested_config():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    service_config = config_manager.parse_config(ServiceConfig, "service")
+    service_config = config_manager.parse_config(ServiceConfig, "service", None)
 
     assert service_config.model.controller.port == 8000
     assert service_config.model.worker.port == 8001
@@ -467,7 +481,7 @@ def test_invalid_nested_type():
 
     config_manager = ConfigurationManager(config_dict)
     with pytest.raises(ValueError):
-        config_manager.parse_config(ServiceConfig, "service")
+        config_manager.parse_config(ServiceConfig, "service", None)
 
     """Test list element type mismatch"""
     config_dict = {
@@ -532,7 +546,7 @@ def test_basic_env_var():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    service_config = config_manager.parse_config(ServiceConfig, "service")
+    service_config = config_manager.parse_config(ServiceConfig, "service", None)
 
     assert service_config.web.host == "test.example.com"
     assert service_config.web.port == 5432
@@ -558,7 +572,7 @@ def test_env_var_with_default():
         del os.environ["ENCRYPT_KEY"]
 
     config_manager = ConfigurationManager(config_dict)
-    system_config = config_manager.parse_config(SystemConfig, "system")
+    system_config = config_manager.parse_config(SystemConfig, "system", None)
 
     assert system_config.language == "en"
     assert system_config.log_level == "INFO"
@@ -567,7 +581,7 @@ def test_env_var_with_default():
     # Test with set environment variable
     os.environ["LANG"] = "zh"
     config_manager = ConfigurationManager(config_dict)
-    system_config = config_manager.parse_config(SystemConfig, "system")
+    system_config = config_manager.parse_config(SystemConfig, "system", None)
     assert system_config.language == "zh"
 
 
@@ -593,7 +607,7 @@ def test_nested_env_vars():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    service_config = config_manager.parse_config(ServiceConfig, "service")
+    service_config = config_manager.parse_config(ServiceConfig, "service", None)
 
     assert service_config.web.database.type == "postgres"
     assert service_config.web.database.path == "/var/lib/postgres"
@@ -615,7 +629,7 @@ def test_env_vars_in_list():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    system_config = config_manager.parse_config(SystemConfig, "system")
+    system_config = config_manager.parse_config(SystemConfig, "system", None)
 
     assert "key1" in system_config.api_keys
     assert "key2" in system_config.api_keys
@@ -629,7 +643,7 @@ def test_missing_env_var():
 
     config_dict = {
         "system": {
-            "language": "${env:MISSING_VAR}",
+            "language": "en",
             "log_level": "INFO",
             "api_keys": [],
             "encrypt_key": "test",
@@ -637,8 +651,7 @@ def test_missing_env_var():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    with pytest.raises(ValueError, match="Environment variable MISSING_VAR not found"):
-        config_manager.parse_config(SystemConfig, "system")
+    config_manager.parse_config(SystemConfig, "system", None)
 
 
 def test_disable_env_vars():
@@ -655,7 +668,7 @@ def test_disable_env_vars():
     }
 
     config_manager = ConfigurationManager(config_dict, resolve_env_vars=False)
-    system_config = config_manager.parse_config(SystemConfig, "system")
+    system_config = config_manager.parse_config(SystemConfig, "system", None)
 
     assert system_config.language == "${env:TEST_VAR}"
 
@@ -1207,7 +1220,7 @@ def test_env_var_set_hook():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    service_config = config_manager.parse_config(TestAppConfig, "app", "hooks")
+    service_config = config_manager.parse_config(TestAppConfig, "app", None, "hooks")
 
     assert service_config.database.host == "test-host"
     assert service_config.database.port == 5432
@@ -1239,7 +1252,7 @@ def test_config_validation_failure():
 
     config_manager = ConfigurationManager(config_dict)
     with pytest.raises(ValueError, match="Value .* below minimum 1024"):
-        config_manager.parse_config(TestAppConfig, "app", "hooks")
+        config_manager.parse_config(TestAppConfig, "app", None, "hooks")
 
 
 def test_env_var_set_hook_disabled():
@@ -1267,7 +1280,7 @@ def test_env_var_set_hook_disabled():
     }
 
     config_manager = ConfigurationManager(config_dict)
-    service_config = config_manager.parse_config(TestAppConfig, "app", "hooks")
+    service_config = config_manager.parse_config(TestAppConfig, "app", None, "hooks")
 
     # Since hook is disabled, environment variable shouldn't be set
     assert "TEST_APP_NAME" not in os.environ

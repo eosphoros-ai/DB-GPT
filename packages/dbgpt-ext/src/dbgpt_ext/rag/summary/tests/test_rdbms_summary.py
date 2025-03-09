@@ -55,7 +55,7 @@ class TestRdbmsSummary(unittest.TestCase):
         summaries = rdbms_summary.table_summaries()
         self.assertTrue(
             "table1(column1 (first column), column2), and index keys: index1(`column1`)"
-            ", and table comment: table1 comment" in summaries
+            " , and table comment: table1 comment" in summaries
         )
         self.assertTrue(
             "table2(column1), and index keys: index1(`column1`) , and table comment: "

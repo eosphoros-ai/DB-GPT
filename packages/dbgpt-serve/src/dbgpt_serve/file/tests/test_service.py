@@ -30,7 +30,14 @@ def service(system_app: SystemApp, config: BaseServeConfig):
 @pytest.fixture
 def default_entity_dict():
     # TODO: build your default entity dict
-    return {}
+    return {
+        "host": "",
+        "port": 0,
+        "model": "",
+        "provider": "",
+        "worker_type": "",
+        "params": "{}",
+    }
 
 
 @pytest.mark.parametrize(

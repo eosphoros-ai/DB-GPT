@@ -7,14 +7,15 @@ from dbgpt_serve.core.tests.conftest import (  # noqa: F401
     system_app,
 )
 
-from ..api.schemas import ServeRequest, ServerResponse
 from ..config import ServeConfig
-from ..models.models import ServeDao, ServeEntity
+from ..models.models import ServeDao, ServeEntity, ServeRequest, ServerResponse
 
 
 @pytest.fixture(autouse=True)
 def setup_and_teardown():
-    db.init_db("sqlite:///:memory:")
+    db.init_db(
+        "sqlite:///:memory:", engine_args={"connect_args": {"check_same_thread": False}}
+    )
     db.create_all()
 
     yield
@@ -34,7 +35,14 @@ def dao(server_config):
 @pytest.fixture
 def default_entity_dict():
     # TODO: build your default entity dict
-    return {}
+    return {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "model": "test",
+        "provider": "test",
+        "worker_type": "test",
+        "params": "{}",
+    }
 
 
 def test_table_exist():
@@ -43,7 +51,14 @@ def test_table_exist():
 
 def test_entity_create(default_entity_dict):
     with db.session() as session:
-        entity = ServeEntity(**default_entity_dict)
+        entity = ServeEntity(
+            host=default_entity_dict["host"],
+            port=default_entity_dict["port"],
+            model=default_entity_dict["model"],
+            provider=default_entity_dict["provider"],
+            worker_type=default_entity_dict["worker_type"],
+            params=default_entity_dict["params"],
+        )
         session.add(entity)
 
 
@@ -74,15 +89,14 @@ def test_entity_all():
 
 def test_dao_create(dao, default_entity_dict):
     # TODO: implement your test case
-    req = ServeRequest(**default_entity_dict)
-    res: ServerResponse = dao.create(req)
+    res: ServerResponse = dao.create(default_entity_dict)
     assert res is not None
 
 
 def test_dao_get_one(dao, default_entity_dict):
     # TODO: implement your test case
-    req = ServeRequest(**default_entity_dict)
-    res: ServerResponse = dao.create(req)
+    req = ServeRequest()
+    res: ServerResponse = dao.create(default_entity_dict)
 
 
 def test_get_dao_get_list(dao):

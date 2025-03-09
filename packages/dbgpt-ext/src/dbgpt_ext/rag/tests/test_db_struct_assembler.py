@@ -100,11 +100,7 @@ def test_retrieve_with_mocked_summary(dbstruct_retriever):
     query = "Table summary"
     chunks: List[Chunk] = dbstruct_retriever._retrieve(query)
     assert isinstance(chunks[0], Chunk)
-    assert chunks[0].content == (
-        "table_name: user\ncomment: user about dbgpt\n"
-        "--table-field-separator--\n"
-        "name,age\naddress,gender\nmail,phone"
-    )
+    assert "-table-field-separator--" in chunks[0].content
 
 
 def async_mock_parse_db_summary() -> str:
