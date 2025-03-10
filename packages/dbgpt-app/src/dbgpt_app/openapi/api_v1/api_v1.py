@@ -18,6 +18,7 @@ from dbgpt.core import ModelOutput
 from dbgpt.core.awel import BaseOperator, CommonLLMHttpRequestBody
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.core.awel.util.chat_util import safe_chat_stream_with_dag_task
+from dbgpt.core.interface.file import FileStorageClient
 from dbgpt.core.schema.api import (
     ChatCompletionResponse,
     ChatCompletionResponseChoice,
@@ -32,7 +33,6 @@ from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManage
 from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
     ExecutorFactory,
-    blocking_func_to_async,
 )
 from dbgpt.util.file_client import FileClient
 from dbgpt.util.tracer import SpanType, root_tracer
@@ -46,6 +46,7 @@ from dbgpt_app.openapi.api_view_model import (
 )
 from dbgpt_app.scene import BaseChat, ChatFactory, ChatScene
 from dbgpt_serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
+from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.datasource.manages.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
 from dbgpt_serve.flow.service.service import Service as FlowService
@@ -148,6 +149,10 @@ def get_worker_manager() -> WorkerManager:
         ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
     ).create()
     return worker_manager
+
+
+def get_fs() -> FileStorageClient:
+    return FileStorageClient.get_instance(CFG.SYSTEM_APP)
 
 
 def get_dag_manager() -> DAGManager:
@@ -327,25 +332,45 @@ async def params_list(
 async def file_upload(
     chat_mode: str,
     conv_uid: str,
+    temperature: Optional[float] = None,
+    max_new_tokens: Optional[int] = None,
     sys_code: Optional[str] = None,
     model_name: Optional[str] = None,
     doc_file: UploadFile = File(...),
     user_token: UserRequest = Depends(get_user_from_headers),
+    fs: FileStorageClient = Depends(get_fs),
 ):
     logger.info(f"file_upload:{conv_uid},{doc_file.filename}")
-    file_client = FileClient()
+    # file_client = FileClient()
     file_name = doc_file.filename
-    is_oss, file_key = await file_client.write_file(
-        conv_uid=conv_uid, doc_file=doc_file
+    # is_oss, file_key = await file_client.write_file(
+    #     conv_uid=conv_uid, doc_file=doc_file
+    # )
+    #
+    custom_metadata = {
+        "user_name": user_token.user_id,
+        "sys_code": sys_code,
+        "conv_uid": conv_uid,
+    }
+    bucket = "dbgpt_app_file"
+    file_uri = await blocking_func_to_async(
+        CFG.SYSTEM_APP,
+        fs.save_file,
+        bucket,
+        file_name,
+        doc_file.file,
+        storage_type="distributed",
+        custom_metadata=custom_metadata,
     )
 
     _, file_extension = os.path.splitext(file_name)
-    if file_extension.lower() in [".xls", ".xlsx", ".csv"]:
+    if file_extension.lower() in [".xls", ".xlsx", ".csv", "*.json", "*.parquet"]:
         file_param = {
-            "is_oss": is_oss,
-            "file_path": file_key,
+            "is_oss": True,
+            "file_path": file_uri,
             "file_name": file_name,
             "file_learning": True,
+            "bucket": bucket,
         }
         # Prepare the chat
         dialogue = ConversationVo(
@@ -356,6 +381,10 @@ async def file_upload(
             user_name=user_token.user_id,
             sys_code=sys_code,
         )
+        if temperature is not None:
+            dialogue.temperature = temperature
+        if max_new_tokens is not None:
+            dialogue.max_new_tokens = max_new_tokens
         chat: BaseChat = await get_chat_instance(dialogue)
         await chat.prepare()
 
@@ -364,8 +393,8 @@ async def file_upload(
     else:
         return Result.succ(
             {
-                "is_oss": is_oss,
-                "file_path": file_key,
+                "is_oss": True,
+                "file_path": file_uri,
                 "file_learning": False,
                 "file_name": file_name,
             }
@@ -439,7 +468,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "prompt_code": dialogue.prompt_code,
     }
     chat: BaseChat = await blocking_func_to_async(
-        get_executor(),
+        CFG.SYSTEM_APP,
         CHAT_FACTORY.get_implementation,
         dialogue.chat_mode,
         CFG.SYSTEM_APP,

@@ -52,7 +52,7 @@ const MaxNewTokens: React.FC<{
               max={20480}
               step={1}
               onChange={handleSliderChange}
-              value={typeof maxNewTokensValue === 'number' ? maxNewTokensValue : 2048}
+              value={typeof maxNewTokensValue === 'number' ? maxNewTokensValue : 4000}
             />
             <InputNumber
               size='small'

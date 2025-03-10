@@ -478,6 +478,13 @@ class ModelOutput:
             metrics=metrics,
         )
 
+    @property
+    def error_message(self) -> str:
+        """Get the error message.
+        Just return the error message when error_code is not 0.
+        """
+        return self.text if self.has_text else "Unknown error"
+
 
 _ModelMessageType = Union[List[ModelMessage], List[Dict[str, Any]]]
 

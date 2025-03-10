@@ -308,7 +308,6 @@ class BaseChat(ABC):
         previous_text = ""
         previous_thinking_text = ""
         try:
-            msg = "<span style='color:red'>ERROR!</span> No response from model"
             final_output: Optional[ModelOutput] = None
             async for output in self.call_streaming_operator(payload):
                 # Plugin research in result generation
@@ -319,8 +318,9 @@ class BaseChat(ABC):
                         text_output=False,
                     )
                 )
-                msg = model_output.gen_text_with_thinking()
-                view_msg = self.stream_plugin_call(msg)
+                text_msg = model_output.text if model_output.has_text else ""
+                view_msg = self.stream_plugin_call(text_msg)
+                view_msg = model_output.gen_text_with_thinking(new_text=view_msg)
                 view_msg = view_msg.replace("\n", "\\n")
 
                 if text_output:
@@ -459,7 +459,7 @@ class BaseChat(ABC):
         parsed_output = self.prompt_template.output_parser.parse_model_nostream_resp(
             model_output, text_output=False
         )
-        ai_response_text = parsed_output.text
+        ai_response_text = parsed_output.text if parsed_output.has_text else ""
         prompt_define_response = (
             self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
         )

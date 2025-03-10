@@ -105,13 +105,26 @@ class ApiCall:
             all_context = all_context.replace(tag + api_context, api_context)
         return all_context
 
+    def _format_api_context(self, raw_api_context: str) -> str:
+        """Format the API context."""
+        # Remove newline characters
+
+        raw_api_context = (
+            raw_api_context.replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\_", "_")
+            .replace("\\", " ")
+        )
+        return raw_api_context
+
     def api_view_context(self, all_context: str, display_mode: bool = False):
         """Return the view content."""
         call_context_map = extract_content_open_ending(
             all_context, self.agent_prefix, self.agent_end, True
         )
         for api_index, api_context in call_context_map.items():
-            api_status = self.plugin_status_map.get(api_context)
+            key_api_context = self._format_api_context(api_context)
+            api_status = self.plugin_status_map.get(key_api_context)
             if api_status is not None:
                 if display_mode:
                     all_context = self._deal_error_md_tags(all_context, api_context)
@@ -149,30 +162,104 @@ class ApiCall:
 
         return all_context
 
+    # def update_from_context(self, all_context):
+    #     """Modify the plugin status map based on the context."""
+    #     api_context_map: Dict[int, str] = extract_content(
+    #         all_context, self.agent_prefix, self.agent_end, True
+    #     )
+    #     for api_index, api_context in api_context_map.items():
+    #         api_context = api_context.replace("\\n", "").replace("\n", "")
+    #         api_call_element = ET.fromstring(api_context)
+    #         api_name = api_call_element.find("name").text
+    #         if api_name.find("[") >= 0 or api_name.find("]") >= 0:
+    #             api_name = api_name.replace("[", "").replace("]", "")
+    #         api_args = {}
+    #         args_elements = api_call_element.find("args")
+    #         for child_element in args_elements.iter():
+    #             api_args[child_element.tag] = child_element.text
+    #
+    #         api_status = self.plugin_status_map.get(api_context)
+    #         if api_status is None:
+    #             api_status = PluginStatus(
+    #                 name=api_name, location=[api_index], args=api_args
+    #             )
+    #             self.plugin_status_map[api_context] = api_status
+    #         else:
+    #             api_status.location.append(api_index)
+
     def update_from_context(self, all_context):
         """Modify the plugin status map based on the context."""
         api_context_map: Dict[int, str] = extract_content(
             all_context, self.agent_prefix, self.agent_end, True
         )
         for api_index, api_context in api_context_map.items():
-            api_context = api_context.replace("\\n", "").replace("\n", "")
-            api_call_element = ET.fromstring(api_context)
-            api_name = api_call_element.find("name").text
-            if api_name.find("[") >= 0 or api_name.find("]") >= 0:
-                api_name = api_name.replace("[", "").replace("]", "")
-            api_args = {}
-            args_elements = api_call_element.find("args")
-            for child_element in args_elements.iter():
-                api_args[child_element.tag] = child_element.text
+            try:
+                # Format the API context
+                api_context = self._format_api_context(api_context)
+                key_api_context = api_context
 
-            api_status = self.plugin_status_map.get(api_context)
-            if api_status is None:
-                api_status = PluginStatus(
-                    name=api_name, location=[api_index], args=api_args
+                # Try to parse directly
+                try:
+                    api_call_element = ET.fromstring(api_context)
+                except ET.ParseError:
+                    # If the parsing fails, try to escape special characters
+                    # First find the SQL part and wrap it in CDATA or escape it
+                    import re
+
+                    # Find the content between <sql> and </sql> using regular
+                    # expressions
+                    sql_match = re.search(r"<sql>(.*?)</sql>", api_context, re.DOTALL)
+                    if sql_match:
+                        sql_content = sql_match.group(1)
+                        # Wrap the SQL content in CDATA
+                        escaped_sql = f"<sql><![CDATA[{sql_content}]]></sql>"
+                        # Replace the original SQL part
+                        api_context = api_context.replace(
+                            f"<sql>{sql_content}</sql>", escaped_sql
+                        )
+                        # Try to parse again
+                        api_call_element = ET.fromstring(api_context)
+                    else:
+                        # If the SQL part cannot be found, throw the original error
+                        raise
+
+                api_name = api_call_element.find("name").text
+                if api_name.find("[") >= 0 or api_name.find("]") >= 0:
+                    api_name = api_name.replace("[", "").replace("]", "")
+
+                api_args = {}
+                args_elements = api_call_element.find("args")
+                for child_element in args_elements.iter():
+                    if child_element.tag != "args":  # Skip the args tag
+                        # Check if there is CDATA content
+                        if child_element.text and "CDATA" in str(child_element.text):
+                            # Extract the actual content in CDATA
+                            cdata_content = child_element.text.replace(
+                                "<![CDATA[", ""
+                            ).replace("]]>", "")
+                            api_args[child_element.tag] = cdata_content
+                        else:
+                            api_args[child_element.tag] = child_element.text
+
+                api_status = self.plugin_status_map.get(key_api_context)
+                if api_status is None:
+                    api_status = PluginStatus(
+                        name=api_name, location=[api_index], args=api_args
+                    )
+                    self.plugin_status_map[key_api_context] = api_status
+                else:
+                    api_status.location.append(api_index)
+
+            except Exception as e:
+                import traceback
+
+                logger.warning(
+                    f"Error parsing API context at index {api_index}: {str(e)}"
                 )
-                self.plugin_status_map[api_context] = api_status
-            else:
-                api_status.location.append(api_index)
+                logger.warning(f"API context: {api_context}")
+                logger.warning(traceback.format_exc())
+
+                continue
 
     def _to_view_param_str(self, api_status):
         param = {}

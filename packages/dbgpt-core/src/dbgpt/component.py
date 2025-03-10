@@ -264,22 +264,27 @@ class SystemApp(LifeCycle):
 
     def on_init(self):
         """Invoke the on_init hooks for all registered components."""
-        for _, v in self.components.items():
+        copied_view = {k: v for k, v in self.components.items()}
+        for _, v in copied_view.items():
             v.on_init()
 
     def after_init(self):
         """Invoke the after_init hooks for all registered components."""
-        for _, v in self.components.items():
+        copied_view = {k: v for k, v in self.components.items()}
+        for _, v in copied_view.items():
             v.after_init()
 
     async def async_on_init(self):
         """Asynchronously invoke the on_init hooks for all registered components."""
-        tasks = [v.async_on_init() for _, v in self.components.items()]
+
+        copied_view = {k: v for k, v in self.components.items()}
+        tasks = [v.async_on_init() for _, v in copied_view.items()]
         await asyncio.gather(*tasks)
 
     def before_start(self):
         """Invoke the before_start hooks for all registered components."""
-        for _, v in self.components.items():
+        copied_view = {k: v for k, v in self.components.items()}
+        for _, v in copied_view.items():
             v.before_start()
 
     async def async_before_start(self):
@@ -287,24 +292,29 @@ class SystemApp(LifeCycle):
 
         It will invoke all registered components' async_before_start hooks.
         """
-        tasks = [v.async_before_start() for _, v in self.components.items()]
+        copied_view = {k: v for k, v in self.components.items()}
+        tasks = [v.async_before_start() for _, v in copied_view.items()]
         await asyncio.gather(*tasks)
 
     def after_start(self):
         """Invoke the after_start hooks for all registered components."""
-        for _, v in self.components.items():
+        copied_view = {k: v for k, v in self.components.items()}
+        for _, v in copied_view.items():
             v.after_start()
 
     async def async_after_start(self):
         """Asynchronously invoke the after_start hooks for all registered components."""
-        tasks = [v.async_after_start() for _, v in self.components.items()]
+        copied_view = {k: v for k, v in self.components.items()}
+        tasks = [v.async_after_start() for _, v in copied_view.items()]
         await asyncio.gather(*tasks)
 
     def before_stop(self):
         """Invoke the before_stop hooks for all registered components."""
         if self._stop_event.is_set():
             return
-        for _, v in self.components.items():
+
+        copied_view = {k: v for k, v in self.components.items()}
+        for _, v in copied_view.items():
             try:
                 v.before_stop()
             except Exception:
@@ -313,7 +323,8 @@ class SystemApp(LifeCycle):
 
     async def async_before_stop(self):
         """Asynchronously invoke the before_stop hooks for all registered components."""
-        tasks = [v.async_before_stop() for _, v in self.components.items()]
+        copied_view = {k: v for k, v in self.components.items()}
+        tasks = [v.async_before_stop() for _, v in copied_view.items()]
         await asyncio.gather(*tasks)
 
     def _build(self):

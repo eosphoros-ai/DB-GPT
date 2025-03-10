@@ -1,8 +1,9 @@
 import json
 import logging
-from typing import List, NamedTuple
+from typing import Dict, List, NamedTuple
 
 from dbgpt.core.interface.output_parser import BaseOutputParser
+from dbgpt_app.scene.chat_data.chat_excel.excel_reader import TransformedExcelResponse
 
 
 class ExcelResponse(NamedTuple):
@@ -20,36 +21,44 @@ class LearningExcelOutputParser(BaseOutputParser):
         self.is_downgraded = False
 
     def parse_prompt_response(self, model_out_text):
+        description = ""
+        columns = []
+        plans = []
         try:
             clean_str = super().parse_prompt_response(model_out_text)
             logger.info(f"parse_prompt_response:{model_out_text},{model_out_text}")
             response = json.loads(clean_str)
             for key in sorted(response):
-                if key.strip() == "DataAnalysis":
-                    desciption = response[key]
-                if key.strip() == "ColumnAnalysis":
-                    clounms = response[key]
-                if key.strip() == "AnalysisProgram":
+                if key.strip() == "data_analysis":
+                    description = response[key]
+                if key.strip() == "column_analysis":
+                    columns = response[key]
+                if key.strip() == "analysis_program":
                     plans = response[key]
-            return ExcelResponse(desciption=desciption, clounms=clounms, plans=plans)
+            return TransformedExcelResponse(
+                description=description, columns=columns, plans=plans
+            )
         except Exception as e:
-            logger.error(f"parse_prompt_response Faild!{str(e)}")
-            clounms = []
+            logger.error(f"parse_prompt_response failed: {e}")
             for name in self.data_schema:
-                clounms.append({name: "-"})
-            return ExcelResponse(desciption=model_out_text, clounms=clounms, plans=None)
+                columns.append({name: "-"})
+            return TransformedExcelResponse(
+                description=model_out_text, columns=columns, plans=plans
+            )
 
-    def __build_colunms_html(self, clounms_data):
-        html_colunms = "### **Data Structure**\n"
+    def _build_columns_html(self, columns: List[Dict[str, str]]) -> str:
+        html_columns = "### **Data Structure**\n"
         column_index = 0
-        for item in clounms_data:
+        for item in columns:
             column_index += 1
-            keys = item.keys()
-            for key in keys:
-                html_colunms = (
-                    html_colunms + f"- **{column_index}.[{key}]**   _{item[key]}_\n"
-                )
-        return html_colunms
+            column_name = item.get("new_column_name", "")
+            old_column_name = item.get("old_column_name", "")
+            column_description = item.get("column_description", "")
+            html_columns += (
+                f"- **{column_index}. {column_name}({old_column_name})**: "
+                f"_{column_description}_\n"
+            )
+        return html_columns
 
     def __build_plans_html(self, plans_data):
         html_plans = "### **Analysis plans**\n"
@@ -60,14 +69,16 @@ class LearningExcelOutputParser(BaseOutputParser):
                 html_plans = html_plans + f"{item} \n"
         return html_plans
 
-    def parse_view_response(self, speak, data, prompt_response) -> str:
+    def parse_view_response(
+        self, speak, data: TransformedExcelResponse, prompt_response
+    ) -> str:
         if data and not isinstance(data, str):
             ### tool out data to table view
-            html_title = f"### **Data Summary**\n{data.desciption} "
-            html_colunms = self.__build_colunms_html(data.clounms)
+            html_title = f"### **Data Summary**\n{data.description} "
+            html_columns = self._build_columns_html(data.columns)
             html_plans = self.__build_plans_html(data.plans)
 
-            html = f"""{html_title}\n{html_colunms}\n{html_plans}"""
+            html = f"""{html_title}\n{html_columns}\n{html_plans}"""
             return html
         else:
             return speak

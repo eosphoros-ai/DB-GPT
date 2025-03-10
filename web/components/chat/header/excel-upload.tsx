@@ -1,5 +1,6 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, postChatModeParamsFileLoad } from '@/client/api';
+import { ChatContentContext } from '@/pages/chat';
 import { LinkOutlined, SelectOutlined, UploadOutlined } from '@ant-design/icons';
 import { Button, Tooltip, Upload, UploadFile, UploadProps, message } from 'antd';
 import { PropsWithChildren, useContext, useState } from 'react';
@@ -16,6 +17,8 @@ function ExcelUpload({ convUid, chatMode, onComplete, ...props }: PropsWithChild
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [percent, setPercent] = useState<number>();
   const { model } = useContext(ChatContext);
+
+  const { temperatureValue, maxNewTokensValue } = useContext(ChatContentContext);
 
   const onChange: UploadProps['onChange'] = async info => {
     if (!info) {
@@ -42,6 +45,8 @@ function ExcelUpload({ convUid, chatMode, onComplete, ...props }: PropsWithChild
           chatMode,
           data: formData,
           model,
+          temperatureValue,
+          maxNewTokensValue,
           config: {
             /** timeout 1h */
             timeout: 1000 * 60 * 60,

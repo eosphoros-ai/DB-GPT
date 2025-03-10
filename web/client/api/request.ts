@@ -63,6 +63,15 @@ export const newDialogue = (data: NewDialogueParam) => {
   );
 };
 
+const buildUrl = (baseUrl: string, params: any) => {
+  const queryString = Object.keys(params)
+    .filter(key => params[key] !== undefined) //
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+    .join('&');
+
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+};
+
 export const addUser = (data: UserParam) => {
   return POST<UserParam, UserParamResponse>('/api/v1/user/add', data);
 };
@@ -112,6 +121,8 @@ export const postChatModeParamsFileLoad = ({
   data,
   config,
   model,
+  temperatureValue,
+  maxNewTokensValue,
   userName,
   sysCode,
 }: {
@@ -119,20 +130,30 @@ export const postChatModeParamsFileLoad = ({
   chatMode: string;
   data: FormData;
   model: string;
+  temperatureValue?: number;
+  maxNewTokensValue?: number;
   userName?: string;
   sysCode?: string;
   config?: Omit<AxiosRequestConfig, 'headers'>;
 }) => {
-  return POST<FormData, any>(
-    `/api/v1/resource/file/upload?conv_uid=${convUid}&chat_mode=${chatMode}&model_name=${model}&user_name=${userName}&sys_code=${sysCode}`,
-    data,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      ...config,
+  const baseUrl = `/api/v1/resource/file/upload`;
+  const params = {
+    conv_uid: convUid,
+    chat_mode: chatMode,
+    model_name: model,
+    user_name: userName,
+    sys_code: sysCode,
+    temperature: temperatureValue,
+    max_new_tokens: maxNewTokensValue,
+  };
+
+  const url = buildUrl(baseUrl, params);
+  return POST<FormData, any>(url, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
     },
-  );
+    ...config,
+  });
 };
 
 export const clearChatHistory = (conUid: string) => {

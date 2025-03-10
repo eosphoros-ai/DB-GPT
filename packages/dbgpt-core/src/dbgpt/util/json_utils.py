@@ -22,6 +22,8 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return asdict(obj)
         if isinstance(obj, datetime):
             return obj.isoformat()
+        if isinstance(obj, date):
+            return obj.isoformat()
         return super().default(obj)
 
 

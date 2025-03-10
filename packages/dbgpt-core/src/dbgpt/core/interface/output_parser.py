@@ -133,7 +133,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
         if not response.success:
             raise ValueError(
                 f"Model server error!code={response.error_code}, error msg is "
-                f"{response.text}"
+                f"{response.error_message}"
             )
         if text_output:
             return response.text
