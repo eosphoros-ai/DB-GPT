@@ -20,6 +20,15 @@ host = "127.0.0.1"
 type = "Chroma"
 persist_path = "pilot/data"
 
+[rag.storage.graph]
+type = "TuGraph"
+host="127.0.0.1"
+port=7687
+username="admin"
+password="73@TuGraph"
+enable_summary="True"
+enable_similarity_search="False"
+
 # Model Configurations
 [models]
 [[models.llms]]
