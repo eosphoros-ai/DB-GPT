@@ -639,3 +639,15 @@ class MilvusStore(VectorStoreBase):
         else:
             metadata_filter_expr = metadata_filters[0]
         return metadata_filter_expr
+
+    def truncate(self):
+        """Truncate milvus collection.
+        """
+        logger.info(f"begin truncate milvus collection:{self.collection_name}")
+        from pymilvus import utility
+        if utility.has_collection(self.collection_name):
+            utility.drop_collection(self.collection_name)
+
+        logger.info(
+            f"truncate milvus collection {self.collection_name} success"
+        )
