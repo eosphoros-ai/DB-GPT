@@ -10,6 +10,7 @@ You can limit the memory and file system resources available to the code executi
 environment. The code execution environment is isolated from the host system,
 preventing access to the internet and other external resources.
 """
+
 import asyncio
 import logging
 import os
@@ -116,7 +117,6 @@ class SandboxCodeAction(Action[None]):
     async def execute_code_blocks(self, code_blocks):
         """Execute the code blocks and return the result."""
         from lyric import (
-            PyTaskFilePerms,
             PyTaskFsConfig,
             PyTaskMemoryConfig,
             PyTaskResourceConfig,
@@ -216,7 +216,7 @@ class SandboxCodeAssistantAgent(ConversableAgent):
             "problem, revisit your assumptions, gather additional information you "
             "need from historical conversation records, and consider trying a "
             "different approach.",
-            "Unless necessary, give priority to solving problems with python " "code.",
+            "Unless necessary, give priority to solving problems with python code.",
             "The output content of the 'print' function will be passed to other "
             "LLM agents as dependent data. Please control the length of the "
             "output content of the 'print' function. The 'print' function only "

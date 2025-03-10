@@ -1,0 +1,277 @@
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:22
+msgid "Apache Spark datasource"
+msgstr "Источник данных Apache Spark"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:25
+msgid "Unified engine for large-scale data analytics."
+msgstr "Единый движок для крупномасштабного анализа данных."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:34
+msgid "The file path of the data source."
+msgstr "Путь к файлу источника данных."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:18
+msgid "TuGraph datasource"
+msgstr "Источник данных TuGraph"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:22
+msgid ""
+"TuGraph is a high-performance graph database jointly developed by Ant Group "
+"and Tsinghua University."
+msgstr "TuGraph - это высокопроизводительная графовая база данных, совместно разработанная Ant Group и Тсинхуа университетом."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:32
+msgid "TuGraph server host"
+msgstr "Хост сервера TuGraph"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:33
+msgid "TuGraph server user"
+msgstr "Пользователь сервера TuGraph"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:38
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:46
+msgid ""
+"Database password, you can write your password directly, of course, you can "
+"also use environment variables, such as ${env:DBGPT_DB_PASSWORD}"
+msgstr "Пароль от базы данных. Вы можете ввести пароль напрямую, а также использовать переменные окружения, например ${env:DBGPT_DB_PASSWORD}"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:46
+msgid "TuGraph server port, default 7687"
+msgstr "Порт сервера TuGraph, по умолчанию 7687"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:49
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:38
+msgid "Database name, default 'default'"
+msgstr "Имя базы данных, по умолчанию 'default'"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:21
+msgid "Apache Hive datasource"
+msgstr "Источник данных Apache Hive"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:24
+msgid "A distributed fault-tolerant data warehouse system."
+msgstr "Распределенная отказоустойчивая система хранения данных."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:33
+msgid "Hive server host"
+msgstr "Хост сервера Hive"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:35
+msgid "Hive server port, default 10000"
+msgstr "Порт сервера Hive, по умолчанию 10000"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:45
+msgid "Authentication mode: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
+msgstr "Режим аутентификации: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:50
+msgid "Username for authentication"
+msgstr "Имя пользователя для аутентификации"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:55
+msgid "Password for LDAP or CUSTOM auth"
+msgstr "Пароль для аутентификации LDAP или CUSTOM"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:62
+msgid "Kerberos service name"
+msgstr "Имя сервиса Kerberos"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:67
+msgid "Transport mode: binary or http"
+msgstr "Режим передачи: binary или http"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:75
+msgid "Driver name for Hive, default is hive."
+msgstr "Имя драйвера для Hive, по умолчанию hive."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:22
+msgid "StarRocks datasource"
+msgstr "Источник данных StarRocks"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:25
+msgid "An Open-Source, High-Performance Analytical Database."
+msgstr "Открытая аналитическая база данных с высокой производительностью."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:36
+msgid "Driver name for starrocks, default is starrocks."
+msgstr "Имя драйвера для StarRocks, по умолчанию starrocks."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:16
+msgid "MySQL datasource"
+msgstr "MySQL-источник данных"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:20
+msgid ""
+"Fast, reliable, scalable open-source relational database management system."
+msgstr "Быстрая, надежная, масштабируемая система управления реляционными базами данных с открытым исходным кодом."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:32
+msgid "Driver name for MySQL, default is mysql+pymysql."
+msgstr "Имя драйвера для MySQL, по умолчанию mysql+pymysql."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:24
+msgid "SQLite datasource"
+msgstr "SQLite-источник данных"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:28
+msgid ""
+"Lightweight embedded relational database with simplicity and portability."
+msgstr "Легковесная встраиваемая реляционная база данных, простая в использовании и переносимая."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:45
+msgid "SQLite database file path. Use ':memory:' for in-memory database"
+msgstr "Путь к файлу базы данных SQLite. Используйте ':memory:', чтобы создать базу данных в памяти."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:54
+msgid ""
+"Check same thread or not, default is False. Set False to allow sharing "
+"connection across threads"
+msgstr "Проверять, используется ли один и тот же поток или нет, по умолчанию False. Установите False, чтобы разрешить общий доступ к соединению между потоками."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:61
+msgid "Driver name, default is sqlite"
+msgstr "Имя драйвера, по умолчанию sqlite"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:18
+msgid "MSSQL datasource"
+msgstr "MSSQL-источник данных"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:22
+msgid "Powerful, scalable, secure relational database system by Microsoft."
+msgstr "Мощная, масштабируемая и безопасная система реляционных баз данных от Microsoft."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:33
+msgid "Driver name for MSSQL, default is mssql+pymssql."
+msgstr "Имя драйвера для MSSQL, по умолчанию mssql+pymssql."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:20
+msgid "Apache Doris datasource"
+msgstr "Apache Doris-источник данных"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:23
+msgid "A new-generation open-source real-time data warehouse."
+msgstr "Современный открытый реляционный аналитический сервер."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:37
+msgid "Driver name for Doris, default is doris."
+msgstr "Имя драйвера для Doris, по умолчанию doris."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:29
+msgid "Vertica datasource"
+msgstr "Источник данных Vertica"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:33
+msgid ""
+"Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built "
+"for the scale and complexity of today`s data-driven world."
+msgstr "Vertica - это строго согласованный, соответствующий стандартам ACID, SQL-аналитический сервер, разработанный для масштаба и сложности современного мира, основанного на данных."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:45
+msgid "Driver name for vertica, default is vertica+vertica_python"
+msgstr "Имя драйвера для Vertica, по умолчанию vertica+vertica_python"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:19
+msgid "OceanBase datasource"
+msgstr "Источник данных OceanBase"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:22
+msgid "An Ultra-Fast & Cost-Effective Distributed SQL Database."
+msgstr "Ультрабыстрая и экономичная распределенная SQL-система управления базами данных."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:32
+msgid "Driver name for oceanbase, default is mysql+ob."
+msgstr "Имя драйвера для OceanBase, по умолчанию mysql+ob."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:25
+msgid "Clickhouse datasource"
+msgstr "Источник данных ClickHouse"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:29
+msgid "Columnar database for high-performance analytics and real-time queries."
+msgstr "Колоночная база данных для высокопроизводительных аналитических и реального времени запросов."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:38
+msgid "Database host, e.g., localhost"
+msgstr "Хост базы данных, например, localhost"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:39
+msgid "Database port, e.g., 3306"
+msgstr "Порт базы данных, например, 3306"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:40
+msgid "Database user to connect"
+msgstr "Пользователь базы данных для подключения"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:41
+msgid "Database name"
+msgstr "Имя базы данных"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:54
+msgid "http pool maxsize"
+msgstr "Максимальный размер HTTP-пула"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:57
+msgid "http pool num_pools"
+msgstr "Количество пулов в HTTP-пуле"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:60
+msgid "Database connect timeout, default 15s"
+msgstr "Тайм-аут подключения к базе данных, по умолчанию 15 с"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:63
+msgid "Distributed ddl task timeout, default 300s"
+msgstr "Тайм-аут распределенной задачи DDL, по умолчанию 300 с"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:23
+msgid "PostreSQL datasource"
+msgstr "Источник данных PostgreSQL"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:27
+msgid ""
+"Powerful open-source relational database with extensibility and SQL "
+"standards."
+msgstr "Мощная открытая реляционная база данных с расширяемостью и соответствием стандартам SQL."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:36
+msgid "Database schema, defaults to 'public'"
+msgstr "Схема базы данных, по умолчанию 'public'"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:41
+msgid "Driver name for postgres, default is postgresql+psycopg2."
+msgstr "Имя драйвера для PostgreSQL, по умолчанию postgresql+psycopg2."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:19
+msgid "DuckDB datasource"
+msgstr "Источник данных DuckDB"
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:22
+msgid "In-memory analytical database with efficient query processing."
+msgstr "Внутренне-память аналитическая база данных с эффективной обработкой запросов."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:29
+msgid "Path to the DuckDB file."
+msgstr "Путь к файлу DuckDB."
+
+#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:33
+msgid "Driver name for DuckDB, default is duckdb."
+msgstr "Имя драйвера для DuckDB, по умолчанию duckdb."

@@ -16,9 +16,9 @@ from dbgpt.core.operators import (
     RequestBuilderOperator,
 )
 from dbgpt.datasource.operators.datasource_operator import DatasourceOperator
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.operators.datasource import DatasourceRetrieverOperator
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 
 
 def _create_temporary_connection():

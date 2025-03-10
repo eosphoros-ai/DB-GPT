@@ -1,0 +1,33 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-en}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+[rag.storage]
+[rag.storage.vector]
+type = "Chroma"
+persist_path = "pilot/data"
+
+# Model Configurations
+[models]
+[[models.llms]]
+name = "deepseek-r1:1.5b"
+provider = "proxy/ollama"
+api_base = "http://localhost:11434"
+api_key = ""
+
+[[models.embeddings]]
+name = "bge-m3:latest"
+provider = "proxy/ollama"
+api_url = "http://localhost:11434"
+api_key = ""

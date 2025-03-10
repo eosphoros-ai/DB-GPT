@@ -1,0 +1,52 @@
+# French translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:88
+msgid "Datasource Resource"
+msgstr "Ressource de source de données"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:92
+msgid ""
+"Connect to a datasource(retrieve table schemas and execute SQL to fetch "
+"data)."
+msgstr "Se connecter à une source de données (récupérer les schémas de table et exécuter des requêtes SQL pour obtenir des données)."
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:97
+msgid "Datasource Name"
+msgstr "Nom de la source de données"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:102
+msgid "The name of the datasource, default is 'datasource'."
+msgstr "Le nom de la source de données, la valeur par défaut est 'datasource'."
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:105
+msgid "DB Name"
+msgstr "Nom de la base de données"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:108
+msgid "The name of the database."
+msgstr "Le nom de la base de données."
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:112
+msgid "Prompt Template"
+msgstr "Modèle de prompt"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:121
+msgid "The prompt template to build a database prompt."
+msgstr "Le modèle de prompt pour construire un prompt de base de données."

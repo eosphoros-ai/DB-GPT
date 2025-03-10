@@ -50,7 +50,7 @@ import {
 } from '@/types/knowledge';
 import { BaseModelParams, IModelData, StartModelParams, SupportModel } from '@/types/model';
 import { AxiosRequestConfig } from 'axios';
-import { GET, POST } from '.';
+import { DELETE, GET, POST, PUT } from '.';
 
 /** App */
 export const postScenes = () => {
@@ -63,31 +63,40 @@ export const newDialogue = (data: NewDialogueParam) => {
   );
 };
 
+const buildUrl = (baseUrl: string, params: any) => {
+  const queryString = Object.keys(params)
+    .filter(key => params[key] !== undefined) //
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+    .join('&');
+
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+};
+
 export const addUser = (data: UserParam) => {
   return POST<UserParam, UserParamResponse>('/api/v1/user/add', data);
 };
 
 /** Database Page */
 export const getDbList = () => {
-  return GET<null, DbListResponse>('/api/v1/chat/db/list');
+  return GET<null, DbListResponse>('/api/v2/serve/datasources');
 };
 export const getDbSupportType = () => {
-  return GET<null, DbSupportTypeResponse>('/api/v1/chat/db/support/type');
+  return GET<null, DbSupportTypeResponse>('/api/v2/serve/datasource-types');
 };
-export const postDbDelete = (dbName: string) => {
-  return POST(`/api/v1/chat/db/delete?db_name=${dbName}`);
+export const postDbDelete = (id: string) => {
+  return DELETE(`/api/v2/serve/datasources/${id}`);
 };
 export const postDbEdit = (data: PostDbParams) => {
-  return POST<PostDbParams, null>('/api/v1/chat/db/edit', data);
+  return PUT<PostDbParams, null>('/api/v2/serve/datasources', data);
 };
 export const postDbAdd = (data: PostDbParams) => {
-  return POST<PostDbParams, null>('/api/v1/chat/db/add', data);
+  return POST<PostDbParams, null>('/api/v2/serve/datasources', data);
 };
 export const postDbTestConnect = (data: PostDbParams) => {
-  return POST<PostDbParams, null>('/api/v1/chat/db/test/connect', data);
+  return POST<PostDbParams, null>('/api/v2/serve/datasources/test-connection', data);
 };
 export const postDbRefresh = (data: PostDbRefreshParams) => {
-  return POST<PostDbRefreshParams, boolean>('/api/v1/chat/db/refresh', data);
+  return POST<PostDbRefreshParams, boolean>(`/api/v2/serve/datasources/${data.id}/refresh`);
 };
 
 /** Chat Page */
@@ -112,6 +121,8 @@ export const postChatModeParamsFileLoad = ({
   data,
   config,
   model,
+  temperatureValue,
+  maxNewTokensValue,
   userName,
   sysCode,
 }: {
@@ -119,20 +130,30 @@ export const postChatModeParamsFileLoad = ({
   chatMode: string;
   data: FormData;
   model: string;
+  temperatureValue?: number;
+  maxNewTokensValue?: number;
   userName?: string;
   sysCode?: string;
   config?: Omit<AxiosRequestConfig, 'headers'>;
 }) => {
-  return POST<FormData, any>(
-    `/api/v1/resource/file/upload?conv_uid=${convUid}&chat_mode=${chatMode}&model_name=${model}&user_name=${userName}&sys_code=${sysCode}`,
-    data,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      ...config,
+  const baseUrl = `/api/v1/resource/file/upload`;
+  const params = {
+    conv_uid: convUid,
+    chat_mode: chatMode,
+    model_name: model,
+    user_name: userName,
+    sys_code: sysCode,
+    temperature: temperatureValue,
+    max_new_tokens: maxNewTokensValue,
+  };
+
+  const url = buildUrl(baseUrl, params);
+  return POST<FormData, any>(url, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
     },
-  );
+    ...config,
+  });
 };
 
 export const clearChatHistory = (conUid: string) => {
@@ -220,19 +241,26 @@ export const delSpace = (data: Record<string, string>) => {
 
 /** models */
 export const getModelList = () => {
-  return GET<null, Array<IModelData>>('/api/v1/worker/model/list');
+  return GET<null, Array<IModelData>>('/api/v2/serve/model/models');
 };
 
+// Create and deploy a new model
+export const createModel = (data: StartModelParams) => {
+  return POST<StartModelParams, boolean>('/api/v2/serve/model/models', data);
+};
+
+// Stop the running model
 export const stopModel = (data: BaseModelParams) => {
-  return POST<BaseModelParams, boolean>('/api/v1/worker/model/stop', data);
+  return POST<BaseModelParams, boolean>('/api/v2/serve/model/models/stop', data);
 };
 
-export const startModel = (data: StartModelParams) => {
-  return POST<StartModelParams, boolean>('/api/v1/worker/model/start', data);
+// Start the stopped model
+export const startModel = (data: BaseModelParams) => {
+  return POST<BaseModelParams, boolean>('/api/v2/serve/model/models/start', data);
 };
 
 export const getSupportModels = () => {
-  return GET<null, Array<SupportModel>>('/api/v1/worker/model/params');
+  return GET<null, Array<SupportModel>>('/api/v2/serve/model/model-types');
 };
 
 /** Agent */
@@ -353,6 +381,7 @@ export const unPublishApp = (app_code: string) => {
 };
 export const addOmcDB = (params: Record<string, string>) => {
   return POST<Record<string, any>, []>('/api/v1/chat/db/add', params);
+  // return POST<Record<string, any>, []>('/api/v2/serve/datasources', params);
 };
 
 export const getAppInfo = (data: GetAppInfoParams) => {

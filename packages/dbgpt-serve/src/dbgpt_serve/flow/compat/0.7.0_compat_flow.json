@@ -1,0 +1,2531 @@
+{
+    "curr_version": "0.7.0",
+    "last_support_version": "0.8.x",
+    "compat": [
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator.AWELAgentOperator",
+            "type_name": "AWELAgentOperator",
+            "name": "agent_operator",
+            "id": "operator_agent_operator___$$___agent___$$___v1",
+            "category": "agent",
+            "parameters": [
+                "awel_agent"
+            ],
+            "outputs": [
+                "agent_operator_output"
+            ],
+            "inputs": [
+                "agent_operator_request"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator.AgentBranchJoinOperator",
+            "type_name": "AgentBranchJoinOperator",
+            "name": "agent_branch_join_operator",
+            "id": "operator_agent_branch_join_operator___$$___agent___$$___v1",
+            "category": "agent",
+            "parameters": [],
+            "outputs": [
+                "agent_output_value"
+            ],
+            "inputs": [
+                "agent_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator.AgentBranchOperator",
+            "type_name": "AgentBranchOperator",
+            "name": "agent_branch_operator",
+            "id": "operator_agent_branch_operator___$$___agent___$$___v1",
+            "category": "agent",
+            "parameters": [],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator.AgentDummyTrigger",
+            "type_name": "AgentDummyTrigger",
+            "name": "agent_trigger",
+            "id": "operator_agent_trigger___$$___agent___$$___v1",
+            "category": "agent",
+            "parameters": [],
+            "outputs": [
+                "agent_operator_context"
+            ],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgent",
+            "type_name": "AWELAgent",
+            "name": "agent_operator_agent",
+            "id": "resource_dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgent",
+            "category": "agent",
+            "parameters": [
+                "agent_profile",
+                "role_name",
+                "fixed_subgoal",
+                "agent_resource",
+                "agent_llm_Config",
+                "agent_prompt"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgentConfig",
+            "type_name": "AWELAgentConfig",
+            "name": "agent_operator_llm_config",
+            "id": "resource_dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgentConfig",
+            "category": "agent",
+            "parameters": [
+                "llm_client",
+                "llm_strategy",
+                "strategy_context"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgentKnowledgeResource",
+            "type_name": "AWELAgentKnowledgeResource",
+            "name": "agent_resource_knowledge",
+            "id": "resource_dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgentKnowledgeResource",
+            "category": "agent",
+            "parameters": [
+                "agent_resource_name",
+                "agent_resource_value",
+                "agent_resource_recall_topk"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgentResource",
+            "type_name": "AWELAgentResource",
+            "name": "agent_operator_resource",
+            "id": "resource_dbgpt.agent.core.plan.awel.agent_operator_resource.AWELAgentResource",
+            "category": "agent",
+            "parameters": [
+                "agent_resource_type",
+                "agent_resource_name",
+                "agent_resource_value"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.agent.core.plan.awel.agent_operator_resource.AgentPrompt",
+            "type_name": "AgentPrompt",
+            "name": "agent_prompt",
+            "id": "resource_dbgpt.agent.core.plan.awel.agent_operator_resource.AgentPrompt",
+            "category": "agent",
+            "parameters": [
+                "agent_prompt_code"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_name": "OpenAILLMClient",
+            "name": "openai_llm_client",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "apk_key",
+                "api_base"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_name": "OpenAILLMClient",
+            "name": "openai_llm_client",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "apk_key",
+                "api_base"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_name": "OpenAILLMClient",
+            "name": "openai_llm_client",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "apk_key",
+                "api_base"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_name": "OpenAILLMClient",
+            "name": "openai_llm_client",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "apk_key",
+                "api_base"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_name": "OpenAILLMClient",
+            "name": "openai_llm_client",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "apk_key",
+                "api_base"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_name": "OpenAILLMClient",
+            "name": "openai_llm_client",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "apk_key",
+                "api_base"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_name": "OpenAILLMClient",
+            "name": "openai_llm_client",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "apk_key",
+                "api_base"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.cluster.client.DefaultLLMClient",
+            "type_name": "DefaultLLMClient",
+            "name": "default_llm_client",
+            "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "auto_convert_message"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.cluster.client.RemoteLLMClient",
+            "type_name": "RemoteLLMClient",
+            "name": "remote_llm_client",
+            "id": "resource_dbgpt.model.cluster.client.RemoteLLMClient",
+            "category": "llm_client",
+            "parameters": [
+                "controller_address",
+                "auto_convert_message"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.model.utils.chatgpt_utils.OpenAIStreamingOutputOperator",
+            "type_name": "OpenAIStreamingOutputOperator",
+            "name": "openai_streaming_output_operator",
+            "id": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.model.operators.llm_operator.LLMOperator",
+            "type_name": "LLMOperator",
+            "name": "llm_operator",
+            "id": "operator_llm_operator___$$___llm___$$___v1",
+            "category": "llm",
+            "parameters": [
+                "llm_client"
+            ],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_request"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.model.operators.llm_operator.StreamingLLMOperator",
+            "type_name": "StreamingLLMOperator",
+            "name": "streaming_llm_operator",
+            "id": "operator_streaming_llm_operator___$$___llm___$$___v1",
+            "category": "llm",
+            "parameters": [
+                "llm_client"
+            ],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_request"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings",
+            "type_name": "DefaultEmbeddings",
+            "name": "default_embeddings",
+            "id": "resource_dbgpt.rag.embedding.embedding_factory.DefaultEmbeddings",
+            "category": "embeddings",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.embedding.embeddings.HuggingFaceEmbeddings",
+            "type_name": "HuggingFaceEmbeddings",
+            "name": "huggingface_embeddings",
+            "id": "resource_dbgpt.rag.embedding.embeddings.HuggingFaceEmbeddings",
+            "category": "embeddings",
+            "parameters": [
+                "model_name"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.embedding.embeddings.HuggingFaceInferenceAPIEmbeddings",
+            "type_name": "HuggingFaceInferenceAPIEmbeddings",
+            "name": "huggingface_inference_api_embeddings",
+            "id": "resource_dbgpt.rag.embedding.embeddings.HuggingFaceInferenceAPIEmbeddings",
+            "category": "embeddings",
+            "parameters": [
+                "api_key",
+                "model_name"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.embedding.embeddings.HuggingFaceInstructEmbeddings",
+            "type_name": "HuggingFaceInstructEmbeddings",
+            "name": "huggingface_instructor_embeddings",
+            "id": "resource_dbgpt.rag.embedding.embeddings.HuggingFaceInstructEmbeddings",
+            "category": "embeddings",
+            "parameters": [
+                "model_name",
+                "embed_instruction",
+                "query_instruction"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.embedding.embeddings.OpenAPIEmbeddings",
+            "type_name": "OpenAPIEmbeddings",
+            "name": "openapi_embeddings",
+            "id": "resource_dbgpt.rag.embedding.embeddings.OpenAPIEmbeddings",
+            "category": "embeddings",
+            "parameters": [
+                "api_url",
+                "api_key",
+                "model_name",
+                "timeout"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.rag.operators.chunk_manager.ChunkManagerOperator",
+            "type_name": "ChunkManagerOperator",
+            "name": "chunk_manager_operator",
+            "id": "operator_chunk_manager_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "chunk_parameters"
+            ],
+            "outputs": [
+                "chunks"
+            ],
+            "inputs": [
+                "knowledge"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.rag.operators.rewrite.QueryRewriteOperator",
+            "type_name": "QueryRewriteOperator",
+            "name": "query_rewrite_operator",
+            "id": "operator_query_rewrite_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "llm_client",
+                "model_name",
+                "language",
+                "nums"
+            ],
+            "outputs": [
+                "queries"
+            ],
+            "inputs": [
+                "query_context"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.text_splitter.text_splitter.CharacterTextSplitter",
+            "type_name": "CharacterTextSplitter",
+            "name": "character_text_splitter",
+            "id": "resource_dbgpt.rag.text_splitter.text_splitter.CharacterTextSplitter",
+            "category": "rag",
+            "parameters": [
+                "separator"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.text_splitter.text_splitter.MarkdownHeaderTextSplitter",
+            "type_name": "MarkdownHeaderTextSplitter",
+            "name": "markdown_header_text_splitter",
+            "id": "resource_dbgpt.rag.text_splitter.text_splitter.MarkdownHeaderTextSplitter",
+            "category": "rag",
+            "parameters": [
+                "return_each_line",
+                "chunk_size",
+                "chunk_overlap",
+                "separator"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.text_splitter.text_splitter.PageTextSplitter",
+            "type_name": "PageTextSplitter",
+            "name": "page_text_splitter",
+            "id": "resource_dbgpt.rag.text_splitter.text_splitter.PageTextSplitter",
+            "category": "rag",
+            "parameters": [
+                "separator"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.text_splitter.text_splitter.CharacterTextSplitter",
+            "type_name": "CharacterTextSplitter",
+            "name": "character_text_splitter",
+            "id": "resource_dbgpt.rag.text_splitter.text_splitter.CharacterTextSplitter",
+            "category": "rag",
+            "parameters": [
+                "separator"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.text_splitter.text_splitter.RecursiveCharacterTextSplitter",
+            "type_name": "RecursiveCharacterTextSplitter",
+            "name": "recursive_character_text_splitter",
+            "id": "resource_dbgpt.rag.text_splitter.text_splitter.RecursiveCharacterTextSplitter",
+            "category": "rag",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.text_splitter.text_splitter.SeparatorTextSplitter",
+            "type_name": "SeparatorTextSplitter",
+            "name": "separator_text_splitter",
+            "id": "resource_dbgpt.rag.text_splitter.text_splitter.SeparatorTextSplitter",
+            "category": "rag",
+            "parameters": [
+                "separator"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.text_splitter.text_splitter.SpacyTextSplitter",
+            "type_name": "SpacyTextSplitter",
+            "name": "spacy_text_splitter",
+            "id": "resource_dbgpt.rag.text_splitter.text_splitter.SpacyTextSplitter",
+            "category": "rag",
+            "parameters": [
+                "pipeline"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.retriever.rewrite.QueryRewrite",
+            "type_name": "QueryRewrite",
+            "name": "query_rewrite",
+            "id": "resource_dbgpt.rag.retriever.rewrite.QueryRewrite",
+            "category": "rag",
+            "parameters": [
+                "model_name",
+                "llm_client",
+                "language"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.retriever.rerank.CrossEncoderRanker",
+            "type_name": "CrossEncoderRanker",
+            "name": "cross_encoder_ranker",
+            "id": "resource_dbgpt.rag.retriever.rerank.CrossEncoderRanker",
+            "category": "rag",
+            "parameters": [
+                "topk",
+                "model",
+                "device"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.rag.retriever.rerank.DefaultRanker",
+            "type_name": "DefaultRanker",
+            "name": "default_ranker",
+            "id": "resource_dbgpt.rag.retriever.rerank.DefaultRanker",
+            "category": "rag",
+            "parameters": [
+                "topk"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.util.serialization.json_serialization.JsonSerializer",
+            "type_name": "JsonSerializer",
+            "name": "json_serializer",
+            "id": "resource_dbgpt.util.serialization.json_serialization.JsonSerializer",
+            "category": "serializer",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+            "type_name": "CommonLLMHttpRequestBody",
+            "name": "common_llm_http_request_body",
+            "id": "resource_dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+            "category": "http_body",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpResponseBody",
+            "type_name": "CommonLLMHttpResponseBody",
+            "name": "common_llm_http_response_body",
+            "id": "resource_dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpResponseBody",
+            "category": "http_body",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger",
+            "type_name": "CommonLLMHttpTrigger",
+            "name": "common_llm_http_trigger",
+            "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1",
+            "category": "trigger",
+            "parameters": [
+                "endpoint",
+                "methods",
+                "streaming_response",
+                "http_response_body",
+                "response_media_type",
+                "status_code"
+            ],
+            "outputs": [
+                "request_body",
+                "request_string_messages"
+            ],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.DictHttpBody",
+            "type_name": "DictHttpBody",
+            "name": "dict_http_body",
+            "id": "resource_dbgpt.core.awel.trigger.http_trigger.DictHttpBody",
+            "category": "http_body",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.DictHttpTrigger",
+            "type_name": "DictHttpTrigger",
+            "name": "dict_http_trigger",
+            "id": "operator_dict_http_trigger___$$___trigger___$$___v1",
+            "category": "trigger",
+            "parameters": [
+                "endpoint",
+                "methods",
+                "streaming_response",
+                "http_response_body",
+                "response_media_type",
+                "status_code"
+            ],
+            "outputs": [
+                "request_body"
+            ],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.ExampleHttpHelloOperator",
+            "type_name": "ExampleHttpHelloOperator",
+            "name": "example_http_hello_operator",
+            "id": "operator_example_http_hello_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [],
+            "outputs": [
+                "response_body"
+            ],
+            "inputs": [
+                "request_body"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.ExampleHttpResponse",
+            "type_name": "ExampleHttpResponse",
+            "name": "example_http_response",
+            "id": "resource_dbgpt.core.awel.trigger.http_trigger.ExampleHttpResponse",
+            "category": "http_body",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.HttpTrigger",
+            "type_name": "HttpTrigger",
+            "name": "http_trigger",
+            "id": "operator_http_trigger___$$___trigger___$$___v1",
+            "category": "trigger",
+            "parameters": [
+                "endpoint",
+                "methods",
+                "http_trigger_body",
+                "streaming_response",
+                "http_response_body",
+                "response_media_type",
+                "status_code"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.RequestBodyToDictOperator",
+            "type_name": "RequestBodyToDictOperator",
+            "name": "request_body_to_dict_operator",
+            "id": "operator_request_body_to_dict_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [
+                "prefix_key"
+            ],
+            "outputs": [
+                "response_body"
+            ],
+            "inputs": [
+                "request_body"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.RequestHttpBody",
+            "type_name": "RequestHttpBody",
+            "name": "request_http_body",
+            "id": "resource_dbgpt.core.awel.trigger.http_trigger.RequestHttpBody",
+            "category": "http_body",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.RequestedParsedOperator",
+            "type_name": "RequestedParsedOperator",
+            "name": "request_body_to_str__parsed_operator",
+            "id": "operator_request_body_to_str__parsed_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [
+                "key"
+            ],
+            "outputs": [
+                "user_input_str"
+            ],
+            "inputs": [
+                "request_body"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.StringHttpBody",
+            "type_name": "StringHttpBody",
+            "name": "string_http_body",
+            "id": "resource_dbgpt.core.awel.trigger.http_trigger.StringHttpBody",
+            "category": "http_body",
+            "parameters": [],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.StringHttpTrigger",
+            "type_name": "StringHttpTrigger",
+            "name": "string_http_trigger",
+            "id": "operator_string_http_trigger___$$___trigger___$$___v1",
+            "category": "trigger",
+            "parameters": [
+                "endpoint",
+                "methods",
+                "streaming_response",
+                "http_response_body",
+                "response_media_type",
+                "status_code"
+            ],
+            "outputs": [
+                "request_body"
+            ],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.http_trigger.UserInputParsedOperator",
+            "type_name": "UserInputParsedOperator",
+            "name": "user_input_parsed_operator",
+            "id": "operator_user_input_parsed_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [
+                "key"
+            ],
+            "outputs": [
+                "user_input_dict"
+            ],
+            "inputs": [
+                "request_body"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.ext_http_trigger.DictHTTPSender",
+            "type_name": "DictHTTPSender",
+            "name": "awel_dict_http_sender",
+            "id": "operator_awel_dict_http_sender___$$___sender___$$___v1",
+            "category": "sender",
+            "parameters": [
+                "address",
+                "methods",
+                "status_code",
+                "timeout",
+                "token",
+                "cookies"
+            ],
+            "outputs": [
+                "response_body"
+            ],
+            "inputs": [
+                "request_body"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.awel.trigger.ext_http_trigger.RequestHttpTrigger",
+            "type_name": "RequestHttpTrigger",
+            "name": "request_http_trigger",
+            "id": "operator_request_http_trigger___$$___trigger___$$___v1",
+            "category": "trigger",
+            "parameters": [
+                "endpoint",
+                "methods",
+                "streaming_response",
+                "http_response_body",
+                "response_media_type",
+                "status_code"
+            ],
+            "outputs": [
+                "request_body"
+            ],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.operators.flow.composer_operator.ConversationComposerOperator",
+            "type_name": "ConversationComposerOperator",
+            "name": "conversation_composer_operator",
+            "id": "operator_conversation_composer_operator___$$___conversion___$$___v1",
+            "category": "conversion",
+            "parameters": [
+                "prompt_template",
+                "human_message_key",
+                "history_key",
+                "keep_start_rounds",
+                "keep_end_rounds",
+                "storage",
+                "message_storage"
+            ],
+            "outputs": [
+                "model_request"
+            ],
+            "inputs": [
+                "common_llm_http_request_body"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.operators.flow.composer_operator.PromptFormatDictBuilderOperator",
+            "type_name": "PromptFormatDictBuilderOperator",
+            "name": "prompt_format_dict_builder_operator",
+            "id": "operator_prompt_format_dict_builder_operator___$$___conversion___$$___v1",
+            "category": "conversion",
+            "parameters": [
+                "human_message_key"
+            ],
+            "outputs": [
+                "prompt_format_dict"
+            ],
+            "inputs": [
+                "common_llm_http_request_body"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.operators.flow.dict_operator.MergeStringToDictOperator",
+            "type_name": "MergeStringToDictOperator",
+            "name": "merge_string_to_dict_operator",
+            "id": "operator_merge_string_to_dict_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [
+                "first_key",
+                "second_key"
+            ],
+            "outputs": [
+                "output"
+            ],
+            "inputs": [
+                "first",
+                "second"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.SQLListOutputParser",
+            "type_name": "SQLListOutputParser",
+            "name": "default_sql_list_output_parser",
+            "id": "operator_default_sql_list_output_parser___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "list"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.SQLOutputParser",
+            "type_name": "SQLOutputParser",
+            "name": "default_sql_output_parser",
+            "id": "operator_default_sql_output_parser___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "dict"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.interface.storage.InMemoryStorage",
+            "type_name": "InMemoryStorage",
+            "name": "in_memory_storage",
+            "id": "resource_dbgpt.core.interface.storage.InMemoryStorage",
+            "category": "storage",
+            "parameters": [
+                "serializer"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.CommonStreamingOutputOperator",
+            "type_name": "CommonStreamingOutputOperator",
+            "name": "common_streaming_output_operator",
+            "id": "operator_common_streaming_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "output_iter"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.LLMBranchJoinOperator",
+            "type_name": "LLMBranchJoinOperator",
+            "name": "llm_branch_join_operator",
+            "id": "operator_llm_branch_join_operator___$$___llm___$$___v1",
+            "category": "llm",
+            "parameters": [],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "stream_output",
+                "not_stream_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.LLMBranchOperator",
+            "type_name": "LLMBranchOperator",
+            "name": "llm_branch_operator",
+            "id": "operator_llm_branch_operator___$$___llm___$$___v1",
+            "category": "llm",
+            "parameters": [],
+            "outputs": [
+                "streaming_request",
+                "no_streaming_request"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.MergedRequestBuilderOperator",
+            "type_name": "MergedRequestBuilderOperator",
+            "name": "merged_request_builder_operator",
+            "id": "operator_merged_request_builder_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "model_request",
+                "messages"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.ModelOutput2CommonResponseOperator",
+            "type_name": "ModelOutput2CommonResponseOperator",
+            "name": "model_output_2_common_response_body_operator",
+            "id": "operator_model_output_2_common_response_body_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.RequestBuilderOperator",
+            "type_name": "RequestBuilderOperator",
+            "name": "request_builder_operator",
+            "id": "operator_request_builder_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [
+                "model",
+                "temperature",
+                "max_new_tokens",
+                "context_len"
+            ],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.StringBranchJoinOperator",
+            "type_name": "StringBranchJoinOperator",
+            "name": "string_branch_join_operator",
+            "id": "operator_string_branch_join_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "stream_output",
+                "not_stream_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.llm_operator.StringOutput2ModelOutputOperator",
+            "type_name": "StringOutput2ModelOutputOperator",
+            "name": "string_2_model_output_operator",
+            "id": "operator_string_2_model_output_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [],
+            "outputs": [
+                "input_value"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.message_operator.PreChatHistoryLoadOperator",
+            "type_name": "PreChatHistoryLoadOperator",
+            "name": "chat_history_load_operator",
+            "id": "operator_chat_history_load_operator___$$___conversion___$$___v1",
+            "category": "conversion",
+            "parameters": [
+                "storage",
+                "message_storage"
+            ],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+            "type_name": "CommonChatPromptTemplate",
+            "name": "common_chat_prompt_template",
+            "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+            "category": "prompt",
+            "parameters": [
+                "system_message",
+                "message_placeholder",
+                "human_message"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.prompt_operator.HistoryPromptBuilderOperator",
+            "type_name": "HistoryPromptBuilderOperator",
+            "name": "history_prompt_builder_operator",
+            "id": "operator_history_prompt_builder_operator___$$___conversion___$$___v1",
+            "category": "conversion",
+            "parameters": [
+                "prompt",
+                "history_key",
+                "str_history"
+            ],
+            "outputs": [
+                "formatted_messages"
+            ],
+            "inputs": [
+                "history",
+                "prompt_input_dict"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.prompt_operator.PromptBuilderOperator",
+            "type_name": "PromptBuilderOperator",
+            "name": "prompt_builder_operator",
+            "id": "operator_prompt_builder_operator___$$___common___$$___v1",
+            "category": "common",
+            "parameters": [
+                "prompt"
+            ],
+            "outputs": [
+                "formatted_messages"
+            ],
+            "inputs": [
+                "prompt_input_dict"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.rag.chunk_manager.ChunkParameters",
+            "type_name": "ChunkParameters",
+            "name": "chunk_parameters",
+            "id": "resource_dbgpt_ext.rag.chunk_manager.ChunkParameters",
+            "category": "rag",
+            "parameters": [
+                "chunk_strategy",
+                "text_splitter",
+                "splitter_type",
+                "chunk_size",
+                "chunk_overlap",
+                "separator",
+                "enable_merge"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.rag.embeddings.jina.JinaEmbeddings",
+            "type_name": "JinaEmbeddings",
+            "name": "jina_embeddings",
+            "id": "resource_dbgpt_ext.rag.embeddings.jina.JinaEmbeddings",
+            "category": "embeddings",
+            "parameters": [
+                "api_key",
+                "model_name"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.knowledge_graph.KnowledgeGraphOperator",
+            "type_name": "KnowledgeGraphOperator",
+            "name": "knowledge_graph_operator",
+            "id": "operator_knowledge_graph_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "graph_store"
+            ],
+            "outputs": [
+                "chunks"
+            ],
+            "inputs": [
+                "chunks"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.summary.SummaryAssemblerOperator",
+            "type_name": "SummaryAssemblerOperator",
+            "name": "summary_assembler_operator",
+            "id": "operator_summary_assembler_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "llm_client",
+                "model_name",
+                "language",
+                "max_iteration_with_llm",
+                "concurrency_limit_with_llm"
+            ],
+            "outputs": [
+                "summary"
+            ],
+            "inputs": [
+                "knowledge"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.embedding.EmbeddingAssemblerOperator",
+            "type_name": "EmbeddingAssemblerOperator",
+            "name": "embedding_assembler_operator",
+            "id": "operator_embedding_assembler_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "index_store",
+                "chunk_parameters"
+            ],
+            "outputs": [
+                "chunks"
+            ],
+            "inputs": [
+                "knowledge"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.embedding.EmbeddingRetrieverOperator",
+            "type_name": "EmbeddingRetrieverOperator",
+            "name": "embedding_retriever_operator",
+            "id": "operator_embedding_retriever_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "index_store",
+                "top_k",
+                "score_threshold",
+                "query_rewrite",
+                "rerank"
+            ],
+            "outputs": [
+                "candidates"
+            ],
+            "inputs": [
+                "query"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.knowledge.ChunksToStringOperator",
+            "type_name": "ChunksToStringOperator",
+            "name": "chunks_to_string_operator",
+            "id": "operator_chunks_to_string_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "separator"
+            ],
+            "outputs": [
+                "string"
+            ],
+            "inputs": [
+                "chunks"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.knowledge.KnowledgeOperator",
+            "type_name": "KnowledgeOperator",
+            "name": "knowledge_operator",
+            "id": "operator_knowledge_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "datasource",
+                "knowledge_type"
+            ],
+            "outputs": [
+                "Knowledge"
+            ],
+            "inputs": [
+                "knowledge datasource"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.process_branch.KnowledgeProcessBranchOperator",
+            "type_name": "KnowledgeProcessBranchOperator",
+            "name": "knowledge_process_operator",
+            "id": "operator_knowledge_process_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [],
+            "outputs": [
+                "chunks",
+                "chunks",
+                "chunks"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.process_branch.KnowledgeProcessJoinOperator",
+            "type_name": "KnowledgeProcessJoinOperator",
+            "name": "knowledge_process_join_operator",
+            "id": "operator_knowledge_process_join_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [],
+            "outputs": [
+                "chunks"
+            ],
+            "inputs": [
+                "input_value",
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.full_text.FullTextStorageOperator",
+            "type_name": "FullTextStorageOperator",
+            "name": "full text_storage_operator",
+            "id": "operator_full text_storage_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "full_text_store"
+            ],
+            "outputs": [
+                "chunks"
+            ],
+            "inputs": [
+                "chunks"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_ext.rag.operators.vector_store.VectorStorageOperator",
+            "type_name": "VectorStorageOperator",
+            "name": "vector_storage_operator",
+            "id": "operator_vector_storage_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "vector_store"
+            ],
+            "outputs": [
+                "chunks"
+            ],
+            "inputs": [
+                "chunks"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.conn_spark.SparkParameters",
+            "type_name": "SparkParameters",
+            "name": "SparkParameters",
+            "id": "resource_dbgpt_ext.datasource.conn_spark.SparkParameters",
+            "category": "database",
+            "parameters": [
+                "path"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.conn_tugraph.TuGraphParameters",
+            "type_name": "TuGraphParameters",
+            "name": "TuGraphParameters",
+            "id": "resource_dbgpt_ext.datasource.conn_tugraph.TuGraphParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "user",
+                "password",
+                "port",
+                "database"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_hive.HiveParameters",
+            "type_name": "HiveParameters",
+            "name": "HiveParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_hive.HiveParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "database",
+                "auth",
+                "username",
+                "password",
+                "kerberos_service_name",
+                "transport_mode",
+                "driver"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_starrocks.StarRocksParameters",
+            "type_name": "StarRocksParameters",
+            "name": "StarRocksParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_starrocks.StarRocksParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "driver",
+                "password",
+                "pool_size",
+                "max_overflow",
+                "pool_timeout",
+                "pool_recycle",
+                "pool_pre_ping"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_mysql.MySQLParameters",
+            "type_name": "MySQLParameters",
+            "name": "MySQLParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_mysql.MySQLParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "driver",
+                "password",
+                "pool_size",
+                "max_overflow",
+                "pool_timeout",
+                "pool_recycle",
+                "pool_pre_ping"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_sqlite.SQLiteConnectorParameters",
+            "type_name": "SQLiteConnectorParameters",
+            "name": "SQLiteConnectorParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_sqlite.SQLiteConnectorParameters",
+            "category": "database",
+            "parameters": [
+                "path",
+                "check_same_thread",
+                "driver"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_mssql.MSSQLParameters",
+            "type_name": "MSSQLParameters",
+            "name": "MSSQLParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_mssql.MSSQLParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "driver",
+                "password",
+                "pool_size",
+                "max_overflow",
+                "pool_timeout",
+                "pool_recycle",
+                "pool_pre_ping"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_doris.DorisParameters",
+            "type_name": "DorisParameters",
+            "name": "DorisParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_doris.DorisParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "driver",
+                "password",
+                "pool_size",
+                "max_overflow",
+                "pool_timeout",
+                "pool_recycle",
+                "pool_pre_ping"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_vertica.VerticaParameters",
+            "type_name": "VerticaParameters",
+            "name": "VerticaParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_vertica.VerticaParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "driver",
+                "password",
+                "pool_size",
+                "max_overflow",
+                "pool_timeout",
+                "pool_recycle",
+                "pool_pre_ping"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_oceanbase.OceanBaseParameters",
+            "type_name": "OceanBaseParameters",
+            "name": "OceanBaseParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_oceanbase.OceanBaseParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "driver",
+                "password",
+                "pool_size",
+                "max_overflow",
+                "pool_timeout",
+                "pool_recycle",
+                "pool_pre_ping"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_clickhouse.ClickhouseParameters",
+            "type_name": "ClickhouseParameters",
+            "name": "ClickhouseParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_clickhouse.ClickhouseParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "password",
+                "http_pool_maxsize",
+                "http_pool_num_pools",
+                "connect_timeout",
+                "distributed_ddl_task_timeout"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_postgresql.PostgreSQLParameters",
+            "type_name": "PostgreSQLParameters",
+            "name": "PostgreSQLParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_postgresql.PostgreSQLParameters",
+            "category": "database",
+            "parameters": [
+                "host",
+                "port",
+                "user",
+                "database",
+                "driver",
+                "password",
+                "pool_size",
+                "max_overflow",
+                "pool_timeout",
+                "pool_recycle",
+                "pool_pre_ping",
+                "schema"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.datasource.rdbms.conn_duckdb.DuckDbConnectorParameters",
+            "type_name": "DuckDbConnectorParameters",
+            "name": "DuckDbConnectorParameters",
+            "id": "resource_dbgpt_ext.datasource.rdbms.conn_duckdb.DuckDbConnectorParameters",
+            "category": "database",
+            "parameters": [
+                "path",
+                "driver"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchVectorConfig",
+            "type_name": "ElasticsearchVectorConfig",
+            "name": "elasticsearch_vector_config",
+            "id": "resource_dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchVectorConfig",
+            "category": "vector_store",
+            "parameters": [
+                "name",
+                "user",
+                "password",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "uri",
+                "port",
+                "alias",
+                "index_name"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
+            "type_name": "BuiltinKnowledgeGraph",
+            "name": "builtin_knowledge_graph",
+            "id": "resource_dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
+            "category": "knowledge_graph",
+            "parameters": [
+                "config"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+            "type_name": "BuiltinKnowledgeGraphConfig",
+            "name": "knowledge_graph_config",
+            "id": "resource_dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+            "category": "knowledge_graph",
+            "parameters": [
+                "name",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "graph_store_type",
+                "llm_client",
+                "model_name"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.knowledge_graph.community_summary.CommunitySummaryKnowledgeGraph",
+            "type_name": "CommunitySummaryKnowledgeGraph",
+            "name": "community_summary_knowledge_graph",
+            "id": "resource_dbgpt_ext.storage.knowledge_graph.community_summary.CommunitySummaryKnowledgeGraph",
+            "category": "knowledge_graph",
+            "parameters": [
+                "config"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.knowledge_graph.community_summary.CommunitySummaryKnowledgeGraphConfig",
+            "type_name": "CommunitySummaryKnowledgeGraphConfig",
+            "name": "community_summary_kg_config",
+            "id": "resource_dbgpt_ext.storage.knowledge_graph.community_summary.CommunitySummaryKnowledgeGraphConfig",
+            "category": "knowledge_graph",
+            "parameters": [
+                "name",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "graph_store_type",
+                "llm_client",
+                "model_name",
+                "vector_store_type",
+                "extract_topk",
+                "extract_score_threshold",
+                "community_topk",
+                "community_score_threshold",
+                "triplet_graph_enabled",
+                "document_graph_enabled",
+                "knowledge_graph_chunk_search_top_size",
+                "knowledge_graph_extraction_batch_size",
+                "community_summary_batch_size"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.pgvector_store.PGVectorConfig",
+            "type_name": "PGVectorConfig",
+            "name": "pg_vector_config",
+            "id": "resource_dbgpt_ext.storage.vector_store.pgvector_store.PGVectorConfig",
+            "category": "vector_store",
+            "parameters": [
+                "name",
+                "user",
+                "password",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "connection_string"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.weaviate_store.WeaviateVectorConfig",
+            "type_name": "WeaviateVectorConfig",
+            "name": "weaviate_vector_config",
+            "id": "resource_dbgpt_ext.storage.vector_store.weaviate_store.WeaviateVectorConfig",
+            "category": "vector_store",
+            "parameters": [
+                "name",
+                "user",
+                "password",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "weaviate_url",
+                "persist_path"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.elastic_store.ElasticStore",
+            "type_name": "ElasticStore",
+            "name": "elastic_vector_store",
+            "id": "resource_dbgpt_ext.storage.vector_store.elastic_store.ElasticStore",
+            "category": "vector_store",
+            "parameters": [
+                "vector_store_config"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchVectorConfig",
+            "type_name": "ElasticsearchVectorConfig",
+            "name": "elasticsearch_vector_config",
+            "id": "resource_dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchVectorConfig",
+            "category": "vector_store",
+            "parameters": [
+                "name",
+                "user",
+                "password",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "uri",
+                "port",
+                "alias",
+                "index_name"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.milvus_store.MilvusStore",
+            "type_name": "MilvusStore",
+            "name": "milvus_vector_store",
+            "id": "resource_dbgpt_ext.storage.vector_store.milvus_store.MilvusStore",
+            "category": "vector_store",
+            "parameters": [
+                "vector_store_config"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.milvus_store.MilvusVectorConfig",
+            "type_name": "MilvusVectorConfig",
+            "name": "milvus_vector_config",
+            "id": "resource_dbgpt_ext.storage.vector_store.milvus_store.MilvusVectorConfig",
+            "category": "vector_store",
+            "parameters": [
+                "name",
+                "user",
+                "password",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "uri",
+                "port",
+                "alias",
+                "primary_field",
+                "text_field",
+                "embedding_field"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.chroma_store.ChromaStore",
+            "type_name": "ChromaStore",
+            "name": "chroma_vector_store",
+            "id": "resource_dbgpt_ext.storage.vector_store.chroma_store.ChromaStore",
+            "category": "vector_store",
+            "parameters": [
+                "vector_store_config"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.chroma_store.ChromaVectorConfig",
+            "type_name": "ChromaVectorConfig",
+            "name": "chroma_vector_config",
+            "id": "resource_dbgpt_ext.storage.vector_store.chroma_store.ChromaVectorConfig",
+            "category": "vector_store",
+            "parameters": [
+                "name",
+                "user",
+                "password",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "persist_path"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.oceanbase_store.OceanBaseConfig",
+            "type_name": "OceanBaseConfig",
+            "name": "oceanbase_vector_config",
+            "id": "resource_dbgpt_ext.storage.vector_store.oceanbase_store.OceanBaseConfig",
+            "category": "vector_store",
+            "parameters": [
+                "name",
+                "user",
+                "password",
+                "embedding_fn",
+                "max_chunks_once_load",
+                "max_threads",
+                "ob_host",
+                "ob_port",
+                "ob_user",
+                "ob_password",
+                "ob_database"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_ext.storage.vector_store.oceanbase_store.OceanBaseStore",
+            "type_name": "OceanBaseStore",
+            "name": "ob_vector_store",
+            "id": "resource_dbgpt_ext.storage.vector_store.oceanbase_store.OceanBaseStore",
+            "category": "vector_store",
+            "parameters": [
+                "vector_store_config"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.agent.resource.datasource.DatasourceResource",
+            "type_name": "DatasourceResource",
+            "name": "datasource",
+            "id": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource",
+            "category": "database",
+            "parameters": [
+                "name",
+                "db_name",
+                "prompt_template"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_serve.rag.operators.knowledge_space.KnowledgeSpacePromptBuilderOperator",
+            "type_name": "KnowledgeSpacePromptBuilderOperator",
+            "name": "knowledge_space_prompt_builder_operator",
+            "id": "operator_knowledge_space_prompt_builder_operator___$$___conversion___$$___v1",
+            "category": "conversion",
+            "parameters": [
+                "prompt",
+                "history_key",
+                "str_history"
+            ],
+            "outputs": [
+                "formatted_messages"
+            ],
+            "inputs": [
+                "user_input",
+                "related_context",
+                "history"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_serve.rag.operators.knowledge_space.SpaceRetrieverOperator",
+            "type_name": "SpaceRetrieverOperator",
+            "name": "space_operator",
+            "id": "operator_space_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "space_name"
+            ],
+            "outputs": [
+                "related chunk content"
+            ],
+            "inputs": [
+                "query"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_serve.conversation.operators.DefaultServePreChatHistoryLoadOperator",
+            "type_name": "DefaultServePreChatHistoryLoadOperator",
+            "name": "default_serve_pre_chat_history_load_operator",
+            "id": "operator_default_serve_pre_chat_history_load_operator___$$___conversion___$$___v1",
+            "category": "conversion",
+            "parameters": [],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "model_request"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.operators.message_operator.PreChatHistoryLoadOperator",
+            "type_name": "PreChatHistoryLoadOperator",
+            "name": "chat_history_load_operator",
+            "id": "operator_chat_history_load_operator___$$___conversion___$$___v1",
+            "category": "conversion",
+            "parameters": [
+                "storage",
+                "message_storage"
+            ],
+            "outputs": [
+                "output_value"
+            ],
+            "inputs": [
+                "input_value"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.core.interface.output_parser.BaseOutputParser",
+            "type_name": "BaseOutputParser",
+            "name": "base_output_operator",
+            "id": "operator_base_output_operator___$$___output_parser___$$___v1",
+            "category": "output_parser",
+            "parameters": [],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.rag.HOKnowledgeOperator",
+            "type_name": "HOKnowledgeOperator",
+            "name": "higher_order_knowledge_operator",
+            "id": "operator_higher_order_knowledge_operator___$$___rag___$$___v1",
+            "category": "rag",
+            "parameters": [
+                "knowledge_space",
+                "context",
+                "top_k",
+                "score_threshold",
+                "reranker_enabled",
+                "reranker_top_k"
+            ],
+            "outputs": [
+                "context",
+                "chunks"
+            ],
+            "inputs": [
+                "query"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.converter.BooleanToString",
+            "type_name": "BooleanToString",
+            "name": "default_converter_boolean_to_string",
+            "id": "operator_default_converter_boolean_to_string___$$___type_converter___$$___v1",
+            "category": "type_converter",
+            "parameters": [],
+            "outputs": [
+                "string"
+            ],
+            "inputs": [
+                "boolean"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.converter.FloatToString",
+            "type_name": "FloatToString",
+            "name": "default_converter_float_to_string",
+            "id": "operator_default_converter_float_to_string___$$___type_converter___$$___v1",
+            "category": "type_converter",
+            "parameters": [],
+            "outputs": [
+                "string"
+            ],
+            "inputs": [
+                "float"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.converter.IntegerToString",
+            "type_name": "IntegerToString",
+            "name": "default_converter_integer_to_string",
+            "id": "operator_default_converter_integer_to_string___$$___type_converter___$$___v1",
+            "category": "type_converter",
+            "parameters": [],
+            "outputs": [
+                "string"
+            ],
+            "inputs": [
+                "integer"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.converter.ModelOutputToDict",
+            "type_name": "ModelOutputToDict",
+            "name": "default_converter_model_output_to_dict",
+            "id": "operator_default_converter_model_output_to_dict___$$___type_converter___$$___v1",
+            "category": "type_converter",
+            "parameters": [],
+            "outputs": [
+                "dict"
+            ],
+            "inputs": [
+                "model_output"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.converter.StringToBoolean",
+            "type_name": "StringToBoolean",
+            "name": "default_converter_string_to_boolean",
+            "id": "operator_default_converter_string_to_boolean___$$___type_converter___$$___v1",
+            "category": "type_converter",
+            "parameters": [
+                "true_values"
+            ],
+            "outputs": [
+                "boolean"
+            ],
+            "inputs": [
+                "string"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.converter.StringToFloat",
+            "type_name": "StringToFloat",
+            "name": "default_converter_string_to_float",
+            "id": "operator_default_converter_string_to_float___$$___type_converter___$$___v1",
+            "category": "type_converter",
+            "parameters": [],
+            "outputs": [
+                "float"
+            ],
+            "inputs": [
+                "string"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.converter.StringToInteger",
+            "type_name": "StringToInteger",
+            "name": "default_converter_string_to_integer",
+            "id": "operator_default_converter_string_to_integer___$$___type_converter___$$___v1",
+            "category": "type_converter",
+            "parameters": [],
+            "outputs": [
+                "integer"
+            ],
+            "inputs": [
+                "string"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.datasource.HODatasourceDashboardOperator",
+            "type_name": "HODatasourceDashboardOperator",
+            "name": "higher_order_datasource_dashboard_operator",
+            "id": "operator_higher_order_datasource_dashboard_operator___$$___database___$$___v1",
+            "category": "database",
+            "parameters": [
+                "datasource"
+            ],
+            "outputs": [
+                "sql_result"
+            ],
+            "inputs": [
+                "sql_dict_list"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.datasource.HODatasourceExecutorOperator",
+            "type_name": "HODatasourceExecutorOperator",
+            "name": "higher_order_datasource_executor_operator",
+            "id": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1",
+            "category": "database",
+            "parameters": [
+                "datasource"
+            ],
+            "outputs": [
+                "sql_result"
+            ],
+            "inputs": [
+                "sql_dict"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.datasource.HODatasourceRetrieverOperator",
+            "type_name": "HODatasourceRetrieverOperator",
+            "name": "higher_order_datasource_retriever_operator",
+            "id": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1",
+            "category": "database",
+            "parameters": [
+                "datasource",
+                "prompt_template",
+                "display_type",
+                "max_num_results",
+                "response_format",
+                "context_key"
+            ],
+            "outputs": [
+                "context",
+                "chunks"
+            ],
+            "inputs": [
+                "query"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.code.CodeDictToModelRequestOperator",
+            "type_name": "CodeDictToModelRequestOperator",
+            "name": "default_code_dict_to_model_request_operator",
+            "id": "operator_default_code_dict_to_model_request_operator___$$___code___$$___v1",
+            "category": "code",
+            "parameters": [
+                "code",
+                "lang",
+                "call_name"
+            ],
+            "outputs": [
+                "output"
+            ],
+            "inputs": [
+                "input"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.code.CodeMapOperator",
+            "type_name": "CodeMapOperator",
+            "name": "default_code_map_operator",
+            "id": "operator_default_code_map_operator___$$___code___$$___v1",
+            "category": "code",
+            "parameters": [
+                "code",
+                "lang",
+                "call_name"
+            ],
+            "outputs": [
+                "output"
+            ],
+            "inputs": [
+                "input"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt.model.operators.llm_operator.LLMOperator",
+            "type_name": "LLMOperator",
+            "name": "llm_operator",
+            "id": "operator_llm_operator___$$___llm___$$___v1",
+            "category": "llm",
+            "parameters": [
+                "llm_client"
+            ],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "model_request"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.llm.HOLLMOperator",
+            "type_name": "HOLLMOperator",
+            "name": "higher_order_llm_operator",
+            "id": "operator_higher_order_llm_operator___$$___llm___$$___v1",
+            "category": "llm",
+            "parameters": [
+                "prompt_template",
+                "model",
+                "llm_client",
+                "history_merge_mode",
+                "user_message_key",
+                "history_key",
+                "keep_start_rounds",
+                "keep_end_rounds",
+                "max_token_limit"
+            ],
+            "outputs": [
+                "model_output"
+            ],
+            "inputs": [
+                "common_llm_request_body",
+                "extra_context"
+            ],
+            "version": "v1"
+        },
+        {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.llm.HOStreamingLLMOperator",
+            "type_name": "HOStreamingLLMOperator",
+            "name": "higher_order_streaming_llm_operator",
+            "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1",
+            "category": "llm",
+            "parameters": [
+                "prompt_template",
+                "model",
+                "llm_client",
+                "history_merge_mode",
+                "user_message_key",
+                "history_key",
+                "keep_start_rounds",
+                "keep_end_rounds",
+                "max_token_limit"
+            ],
+            "outputs": [
+                "streaming_model_output"
+            ],
+            "inputs": [
+                "common_llm_request_body",
+                "extra_context"
+            ],
+            "version": "v1"
+        }
+    ]
+}

@@ -104,8 +104,8 @@ const Chat: React.FC = () => {
   const [modelValue, setModelValue] = useState<string>('');
 
   useEffect(() => {
-    setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.5);
-    setMaxNewTokensValue(appInfo?.param_need?.filter(item => item.type === 'max_new_tokens')[0]?.value || 2048);
+    setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.6);
+    setMaxNewTokensValue(appInfo?.param_need?.filter(item => item.type === 'max_new_tokens')[0]?.value || 4000);
     setModelValue(appInfo?.param_need?.filter(item => item.type === 'model')[0]?.value || model);
     setResourceValue(
       knowledgeId || dbName || appInfo?.param_need?.filter(item => item.type === 'resource')[0]?.bind_value,

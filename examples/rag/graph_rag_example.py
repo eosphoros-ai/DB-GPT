@@ -5,16 +5,16 @@ import pytest
 from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.core import Chunk, HumanPromptTemplate, ModelMessage, ModelRequest
 from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
-from dbgpt.rag import ChunkParameters
-from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever import RetrieverStrategy
-from dbgpt.storage.knowledge_graph.community_summary import (
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.storage.knowledge_graph.community_summary import (
     CommunitySummaryKnowledgeGraph,
     CommunitySummaryKnowledgeGraphConfig,
 )
-from dbgpt.storage.knowledge_graph.knowledge_graph import (
+from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
 )
@@ -86,7 +86,7 @@ def __create_community_kg_connector():
 
 async def ask_chunk(chunk: Chunk, question) -> str:
     rag_template = (
-        "Based on the following [Context] {context}, " "answer [Question] {question}."
+        "Based on the following [Context] {context}, answer [Question] {question}."
     )
     template = HumanPromptTemplate.from_template(rag_template)
     messages = template.format_messages(context=chunk.content, question=question)

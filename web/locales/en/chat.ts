@@ -19,4 +19,5 @@ export const ChatEn = {
   temperature_tip: 'The current application does not support temperature configuration',
   max_new_tokens_tip: 'The current application does not support max_new_tokens configuration',
   extend_tip: 'Extended configuration is not supported for the current application',
+  cot_title: 'Thoughts',
 };

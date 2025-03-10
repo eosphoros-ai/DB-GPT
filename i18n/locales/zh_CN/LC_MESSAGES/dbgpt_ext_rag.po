@@ -1,0 +1,477 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:24
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:138
+msgid "Chunk Parameters"
+msgstr "分块参数"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:29
+msgid "Chunk Strategy"
+msgstr "分块策略"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:32
+msgid "chunk strategy"
+msgstr "分块策略"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:37
+msgid "Text Splitter"
+msgstr "文本分割器"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:41
+msgid "Text splitter, if not set, will use the default text splitter."
+msgstr "文本分割器，如果不设置，将使用默认的文本分割器。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:47
+msgid "Splitter Type"
+msgstr "分割器类型"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:50
+msgid "Splitter type"
+msgstr "分割器类型"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:55
+msgid "Chunk Size"
+msgstr "分块大小"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:58
+msgid "Chunk size"
+msgstr "分块大小"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:63
+msgid "Chunk Overlap"
+msgstr "分块重叠"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:71
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:112
+msgid "Separator"
+msgstr "分隔符"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:74
+msgid "Chunk separator"
+msgstr "分块分隔符"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:79
+msgid "Enable Merge"
+msgstr "启用合并"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:82
+msgid "Enable chunk merge by chunk_size."
+msgstr "根据分块大小启用合并。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:21
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:20
+msgid "The API key for the embeddings API."
+msgstr "嵌入式 API 的 API 密钥。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:26
+msgid "The Secret key for the embeddings API. It's the sk for qianfan."
+msgstr "嵌入式 API 的密钥。这是千帆的 sk。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:26
+msgid ""
+"The real model name to pass to the provider, default is None. If backend is "
+"None, use name as the real model name."
+msgstr "传递给提供者的实际模型名称，默认为 None。如果后端为 None，则使用名称作为实际模型名称。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:169
+msgid "Embedding-V1 by Baidu Qianfan. "
+msgstr "百度千帆 Embedding-V1。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:26
+msgid "The URL of the embeddings API."
+msgstr "嵌入式 API 的 URL。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:157
+msgid ""
+"The embedding model are trained by BAAI, it support more than 100 working "
+"languages."
+msgstr "该嵌入模型由 BAAI 训练，支持超过 100 种工作语言。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:57
+msgid "The name of the model to use for text embeddings."
+msgstr "用于文本嵌入的模型名称。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:40
+msgid "Jina AI Embeddings"
+msgstr "Jina AI 嵌入"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:43
+msgid "Jina AI embeddings."
+msgstr "Jina AI 嵌入。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:46
+msgid "API Key"
+msgstr "API 密钥"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:49
+msgid "Your API key for the Jina AI API."
+msgstr "您的 Jina AI API 密钥。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:52
+msgid "Model Name"
+msgstr "模型名称"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:159
+msgid ""
+"The embedding model are trained by TongYi, it support more than 50 working "
+"languages."
+msgstr "该嵌入模型由通义训练，支持超过 50 种工作语言。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:17
+msgid "Knowledge Graph Operator"
+msgstr "知识图谱算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:19
+msgid "Extract Documents and persist into graph database."
+msgstr "提取文档并持久化到图数据库中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:23
+msgid "Knowledge Graph Connector"
+msgstr "知识图谱连接器"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:26
+msgid "The knowledge graph."
+msgstr "知识图谱。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:156
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:122
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:43
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:50
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:145
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:41
+msgid "Chunks"
+msgstr "片段"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:35
+msgid "The text split chunks by chunk manager."
+msgstr "由分块管理器分割的文本块。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:45
+msgid "The assembled chunks, it has been persisted to graph store."
+msgstr "已组装的块，已持久化到图存储中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:17
+msgid "Summary Operator"
+msgstr "摘要算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:20
+msgid "The summary assembler operator."
+msgstr "摘要组装算子。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:148
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:39
+msgid "Knowledge"
+msgstr "知识"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+msgid "Knowledge datasource"
+msgstr "知识数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:28
+msgid "Document summary"
+msgstr "文档摘要"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:36
+msgid "LLM Client"
+msgstr "LLM 客户端"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:41
+msgid "The LLM Client."
+msgstr "LLM 客户端。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:44
+msgid "Model name"
+msgstr "模型名称"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:49
+msgid "LLM model name"
+msgstr "LLM 模型名称"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:52
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:65
+msgid "prompt language"
+msgstr "提示语言"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:60
+msgid "Max iteration with LLM"
+msgstr "与 LLM 的最大迭代次数"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:68
+msgid "Concurrency limit with LLM"
+msgstr "与 LLM 的并发限制"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:73
+msgid "The concurrency limit with llm"
+msgstr "与 LLM 的并发限制"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:25
+msgid "Embedding Retriever Operator"
+msgstr "嵌入检索算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:27
+msgid "Retrieve candidates from vector store."
+msgstr "从向量存储中检索候选对象。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:31
+msgid "Storage Index Store"
+msgstr "存储索引库"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:34
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:134
+msgid "The vector store connector."
+msgstr "向量存储连接器。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:38
+msgid "Top K"
+msgstr "前 K 个"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:41
+msgid "The number of candidates."
+msgstr "候选对象的数量。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:44
+msgid "Score Threshold"
+msgstr "得分阈值"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:48
+msgid ""
+"The score threshold, if score of candidate is less than it, it will be "
+"filtered."
+msgstr "得分阈值，如果候选对象的得分低于此值，将被过滤。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:55
+msgid "Query Rewrite"
+msgstr "查询重写"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:58
+msgid "The query rewrite resource."
+msgstr "查询重写资源。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:63
+msgid "Rerank"
+msgstr "重新排序"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:66
+msgid "The rerank."
+msgstr "重新排序。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:73
+msgid "Query"
+msgstr "查询"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:76
+msgid "The query to retrieve."
+msgstr "要检索的查询。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:81
+msgid "Candidates"
+msgstr "候选对象"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:84
+msgid "The retrieved candidates."
+msgstr "已检索的候选对象。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:125
+msgid "Embedding Assembler Operator"
+msgstr "嵌入组装算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:127
+msgid "Load knowledge and assemble embedding chunks to vector store."
+msgstr "加载知识并组装嵌入块到向量存储中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:131
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:23
+msgid "Vector Store Connector"
+msgstr "向量存储连接器"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:141
+msgid "The chunk parameters."
+msgstr "块参数。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:151
+msgid "The knowledge to be loaded."
+msgstr "要加载的知识。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:160
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:45
+msgid "The assembled chunks, it has been persisted to vector store."
+msgstr "已组装的块，已持久化到向量存储中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:23
+msgid "Knowledge Loader Operator"
+msgstr "知识加载算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:27
+msgid "The knowledge operator, which can create knowledge from datasource."
+msgstr "知识算子，可以从数据源创建知识。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:31
+msgid "knowledge datasource"
+msgstr "知识数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:34
+msgid "knowledge datasource, which can be a document, url, or text."
+msgstr "知识数据源，可以是文档、URL 或文本。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:42
+msgid "Knowledge object."
+msgstr "知识对象。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:47
+msgid "Default datasource"
+msgstr "默认数据源"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:52
+msgid "Default datasource."
+msgstr "默认数据源。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:55
+msgid "Knowledge type"
+msgstr "知识类型"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:71
+msgid "Knowledge type."
+msgstr "知识类型。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:106
+msgid "Chunks To String Operator"
+msgstr "片段转字符串算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:108
+msgid "Convert chunks to string."
+msgstr "将片段转换为字符串。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:115
+msgid "The separator between chunks."
+msgstr "片段之间的分隔符。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:125
+msgid "The input chunks."
+msgstr "输入片段。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:131
+msgid "String"
+msgstr "字符串"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:134
+msgid "The output string."
+msgstr "输出字符串。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:26
+msgid "Knowledge Process Branch Operator"
+msgstr "知识处理分支算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:30
+msgid "Branch the workflow based on the stream flag of the request."
+msgstr "根据请求的流标志分支工作流。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:34
+msgid "Document Chunks"
+msgstr "文档片段"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:37
+msgid "The input value of the operator."
+msgstr "算子的输入值。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:46
+msgid "Chunks for Vector Storage Connector."
+msgstr "用于向量存储连接器的片段。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:53
+msgid "Chunks for Knowledge Graph Connector."
+msgstr "知识图谱连接器的片段。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:60
+msgid "Chunks for Full Text Connector."
+msgstr "全文连接器的片段。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:119
+msgid "Knowledge Process Join Operator"
+msgstr "知识处理合并算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:124
+msgid "Join Branch the workflow based on the Knowledge Process Results."
+msgstr "根据知识处理结果合并工作流分支。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:129
+msgid "Vector Storage Results"
+msgstr "向量存储结果"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:132
+msgid "vector storage results."
+msgstr "向量存储结果。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:136
+msgid "Knowledge Graph Storage Results"
+msgstr "知识图谱存储结果"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:139
+msgid "knowledge graph storage results."
+msgstr "知识图谱存储结果。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:148
+msgid "Knowledge Process Results."
+msgstr "知识处理结果。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:17
+msgid "Full Text Storage Operator"
+msgstr "全文存储算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:19
+msgid "Persist embeddings into full text storage."
+msgstr "将嵌入持久化到全文存储中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:23
+msgid "Full Text Connector"
+msgstr "全文连接器"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:26
+msgid "The full text store."
+msgstr "全文存储。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:45
+msgid "The assembled chunks, it has been persisted to full text store."
+msgstr "已组装的片段，已持久化到全文存储中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:17
+msgid "Vector Storage Operator"
+msgstr "向量存储算子"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:19
+msgid "Persist embeddings into vector storage."
+msgstr "将嵌入持久化到向量存储中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:26
+msgid "The vector store."
+msgstr "向量存储。"

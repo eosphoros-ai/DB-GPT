@@ -1,0 +1,483 @@
+import { ConfigDiagram } from "@site/src/components/mdx/ConfigDiagram";
+
+# Configuration Overview
+
+## The layout of configuration classes
+
+<ConfigDiagram relationships={[
+  {
+    "from": "ApplicationConfig",
+    "to": "HookConfig",
+    "label": "hooks"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "SystemParameters",
+    "label": "system"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServiceConfig",
+    "label": "service"
+  },
+  {
+    "from": "ServiceConfig",
+    "to": "ServiceWebParameters",
+    "label": "web"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "RDBMSDatasourceParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "SQLiteConnectorParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "TuGraphParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "SparkParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "ClickhouseParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "DorisParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "DuckDbConnectorParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "HiveParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "MSSQLParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "MySQLParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "OceanBaseParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "PostgreSQLParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "StarRocksParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "VerticaParameters",
+    "label": "database"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "TracerParameters",
+    "label": "trace"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "LoggingParameters",
+    "label": "log"
+  },
+  {
+    "from": "ServiceWebParameters",
+    "to": "ModelCacheParameters",
+    "label": "model_cache"
+  },
+  {
+    "from": "ServiceConfig",
+    "to": "ModelServiceConfig",
+    "label": "model"
+  },
+  {
+    "from": "ModelServiceConfig",
+    "to": "ModelWorkerParameters",
+    "label": "worker"
+  },
+  {
+    "from": "ModelWorkerParameters",
+    "to": "LoggingParameters",
+    "label": "log"
+  },
+  {
+    "from": "ModelWorkerParameters",
+    "to": "TracerParameters",
+    "label": "trace"
+  },
+  {
+    "from": "ModelServiceConfig",
+    "to": "ModelAPIServerParameters",
+    "label": "api"
+  },
+  {
+    "from": "ModelAPIServerParameters",
+    "to": "LoggingParameters",
+    "label": "log"
+  },
+  {
+    "from": "ModelAPIServerParameters",
+    "to": "TracerParameters",
+    "label": "trace"
+  },
+  {
+    "from": "ModelServiceConfig",
+    "to": "ModelControllerParameters",
+    "label": "controller"
+  },
+  {
+    "from": "ModelControllerParameters",
+    "to": "LoggingParameters",
+    "label": "log"
+  },
+  {
+    "from": "ModelControllerParameters",
+    "to": "TracerParameters",
+    "label": "trace"
+  },
+  {
+    "from": "ModelControllerParameters",
+    "to": "DBModelRegistryParameters",
+    "label": "registry"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "RDBMSDatasourceParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "SQLiteConnectorParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "TuGraphParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "SparkParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "ClickhouseParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "DorisParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "DuckDbConnectorParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "HiveParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "MSSQLParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "MySQLParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "OceanBaseParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "PostgreSQLParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "StarRocksParameters",
+    "label": "database"
+  },
+  {
+    "from": "DBModelRegistryParameters",
+    "to": "VerticaParameters",
+    "label": "database"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ModelsDeployParameters",
+    "label": "models"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "HFLLMDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "HFLLMDeployModelParameters",
+    "to": "BitsandbytesQuantization",
+    "label": "quantization"
+  },
+  {
+    "from": "HFLLMDeployModelParameters",
+    "to": "BitsandbytesQuantization8bits",
+    "label": "quantization"
+  },
+  {
+    "from": "HFLLMDeployModelParameters",
+    "to": "BitsandbytesQuantization4bits",
+    "label": "quantization"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "VLLMDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "LlamaServerParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "LlamaCppModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "OpenAICompatibleDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "SiliconFlowDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "ZhipuDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "MoonshotDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "GiteeDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "DeepSeekDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "OllamaDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "YiDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "SparkDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "BaichuanDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "GeminiDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "TongyiDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "VolcengineDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "WenxinDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "ClaudeDeployModelParameters",
+    "label": "llms"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "HFEmbeddingDeployModelParameters",
+    "label": "embeddings"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "OpenAPIEmbeddingDeployModelParameters",
+    "label": "embeddings"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "JinaEmbeddingsDeployModelParameters",
+    "label": "embeddings"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "OllamaEmbeddingDeployModelParameters",
+    "label": "embeddings"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "QianfanEmbeddingDeployModelParameters",
+    "label": "embeddings"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "TongyiEmbeddingDeployModelParameters",
+    "label": "embeddings"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "CrossEncoderRerankEmbeddingsParameters",
+    "label": "rerankers"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "OpenAPIRerankerDeployModelParameters",
+    "label": "rerankers"
+  },
+  {
+    "from": "ModelsDeployParameters",
+    "to": "SiliconFlowRerankEmbeddingsParameters",
+    "label": "rerankers"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "ServeConfig",
+    "label": "serves"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "RagParameters",
+    "label": "rag"
+  },
+  {
+    "from": "RagParameters",
+    "to": "StorageConfig",
+    "label": "storage"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "TracerParameters",
+    "label": "trace"
+  },
+  {
+    "from": "ApplicationConfig",
+    "to": "LoggingParameters",
+    "label": "log"
+  }
+]} />

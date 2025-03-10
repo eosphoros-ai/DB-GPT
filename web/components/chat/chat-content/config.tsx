@@ -18,6 +18,7 @@ import VisCode from './vis-code';
 import VisConvertError from './vis-convert-error';
 import VisDashboard from './vis-dashboard';
 import VisPlugin from './vis-plugin';
+import { VisThinking } from './vis-thinking';
 
 type MarkdownComponent = Parameters<typeof GPTVis>['0']['components'];
 
@@ -139,6 +140,11 @@ const codeComponents = {
         } catch {
           return <CodePreview language={lang} code={content} />;
         }
+      },
+      'vis-thinking': ({ className, children }) => {
+        const content = String(children);
+        const _lang = className?.replace('language-', '') || 'javascript';
+        return <VisThinking content={content} />;
       },
     },
     defaultRenderer({ node, className, children, style, ...props }) {

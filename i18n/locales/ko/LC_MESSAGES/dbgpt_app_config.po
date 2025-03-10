@@ -1,0 +1,200 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:26
+msgid "Language setting"
+msgstr "언어 설정"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:33
+msgid "Logging level"
+msgstr "로깅 수준"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:40
+msgid "API keys"
+msgstr "API 키"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:45
+msgid "The key to encrypt the data"
+msgstr "데이터를 암호화하는 키"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:54
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:74
+msgid "default vector type"
+msgstr "기본 벡터 유형"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:64
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:80
+msgid "default graph type"
+msgstr "기본 그래프 유형"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:91
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:203
+msgid "Whether to verify the SSL certificate of the database"
+msgstr "데이터베이스의 SSL 인증서를 검증할지 여부"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:97
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:209
+msgid ""
+"The default thread pool size, If None, use default config of python thread "
+"pool"
+msgstr "기본 스레드 풀 크기입니다. None인 경우 Python 스레드 풀의 기본 구성을 사용합니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:104
+msgid "knowledge search top k"
+msgstr "지식 검색 상위 k개"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:108
+msgid "knowledge search top similarity score"
+msgstr "지식 검색 상위 유사도 점수"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:112
+msgid "knowledge search rewrite"
+msgstr "지식 검색 재작성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:116
+msgid "knowledge max chunks once load"
+msgstr "지식 한 번에 로드할 최대 청크 수"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:120
+msgid "knowledge max load thread"
+msgstr "지식 최대 로드 스레드 수"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:124
+msgid "knowledge rerank top k"
+msgstr "지식 재정렬 상위 k개"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:128
+msgid "Storage configuration"
+msgstr "저장소 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:132
+msgid "knowledge graph search top k"
+msgstr "지식 그래프 검색 상위 k개"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:136
+msgid "graph community summary enabled"
+msgstr "그래프 커뮤니티 요약 사용"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:142
+msgid "Webserver deploy host"
+msgstr "웹 서버 배포 호스트"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:144
+msgid "Webserver deploy port, default is 5670"
+msgstr "웹 서버 배포 포트, 기본값은 5670"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:147
+msgid "Run Webserver in light mode"
+msgstr "경량 모드로 웹 서버 실행"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:153
+msgid ""
+"The Model controller address to connect. If None, read model controller "
+"address from environment key `MODEL_SERVER`."
+msgstr "연결할 모델 컨트롤러 주소입니다. None인 경우 환경 변수 `MODEL_SERVER`에서 모델 컨트롤러 주소를 읽습니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:164
+msgid "Database connection config, now support SQLite, OceanBase and MySQL"
+msgstr "데이터베이스 연결 구성, 현재 SQLite, OceanBase 및 MySQL을 지원합니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:172
+msgid ""
+"The storage type of model configures, if None, use the default "
+"storage(current database). When you run in light mode, it will not use any "
+"storage."
+msgstr "모델 구성의 저장 유형입니다. None인 경우 기본 저장소(현재 데이터베이스)를 사용합니다. 경량 모드로 실행할 때는 어떤 저장소도 사용하지 않습니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:182
+msgid "Tracer config for web server, if None, use global tracer config"
+msgstr "웹 서버용 추적기 구성, None인 경우 전역 추적기 구성을 사용합니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:189
+msgid "Logging configuration for web server, if None, use global config"
+msgstr "웹 서버용 로깅 구성, None인 경우 전역 구성을 사용합니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:197
+msgid "Whether to disable alembic to initialize and upgrade database metadata"
+msgstr "alembic을 사용하여 데이터베이스 메타데이터를 초기화하고 업그레이드할지 여부"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:218
+msgid ""
+"Whether to enable remote embedding models. If it is True, you need to start "
+"a embedding model through `dbgpt start worker --worker_type text2vec --"
+"model_name xxx --model_path xxx`"
+msgstr "원격 임베딩 모델을 사용할지 여부입니다. True인 경우 `dbgpt start worker --worker_type text2vec --model_name xxx --model_path xxx`를 통해 임베딩 모델을 시작해야 합니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:228
+msgid ""
+"Whether to enable remote rerank models. If it is True, you need to start a "
+"rerank model through `dbgpt start worker --worker_type text2vec --rerank --"
+"model_name xxx --model_path xxx`"
+msgstr "원격 재정렬 모델을 사용할지 여부입니다. True로 설정하면 `dbgpt start worker --worker_type text2vec --rerank --model_name xxx --model_path xxx`를 통해 재정렬 모델을 시작해야 합니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:236
+msgid "The directories to search awel files, split by `,`"
+msgstr "awel 파일을 검색할 디렉토리입니다. `,`로 구분합니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:240
+msgid "Whether to use the new web UI, default is True"
+msgstr "새로운 웹 UI를 사용할지 여부입니다. 기본값은 True입니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:244
+msgid "Model cache configuration"
+msgstr "모델 캐시 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:249
+msgid "The max sequence length of the embedding model, default is 512"
+msgstr "임베딩 모델의 최대 시퀀스 길이입니다. 기본값은 512입니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:258
+msgid "Web service configuration"
+msgstr "웹 서비스 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:262
+msgid "Model service configuration"
+msgstr "모델 서비스 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:274
+msgid ""
+"Configuration hooks, which will be executed before the configuration loading"
+msgstr "구성 로드 전에 실행될 구성 훅입니다."
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:283
+msgid "System configuration"
+msgstr "시스템 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:290
+msgid "Model deployment configuration"
+msgstr "모델 배포 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:296
+msgid "Serve configuration"
+msgstr "서비스 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:301
+msgid "Rag Knowledge Parameters"
+msgstr "RAG 지식 매개변수"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:306
+msgid "Global tracer configuration"
+msgstr "전역 추적기 구성"
+
+#:../packages/dbgpt-app/src/dbgpt_app/config.py:312
+msgid "Logging configuration"
+msgstr "로깅 구성"

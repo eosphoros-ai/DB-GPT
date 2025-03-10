@@ -1,15 +1,14 @@
-# Japanese translations for PACKAGE package
-# PACKAGE パッケージに対する英訳.
-# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# Japanese translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2024.
+# Automatically generated, 2025.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
-"PO-Revision-Date: 2024-03-23 11:22+0800\n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: ja\n"
@@ -18,540 +17,442 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../dbgpt/rag/operators/embedding.py:25
-msgid "Embedding Retriever Operator"
-msgstr "埋め込みリトリーバー演算子"
-
-#: ../dbgpt/rag/operators/embedding.py:27
-msgid "Retrieve candidates from vector store."
-msgstr "ベクトルストアから候補を取得します。"
-
-#: ../dbgpt/rag/operators/embedding.py:31
-#: ../dbgpt/rag/operators/embedding.py:130
-msgid "Vector Store Connector"
-msgstr "ベクトルストアコネクタ"
-
-#: ../dbgpt/rag/operators/embedding.py:34
-#: ../dbgpt/rag/operators/embedding.py:133
-msgid "The vector store connector."
-msgstr "ベクトルストアコネクタ。"
-
-#: ../dbgpt/rag/operators/embedding.py:37
-msgid "Top K"
-msgstr "上位K個"
-
-#: ../dbgpt/rag/operators/embedding.py:40
-msgid "The number of candidates."
-msgstr "候補の数。"
-
-#: ../dbgpt/rag/operators/embedding.py:43
-msgid "Score Threshold"
-msgstr "スコア閾値"
-
-#: ../dbgpt/rag/operators/embedding.py:47
-msgid ""
-"The score threshold, if score of candidate is less than it, it will be "
-"filtered."
-msgstr "スコア閾値、候補のスコアがこれより低い場合、フィルタリングされます。"
-
-#: ../dbgpt/rag/operators/embedding.py:54 ../dbgpt/rag/retriever/rewrite.py:24
-msgid "Query Rewrite"
-msgstr "クエリの書き換え"
-
-#: ../dbgpt/rag/operators/embedding.py:57
-msgid "The query rewrite resource."
-msgstr "クエリの書き換えリソース。"
-
-#: ../dbgpt/rag/operators/embedding.py:62
-msgid "Rerank"
-msgstr "再ランク"
-
-#: ../dbgpt/rag/operators/embedding.py:65
-msgid "The rerank."
-msgstr "再ランク。"
-
-#: ../dbgpt/rag/operators/embedding.py:72
-msgid "Query"
-msgstr "クエリ"
-
-#: ../dbgpt/rag/operators/embedding.py:75
-msgid "The query to retrieve."
-msgstr "取得するクエリ。"
-
-#: ../dbgpt/rag/operators/embedding.py:80
-msgid "Candidates"
-msgstr "候補"
-
-#: ../dbgpt/rag/operators/embedding.py:83
-msgid "The retrieved candidates."
-msgstr "取得された候補。"
-
-#: ../dbgpt/rag/operators/embedding.py:124
-msgid "Embedding Assembler Operator"
-msgstr "埋め込みアセンブラ演算子"
-
-#: ../dbgpt/rag/operators/embedding.py:126
-msgid "Load knowledge and assemble embedding chunks to vector store."
-msgstr "知識を読み込み、埋め込みチャンクをベクトルストアに組み立てます。"
-
-#: ../dbgpt/rag/operators/embedding.py:136 ../dbgpt/rag/chunk_manager.py:24
-msgid "Chunk Parameters"
-msgstr "チャンクパラメータ"
-
-#: ../dbgpt/rag/operators/embedding.py:139
-msgid "The chunk parameters."
-msgstr "チャンクのパラメータ。"
-
-#: ../dbgpt/rag/operators/embedding.py:146 ../dbgpt/rag/operators/summary.py:23
-#: ../dbgpt/rag/operators/knowledge.py:39
-msgid "Knowledge"
-msgstr "知識"
-
-#: ../dbgpt/rag/operators/embedding.py:149
-msgid "The knowledge to be loaded."
-msgstr "読み込まれる知識。"
-
-#: ../dbgpt/rag/operators/embedding.py:154
-#: ../dbgpt/rag/operators/knowledge.py:121
-msgid "Chunks"
-msgstr "チャンク"
-
-#: ../dbgpt/rag/operators/embedding.py:158
-msgid "The assembled chunks, it has been persisted to vector store."
-msgstr "組み立てられたチャンク、ベクトルストアに永続化されました。"
-
-#: ../dbgpt/rag/operators/summary.py:17
-msgid "Summary Operator"
-msgstr ""
-
-#: ../dbgpt/rag/operators/summary.py:20
-#, fuzzy
-msgid "The summary assembler operator."
-msgstr "埋め込みアセンブラ演算子"
-
-#: ../dbgpt/rag/operators/summary.py:23
-#, fuzzy
-msgid "Knowledge datasource"
-msgstr "知識データソース"
-
-#: ../dbgpt/rag/operators/summary.py:28
-msgid "Document summary"
-msgstr ""
-
-#: ../dbgpt/rag/operators/summary.py:36 ../dbgpt/rag/operators/rewrite.py:36
-#: ../dbgpt/rag/retriever/rewrite.py:36
-msgid "LLM Client"
-msgstr "LLM クライアント"
-
-#: ../dbgpt/rag/operators/summary.py:41 ../dbgpt/rag/operators/rewrite.py:39
-#, fuzzy
-msgid "The LLM Client."
-msgstr "LLM クライアント"
-
-#: ../dbgpt/rag/operators/summary.py:44 ../dbgpt/rag/operators/rewrite.py:42
-#, fuzzy
-msgid "Model name"
-msgstr "モデル名"
-
-#: ../dbgpt/rag/operators/summary.py:49
-#, fuzzy
-msgid "LLM model name"
-msgstr "LLM モデル名。"
-
-#: ../dbgpt/rag/operators/summary.py:52 ../dbgpt/rag/operators/summary.py:57
-#: ../dbgpt/rag/operators/summary.py:65
-#, fuzzy
-msgid "prompt language"
-msgstr "言語"
-
-#: ../dbgpt/rag/operators/summary.py:60
-msgid "Max iteration with LLM"
-msgstr ""
-
-#: ../dbgpt/rag/operators/summary.py:68
-msgid "Concurrency limit with LLM"
-msgstr ""
-
-#: ../dbgpt/rag/operators/summary.py:73
-msgid "The concurrency limit with llm"
-msgstr ""
-
-#: ../dbgpt/rag/operators/rewrite.py:16
-#, fuzzy
-msgid "Query Rewrite Operator"
-msgstr "クエリの書き換え"
-
-#: ../dbgpt/rag/operators/rewrite.py:19
-#, fuzzy
-msgid "Query rewrite operator."
-msgstr "クエリの書き換え。"
-
-#: ../dbgpt/rag/operators/rewrite.py:22
-#, fuzzy
-msgid "Query context"
-msgstr "クエリの書き換え"
-
-#: ../dbgpt/rag/operators/rewrite.py:22
-msgid "query context"
-msgstr ""
-
-#: ../dbgpt/rag/operators/rewrite.py:27 ../dbgpt/rag/operators/rewrite.py:31
-msgid "Rewritten queries"
-msgstr ""
-
-#: ../dbgpt/rag/operators/rewrite.py:47
-#, fuzzy
-msgid "LLM model name."
-msgstr "LLM モデル名。"
-
-#: ../dbgpt/rag/operators/rewrite.py:50
-#, fuzzy
-msgid "Prompt language"
-msgstr "言語"
-
-#: ../dbgpt/rag/operators/rewrite.py:55
-msgid "Prompt language."
-msgstr ""
-
-#: ../dbgpt/rag/operators/rewrite.py:58
-msgid "Number of results"
-msgstr ""
-
-#: ../dbgpt/rag/operators/rewrite.py:63
-msgid "rewrite query number."
-msgstr ""
-
-#: ../dbgpt/rag/operators/knowledge.py:23
-msgid "Knowledge Operator"
-msgstr "知識演算子"
-
-#: ../dbgpt/rag/operators/knowledge.py:27
-msgid "The knowledge operator, which can create knowledge from datasource."
-msgstr "データソースから知識を作成できる知識演算子。"
-
-#: ../dbgpt/rag/operators/knowledge.py:31
-msgid "knowledge datasource"
-msgstr "知識データソース"
-
-#: ../dbgpt/rag/operators/knowledge.py:34
-msgid "knowledge datasource, which can be a document, url, or text."
-msgstr "文書、URL、またはテキストなどの知識データソース。"
-
-#: ../dbgpt/rag/operators/knowledge.py:42
-msgid "Knowledge object."
-msgstr "知識オブジェクト。"
-
-#: ../dbgpt/rag/operators/knowledge.py:47
-msgid "Default datasource"
-msgstr "デフォルトデータソース"
-
-#: ../dbgpt/rag/operators/knowledge.py:52
-msgid "Default datasource."
-msgstr "デフォルトデータソース。"
-
-#: ../dbgpt/rag/operators/knowledge.py:55
-msgid "Knowledge type"
-msgstr "知識タイプ"
-
-#: ../dbgpt/rag/operators/knowledge.py:71
-msgid "Knowledge type."
-msgstr "知識タイプ。"
-
-#: ../dbgpt/rag/operators/knowledge.py:105
-msgid "Chunks To String Operator"
-msgstr "チャンクを文字列に変換する演算子"
-
-#: ../dbgpt/rag/operators/knowledge.py:107
-msgid "Convert chunks to string."
-msgstr "チャンクを文字列に変換します。"
-
-#: ../dbgpt/rag/operators/knowledge.py:111 ../dbgpt/rag/chunk_manager.py:71
-#: ../dbgpt/rag/text_splitter/text_splitter.py:211
-#: ../dbgpt/rag/text_splitter/text_splitter.py:422
-#: ../dbgpt/rag/text_splitter/text_splitter.py:804
-msgid "Separator"
-msgstr "区切り文字"
-
-#: ../dbgpt/rag/operators/knowledge.py:114
-msgid "The separator between chunks."
-msgstr "チャンク間の区切り文字。"
-
-#: ../dbgpt/rag/operators/knowledge.py:124
-msgid "The input chunks."
-msgstr "入力チャンク。"
-
-#: ../dbgpt/rag/operators/knowledge.py:130
-msgid "String"
-msgstr "文字列"
-
-#: ../dbgpt/rag/operators/knowledge.py:133
-msgid "The output string."
-msgstr "出力文字列。"
-
-#: ../dbgpt/rag/embedding/embedding_factory.py:230
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embedding_factory.py:245
 msgid "Default Embeddings"
-msgstr "デフォルト埋め込み"
+msgstr "デフォルトの埋め込み"
 
-#: ../dbgpt/rag/embedding/embedding_factory.py:234
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embedding_factory.py:249
 msgid "Default embeddings(using default embedding model of current system)"
-msgstr "デフォルトの埋め込み（現在のシステムのデフォルト埋め込みモデルを使用）"
+msgstr "現在のシステムのデフォルトの埋め込みモデルを使用するデフォルトの埋め込み"
 
-#: ../dbgpt/rag/embedding/embeddings.py:28
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:42
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:29
+msgid "The path of the model, if you want to deploy a local model."
+msgstr "ローカルモデルを展開する場合のモデルのパス"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:50
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:37
+msgid "Device to run model. If None, the device is automatically determined"
+msgstr "モデルを実行するデバイス。None の場合は、デバイスが自動的に決定されます"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:57
+msgid "Path of the cache folder."
+msgstr "キャッシュフォルダのパス"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:64
+msgid "Normalize embeddings."
+msgstr "埋め込みを正規化します"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:70
+msgid "Run encode() on multiple GPUs."
+msgstr "複数の GPU で encode() を実行します"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:76
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:53
+msgid "Keyword arguments to pass to the model."
+msgstr "モデルに渡すキーワード引数"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:82
+msgid "Keyword arguments to pass when calling the `encode` method."
+msgstr "`encode` メソッドを呼び出すときに渡すキーワード引数"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:89
+msgid "Instruction to use for embedding documents. Just for Instructor model."
+msgstr "ドキュメントの埋め込みに使用する指示。インストラクターモデル専用です"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:97
+msgid "Instruction to use for embedding query. Just for Instructor model."
+msgstr "クエリの埋め込みに使用する指示。インストラクターモデル専用です"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:136
 msgid "HuggingFace Embeddings"
 msgstr "HuggingFace 埋め込み"
 
-#: ../dbgpt/rag/embedding/embeddings.py:31
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:139
 msgid "HuggingFace sentence_transformers embedding models."
-msgstr "HuggingFace sentence_transformers 埋め込みモデル。"
+msgstr "HuggingFace sentence_transformers の埋め込みモデル。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:34
-#: ../dbgpt/rag/embedding/embeddings.py:141
-#: ../dbgpt/rag/embedding/embeddings.py:348
-#: ../dbgpt/rag/embedding/embeddings.py:461
-#: ../dbgpt/rag/embedding/embeddings.py:553
-#: ../dbgpt/rag/retriever/rewrite.py:30
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:142
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:274
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:537
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:703
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:32
 msgid "Model Name"
 msgstr "モデル名"
 
-#: ../dbgpt/rag/embedding/embeddings.py:39
-#: ../dbgpt/rag/embedding/embeddings.py:146
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:147
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:279
 msgid "Model name to use."
 msgstr "使用するモデル名。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:135
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:268
 msgid "HuggingFace Instructor Embeddings"
-msgstr "HuggingFace インストラクター埋め込み"
+msgstr "HuggingFace Instructor 埋め込み"
 
-#: ../dbgpt/rag/embedding/embeddings.py:138
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:271
 msgid "HuggingFace Instructor embeddings."
-msgstr "HuggingFace インストラクター埋め込み。"
+msgstr "HuggingFace Instructor 埋め込み。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:149
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:282
 msgid "Embed Instruction"
 msgstr "埋め込み指示"
 
-#: ../dbgpt/rag/embedding/embeddings.py:154
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:287
 msgid "Instruction to use for embedding documents."
-msgstr "文書を埋め込むための指示。"
+msgstr "ドキュメントを埋め込むために使用する指示。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:157
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:290
 msgid "Query Instruction"
 msgstr "クエリ指示"
 
-#: ../dbgpt/rag/embedding/embeddings.py:162
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:295
 msgid "Instruction to use for embedding query."
-msgstr "クエリを埋め込むための指示。"
+msgstr "クエリを埋め込むために使用する指示。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:336
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:525
 msgid "HuggingFace Inference API Embeddings"
 msgstr "HuggingFace 推論 API 埋め込み"
 
-#: ../dbgpt/rag/embedding/embeddings.py:339
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:528
 msgid "HuggingFace Inference API embeddings."
 msgstr "HuggingFace 推論 API 埋め込み。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:342
-#: ../dbgpt/rag/embedding/embeddings.py:455
-#: ../dbgpt/rag/embedding/embeddings.py:545
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:531
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:695
 msgid "API Key"
-msgstr "APIキー"
+msgstr "API キー"
 
-#: ../dbgpt/rag/embedding/embeddings.py:345
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:534
 msgid "Your API key for the HuggingFace Inference API."
-msgstr "HuggingFace 推論 API 用のAPIキー。"
+msgstr "HuggingFace Inference API のあなたの API キー。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:353
-#: ../dbgpt/rag/embedding/embeddings.py:466
-#: ../dbgpt/rag/embedding/embeddings.py:558
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:542
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:708
 msgid "The name of the model to use for text embeddings."
-msgstr "テキスト埋め込みに使用するモデル名。"
+msgstr "テキスト埋め込みに使用するモデルの名前。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:449
-msgid "Jina AI Embeddings"
-msgstr "Jina AI 埋め込み"
-
-#: ../dbgpt/rag/embedding/embeddings.py:452
-msgid "Jina AI embeddings."
-msgstr "Jina AI 埋め込み。"
-
-#: ../dbgpt/rag/embedding/embeddings.py:458
-msgid "Your API key for the Jina AI API."
-msgstr "Jina AI API 用のAPIキー。"
-
-#: ../dbgpt/rag/embedding/embeddings.py:531
-msgid "OpenAPI Embeddings"
-msgstr "OpenAPI 埋め込み"
-
-#: ../dbgpt/rag/embedding/embeddings.py:534
-msgid "OpenAPI embeddings."
-msgstr "OpenAPI 埋め込み。"
-
-#: ../dbgpt/rag/embedding/embeddings.py:537
-msgid "API URL"
-msgstr "API URL"
-
-#: ../dbgpt/rag/embedding/embeddings.py:542
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:648
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:692
 msgid "The URL of the embeddings API."
-msgstr "埋め込みAPIのURL。"
+msgstr "埋め込み API の URL。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:550
-msgid "Your API key for the Open API."
-msgstr "Open API 用のAPIキー。"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:654
+msgid "The API key for the embeddings API."
+msgstr "埋め込み API の API キー。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:561
-msgid "Timeout"
-msgstr "タイムアウト"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:661
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:186
+msgid ""
+"The real model name to pass to the provider, default is None. If backend is "
+"None, use name as the real model name."
+msgstr "プロバイダーに渡す実際のモデル名で、デフォルトは None です。バックエンドが None の場合、名前を実際のモデル名として使用します。"
 
-#: ../dbgpt/rag/embedding/embeddings.py:566
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:670
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:716
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:195
 msgid "The timeout for the request in seconds."
 msgstr "リクエストのタイムアウト時間（秒）。"
 
-#: ../dbgpt/rag/chunk_manager.py:29
-msgid "Chunk Strategy"
-msgstr "チャンク戦略"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:681
+msgid "OpenAPI Embeddings"
+msgstr "OpenAPI 埋め込み"
 
-#: ../dbgpt/rag/chunk_manager.py:32
-msgid "chunk strategy"
-msgstr "チャンク戦略"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:684
+msgid "OpenAPI embeddings."
+msgstr "OpenAPI 埋め込み。"
 
-#: ../dbgpt/rag/chunk_manager.py:37
-msgid "Text Splitter"
-msgstr "テキスト分割器"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:687
+msgid "API URL"
+msgstr "API URL"
 
-#: ../dbgpt/rag/chunk_manager.py:41
-msgid "Text splitter, if not set, will use the default text splitter."
-msgstr ""
-"テキスト分割器。設定されていない場合、デフォルトのテキスト分割器が使用されま"
-"す。"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:700
+msgid "Your API key for the Open API."
+msgstr "Open API の API キーです。"
 
-#: ../dbgpt/rag/chunk_manager.py:47
-msgid "Splitter Type"
-msgstr "分割器タイプ"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:711
+msgid "Timeout"
+msgstr "タイムアウト"
 
-#: ../dbgpt/rag/chunk_manager.py:50
-msgid "Splitter type"
-msgstr "分割器タイプ"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:913
+msgid "The GTE models are trained by Alibaba DAMO Academy, supporting Chinese."
+msgstr "GTE モデルはアリババダモアカデミーによって訓練され、中国語をサポートしています。"
 
-#: ../dbgpt/rag/chunk_manager.py:55
-#: ../dbgpt/rag/text_splitter/text_splitter.py:406
-msgid "Chunk Size"
-msgstr "チャンクサイズ"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:923
+msgid "The GTE models are trained by Alibaba DAMO Academy, supporting English."
+msgstr "GTE モデルはアリババダモアカデミーによって訓練され、英語をサポートしています。"
 
-#: ../dbgpt/rag/chunk_manager.py:58
-msgid "Chunk size"
-msgstr "チャンクサイズ"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:933
+msgid ""
+"The embedding model are trained by MokaAI, this version support English and "
+"Chinese."
+msgstr "この埋め込みモデルは MokaAI によって訓練され、このバージョンでは英語と中国語をサポートしています。"
 
-#: ../dbgpt/rag/chunk_manager.py:63
-msgid "Chunk Overlap"
-msgstr "チャンクオーバーラップ"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:943
+msgid ""
+"The embedding model are trained by MokaAI, this version support Chinese."
+msgstr "この埋め込みモデルは MokaAI によって訓練され、このバージョンでは中国語をサポートしています。"
 
-#: ../dbgpt/rag/chunk_manager.py:74
-msgid "Chunk separator"
-msgstr "チャンクセパレータ"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:958
+msgid "The embedding model are trained by HKUNLP, it support English."
+msgstr "この埋め込みモデルは香港大学自然言語処理研究室 (HKUNLP) によって訓練され、英語をサポートしています。"
 
-#: ../dbgpt/rag/chunk_manager.py:79
-msgid "Enable Merge"
-msgstr "マージを有効にする"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:976
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/embeddings.py:986
+msgid "The embedding model are trained by OpenAI, it support English."
+msgstr "この埋め込みモデルは OpenAI によって訓練され、英語をサポートしています。"
 
-#: ../dbgpt/rag/chunk_manager.py:82
-msgid "Enable chunk merge by chunk_size."
-msgstr "チャンクサイズによるチャンクマージを有効にする"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:45
+msgid "Max length for input sequences. Longer sequences will be truncated."
+msgstr "入力シーケンスの最大長です。より長いシーケンスは切り捨てられます。"
 
-#: ../dbgpt/rag/retriever/rerank.py:56
-msgid "Default Ranker"
-msgstr "デフォルトランカー"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:173
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:333
+msgid "The URL of the rerank API."
+msgstr "リランク API の URL です。"
 
-#: ../dbgpt/rag/retriever/rerank.py:59
-msgid "Default ranker(Rank by score)."
-msgstr "デフォルトランカー（スコアによるランク）。"
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:179
+#:../packages/dbgpt-core/src/dbgpt/rag/embedding/rerank.py:339
+msgid "The API key for the rerank API."
+msgstr "リランク API の API キーです。"
 
-#: ../dbgpt/rag/retriever/rerank.py:62
-msgid "Top k"
-msgstr "上位 k"
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:18
+msgid "Chunk Manager Operator"
+msgstr "チャンクマネージャオペレーター"
 
-#: ../dbgpt/rag/retriever/rerank.py:65
-msgid "The number of top k documents."
-msgstr "上位 k ドキュメントの数。"
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:20
+msgid " Split Knowledge Documents into chunks."
+msgstr "知識ドキュメントをチャンクに分割します。"
 
-#: ../dbgpt/rag/retriever/rewrite.py:27
-msgid "Query rewrite."
-msgstr "クエリの書き換え。"
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:24
+msgid "Chunk Split Parameters"
+msgstr "チャンク分割パラメータ"
 
-#: ../dbgpt/rag/retriever/rewrite.py:33
-msgid "The LLM model name."
-msgstr "LLM モデル名。"
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:27
+msgid "Chunk Split Parameters."
+msgstr "チャンク分割パラメータ。"
 
-#: ../dbgpt/rag/retriever/rewrite.py:39
-msgid "The llm client."
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:35
+msgid "Knowledge"
+msgstr "知識"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:38
+msgid "The knowledge to be loaded."
+msgstr "読み込む知識。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:43
+msgid "Chunks"
+msgstr "チャンク"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/chunk_manager.py:46
+msgid "The split chunks by chunk manager."
+msgstr "チャンクマネージャーによって分割されたチャンク。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:16
+msgid "Query Rewrite Operator"
+msgstr "クエリ書き換えオペレーター"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:19
+msgid "Query rewrite operator."
+msgstr "クエリ書き換えオペレーター。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:22
+msgid "Query context"
+msgstr "クエリコンテキスト"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:22
+msgid "query context"
+msgstr "クエリコンテキスト"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:27
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:31
+msgid "Rewritten queries"
+msgstr "書き換えられたクエリ"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:36
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:38
+msgid "LLM Client"
+msgstr "LLM クライアント"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:39
+msgid "The LLM Client."
 msgstr "LLM クライアント。"
 
-#: ../dbgpt/rag/retriever/rewrite.py:42
-msgid "Language"
-msgstr "言語"
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:42
+msgid "Model name"
+msgstr "モデル名"
 
-#: ../dbgpt/rag/retriever/rewrite.py:45
-msgid "The language of the query rewrite prompt."
-msgstr "クエリの書き換えプロンプトの言語。"
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:47
+msgid "LLM model name."
+msgstr "LLM モデル名。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:206
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:50
+msgid "Prompt language"
+msgstr "プロンプト言語"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:55
+msgid "Prompt language."
+msgstr "プロンプト言語。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:58
+msgid "Number of results"
+msgstr "結果の数"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/operators/rewrite.py:63
+msgid "rewrite query number."
+msgstr "クエリの書き換え数。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:212
 msgid "Character Text Splitter"
-msgstr "文字テキスト分割器"
+msgstr "文字単位のテキスト分割器"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:214
-#: ../dbgpt/rag/text_splitter/text_splitter.py:425
-#: ../dbgpt/rag/text_splitter/text_splitter.py:807
-#: ../dbgpt/rag/text_splitter/text_splitter.py:850
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:217
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:428
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:830
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:873
+msgid "Separator"
+msgstr "セパレーター"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:220
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:431
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:833
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:876
 msgid "Separator to split the text."
-msgstr "テキストを分割するセパレータ。"
+msgstr "テキストを分割するためのセパレーター。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:251
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:257
 msgid "Recursive Character Text Splitter"
-msgstr "再帰的文字テキスト分割器"
+msgstr "再帰的文字単位テキスト分割器"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:265
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:271
 msgid "Split text by characters recursively."
-msgstr "文字を再帰的に分割する。"
+msgstr "文字単位でテキストを再帰的に分割します。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:330
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:336
 msgid "Spacy Text Splitter"
 msgstr "Spacy テキスト分割器"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:338
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:341
+msgid "Pipeline"
+msgstr "パイプライン"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:344
 msgid "Spacy pipeline to use for tokenization."
 msgstr "トークン化に使用する Spacy パイプライン。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:343
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:349
 msgid "Split text by sentences using Spacy."
-msgstr "Spacy を使用して文章ごとにテキストを分割する。"
+msgstr "Spacy を使って文単位でテキストを分割します。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:393
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:399
 msgid "Markdown Header Text Splitter"
-msgstr "Markdown ヘッダーテキスト分割器"
+msgstr "Markdown 見出しテキスト分割器"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:401
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:404
+msgid "Return Each Line"
+msgstr "各行を返す"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:407
 msgid "Return each line with associated headers."
-msgstr "関連するヘッダーを持つ各行を返す。"
+msgstr "関連する見出し付きで各行を返します。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:409
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:412
+msgid "Chunk Size"
+msgstr "チャンクサイズ"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:415
 msgid "Size of each chunk."
 msgstr "各チャンクのサイズ。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:430
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:420
+msgid "Chunk Overlap"
+msgstr "チャンクの重複"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:423
+msgid "Overlap between chunks."
+msgstr "チャンク間の重複。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:436
 msgid "Split markdown text by headers."
-msgstr "ヘッダーで Markdown テキストを分割する。"
+msgstr "見出しによって Markdown テキストを分割します。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:799
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:825
 msgid "Separator Text Splitter"
-msgstr "セパレータテキスト分割器"
+msgstr "セパレーターテキスト分割器"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:812
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:838
 msgid "Split text by separator."
-msgstr "セパレータでテキストを分割する。"
+msgstr "セパレーターでテキストを分割します。"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:842
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:868
 msgid "Page Text Splitter"
 msgstr "ページテキスト分割器"
 
-#: ../dbgpt/rag/text_splitter/text_splitter.py:855
+#:../packages/dbgpt-core/src/dbgpt/rag/text_splitter/text_splitter.py:881
 msgid "Split text by page."
-msgstr "ページごとにテキストを分割する。"
+msgstr "ページ単位でテキストを分割します。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:26
+msgid "Query Rewrite"
+msgstr "クエリの書き換え"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:29
+msgid "Query rewrite."
+msgstr "クエリの書き換え。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:35
+msgid "The LLM model name."
+msgstr "LLM モデルの名前"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:41
+msgid "The llm client."
+msgstr "LLM クライアント"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:44
+msgid "Language"
+msgstr "言語"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rewrite.py:47
+msgid "The language of the query rewrite prompt."
+msgstr "クエリの書き換えプロンプトの言語"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:88
+msgid "Default Ranker"
+msgstr "デフォルトランカー"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:91
+msgid "Default ranker(Rank by score)."
+msgstr "デフォルトランカー（スコアによるランキング）。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:94
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:184
+msgid "Top k"
+msgstr "上位 k"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:97
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:187
+msgid "The number of top k documents."
+msgstr "上位 k のドキュメント数"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:178
+msgid "CrossEncoder Rerank"
+msgstr "クロスエンコーダー再ランキング"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:181
+msgid "CrossEncoder ranker."
+msgstr "クロスエンコーダーランカー。"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:190
+msgid "Rerank Model"
+msgstr "再ランキングモデル"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:193
+msgid "rerank model name, e.g., 'BAAI/bge-reranker-base'."
+msgstr "再ランキングモデルの名前、例：'BAAI/bge-reranker-base'"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:196
+msgid "device"
+msgstr "デバイス"
+
+#:../packages/dbgpt-core/src/dbgpt/rag/retriever/rerank.py:199
+msgid "device name, e.g., 'cpu'."
+msgstr "デバイス名、例えば 'cpu'。"

@@ -49,8 +49,8 @@ curl -X POST "http://localhost:5670/api/v2/serve/evaluate/evaluation"
 
 
 ```python
-from dbgpt.client import Client
-from dbgpt.client.evaluation import run_evaluation
+from dbgpt_client import Client
+from dbgpt_client.evaluation import run_evaluation
 from dbgpt.serve.evaluate.api.schemas import EvaluateServeRequest
 
 DBGPT_API_KEY = "dbgpt"

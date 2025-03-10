@@ -1,4 +1,5 @@
 import { apiInterceptors, postChatModeParamsFileLoad } from '@/client/api';
+import { ChatContentContext } from '@/pages/chat';
 import { dbMapper } from '@/utils';
 import { FolderAddOutlined, LoadingOutlined, SwapOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
@@ -12,6 +13,7 @@ const Resource: React.FC = () => {
   const { appInfo, resourceList, scene, model, conv_uid, getChatHistoryRun, setResource, resource } =
     useContext(MobileChatContext);
 
+  const { temperatureValue, maxNewTokensValue } = useContext(ChatContentContext);
   const [selectedVal, setSelectedVal] = useState<any>(null);
 
   // 资源类型
@@ -51,6 +53,8 @@ const Resource: React.FC = () => {
           chatMode: scene,
           data: formData,
           model,
+          temperatureValue,
+          maxNewTokensValue,
           config: {
             timeout: 1000 * 60 * 60,
           },

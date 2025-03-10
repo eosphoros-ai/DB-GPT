@@ -1,0 +1,197 @@
+[project]
+name = "dbgpt-acc-auto"
+version = "0.7.0"
+description = "Add your description here"
+authors = [
+    { name = "csunny", email = "cfqcsunny@gmail.com" }
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/eosphoros-ai/DB-GPT"
+Documentation = "http://docs.dbgpt.cn/docs/overview"
+Repository = "https://github.com/eosphoros-ai/DB-GPT.git"
+Issues = "https://github.com/eosphoros-ai/DB-GPT/issues"
+
+[project.optional-dependencies]
+# Auto install dependencies
+auto = [
+    # Starting from PyTorch 2.3.0, the minimum requirement for macOS is macOS 11.0+ ARM64.
+    "torch>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torch>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchaudio>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torchaudio>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchvision>=0.17.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torchvision>=0.17.1,<0.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
+cpu = [
+    # Starting from PyTorch 2.3.0, the minimum requirement for macOS is macOS 11.0+ ARM64.
+    "torch>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torch>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchaudio>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torchaudio>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchvision>=0.17.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torchvision>=0.17.1,<0.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
+cuda118 = [
+    "torch>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
+    "torchvision>=0.17.1; sys_platform == 'win32' or sys_platform == 'linux'",
+    "torchaudio>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
+]
+cuda121 = [
+    "torch>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
+    "torchvision>=0.17.1; sys_platform == 'win32' or sys_platform == 'linux'",
+    "torchaudio>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
+]
+# CUDA 12.4, Need torch>=2.4.0
+cuda124 = [
+    "torch>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
+    "torchvision>=0.17.1; sys_platform == 'win32' or sys_platform == 'linux'",
+    "torchaudio>=2.2.1; sys_platform == 'win32' or sys_platform == 'linux'",
+]
+#rocm60 = [
+#    "torch>=2.3.0,<2.4.0;sys_platform == 'linux'",
+#    "torchvision>=0.18.0,<0.19.0;sys_platform == 'linux'",
+#    "torchaudio>=2.3.0,<2.4.0;sys_platform == 'linux'",
+#]
+vllm = [
+    # Just support GPU version on Linux
+    "vllm>=0.7.0; sys_platform == 'linux'",
+]
+# vllm_pascal = [
+#    # https://github.com/sasha0552/pascal-pkgs-ci
+#    "vllm-pascal==0.7.2; sys_platform == 'linux'"
+# ]
+quant_bnb = [
+    "bitsandbytes>=0.39.0; sys_platform == 'win32' or sys_platform == 'linux'",
+    "accelerate"
+]
+# NVIDIA:
+#   - 1. Capabilities: 7.5 or higher
+#   - 2. CUDA: 11.8 or higher
+# AMD:
+#   - 1. Your ROCm version must be compatible with Triton.
+quant_awq = [
+    "autoawq"
+]
+quant_gptqmodel = [
+    "optimum",
+    "device-smi>=0.3.3",
+    "tokenicer",
+    # Required transformers>4.48.3
+    "gptqmodel"
+]
+quant_gptq = [
+    "optimum",
+    "auto-gptq",
+]
+flash_attn = [
+    # "torch>=2.2.1",
+    "dbgpt-acc-flash-attn"
+]
+
+[dependency-groups]
+auto = [
+    # Starting from PyTorch 2.3.0, the minimum requirement for macOS is macOS 11.0+ ARM64.
+    "torch>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torch>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchaudio>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torchaudio>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchvision>=0.17.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    "torchvision>=0.17.1,<0.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
+
+[tool.uv]
+managed = true
+dev-dependencies = []
+conflicts = [
+    [
+        { extra = "auto" },
+        { extra = "cpu" },
+        { extra = "cuda118" },
+        { extra = "cuda121" },
+        { extra = "cuda124" },
+    ],
+]
+default-groups = ["auto"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-rocm60"
+url = "https://download.pytorch.org/whl/rocm6.0"
+explicit = true
+
+#[[tool.uv.index]]
+#name = "vllm-pascal"
+#url = "https://sasha0552.github.io/pascal-pkgs-ci/"
+#explicit = true
+
+[tool.uv.sources]
+torch = [
+    # MacOS support CPU only
+    { index = "pytorch-cpu", marker = "platform_system == 'Darwin'" },
+    # Windows use CPU or CUDA
+    { index = "pytorch-cpu", marker = "platform_system == 'Windows'", extra="cpu"},
+    { index = "pytorch-cu118", marker = "platform_system == 'Windows'", extra = "cuda118" },
+    { index = "pytorch-cu121", marker = "platform_system == 'Windows'", extra = "cuda121" },
+    { index = "pytorch-cu124", marker = "platform_system == 'Windows'", extra = "cuda124" },
+    # Linux support all versions
+    { index = "pytorch-cpu", marker = "platform_system == 'Linux'", extra = "cpu" },
+    { index = "pytorch-cu118", marker = "platform_system == 'Linux'", extra = "cuda118" },
+    { index = "pytorch-cu121", marker = "platform_system == 'Linux'", extra = "cuda121" },
+    { index = "pytorch-cu124", marker = "platform_system == 'Linux'", extra = "cuda124" },
+#    { index = "pytorch-rocm60", marker = "platform_system == 'Linux'", extra = "rocm60" },
+]
+torchvision = [
+    { index = "pytorch-cpu", marker = "platform_system == 'Darwin'" },
+    { index = "pytorch-cpu", marker = "platform_system == 'Windows'", extra = "cpu" },
+    { index = "pytorch-cu118", marker = "platform_system == 'Windows'", extra = "cuda118" },
+    { index = "pytorch-cu121", marker = "platform_system == 'Windows'", extra = "cuda121" },
+    { index = "pytorch-cu124", marker = "platform_system == 'Windows'", extra = "cuda124" },
+    { index = "pytorch-cpu", marker = "platform_system == 'Linux'", extra = "cpu" },
+    { index = "pytorch-cu118", marker = "platform_system == 'Linux'", extra = "cuda118" },
+    { index = "pytorch-cu121", marker = "platform_system == 'Linux'", extra = "cuda121" },
+    { index = "pytorch-cu124", marker = "platform_system == 'Linux'", extra = "cuda124" },
+#    { index = "pytorch-rocm60", marker = "platform_system == 'Linux'", extra = "rocm60" },
+]
+torchaudio = [
+    { index = "pytorch-cpu", marker = "platform_system == 'Darwin'" },
+    { index = "pytorch-cpu", marker = "platform_system == 'Windows'", extra = "cpu" },
+    { index = "pytorch-cu118", marker = "platform_system == 'Windows'", extra = "cuda118" },
+    { index = "pytorch-cu121", marker = "platform_system == 'Windows'", extra = "cuda121" },
+    { index = "pytorch-cu124", marker = "platform_system == 'Windows'", extra = "cuda124" },
+    { index = "pytorch-cpu", marker = "platform_system == 'Linux'", extra = "cpu" },
+    { index = "pytorch-cu118", marker = "platform_system == 'Linux'", extra = "cuda118" },
+    { index = "pytorch-cu121", marker = "platform_system == 'Linux'", extra = "cuda121" },
+    { index = "pytorch-cu124", marker = "platform_system == 'Linux'", extra = "cuda124" },
+#    { index = "pytorch-rocm60", marker = "platform_system == 'Linux'", extra = "rocm60" },
+]
+#vllm-pascal = [
+#    { index = "vllm-pascal", marker = "platform_system == 'Linux'", extra = "vllm_pascal" },
+#]
+
+[tool.uv.build-isolation]
+# Disable build isolation for gptqmodel
+gptqmodel = false

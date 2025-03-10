@@ -15,7 +15,6 @@ from .agents.single_agent_dialogue_example import main as single_agent_main
 from .agents.sql_agent_dialogue_example import main as sql_main
 
 if __name__ == "__main__":
-
     # Run the examples
 
     ## Agent examples

@@ -19,7 +19,6 @@ const sidebars = {
   tutorials: [
       "tutorials/index",
   ],
-
   docs: [
     {
       type: "doc", 
@@ -33,7 +32,149 @@ const sidebars = {
       label: "Quickstart",
       
     },
+ {
+      type: "category",
+      label: "Installation",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        {
+          type: 'doc',
+          id: 'installation/sourcecode',
+        },
+        {
+//          type: 'doc',
+//          id: 'installation/integrations',
+              type: "category",
+              label: "Other Integrations",
+              collapsed: true,
+              collapsible: true,
+              items: [
+                {
+                  type: "doc",
+                  id: "installation/integrations"
+                },
+//                 {
+//              type: "category",
+//              label: "LLM Integrations",
+//              items: [
+//                {
+//                  type: "doc",
+//                  id: "installation/integrations/deepseek_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/ollama_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/claude_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/siliconflow_llm_install"
+//                },{
+//                  type: "doc",
+//                  id: "installation/integrations/gitee_llm_install"
+//                },
+//              ]
+//               },
+               {
+              type: "category",
+              label: "Datasource Integrations",
+              items: [
+                {
+                  type: "doc",
+                  id: "installation/integrations/clickhouse_install"
+                },{
+                  type: "doc",
+                  id: "installation/integrations/postgres_install"
+                },{
+                  type: "doc",
+                  id: "installation/integrations/duckdb_install"
+                },{
+                  type: "doc",
+                  id: "installation/integrations/mssql_install"
+                },
+              ]
+               },
+                 {
+              type: "category",
+              label: "RAG Integrations",
+              items: [
+                {
+                  type: "doc",
+                  id: "installation/integrations/graph_rag_install"
+                },
+                {
+                  type: "doc",
+                  id: "installation/integrations/oceanbase_rag_install"
+                },
+                {
+                  type: "doc",
+                  id: "installation/integrations/milvus_rag_install"
+                }
+              ]
+               },
 
+              ]
+        },
+        {
+          type: 'doc',
+          id: 'installation/docker',
+        },
+        {
+          type: 'doc',
+          id: 'installation/docker_compose',
+        },
+        {
+          type: 'category',
+          label: 'Model Service Deployment',
+          items: [
+            {
+              type: 'doc',
+              id: 'installation/model_service/stand_alone',
+            },
+            {
+              type: 'doc',
+              id: 'installation/model_service/cluster',
+            },
+            {
+              type: 'doc',
+              id: 'installation/model_service/cluster_ha',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Advanced Usage',
+          items: [
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/More_proxyllms',
+            },
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/ollama',
+            },
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/vLLM_inference',
+            },
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/Llamacpp_server',
+            },
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/OpenAI_SDK_call',
+            },
+          ],
+        },
+      ],
+      link: {
+        type: 'generated-index',
+        description: 'DB-GPT provides a wealth of installation and deployment options, supporting source code deployment, Docker deployment, cluster deployment and other modes. At the same time, it can also be deployed and installed based on the AutoDL image.',
+        slug: "installation",
+      },
+    },
     {
       type: "category", 
       label: "AWEL(Agentic Workflow Expression Language)",
@@ -218,77 +359,6 @@ const sidebars = {
         description: "AWEL (Agentic Workflow Expression Language) is an intelligent agent workflow expression language specifically designed for the development of large-model applications",
       },
     },
-
-    {
-      type: "category",
-      label: "Installation",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        {
-          type: 'doc',
-          id: 'installation/sourcecode',
-        },
-        {
-          type: 'doc',
-          id: 'installation/docker',
-        },
-        {
-          type: 'doc',
-          id: 'installation/docker_compose',
-        },
-        {
-          type: 'category',
-          label: 'Model Service Deployment',
-          items: [
-            {
-              type: 'doc',
-              id: 'installation/model_service/stand_alone',
-            },
-            {
-              type: 'doc',
-              id: 'installation/model_service/cluster',
-            },
-            {
-              type: 'doc',
-              id: 'installation/model_service/cluster_ha',
-            },
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Advanced Usage',
-          items: [
-            {
-              type: 'doc',
-              id: 'installation/advanced_usage/More_proxyllms',
-            },
-            {
-              type: 'doc',
-              id: 'installation/advanced_usage/ollama',
-            },
-            {
-              type: 'doc',
-              id: 'installation/advanced_usage/vLLM_inference',
-            },
-            {
-              type: 'doc',
-              id: 'installation/advanced_usage/Llamacpp_server',
-            },
-            {
-              type: 'doc',
-              id: 'installation/advanced_usage/OpenAI_SDK_call',
-            },
-          ],
-        },
-      ],
-      link: {
-        type: 'generated-index',
-        description: 'DB-GPT provides a wealth of installation and deployment options, supporting source code deployment, Docker deployment, cluster deployment and other modes. At the same time, it can also be deployed and installed based on the AutoDL image.',
-        slug: "installation",
-      },
-    },
-
     {
       type: "category",
       label: "Application",
@@ -736,6 +806,23 @@ const sidebars = {
       id: "use_cases",
       label: "Use Cases"
     },
+
+    {
+      type: 'category',
+      label: 'Config Reference',
+      link: {
+        type: 'generated-index',
+        title: 'Config Reference',
+        description: 'All system configurable parameters and their detailed descriptions',
+        // slug: '/config-reference'
+      },
+      items: [
+        {
+          type: 'autogenerated',
+          dirName: 'config-reference' // make sure it matches the generated docs directory
+        }
+      ]
+    }
   ]
 };
 

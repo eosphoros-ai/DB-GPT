@@ -1,0 +1,64 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-en}"
+log_level = "INFO"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+light = true
+controller_addr = "${env:CONTROLLER_ADDR}"
+
+[service.web.database]
+type = "mysql"
+host = "${env:MYSQL_HOST}"
+port = "${env:MYSQL_PORT}"
+database = "${env:MYSQL_DATABASE}"
+user = "${env:MYSQL_USER}"
+password ="${env:MYSQL_PASSWORD}"
+
+# Model Configurations
+# Server Configurations
+[service.model.worker]
+host = "0.0.0.0"
+port = 8001
+worker_type = "${env:WORKER_TYPE:-llm}"
+controller_addr = "${env:CONTROLLER_ADDR}"
+
+[models]
+default_embedding = "${env:EMBEDDING_MODEL_NAME:-text-embedding-3-small}"
+
+[[models.llms]]
+name = "${env:LLM_MODEL_NAME:-gpt-4o}"
+provider = "${env:LLM_MODEL_PROVIDER:-proxy/openai}"
+api_base = "${env:OPENAI_API_BASE:-https://api.openai.com/v1}"
+api_key = "${env:OPENAI_API_KEY}"
+
+[[models.embeddings]]
+name = "${env:EMBEDDING_MODEL_NAME:-text-embedding-3-small}"
+provider = "${env:EMBEDDING_MODEL_PROVIDER:-proxy/openai}"
+api_url = "${env:EMBEDDING_MODEL_API_URL:-https://api.openai.com/v1/embeddings}"
+api_key = "${env:OPENAI_API_KEY}"
+
+[service.model.api]
+host = "0.0.0.0"
+port = 8100
+controller_addr = "${env:CONTROLLER_ADDR}"
+
+[service.model.controller]
+host = "0.0.0.0"
+port = 8000
+
+[service.model.controller.registry.database]
+type = "mysql"
+host = "${env:MYSQL_HOST}"
+port = "${env:MYSQL_PORT}"
+database = "${env:MYSQL_DATABASE}"
+user = "${env:MYSQL_USER}"
+password ="${env:MYSQL_PASSWORD}"
+
+[log]
+level = "DEBUG"

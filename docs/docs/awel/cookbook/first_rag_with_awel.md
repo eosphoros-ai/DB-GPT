@@ -73,7 +73,7 @@ store.
 import asyncio
 import shutil
 from dbgpt.core.awel import DAG
-from dbgpt.rag import ChunkParameters
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.knowledge import KnowledgeType
 from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
@@ -252,7 +252,7 @@ import asyncio
 import shutil
 from dbgpt.core.awel import DAG, MapOperator, InputOperator, JoinOperator, InputSource
 from dbgpt.core.operators import PromptBuilderOperator, RequestBuilderOperator
-from dbgpt.rag import ChunkParameters
+from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.knowledge import KnowledgeType
 from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator,
     EmbeddingRetrieverOperator

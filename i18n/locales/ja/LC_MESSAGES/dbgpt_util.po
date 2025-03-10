@@ -1,15 +1,14 @@
-# Japanese translations for PACKAGE package
-# PACKAGE パッケージに対する英訳.
-# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# Japanese translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2024.
+# Automatically generated, 2025.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
-"PO-Revision-Date: 2024-03-24 22:53+0800\n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: ja\n"
@@ -18,10 +17,108 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../dbgpt/util/serialization/json_serialization.py:23
-msgid "Json Serializer"
-msgstr ""
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:30
+msgid ""
+"The module to scan, if not set, will scan all DB-GPT "
+"modules('dbgpt,dbgpt_client,dbgpt_ext,dbgpt_serve,dbgpt_app')."
+msgstr "スキャンするモジュール。設定されていない場合は、すべての DB-GPT モジュール ('dbgpt, dbgpt_client, dbgpt_ext, dbgpt_serve, dbgpt_app') をスキャンします。"
 
-#: ../dbgpt/util/serialization/json_serialization.py:26
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:40
+msgid ""
+"The output path, if not set, will print to packages/dbgpt-serve/src/"
+"dbgpt_serve/flow/compat/"
+msgstr "出力パス。設定されていない場合は、packages/dbgpt-serve/src/dbgpt_serve/flow/compat/ に出力されます。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:50
+msgid ""
+"The current version of the flow, if not set, will read from dbgpt.__version__"
+msgstr "フローの現在のバージョン。設定されていない場合は、dbgpt.__version__ から読み込みます。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:59
+msgid ""
+"The last version to compatible, if not set, will big than the current "
+"version by one minor version."
+msgstr "互換対象の最後のバージョン。設定されていない場合は、現在のバージョンよりマイナーバージョンが1つ大きいバージョンになります。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:75
+msgid "Repos"
+msgstr "リポジトリ一覧"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:76
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:408
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:498
+msgid "Repository"
+msgstr "リポジトリ"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:77
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:499
+msgid "Path"
+msgstr "パス"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:406
+msgid "dbgpts In All Repos"
+msgstr "すべてのリポジトリ内の dbgpts"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:409
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:497
+msgid "Type"
+msgstr "タイプ"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:410
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:496
+msgid "Name"
+msgstr "名前"
+
+#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:494
+msgid "Installed dbgpts"
+msgstr "インストールされた dbgpts"
+
+#:../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:23
+msgid "Json Serializer"
+msgstr "JSON シリアライザー"
+
+#:../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:26
 msgid "The serializer for serializing data with json format."
-msgstr ""
+msgstr "JSON 形式でデータをシリアライズするためのシリアライザー。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/utils.py:40
+msgid "Logging level, just support FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+msgstr "ログレベルです。サポートされているのは FATAL、ERROR、WARNING、INFO、DEBUG、NOTSET です。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/utils.py:56
+msgid "The filename to store logs"
+msgstr "ログを保存するファイル名"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:249
+msgid "The file to store the tracer, e.g. dbgpt_webserver_tracer.jsonl"
+msgstr "トレーサーを保存するファイル、例えば dbgpt_webserver_tracer.jsonl"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:256
+msgid "The root operation name of the tracer"
+msgstr "トレーサーのルート操作名"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:262
+msgid "The exporter of the tracer, e.g. telemetry"
+msgstr "トレーサーのエクスポーター、例えば telemetry"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:269
+msgid ""
+"The endpoint of the OpenTelemetry Protocol, you can set '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}' to use the environment variable"
+msgstr "OpenTelemetry プロトコルのエンドポイントです。環境変数を使用するには '${env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}' を設定してください。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:279
+msgid ""
+"Whether to use insecure connection, you can set '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}' to use the environment "
+msgstr "セキュアでない接続を使用するかどうかです。環境変数を使用するには '${env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}' を設定してください。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:288
+msgid ""
+"The timeout of the connection, in seconds, you can set '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}' to use the environment "
+msgstr "接続のタイムアウト時間（秒単位）です。環境変数を使用するには '${env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}' を設定してください。"
+
+#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:296
+msgid "The class of the tracer storage"
+msgstr "トレーサーのストレージクラス"

@@ -4,7 +4,7 @@ SCRIPT_LOCATION=$0
 cd "$(dirname "$SCRIPT_LOCATION")"
 WORK_DIR=$(pwd)
 
-BASE_IMAGE_DEFAULT="nvidia/cuda:12.1.0-runtime-ubuntu22.04"
+BASE_IMAGE_DEFAULT="nvidia/cuda:12.1.0-devel-ubuntu22.04"
 BASE_IMAGE_DEFAULT_CPU="ubuntu:22.04"
 
 BASE_IMAGE=$BASE_IMAGE_DEFAULT
@@ -19,12 +19,13 @@ BUILD_LOCAL_CODE="true"
 LOAD_EXAMPLES="true"
 BUILD_NETWORK=""
 DB_GPT_INSTALL_MODEL="default"
-
+DEFAULT_EXTRAS="proxy_openai,rag,storage_chromadb,quant_bnb"
+EXTRAS=""
 DOCKERFILE="Dockerfile"
 IMAGE_NAME_SUFFIX=""
 
 usage () {
-    echo "USAGE: $0 [--base-image nvidia/cuda:12.1.0-runtime-ubuntu22.04] [--image-name db-gpt]"
+    echo "USAGE: $0 [--base-image nvidia/cuda:12.1.0-devel-ubuntu22.04] [--image-name db-gpt]"
     echo "  [-b|--base-image base image name] Base image name"
     echo "  [-n|--image-name image name] Current image name, default: db-gpt"
     echo "  [--image-name-suffix image name suffix] Image name suffix"
@@ -90,6 +91,11 @@ while [[ $# -gt 0 ]]; do
         shift # past argument
         shift # past value
         ;;
+        EXTRAS)
+        EXTRAS="$2"
+        shift # past argument
+        shift # past value
+        ;;
         -f|--dockerfile)
         DOCKERFILE="$2"
         shift # past argument
@@ -120,6 +126,10 @@ if [ -z "$IMAGE_NAME_ARGS" ]; then
     if [ "$DB_GPT_INSTALL_MODEL" == "openai" ]; then 
         # Use cpu image
         BASE_IMAGE=$BASE_IMAGE_DEFAULT_CPU
+        # Set extras if it is empty
+        if [ -z "$EXTRAS" ]; then
+            EXTRAS="proxy_openai,rag,storage_chromadb,cpu"
+        fi
     fi
 else
     # User input image is not empty
@@ -129,8 +139,11 @@ fi
 if [ -n "$IMAGE_NAME_SUFFIX" ]; then
     IMAGE_NAME="$IMAGE_NAME-$IMAGE_NAME_SUFFIX"
 fi
+if [ -z "$EXTRAS" ]; then
+    EXTRAS=$DEFAULT_EXTRAS
+fi
 
-echo "Begin build docker image, base image: ${BASE_IMAGE}, target image name: ${IMAGE_NAME}"
+echo "Begin build docker image, base image: ${BASE_IMAGE}, target image name: ${IMAGE_NAME}, extras: ${EXTRAS}"
 
 docker build $BUILD_NETWORK \
     --build-arg BASE_IMAGE=$BASE_IMAGE \
@@ -139,5 +152,6 @@ docker build $BUILD_NETWORK \
     --build-arg BUILD_LOCAL_CODE=$BUILD_LOCAL_CODE \
     --build-arg LOAD_EXAMPLES=$LOAD_EXAMPLES \
     --build-arg DB_GPT_INSTALL_MODEL=$DB_GPT_INSTALL_MODEL \
+    --build-arg EXTRAS=$EXTRAS \
     -f $DOCKERFILE \
     -t $IMAGE_NAME $WORK_DIR/../../

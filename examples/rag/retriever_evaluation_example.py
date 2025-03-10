@@ -4,8 +4,6 @@ from typing import Optional
 
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH, ROOT_PATH
 from dbgpt.core import Embeddings
-from dbgpt.rag import ChunkParameters
-from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.evaluation import RetrieverEvaluator
 from dbgpt.rag.evaluation.retriever import (
@@ -13,9 +11,11 @@ from dbgpt.rag.evaluation.retriever import (
     RetrieverMRRMetric,
     RetrieverSimilarityMetric,
 )
-from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.rag.operators import EmbeddingRetrieverOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.rag.operators import EmbeddingRetrieverOperator
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 
 def _create_embeddings(

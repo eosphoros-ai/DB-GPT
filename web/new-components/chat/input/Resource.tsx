@@ -21,6 +21,7 @@ const Resource: React.FC<{
   const { setResourceValue, appInfo, refreshHistory, refreshDialogList, modelValue, resourceValue } =
     useContext(ChatContentContext);
 
+  const { temperatureValue, maxNewTokensValue } = useContext(ChatContentContext);
   const searchParams = useSearchParams();
   const scene = searchParams?.get('scene') ?? '';
   const chatId = searchParams?.get('id') ?? '';
@@ -97,6 +98,8 @@ const Resource: React.FC<{
         chatMode: scene,
         data: formData,
         model: modelValue,
+        temperatureValue,
+        maxNewTokensValue,
         config: {
           timeout: 1000 * 60 * 60,
         },

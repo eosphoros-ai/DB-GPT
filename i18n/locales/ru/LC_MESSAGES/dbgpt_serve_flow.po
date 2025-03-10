@@ -1,0 +1,107 @@
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:32
+msgid "All AWEL Flows"
+msgstr "Все AWEL потоки"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:33
+msgid "Fetch all AWEL flows in the system"
+msgstr "Получить все AWEL потоки в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:40
+msgid "All AWEL Flow Nodes"
+msgstr "Все узлы AWEL потоков"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:41
+msgid "Fetch all AWEL flow nodes in the system"
+msgstr "Получить все узлы AWEL потоков в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:48
+msgid "All Variables"
+msgstr "Все переменные"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:49
+msgid "Fetch all variables in the system"
+msgstr "Получить все переменные в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:56
+msgid "All Secrets"
+msgstr "Все секреты"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:57
+msgid "Fetch all secrets in the system"
+msgstr "Получить все секреты в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:64
+msgid "All LLMs"
+msgstr "Все Large Language Model"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:65
+msgid "Fetch all LLMs in the system"
+msgstr "Получить все Large Language Model в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:72
+msgid "All Embeddings"
+msgstr "Все эмбеддинги"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:73
+msgid "Fetch all embeddings models in the system"
+msgstr "Получить все модели эмбеддингов в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:80
+msgid "All Rerankers"
+msgstr "Все переранжировщики"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:81
+msgid "Fetch all rerankers in the system"
+msgstr "Получить все переранжировщики в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:88
+msgid "All Data Sources"
+msgstr "Все источники данных"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:89
+msgid "Fetch all data sources in the system"
+msgstr "Получить все источники данных в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:96
+msgid "All Agents"
+msgstr "Все Агенты"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:97
+msgid "Fetch all agents in the system"
+msgstr "Получить всех Агентов в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:104
+msgid "All Knowledge Spaces"
+msgstr "Все пространства знаний"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:105
+msgid "Fetch all knowledge spaces in the system"
+msgstr "Получить все пространства знаний в системе"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:26
+msgid "Interval to load dbgpts from installed packages"
+msgstr "Интервал для загрузки DB-GPT из установленных пакетов"
+
+#:../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:29
+msgid "The key to encrypt the data"
+msgstr "Ключ для шифрования данных"

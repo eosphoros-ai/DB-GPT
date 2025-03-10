@@ -1,0 +1,21 @@
+version: '3.10'
+
+services:
+  hiveserver2:
+    image: apache/hive:4.0.1
+    container_name: hiveserver2
+    environment:
+      - SERVICE_NAME=hiveserver2
+    ports:
+      - "10000:10000"  # HiveServer2 JDBC Port
+      - "10002:10002"  # HiveServer2 Web UI Port
+    volumes:
+      - hive-warehouse:/opt/hive/data/warehouse  # Persist Hive data
+    networks:
+      - hive-network
+
+volumes:
+  hive-warehouse:  # For Hive data persistence
+
+networks:
+  hive-network:  # Custom network for Hive services

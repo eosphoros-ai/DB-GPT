@@ -1,15 +1,15 @@
 # Chinese translations for PACKAGE package
 # PACKAGE 软件包的简体中文翻译.
-# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2024.
+# Automatically generated, 2025.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-06 16:14+0800\n"
-"PO-Revision-Date: 2024-03-23 16:45+0800\n"
+"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: zh_CN\n"
@@ -17,900 +17,994 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:37
-msgid "Common Chat Prompt Template"
-msgstr "常见聊天提示模板"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:135
+msgid "Dict Http Body"
+msgstr "字典型 HTTP 请求体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:40
-msgid "The operator to build the prompt with static prompt."
-msgstr "用静态提示构建提示的原子。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:139
+msgid "Parse the request body as a dict or response body as a dict"
+msgstr "将请求体解析为字典或响应体解析为字典"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:44
-msgid "System Message"
-msgstr "系统消息"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:165
+msgid "String Http Body"
+msgstr "字符串型 HTTP 请求体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:49
-msgid "The system message."
-msgstr "系统消息。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:169
+msgid "Parse the request body as a string or response body as string"
+msgstr "将请求体解析为字符串或响应体解析为字符串"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:53
-msgid "Message placeholder"
-msgstr "消息占位符"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:195
+msgid "Request Http Body"
+msgstr "HTTP 请求体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:58
-msgid "The chat history message placeholder."
-msgstr "聊天历史消息占位符。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:199
+msgid "Parse the request body as a starlette Request"
+msgstr "将请求体解析为 Starlette 请求对象"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:61
-msgid "Human Message"
-msgstr "用户消息"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:227
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:110
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:225
+msgid "Common LLM Http Request Body"
+msgstr "通用 LLM HTTP 请求体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:67
-msgid "The human message."
-msgstr "用户消息。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:231
+msgid "Parse the request body as a common LLM http body"
+msgstr "将请求体解析为通用 LLM HTTP 请求体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:257
-msgid "Prompt Builder Operator"
-msgstr "提示构建器算子"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:307
+msgid "Common LLM Http Response Body"
+msgstr "通用 LLM HTTP 响应体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:259
-msgid "Build messages from prompt template."
-msgstr "从提示模板构建消息。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:311
+msgid "Parse the response body as a common LLM http body"
+msgstr "将响应体解析为通用 LLM HTTP 请求体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:263
-#: ../dbgpt/core/interface/operators/prompt_operator.py:350
-msgid "Chat Prompt Template"
-msgstr "聊天提示模板"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:759
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:991
+msgid "API Endpoint"
+msgstr "API 端点"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:266
-#: ../dbgpt/core/interface/operators/prompt_operator.py:353
-msgid "The chat prompt template."
-msgstr "聊天提示模板。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:759
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:996
+msgid "The API endpoint"
+msgstr "API 端点"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:271
-#: ../dbgpt/core/interface/operators/prompt_operator.py:381
-msgid "Prompt Input Dict"
-msgstr "提示输入字典"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:762
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:774
+msgid "Http Methods"
+msgstr "HTTP 方法"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:274
-#: ../dbgpt/core/interface/operators/prompt_operator.py:384
-msgid "The prompt dict."
-msgstr "提示字典。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:767
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:779
+msgid "The methods of the API endpoint"
+msgstr "API 端点的方法"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:279
-#: ../dbgpt/core/interface/operators/prompt_operator.py:389
-msgid "Formatted Messages"
-msgstr "格式化消息"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:769
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:783
+msgid "HTTP Method PUT"
+msgstr "HTTP 方法 PUT"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:283
-#: ../dbgpt/core/interface/operators/prompt_operator.py:393
-msgid "The formatted messages."
-msgstr "格式化的消息。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:770
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:784
+msgid "HTTP Method POST"
+msgstr "HTTP 方法 POST"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:343
-msgid "History Prompt Builder Operator"
-msgstr "历史提示构建器算子"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:781
+msgid "HTTP Method GET"
+msgstr "HTTP 方法 GET"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:345
-msgid "Build messages from prompt template and chat history."
-msgstr "从提示模板和聊天历史构建消息。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:782
+msgid "HTTP Method DELETE"
+msgstr "HTTP 方法 DELETE"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:356
-#: ../dbgpt/core/operators/flow/composer_operator.py:65
-msgid "History Key"
-msgstr "历史关键字"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:788
+msgid "Streaming Response"
+msgstr "流式响应"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:361
-msgid "The key of history in prompt dict."
-msgstr "提示字典中的历史关键字。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:793
+msgid "Whether the response is streaming"
+msgstr "响应是否为流式"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:364
-msgid "String History"
-msgstr "字符串历史"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:796
+msgid "Http Response Body"
+msgstr "HTTP 响应体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:369
-msgid "Whether to convert the history to string."
-msgstr "是否将历史转换为字符串。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:801
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1079
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1130
+msgid "The response body of the API endpoint"
+msgstr "API 端点的响应体"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:374
-msgid "History"
-msgstr "历史"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:805
+msgid "Response Media Type"
+msgstr "响应媒体类型"
 
-#: ../dbgpt/core/interface/operators/prompt_operator.py:378
-msgid "The history."
-msgstr "历史。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:810
+msgid "The response media type"
+msgstr "响应媒体类型"
 
-#: ../dbgpt/core/interface/operators/message_operator.py:122
-msgid "Chat History Load Operator"
-msgstr "历史提示构建器算子"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:813
+msgid "Http Status Code"
+msgstr "HTTP 状态码"
 
-#: ../dbgpt/core/interface/operators/message_operator.py:125
-msgid "The operator to load chat history from storage."
-msgstr "从存储加载聊天历史的算子"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:818
+msgid "The http status code"
+msgstr "HTTP 状态码"
 
-#: ../dbgpt/core/interface/operators/message_operator.py:128
-#: ../dbgpt/core/operators/flow/composer_operator.py:92
-msgid "Conversation Storage"
-msgstr "对话存储"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:829
+msgid "Dict Http Trigger"
+msgstr "字典 HTTP 触发器"
 
-#: ../dbgpt/core/interface/operators/message_operator.py:134
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:834
 msgid ""
-"The conversation storage, store the conversation items(Not include message "
-"items). If None, we will use InMemoryStorage."
-msgstr ""
+"Trigger your workflow by http request, and parse the request body as a dict"
+msgstr "通过 HTTP 请求触发工作流，并将请求体解析为字典"
 
-#: ../dbgpt/core/interface/operators/message_operator.py:139
-#: ../dbgpt/core/operators/flow/composer_operator.py:100
-msgid "Message Storage"
-msgstr "消息存储"
-
-#: ../dbgpt/core/interface/operators/message_operator.py:145
-msgid ""
-"The message storage, store the messages of one conversation. If None, we "
-"will use InMemoryStorage."
-msgstr ""
-
-#: ../dbgpt/core/interface/operators/message_operator.py:152
-#: ../dbgpt/core/interface/operators/llm_operator.py:105
-#: ../dbgpt/core/interface/operators/llm_operator.py:208
-#: ../dbgpt/core/interface/operators/llm_operator.py:223
-#: ../dbgpt/core/interface/operators/llm_operator.py:369
-#: ../dbgpt/core/operators/flow/composer_operator.py:118
-msgid "Model Request"
-msgstr "模型请求"
-
-#: ../dbgpt/core/interface/operators/message_operator.py:155
-msgid "The model request."
-msgstr "上游的模型请求。"
-
-#: ../dbgpt/core/interface/operators/message_operator.py:160
-msgid "Stored Messages"
-msgstr "存储的消息"
-
-#: ../dbgpt/core/interface/operators/message_operator.py:163
-msgid "The messages stored in the storage."
-msgstr "存储在存储中的消息。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:53
-msgid "Build Model Request"
-msgstr "构建模型请求"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:56
-msgid "Build the model request from the http request body."
-msgstr "从 HTTP 请求体构建模型请求。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:59
-msgid "Default Model Name"
-msgstr "默认模型名称"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:64
-msgid "The model name of the model request."
-msgstr "模型请求的模型名称。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:67
-msgid "Temperature"
-msgstr ""
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:72
-msgid "The temperature of the model request."
-msgstr "模型请求的温度。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:79
-msgid "Max New Tokens"
-msgstr ""
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:84
-msgid "The max new tokens of the model request."
-msgstr "最大新令牌数(token)。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:87
-msgid "Context Length"
-msgstr "上下文长度"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:92
-msgid "The context length of the model request."
-msgstr "模型请求的上下文长度。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:97
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:41
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:98
-#: ../dbgpt/core/awel/trigger/http_trigger.py:840
-#: ../dbgpt/core/awel/trigger/http_trigger.py:899
-#: ../dbgpt/core/awel/trigger/http_trigger.py:970
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1119
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1176
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1225
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:840
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:899
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:970
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1119
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1176
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1225
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:42
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:98
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:97
 msgid "Request Body"
 msgstr "请求体"
 
-#: ../dbgpt/core/interface/operators/llm_operator.py:100
-#: ../dbgpt/core/interface/operators/llm_operator.py:372
-#: ../dbgpt/core/interface/operators/llm_operator.py:458
-#: ../dbgpt/core/interface/operators/llm_operator.py:551
-#: ../dbgpt/core/interface/operators/llm_operator.py:559
-msgid "The input value of the operator."
-msgstr "算子的输入值。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:843
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1122
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1179
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1228
+msgid "The request body of the API endpoint"
+msgstr "API 端点的请求体"
 
-#: ../dbgpt/core/interface/operators/llm_operator.py:108
-#: ../dbgpt/core/interface/operators/llm_operator.py:226
-#: ../dbgpt/core/interface/operators/llm_operator.py:466
-#: ../dbgpt/core/interface/operators/llm_operator.py:611
-#: ../dbgpt/core/interface/operators/llm_operator.py:656
-msgid "The output value of the operator."
-msgstr "算子的输出值。"
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:888
+msgid "String Http Trigger"
+msgstr "字符串 HTTP 触发器"
 
-#: ../dbgpt/core/interface/operators/llm_operator.py:201
-msgid "Merge Model Request Messages"
-msgstr "合并模型请求消息"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:204
-msgid "Merge the model request from the input value."
-msgstr "从输入值中合并模型请求。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:211
-msgid "The model request of upstream."
-msgstr "上游的模型请求。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:214
-msgid "Model messages"
-msgstr "模型消息"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:217
-msgid "The model messages of upstream."
-msgstr "上游的模型消息。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:361
-msgid "LLM Branch Operator"
-msgstr "LLM 分支算子"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:365
-msgid "Branch the workflow based on the stream flag of the request."
-msgstr "根据请求的流标志分支工作流。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:377
-msgid "Streaming Model Request"
-msgstr "流式模型请求"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:380
-msgid "The streaming request, to streaming Operator."
-msgstr "流式请求，发送至流式算子。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:383
-msgid "Non-Streaming Model Request"
-msgstr "非流式模型请求"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:386
-msgid "The non-streaming request, to non-streaming Operator."
-msgstr "非流式请求，发送至非流式算子。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:448
-msgid "Map Model Output to Common Response Body"
-msgstr "将模型输出映射到通用响应体"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:451
-msgid "Map the model output to the common response body."
-msgstr "将模型输出映射到通用响应体。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:455
-#: ../dbgpt/core/interface/operators/llm_operator.py:511
-#: ../dbgpt/core/interface/operators/llm_operator.py:556
-#: ../dbgpt/core/interface/operators/llm_operator.py:607
-#: ../dbgpt/core/interface/output_parser.py:46
-#: ../dbgpt/core/interface/output_parser.py:55
-#: ../dbgpt/core/interface/output_parser.py:310
-#: ../dbgpt/core/interface/output_parser.py:351
-msgid "Model Output"
-msgstr "模型输出"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:463
-msgid "Common Response Body"
-msgstr "通用响应体"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:494
-msgid "Common Streaming Output Operator"
-msgstr "通用流式输出算子"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:498
-msgid "The common streaming LLM operator, for chat flow."
-msgstr "用于聊天流程的通用流式 LLM 算子。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:502
-msgid "Upstream Model Output"
-msgstr "上游模型输出"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:506
-#: ../dbgpt/core/interface/output_parser.py:50
-#: ../dbgpt/core/interface/output_parser.py:313
-#: ../dbgpt/core/interface/output_parser.py:354
-msgid "The model output of upstream."
-msgstr "上游的模型输出。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:516
-msgid "The model output after transform to common stream format"
-msgstr "转换为通用流格式后的模型输出"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:541
-msgid "Map String to ModelOutput"
-msgstr "将字符串映射到模型输出"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:544
-msgid "Map String to ModelOutput."
-msgstr "将字符串映射到模型输出。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:548
-msgid "String"
-msgstr "字符串"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:584
-msgid "LLM Branch Join Operator"
-msgstr "LLM 分支算子"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:588
-#: ../dbgpt/core/interface/operators/llm_operator.py:633
-msgid "Just keep the first non-empty output."
-msgstr "仅保留第一个非空输出。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:592
-msgid "Streaming Model Output"
-msgstr "模型流式输出"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:596
-#: ../dbgpt/core/interface/operators/llm_operator.py:641
-msgid "The streaming output."
-msgstr "上游模型流式输出"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:599
-msgid "Non-Streaming Model Output"
-msgstr "非流式模型请求"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:602
-#: ../dbgpt/core/interface/operators/llm_operator.py:647
-msgid "The non-streaming output."
-msgstr "非流式任务的名称。"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:629
-msgid "String Branch Join Operator"
-msgstr "LLM 分支算子"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:637
-msgid "Streaming String Output"
-msgstr "将字符串映射到模型输出"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:644
-msgid "Non-Streaming String Output"
-msgstr "非流式模型请求"
-
-#: ../dbgpt/core/interface/operators/llm_operator.py:652
-msgid "String Output"
-msgstr "将字符串映射到模型输出"
-
-#: ../dbgpt/core/interface/output_parser.py:38
-msgid "Base Output Operator"
-msgstr "通用流式输出算子"
-
-#: ../dbgpt/core/interface/output_parser.py:42
-msgid "The base LLM out parse."
-msgstr "基础 LLM 输出解析。"
-
-#: ../dbgpt/core/interface/output_parser.py:59
-msgid "The model output after parsing."
-msgstr "上游的模型输出。"
-
-#: ../dbgpt/core/interface/output_parser.py:303
-msgid "SQL Output Parser"
-msgstr "SQL 输出解析器"
-
-#: ../dbgpt/core/interface/output_parser.py:306
-msgid "Parse the SQL output of an LLM call."
-msgstr "解析 LLM 调用的 SQL 输出。"
-
-#: ../dbgpt/core/interface/output_parser.py:318
-msgid "Dict SQL Output"
-msgstr "SQL 字典输出"
-
-#: ../dbgpt/core/interface/output_parser.py:321
-#, fuzzy
-msgid "The dict output after parsing."
-msgstr "上游的模型输出。"
-
-#: ../dbgpt/core/interface/output_parser.py:342
-msgid "SQL List Output Parser"
-msgstr "SQL 列表输出解析器"
-
-#: ../dbgpt/core/interface/output_parser.py:346
-msgid "Parse the SQL list output of an LLM call, mostly used for dashboard."
-msgstr "解析 LLM 调用的 SQL 列表输出，主要用于 dashboard。"
-
-#: ../dbgpt/core/interface/output_parser.py:359
-msgid "List SQL Output"
-msgstr "SQL 列表输出"
-
-#: ../dbgpt/core/interface/output_parser.py:363
-msgid "The list output after parsing."
-msgstr "上游的模型输出。"
-
-#: ../dbgpt/core/interface/storage.py:391
-msgid "Memory Storage"
-msgstr "消息存储"
-
-#: ../dbgpt/core/interface/storage.py:394
-msgid "Save your data in memory."
-msgstr "将数据保存在内存中。"
-
-#: ../dbgpt/core/interface/storage.py:397
-msgid "Serializer"
-msgstr "序列化器"
-
-#: ../dbgpt/core/interface/storage.py:403
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:893
 msgid ""
-"The serializer for serializing the data. If not set, the default JSON "
-"serializer will be used."
-msgstr "用于序列化数据的序列化器。如果未设置，将使用默认的 JSON 序列化器。"
+"Trigger your workflow by http request, and parse the request body as a string"
+msgstr "通过 HTTP 请求触发工作流，并将请求体解析为字符串"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:42
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:903
+msgid "The request body of the API endpoint, parse as a json string"
+msgstr "API 端点的请求体，解析为 JSON 字符串"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:959
+msgid "Common LLM Http Trigger"
+msgstr "通用 LLM HTTP 触发器"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:964
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a "
+"common LLM http body"
+msgstr "通过 HTTP 请求触发工作流，并将请求体解析为通用 LLM HTTP 请求体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:974
+msgid "The request body of the API endpoint, parse as a common LLM http body"
+msgstr "API 端点的请求体，解析为通用 LLM HTTP 请求体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:979
+msgid "Request String Messages"
+msgstr "请求字符串消息"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:983
+msgid ""
+"The request string messages of the API endpoint, parsed from 'messages' "
+"field of the request body"
+msgstr "API 端点的请求字符串消息，从请求体中的 'messages' 字段解析而来"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1036
+msgid "Example Http Response"
+msgstr "示例 HTTP 响应"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1040
+msgid "Example Http Request"
+msgstr "示例 HTTP 请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1062
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1082
+msgid "Example Http Hello Operator"
+msgstr "示例 HTTP 问候算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1068
+msgid "Http Request Body"
+msgstr "HTTP 请求体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1071
+msgid "The request body of the API endpoint(Dict[str, Any])"
+msgstr "API 端点的请求体 (Dict[str, Any])"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1076
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1127
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:106
+msgid "Response Body"
+msgstr "响应体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1102
+msgid "Request Body To Dict Operator"
+msgstr "请求体转字典算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1107
+msgid "Prefix Key"
+msgstr "前缀键"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1113
+msgid "The prefix key of the dict, link 'message' or 'extra.info'"
+msgstr "字典的前缀键，例如 'message' 或 'extra.info'"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1161
+msgid "User Input Parsed Operator"
+msgstr "用户输入解析算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1166
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1215
+msgid "Key"
+msgstr "键"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1171
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1220
+msgid "The key of the dict, link 'user_input'"
+msgstr "字典的键，例如 'user_input'"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1184
+msgid "User Input Dict"
+msgstr "用户输入字典"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1187
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1236
+msgid "The user input dict of the API endpoint"
+msgstr "API 端点的用户输入字典"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1191
+msgid ""
+"User input parsed operator, parse the user input from request body and "
+"return as a dict"
+msgstr ""
+"用户输入解析算子，从请求体中解析用户输入并返回为字典"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1210
+msgid "Request Body Parsed To String Operator"
+msgstr "请求体解析为字符串算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1233
+msgid "User Input String"
+msgstr "用户输入字符串"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/http_trigger.py:1240
+msgid ""
+"User input parsed operator, parse the user input from request body and "
+"return as a string"
+msgstr ""
+"用户输入解析算子，从请求体中解析用户输入并返回为字符串"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:31
+msgid "Request Http Trigger"
+msgstr "HTTP 请求触发器"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:36
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a "
+"starlette Request"
+msgstr ""
+"通过 HTTP 请求触发工作流，并将请求体解析为 Starlette 请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:46
+msgid "The request body of the API endpoint, parse as a starlette Request"
+msgstr "API 端点的请求体，解析为 Starlette 请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:92
+msgid "HTTP Sender"
+msgstr "HTTP 发送器"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:95
+msgid "Send a HTTP request to a specified endpoint"
+msgstr "向指定端点发送 HTTP 请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:101
+msgid "The request body to send"
+msgstr "要发送的请求体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:109
+msgid "The response body of the HTTP request"
+msgstr "HTTP 请求的响应体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:114
+msgid "HTTP Address"
+msgstr "HTTP 地址"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:115
+msgid "address"
+msgstr "地址"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:117
+msgid "The address to send the HTTP request to"
+msgstr "发送 HTTP 请求的目标地址"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:122
+msgid "Timeout"
+msgstr "超时时间"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:127
+msgid "The timeout of the HTTP request in seconds"
+msgstr "HTTP 请求的超时时间（秒）"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:130
+msgid "Token"
+msgstr "Token"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:135
+msgid "The token to use for the HTTP request"
+msgstr "用于 HTTP 请求的 Token"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:138
+msgid "Cookies"
+msgstr "Cookies"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/awel/trigger/ext_http_trigger.py:143
+msgid "The cookies to use for the HTTP request"
+msgstr "用于 HTTP 请求的 Cookies"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:42
 msgid "Conversation Composer Operator"
-msgstr "对话组合算子"
+msgstr "对话编排算子"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:46
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:46
 msgid ""
 "A composer operator for conversation.\n"
 "Including chat history handling, prompt composing, etc. Output is "
 "ModelRequest."
 msgstr ""
-"用于对话的组合算子。\n"
-"包括聊天历史处理、提示组合等。输出为模型请求。"
+"用于对话的编排算子。\n"
+"包括聊天历史处理、提示词编排等。输出为 ModelRequest。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:51
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:51
 msgid "Prompt Template"
-msgstr "提示模板"
+msgstr "提示词模板"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:54
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:54
 msgid "The prompt template for the conversation."
-msgstr "对话的提示模板。"
+msgstr "对话的提示词模板。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:57
-#: ../dbgpt/core/operators/flow/composer_operator.py:216
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:57
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:215
 msgid "Human Message Key"
 msgstr "人类消息键"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:62
-#: ../dbgpt/core/operators/flow/composer_operator.py:221
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:62
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:220
 msgid "The key for human message in the prompt format dict."
-msgstr "在提示格式字典中用于人类消息的键。"
+msgstr "提示格式字典中的人类消息键。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:71
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:65
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:356
+msgid "History Key"
+msgstr "历史记录键"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:71
 msgid ""
 "The chat history key, with chat history message pass to prompt template."
-msgstr "聊天历史键，将聊天历史消息传递给提示模板。"
+msgstr "聊天历史记录键，用于将聊天历史记录消息传递给提示模板。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:76
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:76
 msgid "Keep Start Rounds"
-msgstr "保留起始轮数"
+msgstr "保留起始轮次"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:81
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:81
 msgid "The start rounds to keep in the chat history."
-msgstr "在聊天历史记录中保留的起始轮数。"
+msgstr "在聊天历史记录中保留的起始轮次。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:84
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:84
 msgid "Keep End Rounds"
-msgstr "保留结束轮数"
+msgstr "保留结束轮次"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:89
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:89
 msgid "The end rounds to keep in the chat history."
-msgstr "在聊天历史记录中保留的结束轮数。"
+msgstr "在聊天历史记录中保留的结束轮次。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:97
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:92
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:129
+msgid "Conversation Storage"
+msgstr "对话存储"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:97
 msgid "The conversation storage(Not include message detail)."
-msgstr "对话存储（不包括消息细节）。"
+msgstr "对话存储（不包括消息详情）。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:105
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:100
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:140
+msgid "Message Storage"
+msgstr "消息存储"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:105
 msgid "The message storage."
 msgstr "消息存储。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:110
-#: ../dbgpt/core/operators/flow/composer_operator.py:226
-#: ../dbgpt/core/awel/trigger/http_trigger.py:227
-msgid "Common LLM Http Request Body"
-msgstr "通用LLM HTTP请求体"
-
-#: ../dbgpt/core/operators/flow/composer_operator.py:113
-#: ../dbgpt/core/operators/flow/composer_operator.py:229
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:113
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:228
 msgid "The common LLM http request body."
-msgstr "通用LLM HTTP请求体。"
+msgstr "通用的 LLM HTTP 请求体。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:121
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:118
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:105
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:208
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:223
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:370
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:153
+msgid "Model Request"
+msgstr "模型请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:121
 msgid "The model request with chat history prompt."
-msgstr "带有聊天历史提示的模型请求。"
+msgstr "包含聊天历史提示的模型请求。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:207
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:207
 msgid "Prompt Format Dict Builder Operator"
 msgstr "提示格式字典构建算子"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:211
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:211
 msgid ""
 "A operator to build prompt format dict from common LLM http request body."
-msgstr "从通用LLM HTTP请求体构建提示格式字典的算子。"
+msgstr "从通用的 LLM HTTP 请求体中构建提示格式字典的算子。"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:234
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:233
 msgid "Prompt Format Dict"
 msgstr "提示格式字典"
 
-#: ../dbgpt/core/operators/flow/composer_operator.py:237
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/composer_operator.py:236
 msgid "The prompt format dict."
 msgstr "提示格式字典。"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:14
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:14
 msgid "Merge String to Dict Operator"
-msgstr "字符串合并为字典算子"
+msgstr "字符串合并到字典算子"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:18
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:18
 msgid ""
 "Merge two strings to a dict, the fist string which is the value from first "
 "upstream is the value of the key `first_key`, the second string which is the "
 "value from second upstream is the value of the key `second_key`."
-msgstr ""
-"将两个字符串合并为字典，第一个字符串是来自第一个上游的值，是`first_key`键的"
-"值，第二个字符串是来自第二个上游的值，是`second_key`键的值。"
+msgstr "将两个字符串合并为一个字典，第一个上游传入的值作为键 `first_key` 的值，第二个上游传入的值作为键 `second_key` 的值。"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:24
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:24
 msgid "First Key"
 msgstr "第一个键"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:29
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:29
 msgid "The key for the first string, default is `user_input`."
-msgstr "第一个字符串的键，默认为`user_input`。"
+msgstr "第一个字符串的键，默认是 `user_input` 。"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:32
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:32
 msgid "Second Key"
 msgstr "第二个键"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:37
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:37
 msgid "The key for the second string, default is `context`."
-msgstr "第二个字符串的键，默认为`context`。"
+msgstr "第二个字符串的键，默认是 `context` 。"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:42
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:42
 msgid "First String"
 msgstr "第一个字符串"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:45
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:45
 msgid "The first string from first upstream."
 msgstr "来自第一个上游的第一个字符串。"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:48
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:48
 msgid "Second String"
 msgstr "第二个字符串"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:51
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:51
 msgid "The second string from second upstream."
 msgstr "来自第二个上游的第二个字符串。"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:56
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:56
 msgid "Output"
 msgstr "输出"
 
-#: ../dbgpt/core/operators/flow/dict_operator.py:60
+#: ../packages/dbgpt-core/src/dbgpt/core/operators/flow/dict_operator.py:60
 msgid "The merged dict. example: {'user_input': 'first', 'context': 'second'}."
-msgstr "合并后的字典。示例：{'user_input': 'first', 'context': 'second'}。"
+msgstr "合并后的字典。示例：{'user_input': 'first', 'context': 'second'} 。"
 
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:30
-msgid "Request Http Trigger"
-msgstr "请求HTTP触发器"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:38
+msgid "Base Output Operator"
+msgstr "基础输出算子"
 
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:35
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:42
+msgid "The base LLM out parse."
+msgstr "基础 LLM 输出解析。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:46
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:55
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:312
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:353
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:456
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:512
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:557
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:608
+msgid "Model Output"
+msgstr "模型输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:50
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:315
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:356
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:507
+msgid "The model output of upstream."
+msgstr "上游的模型输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:59
+msgid "The model output after parsing."
+msgstr "解析后的模型输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:305
+msgid "SQL Output Parser"
+msgstr "SQL 输出解析器"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:308
+msgid "Parse the SQL output of an LLM call."
+msgstr "解析大语言模型调用的 SQL 输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:320
+msgid "Dict SQL Output"
+msgstr "字典形式的 SQL 输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:323
+msgid "The dict output after parsing."
+msgstr "解析后的字典输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:344
+msgid "SQL List Output Parser"
+msgstr "SQL 列表输出解析器"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:348
+msgid "Parse the SQL list output of an LLM call, mostly used for dashboard."
+msgstr "解析大语言模型调用的 SQL 列表输出，主要用于仪表板。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:361
+msgid "List SQL Output"
+msgstr "列表形式的 SQL 输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/output_parser.py:365
+msgid "The list output after parsing."
+msgstr "解析后的列表输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/storage.py:391
+msgid "Memory Storage"
+msgstr "内存存储"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/storage.py:394
+msgid "Save your data in memory."
+msgstr "将数据保存在内存中。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/storage.py:397
+msgid "Serializer"
+msgstr "序列化器"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/storage.py:403
 msgid ""
-"Trigger your workflow by http request, and parse the request body as a "
-"starlette Request"
-msgstr "通过HTTP请求触发您的工作流，并将请求体解析为starlette请求。"
+"The serializer for serializing the data. If not set, the default JSON "
+"serializer will be used."
+msgstr "用于序列化数据的序列化器。如果未设置，则使用默认的 JSON 序列化器。"
 
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:45
-msgid "The request body of the API endpoint, parse as a starlette Request"
-msgstr "API 端点的请求主体，解析为 starlette 请求"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:23
+msgid "The name of the model."
+msgstr "模型名称。"
 
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:92
-msgid "HTTP Sender"
-msgstr ""
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:95
-msgid "Send a HTTP request to a specified endpoint"
-msgstr ""
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:101
-msgid "The request body to send"
-msgstr "API 端点的请求主体"
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:106
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1076
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1127
-msgid "Response Body"
-msgstr "响应主体"
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:109
-msgid "The response body of the HTTP request"
-msgstr "API 端点的响应主体"
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:114
-msgid "HTTP Address"
-msgstr ""
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:115
-msgid "address"
-msgstr ""
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:117
-msgid "The address to send the HTTP request to"
-msgstr "模型请求的模型名称。"
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:122
-msgid "Timeout"
-msgstr "超时时间"
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:127
-msgid "The timeout of the HTTP request in seconds"
-msgstr "模型请求的模型名称。"
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:130
-msgid "Token"
-msgstr ""
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:135
-msgid "The token to use for the HTTP request"
-msgstr "发送 HTTP 请求的令牌。"
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:138
-msgid "Cookies"
-msgstr ""
-
-#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:143
-msgid "The cookies to use for the HTTP request"
-msgstr "发送 HTTP 请求的 cookies。"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:135
-msgid "Dict Http Body"
-msgstr "字典 HTTP 主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:139
-msgid "Parse the request body as a dict or response body as a dict"
-msgstr "将请求主体解析为字典或响应主体解析为字典"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:165
-msgid "String Http Body"
-msgstr "字符串 HTTP 主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:169
-msgid "Parse the request body as a string or response body as string"
-msgstr "将请求主体解析为字符串或响应主体解析为字符串"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:195
-msgid "Request Http Body"
-msgstr "请求 HTTP 主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:199
-msgid "Parse the request body as a starlette Request"
-msgstr "将请求主体解析为 starlette 请求"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:231
-msgid "Parse the request body as a common LLM http body"
-msgstr "将请求主体解析为通用 LLM HTTP 主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:307
-msgid "Common LLM Http Response Body"
-msgstr "通用 LLM HTTP 响应主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:311
-msgid "Parse the response body as a common LLM http body"
-msgstr "将响应主体解析为通用 LLM HTTP 主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:759
-#: ../dbgpt/core/awel/trigger/http_trigger.py:991
-msgid "API Endpoint"
-msgstr "API 端点"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:759
-#: ../dbgpt/core/awel/trigger/http_trigger.py:996
-msgid "The API endpoint"
-msgstr "API 端点"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:762
-#: ../dbgpt/core/awel/trigger/http_trigger.py:774
-msgid "Http Methods"
-msgstr "HTTP 方法"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:767
-#: ../dbgpt/core/awel/trigger/http_trigger.py:779
-msgid "The methods of the API endpoint"
-msgstr "API 端点的方法"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:769
-#: ../dbgpt/core/awel/trigger/http_trigger.py:783
-msgid "HTTP Method PUT"
-msgstr "HTTP PUT 方法"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:770
-#: ../dbgpt/core/awel/trigger/http_trigger.py:784
-msgid "HTTP Method POST"
-msgstr "HTTP POST 方法"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:781
-msgid "HTTP Method GET"
-msgstr "HTTP GET 方法"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:782
-msgid "HTTP Method DELETE"
-msgstr "HTTP DELETE 方法"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:788
-msgid "Streaming Response"
-msgstr "流式响应"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:793
-msgid "Whether the response is streaming"
-msgstr "响应是否为流式传输"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:796
-msgid "Http Response Body"
-msgstr "HTTP 响应主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:801
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1079
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1130
-msgid "The response body of the API endpoint"
-msgstr "API 端点的响应主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:805
-msgid "Response Media Type"
-msgstr "响应媒体类型"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:810
-msgid "The response media type"
-msgstr "响应的媒体类型"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:813
-msgid "Http Status Code"
-msgstr "HTTP 状态码"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:818
-msgid "The http status code"
-msgstr "HTTP 状态码"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:829
-msgid "Dict Http Trigger"
-msgstr "字典 HTTP 触发器"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:834
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:31
 msgid ""
-"Trigger your workflow by http request, and parse the request body as a dict"
-msgstr "通过 HTTP 请求触发您的工作流，并将请求主体解析为字典"
+"The provider of the model. If model is deployed in local, this is the "
+"inference type. If model is deployed in third-party service, this is "
+"platform name('proxy/<platform>')"
+msgstr "模型提供者。如果模型部署在本地，这是推理类型。如果模型部署在第三方服务上，这是平台名称（'proxy/<平台>'）。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:843
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1122
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1179
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1228
-msgid "The request body of the API endpoint"
-msgstr "API 端点的请求主体"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:47
+msgid "Show verbose output."
+msgstr "显示详细输出。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:888
-msgid "String Http Trigger"
-msgstr "字符串 HTTP 触发器"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:50
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:132
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:148
+msgid "Model concurrency limit"
+msgstr "模型并发限制"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:893
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:81
 msgid ""
-"Trigger your workflow by http request, and parse the request body as a string"
-msgstr "通过 HTTP 请求触发您的工作流，并将请求主体解析为字符串"
+"The real model name to pass to the provider, default is None. If backend is "
+"None, use name as the real model name."
+msgstr "传递给提供者的实际模型名称，默认为 None。如果后端为 None，则使用名称作为实际模型名称。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:903
-msgid "The request body of the API endpoint, parse as a json string"
-msgstr "API 端点的请求主体，解析为 JSON 字符串"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:959
-msgid "Common LLM Http Trigger"
-msgstr "常见 LLM Http 触发器"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:964
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:91
 msgid ""
-"Trigger your workflow by http request, and parse the request body as a "
-"common LLM http body"
-msgstr "通过 HTTP 请求触发您的工作流，并将请求主体解析为常见的 LLM HTTP 主体"
+"Prompt template. If None, the prompt template is automatically determined "
+"from model. Just for local deployment."
+msgstr "提示模板。如果为 None，则提示模板会根据模型自动确定。仅适用于本地部署。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:974
-msgid "The request body of the API endpoint, parse as a common LLM http body"
-msgstr "API 端点的请求主体，解析为常见的 LLM HTTP 主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:979
-#, fuzzy
-msgid "Request String Messages"
-msgstr "请求HTTP触发器"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:983
-#, fuzzy
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:100
 msgid ""
-"The request string messages of the API endpoint, parsed from 'messages' "
-"field of the request body"
-msgstr "API 端点的请求主体，解析为 starlette 请求"
+"The context length of the model. If None, it is automatically determined "
+"from model."
+msgstr "模型的上下文长度。如果为 None，则会根据模型自动确定。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1036
-msgid "Example Http Response"
-msgstr "示例 HTTP 响应"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1040
-msgid "Example Http Request"
-msgstr "示例 HTTP 请求"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1062
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1082
-msgid "Example Http Hello Operator"
-msgstr "示例 HTTP Hello 算子"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1068
-msgid "Http Request Body"
-msgstr "HTTP 请求主体"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1071
-msgid "The request body of the API endpoint(Dict[str, Any])"
-msgstr "API 端点的请求主体（字典[str, Any]）"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1102
-msgid "Request Body To Dict Operator"
-msgstr "请求主体转换为字典算子"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1107
-msgid "Prefix Key"
-msgstr "前缀键"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1113
-msgid "The prefix key of the dict, link 'message' or 'extra.info'"
-msgstr "字典的前缀键，链接 'message' 或 'extra.info'"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1161
-msgid "User Input Parsed Operator"
-msgstr "用户输入解析算子"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1166
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1215
-msgid "Key"
-msgstr "键"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1171
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1220
-msgid "The key of the dict, link 'user_input'"
-msgstr "字典的键，链接 'user_input'"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1184
-msgid "User Input Dict"
-msgstr "用户输入字典"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1187
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1236
-msgid "The user input dict of the API endpoint"
-msgstr "API 端点的用户输入字典"
-
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1191
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:183
 msgid ""
-"User input parsed operator, parse the user input from request body and "
-"return as a dict"
-msgstr "用户输入解析算子，从请求主体解析用户输入并返回为字典"
+"Whether to load the model in 8 bits(LLM.int8() algorithm), default is False."
+msgstr "是否以 8 位模式（LLM.int8() 算法）加载模型，默认为 False。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1210
-msgid "Request Body Parsed To String Operator"
-msgstr "请求主体解析为字符串算子"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:191
+msgid "Whether to load the model in 4 bits, default is False."
+msgstr "是否以 4 位模式加载模型，默认为 False。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1233
-msgid "User Input String"
-msgstr "用户输入字符串"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:242
+msgid "Whether to load the model in 8 bits(LLM.int8() algorithm)."
+msgstr "是否以 8 位模式（LLM.int8() 算法）加载模型。"
 
-#: ../dbgpt/core/awel/trigger/http_trigger.py:1240
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:250
 msgid ""
-"User input parsed operator, parse the user input from request body and "
-"return as a string"
-msgstr "用户输入解析算子，从请求主体解析用户输入并返回为字符串"
+"8-bit models can offload weights between the CPU and GPU to support fitting "
+"very large models into memory. The weights dispatched to the CPU are "
+"actually stored in float32, and aren’t converted to 8-bit. "
+msgstr "8 位模型可以在 CPU 和 GPU 之间卸载权重，以支持将非常大的模型装入内存。分配给 CPU 的权重实际上是以 float32 格式存储的，并不会转换为 8 位。"
 
-#~ msgid "Streaming Task Name"
-#~ msgstr "流式任务名称"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:260
+msgid ""
+"An “outlier” is a hidden state value greater than a certain threshold, and "
+"these values are computed in fp16. While the values are usually normally "
+"distributed ([-3.5, 3.5]), this distribution can be very different for large "
+"models ([-60, 6] or [6, 60]). 8-bit quantization works well for values ~5, "
+"but beyond that, there is a significant performance penalty. A good default "
+"threshold value is 6, but a lower threshold may be needed for more unstable "
+"models (small models or finetuning)."
+msgstr "“异常值”是指隐藏状态值超过某个阈值的情况，这些值是在 fp16 中计算的。通常情况下，这些值是正态分布的（[-3.5, 3.5]），但对于大模型，这种分布可能非常不同（[-60, 6] 或 [6, 60]）。8 位量化对于值约为 5 的情况效果很好，但超出这个范围后，性能会显著下降。一个合理的默认阈值是 6，但对于更不稳定的模型（小模型或微调），可能需要更低的阈值。"
 
-#~ msgid "The name of the streaming task."
-#~ msgstr "流式任务的名称。"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:275
+msgid ""
+"An explicit list of the modules that we do not want to convert in 8-bit. "
+"This is useful for models such as Jukebox that has several heads in "
+"different places and not necessarily at the last position. For example for "
+"`CausalLM` models, the last `lm_head` is kept in its original `dtype`"
+msgstr "明确列出我们不想转换为 8 位的模块。这对于像 Jukebox 这样的模型很有用，它有多个头位于不同的位置，而不一定在最后的位置。例如，在 `CausalLM` 模型中，最后一个 `lm_head` 保持其原始的 `dtype`。"
 
-#~ msgid "Non-Streaming Task Name"
-#~ msgstr "非流式任务名称"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:308
+msgid "Whether to load the model in 4 bits."
+msgstr "是否以 4 位模式加载模型。"
 
-#~ msgid "The name of the non-streaming task."
-#~ msgstr "非流式任务的名称。"
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:316
+msgid ""
+"To speedup computation, you can change the数据类型从 float32（默认值）改为 bfloat16 以加速计算"
+msgstr "为了加速计算，你可以将数据类型从 float32（默认值）改为 bfloat16"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:331
+msgid ""
+"Quantization datatypes, `fp4` (four bit float) and `nf4` (normal four bit "
+"float), only valid when load_4bit=True"
+msgstr "量化数据类型，`fp4`（四位浮点数）和 `nf4`（标准四位浮点数），仅在 load_4bit=True 时有效"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:340
+msgid ""
+"Nested quantization is a technique that can save additional memory at no "
+"additional performance cost. This feature performs a second quantization of "
+"the already quantized weights to save an additional 0.4 bits/parameter. "
+msgstr "嵌套量化是一种可以在不增加性能成本的情况下节省更多内存的技术。此功能对已经量化的权重进行二次量化，以额外节省 0.4 位/参数"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:392
+msgid "Logging configuration"
+msgstr "日志配置"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/parameter.py:398
+msgid "Tracer configuration"
+msgstr "追踪器配置"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:53
+msgid "Build Model Request"
+msgstr "构建模型请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:56
+msgid "Build the model request from the http request body."
+msgstr "从 HTTP 请求体中构建模型请求。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:59
+msgid "Default Model Name"
+msgstr "默认模型名称"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:64
+msgid "The model name of the model request."
+msgstr "模型请求中的模型名称。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:67
+msgid "Temperature"
+msgstr "温度"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:72
+msgid "The temperature of the model request."
+msgstr "模型请求中的温度。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:79
+msgid "Max New Tokens"
+msgstr "最大新 Token 数"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:84
+msgid "The max new tokens of the model request."
+msgstr "模型请求中的最大新 Token 数。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:87
+msgid "Context Length"
+msgstr "上下文长度"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:92
+msgid "The context length of the model request."
+msgstr "模型请求的上下文长度。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:100
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:373
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:459
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:552
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:560
+msgid "The input value of the operator."
+msgstr "算子的输入值。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:108
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:226
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:467
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:612
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:657
+msgid "The output value of the operator."
+msgstr "算子的输出值。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:201
+msgid "Merge Model Request Messages"
+msgstr "合并模型请求消息"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:204
+msgid "Merge the model request from the input value."
+msgstr "从输入值中合并模型请求。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:211
+msgid "The model request of upstream."
+msgstr "上游的模型请求。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:214
+msgid "Model messages"
+msgstr "模型消息"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:217
+msgid "The model messages of upstream."
+msgstr "上游的模型消息。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:362
+msgid "LLM Branch Operator"
+msgstr "LLM 分支算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:366
+msgid "Branch the workflow based on the stream flag of the request."
+msgstr "根据请求的流标志分支工作流。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:378
+msgid "Streaming Model Request"
+msgstr "流式模型请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:381
+msgid "The streaming request, to streaming Operator."
+msgstr "流式请求，发送到流式算子。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:384
+msgid "Non-Streaming Model Request"
+msgstr "非流式模型请求"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:387
+msgid "The non-streaming request, to non-streaming Operator."
+msgstr "非流式请求，发送到非流式算子。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:449
+msgid "Map Model Output to Common Response Body"
+msgstr "将模型输出映射到通用响应体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:452
+msgid "Map the model output to the common response body."
+msgstr "将模型输出映射到通用响应体。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:464
+msgid "Common Response Body"
+msgstr "通用响应体"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:495
+msgid "Common Streaming Output Operator"
+msgstr "通用流式输出算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:499
+msgid "The common streaming LLM operator, for chat flow."
+msgstr "用于聊天流程的通用流式 LLM 算子。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:503
+msgid "Upstream Model Output"
+msgstr "上游模型输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:517
+msgid "The model output after transform to common stream format"
+msgstr "转换为通用流格式后的模型输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:542
+msgid "Map String to ModelOutput"
+msgstr "将字符串映射到模型输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:545
+msgid "Map String to ModelOutput."
+msgstr "将字符串映射到模型输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:549
+msgid "String"
+msgstr "字符串"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:585
+msgid "LLM Branch Join Operator"
+msgstr "LLM 分支合并算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:589
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:634
+msgid "Just keep the first non-empty output."
+msgstr "仅保留第一个非空输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:593
+msgid "Streaming Model Output"
+msgstr "流式模型输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:597
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:642
+msgid "The streaming output."
+msgstr "流式输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:600
+msgid "Non-Streaming Model Output"
+msgstr "非流式模型输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:603
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:648
+msgid "The non-streaming output."
+msgstr "非流式输出。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:630
+msgid "String Branch Join Operator"
+msgstr "字符串分支合并算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:638
+msgid "Streaming String Output"
+msgstr "流式字符串输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:645
+msgid "Non-Streaming String Output"
+msgstr "非流式字符串输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/llm_operator.py:653
+msgid "String Output"
+msgstr "字符串输出"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:123
+msgid "Chat History Load Operator"
+msgstr "聊天历史加载算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:126
+msgid "The operator to load chat history from storage."
+msgstr "从存储中加载聊天历史的算子。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:135
+msgid ""
+"The conversation storage, store the conversation items(Not include message "
+"items). If None, we will use InMemoryStorage."
+msgstr "对话存储，用于存储对话项（不包括消息项）。如果为 None，则使用 InMemoryStorage。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:146
+msgid ""
+"The message storage, store the messages of one conversation. If None, we "
+"will use InMemoryStorage."
+msgstr "消息存储，用于存储一次对话中的消息。如果为 None，则使用 InMemoryStorage。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:156
+msgid "The model request."
+msgstr "模型请求。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:161
+msgid "Stored Messages"
+msgstr "已存储的消息"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/message_operator.py:164
+msgid "The messages stored in the storage."
+msgstr "存储在存储中的消息。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:37
+msgid "Common Chat Prompt Template"
+msgstr "通用聊天提示模板"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:40
+msgid "The operator to build the prompt with static prompt."
+msgstr "用于构建静态提示的算子。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:44
+msgid "System Message"
+msgstr "系统消息"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:49
+msgid "The system message."
+msgstr "系统消息。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:53
+msgid "Message placeholder"
+msgstr "消息占位符"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:58
+msgid "The chat history message placeholder."
+msgstr "聊天历史消息占位符。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:61
+msgid "Human Message"
+msgstr "用户消息"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:67
+msgid "The human message."
+msgstr "用户消息。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:257
+msgid "Prompt Builder Operator"
+msgstr "提示构建算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:259
+msgid "Build messages from prompt template."
+msgstr "从提示模板构建消息。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:263
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:350
+msgid "Chat Prompt Template"
+msgstr "聊天提示模板"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:266
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:353
+msgid "The chat prompt template."
+msgstr "聊天提示模板。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:271
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:381
+msgid "Prompt Input Dict"
+msgstr "提示输入字典"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:274
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:384
+msgid "The prompt dict."
+msgstr "提示字典。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:279
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:389
+msgid "Formatted Messages"
+msgstr "格式化消息"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:283
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:393
+msgid "The formatted messages."
+msgstr "格式化消息。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:343
+msgid "History Prompt Builder Operator"
+msgstr "历史提示构建算子"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:345
+msgid "Build messages from prompt template and chat history."
+msgstr "从提示模板和聊天历史中构建消息。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:361
+msgid "The key of history in prompt dict."
+msgstr "提示字典中的历史键。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:364
+msgid "String History"
+msgstr "字符串历史"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:369
+msgid "Whether to convert the history to string."
+msgstr "是否将历史转换为字符串。"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:374
+msgid "History"
+msgstr "历史"
+
+#: ../packages/dbgpt-core/src/dbgpt/core/interface/operators/prompt_operator.py:378
+msgid "The history."
+msgstr "历史记录。"

@@ -22,16 +22,17 @@ Example:
         python examples/rag/rag_embedding_api_example.py
 
 """
+
 import asyncio
 import os
 from typing import Optional
 
 from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
-from dbgpt.rag import ChunkParameters
-from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import OpenAPIEmbeddings
-from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 
 def _create_embeddings(

@@ -8,16 +8,17 @@ Download pretrained cross-encoder models can be found at https://huggingface.co/
 Example:
     python examples/rag/cross_encoder_rerank_example.py
 """
+
 import asyncio
 import os
 
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH, ROOT_PATH
-from dbgpt.rag import ChunkParameters
-from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.rag.knowledge import KnowledgeFactory
 from dbgpt.rag.retriever.rerank import CrossEncoderRanker
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+from dbgpt_ext.rag import ChunkParameters
+from dbgpt_ext.rag.assembler import EmbeddingAssembler
+from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 
 def _create_vector_connector():
@@ -53,14 +54,14 @@ async def main():
 
     print("before rerank results:\n")
     for i, chunk in enumerate(chunks):
-        print(f"----{i+1}.chunk content:{chunk.content}\n score:{chunk.score}")
+        print(f"----{i + 1}.chunk content:{chunk.content}\n score:{chunk.score}")
     # cross-encoder rerankpython
     cross_encoder_model = os.path.join(MODEL_PATH, "bge-reranker-base")
     rerank = CrossEncoderRanker(topk=3, model=cross_encoder_model)
     new_chunks = rerank.rank(chunks, query=query)
     print("after cross-encoder rerank results:\n")
     for i, chunk in enumerate(new_chunks):
-        print(f"----{i+1}.chunk content:{chunk.content}\n score:{chunk.score}")
+        print(f"----{i + 1}.chunk content:{chunk.content}\n score:{chunk.score}")
 
 
 if __name__ == "__main__":
