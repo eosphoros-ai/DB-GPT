@@ -1,4 +1,4 @@
-name: Pylint
+name: Python Code Quality Checks
 
 on:
   push:
