@@ -39,12 +39,18 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
     sqlite3 \
     libpq-dev \
     default-libmysqlclient-dev \
+    build-essential \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/* \
     && python${PYTHON_VERSION} -m pip install --upgrade pip \
     && python${PYTHON_VERSION} -m pip install --upgrade pipx \
     && python${PYTHON_VERSION} -m pipx ensurepath \
     && pipx ensurepath --global \
     && pipx install uv --global
+
+# Install Rust toolchain for building lyric-py
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
 # Create a virtual environment
