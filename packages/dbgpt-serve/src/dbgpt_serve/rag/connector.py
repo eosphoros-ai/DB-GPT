@@ -11,6 +11,7 @@ from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.base import IndexStoreConfig
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt_ext.storage import __document_store__ as supported_full_tet_list
 from dbgpt_ext.storage import __knowledge_graph__ as supported_kg_store_list
 from dbgpt_ext.storage import __vector_store__ as supported_vector_store_list
 
@@ -70,12 +71,7 @@ class VectorStoreConnector:
         self._vector_store_type = vector_store_type
         self._embeddings = vector_store_config.embedding_fn
 
-        config_dict = {}
-        storage_config = self.app_config.rag.storage
-        if vector_store_type in supported_vector_store_list:
-            config_dict = storage_config.vector
-        elif vector_store_type in supported_kg_store_list:
-            config_dict = storage_config.graph
+        config_dict = self._adapt_storage_config(vector_store_type)
         for key in vector_store_config.to_dict().keys():
             value = getattr(vector_store_config, key)
             if value is not None:
@@ -286,3 +282,26 @@ class VectorStoreConnector:
         for cls_name in rag_storages:
             store_cls, config_cls = _select_rag_storage(cls_name)
             connector[cls_name] = (store_cls, config_cls)
+
+    def _adapt_storage_config(self, vector_store_type):
+        """Adapt storage config."""
+        storage_config = self.app_config.rag.storage
+        if vector_store_type in supported_vector_store_list:
+            return (
+                storage_config.vector
+                if isinstance(storage_config.vector, dict)
+                else storage_config.vector.to_dict()
+            )
+        elif vector_store_type in supported_kg_store_list:
+            return (
+                storage_config.graph
+                if isinstance(storage_config.graph, dict)
+                else storage_config.graph.dict()
+            )
+        elif vector_store_type in supported_full_tet_list:
+            return (
+                storage_config.full_text
+                if isinstance(storage_config.full_text, dict)
+                else storage_config.full_text.dict()
+            )
+        raise ValueError(f"storage type {vector_store_type} not supported")
