@@ -125,6 +125,10 @@ const sidebars = {
           id: 'installation/docker_compose',
         },
         {
+          type: 'doc',
+          id: 'installation/docker-build-guide',
+        },
+        {
           type: 'category',
           label: 'Model Service Deployment',
           items: [

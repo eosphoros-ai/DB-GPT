@@ -232,7 +232,7 @@ with DAG("simple_nl_schema_sql_chart_example") as dag:
     )
     request_handle_task = RequestHandleOperator()
     query_operator = MapOperator(lambda request: request["query"])
-    llm = OpenAILLMClient()
+    llm = (OpenAILLMClient(api_key=os.getenv("OPENAI_API_KEY", "your api key")),)
     model_name = "gpt-3.5-turbo"
     retriever_task = SchemaLinkingOperator(
         connector=_create_temporary_connection(), llm=llm, model_name=model_name

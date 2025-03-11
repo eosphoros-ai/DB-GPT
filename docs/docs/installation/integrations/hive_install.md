@@ -7,7 +7,7 @@ In this example, we will show how to use the Hive as in DB-GPT Datasource. Using
 First, you need to install the `dbgpt hive datasource` library.
 
 ```bash
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "datasource_hive" \
 --extra "rag" \

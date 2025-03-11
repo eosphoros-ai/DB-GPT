@@ -33,7 +33,6 @@ rag = [
     "python-docx",
     "pypdf",
     "pdfplumber",
-    "sentence-transformers",
 ]
 graph_rag = [
     # For visualization in code

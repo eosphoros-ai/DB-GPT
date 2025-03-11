@@ -254,7 +254,7 @@ class ServiceConfig(BaseParameters):
 
 
 @dataclass
-class ApplicationConfig:
+class ApplicationConfig(BaseParameters):
     """Application configuration."""
 
     hooks: List[HookConfig] = field(

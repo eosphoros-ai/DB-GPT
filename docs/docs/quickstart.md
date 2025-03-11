@@ -165,8 +165,10 @@ uv sync --all-packages \
 --extra "rag" \
 --extra "storage_chromadb" \
 --extra "dbgpts" \
---extra "hf" 
+--extra "hf" \
+--extra "cpu"
 ```
+
 **Model Configurations**:
 ```toml
 # Model Configurations
@@ -205,6 +207,7 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 # Install core dependencies and select desired extensions
 uv sync --all-packages \
 --extra "base" \
+--extra "cuda121" \
 --extra "hf" \
 --extra "rag" \
 --extra "storage_chromadb" \
@@ -249,6 +252,8 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 # Install core dependencies and select desired extensions
 uv sync --all-packages \
 --extra "base" \
+--extra "hf" \
+--extra "cuda121" \
 --extra "vllm" \
 --extra "rag" \
 --extra "storage_chromadb" \
@@ -295,6 +300,8 @@ If you has a Nvidia GPU, you can enable the CUDA support by setting the environm
 # Install core dependencies and select desired extensions
 CMAKE_ARGS="-DGGML_CUDA=ON" uv sync --all-packages \
 --extra "base" \
+--extra "hf" \
+--extra "cuda121" \
 --extra "llama_cpp" \
 --extra "rag" \
 --extra "storage_chromadb" \
@@ -308,6 +315,7 @@ Otherwise, run the following command to install dependencies without CUDA suppor
 # Install core dependencies and select desired extensions
 uv sync --all-packages \
 --extra "base" \
+--extra "hf" \
 --extra "llama_cpp" \
 --extra "rag" \
 --extra "storage_chromadb" \
@@ -386,6 +394,35 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 
   </TabItem>
 </Tabs>
+
+
+## DB-GPT Install Help Tool
+
+If you need help with the installation, you can use the `uv` script to get help.
+
+```bash
+uv run install_help.py --help
+```
+
+## Generate Install Command
+
+You can use the `uv` script to generate the install command in the interactive mode.
+
+```bash
+uv run install_help.py install-cmd --interactive
+```
+
+And you can generate an install command with all the dependencies needed for the OpenAI proxy model.
+
+```bash
+uv run install_help.py install-cmd --all
+```
+
+You can found all the dependencies and extras.
+
+```bash
+uv run install_help.py list
+```
 
 
 ## Visit Website
