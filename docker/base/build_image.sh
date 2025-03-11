@@ -8,38 +8,37 @@ WORK_DIR=$(pwd)
 CUDA_BASE_IMAGE="nvidia/cuda:12.4.0-devel-ubuntu22.04"
 CPU_BASE_IMAGE="ubuntu:22.04"
 
-# Define installation mode configurations: base_image, extras
-declare -A INSTALL_MODES
+# Define installation mode configurations (macOS-compatible format)
 
-# Common mode configurations - Base configuration shared by modes using CUDA image
+# Common mode configurations
 DEFAULT_PROXY_EXTRAS="base,proxy_openai,rag,graph_rag,storage_chromadb,dbgpts,proxy_ollama,proxy_zhipuai,proxy_anthropic,proxy_qianfan,proxy_tongyi"
 DEFAULT_CUDA_EXTRAS="${DEFAULT_PROXY_EXTRAS},cuda121,hf,quant_bnb,flash_attn,quant_awq"
 
-# Define each installation mode
-# Default mode configuration
-INSTALL_MODES["default,base_image"]=$CUDA_BASE_IMAGE
-INSTALL_MODES["default,extras"]=$DEFAULT_CUDA_EXTRAS
-INSTALL_MODES["default,env_vars"]=""
+# Set default options for each installation mode
+# Default mode
+DEFAULT_BASE_IMAGE=$CUDA_BASE_IMAGE
+DEFAULT_EXTRAS=$DEFAULT_CUDA_EXTRAS
+DEFAULT_ENV_VARS=""
 
-# OpenAI mode configuration - The only mode using CPU image
-INSTALL_MODES["openai,base_image"]=$CPU_BASE_IMAGE
-INSTALL_MODES["openai,extras"]="${DEFAULT_PROXY_EXTRAS}"
-INSTALL_MODES["openai,env_vars"]=""
+# OpenAI mode
+OPENAI_BASE_IMAGE=$CPU_BASE_IMAGE
+OPENAI_EXTRAS="${DEFAULT_PROXY_EXTRAS}"
+OPENAI_ENV_VARS=""
 
-# vllm mode configuration
-INSTALL_MODES["vllm,base_image"]=$CUDA_BASE_IMAGE
-INSTALL_MODES["vllm,extras"]="$DEFAULT_CUDA_EXTRAS,vllm"
-INSTALL_MODES["vllm,env_vars"]=""
+# VLLM mode
+VLLM_BASE_IMAGE=$CUDA_BASE_IMAGE
+VLLM_EXTRAS="$DEFAULT_CUDA_EXTRAS,vllm"
+VLLM_ENV_VARS=""
 
-# llama-cpp mode configuration
-INSTALL_MODES["llama-cpp,base_image"]=$CUDA_BASE_IMAGE
-INSTALL_MODES["llama-cpp,extras"]="$DEFAULT_CUDA_EXTRAS,llama_cpp,llama_cpp_server"
-INSTALL_MODES["llama-cpp,env_vars"]="CMAKE_ARGS=\"-DGGML_CUDA=ON\""
+# LLAMA-CPP mode
+LLAMA_CPP_BASE_IMAGE=$CUDA_BASE_IMAGE
+LLAMA_CPP_EXTRAS="$DEFAULT_CUDA_EXTRAS,llama_cpp,llama_cpp_server"
+LLAMA_CPP_ENV_VARS="CMAKE_ARGS=\"-DGGML_CUDA=ON\""
 
 # Full functionality mode
-INSTALL_MODES["full,base_image"]=$CUDA_BASE_IMAGE
-INSTALL_MODES["full,extras"]="$DEFAULT_CUDA_EXTRAS,vllm,llama-cpp,llama_cpp_server"
-INSTALL_MODES["full,env_vars"]="CMAKE_ARGS=\"-DGGML_CUDA=ON\""
+FULL_BASE_IMAGE=$CUDA_BASE_IMAGE
+FULL_EXTRAS="$DEFAULT_CUDA_EXTRAS,vllm,llama-cpp,llama_cpp_server"
+FULL_ENV_VARS="CMAKE_ARGS=\"-DGGML_CUDA=ON\""
 
 # Default value settings
 BASE_IMAGE=$CUDA_BASE_IMAGE
@@ -84,25 +83,51 @@ usage () {
 list_modes() {
     echo "Available installation modes:"
     echo "--------------------------"
-    # Get unique mode names
-    local modes=()
-    for key in "${!INSTALL_MODES[@]}"; do
-        local mode_name="${key%%,*}"
-        if [[ ! " ${modes[@]} " =~ " ${mode_name} " ]]; then
-            modes+=("$mode_name")
-        fi
-    done
-
-    # Print each mode's configuration
-    for mode in "${modes[@]}"; do
-        echo "Mode: $mode"
-        echo "  Base image: ${INSTALL_MODES["$mode,base_image"]}"
-        echo "  Extras: ${INSTALL_MODES["$mode,extras"]}"
-        if [ -n "${INSTALL_MODES["$mode,env_vars"]}" ]; then
-            echo "  Environment Variables: ${INSTALL_MODES["$mode,env_vars"]}"
-        fi
-        echo "--------------------------"
-    done
+    
+    # Default mode
+    echo "Mode: default"
+    echo "  Base image: $DEFAULT_BASE_IMAGE"
+    echo "  Extras: $DEFAULT_EXTRAS"
+    if [ -n "$DEFAULT_ENV_VARS" ]; then
+        echo "  Environment Variables: $DEFAULT_ENV_VARS"
+    fi
+    echo "--------------------------"
+    
+    # OpenAI mode
+    echo "Mode: openai"
+    echo "  Base image: $OPENAI_BASE_IMAGE"
+    echo "  Extras: $OPENAI_EXTRAS"
+    if [ -n "$OPENAI_ENV_VARS" ]; then
+        echo "  Environment Variables: $OPENAI_ENV_VARS"
+    fi
+    echo "--------------------------"
+    
+    # VLLM mode
+    echo "Mode: vllm"
+    echo "  Base image: $VLLM_BASE_IMAGE"
+    echo "  Extras: $VLLM_EXTRAS"
+    if [ -n "$VLLM_ENV_VARS" ]; then
+        echo "  Environment Variables: $VLLM_ENV_VARS"
+    fi
+    echo "--------------------------"
+    
+    # LLAMA-CPP mode
+    echo "Mode: llama-cpp"
+    echo "  Base image: $LLAMA_CPP_BASE_IMAGE"
+    echo "  Extras: $LLAMA_CPP_EXTRAS"
+    if [ -n "$LLAMA_CPP_ENV_VARS" ]; then
+        echo "  Environment Variables: $LLAMA_CPP_ENV_VARS"
+    fi
+    echo "--------------------------"
+    
+    # Full mode
+    echo "Mode: full"
+    echo "  Base image: $FULL_BASE_IMAGE"
+    echo "  Extras: $FULL_EXTRAS"
+    if [ -n "$FULL_ENV_VARS" ]; then
+        echo "  Environment Variables: $FULL_ENV_VARS"
+    fi
+    echo "--------------------------"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -198,53 +223,98 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If installation mode is provided, get base_image, extras, and env_vars from configuration
+# Configure based on the installation mode
 if [ -n "$DB_GPT_INSTALL_MODE" ]; then
-    # Check if it's a valid installation mode
-    if [ -n "${INSTALL_MODES["$DB_GPT_INSTALL_MODE,base_image"]}" ]; then
-        # If user hasn't explicitly specified BASE_IMAGE, use the default value for this mode
-        if [ "$BASE_IMAGE" == "$CUDA_BASE_IMAGE" ]; then
-            BASE_IMAGE="${INSTALL_MODES["$DB_GPT_INSTALL_MODE,base_image"]}"
-        fi
-
-        # If user hasn't explicitly specified EXTRAS, use the default value for this mode
-        if [ -z "$EXTRAS" ]; then
-            EXTRAS="${INSTALL_MODES["$DB_GPT_INSTALL_MODE,extras"]}"
-        fi
-
-        # If additional extras are specified, add them to existing extras
-        if [ -n "$ADDITIONAL_EXTRAS" ]; then
+    # Check if it is a valid installation mode and set the corresponding variables
+    case "$DB_GPT_INSTALL_MODE" in
+        default)
+            # If the user has not explicitly specified BASE_IMAGE, use the default value for this mode
+            if [ "$BASE_IMAGE" == "$CUDA_BASE_IMAGE" ]; then
+                BASE_IMAGE="$DEFAULT_BASE_IMAGE"
+            fi
+            # If the user has not explicitly specified EXTRAS, use the default value for this mode
             if [ -z "$EXTRAS" ]; then
-                EXTRAS="$ADDITIONAL_EXTRAS"
-            else
-                EXTRAS="$EXTRAS,$ADDITIONAL_EXTRAS"
+                EXTRAS="$DEFAULT_EXTRAS"
             fi
-        fi
-
-        # If user hasn't explicitly specified BUILD_ENV_VARS, use the default value for this mode
-        if [ -z "$BUILD_ENV_VARS" ]; then
-            BUILD_ENV_VARS="${INSTALL_MODES["$DB_GPT_INSTALL_MODE,env_vars"]}"
-        fi
-
-        # If additional env_vars are specified, add them to existing env_vars
-        if [ -n "$ADDITIONAL_ENV_VARS" ]; then
+            # If the user has not explicitly specified BUILD_ENV_VARS, use the default value for this mode
             if [ -z "$BUILD_ENV_VARS" ]; then
-                BUILD_ENV_VARS="$ADDITIONAL_ENV_VARS"
-            else
-                BUILD_ENV_VARS="$BUILD_ENV_VARS $ADDITIONAL_ENV_VARS"
+                BUILD_ENV_VARS="$DEFAULT_ENV_VARS"
             fi
-        fi
-    else
-        echo "Warning: Unknown install mode '$DB_GPT_INSTALL_MODE'. Using defaults."
-    fi
+            ;;
+        openai)
+            if [ "$BASE_IMAGE" == "$CUDA_BASE_IMAGE" ]; then
+                BASE_IMAGE="$OPENAI_BASE_IMAGE"
+            fi
+            if [ -z "$EXTRAS" ]; then
+                EXTRAS="$OPENAI_EXTRAS"
+            fi
+            if [ -z "$BUILD_ENV_VARS" ]; then
+                BUILD_ENV_VARS="$OPENAI_ENV_VARS"
+            fi
+            ;;
+        vllm)
+            if [ "$BASE_IMAGE" == "$CUDA_BASE_IMAGE" ]; then
+                BASE_IMAGE="$VLLM_BASE_IMAGE"
+            fi
+            if [ -z "$EXTRAS" ]; then
+                EXTRAS="$VLLM_EXTRAS"
+            fi
+            if [ -z "$BUILD_ENV_VARS" ]; then
+                BUILD_ENV_VARS="$VLLM_ENV_VARS"
+            fi
+            ;;
+        llama-cpp)
+            if [ "$BASE_IMAGE" == "$CUDA_BASE_IMAGE" ]; then
+                BASE_IMAGE="$LLAMA_CPP_BASE_IMAGE"
+            fi
+            if [ -z "$EXTRAS" ]; then
+                EXTRAS="$LLAMA_CPP_EXTRAS"
+            fi
+            if [ -z "$BUILD_ENV_VARS" ]; then
+                BUILD_ENV_VARS="$LLAMA_CPP_ENV_VARS"
+            fi
+            ;;
+        full)
+            if [ "$BASE_IMAGE" == "$CUDA_BASE_IMAGE" ]; then
+                BASE_IMAGE="$FULL_BASE_IMAGE"
+            fi
+            if [ -z "$EXTRAS" ]; then
+                EXTRAS="$FULL_EXTRAS"
+            fi
+            if [ -z "$BUILD_ENV_VARS" ]; then
+                BUILD_ENV_VARS="$FULL_ENV_VARS"
+            fi
+            ;;
+        *)
+            echo "Warning: Unknown install mode '$DB_GPT_INSTALL_MODE'. Using defaults."
+            ;;
+    esac
 
-    # Set image name suffix to installation mode
+    # Set image name suffix to the installation mode
     if [ "$DB_GPT_INSTALL_MODE" != "default" ]; then
         IMAGE_NAME="$IMAGE_NAME-$DB_GPT_INSTALL_MODE"
     fi
 fi
 
-# If image name argument is provided, use it as the image name
+# If additional extras are specified, add them to the existing extras
+if [ -n "$ADDITIONAL_EXTRAS" ]; then
+    if [ -z "$EXTRAS" ]; then
+        EXTRAS="$ADDITIONAL_EXTRAS"
+    else
+        EXTRAS="$EXTRAS,$ADDITIONAL_EXTRAS"
+    fi
+fi
+
+# If additional environment variables are specified, add them to the existing environment variables
+if [ -n "$ADDITIONAL_ENV_VARS" ]; then
+    if [ -z "$BUILD_ENV_VARS" ]; then
+        BUILD_ENV_VARS="$ADDITIONAL_ENV_VARS"
+    else
+        BUILD_ENV_VARS="$BUILD_ENV_VARS $ADDITIONAL_ENV_VARS"
+    fi
+fi
+
+# If an image name argument is provided, use it as the image name
 if [ -n "$IMAGE_NAME_ARGS" ]; then
     IMAGE_NAME=$IMAGE_NAME_ARGS
 fi
@@ -259,22 +329,20 @@ echo "Base image: ${BASE_IMAGE}"
 echo "Target image name: ${IMAGE_NAME}"
 echo "Install mode: ${DB_GPT_INSTALL_MODE}"
 echo "Extras: ${EXTRAS}"
-echo "Additional Extras: ${ADDITIONAL_EXTRAS}"
+if [ -n "$ADDITIONAL_EXTRAS" ]; then
+    echo "Additional Extras: ${ADDITIONAL_EXTRAS}"
+fi
 if [ -n "$BUILD_ENV_VARS" ]; then
     echo "Environment Variables: ${BUILD_ENV_VARS}"
-fi
-if [ -n "$ADDITIONAL_ENV_VARS" ]; then
-    echo "Additional Environment Variables: ${ADDITIONAL_ENV_VARS}"
 fi
 echo "Python version: ${PYTHON_VERSION}"
 echo "Use Tsinghua Ubuntu mirror: ${USE_TSINGHUA_UBUNTU}"
 
-# Build environment variable argument string
+# Build environment variable arguments string
 BUILD_ENV_ARGS=""
 if [ -n "$BUILD_ENV_VARS" ]; then
-    # Split environment variables and add them as build arguments
+    # Split the environment variables and add them as build arguments
     for env_var in $BUILD_ENV_VARS; do
-        var_name="${env_var%%=*}"
         BUILD_ENV_ARGS="$BUILD_ENV_ARGS --build-arg $env_var"
     done
 fi
