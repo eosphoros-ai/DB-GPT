@@ -16,17 +16,21 @@ $(VENV)/bin/activate: $(VENV)/.venv-timestamp
 
 $(VENV)/.venv-timestamp: uv.lock
 	# Create new virtual environment if setup.py has changed
-	#python3 -m venv $(VENV)
-	uv venv --python 3.10 $(VENV)
+	uv venv --python 3.11 $(VENV)
 	uv pip install --prefix $(VENV) ruff
+	uv pip install --prefix $(VENV) mypy
 	touch $(VENV)/.venv-timestamp
 
 testenv: $(VENV)/.testenv
 
 $(VENV)/.testenv: $(VENV)/bin/activate
-	# $(VENV_BIN)/pip install -e ".[framework]"
-	# the openai optional dependency is include framework and rag dependencies
-	$(VENV_BIN)/pip install -e ".[openai]"
+	uv sync --all-packages \
+		--extra "base" \
+		--extra "proxy_openai" \
+		--extra "rag" \
+		--extra "storage_chromadb" \
+		--extra "dbgpts" \
+		--link-mode=copy
 	touch $(VENV)/.testenv
 
 
@@ -75,7 +79,8 @@ test-doc: $(VENV)/.testenv ## Run doctests
 .PHONY: mypy
 mypy: $(VENV)/.testenv ## Run mypy checks
 	# https://github.com/python/mypy
-	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/rag/ dbgpt/datasource/ dbgpt/client/ dbgpt/agent/ dbgpt/vis/ dbgpt/experimental/
+	$(VENV_BIN)/mypy --config-file .mypy.ini --ignore-missing-imports packages/dbgpt-core/
+	# $(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/rag/ dbgpt/datasource/ dbgpt/client/ dbgpt/agent/ dbgpt/vis/ dbgpt/experimental/
 	# rag depends on core and storage, so we not need to check it again.
 	# $(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/storage/
 	# $(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/core/
