@@ -9,7 +9,7 @@ In this example, we will show how to use the Milvus as in DB-GPT RAG Storage. Us
 First, you need to install the `dbgpt milvus storage` library.
 
 ```bash
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \

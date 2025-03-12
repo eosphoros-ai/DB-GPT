@@ -80,7 +80,7 @@ uv --version
 
 ```bash
 # Use uv to install dependencies needed for OpenAI proxy
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \
@@ -120,7 +120,7 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 
 ```bash
 # Use uv to install dependencies needed for OpenAI proxy
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \
@@ -169,8 +169,9 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 ```bash
 # Use uv to install dependencies needed for GLM4
 # Install core dependencies and select desired extensions
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
+--extra "cuda121" \
 --extra "hf" \
 --extra "rag" \
 --extra "storage_chromadb" \
@@ -228,20 +229,6 @@ npm run dev
 Open your browser and visit [`http://localhost:3000`](http://localhost:3000)
 
 
-#### More descriptions
-
-| environment variables               | default value    |       description     |
-|-------------------------------------|------------------|-----------------------|
-| `llama_cpp_prompt_template`         | None             |        Prompt template now supports `zero_shot, vicuna_v1.1,alpaca,llama-2,baichuan-chat,internlm-chat`. If it is None, the model Prompt template can be automatically obtained according to the model path.    |  
-|          `llama_cpp_model_path`     |   None           |               model path        | 
-|          `llama_cpp_n_gpu_layers`   | 1000000000         |    How many network layers to transfer to the GPU, set this to 1000000000 to transfer all layers to the GPU. If your GPU is low on memory, you can set a lower number, for example: 10.                   | 
-|           `llama_cpp_n_threads`     |     None     |      The number of threads to use. If None, the number of threads will be determined automatically.                 | 
-|            `llama_cpp_n_batch`      |     512     |         The maximum number of prompt tokens to be batched together when calling llama_eval              | 
-|             `llama_cpp_n_gqa`       |     None     |          For the llama-2 70B model, Grouped-query attention must be 8.             | 
-|           `llama_cpp_rms_norm_eps`  |     5e-06     |      For the llama-2 model, 5e-6 is a good value.                 | 
-|          `llama_cpp_cache_capacity` |     None     |    Maximum model cache size. For example: 2000MiB, 2GiB                   | 
-|            `llama_cpp_prefer_cpu`   |     False     |    If a GPU is available, the GPU will be used first by default unless prefer_cpu=False is configured.              | 
-
 ## Install DB-GPT Application Database
 <Tabs
   defaultValue="sqlite"
@@ -257,6 +244,13 @@ You do not need to separately create the database tables related to the DB-GPT a
 they will be created automatically for you by default.
 
 :::
+
+Modify your toml configuration file to use SQLite as the database(Is the default setting).
+```toml
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+```
 
 
  </TabItem>
@@ -274,15 +268,18 @@ After version 0.4.7, we removed the automatic generation of MySQL database Schem
 $ mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql
 ```
 
-2. Second, set DB-GPT MySQL database settings in `.env` file.
+2. Second, modify your toml configuration file to use MySQL as the database.
 
-```bash
-LOCAL_DB_TYPE=mysql
-LOCAL_DB_USER= {your username}
-LOCAL_DB_PASSWORD={your_password}
-LOCAL_DB_HOST=127.0.0.1
-LOCAL_DB_PORT=3306
+```toml
+[service.web.database]
+type = "mysql"
+host = "127.0.0.1"
+port = 3306
+user = "root"
+database = "dbgpt"
+password = "aa123456"
 ```
+Please replace the `host`, `port`, `user`, `database`, and `password` with your own MySQL database settings.
 
  </TabItem>
 </Tabs>

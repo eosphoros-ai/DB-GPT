@@ -8,7 +8,7 @@ First, you need to install the `dbgpt mssql datasource` library.
 
 ```bash
 
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "datasource_mssql" \
 --extra "rag" \

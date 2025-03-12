@@ -27,6 +27,7 @@ This example shows how to use AWEL to build a simple rag summary example.
         }'
 """
 
+import os
 from typing import Dict
 
 from dbgpt._private.pydantic import BaseModel, Field
@@ -62,7 +63,8 @@ with DAG("dbgpt_awel_simple_rag_summary_example") as dag:
     knowledge_operator = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
     # build summary assembler operator
     summary_operator = SummaryAssemblerOperator(
-        llm_client=OpenAILLMClient(), language="en"
+        llm_client=OpenAILLMClient(api_key=os.getenv("OPENAI_API_KEY", "your api key")),
+        language="en",
     )
     (
         trigger

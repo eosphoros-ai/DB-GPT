@@ -55,7 +55,7 @@ def _get_current_cuda_memory() -> List[GPUInfo]:
     try:
         import torch
     except ImportError:
-        logger.warn("Torch not installed")
+        logger.debug("Torch not installed")
         return []
     if torch.cuda.is_available():
         num_gpus = torch.cuda.device_count()
@@ -80,5 +80,5 @@ def _get_current_cuda_memory() -> List[GPUInfo]:
                 )
         return gpu_infos
     else:
-        logger.warn("CUDA is not available.")
+        logger.debug("CUDA is not available.")
         return []

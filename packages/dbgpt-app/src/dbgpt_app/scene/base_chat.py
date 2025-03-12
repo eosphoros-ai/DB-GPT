@@ -374,7 +374,7 @@ class BaseChat(ABC):
             ai_response_text, view_message = await self._handle_final_output(
                 final_output, incremental=incremental
             )
-            full_text = view_message
+            full_text = view_message if text_output else final_output.text
             # Return the incremental text
             delta_text = full_text[len(previous_text) :]
             result_text = delta_text if incremental else full_text
