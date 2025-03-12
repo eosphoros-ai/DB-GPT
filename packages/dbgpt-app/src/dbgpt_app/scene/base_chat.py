@@ -374,14 +374,15 @@ class BaseChat(ABC):
             ai_response_text, view_message = await self._handle_final_output(
                 final_output, incremental=incremental
             )
+            full_text = view_message
+            # Return the incremental text
+            delta_text = full_text[len(previous_text) :]
+            result_text = delta_text if incremental else full_text
             if text_output:
-                full_text = view_message
-                # Return the incremental text
-                delta_text = full_text[len(previous_text) :]
-                yield delta_text if incremental else full_text
+                yield result_text
             else:
                 yield ModelOutput.build(
-                    view_message,
+                    result_text,
                     "",
                     error_code=final_output.error_code,
                     usage=final_output.usage,
