@@ -28,6 +28,7 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update && apt-get install -y \
     python${PYTHON_VERSION} \
+    python${PYTHON_VERSION}-dev \
     python${PYTHON_VERSION}-venv \
     python3-pip \
     python3-dev \
