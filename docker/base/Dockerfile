@@ -7,6 +7,7 @@ ARG BASE_IMAGE
 ARG PYTHON_VERSION=3.11
 # Use Tsinghua PyPI mirror, It's faster in most countries
 ARG PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+ARG UV_HTTP_TIMEOUT=180
 ARG EXTRAS="base,proxy_openai,rag,storage_chromadb,cuda121,hf,quant_bnb,dbgpts"
 ARG VERSION=latest
 ARG USE_TSINGHUA_UBUNTU
@@ -16,6 +17,7 @@ ENV PYTHONUNBUFFERED=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     PIP_INDEX_URL=${PIP_INDEX_URL} \
+    UV_HTTP_TIMEOUT=${UV_HTTP_TIMEOUT} \
     CMAKE_ARGS=${CMAKE_ARGS}
 
 # Configure apt sources based on the USE_TSINGHUA_UBUNTU parameter
@@ -31,8 +33,6 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
     python${PYTHON_VERSION}-dev \
     python${PYTHON_VERSION}-venv \
     python3-pip \
-    python3-dev \
-    python3-virtualenv \
     git \
     curl \
     wget \
@@ -63,7 +63,9 @@ COPY packages /app/packages
 # Install dependencies with uv and install all local packages
 RUN --mount=type=cache,target=/root/.cache/uv \
     extras=$(echo $EXTRAS | tr ',' '\n' | while read extra; do echo "--extra $extra"; done | tr '\n' ' ') && \
-    uv sync --frozen --all-packages --no-dev $extras && \
+    uv sync --frozen --all-packages \
+    --no-dev $extras \
+    --index-url=$PIP_INDEX_URL && \
     # Verify installation
     python -c "import dbgpt; print(dbgpt.__version__)"
 ARG LANGUAGE="en"

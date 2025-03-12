@@ -43,6 +43,7 @@ jobs:
           build-args: |
             BASE_IMAGE=ubuntu:22.04
             EXTRAS=base,proxy_openai,rag,graph_rag,storage_chromadb,dbgpts,proxy_ollama,proxy_zhipuai,proxy_anthropic,proxy_qianfan,proxy_tongyi
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+            PIP_INDEX_URL=https://pypi.org/simple
+          platforms: linux/arm64,linux/amd64
           push: true
           tags: eosphorosai/dbgpt-openai:${{ github.ref_name }},eosphorosai/dbgpt-openai:latest
