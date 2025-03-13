@@ -1,872 +1,829 @@
 {
-  "flow": {
-  "uid": "feb180ad-0f02-42c9-983d-70eb5ae9b346",
-  "label": "知识图谱加工工作流",
-  "name": "knowledge_graph_process_workflow",
-  "flow_category": null,
-  "flow_data": {
-    "nodes": [
-      {
-        "width": 320,
-        "height": 323,
-        "id": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
-        "position": {
-          "x": 6.722768991652174,
-          "y": -225.32501282124363,
-          "zoom": 0
-        },
-        "type": "customNode",
-        "data": {
-          "label": "知识图谱抽取算子",
-          "custom_label": null,
-          "name": "knowledge_graph_operator",
-          "description": "Extract Documents and persist into graph database.",
-          "category": "rag",
-          "category_label": "RAG",
-          "flow_type": "operator",
-          "icon": null,
-          "documentation_url": null,
-          "id": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
-          "tags": {
-            "ui_version": "flow2.0"
-          },
-          "parameters": [
-            {
-              "type_name": "KnowledgeGraphBase",
-              "type_cls": "dbgpt.storage.knowledge_graph.base.KnowledgeGraphBase",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "Knowledge Graph Connector",
-              "name": "graph_store",
-              "is_list": false,
-              "category": "resource",
-              "resource_type": "instance",
-              "optional": false,
-              "default": null,
-              "placeholder": null,
-              "description": "The knowledge graph.",
-              "options": null,
-              "value": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
-              "alias": null,
-              "ui": null
-            }
-          ],
-          "operator_type": "map",
-          "inputs": [
-            {
-              "type_name": "List",
-              "type_cls": "typing.List",
-              "label": "块",
-              "custom_label": null,
-              "name": "chunks",
-              "description": "The text split chunks by chunk manager.",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "is_list": true,
-              "mappers": null
-            }
-          ],
-          "outputs": [
-            {
-              "type_name": "List",
-              "type_cls": "typing.List",
-              "label": "块",
-              "custom_label": null,
-              "name": "chunks",
-              "description": "已组装的块，已持久化到向量存储中。",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "is_list": true,
-              "mappers": null
-            }
-          ],
-          "version": "v1",
-          "type_name": "KnowledgeGraphOperator",
-          "type_cls": "dbgpt.rag.operators.knowledge_graph.KnowledgeGraphOperator"
-        },
-        "position_absolute": {
-          "x": 6.722768991652174,
-          "y": -225.32501282124363,
-          "zoom": 0
-        }
-      },
-      {
-        "width": 320,
-        "height": 321,
-        "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
-        "position": {
-          "x": -812.1903428806644,
-          "y": -415.17234393736123,
-          "zoom": 0
-        },
-        "type": "customNode",
-        "data": {
-          "label": "文档Chunk切片算子",
-          "custom_label": null,
-          "name": "chunk_manager_operator",
-          "description": " Split Knowledge Documents into chunks.",
-          "category": "rag",
-          "category_label": "RAG",
-          "flow_type": "operator",
-          "icon": null,
-          "documentation_url": null,
-          "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
-          "tags": {
-            "ui_version": "flow2.0"
-          },
-          "parameters": [
-            {
-              "type_name": "ChunkParameters",
-              "type_cls": "dbgpt.rag.chunk_manager.ChunkParameters",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "Chunk Split Parameters",
-              "name": "chunk_parameters",
-              "is_list": false,
-              "category": "resource",
-              "resource_type": "instance",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "Chunk Split Parameters.",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            }
-          ],
-          "operator_type": "map",
-          "inputs": [
-            {
-              "type_name": "Knowledge",
-              "type_cls": "dbgpt.rag.knowledge.base.Knowledge",
-              "label": "知识",
-              "custom_label": null,
-              "name": "knowledge",
-              "description": "The knowledge to be loaded.",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "is_list": false,
-              "mappers": null
-            }
-          ],
-          "outputs": [
-            {
-              "type_name": "List",
-              "type_cls": "typing.List",
-              "label": "块",
-              "custom_label": null,
-              "name": "chunks",
-              "description": "The split chunks by chunk manager.",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "is_list": true,
-              "mappers": null
-            }
-          ],
-          "version": "v1",
-          "type_name": "ChunkManagerOperator",
-          "type_cls": "dbgpt.rag.operators.chunk_manager.ChunkManagerOperator"
-        },
-        "position_absolute": {
-          "x": -812.1903428806644,
-          "y": -415.17234393736123,
-          "zoom": 0
-        }
-      },
-      {
-        "width": 320,
-        "height": 234,
-        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
-        "position": {
-          "x": -446.7662140064656,
-          "y": 116.76439313193941,
-          "zoom": 0
-        },
-        "type": "customNode",
-        "data": {
-          "type_name": "BuiltinKnowledgeGraph",
-          "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
-          "label": "Builtin Knowledge Graph",
-          "custom_label": null,
-          "name": "builtin_knowledge_graph",
-          "description": "Builtin Knowledge Graph.",
-          "category": "knowledge_graph",
-          "category_label": "Knowledge Graph",
-          "flow_type": "resource",
-          "icon": null,
-          "documentation_url": null,
-          "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
-          "tags": {
-            "ui_version": "flow2.0"
-          },
-          "parameters": [
-            {
-              "type_name": "BuiltinKnowledgeGraphConfig",
-              "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "Builtin Knowledge Graph Config.",
-              "name": "config",
-              "is_list": false,
-              "category": "resource",
-              "resource_type": "instance",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "Builtin Knowledge Graph Config.",
-              "options": null,
-              "value": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
-              "alias": null,
-              "ui": null
-            }
-          ],
-          "resource_type": "instance",
-          "parent_cls": [
-            "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
-            "dbgpt.storage.knowledge_graph.base.KnowledgeGraphBase",
-            "dbgpt.rag.index.base.IndexStoreBase"
-          ]
-        },
-        "position_absolute": {
-          "x": -446.7662140064656,
-          "y": 116.76439313193941,
-          "zoom": 0
-        }
-      },
-      {
-        "width": 320,
-        "height": 645,
-        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
-        "position": {
-          "x": -915.1247640485547,
-          "y": 148.92845384162234,
-          "zoom": 0
-        },
-        "type": "customNode",
-        "data": {
-          "type_name": "BuiltinKnowledgeGraphConfig",
-          "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
-          "label": "Builtin Graph Config",
-          "custom_label": null,
-          "name": "knowledge_graph_config",
-          "description": "knowledge graph config.",
-          "category": "knowledge_graph",
-          "category_label": "Knowledge Graph",
-          "flow_type": "resource",
-          "icon": null,
-          "documentation_url": null,
-          "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
-          "tags": {
-            "ui_version": "flow2.0"
-          },
-          "parameters": [
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "Graph Name",
-              "name": "name",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": "dbgpt_collection",
-              "placeholder": null,
-              "description": "The name of Graph, if not set, will use the default name.",
-              "options": null,
-              "value": "dbgpt_collection_V1",
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "Embeddings",
-              "type_cls": "dbgpt.core.interface.embeddings.Embeddings",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "嵌入函数",
-              "name": "embedding_fn",
-              "is_list": false,
-              "category": "resource",
-              "resource_type": "instance",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "向量存储的嵌入函数，如果未设置，将使用默认的嵌入函数。",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "int",
-              "type_cls": "builtins.int",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "一次加载的最大块数",
-              "name": "max_chunks_once_load",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": 10,
-              "placeholder": null,
-              "description": "一次加载的最大块数。如果您的文档很大，可以将此值设置为较大的数字，以加快加载过程。默认值为 10。",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "int",
-              "type_cls": "builtins.int",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "最大线程数",
-              "name": "max_threads",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": 1,
-              "placeholder": null,
-              "description": "要使用的最大线程数。默认值为 1。如果您将此值设置为大于 1，请确保您的向量存储是线程安全的。",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "Knowledge Graph Type",
-              "name": "graph_store_type",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "graph store type.",
-              "options": null,
-              "value": "TuGraph",
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "LLMClient",
-              "type_cls": "dbgpt.core.interface.llm.LLMClient",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "LLM Client",
-              "name": "llm_client",
-              "is_list": false,
-              "category": "resource",
-              "resource_type": "instance",
-              "optional": false,
-              "default": null,
-              "placeholder": null,
-              "description": "llm client for extract graph triplets.",
-              "options": null,
-              "value": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "LLM Model Name",
-              "name": "model_name",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "llm model name.",
-              "options": null,
-              "value": "zhipu_proxyllm",
-              "alias": null,
-              "ui": null
-            }
-          ],
-          "resource_type": "instance",
-          "parent_cls": [
-            "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
-            "dbgpt.storage.knowledge_graph.base.KnowledgeGraphConfig",
-            "dbgpt.rag.index.base.IndexStoreConfig",
-            "pydantic.main.BaseModel"
-          ]
-        },
-        "position_absolute": {
-          "x": -915.1247640485547,
-          "y": 148.92845384162234,
-          "zoom": 0
-        }
-      },
-      {
-        "width": 320,
-        "height": 431,
-        "id": "operator_knowledge_operator___$$___rag___$$___v1_0",
-        "position": {
-          "x": -1381.9120062303377,
-          "y": -370.57039313932444,
-          "zoom": 0
-        },
-        "type": "customNode",
-        "data": {
-          "label": "文档知识加载算子",
-          "custom_label": null,
-          "name": "knowledge_operator",
-          "description": "知识算子，可以从数据源创建知识。",
-          "category": "rag",
-          "category_label": "RAG",
-          "flow_type": "operator",
-          "icon": null,
-          "documentation_url": "https://github.com/openai/openai-python",
-          "id": "operator_knowledge_operator___$$___rag___$$___v1_0",
-          "tags": {
-            "ui_version": "flow2.0"
-          },
-          "parameters": [
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "默认数据源",
-              "name": "datasource",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "默认数据源。",
-              "options": null,
-              "value": "../../docs/docs/awel/awel.md",
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "知识类型",
-              "name": "knowledge_type",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": "DOCUMENT",
-              "placeholder": null,
-              "description": "知识类型。",
-              "options": [
+    "flow": {
+        "uid": "5ffb9d22-f749-4338-8562-141d276b54c7",
+        "label": "知识图谱加工工作流",
+        "name": "knowledge_graph_process_workflow",
+        "flow_category": null,
+        "description": "知识图谱知识加工工作流",
+        "state": "initializing",
+        "error_message": "",
+        "source": "DBGPT-WEB",
+        "source_url": null,
+        "version": "0.1.1",
+        "define_type": "json",
+        "editable": false,
+        "user_name": null,
+        "sys_code": null,
+        "dag_id": null,
+        "gmt_created": "2024-12-16 17:51:31",
+        "gmt_modified": "2024-12-16 17:51:31",
+        "metadata": {
+            "triggers": [
                 {
-                  "label": "DOCUMENT",
-                  "name": "DOCUMENT",
-                  "value": "DOCUMENT",
-                  "children": null
-                },
-                {
-                  "label": "URL",
-                  "name": "URL",
-                  "value": "URL",
-                  "children": null
-                },
-                {
-                  "label": "TEXT",
-                  "name": "TEXT",
-                  "value": "TEXT",
-                  "children": null
+                    "trigger_type": "http"
                 }
-              ],
-              "value": null,
-              "alias": null,
-              "ui": null
-            }
-          ],
-          "operator_type": "map",
-          "inputs": [
-            {
-              "type_name": "dict",
-              "type_cls": "builtins.dict",
-              "label": "知识数据源",
-              "custom_label": null,
-              "name": "knowledge datasource",
-              "description": "知识数据源，可以是文档、网址或文本。",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "is_list": false,
-              "mappers": null
-            }
-          ],
-          "outputs": [
-            {
-              "type_name": "Knowledge",
-              "type_cls": "dbgpt.rag.knowledge.base.Knowledge",
-              "label": "知识",
-              "custom_label": null,
-              "name": "Knowledge",
-              "description": "知识对象。",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "is_list": false,
-              "mappers": null
-            }
-          ],
-          "version": "v1",
-          "type_name": "KnowledgeOperator",
-          "type_cls": "dbgpt.rag.operators.knowledge.KnowledgeOperator"
+            ],
+            "sse_output": false,
+            "streaming_output": false,
+            "tags": {}
         },
-        "position_absolute": {
-          "x": -1381.9120062303377,
-          "y": -370.57039313932444,
-          "zoom": 0
-        }
-      },
-      {
-        "width": 320,
-        "height": 602,
-        "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
-        "position": {
-          "x": -2020.527087889374,
-          "y": -445.3470107479735,
-          "zoom": 0
-        },
-        "type": "customNode",
-        "data": {
-          "label": "字典 HTTP 触发器",
-          "custom_label": null,
-          "name": "dict_http_trigger",
-          "description": "通过 HTTP 请求触发您的工作流，并将请求主体解析为字典",
-          "category": "trigger",
-          "category_label": "Trigger",
-          "flow_type": "operator",
-          "icon": null,
-          "documentation_url": null,
-          "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
-          "tags": {
-            "ui_version": "flow2.0"
-          },
-          "parameters": [
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "API 端点",
-              "name": "endpoint",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": false,
-              "default": null,
-              "placeholder": null,
-              "description": "API 端点",
-              "options": null,
-              "value": "/rag/knowledge/kg/process",
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "HTTP 方法",
-              "name": "methods",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": "POST",
-              "placeholder": null,
-              "description": "API 端点的方法",
-              "options": [
+        "variables": null,
+        "authors": null,
+        "flow_data": {
+            "edges": [
                 {
-                  "label": "HTTP PUT 方法",
-                  "name": "http_put",
-                  "value": "PUT",
-                  "children": null
+                    "source": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+                    "source_order": 0,
+                    "target": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+                    "target_order": 0,
+                    "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+                    "source_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|outputs|0",
+                    "target_handle": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|parameters|0",
+                    "type": "buttonedge"
                 },
                 {
-                  "label": "HTTP POST 方法",
-                  "name": "http_post",
-                  "value": "POST",
-                  "children": null
+                    "source": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+                    "source_order": 0,
+                    "target": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+                    "target_order": 0,
+                    "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+                    "source_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|outputs|0",
+                    "target_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|parameters|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_knowledge_operator___$$___rag___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_knowledge_operator___$$___rag___$$___v1_0|operator_chunk_manager_operator___$$___rag___$$___v1_0",
+                    "source_handle": "operator_knowledge_operator___$$___rag___$$___v1_0|outputs|0",
+                    "target_handle": "operator_chunk_manager_operator___$$___rag___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_knowledge_operator___$$___rag___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0|operator_knowledge_operator___$$___rag___$$___v1_0",
+                    "source_handle": "operator_dict_http_trigger___$$___trigger___$$___v1_0|outputs|0",
+                    "target_handle": "operator_knowledge_operator___$$___rag___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+                    "source_order": 0,
+                    "target": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+                    "target_order": 5,
+                    "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0|resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+                    "source_handle": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0|outputs|0",
+                    "target_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|parameters|5",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0|operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+                    "source_handle": "operator_chunk_manager_operator___$$___rag___$$___v1_0|outputs|0",
+                    "target_handle": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
                 }
-              ],
-              "value": null,
-              "alias": null,
-              "ui": null
+            ],
+            "viewport": {
+                "x": 831.8128405437491,
+                "y": 421.4753242151554,
+                "zoom": 0.3846854569072972
             },
-            {
-              "type_name": "bool",
-              "type_cls": "builtins.bool",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "流式响应",
-              "name": "streaming_response",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": false,
-              "placeholder": null,
-              "description": "响应是否为流式传输",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "BaseHttpBody",
-              "type_cls": "dbgpt.core.awel.trigger.http_trigger.BaseHttpBody",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "HTTP 响应主体",
-              "name": "http_response_body",
-              "is_list": false,
-              "category": "resource",
-              "resource_type": "class",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "API 端点的响应主体",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "str",
-              "type_cls": "builtins.str",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "响应媒体类型",
-              "name": "response_media_type",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": null,
-              "placeholder": null,
-              "description": "响应的媒体类型",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            },
-            {
-              "type_name": "int",
-              "type_cls": "builtins.int",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "HTTP 状态码",
-              "name": "status_code",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": 200,
-              "placeholder": null,
-              "description": "HTTP 状态码",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            }
-          ],
-          "operator_type": "input",
-          "inputs": [],
-          "outputs": [
-            {
-              "type_name": "dict",
-              "type_cls": "builtins.dict",
-              "label": "请求体",
-              "custom_label": null,
-              "name": "request_body",
-              "description": "API 端点的请求主体",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "is_list": false,
-              "mappers": null
-            }
-          ],
-          "version": "v1",
-          "type_name": "DictHttpTrigger",
-          "type_cls": "dbgpt.core.awel.trigger.http_trigger.DictHttpTrigger"
-        },
-        "position_absolute": {
-          "x": -2020.527087889374,
-          "y": -445.3470107479735,
-          "zoom": 0
+            "nodes": [
+                {
+                    "width": 320,
+                    "height": 323,
+                    "id": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+                    "position": {
+                        "x": 6.722768991652174,
+                        "y": -225.32501282124363,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": 6.722768991652174,
+                        "y": -225.32501282124363,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "知识图谱算子",
+                        "custom_label": null,
+                        "name": "knowledge_graph_operator",
+                        "description": "提取文档并持久化到图数据库中。",
+                        "category": "rag",
+                        "category_label": "RAG",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
+                        "tags": {
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "List",
+                                "type_cls": "typing.List",
+                                "label": "Chunks",
+                                "custom_label": null,
+                                "name": "chunks",
+                                "description": "The text split chunks by chunk manager.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": true,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "List",
+                                "type_cls": "typing.List",
+                                "label": "Chunks",
+                                "custom_label": null,
+                                "name": "chunks",
+                                "description": "The assembled chunks, it has been persisted to graph store.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": true,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "KnowledgeGraphOperator",
+                        "type_cls": "dbgpt_ext.rag.operators.knowledge_graph.KnowledgeGraphOperator",
+                        "parameters": [
+                            {
+                                "type_name": "KnowledgeGraphBase",
+                                "type_cls": "dbgpt.storage.knowledge_graph.base.KnowledgeGraphBase",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "知识图谱连接器",
+                                "name": "graph_store",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": false,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "知识图谱。",
+                                "value": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 321,
+                    "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+                    "position": {
+                        "x": -812.1903428806644,
+                        "y": -415.17234393736123,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -812.1903428806644,
+                        "y": -415.17234393736123,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "Chunk Manager Operator",
+                        "custom_label": null,
+                        "name": "chunk_manager_operator",
+                        "description": " Split Knowledge Documents into chunks.",
+                        "category": "rag",
+                        "category_label": "RAG",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
+                        "tags": {
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "Knowledge",
+                                "type_cls": "dbgpt.rag.knowledge.base.Knowledge",
+                                "label": "Knowledge",
+                                "custom_label": null,
+                                "name": "knowledge",
+                                "description": "The knowledge to be loaded.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "List",
+                                "type_cls": "typing.List",
+                                "label": "Chunks",
+                                "custom_label": null,
+                                "name": "chunks",
+                                "description": "The split chunks by chunk manager.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": true,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "ChunkManagerOperator",
+                        "type_cls": "dbgpt.rag.operators.chunk_manager.ChunkManagerOperator",
+                        "parameters": [
+                            {
+                                "type_name": "ChunkParameters",
+                                "type_cls": "dbgpt_ext.rag.chunk_manager.ChunkParameters",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "Chunk Split Parameters",
+                                "name": "chunk_parameters",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "Chunk Split Parameters.",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 234,
+                    "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+                    "position": {
+                        "x": -446.7662140064656,
+                        "y": 116.76439313193941,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -446.7662140064656,
+                        "y": 116.76439313193941,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "type_name": "BuiltinKnowledgeGraph",
+                        "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
+                        "label": "内置知识图谱",
+                        "custom_label": null,
+                        "name": "builtin_knowledge_graph",
+                        "description": "内置知识图谱。",
+                        "category": "knowledge_graph",
+                        "category_label": "Knowledge Graph",
+                        "flow_type": "resource",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "resource_dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+                        "tags": {
+                            "ui_version": "flow2.0"
+                        },
+                        "resource_type": "instance",
+                        "parent_cls": [
+                            "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
+                            "dbgpt.storage.knowledge_graph.base.KnowledgeGraphBase",
+                            "dbgpt.rag.index.base.IndexStoreBase"
+                        ],
+                        "parameters": [
+                            {
+                                "type_name": "BuiltinKnowledgeGraphConfig",
+                                "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "内置知识图谱配置。",
+                                "name": "config",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "内置知识图谱配置。",
+                                "value": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 645,
+                    "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+                    "position": {
+                        "x": -915.1247640485547,
+                        "y": 148.92845384162234,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -915.1247640485547,
+                        "y": 148.92845384162234,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "type_name": "BuiltinKnowledgeGraphConfig",
+                        "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+                        "label": "内置图配置",
+                        "custom_label": null,
+                        "name": "knowledge_graph_config",
+                        "description": "知识图谱配置。",
+                        "category": "knowledge_graph",
+                        "category_label": "Knowledge Graph",
+                        "flow_type": "resource",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "resource_dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+                        "tags": {
+                            "ui_version": "flow2.0"
+                        },
+                        "resource_type": "instance",
+                        "parent_cls": [
+                            "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+                            "dbgpt.storage.knowledge_graph.base.KnowledgeGraphConfig",
+                            "dbgpt.rag.index.base.IndexStoreConfig",
+                            "pydantic.main.BaseModel"
+                        ],
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "图名称",
+                                "name": "name",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "dbgpt_collection",
+                                "placeholder": null,
+                                "description": "图的名称，如果不设置，将使用默认名称。",
+                                "value": "dbgpt_collection_V1",
+                                "options": null
+                            },
+                            {
+                                "type_name": "Embeddings",
+                                "type_cls": "dbgpt.core.interface.embeddings.Embeddings",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "嵌入函数",
+                                "name": "embedding_fn",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "向量存储的嵌入函数，如果不设置，将使用默认嵌入函数。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "一次加载的最大块数",
+                                "name": "max_chunks_once_load",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 10,
+                                "placeholder": null,
+                                "description": "一次加载的最大块数。如果文档较大，可以将此值设置为较大的数字以加快加载过程，默认值为 10。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "最大线程数",
+                                "name": "max_threads",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 1,
+                                "placeholder": null,
+                                "description": "使用的最大线程数，默认值为 1。如果设置为大于 1，请确保向量存储是线程安全的。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "知识图谱类型",
+                                "name": "graph_store_type",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "TuGraph",
+                                "placeholder": null,
+                                "description": "图存储类型。",
+                                "value": "TuGraph",
+                                "options": null
+                            },
+                            {
+                                "type_name": "LLMClient",
+                                "type_cls": "dbgpt.core.interface.llm.LLMClient",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "LLM 客户端",
+                                "name": "llm_client",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": false,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "用于提取图三元组的 LLM 客户端。",
+                                "value": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "LLM 模型名称",
+                                "name": "model_name",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "LLM 模型名称。",
+                                "value": "zhipu_proxyllm",
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 431,
+                    "id": "operator_knowledge_operator___$$___rag___$$___v1_0",
+                    "position": {
+                        "x": -1381.9120062303377,
+                        "y": -370.57039313932444,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -1381.9120062303377,
+                        "y": -370.57039313932444,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "知识加载算子",
+                        "custom_label": null,
+                        "name": "knowledge_operator",
+                        "description": "知识算子，可以从数据源创建知识。",
+                        "category": "rag",
+                        "category_label": "RAG",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": "https://github.com/openai/openai-python",
+                        "id": "operator_knowledge_operator___$$___rag___$$___v1_0",
+                        "tags": {
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "dict",
+                                "type_cls": "builtins.dict",
+                                "label": "knowledge datasource",
+                                "custom_label": null,
+                                "name": "knowledge datasource",
+                                "description": "knowledge datasource, which can be a document, url, or text.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "Knowledge",
+                                "type_cls": "dbgpt.rag.knowledge.base.Knowledge",
+                                "label": "Knowledge",
+                                "custom_label": null,
+                                "name": "Knowledge",
+                                "description": "Knowledge object.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "KnowledgeOperator",
+                        "type_cls": "dbgpt_ext.rag.operators.knowledge.KnowledgeOperator",
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "默认数据源",
+                                "name": "datasource",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "默认数据源。",
+                                "value": "../../docs/docs/awel/awel.md",
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "知识类型",
+                                "name": "knowledge_type",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "DOCUMENT",
+                                "placeholder": null,
+                                "description": "知识类型。",
+                                "value": null,
+                                "options": [
+                                    {
+                                        "label": "DOCUMENT",
+                                        "name": "DOCUMENT",
+                                        "value": "DOCUMENT",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "URL",
+                                        "name": "URL",
+                                        "value": "URL",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "TEXT",
+                                        "name": "TEXT",
+                                        "value": "TEXT",
+                                        "children": null
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 602,
+                    "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
+                    "position": {
+                        "x": -2020.527087889374,
+                        "y": -445.3470107479735,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -2020.527087889374,
+                        "y": -445.3470107479735,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "字典 HTTP 触发器",
+                        "custom_label": null,
+                        "name": "dict_http_trigger",
+                        "description": "通过 HTTP 请求触发工作流，并将请求体解析为字典",
+                        "category": "trigger",
+                        "category_label": "Trigger",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
+                        "tags": {
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "input",
+                        "inputs": [],
+                        "outputs": [
+                            {
+                                "type_name": "dict",
+                                "type_cls": "builtins.dict",
+                                "label": "Request Body",
+                                "custom_label": null,
+                                "name": "request_body",
+                                "description": "The request body of the API endpoint",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "DictHttpTrigger",
+                        "type_cls": "dbgpt.core.awel.trigger.http_trigger.DictHttpTrigger",
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "API 端点",
+                                "name": "endpoint",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": false,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "API 端点",
+                                "value": "/rag/knowledge/kg/process",
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 方法",
+                                "name": "methods",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "POST",
+                                "placeholder": null,
+                                "description": "API 端点的方法",
+                                "value": null,
+                                "options": [
+                                    {
+                                        "label": "HTTP Method PUT",
+                                        "name": "http_put",
+                                        "value": "PUT",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "HTTP Method POST",
+                                        "name": "http_post",
+                                        "value": "POST",
+                                        "children": null
+                                    }
+                                ]
+                            },
+                            {
+                                "type_name": "bool",
+                                "type_cls": "builtins.bool",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "流式响应",
+                                "name": "streaming_response",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": false,
+                                "placeholder": null,
+                                "description": "响应是否为流式",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "BaseHttpBody",
+                                "type_cls": "dbgpt.core.awel.trigger.http_trigger.BaseHttpBody",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 响应体",
+                                "name": "http_response_body",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "class",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "API 端点的响应体",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "响应媒体类型",
+                                "name": "response_media_type",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "响应媒体类型",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 状态码",
+                                "name": "status_code",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 200,
+                                "placeholder": null,
+                                "description": "HTTP 状态码",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 272,
+                    "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+                    "position": {
+                        "x": -1506.5067155518987,
+                        "y": 313.0562898282468,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -1506.5067155518987,
+                        "y": 313.0562898282468,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "type_name": "DefaultLLMClient",
+                        "type_cls": "dbgpt.model.cluster.client.DefaultLLMClient",
+                        "label": "默认 LLM 客户端",
+                        "custom_label": null,
+                        "name": "default_llm_client",
+                        "description": "默认 LLM 客户端（连接到你的 DB-GPT 模型服务）",
+                        "category": "llm_client",
+                        "category_label": "LLM Client",
+                        "flow_type": "resource",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
+                        "tags": {
+                            "ui_version": "flow2.0"
+                        },
+                        "resource_type": "instance",
+                        "parent_cls": [
+                            "dbgpt.model.cluster.client.DefaultLLMClient",
+                            "dbgpt.core.interface.llm.LLMClient"
+                        ],
+                        "parameters": [
+                            {
+                                "type_name": "bool",
+                                "type_cls": "builtins.bool",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "自动转换消息",
+                                "name": "auto_convert_message",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": true,
+                                "placeholder": null,
+                                "description": "是否自动将 LLM 不支持的消息转换为兼容格式",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                }
+            ]
         }
-      },
-      {
-        "width": 320,
-        "height": 272,
-        "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
-        "position": {
-          "x": -1506.5067155518987,
-          "y": 313.0562898282468,
-          "zoom": 0
-        },
-        "type": "customNode",
-        "data": {
-          "type_name": "DefaultLLMClient",
-          "type_cls": "dbgpt.model.cluster.client.DefaultLLMClient",
-          "label": "默认 LLM 客户端",
-          "custom_label": null,
-          "name": "default_llm_client",
-          "description": "默认 LLM 客户端（连接到您的 DB-GPT 模型服务）",
-          "category": "llm_client",
-          "category_label": "LLM Client",
-          "flow_type": "resource",
-          "icon": null,
-          "documentation_url": null,
-          "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
-          "tags": {
-            "ui_version": "flow2.0"
-          },
-          "parameters": [
-            {
-              "type_name": "bool",
-              "type_cls": "builtins.bool",
-              "dynamic": false,
-              "dynamic_minimum": 0,
-              "label": "自动转换消息",
-              "name": "auto_convert_message",
-              "is_list": false,
-              "category": "common",
-              "resource_type": "instance",
-              "optional": true,
-              "default": true,
-              "placeholder": null,
-              "description": "是否将 LLM 不支持的消息自动转换为兼容格式",
-              "options": null,
-              "value": null,
-              "alias": null,
-              "ui": null
-            }
-          ],
-          "resource_type": "instance",
-          "parent_cls": [
-            "dbgpt.model.cluster.client.DefaultLLMClient",
-            "dbgpt.core.interface.llm.LLMClient"
-          ]
-        },
-        "position_absolute": {
-          "x": -1506.5067155518987,
-          "y": 313.0562898282468,
-          "zoom": 0
-        }
-      }
-    ],
-    "edges": [
-      {
-        "source": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
-        "source_order": 0,
-        "target": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
-        "target_order": 0,
-        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|operator_knowledge_graph_operator___$$___rag___$$___v1_0",
-        "source_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|outputs|0",
-        "target_handle": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|parameters|0",
-        "type": "buttonedge"
-      },
-      {
-        "source": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
-        "source_order": 0,
-        "target": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
-        "target_order": 0,
-        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
-        "source_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|outputs|0",
-        "target_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0|parameters|0",
-        "type": "buttonedge"
-      },
-      {
-        "source": "operator_knowledge_operator___$$___rag___$$___v1_0",
-        "source_order": 0,
-        "target": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
-        "target_order": 0,
-        "id": "operator_knowledge_operator___$$___rag___$$___v1_0|operator_chunk_manager_operator___$$___rag___$$___v1_0",
-        "source_handle": "operator_knowledge_operator___$$___rag___$$___v1_0|outputs|0",
-        "target_handle": "operator_chunk_manager_operator___$$___rag___$$___v1_0|inputs|0",
-        "type": "buttonedge"
-      },
-      {
-        "source": "operator_dict_http_trigger___$$___trigger___$$___v1_0",
-        "source_order": 0,
-        "target": "operator_knowledge_operator___$$___rag___$$___v1_0",
-        "target_order": 0,
-        "id": "operator_dict_http_trigger___$$___trigger___$$___v1_0|operator_knowledge_operator___$$___rag___$$___v1_0",
-        "source_handle": "operator_dict_http_trigger___$$___trigger___$$___v1_0|outputs|0",
-        "target_handle": "operator_knowledge_operator___$$___rag___$$___v1_0|inputs|0",
-        "type": "buttonedge"
-      },
-      {
-        "source": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0",
-        "source_order": 0,
-        "target": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
-        "target_order": 5,
-        "id": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0|resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
-        "source_handle": "resource_dbgpt.model.cluster.client.DefaultLLMClient_0|outputs|0",
-        "target_handle": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0|parameters|5",
-        "type": "buttonedge"
-      },
-      {
-        "source": "operator_chunk_manager_operator___$$___rag___$$___v1_0",
-        "source_order": 0,
-        "target": "operator_knowledge_graph_operator___$$___rag___$$___v1_0",
-        "target_order": 0,
-        "id": "operator_chunk_manager_operator___$$___rag___$$___v1_0|operator_knowledge_graph_operator___$$___rag___$$___v1_0",
-        "source_handle": "operator_chunk_manager_operator___$$___rag___$$___v1_0|outputs|0",
-        "target_handle": "operator_knowledge_graph_operator___$$___rag___$$___v1_0|inputs|0",
-        "type": "buttonedge"
-      }
-    ],
-    "viewport": {
-      "x": 831.8128405437491,
-      "y": 421.4753242151554,
-      "zoom": 0.3846854569072972
     }
-  },
-  "description": "知识图谱知识加工工作流",
-  "state": "running",
-  "error_message": "",
-  "source": "DBGPT-WEB",
-  "source_url": null,
-  "version": "0.1.1",
-  "define_type": "json",
-  "editable": true,
-  "user_name": null,
-  "sys_code": null,
-  "dag_id": "flow_dag_knowledge_graph_process_workflow_feb180ad-0f02-42c9-983d-70eb5ae9b346",
-  "gmt_created": "2024-12-16 17:51:31",
-  "gmt_modified": "2024-12-16 17:51:31",
-  "metadata": {
-    "sse_output": false,
-    "streaming_output": false,
-    "tags": {},
-    "triggers": [
-      {
-        "trigger_type": "http",
-        "path": "/api/v1/awel/trigger/rag/graph/process",
-        "methods": [
-          "POST"
-        ],
-        "trigger_mode": "command"
-      }
-    ]
-  },
-  "variables": null,
-  "authors": null
-}
 }

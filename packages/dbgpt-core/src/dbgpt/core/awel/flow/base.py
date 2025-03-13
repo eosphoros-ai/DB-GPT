@@ -90,6 +90,7 @@ def _get_type_cls(type_name: str) -> Type[Any]:
 
     if type_name in _TYPE_REGISTRY:
         return _TYPE_REGISTRY[type_name]
+    # Not registered, try to get the new class name from the compat config.
     new_cls = get_new_class_name(type_name)
     if new_cls and new_cls in _TYPE_REGISTRY:
         return _TYPE_REGISTRY[new_cls]
@@ -1521,4 +1522,6 @@ def _register_resource(
     alias_ids: Optional[List[str]] = None,
 ):
     """Register the operator."""
+    # Register the type
+    _ = _get_type_name(cls)
     _OPERATOR_REGISTRY.register_flow(cls, resource_metadata, alias_ids)
