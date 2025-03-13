@@ -18,6 +18,6 @@ from sqlalchemy.dialects import registry
 
 registry.register(
     "starrocks",
-    "dbgpt.datasource.rdbms.dialect.starrocks.sqlalchemy.dialect",
+    "dbgpt_ext.datasource.rdbms.dialect.starrocks.sqlalchemy.dialect",
     "StarRocksDialect",
 )
