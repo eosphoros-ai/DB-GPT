@@ -2,15 +2,17 @@
 
 import logging
 import traceback
-from typing import Tuple
+from typing import Tuple, Optional
 
 from dbgpt.component import SystemApp
 from dbgpt.core import Embeddings
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.text_splitter.text_splitter import RDBTextSplitter
+from dbgpt.storage.vector_store.base import VectorStoreConfig, VectorStoreBase
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.summary.gdbms_db_summary import GdbmsSummary
 from dbgpt_ext.rag.summary.rdbms_db_summary import RdbmsSummary
+from dbgpt_ext.storage.vector_store.factory import VectorStoreFactory
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
@@ -35,6 +37,7 @@ class DBSummaryClient:
 
         self.app_config = self.system_app.config.configs.get("app_config")
         self.storage_config = self.app_config.rag.storage
+        from dbgpt_ext.storage.vector_store.factory import VectorStoreFactory
 
     @property
     def embeddings(self) -> Embeddings:
@@ -68,8 +71,8 @@ class DBSummaryClient:
         )
         retriever = DBSchemaRetriever(
             top_k=topk,
-            table_vector_store_connector=table_vector_connector.index_client,
-            field_vector_store_connector=field_vector_connector.index_client,
+            table_vector_store_connector=table_vector_connector,
+            field_vector_store_connector=field_vector_connector,
             separator="--table-field-separator--",
         )
 
@@ -116,8 +119,8 @@ class DBSummaryClient:
             )
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connector=db_summary_client.db,
-                table_vector_store_connector=table_vector_connector.index_client,
-                field_vector_store_connector=field_vector_connector.index_client,
+                table_vector_store_connector=table_vector_connector,
+                field_vector_store_connector=field_vector_connector,
                 chunk_parameters=chunk_parameters,
                 max_seq_length=self.app_config.service.web.embedding_model_max_seq_len,
             )
@@ -157,23 +160,33 @@ class DBSummaryClient:
 
     def _get_vector_connector_by_db(
         self, dbname
-    ) -> Tuple[VectorStoreConnector, VectorStoreConnector]:
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
-
+    ) -> Tuple[VectorStoreBase, VectorStoreBase]:
         vector_store_name = dbname + "_profile"
-        table_vector_store_config = VectorStoreConfig(name=vector_store_name)
-        table_vector_connector = VectorStoreConnector.from_default(
-            self.storage_config.vector.get("type"),
-            self.embeddings,
-            vector_store_config=table_vector_store_config,
-            system_app=self.system_app,
+        # table_vector_store_config = VectorStoreConfig(name=vector_store_name)
+        # table_vector_connector = VectorStoreConnector.from_default(
+        #     self.storage_config.vector.get_type_value(),
+        #     self.embeddings,
+        #     vector_store_config=vector_config,
+        #     system_app=self.system_app,
+        # )
+        table_vector_store = VectorStoreFactory.create(
+            vector_store_type=self.storage_config.vector.get_type_value(),
+            vector_store_configure=self.storage_config.vector,
+            vector_space_name=vector_store_name,
+            embedding_fn=self.embeddings,
         )
         field_vector_store_name = dbname + "_profile_field"
-        field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
-        field_vector_connector = VectorStoreConnector.from_default(
-            self.storage_config.vector.get("type"),
-            self.embeddings,
-            vector_store_config=field_vector_store_config,
-            system_app=self.system_app,
+        # field_vector_store_config = VectorStoreConfig(name=field_vector_store_name)
+        field_vector_store = VectorStoreFactory.create(
+            vector_store_type=self.storage_config.vector.get_type_value(),
+            vector_store_configure=self.storage_config.vector,
+            vector_space_name=field_vector_store_name,
+            embedding_fn=self.embeddings,
         )
-        return table_vector_connector, field_vector_connector
+        # field_vector_connector = VectorStoreConnector.from_default(
+        #     self.storage_config.vector.type,
+        #     self.embeddings,
+        #     vector_store_config=field_vector_store_config,
+        #     system_app=self.system_app,
+        # )
+        return table_vector_store, field_vector_store

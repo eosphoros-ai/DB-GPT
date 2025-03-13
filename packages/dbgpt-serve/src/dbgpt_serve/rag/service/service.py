@@ -24,7 +24,7 @@ from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeType
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
-from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.storage.vector_store.base import VectorStoreConfig, VectorStoreBase
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.string_utils import remove_trailing_punctuation
 from dbgpt.util.tracer import root_tracer, trace
@@ -32,6 +32,7 @@ from dbgpt_app.knowledge.request.request import BusinessFieldType
 from dbgpt_ext.rag.assembler import EmbeddingAssembler
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.storage.vector_store.factory import VectorStoreFactory
 from dbgpt_serve.core import BaseService
 from dbgpt_serve.rag.connector import VectorStoreConnector
 
@@ -505,19 +506,20 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         space = self.get({"id": space_id})
-        config = VectorStoreConfig(
-            name=space.name,
-            embedding_fn=embedding_fn,
-            max_chunks_once_load=self._serve_config.max_chunks_once_load,
-            max_threads=self._serve_config.max_threads,
-            llm_client=self.llm_client,
-            model_name=None,
-        )
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=self._system_app,
-        )
+        # config = VectorStoreConfig(
+        #     name=space.name,
+        #     embedding_fn=embedding_fn,
+        #     max_chunks_once_load=self._serve_config.max_chunks_once_load,
+        #     max_threads=self._serve_config.max_threads,
+        #     llm_client=self.llm_client,
+        #     model_name=None,
+        # )
+        # vector_store_connector = VectorStoreConnector(
+        #     vector_store_type=space.vector_type,
+        #     vector_store_config=config,
+        #     system_app=self._system_app,
+        # )
+        vector_store_connector = self._create_vector_store(space.name)
         knowledge = None
         if not space.domain_type or (
             space.domain_type.lower() == BusinessFieldType.NORMAL.value.lower()
@@ -578,7 +580,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     max_threads = vector_store_connector._index_store_config.max_threads
                     assembler = await EmbeddingAssembler.aload_from_knowledge(
                         knowledge=knowledge,
-                        index_store=vector_store_connector.index_client,
+                        index_store=vector_store_connector,
                         chunk_parameters=chunk_parameters,
                     )
 
@@ -654,4 +656,19 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         )
         return await space_retriever.aretrieve_with_scores(
             request.query, request.score_threshold
+        )
+
+    def _create_vector_store(self, space_name) -> VectorStoreBase:
+        """Create vector store."""
+        app_config = self._system_app.config.configs.get("app_config")
+        storage_config = app_config.rag.storage
+        embedding_factory = self._system_app.get_component(
+            "embedding_factory", EmbeddingFactory
+        )
+        embedding_fn = embedding_factory.create()
+        return VectorStoreFactory.create(
+            vector_store_type=storage_config.vector.get_type_value(),
+            vector_store_configure=storage_config.vector,
+            vector_space_name=space_name,
+            embedding_fn=embedding_fn,
         )

@@ -2,6 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List, Optional
 
 from pydantic import Field
@@ -14,6 +15,7 @@ from dbgpt.storage.graph_store.graph import Graph
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class KnowledgeGraphConfig(IndexStoreConfig):
     """Knowledge graph config."""
 

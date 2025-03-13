@@ -18,6 +18,7 @@ from dbgpt_ext.storage.full_text.elasticsearch import ElasticDocumentConfig
 from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraphConfig,
 )
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt_serve.core import BaseServeConfig
 
 
@@ -53,20 +54,20 @@ class SystemParameters:
 
 @dataclass
 class StorageConfig(BaseParameters):
-    vector: VectorStoreConfig = field(
-        default_factory=VectorStoreConfig,
+    vector: Optional[ChromaVectorConfig] = field(
+        default_factory=lambda: ChromaVectorConfig(),
         metadata={
             "help": _("default vector type"),
         },
     )
-    graph: BuiltinKnowledgeGraphConfig = field(
-        default_factory=BuiltinKnowledgeGraphConfig,
+    graph: Optional[BuiltinKnowledgeGraphConfig] = field(
+        default=None,
         metadata={
             "help": _("default graph type"),
         },
     )
-    full_text: ElasticDocumentConfig = field(
-        default_factory=ElasticDocumentConfig,
+    full_text: Optional[ElasticDocumentConfig] = field(
+        default=None,
         metadata={
             "help": _("default full text type"),
         },

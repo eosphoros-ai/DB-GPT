@@ -1,8 +1,9 @@
 """Vector store factory."""
 
 import logging
-from typing import Tuple, Type
+from typing import Tuple, Type, Optional
 
+from dbgpt.core import Embeddings
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt_ext.storage import __vector_store__ as vector_store_list
 from dbgpt_ext.storage import _select_rag_storage
@@ -15,7 +16,11 @@ class VectorStoreFactory:
 
     @staticmethod
     def create(
-        vector_store_type: str, vector_space_name: str, vector_store_configure=None
+        vector_store_type: str,
+            vector_space_name: str,
+            vector_store_configure=None,
+            embedding_fn: Optional[Embeddings] = None,
+            kwargs: Optional[dict] = None,
     ) -> VectorStoreBase:
         """Create a VectorStore instance.
 
@@ -24,12 +29,15 @@ class VectorStoreFactory:
             - vector_store_config: vector store config
         """
         store_cls, cfg_cls = VectorStoreFactory.__find_type(vector_store_type)
-
+        kwargs = kwargs or {}
         try:
-            config = cfg_cls()
-            if vector_store_configure:
-                vector_store_configure(vector_space_name, config)
-            return store_cls(config)
+            # config = cfg_cls()
+            # if vector_store_configure:
+            #     vector_store_configure(vector_space_name, config)
+            return store_cls(vector_store_config=vector_store_configure,
+                             name=vector_space_name,
+                             embedding_fn=embedding_fn,
+                             **kwargs)
         except Exception as e:
             logger.error("create vector store failed: %s", e)
             raise e

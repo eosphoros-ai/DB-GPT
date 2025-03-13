@@ -71,14 +71,14 @@ class VectorStoreConnector:
         self._vector_store_type = vector_store_type
         self._embeddings = vector_store_config.embedding_fn
 
-        config_dict = self._adapt_storage_config(vector_store_type)
+        config_dict = self._adapt_storage_config(vector_store_type).to_dict()
         for key in vector_store_config.to_dict().keys():
             value = getattr(vector_store_config, key)
             if value is not None:
                 config_dict[key] = value
-        for key, value in vector_store_config.model_extra.items():
-            if value is not None:
-                config_dict[key] = value
+        # for key, value in vector_store_config.model_extra.items():
+        #     if value is not None:
+        #         config_dict[key] = value
         config = self.config_class(**config_dict)
         try:
             if vector_store_type in pools and config.name in pools[vector_store_type]:
@@ -93,10 +93,10 @@ class VectorStoreConnector:
     def _rewrite_index_store_type(self, index_store_type):
         # Rewrite Knowledge Graph Type
         if self.app_config.rag.storage.graph:
-            graph_dict = self.app_config.rag.storage.graph
+            graph_config = self.app_config.rag.storage.graph
             if (
-                isinstance(graph_dict, dict)
-                and graph_dict.get("enable_summary", "false").lower() == "true"
+                hasattr(graph_config, "enable_summary")
+                and graph_config.enable_summary.lower() == "true"
             ):
                 if index_store_type == "KnowledgeGraph":
                     return "CommunitySummaryKnowledgeGraph"
@@ -289,19 +289,13 @@ class VectorStoreConnector:
         if vector_store_type in supported_vector_store_list:
             return (
                 storage_config.vector
-                if isinstance(storage_config.vector, dict)
-                else storage_config.vector.to_dict()
             )
         elif vector_store_type in supported_kg_store_list:
             return (
                 storage_config.graph
-                if isinstance(storage_config.graph, dict)
-                else storage_config.graph.dict()
             )
         elif vector_store_type in supported_full_tet_list:
             return (
                 storage_config.full_text
-                if isinstance(storage_config.full_text, dict)
-                else storage_config.full_text.dict()
             )
         raise ValueError(f"storage type {vector_store_type} not supported")

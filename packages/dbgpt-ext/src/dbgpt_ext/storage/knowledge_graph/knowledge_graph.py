@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+from dataclasses import dataclass
 from typing import List, Optional
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -98,6 +99,7 @@ GRAPH_PARAMETERS = [
         ),
     ],
 )
+@dataclass
 class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
     """Builtin knowledge graph config."""
 

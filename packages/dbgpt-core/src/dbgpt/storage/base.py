@@ -4,50 +4,54 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
+from dataclasses import dataclass, field, asdict
 from typing import Any, Dict, List, Optional
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt.util import BaseParameters, RegisterParameters
 from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 
 logger = logging.getLogger(__name__)
 
 
-class IndexStoreConfig(BaseModel):
+@dataclass
+class IndexStoreConfig(BaseParameters):
     """Index store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-
-    type: Optional[str] = Field(
-        default=None,
-        description="storage type",
-    )
-
-    name: str = Field(
-        default="dbgpt_collection",
-        description="The name of index store, if not set, will use the default name.",
-    )
-    embedding_fn: Optional[Embeddings] = Field(
-        default=None,
-        description="The embedding function of vector store, if not set, will use the "
-        "default embedding function.",
-    )
-    max_chunks_once_load: int = Field(
-        default=10,
-        description="The max number of chunks to load at once. If your document is "
-        "large, you can set this value to a larger number to speed up the loading "
-        "process. Default is 10.",
-    )
-    max_threads: int = Field(
-        default=1,
-        description="The max number of threads to use. Default is 1. If you set this "
-        "bigger than 1, please make sure your vector store is thread-safe.",
-    )
-
-    def to_dict(self, **kwargs) -> Dict[str, Any]:
-        """Convert to dict."""
-        return model_to_dict(self, **kwargs)
+    # name: str = field(
+    #     default="dbgpt_collection",
+    #     metadata={
+    #         "help": "The name of index store, if not set, will use the default name."
+    #     }
+    # )
+    # embedding_fn: Optional["Embeddings"] = field(
+    #     default=None,
+    #     metadata={
+    #         "help": "The embedding function of index store, if not set, will use the "
+    #         "default embedding function."
+    #     },
+    # )
+    # max_chunks_once_load: int = field(
+    #     default=10,
+    #     metadata={
+    #         "help": "The max number of chunks to load at once. Default is 10."
+    #     },
+    # )
+    # max_threads: int = field(
+    #     default=1,
+    #     metadata={
+    #         "help": "The max number of threads to use. Default is 1."
+    #     },
+    # )
+    #
+    # def to_dict(self, **kwargs) -> Dict[str, Any]:
+    #     """Convert to dict."""
+    #     embedding_fn = self.embedding_fn
+    #     self.embedding_fn = None
+    #     result = asdict(self)
+    #     result['embedding_fn'] = embedding_fn
+    #     return result
 
 
 class IndexStoreBase(ABC):

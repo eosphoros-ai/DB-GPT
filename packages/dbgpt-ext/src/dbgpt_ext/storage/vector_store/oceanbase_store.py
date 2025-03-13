@@ -5,6 +5,7 @@ import logging
 import math
 import os
 import uuid
+from dataclasses import field, dataclass
 from typing import Any, List, Optional, Tuple
 
 import numpy as np
@@ -122,32 +123,32 @@ def _normalize(vector: List[float]) -> List[float]:
     ],
     description="OceanBase vector store config.",
 )
+@dataclass
 class OceanBaseConfig(VectorStoreConfig):
     """OceanBase vector store config."""
+    __type__ = "OceanBase"
 
-    class Config:
-        """Config for BaseModel."""
-
-        arbitrary_types_allowed = True
-
-    """OceanBase config"""
-    ob_host: Optional[str] = Field(
+    ob_host: Optional[str] = field(
         default=None,
-        description="oceanbase host",
+        metadata={
+            "help": "The host of oceanbase, if not set, will use the default host."
+        },
     )
-    ob_port: Optional[int] = Field(
+    ob_port: Optional[int] = field(
         default=None,
-        description="oceanbase port",
+        metadata={
+            "help": "The port of oceanbase, if not set, will use the default port."
+        },
     )
-    ob_user: Optional[str] = Field(
+    ob_user: Optional[str] = field(
         default=None,
         description="user to login",
     )
-    ob_password: Optional[str] = Field(
+    ob_password: Optional[str] = field(
         default=None,
         description="password to login",
     )
-    ob_database: Optional[str] = Field(
+    ob_database: Optional[str] = field(
         default=None,
         description="database for vector tables",
     )
