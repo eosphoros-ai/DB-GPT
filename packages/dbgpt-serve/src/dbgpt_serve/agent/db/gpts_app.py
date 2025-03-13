@@ -983,6 +983,7 @@ class GptsAppDao(BaseDao):
                         params=json.dumps(recommend_question.params),
                         valid=recommend_question.valid,
                         chat_mode=chat_scene,
+                        user_code=gpts_app.user_code,
                     )
                 )
             session.add_all(recommend_questions)
