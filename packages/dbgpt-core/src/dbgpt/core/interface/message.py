@@ -1150,7 +1150,7 @@ class StorageConversation(OnceConversation, StorageItem):
 
     def clear(self) -> None:
         """Clear all the messages and conversation."""
-        from dbgpt_serve.agent.db import GptsMessagesDao, GptsConversationsDao
+        from dbgpt_serve.agent.db import GptsConversationsDao, GptsMessagesDao
 
         # 清除Agent聊天记录
         GptsMessagesDao().delete_chat_message(conv_id=self.conv_uid)

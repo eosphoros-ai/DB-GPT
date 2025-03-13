@@ -116,7 +116,7 @@ class GptsConversationsDao(BaseDao):
         session = self.get_raw_session()
         gpts_messages = session.query(GptsConversationsEntity)
         gpts_messages.filter(
-            GptsConversationsEntity.conv_id.like(f'%{conv_id}%')
+            GptsConversationsEntity.conv_id.like(f"%{conv_id}%")
         ).delete()
         session.commit()
         session.close()
