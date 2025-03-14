@@ -4,10 +4,13 @@ from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import (
     BaseMessage,
     ChatPromptTemplate,
+    HumanPromptTemplate,
     LLMClient,
+    MessagesPlaceholder,
     ModelOutput,
     ModelRequest,
     StorageConversation,
+    SystemPromptTemplate,
 )
 from dbgpt.core.awel import (
     DAG,
@@ -55,6 +58,15 @@ class HOContextBody(BaseModel):
     )
 
 
+_DEFAULT_PROMPT_TEMPLATE = ChatPromptTemplate(
+    messages=[
+        SystemPromptTemplate.from_template(_("You are a helpful AI assistant.")),
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanPromptTemplate.from_template("{user_input}"),
+    ]
+)
+
+
 class BaseHOLLMOperator(
     BaseConversationOperator,
     JoinOperator[ModelRequest],
@@ -65,7 +77,7 @@ class BaseHOLLMOperator(
 
     def __init__(
         self,
-        prompt_template: ChatPromptTemplate,
+        prompt_template: Optional[ChatPromptTemplate] = None,
         model: str = None,
         llm_client: Optional[LLMClient] = None,
         history_merge_mode: Literal["none", "window", "token"] = "window",
@@ -84,7 +96,7 @@ class BaseHOLLMOperator(
         self._history_merge_mode = history_merge_mode
         self._user_message_key = user_message_key
         self._has_history = history_merge_mode != "none"
-        self._prompt_template = prompt_template
+        self._prompt_template = prompt_template or _DEFAULT_PROMPT_TEMPLATE
         self._model = model
         self._history_key = history_key
         self._str_history = False
@@ -146,6 +158,9 @@ class BaseHOLLMOperator(
         # Save the storage conversation to share data, for the child operators
         await self.current_dag_context.save_to_share_data(
             self.SHARE_DATA_KEY_STORAGE_CONVERSATION, storage_conv
+        )
+        await self.current_dag_context.save_to_share_data(
+            self.SHARE_DATA_KEY_CONV_MODEL_NAME, req.model, overwrite=True
         )
 
         user_input = (
@@ -269,6 +284,8 @@ _PARAMETER_PROMPT_TEMPLATE = Parameter.build_from(
     "prompt_template",
     ChatPromptTemplate,
     description=_("The prompt template for the conversation."),
+    optional=True,
+    default=None,
 )
 _PARAMETER_MODEL = Parameter.build_from(
     _("Model Name"),

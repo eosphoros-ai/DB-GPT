@@ -1,0 +1,573 @@
+{
+    "flow": {
+        "uid": "71d2401f-4703-48f8-9cbc-35502a565c1e",
+        "label": "简单流式对话工作流",
+        "name": "simple_streaming_chat_workflow",
+        "flow_category": "chat_flow",
+        "description": "简单的流式对话工作流，支持记忆。",
+        "state": "running",
+        "error_message": "",
+        "source": "DBGPT-WEB",
+        "source_url": null,
+        "version": "0.1.1",
+        "define_type": "json",
+        "editable": true,
+        "user_name": null,
+        "sys_code": null,
+        "dag_id": "flow_dag_simple_streaming_chat_workflow_71d2401f-4703-48f8-9cbc-35502a565c1e",
+        "gmt_created": "2025-03-14 09:20:38",
+        "gmt_modified": "2025-03-14 09:20:38",
+        "metadata": {
+            "sse_output": true,
+            "streaming_output": true,
+            "tags": {},
+            "triggers": [
+                {
+                    "trigger_type": "http",
+                    "path": "/api/v1/awel/trigger/example/flow_dag_simple_streaming_chat_workflow_71d2401f-4703-48f8-9cbc-35502a565c1e",
+                    "methods": [
+                        "POST"
+                    ],
+                    "trigger_mode": "chat"
+                }
+            ]
+        },
+        "variables": null,
+        "authors": null,
+        "flow_data": {
+            "edges": [
+                {
+                    "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+                    "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|0",
+                    "target_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+                    "source_handle": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0|outputs|0",
+                    "target_handle": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                }
+            ],
+            "viewport": {
+                "x": 719.3238528343023,
+                "y": 132.13267383901623,
+                "zoom": 1.0443554904294883
+            },
+            "nodes": [
+                {
+                    "width": 320,
+                    "height": 632,
+                    "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                    "position": {
+                        "x": -437.17668641409807,
+                        "y": -59.481076916763314,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -437.17668641409807,
+                        "y": -59.481076916763314,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "通用 LLM HTTP 触发器",
+                        "custom_label": null,
+                        "name": "common_llm_http_trigger",
+                        "description": "通过 HTTP 请求触发工作流，并将请求体解析为通用 LLM HTTP 请求体",
+                        "category": "trigger",
+                        "category_label": "Trigger",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "input",
+                        "inputs": [],
+                        "outputs": [
+                            {
+                                "type_name": "CommonLLMHttpRequestBody",
+                                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                                "label": "Request Body",
+                                "custom_label": null,
+                                "name": "request_body",
+                                "description": "The request body of the API endpoint, parse as a common LLM http body",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Request String Messages",
+                                "custom_label": null,
+                                "name": "request_string_messages",
+                                "description": "The request string messages of the API endpoint, parsed from 'messages' field of the request body",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": [
+                                    "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger.MessagesOutputMapper"
+                                ]
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "CommonLLMHttpTrigger",
+                        "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger",
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "API 端点",
+                                "name": "endpoint",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "/example/{dag_id}",
+                                "placeholder": null,
+                                "description": "API 端点",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 方法",
+                                "name": "methods",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "POST",
+                                "placeholder": null,
+                                "description": "API 端点的方法",
+                                "value": null,
+                                "options": [
+                                    {
+                                        "label": "HTTP Method PUT",
+                                        "name": "http_put",
+                                        "value": "PUT",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "HTTP Method POST",
+                                        "name": "http_post",
+                                        "value": "POST",
+                                        "children": null
+                                    }
+                                ]
+                            },
+                            {
+                                "type_name": "bool",
+                                "type_cls": "builtins.bool",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "流式响应",
+                                "name": "streaming_response",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": false,
+                                "placeholder": null,
+                                "description": "响应是否为流式",
+                                "value": false,
+                                "options": null
+                            },
+                            {
+                                "type_name": "BaseHttpBody",
+                                "type_cls": "dbgpt.core.awel.trigger.http_trigger.BaseHttpBody",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 响应体",
+                                "name": "http_response_body",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "class",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "API 端点的响应体",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "响应媒体类型",
+                                "name": "response_media_type",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "响应媒体类型",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 状态码",
+                                "name": "status_code",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 200,
+                                "placeholder": null,
+                                "description": "HTTP 状态码",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 909,
+                    "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+                    "position": {
+                        "x": 170.06343404314669,
+                        "y": -30.119628304764014,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": 170.06343404314669,
+                        "y": -30.119628304764014,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "流式 LLM 算子",
+                        "custom_label": null,
+                        "name": "higher_order_streaming_llm_operator",
+                        "description": "高级流式 LLM 算子，支持多轮对话（对话窗口、Token 长度和无多轮）。",
+                        "category": "llm",
+                        "category_label": "LLM",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_higher_order_streaming_llm_operator___$$___llm___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "CommonLLMHttpRequestBody",
+                                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                                "label": "Common LLM Request Body",
+                                "custom_label": null,
+                                "name": "common_llm_request_body",
+                                "description": "The common LLM request body.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "HOContextBody",
+                                "type_cls": "dbgpt_app.operators.llm.HOContextBody",
+                                "label": "Extra Context",
+                                "custom_label": null,
+                                "name": "extra_context",
+                                "description": "Extra context for building prompt(Knowledge context, database schema, etc), you can add multiple context.",
+                                "dynamic": true,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "ModelOutput",
+                                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                                "label": "Streaming Model Output",
+                                "custom_label": null,
+                                "name": "streaming_model_output",
+                                "description": "The streaming model output.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": true,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "HOStreamingLLMOperator",
+                        "type_cls": "dbgpt_app.operators.llm.HOStreamingLLMOperator",
+                        "parameters": [
+                            {
+                                "type_name": "ChatPromptTemplate",
+                                "type_cls": "dbgpt.core.interface.prompt.ChatPromptTemplate",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "提示模板",
+                                "name": "prompt_template",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "对话的提示模板。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "模型名称",
+                                "name": "model",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "模型名称。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "LLMClient",
+                                "type_cls": "dbgpt.core.interface.llm.LLMClient",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "LLM 客户端",
+                                "name": "llm_client",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "LLM 客户端，如何连接到 LLM 模型，如果未提供，则使用由 DB-GPT 部署的默认客户端。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "历史消息合并模式",
+                                "name": "history_merge_mode",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "none",
+                                "placeholder": null,
+                                "description": "历史合并模式，支持 'none'、'window' 和 'token'。'none'：不合并历史，'window'：按对话窗口合并，'token'：按 Token 长度合并。",
+                                "value": "window",
+                                "options": [
+                                    {
+                                        "label": "No History",
+                                        "name": "none",
+                                        "value": "none",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "Message Window",
+                                        "name": "window",
+                                        "value": "window",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "Token Length",
+                                        "name": "token",
+                                        "value": "token",
+                                        "children": null
+                                    }
+                                ],
+                                "ui": {
+                                    "refresh": false,
+                                    "refresh_depends": null,
+                                    "ui_type": "select",
+                                    "size": null,
+                                    "attr": null
+                                }
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "用户消息键",
+                                "name": "user_message_key",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "user_input",
+                                "placeholder": null,
+                                "description": "提示词中用户消息的键，默认为 'user_input'。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "历史键",
+                                "name": "history_key",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "聊天历史键，用于将聊天历史消息传递给提示模板，如果未提供，它将解析提示模板以获取键。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "保留起始轮次",
+                                "name": "keep_start_rounds",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "在聊天历史中保留的起始轮次。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "保留结束轮次",
+                                "name": "keep_end_rounds",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "在聊天历史中保留的结束轮次。",
+                                "value": 10,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "最大 Token 限制",
+                                "name": "max_token_limit",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 2048,
+                                "placeholder": null,
+                                "description": "在聊天历史中保留的最大 Token 数量。",
+                                "value": 8196,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 235,
+                    "id": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+                    "position": {
+                        "x": 641.7322082533901,
+                        "y": 237.60419500639273,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": 641.7322082533901,
+                        "y": 237.60419500639273,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "OpenAI 流式输出算子",
+                        "custom_label": null,
+                        "name": "openai_streaming_output_operator",
+                        "description": "OpenAI 流式大语言模型算子。",
+                        "category": "output_parser",
+                        "category_label": "Output Parser",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_openai_streaming_output_operator___$$___output_parser___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "transform_stream",
+                        "inputs": [
+                            {
+                                "type_name": "ModelOutput",
+                                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                                "label": "Upstream Model Output",
+                                "custom_label": null,
+                                "name": "model_output",
+                                "description": "The model output of upstream.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": true,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Model Output",
+                                "custom_label": null,
+                                "name": "model_output",
+                                "description": "The model output after transformed to openai stream format.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": true,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "OpenAIStreamingOutputOperator",
+                        "type_cls": "dbgpt.model.utils.chatgpt_utils.OpenAIStreamingOutputOperator",
+                        "parameters": []
+                    }
+                }
+            ]
+        }
+    }
+}
