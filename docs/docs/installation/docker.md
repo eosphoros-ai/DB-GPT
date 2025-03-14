@@ -1,112 +1,223 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # Docker Deployment
 
 ## Docker image preparation
 
-There are two ways to prepare a Docker image. 1. Pull from the official image 2. Build locally. You can **choose any one** during actual use.
+There are two ways to prepare a Docker image. 
+1. Pull from the official image 
+2. Build locally, see [Build Docker Image](./build_image.md) 
 
-1.Pulled from the official image repository, [Eosphoros AI Docker Hub](https://hub.docker.com/u/eosphorosai)
-```bash
-docker pull eosphorosai/dbgpt:latest
-```
-2.local build(optional)
-```bash
-bash docker/build_all_images.sh
-```
-Check the Docker image
-```bash
-# command
-docker images | grep "eosphorosai/dbgpt"
+You can **choose any one** during actual use.
 
-# result
---------------------------------------------------------------------------------------
-eosphorosai/dbgpt-allinone       latest    349d49726588   27 seconds ago       15.1GB
-eosphorosai/dbgpt                latest    eb3cdc5b4ead   About a minute ago   14.5GB
-```
-`eosphorosai/dbgpt` is the base image, which contains project dependencies and the sqlite database. The `eosphorosai/dbgpt-allinone` image is built from `eosphorosai/dbgpt`, which contains a MySQL database. Of course, in addition to pulling the Docker image, the project also provides Dockerfile files, which can be built directly through scripts in DB-GPT. Here are the build commands:
+
+## Deploy With Proxy Model
+
+In this deployment, you don't need an GPU environment.
+
+1. Pull from the official image repository, [Eosphoros AI Docker Hub](https://hub.docker.com/u/eosphorosai)
 
 ```bash
-bash docker/build_all_images.sh
+docker pull eosphorosai/dbgpt-openai:latest
 ```
-When using it, you need to specify specific parameters. The following is an example of specifying parameter construction:
 
-```bash
-bash docker/build_all_images.sh \
---base-image nvidia/cuda:11.8.0-runtime-ubuntu22.04 \
---pip-index-url https://pypi.tuna.tsinghua.edu.cn/simple \
---language zh
-```
-You can view the specific usage through the command `bash docker/build_all_images.sh --help`
+2. Run the Docker container
 
-## Run Docker container
-
-### Run through Sqlite database
+This example requires you previde a valid API key for the SiliconFlow API. You can obtain one by signing up at [SiliconFlow](https://siliconflow.cn/) and creating an API key at [API Key](https://cloud.siliconflow.cn/account/ak).
 
 
 ```bash
-docker run --ipc host --gpus all -d \
--p 5670:5670 \
--e LOCAL_DB_TYPE=sqlite \
--e LOCAL_DB_PATH=data/default_sqlite.db \
--e LLM_MODEL=glm-4-9b-chat \
--e LANGUAGE=zh \
--v /data/models:/app/models \
---name dbgpt \
-eosphorosai/dbgpt
+docker run -it --rm -e SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY} \
+ -p 5670:5670 --name dbgpt eosphorosai/dbgpt-openai
 ```
-Open the browser and visit [http://localhost:5670](http://localhost:5670)
 
-- `-e LLM_MODEL=glm-4-9b-chat`, which means the base model uses `glm-4-9b-chat`. For more model usage, you can view the configuration in `/pilot/configs/model_config.LLM_MODEL_CONFIG`.
-- `-v /data/models:/app/models`, specifies the model file to be mounted. The directory `/data/models` is mounted in `/app/models` of the container. Of course, it can be replaced with other paths.
+Please replace `${SILICONFLOW_API_KEY}` with your own API key.
 
-After the container is started, you can view the logs through the following command
+
+Then you can visit [http://localhost:5670](http://localhost:5670) in the browser.
+
+
+## Deploy With GPU (Local Model)
+
+In this deployment, you need an GPU environment.
+
+Before running the Docker container, you need to install the NVIDIA Container Toolkit. For more information, please refer to the official documentation [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+
+In this deployment, you will use a local model instead of downloading it from the Hugging Face or ModelScope model hub. This is useful if you have already downloaded the model to your local machine or if you want to use a model from a different source.
+
+### Step 1: Download the Model
+
+Before running the Docker container, you need to download the model to your local machine. You can use either Hugging Face or ModelScope (recommended for users in China) to download the model.
+
+<Tabs>
+<TabItem value="modelscope" label="Download from ModelScope">
+
+1. Install `git` and `git-lfs` if you haven't already:
+
+   ```bash
+   sudo apt-get install git git-lfs
+   ```
+
+2. Create a `models` directory in your current working directory:
+
+   ```bash
+   mkdir -p ./models
+   ```
+
+3. Use `git` to clone the model repositories into the `models` directory:
+
+   ```bash
+   cd ./models
+   git lfs install
+   git clone https://www.modelscope.cn/Qwen/Qwen2.5-Coder-0.5B-Instruct.git
+   git clone https://www.modelscope.cn/BAAI/bge-large-zh-v1.5.git
+   cd ..
+   ```
+
+   This will download the models into the `./models/Qwen2.5-Coder-0.5B-Instruct` and `./models/bge-large-zh-v1.5` directories.
+
+</TabItem>
+<TabItem value="huggingface" label="Download from Hugging Face">
+
+1. Install `git` and `git-lfs` if you haven't already:
+
+   ```bash
+   sudo apt-get install git git-lfs
+   ```
+
+2. Create a `models` directory in your current working directory:
+
+   ```bash
+   mkdir -p ./models
+   ```
+
+3. Use `git` to clone the model repositories into the `models` directory:
+
+   ```bash
+   cd ./models
+   git lfs install
+   git clone https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct
+   git clone https://huggingface.co/BAAI/bge-large-zh-v1.5
+   cd ..
+   ```
+
+   This will download the models into the `./models/Qwen2.5-Coder-0.5B-Instruct` and `./models/bge-large-zh-v1.5` directories.
+
+</TabItem>
+</Tabs>
+
+---
+
+### Step 2: Prepare the Configuration File
+
+Create a `toml` file named `dbgpt-local-gpu.toml` and add the following content:
+
+```toml
+[models]
+[[models.llms]]
+name = "Qwen2.5-Coder-0.5B-Instruct"
+provider = "hf"
+# Specify the model path in the local file system
+path = "/app/models/Qwen2.5-Coder-0.5B-Instruct"
+
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "hf"
+# Specify the model path in the local file system
+path = "/app/models/bge-large-zh-v1.5"
+```
+
+This configuration file specifies the local paths to the models inside the Docker container.
+
+---
+
+### Step 3: Run the Docker Container
+
+Run the Docker container with the local `models` directory mounted:
+
 ```bash
-docker logs dbgpt -f
+docker run --ipc host --gpus all \
+  -it --rm \
+  -p 5670:5670 \
+  -v ./dbgpt-local-gpu.toml:/app/configs/dbgpt-local-gpu.toml \
+  -v ./models:/app/models \
+  --name dbgpt \
+  eosphorosai/dbgpt \
+  dbgpt start webserver --config /app/configs/dbgpt-local-gpu.toml
 ```
 
-### Run through MySQL database
+#### Explanation of the Command:
+- `--ipc host`: Enables host IPC mode for better performance.
+- `--gpus all`: Allows the container to use all available GPUs.
+- `-v ./dbgpt-local-gpu.toml:/app/configs/dbgpt-local-gpu.toml`: Mounts the local configuration file into the container.
+- `-v ./models:/app/models`: Mounts the local `models` directory into the container.
+- `eosphorosai/dbgpt`: The Docker image to use.
+- `dbgpt start webserver --config /app/configs/dbgpt-local-gpu.toml`: Starts the webserver with the specified configuration file.
 
-```bash
-docker run --ipc host --gpus all -d -p 3306:3306 \
--p 5670:5670 \
--e LOCAL_DB_HOST=127.0.0.1 \
--e LOCAL_DB_PASSWORD=aa123456 \
--e MYSQL_ROOT_PASSWORD=aa123456 \
--e LLM_MODEL=glm-4-9b-chat \
--e LANGUAGE=zh \
--v /data/models:/app/models \
---name db-gpt-allinone \
-db-gpt-allinone
+---
+
+### Step 4: Access the Application
+
+Once the container is running, you can visit [http://localhost:5670](http://localhost:5670) in your browser to access the application.
+
+---
+
+### Step 5: Persist Data (Optional)
+
+To ensure that your data is not lost when the container is stopped or removed, you can map the `pilot/data` and `pilot/message` directories to your local machine. These directories store application data and messages.
+
+1. Create local directories for data persistence:
+
+   ```bash
+   mkdir -p ./pilot/data
+   mkdir -p ./pilot/message
+   mkdir -p ./pilot/alembic_versions
+   ```
+
+2. Modify the `dbgpt-local-gpu.toml` configuration file to point to the correct paths:
+
+   ```toml
+   [service.web.database]
+   type = "sqlite"
+   path = "/app/pilot/message/dbgpt.db"
+   ```
+
+3. Run the Docker container with the additional volume mounts:
+
+   ```bash
+   docker run --ipc host --gpus all \
+     -it --rm \
+     -p 5670:5670 \
+     -v ./dbgpt-local-gpu.toml:/app/configs/dbgpt-local-gpu.toml \
+     -v ./models:/app/models \
+     -v ./pilot/data:/app/pilot/data \
+     -v ./pilot/message:/app/pilot/message \
+     -v ./pilot/alembic_versions:/app/pilot/meta_data/alembic/versions \
+     --name dbgpt \
+     eosphorosai/dbgpt \
+     dbgpt start webserver --config /app/configs/dbgpt-local-gpu.toml
+   ```
+
+   This ensures that the `pilot/data` and `pilot/message` directories are persisted on your local machine.
+
+---
+
+### Summary of Directory Structure
+
+After completing the steps, your directory structure should look like this:
+
 ```
-Open the browser and visit [http://localhost:5670](http://localhost:5670)
-
-- `-e LLM_MODEL=glm-4-9b-chat`, which means the base model uses `glm-4-9b-chat`. For more model usage, you can view the configuration in `/pilot/configs/model_config.LLM_MODEL_CONFIG`.
-- `-v /data/models:/app/models`, specifies the model file to be mounted. The directory `/data/models` is mounted in `/app/models` of the container. Of course, it can be replaced with other paths.
-
-After the container is started, you can view the logs through the following command
-```bash
-docker logs db-gpt-allinone -f
+.
+├── dbgpt-local-gpu.toml
+├── models
+│   ├── Qwen2.5-Coder-0.5B-Instruct
+│   └── bge-large-zh-v1.5
+├── pilot
+│   ├── data
+│   └── message
 ```
 
-### Run through the OpenAI proxy model
-```bash
-PROXY_API_KEY="You api key"
-PROXY_SERVER_URL="https://api.openai.com/v1/chat/completions"
-docker run --gpus all -d -p 3306:3306 \
--p 5670:5670 \
--e LOCAL_DB_HOST=127.0.0.1 \
--e LOCAL_DB_PASSWORD=aa123456 \
--e MYSQL_ROOT_PASSWORD=aa123456 \
--e LLM_MODEL=proxyllm \
--e PROXY_API_KEY=$PROXY_API_KEY \
--e PROXY_SERVER_URL=$PROXY_SERVER_URL \
--e LANGUAGE=zh \
--v /data/models/text2vec-large-chinese:/app/models/text2vec-large-chinese \
---name db-gpt-allinone \
-db-gpt-allinone
+This setup ensures that the models and application data are stored locally and mounted into the Docker container, allowing you to use them without losing data.
 ```
-- `-e LLM_MODEL=proxyllm`, set the model to serve the third-party model service API, which can be openai or fastchat interface.
-- `-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-chinese`, sets the knowledge base embedding model to `text2vec`
-
-Open the browser and visit [http://localhost:5670](http://localhost:5670)
-
 

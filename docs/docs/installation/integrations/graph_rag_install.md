@@ -11,7 +11,7 @@ You can refer to the python example file `DB-GPT/examples/rag/graph_rag_example.
 First, you need to install the `dbgpt graph_rag` library.
 
 ```bash
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \

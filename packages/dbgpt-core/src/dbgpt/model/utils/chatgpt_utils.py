@@ -88,12 +88,12 @@ def _initialize_openai_v1(init_params: OpenAIParameters):
 
     if api_key is None:
         raise ValueError("api_key is required, please set OPENAI_API_KEY environment")
-    if base_url is None:
-        raise ValueError("base_url is required, please set OPENAI_BASE_URL environment")
-    if base_url.endswith("/"):
+    if base_url and base_url.endswith("/"):
         base_url = base_url[:-1]
 
-    openai_params = {"api_key": api_key, "base_url": base_url}
+    openai_params = {"api_key": api_key}
+    if base_url:
+        openai_params["base_url"] = base_url
     return openai_params, api_type, api_version, api_azure_deployment
 
 
