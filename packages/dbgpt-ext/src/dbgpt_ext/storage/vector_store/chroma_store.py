@@ -201,16 +201,53 @@ class ChromaStore(VectorStoreBase):
         return ids
 
     def delete_vector_name(self, vector_name: str):
-        """Delete vector name."""
+        """Delete vector name and clean up resources.
+
+        Args:
+            vector_name (str): Name of the vector to delete
+
+        Returns:
+            bool: True if deletion was successful, False otherwise
+
+        Raises:
+            Exception: If any error occurs during deletion
+        """
         try:
             from chromadb.api.client import SharedSystemClient
         except ImportError:
             raise ImportError("Please install chroma package first.")
+
         logger.info(f"chroma vector_name:{vector_name} begin delete...")
-        self._chroma_client.delete_collection(self._collection.name)
-        SharedSystemClient.clear_system_cache()
-        self._clean_persist_folder()
-        return True
+
+        try:
+            # Check if collection exists first
+            collections = self._chroma_client.list_collections()
+            collection_exists = self._collection.name in collections
+
+            if not collection_exists:
+                logger.warning(
+                    f"Collection {self._collection.name} does not exist, skip delete"
+                )
+                return True
+
+            # Delete collection if it exists
+            self._chroma_client.delete_collection(self._collection.name)
+            SharedSystemClient.clear_system_cache()
+
+            # Clean persist folder if it exists
+            if os.path.exists(self.persist_dir):
+                try:
+                    self._clean_persist_folder()
+                except Exception as e:
+                    logger.error(f"Failed to clean persist folder: {e}")
+                    # Even if folder cleanup fails, collection deletion succeeded
+                    return True
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error during vector store deletion: {e}")
+            raise
 
     def delete_by_ids(self, ids):
         """Delete vector by ids."""
