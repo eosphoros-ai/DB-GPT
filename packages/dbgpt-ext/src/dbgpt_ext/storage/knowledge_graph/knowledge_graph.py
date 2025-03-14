@@ -105,7 +105,9 @@ class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
 
     llm_client: LLMClient = Field(default=None, description="The default llm client.")
 
-    model_name: str = Field(default=None, description="The name of llm model.")
+    model_name: Optional[str] = Field(
+        default=None, description="The name of llm model."
+    )
 
     type: str = Field(default="TuGraph", description="The type of graph store.")
 

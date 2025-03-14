@@ -14,6 +14,7 @@ from dbgpt.util.parameter_utils import BaseParameters
 from dbgpt.util.tracer import TracerParameters
 from dbgpt.util.utils import LoggingParameters
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
+from dbgpt_ext.storage.full_text.elasticsearch import ElasticDocumentConfig
 from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraphConfig,
 )
@@ -64,10 +65,10 @@ class StorageConfig(BaseParameters):
             "help": _("default graph type"),
         },
     )
-    full_text: BuiltinKnowledgeGraphConfig = field(
-        default_factory=BuiltinKnowledgeGraphConfig,
+    full_text: ElasticDocumentConfig = field(
+        default_factory=ElasticDocumentConfig,
         metadata={
-            "help": _("default graph type"),
+            "help": _("default full text type"),
         },
     )
 
