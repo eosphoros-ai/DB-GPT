@@ -1290,17 +1290,17 @@ class ViewMetadata(BaseMetadata):
             for field in self.inputs:
                 if field.mappers:
                     raise ValueError("Input field can't have mappers.")
-            dyn_cnt, is_last_field_dynamic = 0, False
-            for field in self.inputs:
-                if field.dynamic:
-                    dyn_cnt += 1
-                    is_last_field_dynamic = True
-                else:
-                    if is_last_field_dynamic:
-                        raise ValueError("Dynamic field input must be the last field.")
-                    is_last_field_dynamic = False
-            if dyn_cnt > 1:
-                raise ValueError("Only one dynamic input field is allowed.")
+            # dyn_cnt, is_last_field_dynamic = 0, False
+            # for field in self.inputs:
+            #     if field.dynamic:
+            #         dyn_cnt += 1
+            #         is_last_field_dynamic = True
+            #     else:
+            #         if is_last_field_dynamic:
+            #             raise ValueError("Dynamic field input must be the last field.") # noqa
+            #         is_last_field_dynamic = False
+            # if dyn_cnt > 1:
+            #     raise ValueError("Only one dynamic input field is allowed.")
         if self.outputs:
             dyn_cnt, is_last_field_dynamic = 0, False
             for field in self.outputs:

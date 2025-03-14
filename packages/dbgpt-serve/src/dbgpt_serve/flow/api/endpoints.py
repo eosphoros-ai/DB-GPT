@@ -469,7 +469,9 @@ async def export_flow(
         else:
             # Return the json file
             return StreamingResponse(
-                io.BytesIO(json.dumps(flow_dict, ensure_ascii=False).encode("utf-8")),
+                io.BytesIO(
+                    json.dumps(flow_dict, ensure_ascii=False, indent=4).encode("utf-8")
+                ),
                 media_type="application/file",
                 headers={
                     "Content-Disposition": f"attachment;filename={file_name}.json"
@@ -538,7 +540,6 @@ async def import_flow(
 
 @router.get(
     "/flow/templates",
-    response_model=Result[PaginationResult[ServerResponse]],
     dependencies=[Depends(check_api_key)],
 )
 async def query_flow_templates(
@@ -547,7 +548,7 @@ async def query_flow_templates(
     page: int = Query(default=1, description="current page"),
     page_size: int = Query(default=20, description="page size"),
     service: Service = Depends(get_service),
-) -> Result[PaginationResult[ServerResponse]]:
+):
     """Query Flow templates."""
 
     res = await blocking_func_to_async(

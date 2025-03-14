@@ -39,12 +39,20 @@ export const SaveFlowModal: React.FC<Props> = ({
     setId(router.query.id || '');
   }, [router.query.id]);
 
+  // function onLabelChange(e: React.ChangeEvent<HTMLInputElement>) {
+  //   const label = e.target.value;
+  //   // replace spaces with underscores, convert uppercase letters to lowercase, remove characters other than digits, letters, _, and -.
+  //   const result = label
+  //     .replace(/\s+/g, '_')
+  //     .replace(/[^a-z0-9_-]/g, '')
+  //     .toLowerCase();
+  //   form.setFieldsValue({ name: result });
+  // }
   function onLabelChange(e: React.ChangeEvent<HTMLInputElement>) {
     const label = e.target.value;
-    // replace spaces with underscores, convert uppercase letters to lowercase, remove characters other than digits, letters, _, and -.
+    // replace spaces with underscores, convert letters to lowercase, but preserve Chinese and other characters
     const result = label
-      .replace(/\s+/g, '_')
-      .replace(/[^a-z0-9_-]/g, '')
+      .replace(/\s+/g, '_') // replace spaces with underscores
       .toLowerCase();
     form.setFieldsValue({ name: result });
   }

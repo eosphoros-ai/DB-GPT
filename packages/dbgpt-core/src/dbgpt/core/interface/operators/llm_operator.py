@@ -303,7 +303,7 @@ class BaseLLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
             ModelOutput: The model output.
         """
         await self.current_dag_context.save_to_share_data(
-            self.SHARE_DATA_KEY_MODEL_NAME, request.model
+            self.SHARE_DATA_KEY_MODEL_NAME, request.model, overwrite=True
         )
         model_output = await self.llm_client.generate(request)
         await self.save_model_output(self.current_dag_context, model_output)
@@ -341,7 +341,7 @@ class BaseStreamingLLMOperator(
     ) -> AsyncIterator[ModelOutput]:  # type: ignore
         """Streamify the request."""
         await self.current_dag_context.save_to_share_data(
-            self.SHARE_DATA_KEY_MODEL_NAME, request.model
+            self.SHARE_DATA_KEY_MODEL_NAME, request.model, overwrite=True
         )
         model_output = None
         async for output in self.llm_client.generate_stream(request):  # type: ignore

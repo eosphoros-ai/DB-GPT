@@ -140,7 +140,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
           <TypeLabel label='Outputs' />
           {outputs?.map((output, index) => (
             <NodeHandler
-              key={`${data.id}_input_${index}`}
+              key={`${data.id}_output_${index}`}
               node={data}
               data={output}
               type='source'
@@ -159,6 +159,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
         </div>
       );
     }
+    return null;
   }
 
   return (
