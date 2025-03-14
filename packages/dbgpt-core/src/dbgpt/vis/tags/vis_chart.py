@@ -60,7 +60,7 @@ class VisChart(Vis):
         """Return the prompt for the vis protocol."""
         return default_chart_type_prompt()
 
-    async def generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
+    def sync_generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
         """Generate the parameters required by the vis protocol."""
         chart = kwargs.get("chart", None)
         data_df = kwargs.get("data_df", None)

@@ -1,20 +1,20 @@
 {
     "flow": {
-        "uid": "fa8f01ab-fc7b-4e35-9533-f8e4cf045cce",
+        "uid": "3b6a2c55-0c3b-4e38-bd71-d68104cccf37",
         "label": "Hybrid Knowledge Process Workflow",
         "name": "hybrid_knowledge_process_workflow",
         "flow_category": null,
         "description": "hybrid_knowledge_process_workflow",
-        "state": "running",
+        "state": "initializing",
         "error_message": "",
         "source": "DBGPT-WEB",
         "source_url": null,
         "version": "0.1.1",
         "define_type": "json",
-        "editable": true,
+        "editable": false,
         "user_name": null,
         "sys_code": null,
-        "dag_id": "flow_dag_knowledge_factory_workflow_fa8f01ab-fc7b-4e35-9533-f8e4cf045cce",
+        "dag_id": null,
         "gmt_created": "2024-12-14 15:57:44",
         "gmt_modified": "2024-12-14 15:57:44",
         "metadata": null,
@@ -165,14 +165,14 @@
                     "id": "operator_knowledge_process_join_operator___$$___rag___$$___v1_0",
                     "position": {
                         "x": 604.5,
-                        "y": 77,
-                        "zoom": 0
+                        "y": 77.0,
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": 604.5,
-                        "y": 77,
-                        "zoom": 0
+                        "y": 77.0,
+                        "zoom": 0.0
                     },
                     "data": {
                         "label": "Knowledge Process Join Operator",
@@ -231,7 +231,7 @@
                         ],
                         "version": "v1",
                         "type_name": "KnowledgeProcessJoinOperator",
-                        "type_cls": "dbgpt.rag.operators.process_branch.KnowledgeProcessJoinOperator",
+                        "type_cls": "dbgpt_ext.rag.operators.process_branch.KnowledgeProcessJoinOperator",
                         "parameters": []
                     }
                 },
@@ -242,13 +242,13 @@
                     "position": {
                         "x": 174.16583729394188,
                         "y": -131.63401513480102,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": 174.16583729394188,
                         "y": -131.63401513480102,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "label": "Vector Storage Operator",
@@ -295,7 +295,7 @@
                         ],
                         "version": "v1",
                         "type_name": "VectorStorageOperator",
-                        "type_cls": "dbgpt.rag.operators.vector_store.VectorStorageOperator",
+                        "type_cls": "dbgpt_ext.rag.operators.vector_store.VectorStorageOperator",
                         "parameters": [
                             {
                                 "type_name": "VectorStoreBase",
@@ -324,13 +324,13 @@
                     "position": {
                         "x": 180.89103763027083,
                         "y": 341.37174185366564,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": 180.89103763027083,
                         "y": 341.37174185366564,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "label": "Knowledge Graph Operator",
@@ -377,7 +377,7 @@
                         ],
                         "version": "v1",
                         "type_name": "KnowledgeGraphOperator",
-                        "type_cls": "dbgpt.rag.operators.knowledge_graph.KnowledgeGraphOperator",
+                        "type_cls": "dbgpt_ext.rag.operators.knowledge_graph.KnowledgeGraphOperator",
                         "parameters": [
                             {
                                 "type_name": "KnowledgeGraphBase",
@@ -406,13 +406,13 @@
                     "position": {
                         "x": -1056.545824254249,
                         "y": -163.01828337100258,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -1056.545824254249,
                         "y": -163.01828337100258,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "label": "Chunk Manager Operator",
@@ -463,7 +463,7 @@
                         "parameters": [
                             {
                                 "type_name": "ChunkParameters",
-                                "type_cls": "dbgpt.rag.chunk_manager.ChunkParameters",
+                                "type_cls": "dbgpt_ext.rag.chunk_manager.ChunkParameters",
                                 "dynamic": false,
                                 "dynamic_minimum": 0,
                                 "label": "Chunk Split Parameters",
@@ -488,17 +488,17 @@
                     "position": {
                         "x": -306.391788536534,
                         "y": 491.0961943850906,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -306.391788536534,
                         "y": 491.0961943850906,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "type_name": "BuiltinKnowledgeGraph",
-                        "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
+                        "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph",
                         "label": "Builtin Knowledge Graph",
                         "custom_label": null,
                         "name": "builtin_knowledge_graph",
@@ -508,7 +508,7 @@
                         "flow_type": "resource",
                         "icon": null,
                         "documentation_url": null,
-                        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
+                        "id": "resource_dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraph_0",
                         "tags": {
                             "ui_version": "flow2.0"
                         },
@@ -521,7 +521,7 @@
                         "parameters": [
                             {
                                 "type_name": "BuiltinKnowledgeGraphConfig",
-                                "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+                                "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
                                 "dynamic": false,
                                 "dynamic_minimum": 0,
                                 "label": "Builtin Knowledge Graph Config.",
@@ -546,17 +546,17 @@
                     "position": {
                         "x": -813.7432345424928,
                         "y": 328.2957752754239,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -813.7432345424928,
                         "y": 328.2957752754239,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "type_name": "BuiltinKnowledgeGraphConfig",
-                        "type_cls": "dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
+                        "type_cls": "dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig",
                         "label": "Builtin Graph Config",
                         "custom_label": null,
                         "name": "knowledge_graph_config",
@@ -566,7 +566,7 @@
                         "flow_type": "resource",
                         "icon": null,
                         "documentation_url": null,
-                        "id": "resource_dbgpt.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
+                        "id": "resource_dbgpt_ext.storage.knowledge_graph.knowledge_graph.BuiltinKnowledgeGraphConfig_0",
                         "tags": {
                             "ui_version": "flow2.0"
                         },
@@ -707,17 +707,17 @@
                     "position": {
                         "x": -251.7635173402225,
                         "y": -367.01602690631285,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -251.7635173402225,
                         "y": -367.01602690631285,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "type_name": "ChromaStore",
-                        "type_cls": "dbgpt.storage.vector_store.chroma_store.ChromaStore",
+                        "type_cls": "dbgpt_ext.storage.vector_store.chroma_store.ChromaStore",
                         "label": "Chroma Vector Store",
                         "custom_label": null,
                         "name": "chroma_vector_store",
@@ -727,7 +727,7 @@
                         "flow_type": "resource",
                         "icon": null,
                         "documentation_url": null,
-                        "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaStore_0",
+                        "id": "resource_dbgpt_ext.storage.vector_store.chroma_store.ChromaStore_0",
                         "tags": {
                             "ui_version": "flow2.0"
                         },
@@ -740,7 +740,7 @@
                         "parameters": [
                             {
                                 "type_name": "ChromaVectorConfig",
-                                "type_cls": "dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig",
+                                "type_cls": "dbgpt_ext.storage.vector_store.chroma_store.ChromaVectorConfig",
                                 "dynamic": false,
                                 "dynamic_minimum": 0,
                                 "label": "Chroma Config",
@@ -765,17 +765,17 @@
                     "position": {
                         "x": -684.4180723107158,
                         "y": -934.1745886033843,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -684.4180723107158,
                         "y": -934.1745886033843,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "type_name": "ChromaVectorConfig",
-                        "type_cls": "dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig",
+                        "type_cls": "dbgpt_ext.storage.vector_store.chroma_store.ChromaVectorConfig",
                         "label": "Chroma Config",
                         "custom_label": null,
                         "name": "chroma_vector_config",
@@ -785,7 +785,7 @@
                         "flow_type": "resource",
                         "icon": null,
                         "documentation_url": null,
-                        "id": "resource_dbgpt.storage.vector_store.chroma_store.ChromaVectorConfig_0",
+                        "id": "resource_dbgpt_ext.storage.vector_store.chroma_store.ChromaVectorConfig_0",
                         "tags": {
                             "ui_version": "flow2.0"
                         },
@@ -926,13 +926,13 @@
                     "position": {
                         "x": -1558.679801266548,
                         "y": -149.61064934406164,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -1558.679801266548,
                         "y": -149.61064934406164,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "label": "Knowledge Loader Operator",
@@ -979,7 +979,7 @@
                         ],
                         "version": "v1",
                         "type_name": "KnowledgeOperator",
-                        "type_cls": "dbgpt.rag.operators.knowledge.KnowledgeOperator",
+                        "type_cls": "dbgpt_ext.rag.operators.knowledge.KnowledgeOperator",
                         "parameters": [
                             {
                                 "type_name": "str",
@@ -1044,13 +1044,13 @@
                     "position": {
                         "x": -2015.3280350941911,
                         "y": -603.9181210010445,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -2015.3280350941911,
                         "y": -603.9181210010445,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "label": "Dict Http Trigger",
@@ -1211,13 +1211,13 @@
                     "position": {
                         "x": -1112.4932879687394,
                         "y": -753.8648984316667,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -1112.4932879687394,
                         "y": -753.8648984316667,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "type_name": "DefaultEmbeddings",
@@ -1250,13 +1250,13 @@
                     "position": {
                         "x": -1350.535131696419,
                         "y": 435.2340305150391,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -1350.535131696419,
                         "y": 435.2340305150391,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "type_name": "DefaultLLMClient",
@@ -1307,13 +1307,13 @@
                     "position": {
                         "x": -614.4846931519926,
                         "y": -92.5163519851338,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "type": "customNode",
                     "position_absolute": {
                         "x": -614.4846931519926,
                         "y": -92.5163519851338,
-                        "zoom": 0
+                        "zoom": 0.0
                     },
                     "data": {
                         "label": "Knowledge Process Branch Operator",
@@ -1384,7 +1384,7 @@
                         ],
                         "version": "v1",
                         "type_name": "KnowledgeProcessBranchOperator",
-                        "type_cls": "dbgpt.rag.operators.process_branch.KnowledgeProcessBranchOperator",
+                        "type_cls": "dbgpt_ext.rag.operators.process_branch.KnowledgeProcessBranchOperator",
                         "parameters": []
                     }
                 }

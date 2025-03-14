@@ -194,6 +194,7 @@ class HOKnowledgeOperator(MapOperator[str, HOContextBody]):
             space_id=space.id,
             top_k=self._top_k,
             rerank=reranker,
+            system_app=self.system_app,
         )
 
     async def map(self, query: str) -> HOContextBody:
