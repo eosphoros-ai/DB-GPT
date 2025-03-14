@@ -1112,10 +1112,14 @@ def fill_flow_panel(
                         else:
                             raise
                     param.type_cls = new_param.type_cls
+                    param.optional = new_param.optional
                     param.default = new_param.default
                     param.placeholder = new_param.placeholder
                     param.alias = new_param.alias
                     param.ui = new_param.ui
+                    param.is_list = new_param.is_list
+                    param.dynamic = new_param.dynamic
+                    param.dynamic_minimum = new_param.dynamic_minimum
 
         except (FlowException, ValueError) as e:
             logger.warning(f"Unable to fill the flow panel: {e}")

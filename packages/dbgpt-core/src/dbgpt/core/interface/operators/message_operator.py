@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 class BaseConversationOperator(BaseOperator, ABC):
     """Base class for conversation operators."""
 
+    SHARE_DATA_KEY_CONV_MODEL_NAME = "conv_share_data_key_model_name"
     SHARE_DATA_KEY_STORAGE_CONVERSATION = "share_data_key_storage_conversation"
     SHARE_DATA_KEY_MODEL_REQUEST = "share_data_key_model_request"
     SHARE_DATA_KEY_MODEL_REQUEST_CONTEXT = "share_data_key_model_request_context"
@@ -561,8 +562,13 @@ class TokenBufferedConversationMapperOperator(ConversationMapperOperator):
         eviction_policy = self._eviction_policy or self.eviction_policy
         messages_by_round: List[List[BaseMessage]] = _split_messages_by_round(messages)
         messages_str = _messages_to_str(_merge_multi_round_messages(messages_by_round))
+        model_name = self._model
+        if not model_name:
+            model_name = await self.current_dag_context.get_from_share_data(
+                self.SHARE_DATA_KEY_CONV_MODEL_NAME
+            )
         # Fist time, we count the token of the messages
-        current_tokens = await self._llm_client.count_token(self._model, messages_str)
+        current_tokens = await self._llm_client.count_token(model_name, messages_str)
 
         while current_tokens > self._max_token_limit:
             # Evict the messages by round after all tokens are not greater than the max
@@ -573,7 +579,7 @@ class TokenBufferedConversationMapperOperator(ConversationMapperOperator):
                 _merge_multi_round_messages(messages_by_round)
             )
             current_tokens = await self._llm_client.count_token(
-                self._model, messages_str
+                model_name, messages_str
             )
         message_mapper = self._message_mapper or self.map_multi_round_messages
         return message_mapper(messages_by_round)

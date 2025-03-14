@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import AsyncIterator, List, Optional, Tuple, cast
+from typing import AsyncIterator, Dict, List, Optional, Tuple, cast
 
 import schedule
 from fastapi import HTTPException
@@ -413,7 +413,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         sys_code: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> PaginationResult[ServerResponse]:
+    ) -> PaginationResult[Dict]:
         """Get a list of Flow templates
 
         Args:
@@ -429,7 +429,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         templates = []
         for _, t in local_file_templates:
             fill_flow_panel(t)
-            templates.append(t)
+            templates.append(t.to_dict())
         return PaginationResult.build_from_all(templates, page, page_size)
 
     async def chat_stream_flow_str(

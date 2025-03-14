@@ -70,6 +70,8 @@ export type IFlowNodeParameter = {
   options?: any;
   value: any;
   is_list?: boolean;
+  dynamic?: boolean;
+  dynamic_minimum?: number;
   ui: IFlowNodeParameterUI;
 };
 
@@ -101,6 +103,8 @@ export type IFlowNodeInput = {
   optional?: boolean | undefined;
   value: any;
   is_list?: boolean;
+  dynamic?: boolean;
+  dynamic_minimum?: number;
 };
 
 export type IFlowNodeOutput = {
@@ -112,6 +116,8 @@ export type IFlowNodeOutput = {
   id: string;
   optional?: boolean | undefined;
   is_list?: boolean;
+  dynamic?: boolean;
+  dynamic_minimum?: number;
 };
 
 export type IFlowNode = Node & {
