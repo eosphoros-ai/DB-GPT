@@ -171,7 +171,10 @@ def read_from_df(
 
     df = df.rename(columns=lambda x: x.strip().replace(" ", "_"))
     # write data in duckdb
-    db.register(table_name, df)
+    db.register("temp_df_table", df)
+    # The table is explicitly created due to the issue at
+    # https://github.com/eosphoros-ai/DB-GPT/issues/2437.
+    db.execute(f"CREATE TABLE {table_name} AS SELECT * FROM temp_df_table")
     return table_name
 
 
