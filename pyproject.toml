@@ -28,7 +28,7 @@ members = [
   "packages/dbgpt-core", 
   "packages/dbgpt-ext", 
   "packages/dbgpt-serve", 
-  "packages/dbgpt-accelerator/*"
+  "packages/dbgpt-accelerator/dbgpt-acc*"
 ]
 
 [tool.uv]
