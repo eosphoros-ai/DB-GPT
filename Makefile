@@ -24,13 +24,14 @@ $(VENV)/.venv-timestamp: uv.lock
 testenv: $(VENV)/.testenv
 
 $(VENV)/.testenv: $(VENV)/bin/activate
-	uv sync --all-packages \
+	. $(VENV_BIN)/activate && uv sync --active --all-packages \
 		--extra "base" \
 		--extra "proxy_openai" \
 		--extra "rag" \
 		--extra "storage_chromadb" \
 		--extra "dbgpts" \
 		--link-mode=copy
+	cp .devcontainer/dbgpt.pth $(VENV)/lib/python3.11/site-packages
 	touch $(VENV)/.testenv
 
 
@@ -69,7 +70,7 @@ fmt-check: setup ## Check Python code formatting and style without making change
 pre-commit: fmt-check test test-doc mypy ## Run formatting and unit tests before committing
 
 test: $(VENV)/.testenv ## Run unit tests
-	$(VENV_BIN)/pytest dbgpt
+	$(VENV_BIN)/pytest --pyargs dbgpt
 
 .PHONY: test-doc
 test-doc: $(VENV)/.testenv ## Run doctests
@@ -88,7 +89,7 @@ mypy: $(VENV)/.testenv ## Run mypy checks
 
 .PHONY: coverage
 coverage: setup ## Run tests and report coverage
-	$(VENV_BIN)/pytest dbgpt --cov=dbgpt
+	$(VENV_BIN)/pytest --pyargs dbgpt --cov=dbgpt
 
 .PHONY: clean
 clean: ## Clean up the environment

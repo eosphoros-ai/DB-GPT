@@ -1,0 +1,40 @@
+FROM eosphorosai/dbgpt:latest
+ARG EXTRAS="proxy_openai,rag,storage_chromadb,quant_bnb,graph_rag"
+ARG PYTHON_VERSION=3.10
+ARG USER_UID=1001
+ARG USER_GID=1001
+ARG USER=work
+ARG PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+
+WORKDIR /app
+COPY . .
+USER root
+# Set the GID and UID of the container and 
+# add a user to prevent permission mismatches
+# between the container user (root) and the host user,
+# and to resolve the issue of the host user lacking write permissions.
+RUN groupadd -g $USER_GID $USER && \
+    useradd -u $USER_UID -g $USER_GID -m $USER && \
+    chown -R $USER_UID:$USER_GID /app
+
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    ssh zsh autojump curl git-flow vim sudo \
+    && python${PYTHON_VERSION} -m pip install --upgrade pip \
+    && python${PYTHON_VERSION} -m pip install --upgrade pipx \
+    && pipx install uv --global \
+    && chown -R $USER:$USER /opt/.uv.venv \
+    && echo "$USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USER \
+    && chmod 0440 /etc/sudoers.d/$USER
+USER $USER
+ENV UV_LINK_MODE=copy
+RUN /opt/.uv.venv/bin/python3 -m pip install uv -i https://mirrors.aliyun.com/pypi/simple/ && \
+    extras=$(echo $EXTRAS | tr ',' '\n' | while read extra; do echo "--extra $extra"; done | tr '\n' ' ') && \
+    echo $extras && \
+    /opt/.uv.venv/bin/uv pip install -r pyproject.toml --all-extras && \
+    /opt/.uv.venv/bin/uv pip install -r requirements/dev-requirements.txt && \
+    /opt/.uv.venv/bin/uv pip install -r requirements/lint-requirements.txt && \
+    cp .devcontainer/dbgpt.pth  /opt/.uv.venv/lib/python3.10/site-packages/dbgpt.pth && \
+    python -c "import dbgpt; print(dbgpt.__version__)"
