@@ -9,7 +9,7 @@ In this example, we will show how to use the Oceanbase Vector as in DB-GPT RAG S
 First, you need to install the `dbgpt Oceanbase Vector storage` library.
 
 ```bash
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "proxy_openai" \
 --extra "rag" \

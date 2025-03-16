@@ -5,7 +5,7 @@ import logging
 import uuid
 from contextlib import suppress
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union, cast
 
 from typing_extensions import Annotated
 
@@ -1013,7 +1013,14 @@ def _build_mapper_operators(dag: DAG, mappers: List[str]) -> List[DAGNode]:
     return tasks
 
 
-def fill_flow_panel(flow_panel: FlowPanel):
+def fill_flow_panel(
+    flow_panel: FlowPanel,
+    metadata_func: Callable[
+        [Union[ViewMetadata, ResourceMetadata]], Union[ViewMetadata, ResourceMetadata]
+    ] = None,
+    ignore_options_error: bool = False,
+    update_id: bool = False,
+):
     """Fill the flow panel with the latest metadata.
 
     Args:
@@ -1021,14 +1028,19 @@ def fill_flow_panel(flow_panel: FlowPanel):
     """
     if not flow_panel.flow_data:
         return
+    id_mapping = {}
     for node in flow_panel.flow_data.nodes:
         try:
             parameters_map = {}
             if node.data.is_operator:
                 data = cast(ViewMetadata, node.data)
-                key = data.get_operator_key()
-                operator_cls: Type[DAGNode] = _get_operator_class(key)
-                metadata = operator_cls.metadata
+                metadata = None
+                if metadata_func:
+                    metadata = metadata_func(data)
+                if not metadata:
+                    key = data.get_operator_key()
+                    operator_cls: Type[DAGNode] = _get_operator_class(key)
+                    metadata = operator_cls.metadata
                 if not metadata:
                     raise ValueError("Metadata is not set.")
                 input_parameters = {p.name: p for p in metadata.inputs}
@@ -1036,6 +1048,8 @@ def fill_flow_panel(flow_panel: FlowPanel):
                 for i in node.data.inputs:
                     if i.name in input_parameters:
                         new_param = input_parameters[i.name]
+                        i.type_name = new_param.type_name
+                        i.type_cls = new_param.type_cls
                         i.label = new_param.label
                         i.description = new_param.description
                         i.dynamic = new_param.dynamic
@@ -1045,6 +1059,8 @@ def fill_flow_panel(flow_panel: FlowPanel):
                 for i in node.data.outputs:
                     if i.name in output_parameters:
                         new_param = output_parameters[i.name]
+                        i.type_name = new_param.type_name
+                        i.type_cls = new_param.type_cls
                         i.label = new_param.label
                         i.description = new_param.description
                         i.dynamic = new_param.dynamic
@@ -1053,13 +1069,27 @@ def fill_flow_panel(flow_panel: FlowPanel):
                         i.mappers = new_param.mappers
             else:
                 data = cast(ResourceMetadata, node.data)
-                key = data.get_origin_id()
-                metadata = _get_resource_class(key).metadata
+                metadata = None
+                if metadata_func:
+                    metadata = metadata_func(data)
+                if not metadata:
+                    key = data.get_origin_id()
+                    metadata = _get_resource_class(key).metadata
 
             for param in metadata.parameters:
                 parameters_map[param.name] = param
 
             # Update the latest metadata.
+            if node.data.type_cls != metadata.type_cls:
+                old_type_cls = node.data.type_cls
+                node.data.type_cls = metadata.type_cls
+                node.data.type_name = metadata.type_name
+                if not node.data.is_operator and update_id:
+                    # Update key
+                    old_id = data.id
+                    new_id = old_id.replace(old_type_cls, metadata.type_cls)
+                    data.id = new_id
+                    id_mapping[old_id] = new_id
             node.data.label = metadata.label
             node.data.description = metadata.description
             node.data.category = metadata.category
@@ -1072,11 +1102,34 @@ def fill_flow_panel(flow_panel: FlowPanel):
                     new_param = parameters_map[param.name]
                     param.label = new_param.label
                     param.description = new_param.description
-                    param.options = new_param.get_dict_options()  # type: ignore
+                    try:
+                        param.options = new_param.get_dict_options()  # type: ignore
+                    except Exception as e:
+                        if ignore_options_error:
+                            logger.warning(
+                                f"Unable to fill the options for the parameter: {e}"
+                            )
+                        else:
+                            raise
+                    param.type_cls = new_param.type_cls
+                    param.optional = new_param.optional
                     param.default = new_param.default
                     param.placeholder = new_param.placeholder
                     param.alias = new_param.alias
                     param.ui = new_param.ui
+                    param.is_list = new_param.is_list
+                    param.dynamic = new_param.dynamic
+                    param.dynamic_minimum = new_param.dynamic_minimum
 
         except (FlowException, ValueError) as e:
             logger.warning(f"Unable to fill the flow panel: {e}")
+
+    if not update_id:
+        return
+
+    for edge in flow_panel.flow_data.edges:
+        for old_id, new_id in id_mapping.items():
+            edge.source.replace(old_id, new_id)
+            edge.target.replace(old_id, new_id)
+            edge.source_handle.replace(old_id, new_id)
+            edge.target_handle.replace(old_id, new_id)

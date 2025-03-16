@@ -7,7 +7,7 @@ In this example, we will show how to use the ClickHouse as in DB-GPT Datasource.
 First, you need to install the `dbgpt clickhouse datasource` library.
 
 ```bash
-uv sync --all-packages --frozen \
+uv sync --all-packages \
 --extra "base" \
 --extra "datasource_clickhouse" \
 --extra "rag" \

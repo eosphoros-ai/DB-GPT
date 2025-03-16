@@ -90,6 +90,9 @@ def _register(
 def _register_flow_compat(
     curr_version: str, last_support_version: str, metadata: FlowCompatMetadata
 ):
+    # We use type_name as the key
+    # For example, dbgpt.core.DefaultLLMOperator may be refactor to
+    # dbgpt_ext.DefaultLLMOperator, so we use DefaultLLMOperator as the key
     _TYPE_NAME_TO_COMPAT_METADATA[metadata.type_name].append(
         _FlowCompat(curr_version, last_support_version, metadata)
     )

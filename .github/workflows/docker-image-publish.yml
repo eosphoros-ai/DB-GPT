@@ -40,6 +40,8 @@ jobs:
         with:
           context: .
           file: ./docker/base/Dockerfile
+          build-args: |
+            PIP_INDEX_URL=https://pypi.org/simple
           platforms: linux/amd64
           push: true
           tags: eosphorosai/dbgpt:${{ github.ref_name }},eosphorosai/dbgpt:latest

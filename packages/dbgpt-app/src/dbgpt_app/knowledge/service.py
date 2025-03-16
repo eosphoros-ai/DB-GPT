@@ -347,7 +347,7 @@ class KnowledgeService:
                     top_k = max(int(CFG.RERANK_TOP_K), 20)
 
             knowledge_space_retriever = KnowledgeSpaceRetriever(
-                space_id=space.id, top_k=top_k
+                space_id=space.id, top_k=top_k, system_app=CFG.SYSTEM_APP
             )
             chunks = await knowledge_space_retriever.aretrieve_with_scores(
                 question, score_threshold

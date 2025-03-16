@@ -1,5 +1,5 @@
-version: '3.10'
-
+# To run current docker compose file, you should prepare the silliconflow api key in your environment.
+# SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY} docker compose up -d
 services:
   db:
     image: mysql/mysql-server
@@ -18,23 +18,24 @@ services:
     networks:
       - dbgptnet
   webserver:
-    image: eosphorosai/dbgpt:latest
-    command: python3 dbgpt/app/dbgpt_server.py
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start webserver --config /app/configs/dbgpt-proxy-siliconflow-mysql.toml
     environment:
-      - LOCAL_DB_HOST=db
-      - LOCAL_DB_PASSWORD=aa123456
-      - ALLOWLISTED_PLUGINS=db_dashboard
-      - LLM_MODEL=glm-4-9b-chat
-    depends_on:
-      - db
+      - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
+      - MYSQL_PASSWORD=aa123456
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=dbgpt
+      - MYSQL_USER=root
     volumes:
+      - ./configs:/app/configs
       - /data:/data
-      # Please modify it to your own model directory
+      # May be you can mount your models to container
       - /data/models:/app/models
       - dbgpt-data:/app/pilot/data
       - dbgpt-message:/app/pilot/message
-    env_file:
-      - .env.template
+    depends_on:
+      - db
     ports:
       - 5670:5670/tcp
     # webserver may be failed, it must wait all sqls in /docker-entrypoint-initdb.d execute finish.
@@ -42,16 +43,11 @@ services:
     networks:
       - dbgptnet
     ipc: host
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities: [gpu]
 volumes:
   dbgpt-myql-db:
   dbgpt-data:
   dbgpt-message:
+  dbgpt-alembic-versions:
 networks:
   dbgptnet:
     driver: bridge

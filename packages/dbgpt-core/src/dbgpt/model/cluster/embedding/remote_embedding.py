@@ -26,7 +26,8 @@ class RemoteEmbeddings(Embeddings):
 
     async def aembed_query(self, text: str) -> List[float]:
         """Asynchronous Embed query text."""
-        return await self.aembed_documents([text])[0]
+        result = await self.aembed_documents([text])
+        return result[0]
 
 
 class RemoteRerankEmbeddings(RerankEmbeddings):

@@ -26,4 +26,5 @@ export const FlowEn = {
   Template_Name: 'Template Name',
   Template_Label: 'Label',
   Template_Action: 'Action',
+  minimum_dynamic_fields_warning: 'Please keep more than one dynamic field',
 };

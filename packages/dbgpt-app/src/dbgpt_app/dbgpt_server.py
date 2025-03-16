@@ -112,7 +112,7 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     If you use gunicorn as a process manager, initialize_app can be invoke in
     `on_starting` hook.
     Args:
-        param:WebWerverParameters
+        param:WebServerParameters
         args:List[str]
     """
 
@@ -126,7 +126,6 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         log_config,
         default_logger_filename=os.path.join(LOGDIR, "dbgpt_webserver.log"),
     )
-    print(param)
 
     server_init(param, system_app)
     mount_routers(app)
