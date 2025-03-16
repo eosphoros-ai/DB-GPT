@@ -1,4 +1,4 @@
-import markdownComponents from '@/components/chat/chat-content/config';
+import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import {
@@ -16,8 +16,6 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 import Feedback from './Feedback';
 import RobotIcon from './RobotIcon';
 
@@ -160,8 +158,8 @@ const ChatContent: React.FC<{
             </div>
             {result ? (
               <div className='px-4 md:px-6 py-4 text-sm'>
-                <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
-                  {result ?? ''}
+                <GPTVis components={markdownComponents} {...markdownPlugins}>
+                  {preprocessLaTeX(result ?? '')}
                 </GPTVis>
               </div>
             ) : (
@@ -227,8 +225,8 @@ const ChatContent: React.FC<{
                 </div>
               )}
               {typeof context === 'string' && scene === 'chat_agent' && (
-                <GPTVis components={{ ...markdownComponents }} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
-                  {formatMarkdownValForAgent(value)}
+                <GPTVis components={markdownComponents} {...markdownPlugins}>
+                  {preprocessLaTeX(formatMarkdownValForAgent(value))}
                 </GPTVis>
               )}
               {typeof context === 'string' && scene !== 'chat_agent' && (
@@ -238,10 +236,9 @@ const ChatContent: React.FC<{
                       ...markdownComponents,
                       ...extraMarkdownComponents,
                     }}
-                    rehypePlugins={[rehypeRaw]}
-                    remarkPlugins={[remarkGfm]}
+                    {...markdownPlugins}
                   >
-                    {formatMarkdownVal(value)}
+                    {preprocessLaTeX(formatMarkdownVal(value))}
                   </GPTVis>
                 </div>
               )}

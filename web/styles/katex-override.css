@@ -1,0 +1,7 @@
+/* styles/katex-override.css */
+
+/* Inlined from katex-override.css */
+.katex {
+    font-size: 1.25em !important; /* Adjust the font size */
+    line-height: 3.0 !important;
+}

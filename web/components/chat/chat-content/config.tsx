@@ -4,8 +4,11 @@ import { LinkOutlined, ReadOutlined, SyncOutlined } from '@ant-design/icons';
 import { Datum } from '@antv/ava';
 import { GPTVis, withDefaultChartCode } from '@antv/gpt-vis';
 import { Image, Table, Tabs, TabsProps, Tag } from 'antd';
+import 'katex/dist/katex.min.css';
+import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import ReferencesContent from './ReferencesContent';
 import VisAppLink from './VisAppLink';
 import VisChatLink from './VisChatLink';
@@ -35,6 +38,46 @@ function matchCustomeTagValues(context: string) {
     return acc;
   }, []);
   return { context, matchValues };
+}
+/**
+ * Preprocess LaTeX syntax, convert \[ \] and \( \) to $$ $$ and $ $
+ * Also handle some common edge cases
+ * @param content
+ */
+export function preprocessLaTeX(content: any): string {
+  if (typeof content !== 'string') {
+    return content;
+  }
+  // Extract code blocks
+  const codeBlocks: string[] = [];
+  content = content.replace(/(```[\s\S]*?```|`[^`\n]+`)/g, match => {
+    codeBlocks.push(match);
+    return `<<CODE_BLOCK_${codeBlocks.length - 1}>>`;
+  });
+
+  // Replace common LaTeX delimiters with KaTeX supported format
+  content = content
+    .replace(/\\\\\[/g, '$$') // Replace \\[ with $$
+    .replace(/\\\\\]/g, '$$') // Replace \\] with $$
+    .replace(/\\\\\(/g, '$') //  Replace \\( with $
+    .replace(/\\\\\)/g, '$') //  Replace \\) with $
+    .replace(/\\\[/g, '$$') //   Replace \[ with $$
+    .replace(/\\\]/g, '$$') // Replace \] with $$
+    .replace(/\\\(/g, '$') // Replace \( with $
+    .replace(/\\\)/g, '$'); // Replaces \( with $
+
+  // Make sure there is enough line breaks before and after the block formula
+  content = content
+    .replace(/([^\n])\$\$/g, '$1\n\n$$') // Add a blank line before $$
+    .replace(/\$\$([^\n])/g, '$$\n\n$1'); // Add a blank line after $$
+
+  // Handle currency symbols - escape $ that are obviously currency
+  content = content.replace(/\$(?=\d)/g, '\\$');
+
+  // Recover code blocks
+  content = content.replace(/<<CODE_BLOCK_(\d+)>>/g, (_: any, index: string) => codeBlocks[parseInt(index)]);
+
+  return content;
 }
 
 const codeComponents = {
@@ -161,7 +204,11 @@ const codeComponents = {
               {children}
             </code>
           )}
-          <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
+          <GPTVis
+            components={markdownComponents}
+            rehypePlugins={[rehypeRaw, rehypeKatex]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+          >
             {matchValues.join('\n')}
           </GPTVis>
         </>
@@ -372,4 +419,8 @@ const markdownComponents = {
   ...extraComponents,
 };
 
+export const markdownPlugins = {
+  remarkPlugins: [remarkGfm, [remarkMath, { singleDollarTextMath: true }]],
+  rehypePlugins: [rehypeRaw, [rehypeKatex, { output: 'htmlAndMathml' }]],
+};
 export default markdownComponents;
