@@ -55,6 +55,10 @@ class ChromaVectorConfig(VectorStoreConfig):
         },
     )
 
+    def create_store(self, **kwargs) -> "ChromaStore":
+        """Create index store."""
+        return ChromaStore(vector_store_config=self, **kwargs)
+
 
 @register_resource(
     _("Chroma Vector Store"),

@@ -19,39 +19,9 @@ logger = logging.getLogger(__name__)
 class IndexStoreConfig(BaseParameters):
     """Index store config."""
 
-    # name: str = field(
-    #     default="dbgpt_collection",
-    #     metadata={
-    #         "help": "The name of index store, if not set, will use the default name."
-    #     }
-    # )
-    # embedding_fn: Optional["Embeddings"] = field(
-    #     default=None,
-    #     metadata={
-    #         "help": "The embedding function of index store, if not set, will use the "
-    #         "default embedding function."
-    #     },
-    # )
-    # max_chunks_once_load: int = field(
-    #     default=10,
-    #     metadata={
-    #         "help": "The max number of chunks to load at once. Default is 10."
-    #     },
-    # )
-    # max_threads: int = field(
-    #     default=1,
-    #     metadata={
-    #         "help": "The max number of threads to use. Default is 1."
-    #     },
-    # )
-    #
-    # def to_dict(self, **kwargs) -> Dict[str, Any]:
-    #     """Convert to dict."""
-    #     embedding_fn = self.embedding_fn
-    #     self.embedding_fn = None
-    #     result = asdict(self)
-    #     result['embedding_fn'] = embedding_fn
-    #     return result
+    def create_store(self, **kwargs) -> "IndexStoreBase":
+        """Create a new index store from the config."""
+        raise NotImplementedError("Current index store does not support create_store")
 
 
 class IndexStoreBase(ABC):
