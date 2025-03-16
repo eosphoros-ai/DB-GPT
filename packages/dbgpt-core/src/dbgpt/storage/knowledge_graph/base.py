@@ -7,19 +7,17 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from dbgpt._private.pydantic import ConfigDict
 from dbgpt.core import Chunk
 from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.graph_store.graph import Graph
+from dbgpt.util import RegisterParameters
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class KnowledgeGraphConfig(IndexStoreConfig):
+class KnowledgeGraphConfig(IndexStoreConfig, RegisterParameters):
     """Knowledge graph config."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
 
 class KnowledgeGraphBase(IndexStoreBase, ABC):

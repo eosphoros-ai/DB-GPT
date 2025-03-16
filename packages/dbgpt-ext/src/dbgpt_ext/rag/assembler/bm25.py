@@ -10,7 +10,7 @@ from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt_ext.rag.assembler.base import BaseAssembler
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt_ext.rag.retriever.bm25 import BM25Retriever
-from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
+from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchStoreConfig
 
 
 class BM25Assembler(BaseAssembler):
@@ -44,7 +44,7 @@ class BM25Assembler(BaseAssembler):
     def __init__(
         self,
         knowledge: Knowledge,
-        es_config: ElasticsearchVectorConfig,
+        es_config: ElasticsearchStoreConfig,
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -55,7 +55,7 @@ class BM25Assembler(BaseAssembler):
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            es_config: (ElasticsearchVectorConfig) Elasticsearch config.
+            es_config: (ElasticsearchStoreConfig) Elasticsearch config.
             k1 (Optional[float]): Controls non-linear term frequency normalization
             (saturation). The default value is 2.0.
             b (Optional[float]): Controls to what degree document length normalizes
@@ -123,7 +123,7 @@ class BM25Assembler(BaseAssembler):
     def load_from_knowledge(
         cls,
         knowledge: Knowledge,
-        es_config: ElasticsearchVectorConfig,
+        es_config: ElasticsearchStoreConfig,
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -132,7 +132,7 @@ class BM25Assembler(BaseAssembler):
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            es_config: (ElasticsearchVectorConfig) Elasticsearch config.
+            es_config: (ElasticsearchStoreConfig) Elasticsearch config.
             k1: (Optional[float]) BM25 parameter k1.
             b: (Optional[float]) BM25 parameter b.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
@@ -153,7 +153,7 @@ class BM25Assembler(BaseAssembler):
     async def aload_from_knowledge(
         cls,
         knowledge: Knowledge,
-        es_config: ElasticsearchVectorConfig,
+        es_config: ElasticsearchStoreConfig,
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -163,7 +163,7 @@ class BM25Assembler(BaseAssembler):
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            es_config: (ElasticsearchVectorConfig) Elasticsearch config.
+            es_config: (ElasticsearchStoreConfig) Elasticsearch config.
             k1: (Optional[float]) BM25 parameter k1.
             b: (Optional[float]) BM25 parameter b.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for

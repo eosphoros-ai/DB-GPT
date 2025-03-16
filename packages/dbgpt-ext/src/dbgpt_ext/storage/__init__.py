@@ -50,11 +50,11 @@ def _import_oceanbase() -> Tuple[Type, Type]:
 
 def _import_elastic() -> Tuple[Type, Type]:
     from dbgpt_ext.storage.vector_store.elastic_store import (
-        ElasticsearchVectorConfig,
+        ElasticsearchStoreConfig,
         ElasticStore,
     )
 
-    return ElasticStore, ElasticsearchVectorConfig
+    return ElasticStore, ElasticsearchStoreConfig
 
 
 def _import_builtin_knowledge_graph() -> Tuple[Type, Type]:

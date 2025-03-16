@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
-from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter
 from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
@@ -93,14 +92,17 @@ class VectorStoreConfig(IndexStoreConfig, RegisterParameters):
     user: Optional[str] = field(
         default=None,
         metadata={
-            "help": _("The user of vector store, if not set, will use the default user."),
+            "help": _(
+                "The user of vector store, if not set, will use the default user."
+            ),
         },
     )
     password: Optional[str] = field(
         default=None,
         metadata={
             "help": _(
-                "The password of vector store, if not set, will use the default password."
+                "The password of vector store, if not set, "
+                "will use the default password."
             ),
         },
     )

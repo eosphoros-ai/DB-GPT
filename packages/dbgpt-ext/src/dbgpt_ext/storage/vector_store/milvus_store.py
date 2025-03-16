@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Optional
 
-from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -94,49 +94,76 @@ logger = logging.getLogger(__name__)
     ],
     description=_("Milvus vector config."),
 )
+@dataclass
 class MilvusVectorConfig(VectorStoreConfig):
     """Milvus vector store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "Milvus"
 
-    uri: Optional[str] = Field(
+    uri: str = field(
         default=None,
-        description="The uri of milvus store, if not set, will use the default uri.",
+        metadata={
+            "help": _("The uri of milvus store, if not set, will use the default uri.")
+        },
     )
-    port: str = Field(
+    port: str = field(
         default="19530",
-        description="The port of milvus store, if not set, will use the default port.",
+        metadata={
+            "help": _(
+                "The port of milvus store, if not set, will use the default port."
+            )
+        },
     )
 
-    alias: str = Field(
+    alias: str = field(
         default="default",
-        description="The alias of milvus store, if not set, will use the default "
-        "alias.",
+        metadata={
+            "help": _(
+                "The alias of milvus store, if not set, will use the default alias."
+            )
+        },
     )
-    primary_field: str = Field(
+    primary_field: str = field(
         default="pk_id",
-        description="The primary field of milvus store, if not set, will use the "
-        "default primary field.",
+        metadata={
+            "help": _(
+                "The primary field of milvus store, i"
+                "f not set, will use the default primary field."
+            )
+        },
     )
-    text_field: str = Field(
+    text_field: str = field(
         default="content",
-        description="The text field of milvus store, if not set, will use the default "
-        "text field.",
+        metadata={
+            "help": _(
+                "The text field of milvus store, if not set, will use the "
+                "default text field."
+            )
+        },
     )
-    embedding_field: str = Field(
+    embedding_field: str = field(
         default="vector",
-        description="The embedding field of milvus store, if not set, will use the "
-        "default embedding field.",
+        metadata={
+            "help": _(
+                "The embedding field of milvus store, if not set, will use the "
+                "default embedding field."
+            )
+        },
     )
-    metadata_field: str = Field(
+    metadata_field: str = field(
         default="metadata",
-        description="The metadata field of milvus store, if not set, will use the "
-        "default metadata field.",
+        metadata={
+            "help": _(
+                "The metadata field of milvus store, if not set, will use the "
+                "default metadata field."
+            )
+        },
     )
-    secure: str = Field(
+    secure: str = field(
         default="",
-        description="The secure of milvus store, if not set, will use the default "
-        "secure.",
+        metadata={
+            "help": _("The secure of milvus store, if not set, will use the default ")
+        },
     )
 
 

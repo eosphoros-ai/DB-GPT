@@ -17,7 +17,7 @@ path = "pilot/meta_data/dbgpt.db"
 
 [rag]
 chunk_size=1000
-chunk_overlap=0
+chunk_overlap=100
 similarity_top_k=5
 similarity_score_threshold=0.0
 max_chunks_once_load=10

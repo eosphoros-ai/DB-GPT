@@ -7,18 +7,15 @@ from dbgpt.model.parameter import (
     ModelServiceConfig,
 )
 from dbgpt.storage.cache.manager import ModelCacheParameters
-from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.configure import HookConfig
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
 from dbgpt.util.tracer import TracerParameters
 from dbgpt.util.utils import LoggingParameters
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnectorParameters
-from dbgpt_ext.storage.full_text.elasticsearch import ElasticDocumentConfig
-from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
-    BuiltinKnowledgeGraphConfig,
-)
+from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStoreConfig
 from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
+from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchStoreConfig
 from dbgpt_serve.core import BaseServeConfig
 
 
@@ -60,13 +57,13 @@ class StorageConfig(BaseParameters):
             "help": _("default vector type"),
         },
     )
-    graph: Optional[BuiltinKnowledgeGraphConfig] = field(
+    graph: Optional[TuGraphStoreConfig] = field(
         default=None,
         metadata={
             "help": _("default graph type"),
         },
     )
-    full_text: Optional[ElasticDocumentConfig] = field(
+    full_text: Optional[ElasticsearchStoreConfig] = field(
         default=None,
         metadata={
             "help": _("default full text type"),
@@ -95,7 +92,7 @@ class RagParameters(BaseParameters):
         default=10,
         metadata={"help": _("knowledge search top k")},
     )
-    similarity_score_threshold: Optional[int] = field(
+    similarity_score_threshold: Optional[float] = field(
         default=0.0,
         metadata={"help": _("knowledge search top similarity score")},
     )
@@ -119,13 +116,85 @@ class RagParameters(BaseParameters):
         default_factory=lambda: StorageConfig(),
         metadata={"help": _("Storage configuration")},
     )
-    graph_search_top_k: Optional[int] = field(
-        default=3,
+    knowledge_graph_chunk_search_top_k: Optional[int] = field(
+        default=5,
         metadata={"help": _("knowledge graph search top k")},
     )
-    graph_community_summary_enabled: Optional[bool] = field(
+    kg_enable_summary: Optional[bool] = field(
         default=False,
         metadata={"help": _("graph community summary enabled")},
+    )
+    llm_model: Optional[str] = field(
+        default=None,
+        metadata={"help": _("kg extract llm model")},
+    )
+    kg_extract_top_k: Optional[int] = field(
+        default=5,
+        metadata={"help": _("kg extract top k")},
+    )
+    kg_extract_score_threshold: Optional[float] = field(
+        default=0.3,
+        metadata={"help": _("kg extract score threshold")},
+    )
+    kg_community_top_k: Optional[int] = field(
+        default=50,
+        metadata={"help": _("kg community top k")},
+    )
+    kg_community_score_threshold: Optional[float] = field(
+        default=0.3,
+        metadata={"help": _("kg_community_score_threshold")},
+    )
+    kg_triplet_graph_enabled: Optional[bool] = field(
+        default=True,
+        metadata={"help": _("kg_triplet_graph_enabled")},
+    )
+    kg_document_graph_enabled: Optional[bool] = field(
+        default=True,
+        metadata={"help": _("kg_document_graph_enabled")},
+    )
+    kg_chunk_search_top_k: Optional[int] = field(
+        default=5,
+        metadata={"help": _("kg_chunk_search_top_k")},
+    )
+    kg_extraction_batch_size: Optional[int] = field(
+        default=3,
+        metadata={"help": _("kg_extraction_batch_size")},
+    )
+    kg_community_summary_batch_size: Optional[int] = field(
+        default=20,
+        metadata={"help": _("kg_community_summary_batch_size")},
+    )
+    kg_embedding_batch_size: Optional[int] = field(
+        default=20,
+        metadata={"help": _("kg_embedding_batch_size")},
+    )
+    kg_similarity_top_k: Optional[int] = field(
+        default=5,
+        metadata={"help": _("kg_similarity_top_k")},
+    )
+    kg_similarity_score_threshold: Optional[float] = field(
+        default=0.7,
+        metadata={"help": _("kg_similarity_score_threshold")},
+    )
+    kg_enable_text_search: Optional[bool] = field(
+        default=False,
+        metadata={"help": _("kg_enable_text_search")},
+    )
+    kg_text2gql_model_enabled: Optional[bool] = field(
+        default=False,
+        metadata={"help": _("kg_text2gql_model_enabled")},
+    )
+    kg_text2gql_model_name: Optional[str] = field(
+        default=None,
+        metadata={"help": _("text2gql_model_name")},
+    )
+    bm25_k1: Optional[float] = field(
+        default=2.0,
+        metadata={"help": _("bm25_k1")},
+    )
+    bm25_b: Optional[float] = field(
+        default=0.75,
+        metadata={"help": _("bm25_b")},
     )
 
 

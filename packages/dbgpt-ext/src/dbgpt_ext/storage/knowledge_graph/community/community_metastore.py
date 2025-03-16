@@ -18,18 +18,24 @@ class BuiltinCommunityMetastore(CommunityMetastore):
     """Builtin Community metastore."""
 
     def __init__(
-        self, vector_store: VectorStoreBase, rdb_store: Optional[RDBMSConnector] = None
+        self,
+        vector_store: VectorStoreBase,
+        rdb_store: Optional[RDBMSConnector] = None,
+        index_name: Optional[str] = None,
+        max_chunks_once_load: Optional[int] = 10,
+        max_threads: Optional[int] = 1,
+        top_k: Optional[int] = 5,
+        score_threshold: Optional[float] = 0.7,
     ):
         """Initialize Community metastore."""
         self._vector_store = vector_store
         self._rdb_store = rdb_store
 
-        config = self._vector_store.get_config()
-        self._vector_space = config.name
-        self._max_chunks_once_load = config.max_chunks_once_load
-        self._max_threads = config.max_threads
-        self._topk = config.topk
-        self._score_threshold = config.score_threshold
+        self._vector_space = index_name
+        self._max_chunks_once_load = max_chunks_once_load
+        self._max_threads = max_threads
+        self._topk = top_k
+        self._score_threshold = score_threshold
 
     def get(self, community_id: str) -> Community:
         """Get community."""

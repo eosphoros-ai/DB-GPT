@@ -5,11 +5,10 @@ import logging
 import math
 import os
 import uuid
-from dataclasses import field, dataclass
+from dataclasses import dataclass, field
 from typing import Any, List, Optional, Tuple
 
 import numpy as np
-from pydantic import Field
 from sqlalchemy import JSON, Column, String, Table, func, text
 from sqlalchemy.dialects.mysql import LONGTEXT
 
@@ -126,6 +125,7 @@ def _normalize(vector: List[float]) -> List[float]:
 @dataclass
 class OceanBaseConfig(VectorStoreConfig):
     """OceanBase vector store config."""
+
     __type__ = "OceanBase"
 
     ob_host: Optional[str] = field(
@@ -142,15 +142,23 @@ class OceanBaseConfig(VectorStoreConfig):
     )
     ob_user: Optional[str] = field(
         default=None,
-        description="user to login",
+        metadata={
+            "help": "The user of oceanbase, if not set, will use the default user."
+        },
     )
     ob_password: Optional[str] = field(
         default=None,
-        description="password to login",
+        metadata={
+            "help": "The password of oceanbase, if not set, "
+            "will use the default password"
+        },
     )
     ob_database: Optional[str] = field(
         default=None,
-        description="database for vector tables",
+        metadata={
+            "help": "The database for vector tables, if not set, "
+            "will use the default database."
+        },
     )
 
 

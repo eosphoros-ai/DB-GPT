@@ -287,15 +287,9 @@ class VectorStoreConnector:
         """Adapt storage config."""
         storage_config = self.app_config.rag.storage
         if vector_store_type in supported_vector_store_list:
-            return (
-                storage_config.vector
-            )
+            return storage_config.vector
         elif vector_store_type in supported_kg_store_list:
-            return (
-                storage_config.graph
-            )
+            return storage_config.graph
         elif vector_store_type in supported_full_tet_list:
-            return (
-                storage_config.full_text
-            )
+            return storage_config.full_text
         raise ValueError(f"storage type {vector_store_type} not supported")

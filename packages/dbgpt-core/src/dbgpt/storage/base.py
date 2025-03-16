@@ -4,12 +4,12 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import List, Optional
 
-from dbgpt.core import Chunk, Embeddings
+from dbgpt.core import Chunk
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt.util import BaseParameters, RegisterParameters
+from dbgpt.util import BaseParameters
 from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 
 logger = logging.getLogger(__name__)

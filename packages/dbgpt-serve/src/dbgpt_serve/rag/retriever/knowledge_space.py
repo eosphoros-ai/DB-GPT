@@ -2,17 +2,15 @@ from typing import List, Optional
 
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core import Chunk
-from dbgpt.model import DefaultLLMClient
-from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.retriever import EmbeddingRetriever, QueryRewrite, Ranker
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
-from dbgpt_serve.rag.connector import VectorStoreConnector
 from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
 from dbgpt_serve.rag.retriever.qa_retriever import QARetriever
 from dbgpt_serve.rag.retriever.retriever_chain import RetrieverChain
+from dbgpt_serve.rag.storage_manager import StorageManager
 
 
 class KnowledgeSpaceRetriever(BaseRetriever):
@@ -49,7 +47,6 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             "embedding_factory", EmbeddingFactory
         )
         embedding_fn = embedding_factory.create()
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
 
         space_dao = KnowledgeSpaceDao()
         space = space_dao.get_one({"id": space_id})
@@ -57,21 +54,10 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             space = space_dao.get_one({"name": space_id})
         if space is None:
             raise ValueError(f"Knowledge space {space_id} not found")
-        worker_manager = self._system_app.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        llm_client = DefaultLLMClient(worker_manager=worker_manager)
-        config = VectorStoreConfig(
-            name=space.name,
-            embedding_fn=embedding_fn,
-            llm_client=llm_client,
-            llm_model=self._llm_model,
-        )
-
-        self._vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=self._system_app,
+        storage_connector = self.storage_manager.get_storage_connector(
+            space.name,
+            space.vector_type,
+            self._llm_model,
         )
         self._executor = self._system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
@@ -86,7 +72,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
                     system_app=system_app,
                 ),
                 EmbeddingRetriever(
-                    index_store=self._vector_store_connector.index_client,
+                    index_store=storage_connector,
                     top_k=self._top_k,
                     query_rewrite=self._query_rewrite,
                     rerank=self._rerank,
@@ -94,6 +80,10 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             ],
             executor=self._executor,
         )
+
+    @property
+    def storage_manager(self):
+        return StorageManager.get_instance(self._system_app)
 
     def _retrieve(
         self, query: str, filters: Optional[MetadataFilters] = None

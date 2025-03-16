@@ -5,7 +5,6 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
-from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.configs.model_config import PILOT_PATH, resolve_root_path
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -18,6 +17,7 @@ from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
+
 
 @register_resource(
     _("Chroma Config"),
@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ChromaVectorConfig(VectorStoreConfig):
     """Chroma vector store config."""
+
     __type__ = "Chroma"
 
     persist_path: Optional[str] = field(
@@ -74,12 +75,14 @@ class ChromaVectorConfig(VectorStoreConfig):
 class ChromaStore(VectorStoreBase):
     """Chroma vector store."""
 
-    def __init__(self, vector_store_config: ChromaVectorConfig,
-                 name: Optional[str],
-                 embedding_fn: Optional[Embeddings] = None,
-                 chroma_client: Optional["PersistentClient"] = None,
-                 collection_metadata: Optional[dict] = None,
-                 ) -> None:
+    def __init__(
+        self,
+        vector_store_config: ChromaVectorConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+        chroma_client: Optional["PersistentClient"] = None,  # type: ignore # noqa
+        collection_metadata: Optional[dict] = None,
+    ) -> None:
         """Create a ChromaStore instance.
 
         Args:
@@ -99,9 +102,7 @@ class ChromaStore(VectorStoreBase):
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
         )
-        self.persist_dir = os.path.join(
-            resolve_root_path(chroma_path) + "/chromadb"
-        )
+        self.persist_dir = os.path.join(resolve_root_path(chroma_path) + "/chromadb")
         self.embeddings = embedding_fn
         if not self.embeddings:
             raise ValueError("Embeddings is None")
@@ -115,9 +116,7 @@ class ChromaStore(VectorStoreBase):
             self._chroma_client = PersistentClient(
                 path=self.persist_dir, settings=chroma_settings
             )
-        collection_metadata = collection_metadata or {
-            "hnsw:space": "cosine"
-        }
+        collection_metadata = collection_metadata or {"hnsw:space": "cosine"}
         self._collection = self._chroma_client.get_or_create_collection(
             name=name,
             embedding_function=None,
