@@ -20,7 +20,6 @@ from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchStoreConfi
 def _create_es_config():
     """Create vector connector."""
     return ElasticsearchStoreConfig(
-        name="bm25_es_dbgpt",
         uri="localhost",
         port="9200",
         user="elastic",

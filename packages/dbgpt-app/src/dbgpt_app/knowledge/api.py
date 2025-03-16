@@ -12,10 +12,8 @@ from dbgpt.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.retriever import BaseRetriever
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt_app.knowledge.request.request import (
@@ -49,8 +47,10 @@ from dbgpt_serve.rag.api.schemas import (
     KnowledgeStorageType,
     KnowledgeSyncRequest,
 )
-from dbgpt_serve.rag.connector import VectorStoreConnector
+
+# from dbgpt_serve.rag.connector import VectorStoreConnector
 from dbgpt_serve.rag.service.service import Service
+from dbgpt_serve.rag.storage_manager import StorageManager
 
 logger = logging.getLogger(__name__)
 
@@ -505,22 +505,12 @@ def chunk_edit(
 
 
 @router.post("/knowledge/{vector_name}/query")
-def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
+def similarity_query(space_name: str, query_request: KnowledgeQueryRequest):
     print(f"Received params: {space_name}, {query_request}")
-    embedding_factory = CFG.SYSTEM_APP.get_component(
-        "embedding_factory", EmbeddingFactory
-    )
-    config = VectorStoreConfig(
-        name=space_name,
-        embedding_fn=embedding_factory.create(),
-    )
-    vector_store_connector = VectorStoreConnector(
-        vector_store_type=CFG.VECTOR_STORE_TYPE,
-        vector_store_config=config,
-        system_app=CFG.SYSTEM_APP,
-    )
+    storage_manager = StorageManager.get_instance(CFG.SYSTEM_APP)
+    vector_store_connector = storage_manager.create_vector_store(index_name=space_name)
     retriever = EmbeddingRetriever(
-        top_k=query_request.top_k, index_store=vector_store_connector.index_client
+        top_k=query_request.top_k, index_store=vector_store_connector
     )
     chunks = retriever.retrieve(query_request.query)
     res = [

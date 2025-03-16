@@ -126,6 +126,10 @@ class ElasticsearchStoreConfig(VectorStoreConfig):
         },
     )
 
+    def create_store(self, **kwargs) -> "ElasticStore":
+        """Create Elastic store."""
+        return ElasticStore(vector_store_config=self, **kwargs)
+
 
 @register_resource(
     _("Elastic Vector Store"),
@@ -149,7 +153,8 @@ class ElasticStore(VectorStoreBase):
     def __init__(
         self,
         vector_store_config: ElasticsearchStoreConfig,
-        name: Optional[str] = "dbgpt",
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
     ) -> None:
         """Create a ElasticsearchStore instance.
 
@@ -180,13 +185,13 @@ class ElasticStore(VectorStoreBase):
             bytes_str = self.collection_name.encode("utf-8")
             hex_str = bytes_str.hex()
             self.collection_name = hex_str
-        if vector_store_config.embedding_fn is None:
+        if embedding_fn is None:
             # Perform runtime checks on self.embedding to
             # ensure it has been correctly set and loaded
             raise ValueError("embedding_fn is required for ElasticSearchStore")
         # to lower case
         self.index_name = self.collection_name.lower()
-        self.embedding: Embeddings = vector_store_config.embedding_fn
+        self.embedding: Embeddings = embedding_fn
         self.fields: List = []
 
         if (self.username is None) != (self.password is None):

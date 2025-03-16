@@ -107,6 +107,10 @@ class VectorStoreConfig(IndexStoreConfig, RegisterParameters):
         },
     )
 
+    def create_store(self, **kwargs) -> "VectorStoreBase":
+        """Create a new index store from the config."""
+        raise NotImplementedError("Current vector store does not support create_store")
+
 
 class VectorStoreBase(IndexStoreBase, ABC):
     """Vector store base class."""

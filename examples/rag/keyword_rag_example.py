@@ -6,8 +6,8 @@ from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.assembler import EmbeddingAssembler
 from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt_ext.storage.full_text.elasticsearch import (
-    ElasticDocumentConfig,
     ElasticDocumentStore,
+    ElasticsearchStoreConfig,
 )
 
 """Keyword rag example.
@@ -22,15 +22,14 @@ from dbgpt_ext.storage.full_text.elasticsearch import (
 
 def _create_es_connector():
     """Create es connector."""
-    config = ElasticDocumentConfig(
-        name="keyword_rag_test",
+    config = ElasticsearchStoreConfig(
         uri="localhost",
         port="9200",
         user="elastic",
         password="dbgpt",
     )
 
-    return ElasticDocumentStore(config)
+    return ElasticDocumentStore(config, name="keyword_rag_test")
 
 
 async def main():

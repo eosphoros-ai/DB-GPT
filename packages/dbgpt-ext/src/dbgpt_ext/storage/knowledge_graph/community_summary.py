@@ -24,7 +24,6 @@ from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
 )
-from dbgpt_ext.storage.vector_store.factory import VectorStoreFactory
 
 logger = logging.getLogger(__name__)
 
@@ -227,22 +226,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._embedding_fn = embedding_fn
         self._vector_store_config = vector_store_config
 
-        # def extractor_configure(name: str, cfg: VectorStoreConfig):
-        #     cfg.name = name
-        #     cfg.embedding_fn = embedding_fn
-        #     cfg.max_chunks_once_load = max_chunks_once_load
-        #     cfg.max_threads = max_threads
-        #     cfg.topk = self._extract_topk
-        #     cfg.score_threshold = self._extract_score_threshold
-
         self._graph_extractor = GraphExtractor(
             self._llm_client,
             self._model_name,
-            VectorStoreFactory.create(
-                vector_store_config.get_type_value(),
-                name + "_CHUNK_HISTORY",
-                embedding_fn=embedding_fn,
-                vector_store_configure=self._vector_store_config,
+            vector_store_config.create_store(
+                name=name + "_CHUNK_HISTORY", embedding_fn=embedding_fn
             ),
             index_name=name,
             max_chunks_once_load=kg_max_chunks_once_load,
@@ -267,11 +255,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._community_store = CommunityStore(
             self._graph_store_adapter,
             CommunitySummarizer(self._llm_client, self._model_name),
-            VectorStoreFactory.create(
-                vector_store_config.get_type_value(),
-                self._graph_name + "_COMMUNITY_SUMMARY",
-                embedding_fn=embedding_fn,
-                vector_store_configure=self._vector_store_config,
+            vector_store_config.create_store(
+                name=name + "_COMMUNITY_SUMMARY", embedding_fn=embedding_fn
             ),
             index_name=name,
             max_chunks_once_load=kg_max_chunks_once_load,

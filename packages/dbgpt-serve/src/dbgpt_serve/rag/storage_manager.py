@@ -1,6 +1,6 @@
 """RAG STORAGE MANAGER manager."""
 
-from typing import Optional
+from typing import List, Optional, Type
 
 from dbgpt import BaseComponent
 from dbgpt.component import ComponentType, SystemApp
@@ -9,10 +9,9 @@ from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.storage.base import IndexStoreBase
 from dbgpt.storage.full_text.base import FullTextStoreBase
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt_ext.storage.full_text.elasticsearch import ElasticDocumentStore
 from dbgpt_ext.storage.knowledge_graph.knowledge_graph import BuiltinKnowledgeGraph
-from dbgpt_ext.storage.vector_store.factory import VectorStoreFactory
 
 
 class StorageManager(BaseComponent):
@@ -38,7 +37,7 @@ class StorageManager(BaseComponent):
         self, index_name: str, storage_type: str, llm_model: Optional[str] = None
     ) -> IndexStoreBase:
         """Get storage connector."""
-        supported_vector_types = VectorStoreFactory.get_all_supported_types()
+        supported_vector_types = self.get_vector_supported_types
         storage_config = self.storage_config()
         if storage_type in supported_vector_types:
             return self.create_vector_store(index_name)
@@ -67,11 +66,9 @@ class StorageManager(BaseComponent):
             "embedding_factory", EmbeddingFactory
         )
         embedding_fn = embedding_factory.create()
-        return VectorStoreFactory.create(
-            vector_store_type=storage_config.vector.get_type_value(),
-            vector_store_configure=storage_config.vector,
-            vector_space_name=index_name,
-            embedding_fn=embedding_fn,
+        vector_store_config: VectorStoreConfig = storage_config.vector
+        return vector_store_config.create_store(
+            name=index_name, embedding_fn=embedding_fn
         )
 
     def create_kg_store(
@@ -128,7 +125,7 @@ class StorageManager(BaseComponent):
         )
 
     def create_full_text_store(self, index_name) -> FullTextStoreBase:
-        """Create vector store."""
+        """Create Full Text store."""
         app_config = self.system_app.config.configs.get("app_config")
         rag_config = app_config.rag
         storage_config = app_config.rag.storage
@@ -138,3 +135,18 @@ class StorageManager(BaseComponent):
             k1=rag_config.bm25_k1,
             b=rag_config.bm25_b,
         )
+
+    @property
+    def get_vector_supported_types(self) -> List[str]:
+        """Get all supported types."""
+        support_types = []
+        vector_store_classes = _get_all_subclasses()
+        for vector_cls in vector_store_classes:
+            support_types.append(vector_cls.__type__)
+        return support_types
+
+
+def _get_all_subclasses() -> List[Type[VectorStoreConfig]]:
+    """Get all subclasses of cls."""
+
+    return VectorStoreConfig.__subclasses__()

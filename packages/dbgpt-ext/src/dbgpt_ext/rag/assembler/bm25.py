@@ -45,6 +45,7 @@ class BM25Assembler(BaseAssembler):
         self,
         knowledge: Knowledge,
         es_config: ElasticsearchStoreConfig,
+        name: Optional[str] = "dbgpt",
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -70,7 +71,7 @@ class BM25Assembler(BaseAssembler):
         self._es_port = es_config.port
         self._es_username = es_config.user
         self._es_password = es_config.password
-        self._index_name = es_config.name
+        self._index_name = name
         self._k1 = k1
         self._b = b
         if self._es_username and self._es_password:
@@ -124,6 +125,7 @@ class BM25Assembler(BaseAssembler):
         cls,
         knowledge: Knowledge,
         es_config: ElasticsearchStoreConfig,
+        name: Optional[str] = "dbgpt",
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -133,6 +135,7 @@ class BM25Assembler(BaseAssembler):
         Args:
             knowledge: (Knowledge) Knowledge datasource.
             es_config: (ElasticsearchStoreConfig) Elasticsearch config.
+            name: (Optional[str]) BM25 name.
             k1: (Optional[float]) BM25 parameter k1.
             b: (Optional[float]) BM25 parameter b.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
@@ -144,6 +147,7 @@ class BM25Assembler(BaseAssembler):
         return cls(
             knowledge=knowledge,
             es_config=es_config,
+            name=name,
             k1=k1,
             b=b,
             chunk_parameters=chunk_parameters,
@@ -154,6 +158,7 @@ class BM25Assembler(BaseAssembler):
         cls,
         knowledge: Knowledge,
         es_config: ElasticsearchStoreConfig,
+        name: Optional[str] = "dbgpt",
         k1: Optional[float] = 2.0,
         b: Optional[float] = 0.75,
         chunk_parameters: Optional[ChunkParameters] = None,
@@ -178,6 +183,7 @@ class BM25Assembler(BaseAssembler):
             cls,
             knowledge,
             es_config=es_config,
+            name=name,
             k1=k1,
             b=b,
             chunk_parameters=chunk_parameters,

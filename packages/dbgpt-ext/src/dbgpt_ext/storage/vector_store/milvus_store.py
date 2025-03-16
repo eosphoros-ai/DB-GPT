@@ -166,6 +166,10 @@ class MilvusVectorConfig(VectorStoreConfig):
         },
     )
 
+    def create_store(self, **kwargs) -> "MilvusStore":
+        """Create Milvus Store."""
+        return MilvusStore(vector_store_config=self, **kwargs)
+
 
 @register_resource(
     _("Milvus Vector Store"),
@@ -186,7 +190,12 @@ class MilvusVectorConfig(VectorStoreConfig):
 class MilvusStore(VectorStoreBase):
     """Milvus vector store."""
 
-    def __init__(self, vector_store_config: MilvusVectorConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: MilvusVectorConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+    ) -> None:
         """Create a MilvusStore instance.
 
         Args:
@@ -217,18 +226,16 @@ class MilvusStore(VectorStoreBase):
         )
         self.secure = milvus_vector_config.get("secure") or os.getenv("MILVUS_SECURE")
 
-        self.collection_name = (
-            milvus_vector_config.get("name") or vector_store_config.name
-        )
+        self.collection_name = name
         if string_utils.contains_chinese(self.collection_name):
             bytes_str = self.collection_name.encode("utf-8")
             hex_str = bytes_str.hex()
             self.collection_name = hex_str
-        if vector_store_config.embedding_fn is None:
+        if embedding_fn is None:
             # Perform runtime checks on self.embedding to
             # ensure it has been correctly set and loaded
             raise ValueError("embedding_fn is required for MilvusStore")
-        self.embedding: Embeddings = vector_store_config.embedding_fn
+        self.embedding: Embeddings = embedding_fn
         self.fields: List = []
         self.alias = milvus_vector_config.get("alias") or "default"
 

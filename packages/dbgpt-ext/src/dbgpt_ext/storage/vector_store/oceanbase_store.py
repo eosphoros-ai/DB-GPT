@@ -12,7 +12,7 @@ import numpy as np
 from sqlalchemy import JSON, Column, String, Table, func, text
 from sqlalchemy.dialects.mysql import LONGTEXT
 
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
@@ -161,6 +161,10 @@ class OceanBaseConfig(VectorStoreConfig):
         },
     )
 
+    def create_store(self, **kwargs) -> "OceanBaseStore":
+        """Create OceanBase store."""
+        return OceanBaseStore(vector_store_config=self, **kwargs)
+
 
 @register_resource(
     _("OceanBase Vector Store"),
@@ -181,7 +185,12 @@ class OceanBaseConfig(VectorStoreConfig):
 class OceanBaseStore(VectorStoreBase):
     """OceanBase vector store."""
 
-    def __init__(self, vector_store_config: OceanBaseConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: OceanBaseConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+    ) -> None:
         """Create a OceanBaseStore instance."""
         try:
             from pyobvector import ObVecClient  # type: ignore
@@ -197,8 +206,8 @@ class OceanBaseStore(VectorStoreBase):
         super().__init__()
 
         self._vector_store_config = vector_store_config
-        self.embedding_function = vector_store_config.embedding_fn
-        self.table_name = vector_store_config.name
+        self.embedding_function = embedding_fn
+        self.table_name = name
 
         vector_store_config_map = vector_store_config.to_dict()
         OB_HOST = str(

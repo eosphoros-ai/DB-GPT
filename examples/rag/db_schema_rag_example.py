@@ -4,8 +4,7 @@ from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt_ext.rag.assembler import DBSchemaAssembler
-from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt_serve.rag.connector import VectorStoreConnector
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 """DB struct rag example.
     pre-requirements:
@@ -46,12 +45,12 @@ def _create_temporary_connection():
 
 def _create_vector_connector():
     """Create vector connector."""
-    return VectorStoreConnector.from_default(
-        "Chroma",
-        vector_store_config=ChromaVectorConfig(
-            name="db_schema_vector_store_name",
-            persist_path=os.path.join(PILOT_PATH, "data"),
-        ),
+    config = ChromaVectorConfig(
+        persist_path=PILOT_PATH,
+    )
+    return ChromaStore(
+        config,
+        name="embedding_rag_test",
         embedding_fn=DefaultEmbeddingFactory(
             default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
