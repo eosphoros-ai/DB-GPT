@@ -1,17 +1,16 @@
 {
     // Set container runtime user
-    "remoteUser": "work",
     "build": {
         "dockerfile": ".devcontainer/Dockerfile.dev",
         "context": "./",
         "args": {
-            "USER_UID": "${localEnv:UID:1001}",
-            "USER_GID": "${localEnv:GID:1001}",
-            "USER_NAME":"${localEnv:USER:work}"
+            "USERNAME": "${localEnv:USER}"
         },
-        "options": ["--no-cache"]
-
+        "options": [
+            "--no-cache"
+        ]
     },
+    "initializeCommand": ".devcontainer/get_env.sh",
     "name": "dbgpt",
     "workspaceFolder": "/app",
     "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
@@ -38,8 +37,10 @@
     ],
     "mounts": [
         // sharing-git-credentials see https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials
+        // This will enable you to work with the repository code using Git inside the Dev container.
         "source=${localEnv:SSH_AUTH_SOCK},target=/run/host-services/ssh-auth.sock,type=bind",
         // mount to local models
+        // Persist the model to avoid redundant downloads.
         "source=${localWorkspaceFolder}/models/text2vec-large-chinese,target=/app/models/text2vec-large-chinese,type=bind"
     ],
     "containerEnv": {
@@ -61,7 +62,7 @@
                 "python.formatting.provider": "ruff"
             },
             "extensions": [
-                "ms-python.python", 
+                "ms-python.python",
                 "ms-python.isort",
                 "ms-python.vscode-pylance",
                 "ms-python.autopep8",
