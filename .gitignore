@@ -187,3 +187,6 @@ thirdparty
 /i18n/locales/**/**/*_ai_translated.po
 /i18n/locales/**/**/*~
 configs/my
+docs/package-lock.json
+docs/package.json
+docs/yarn.lock
