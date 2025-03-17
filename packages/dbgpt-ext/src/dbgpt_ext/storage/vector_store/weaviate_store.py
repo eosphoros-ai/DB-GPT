@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 class WeaviateVectorConfig(VectorStoreConfig):
     """Weaviate vector store config."""
 
-    __type__ = "weaviate"
+    __type__ = "Weaviate"
 
     weaviate_url: str = field(
         default=os.getenv("WEAVIATE_URL", None),

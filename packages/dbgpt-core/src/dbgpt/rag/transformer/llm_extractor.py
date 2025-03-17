@@ -25,10 +25,10 @@ class LLMExtractor(ExtractorBase, ABC):
         return await self._extract(text, None, limit)
 
     async def batch_extract(
-        self,
-        texts: List[str],
-        batch_size: int = 1,
-        limit: Optional[int] = None,
+            self,
+            texts: List[str],
+            batch_size: int = 1,
+            limit: Optional[int] = None,
     ) -> List:
         """Batch extract by LLM."""
         if batch_size < 1:
@@ -37,7 +37,7 @@ class LLMExtractor(ExtractorBase, ABC):
         results = []
 
         for i in range(0, len(texts), batch_size):
-            batch_texts = texts[i : i + batch_size]
+            batch_texts = texts[i: i + batch_size]
 
             # Create tasks for current batch
             extraction_tasks = [
@@ -51,7 +51,7 @@ class LLMExtractor(ExtractorBase, ABC):
         return results
 
     async def _extract(
-        self, text: str, history: str = None, limit: Optional[int] = None
+            self, text: str, history: str = None, limit: Optional[int] = None
     ) -> List:
         """Inner extract by LLM."""
         # limit check
@@ -84,7 +84,10 @@ class LLMExtractor(ExtractorBase, ABC):
             logger.error(f"request llm failed ({code}) {reason}")
             return []
 
-        return self._parse_response(response.text, limit)
+        if response.has_text:
+            return self._parse_response(response.text, limit)
+        else:
+            return []
 
     def truncate(self):
         """Do nothing by default."""
