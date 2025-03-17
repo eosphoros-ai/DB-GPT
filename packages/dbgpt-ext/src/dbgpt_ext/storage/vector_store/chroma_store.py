@@ -121,6 +121,7 @@ class ChromaStore(VectorStoreBase):
                 path=self.persist_dir, settings=chroma_settings
             )
         collection_metadata = collection_metadata or {"hnsw:space": "cosine"}
+        self._collection_name = name
         self._collection = self._chroma_client.get_or_create_collection(
             name=name,
             embedding_function=None,
@@ -196,13 +197,12 @@ class ChromaStore(VectorStoreBase):
 
     def vector_name_exists(self) -> bool:
         """Whether vector name exists."""
-        logger.info(f"Check persist_dir: {self.persist_dir}")
-        if not os.path.exists(self.persist_dir):
+        try:
+            collection = self._chroma_client.get_collection(self._collection_name)
+            return collection.count() > 0
+        except Exception as _e:
+            logger.info(f"Collection {self._collection_name} does not exist")
             return False
-        files = os.listdir(self.persist_dir)
-        # Skip default file: chroma.sqlite3
-        files = list(filter(lambda f: f != "chroma.sqlite3", files))
-        return len(files) > 0
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document to vector store."""
