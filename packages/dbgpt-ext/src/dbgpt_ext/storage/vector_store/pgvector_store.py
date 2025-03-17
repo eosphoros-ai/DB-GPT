@@ -52,7 +52,7 @@ class PGVectorConfig(VectorStoreConfig):
     )
 
     def create_store(self, **kwargs) -> "PGVectorStore":
-        """Create Milvus Store."""
+        """Create a PGVectorStore instance."""
         return PGVectorStore(vector_store_config=self, **kwargs)
 
 

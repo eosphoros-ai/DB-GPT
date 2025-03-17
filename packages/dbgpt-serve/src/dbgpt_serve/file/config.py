@@ -1,12 +1,14 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
     ResourceCategory,
     auto_register_resource,
 )
+from dbgpt.core.interface.file import StorageBackendConfig
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.module_utils import ScannerConfig
 from dbgpt_serve.core import BaseServeConfig
 
 APP_NAME = "file"
@@ -27,12 +29,20 @@ SERVER_APP_TABLE_NAME = "dbgpt_serve_file"
         "files in the file server."
     ),
     show_in_ui=False,
+    skip_fields=["backends"],
 )
 @dataclass
 class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
     __type__ = APP_NAME
+
+    __scan_config__ = ScannerConfig(
+        module_path="dbgpt_ext.storage.file",
+        base_class=StorageBackendConfig,
+        recursive=True,
+        specific_files=["config"],
+    )
 
     check_hash: Optional[bool] = field(
         default=True,
@@ -61,6 +71,14 @@ class ServeConfig(BaseServeConfig):
     )
     local_storage_path: Optional[str] = field(
         default=None, metadata={"help": _("The local storage path")}
+    )
+    default_backend: Optional[str] = field(
+        default=None,
+        metadata={"help": _("The default storage backend")},
+    )
+    backends: List[StorageBackendConfig] = field(
+        default_factory=list,
+        metadata={"help": _("The storage backend configurations")},
     )
 
     def get_node_address(self) -> str:

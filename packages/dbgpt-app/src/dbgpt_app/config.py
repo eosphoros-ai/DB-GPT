@@ -17,6 +17,7 @@ from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStoreConfig
 from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchStoreConfig
 from dbgpt_serve.core import BaseServeConfig
+from dbgpt_serve.core.config import GPTsAppConfig
 
 
 @dataclass
@@ -360,6 +361,10 @@ class ApplicationConfig(BaseParameters):
     rag: RagParameters = field(
         default_factory=lambda: RagParameters(),
         metadata={"help": _("Rag Knowledge Parameters")},
+    )
+    app: GPTsAppConfig = field(
+        default_factory=lambda: GPTsAppConfig(),
+        metadata={"help": _("GPTs application configuration")},
     )
     trace: TracerParameters = field(
         default_factory=TracerParameters,

@@ -14,7 +14,7 @@ from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from dbgpt.component import SystemApp
 from dbgpt.util import PaginationResult
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
-from dbgpt_serve.core import Result
+from dbgpt_serve.core import Result, blocking_func_to_async
 from dbgpt_serve.rag.api.schemas import (
     DocumentServeRequest,
     DocumentServeResponse,
@@ -155,7 +155,9 @@ async def delete(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.delete(space_id))
+    # TODO: Delete the files in the space
+    res = await blocking_func_to_async(global_system_app, service.delete, space_id)
+    return Result.succ(res)
 
 
 @router.get(
@@ -248,7 +250,10 @@ async def create_document(
         doc_file=doc_file,
         space_id=space_id,
     )
-    return Result.succ(await service.create_document(request))
+    res = await blocking_func_to_async(
+        global_system_app, service.create_document, request
+    )
+    return Result.succ(res)
 
 
 @router.get(
@@ -369,7 +374,11 @@ async def delete_document(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.delete_document(document_id))
+    # TODO: Delete the files of the document
+    res = await blocking_func_to_async(
+        global_system_app, service.delete_document, document_id
+    )
+    return Result.succ(res)
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:

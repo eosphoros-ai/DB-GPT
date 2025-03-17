@@ -120,7 +120,6 @@ async def upload_files(
         global_system_app,
         service.upload_files,
         bucket,
-        "distributed",
         files,
         user_name,
         sys_code,

@@ -98,7 +98,7 @@ logger = logging.getLogger(__name__)
 class MilvusVectorConfig(VectorStoreConfig):
     """Milvus vector store config."""
 
-    __type__ = "Milvus"
+    __type__ = "milvus"
 
     uri: str = field(
         default=None,

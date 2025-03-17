@@ -77,7 +77,7 @@ logger = logging.getLogger(__name__)
 class ElasticsearchStoreConfig(VectorStoreConfig):
     """Elasticsearch vector store config."""
 
-    __type__ = "ElasticSearch"
+    __type__ = "elasticsearch"
 
     uri: str = field(
         default="localhost",

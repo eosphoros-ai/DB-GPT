@@ -103,7 +103,7 @@ GRAPH_PARAMETERS = [
 class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
     """Builtin knowledge graph config."""
 
-    __type__ = "TuGraph"
+    __type__ = "tugraph"
 
     llm_model: Optional[str] = field(
         default=None, metadata={"description": "llm model name."}

@@ -26,11 +26,11 @@ rerank_top_k=3
 
 [rag.storage]
 [rag.storage.vector]
-type = "Chroma"
+type = "chroma"
 persist_path = "pilot/data"
 
 [rag.storage.full_text]
-type = "ElasticSearch"
+type = "elasticsearch"
 host="127.0.0.1"
 port=9200
 

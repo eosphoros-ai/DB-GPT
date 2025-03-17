@@ -169,8 +169,8 @@ class ModelScanner(Generic[T]):
             logger.warning(f"Directory not found: {base_path}")
             return results
 
-        # If specific files are provided, only scan those files
-        if config.specific_files:
+        # If specific files are provided, only scan those files, but not recursively
+        if config.specific_files and not config.recursive:
             for file_name in config.specific_files:
                 # Construct the full file path
                 file_path = base_dir / f"{file_name}.py"
@@ -199,6 +199,7 @@ class ModelScanner(Generic[T]):
 
         # Regular directory scanning
         pattern = "**/*.py" if config.recursive else "*.py"
+        specific_files = set(config.specific_files or [])
         for item in base_dir.glob(pattern):
             if item.name.startswith("__"):
                 continue
@@ -206,6 +207,8 @@ class ModelScanner(Generic[T]):
             # Skip files that match any of the skip_files patterns
             if self._should_skip_file(item.name, config.skip_files):
                 logger.debug(f"Skipping file {item.name} due to skip_files pattern")
+                continue
+            if specific_files and item.stem not in specific_files:
                 continue
 
             try:
@@ -249,6 +252,26 @@ class ModelScanner(Generic[T]):
                 scanned_items = self._scan_module(module, config)
                 for key, value in scanned_items.items():
                     self._registered_items[key] = value
+
+            child_items = {}
+            for key, value in self._registered_items.items():
+                if hasattr(value, "__scan_config__"):
+                    _child_scanner = ModelScanner()
+                    _child_config = value.__scan_config__
+                    if not isinstance(_child_config, ScannerConfig):
+                        continue
+                    if (
+                        hasattr(value, "__is_already_scanned__")
+                        and value.__is_already_scanned__
+                    ):
+                        continue
+                    try:
+                        _child_scanner.scan_and_register(_child_config)
+                        child_items.update(_child_scanner.get_registered_items())
+                        value.__is_already_scanned__ = True
+                    except Exception as e:
+                        logger.warning(f"Error scanning child module {key}: {str(e)}")
+            self._registered_items.update(child_items)
 
         except ImportError as e:
             logger.warning(f"Error importing module {config.module_path}: {str(e)}")
