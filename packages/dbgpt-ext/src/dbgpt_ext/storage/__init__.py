@@ -115,6 +115,35 @@ def _select_rag_storage(name: str) -> Tuple[Type, Type]:
         raise AttributeError(f"Could not find: {name}")
 
 
+_HAS_SCAN = False
+
+
+def scan_storage_configs():
+    """Scan storage configs."""
+    from dbgpt.storage.base import IndexStoreConfig
+    from dbgpt.util.module_utils import ModelScanner, ScannerConfig
+
+    global _HAS_SCAN
+
+    if _HAS_SCAN:
+        return
+    modules = [
+        "dbgpt_ext.storage.vector_store",
+        "dbgpt_ext.storage.knowledge_graph",
+        "dbgpt_ext.storage.graph_store",
+    ]
+
+    scanner = ModelScanner[IndexStoreConfig]()
+    for module in modules:
+        config = ScannerConfig(
+            module_path=module,
+            base_class=IndexStoreConfig,
+        )
+        scanner.scan_and_register(config)
+    _HAS_SCAN = True
+    return scanner.get_registered_items()
+
+
 __vector_store__ = [
     "Chroma",
     "Milvus",
