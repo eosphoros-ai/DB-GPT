@@ -10,7 +10,7 @@
             "--no-cache"
         ]
     },
-    "initializeCommand": ".devcontainer/get_env.sh",
+    "initializeCommand": ".devcontainer/init_env.sh",
     "name": "dbgpt",
     "workspaceFolder": "/app",
     "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
@@ -41,7 +41,7 @@
         "source=${localEnv:SSH_AUTH_SOCK},target=/run/host-services/ssh-auth.sock,type=bind",
         // mount to local models
         // Persist the model to avoid redundant downloads.
-        "source=${localWorkspaceFolder}/models/text2vec-large-chinese,target=/app/models/text2vec-large-chinese,type=bind"
+        "source=${localWorkspaceFolder}/models,target=/app/models,type=bind"
     ],
     "containerEnv": {
         "SSH_AUTH_SOCK": "/run/host-services/ssh-auth.sock"
