@@ -22,12 +22,12 @@ persist_path = "pilot/data"
 [models]
 [[models.llms]]
 name = "qwen-plus"
-provider = "${env:LLM_MODEL_PROVIDER:-proxy/openai}"
+provider = "${env:LLM_MODEL_PROVIDER:proxy/tongyi}"
 api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 api_key = "sk-"
 
 [[models.embeddings]]
 name = "text-embedding-v3"
-provider = "${env:EMBEDDING_MODEL_PROVIDER:-proxy/openai}"
+provider = "${env:EMBEDDING_MODEL_PROVIDER:proxy/tongyi}"
 api_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings"
 api_key = "sk-"
