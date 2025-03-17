@@ -233,12 +233,8 @@ class Service(
             DatasourceServeResponse: The data after deletion
         """
         db_config = self._dao.get_one({"id": datasource_id})
-        vector_name = db_config.db_name + "_profile"
-        vector_connector = self.storage_manager.create_vector_store(
-            index_name=vector_name
-        )
-        vector_connector.delete_vector_name(vector_name)
         if db_config:
+            self._db_summary_client.delete_db_profile(db_config.db_name)
             self._dao.delete({"id": datasource_id})
         return db_config
 
@@ -301,12 +297,18 @@ class Service(
             bool: The refresh result
         """
         db_config = self._dao.get_one({"id": datasource_id})
-        vector_name = db_config.db_name + "_profile"
-        vector_connector = self.storage_manager.create_vector_store(
-            index_name=vector_name
-        )
-        vector_connector.delete_vector_name(vector_name)
-        self._db_summary_client.db_summary_embedding(
-            db_config.db_name, db_config.db_type
+        if not db_config:
+            raise HTTPException(status_code=404, detail="datasource not found")
+
+        self._db_summary_client.delete_db_profile(db_config.db_name)
+
+        # async embedding
+        executor = self._system_app.get_component(
+            ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        ).create()  # type: ignore
+        executor.submit(
+            self._db_summary_client.db_summary_embedding,
+            db_config.db_name,
+            db_config.db_type,
         )
         return True

@@ -212,6 +212,28 @@ wheels = [
 ]
 
 [[package]]
+name = "aliyun-python-sdk-core"
+version = "2.16.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "cryptography" },
+    { name = "jmespath" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/3e/09/da9f58eb38b4fdb97ba6523274fbf445ef6a06be64b433693da8307b4bec/aliyun-python-sdk-core-2.16.0.tar.gz", hash = "sha256:651caad597eb39d4fad6cf85133dffe92837d53bdf62db9d8f37dab6508bb8f9", size = 449555 }
+
+[[package]]
+name = "aliyun-python-sdk-kms"
+version = "2.16.5"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "aliyun-python-sdk-core" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a8/2c/9877d0e6b18ecf246df671ac65a5d1d9fecbf85bdcb5d43efbde0d4662eb/aliyun-python-sdk-kms-2.16.5.tar.gz", hash = "sha256:f328a8a19d83ecbb965ffce0ec1e9930755216d104638cd95ecd362753b813b3", size = 12018 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/11/5c/0132193d7da2c735669a1ed103b142fd63c9455984d48c5a88a1a516efaa/aliyun_python_sdk_kms-2.16.5-py2.py3-none-any.whl", hash = "sha256:24b6cdc4fd161d2942619479c8d050c63ea9cd22b044fe33b60bbb60153786f0", size = 99495 },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -666,6 +688,34 @@ wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/03/62/0d214dde0703863ed2d3dabb3f10606f7f55ac4eb07a52c3906601331b63/blis-0.7.11-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7de19264b1d49a178bf8035406d0ae77831f3bfaa3ce02942964a81a202abb03", size = 1701009 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/66/aa/bcbd1c6b1c7dfd717ff5c899a1c8adcc6b3e391fb7a0b00fdc64e4e54235/blis-0.7.11-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8ea55c6a4a60fcbf6a0fdce40df6e254451ce636988323a34b9c94b583fc11e5", size = 10161187 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/9a/91/4aea63dccee6491a54c630d9817656a886e086ab97222e2d8101d8cdf894/blis-0.7.11-cp312-cp312-win_amd64.whl", hash = "sha256:5a305dbfc96d202a20d0edd6edf74a406b7e1404f4fa4397d24c68454e60b1b4", size = 6624079 },
+]
+
+[[package]]
+name = "boto3"
+version = "1.37.13"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "botocore" },
+    { name = "jmespath" },
+    { name = "s3transfer" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/d6/50/1183ffa4782408907891af344a8e91d7bc5d7a9bae12e43fca8874da567e/boto3-1.37.13.tar.gz", hash = "sha256:295648f887464ab74c5c301a44982df76f9ba39ebfc16be5b8f071ad1a81fe95", size = 111349 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a2/64/9f9578142ba1ed3ecc6b82a53c5c4c4352108e1424f1d5d02b6239b4314f/boto3-1.37.13-py3-none-any.whl", hash = "sha256:90fa5a91d7d7456219f0b7c4a93b38335dc5cf4613d885da4d4c1d099e04c6b7", size = 139552 },
+]
+
+[[package]]
+name = "botocore"
+version = "1.37.13"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "jmespath" },
+    { name = "python-dateutil" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/18/53/3593b438ab1f9b6837cc90a8582dfa71c71c639e9359a01fd4d110f0566e/botocore-1.37.13.tar.gz", hash = "sha256:60dfb831c54eb466db9b91891a6c8a0c223626caa049969d5d42858ad1e7f8c7", size = 13647494 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/09/43/2aa89ca8ab69196890b0682820469e62d93c4cf402ceb46a3007fd44b0c3/botocore-1.37.13-py3-none-any.whl", hash = "sha256:aa417bac0f4d79533080e6e17c0509e149353aec83cfe7879597a7942f7f08d0", size = 13411385 },
 ]
 
 [[package]]
@@ -1267,6 +1317,12 @@ wheels = [
 ]
 
 [[package]]
+name = "crcmod"
+version = "1.7"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/6b/b0/e595ce2a2527e169c3bcd6c33d2473c1918e0b7f6826a043ca1245dd4e5b/crcmod-1.7.tar.gz", hash = "sha256:dc7051a0db5f2bd48665a990d3ec1cc305a466a77358ca4492826f41f283601e", size = 89670 }
+
+[[package]]
 name = "cryptography"
 version = "44.0.1"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -1492,6 +1548,7 @@ proxy-qianfan = [
     { name = "qianfan" },
 ]
 proxy-tongyi = [
+    { name = "dashscope" },
     { name = "openai" },
 ]
 proxy-zhipuai = [
@@ -1528,6 +1585,7 @@ requires-dist = [
     { name = "colorama", marker = "extra == 'cli'", specifier = "==0.4.6" },
     { name = "coloredlogs", marker = "extra == 'framework'" },
     { name = "cryptography", marker = "extra == 'framework'" },
+    { name = "dashscope", marker = "extra == 'proxy-tongyi'" },
     { name = "duckdb", marker = "extra == 'simple-framework'" },
     { name = "duckdb-engine", marker = "extra == 'simple-framework'", specifier = "==0.9.1" },
     { name = "fastapi", marker = "extra == 'client'", specifier = ">=0.100.0,<0.113.0" },
@@ -1855,13 +1913,16 @@ datasource-spark = [
 datasource-vertica = [
     { name = "vertica-python" },
 ]
+file-oss = [
+    { name = "oss2" },
+]
+file-s3 = [
+    { name = "boto3" },
+]
 graph-rag = [
     { name = "dbgpt-tugraph-plugins" },
     { name = "neo4j" },
     { name = "networkx" },
-]
-proxy-tongyi = [
-    { name = "dashscope" },
 ]
 rag = [
     { name = "bs4" },
@@ -1896,10 +1957,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3", marker = "extra == 'file-s3'" },
     { name = "bs4", marker = "extra == 'rag'" },
     { name = "chromadb", marker = "extra == 'storage-chromadb'", specifier = ">=0.4.22" },
     { name = "clickhouse-connect", marker = "extra == 'datasource-clickhouse'" },
-    { name = "dashscope", marker = "extra == 'proxy-tongyi'" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
     { name = "dbgpt-tugraph-plugins", marker = "extra == 'graph-rag'", specifier = ">=0.1.1" },
     { name = "duckdb", marker = "extra == 'datasource-duckdb'" },
@@ -1910,6 +1971,7 @@ requires-dist = [
     { name = "neo4j", marker = "extra == 'graph-rag'" },
     { name = "networkx", marker = "extra == 'graph-rag'" },
     { name = "onnxruntime", marker = "extra == 'storage-chromadb'", specifier = ">=1.14.1,<=1.18.1" },
+    { name = "oss2", marker = "extra == 'file-oss'" },
     { name = "pdfplumber", marker = "extra == 'rag'" },
     { name = "psycopg2-binary", marker = "extra == 'datasource-postgres'" },
     { name = "pyhive", marker = "extra == 'datasource-hive'" },
@@ -3175,6 +3237,15 @@ wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/2f/3c/71a491952c37b87d127790dd7a0b1ebea0514c6b6ad30085b16bbe00aee6/jiter-0.8.2-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:b426f72cd77da3fec300ed3bc990895e2dd6b49e3bfe6c438592a3ba660e41ca", size = 308347 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a0/4c/c02408042e6a7605ec063daed138e07b982fdb98467deaaf1c90950cf2c6/jiter-0.8.2-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b2dd880785088ff2ad21ffee205e58a8c1ddabc63612444ae41e5e4b321b39c0", size = 342875 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/91/61/c80ef80ed8a0a21158e289ef70dac01e351d929a1c30cb0f49be60772547/jiter-0.8.2-cp313-cp313t-win_amd64.whl", hash = "sha256:3ac9f578c46f22405ff7f8b1f5848fb753cc4b8377fbec8470a7dc3997ca7566", size = 202374 },
+]
+
+[[package]]
+name = "jmespath"
+version = "0.10.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/3c/56/3f325b1eef9791759784aa5046a8f6a1aff8f7c898a2e34506771d3b99d8/jmespath-0.10.0.tar.gz", hash = "sha256:b85d0567b8666149a93172712e68920734333c0ce7e89b78b3e987f71e5ed4f9", size = 21607 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/07/cb/5f001272b6faeb23c1c9e0acc04d48eaaf5c862c17709d20e3469c6e0139/jmespath-0.10.0-py2.py3-none-any.whl", hash = "sha256:cdf6525904cc597730141d61b36f2e4b8ecc257c420fa2f4549bac2c2d0cb72f", size = 24489 },
 ]
 
 [[package]]
@@ -5479,6 +5550,20 @@ wheels = [
 ]
 
 [[package]]
+name = "oss2"
+version = "2.19.1"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "aliyun-python-sdk-core" },
+    { name = "aliyun-python-sdk-kms" },
+    { name = "crcmod" },
+    { name = "pycryptodome" },
+    { name = "requests" },
+    { name = "six" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/df/b5/f2cb1950dda46ac2284d6c950489fdacd0e743c2d79a347924d3cc44b86f/oss2-2.19.1.tar.gz", hash = "sha256:a8ab9ee7eb99e88a7e1382edc6ea641d219d585a7e074e3776e9dec9473e59c1", size = 298845 }
+
+[[package]]
 name = "outlines"
 version = "0.1.11"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -7468,6 +7553,18 @@ dependencies = [
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/18/11/8e445dc55753efd45e09882ad0468f4a5650f33aecdbd15c7a52e8e0c3c4/ruff_lsp-0.0.62.tar.gz", hash = "sha256:6db2a39375973ecb16c64d3c8dc37e23e1e191dcb7aebcf525b1f85ebd338c0d", size = 41182 }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/31/5e/d3a6fdf61f6373e53bfb45d6819a72dfef741bc8a9ff31c64496688e7c39/ruff_lsp-0.0.62-py3-none-any.whl", hash = "sha256:fb6c04a0cb09bb3ae316121b084ff09497edd01df58b36fa431f14515c63029e", size = 20980 },
+]
+
+[[package]]
+name = "s3transfer"
+version = "0.11.4"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "botocore" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0f/ec/aa1a215e5c126fe5decbee2e107468f51d9ce190b9763cb649f76bb45938/s3transfer-0.11.4.tar.gz", hash = "sha256:559f161658e1cf0a911f45940552c696735f5c74e64362e515f333ebed87d679", size = 148419 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/86/62/8d3fc3ec6640161a5649b2cddbbf2b9fa39c92541225b33f117c37c5a2eb/s3transfer-0.11.4-py3-none-any.whl", hash = "sha256:ac265fa68318763a03bf2dc4f39d5cbd6a9e178d81cc9483ad27da33637e320d", size = 84412 },
 ]
 
 [[package]]

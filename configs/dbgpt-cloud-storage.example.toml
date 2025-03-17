@@ -1,0 +1,51 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-zh}"
+log_level = "INFO"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+[[serves]]
+type = "file"
+# Default backend for file server
+default_backend = "s3"
+
+[[serves.backends]]
+type = "oss"
+endpoint = "https://oss-cn-beijing.aliyuncs.com"
+region = "oss-cn-beijing"
+access_key_id = "${env:OSS_ACCESS_KEY_ID}"
+access_key_secret = "${env:OSS_ACCESS_KEY_SECRET}"
+fixed_bucket = "{your_bucket_name}"
+
+[[serves.backends]]
+# Use Tencent COS s3 compatible API as the file server
+type = "s3"
+endpoint = "https://cos.ap-beijing.myqcloud.com"
+region = "ap-beijing"
+access_key_id = "${env:COS_SECRETID}"
+access_key_secret = "${env:COS_SECRETKEY}"
+fixed_bucket = "{your_bucket_name}"
+
+# Model Configurations
+[models]
+[[models.llms]]
+name = "${env:LLM_MODEL_NAME:-gpt-4o}"
+provider = "${env:LLM_MODEL_PROVIDER:-proxy/openai}"
+api_base = "${env:OPENAI_API_BASE:-https://api.openai.com/v1}"
+api_key = "${env:OPENAI_API_KEY}"
+
+[[models.embeddings]]
+name = "${env:EMBEDDING_MODEL_NAME:-text-embedding-3-small}"
+provider = "${env:EMBEDDING_MODEL_PROVIDER:-proxy/openai}"
+api_url = "${env:EMBEDDING_MODEL_API_URL:-https://api.openai.com/v1/embeddings}"
+api_key = "${env:OPENAI_API_KEY}"

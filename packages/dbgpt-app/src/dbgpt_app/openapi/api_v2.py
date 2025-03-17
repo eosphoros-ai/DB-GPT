@@ -30,7 +30,7 @@ from dbgpt_app.openapi.api_v1.api_v1 import (
     get_executor,
     stream_generator,
 )
-from dbgpt_app.scene import BaseChat, ChatScene
+from dbgpt_app.scene import BaseChat, ChatParam, ChatScene
 from dbgpt_client.schema import ChatCompletionRequestBody, ChatMode
 from dbgpt_serve.agent.agents.controller import multi_agents
 from dbgpt_serve.flow.api.endpoints import get_service
@@ -188,16 +188,17 @@ async def get_chat_instance(
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
         raise StopAsyncIteration(f"Unsupported Chat Mode,{dialogue.chat_mode}!")
 
-    chat_param = {
-        "chat_session_id": dialogue.conv_uid,
-        "user_name": dialogue.user_name,
-        "sys_code": dialogue.sys_code,
-        "current_user_input": dialogue.single_prompt(),
-        "select_param": dialogue.chat_param,
-        "model_name": dialogue.model,
-        "temperature": dialogue.temperature,
-        "max_new_tokens": dialogue.max_new_tokens,
-    }
+    chat_param = ChatParam(
+        chat_session_id=dialogue.conv_uid,
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        current_user_input=dialogue.single_prompt(),
+        select_param=dialogue.chat_param,
+        model_name=dialogue.model,
+        temperature=dialogue.temperature,
+        max_new_tokens=dialogue.max_new_tokens,
+        chat_mode=ChatScene.of_mode(dialogue.chat_mode),
+    )
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),
         CHAT_FACTORY.get_implementation,

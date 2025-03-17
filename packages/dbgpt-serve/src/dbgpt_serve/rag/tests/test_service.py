@@ -115,7 +115,7 @@ async def test_create_document(service):
     service._document_dao.get_knowledge_documents = Mock(return_value=[])
     service._document_dao.create_knowledge_document = Mock(return_value="2")
 
-    response = await service.create_document(request)
+    response = service.create_document(request)
     assert response == "2"
 
 

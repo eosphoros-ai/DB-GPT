@@ -1,7 +1,7 @@
 import json
 import os
 from functools import reduce
-from typing import Dict, List
+from typing import Dict, List, Type
 
 from dbgpt import SystemApp
 from dbgpt.core import (
@@ -17,6 +17,8 @@ from dbgpt.util.tracer import root_tracer, trace
 from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_app.knowledge.service import KnowledgeService
 from dbgpt_app.scene import BaseChat, ChatScene
+from dbgpt_app.scene.base_chat import ChatParam
+from dbgpt_app.scene.chat_knowledge.v1.config import ChatKnowledgeConfig
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkDao, DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import (
     KnowledgeDocumentDao,
@@ -26,10 +28,15 @@ from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 
 
 class ChatKnowledge(BaseChat):
-    chat_scene: str = ChatScene.ChatKnowledge.value()
     """KBQA Chat Module"""
 
-    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
+    chat_scene: str = ChatScene.ChatKnowledge.value()
+
+    @classmethod
+    def param_class(cls) -> Type[ChatKnowledgeConfig]:
+        return ChatKnowledgeConfig
+
+    def __init__(self, chat_param: ChatParam, system_app: SystemApp):
         """Chat Knowledge Module Initialization
         Args:
            - chat_param: Dict
@@ -40,8 +47,8 @@ class ChatKnowledge(BaseChat):
         """
         from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
 
-        self.knowledge_space = chat_param["select_param"]
-        chat_param["chat_mode"] = ChatScene.ChatKnowledge
+        self.curr_config = chat_param.real_app_config(ChatKnowledgeConfig)
+        self.knowledge_space = chat_param.select_param
         super().__init__(chat_param=chat_param, system_app=system_app)
         from dbgpt_serve.rag.models.models import (
             KnowledgeSpaceDao,
@@ -55,16 +62,9 @@ class ChatKnowledge(BaseChat):
             raise Exception(f"have not found knowledge space:{self.knowledge_space}")
         self.rag_config = self.app_config.rag
         self.space_context = self.get_space_context(space.name)
-        self.top_k = (
-            self.get_knowledge_search_top_size(space.name)
-            if self.space_context is None
-            else int(self.space_context["embedding"]["topk"])
-        )
-        self.recall_score = (
-            self.rag_config.similarity_score_threshold
-            if self.space_context is None
-            else float(self.space_context["embedding"]["recall_score"])
-        )
+
+        self.top_k = self.get_knowledge_search_top_size(space.name)
+        self.recall_score = self.get_similarity_score_threshold()
 
         query_rewrite = None
         if self.rag_config.query_rewrite:
@@ -81,13 +81,14 @@ class ChatKnowledge(BaseChat):
             rerank_embeddings = RerankEmbeddingFactory.get_instance(
                 self.system_app
             ).create()
-            reranker = RerankEmbeddingsRanker(
-                rerank_embeddings, topk=self.rag_config.rerank_top_k
-            )
-            if retriever_top_k < self.rag_config.rerank_top_k or retriever_top_k < 20:
+            rerank_top_k = self.curr_config.knowledge_retrieve_rerank_top_k
+            if not rerank_top_k:
+                rerank_top_k = self.rag_config.rerank_top_k
+            reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=rerank_top_k)
+            if retriever_top_k < rerank_top_k or retriever_top_k < 20:
                 # We use reranker, so if the top_k is less than 20,
                 # we need to set it to 20
-                retriever_top_k = max(self.rag_config.rerank_top_k, 20)
+                retriever_top_k = max(rerank_top_k, 20)
         self._space_retriever = KnowledgeSpaceRetriever(
             space_id=space.id,
             embedding_model=self.model_config.default_embedding,
@@ -214,10 +215,6 @@ class ChatKnowledge(BaseChat):
         reference = html.decode("utf-8")
         return reference.replace("\\n", "")
 
-    @property
-    def chat_type(self) -> str:
-        return ChatScene.ChatKnowledge.value()
-
     def get_space_context_by_id(self, space_id):
         service = KnowledgeService()
         return service.get_space_context_by_space_id(space_id)
@@ -227,6 +224,9 @@ class ChatKnowledge(BaseChat):
         return service.get_space_context(space_name)
 
     def get_knowledge_search_top_size(self, space_name) -> int:
+        if self.space_context:
+            return int(self.space_context["embedding"]["topk"])
+
         service = KnowledgeService()
         request = KnowledgeSpaceRequest(name=space_name)
         spaces = service.get_knowledge_space(request)
@@ -235,8 +235,17 @@ class ChatKnowledge(BaseChat):
 
             if spaces[0].vector_type in graph_storages:
                 return self.rag_config.kg_chunk_search_top_k
+        if self.curr_config.knowledge_retrieve_top_k:
+            return self.curr_config.knowledge_retrieve_top_k
 
         return self.rag_config.similarity_top_k
+
+    def get_similarity_score_threshold(self):
+        if self.space_context:
+            return float(self.space_context["embedding"]["recall_score"])
+        if self.curr_config.similarity_score_threshold >= 0:
+            return self.curr_config.similarity_score_threshold
+        return self.rag_config.similarity_score_threshold
 
     async def execute_similar_search(self, query):
         """execute similarity search"""

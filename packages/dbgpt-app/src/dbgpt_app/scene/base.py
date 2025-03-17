@@ -167,18 +167,12 @@ class AppScenePromptTemplateAdapter(BaseModel):
     output_parser: Optional[BaseOutputParser] = Field(
         default=None, description="The output parser of this scene"
     )
-    sep: Optional[str] = Field(
-        default="###", description="The default separator of this scene"
-    )
 
     stream_out: Optional[bool] = Field(
         default=True, description="Whether to stream out"
     )
     example_selector: Optional[ExampleSelector] = Field(
         default=None, description="Example selector"
-    )
-    need_historical_messages: Optional[bool] = Field(
-        default=False, description="Whether to need historical messages"
     )
     temperature: Optional[float] = Field(
         default=0.6, description="The default temperature of this scene"

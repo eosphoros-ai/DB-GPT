@@ -39,7 +39,7 @@ class StorageManager(BaseComponent):
         """Get storage connector."""
         supported_vector_types = self.get_vector_supported_types
         storage_config = self.storage_config()
-        if storage_type in supported_vector_types:
+        if storage_type.lower() in supported_vector_types:
             return self.create_vector_store(index_name)
         elif storage_type == "KnowledgeGraph":
             if not storage_config.graph:

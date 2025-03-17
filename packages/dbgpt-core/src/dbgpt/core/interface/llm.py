@@ -346,7 +346,16 @@ class ModelOutput:
 
     def to_dict(self) -> Dict:
         """Convert the model output to dict."""
-        return asdict(self)
+        text = self.gen_text_with_thinking()
+        return {
+            "error_code": self.error_code,
+            "text": text,
+            "incremental": self.incremental,
+            "model_context": self.model_context,
+            "finish_reason": self.finish_reason,
+            "usage": self.usage,
+            "metrics": self.metrics,
+        }
 
     @property
     def success(self) -> bool:
