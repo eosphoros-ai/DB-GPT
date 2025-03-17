@@ -256,6 +256,7 @@ def run_webserver(config_file: str):
 
 def scan_configs():
     from dbgpt.model import scan_model_providers
+    from dbgpt_app.initialization.app_initialization import scan_app_configs
     from dbgpt_app.initialization.serve_initialization import scan_serve_configs
     from dbgpt_ext.storage import scan_storage_configs
     from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
@@ -269,6 +270,8 @@ def scan_configs():
     scan_serve_configs()
     # Register all storage configs
     scan_storage_configs()
+    # Register all app configs
+    scan_app_configs()
 
 
 def load_config(config_file: str = None) -> ApplicationConfig:

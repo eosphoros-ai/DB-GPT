@@ -114,7 +114,8 @@ async def create(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.create(request))
+    res = await blocking_func_to_async(global_system_app, service.create, request)
+    return Result.succ(res)
 
 
 @router.put(
@@ -134,7 +135,8 @@ async def update(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.update(request))
+    res = await blocking_func_to_async(global_system_app, service.update, request)
+    return Result.succ(res)
 
 
 @router.delete(
@@ -153,7 +155,7 @@ async def delete(
     Returns:
         ServerResponse: The response
     """
-    service.delete(datasource_id)
+    await blocking_func_to_async(global_system_app, service.delete, datasource_id)
     return Result.succ(None)
 
 
@@ -173,7 +175,8 @@ async def query(
     Returns:
         List[ServeResponse]: The response
     """
-    return Result.succ(service.get(datasource_id))
+    res = await blocking_func_to_async(global_system_app, service.get, datasource_id)
+    return Result.succ(res)
 
 
 @router.get(
@@ -194,7 +197,9 @@ async def query_page(
     Returns:
         ServerResponse: The response
     """
-    res = service.get_list(db_type=db_type)
+    res = await blocking_func_to_async(
+        global_system_app, service.get_list, db_type=db_type
+    )
     return Result.succ(res)
 
 
@@ -207,7 +212,8 @@ async def get_datasource_types(
     service: Service = Depends(get_service),
 ) -> Result[ResourceTypes]:
     """Get the datasource types."""
-    return Result.succ(service.datasource_types())
+    res = await blocking_func_to_async(global_system_app, service.datasource_types)
+    return Result.succ(res)
 
 
 @router.post(

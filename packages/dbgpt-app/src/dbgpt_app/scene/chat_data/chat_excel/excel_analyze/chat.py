@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import Any, Dict, Union
+from typing import Any, Dict, Type, Union
 
 from dbgpt import SystemApp
 from dbgpt.agent.util.api_call import ApiCall
@@ -12,6 +12,8 @@ from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.json_utils import EnhancedJSONEncoder
 from dbgpt.util.tracer import root_tracer, trace
 from dbgpt_app.scene import BaseChat, ChatScene
+from dbgpt_app.scene.base_chat import ChatParam
+from dbgpt_app.scene.chat_data.chat_excel.config import ChatExcelConfig
 from dbgpt_app.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from dbgpt_app.scene.chat_data.chat_excel.excel_reader import ExcelReader
 
@@ -22,10 +24,12 @@ class ChatExcel(BaseChat):
     """a Excel analyzer to analyze Excel Data"""
 
     chat_scene: str = ChatScene.ChatExcel.value()
-    keep_start_rounds = 0
-    keep_end_rounds = 2
 
-    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
+    @classmethod
+    def param_class(cls) -> Type[ChatExcelConfig]:
+        return ChatExcelConfig
+
+    def __init__(self, chat_param: ChatParam, system_app: SystemApp):
         """Chat Excel Module Initialization
         Args:
            - chat_param: Dict
@@ -35,16 +39,16 @@ class ChatExcel(BaseChat):
             - select_param:(str) file path
         """
         self.fs_client = FileStorageClient.get_instance(system_app)
-        self.select_param = chat_param["select_param"]
+        self.select_param = chat_param.select_param
         if not self.select_param:
             raise ValueError("Please upload the Excel document you want to talk to！")
-        self.model_name = chat_param["model_name"]
-        chat_param["chat_mode"] = ChatScene.ChatExcel
+        self.model_name = chat_param.model_name
+        self.curr_config = chat_param.real_app_config(ChatExcelConfig)
         self.chat_param = chat_param
         self._bucket = "dbgpt_app_file"
         file_path, file_name, database_file_path, database_file_id = self._resolve_path(
             self.select_param,
-            chat_param["chat_session_id"],
+            chat_param.chat_session_id,
             self.fs_client,
             self._bucket,
         )
@@ -53,12 +57,14 @@ class ChatExcel(BaseChat):
         self._database_file_path = database_file_path
         self._database_file_id = database_file_id
         self.excel_reader = ExcelReader(
-            chat_param["chat_session_id"],
+            chat_param.chat_session_id,
             file_path,
             file_name,
             read_type="direct",
             database_name=database_file_path,
             table_name=self._curr_table,
+            duckdb_extensions_dir=self.curr_config.duckdb_extensions_dir,
+            force_install=self.curr_config.force_install,
         )
 
         self.api_call = ApiCall()
@@ -141,20 +147,28 @@ class ChatExcel(BaseChat):
         if self.has_history_messages():
             return None
 
-        chat_param = {
-            "chat_session_id": self.chat_session_id,
-            "user_input": "[" + self.excel_reader.excel_file_name + "]" + " Analyze！",
-            "parent_mode": self.chat_mode,
-            "select_param": self.select_param,
-            "excel_reader": self.excel_reader,
-            "model_name": self.model_name,
-            "user_name": self.chat_param.get("user_name", None),
-        }
-        if "temperature" in self._chat_param:
-            chat_param["temperature"] = self._chat_param["temperature"]
-        if "max_new_tokens" in self._chat_param:
-            chat_param["max_new_tokens"] = self._chat_param["max_new_tokens"]
-        learn_chat = ExcelLearning(**chat_param, system_app=self.system_app)
+        chat_param = ChatParam(
+            chat_session_id=self.chat_session_id,
+            current_user_input="["
+            + self.excel_reader.excel_file_name
+            + "]"
+            + " Analyze！",
+            select_param=self.select_param,
+            chat_mode=ChatScene.ExcelLearning,
+            model_name=self.model_name,
+            user_name=self.chat_param.user_name,
+            sys_code=self.chat_param.sys_code,
+        )
+        if self._chat_param.temperature is not None:
+            chat_param.temperature = self._chat_param.temperature
+        if self._chat_param.max_new_tokens is not None:
+            chat_param.max_new_tokens = self._chat_param.max_new_tokens
+        learn_chat = ExcelLearning(
+            chat_param,
+            system_app=self.system_app,
+            parent_mode=self.chat_mode,
+            excel_reader=self.excel_reader,
+        )
         result = await learn_chat.nostream_call()
 
         if (

@@ -1,11 +1,15 @@
+from dbgpt.component import SystemApp
 from dbgpt.util.singleton import Singleton
 from dbgpt.util.tracer import root_tracer
-from dbgpt_app.scene.base_chat import BaseChat
+from dbgpt_app.scene.base_chat import BaseChat, ChatParam
+from dbgpt_serve.core.config import parse_config
 
 
 class ChatFactory(metaclass=Singleton):
     @staticmethod
-    def get_implementation(chat_mode, system_app, **kwargs):
+    def get_implementation(
+        chat_mode: str, system_app: SystemApp, chat_param: ChatParam, **kwargs
+    ):
         # Lazy loading
         from dbgpt_app.scene.chat_dashboard.chat import ChatDashboard  # noqa: F401
         from dbgpt_app.scene.chat_dashboard.prompt import prompt  # noqa: F401
@@ -49,7 +53,13 @@ class ChatFactory(metaclass=Singleton):
                 with root_tracer.start_span(
                     "get_implementation_of_chat", metadata=metadata
                 ):
-                    implementation = cls(**kwargs, system_app=system_app)
+                    config = parse_config(
+                        system_app, chat_mode, type_class=cls.param_class()
+                    )
+                    chat_param.app_config = config
+                    implementation = cls(
+                        **kwargs, chat_param=chat_param, system_app=system_app
+                    )
         if implementation is None:
             raise Exception(f"Invalid implementation name:{chat_mode}")
         return implementation

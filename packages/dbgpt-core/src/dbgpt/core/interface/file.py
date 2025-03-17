@@ -607,6 +607,7 @@ class FileStorageClient(BaseComponent):
         if dest_path:
             target_path = dest_path
         elif dest_dir:
+            os.makedirs(dest_dir, exist_ok=True)
             target_path = os.path.join(dest_dir, file_metadata.file_id + extension)
         else:
             from pathlib import Path

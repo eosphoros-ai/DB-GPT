@@ -29,8 +29,6 @@ _DEFAULT_TEMPLATE = (
 
 PROMPT_RESPONSE = """"""
 
-PROMPT_NEED_NEED_STREAM_OUT = True
-
 prompt = ChatPromptTemplate(
     messages=[
         # SystemPromptTemplate.from_template(PROMPT_SCENE_DEFINE),
@@ -41,9 +39,8 @@ prompt = ChatPromptTemplate(
 prompt_adapter = AppScenePromptTemplateAdapter(
     prompt=prompt,
     template_scene=ChatScene.ExtractRefineSummary.value(),
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
-    output_parser=ExtractRefineSummaryParser(is_stream_out=PROMPT_NEED_NEED_STREAM_OUT),
-    need_historical_messages=False,
+    stream_out=True,
+    output_parser=ExtractRefineSummaryParser(),
 )
 
 CFG.prompt_template_registry.register(prompt_adapter, is_default=True)
