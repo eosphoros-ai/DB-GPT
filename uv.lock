@@ -1548,6 +1548,7 @@ proxy-qianfan = [
     { name = "qianfan" },
 ]
 proxy-tongyi = [
+    { name = "dashscope" },
     { name = "openai" },
 ]
 proxy-zhipuai = [
@@ -1584,6 +1585,7 @@ requires-dist = [
     { name = "colorama", marker = "extra == 'cli'", specifier = "==0.4.6" },
     { name = "coloredlogs", marker = "extra == 'framework'" },
     { name = "cryptography", marker = "extra == 'framework'" },
+    { name = "dashscope", marker = "extra == 'proxy-tongyi'" },
     { name = "duckdb", marker = "extra == 'simple-framework'" },
     { name = "duckdb-engine", marker = "extra == 'simple-framework'", specifier = "==0.9.1" },
     { name = "fastapi", marker = "extra == 'client'", specifier = ">=0.100.0,<0.113.0" },
@@ -1922,9 +1924,6 @@ graph-rag = [
     { name = "neo4j" },
     { name = "networkx" },
 ]
-proxy-tongyi = [
-    { name = "dashscope" },
-]
 rag = [
     { name = "bs4" },
     { name = "markdown" },
@@ -1962,7 +1961,6 @@ requires-dist = [
     { name = "bs4", marker = "extra == 'rag'" },
     { name = "chromadb", marker = "extra == 'storage-chromadb'", specifier = ">=0.4.22" },
     { name = "clickhouse-connect", marker = "extra == 'datasource-clickhouse'" },
-    { name = "dashscope", marker = "extra == 'proxy-tongyi'" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
     { name = "dbgpt-tugraph-plugins", marker = "extra == 'graph-rag'", specifier = ">=0.1.1" },
     { name = "duckdb", marker = "extra == 'datasource-duckdb'" },
