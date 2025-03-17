@@ -1,12 +1,15 @@
 import json
+import logging
 import os
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Type
 
 from dbgpt import SystemApp
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 from dbgpt_app.scene import BaseChat, ChatScene
+from dbgpt_app.scene.base_chat import ChatParam
+from dbgpt_app.scene.chat_dashboard.config import ChatDashboardConfig
 from dbgpt_app.scene.chat_dashboard.data_loader import DashboardDataLoader
 from dbgpt_app.scene.chat_dashboard.data_preparation.report_schma import (
     ChartData,
@@ -14,13 +17,19 @@ from dbgpt_app.scene.chat_dashboard.data_preparation.report_schma import (
 )
 from dbgpt_serve.datasource.manages import ConnectorManager
 
+logger = logging.getLogger(__name__)
+
 
 class ChatDashboard(BaseChat):
     chat_scene: str = ChatScene.ChatDashboard.value()
     report_name: str
     """Chat Dashboard to generate dashboard chart"""
 
-    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
+    @classmethod
+    def param_class(cls) -> Type[ChatDashboardConfig]:
+        return ChatDashboardConfig
+
+    def __init__(self, chat_param: ChatParam, system_app: SystemApp):
         """Chat Dashboard Module Initialization
         Args:
            - chat_param: Dict
@@ -29,17 +38,16 @@ class ChatDashboard(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) dbname
         """
-        self.db_name = chat_param["select_param"]
-        chat_param["chat_mode"] = ChatScene.ChatDashboard
+        self.db_name = chat_param.select_param
         super().__init__(chat_param=chat_param, system_app=system_app)
         if not self.db_name:
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
         self.db_name = self.db_name
-        self.report_name = chat_param.get("report_name", "report")
+        self.report_name = "report"
         local_db_manager = ConnectorManager.get_instance(self.system_app)
         self.database = local_db_manager.get_connector(self.db_name)
+        self.curr_config = chat_param.real_app_config(ChatDashboardConfig)
 
-        self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(self.report_name)
 
     def __load_dashboard_template(self, template_name):
@@ -65,12 +73,19 @@ class ChatDashboard(BaseChat):
                 client.get_db_summary,
                 self.db_name,
                 self.current_user_input,
-                self.top_k,
+                self.curr_config.schema_retrieve_top_k,
             )
-            print("dashboard vector find tables:{}", table_infos)
+            logger.info(f"Retrieved table info: {table_infos}")
         except Exception as e:
-            print("db summary find error!" + str(e))
-            table_infos = self.database.table_simple_info()
+            logger.error(f"Retrieved table info error: {str(e)}")
+            table_infos = await blocking_func_to_async(
+                self._executor, self.database.table_simple_info
+            )
+            if len(table_infos) > self.curr_config.schema_max_tokens:
+                # Load all tables schema, must be less then schema_max_tokens
+                # Here we just truncate the table_infos
+                # TODO: Count the number of tokens by LLMClient
+                table_infos = table_infos[: self.curr_config.schema_max_tokens]
 
         input_values = {
             "input": self.current_user_input,
@@ -82,7 +97,8 @@ class ChatDashboard(BaseChat):
         return input_values
 
     def do_action(self, prompt_response):
-        ### TODO 记录整体信息，处理成功的，和未成功的分开记录处理
+        # TODO: Record the overall information, and record the successful and
+        #  unsuccessful processing separately
         chart_datas: List[ChartData] = []
         dashboard_data_loader = DashboardDataLoader()
         for chart_item in prompt_response:
@@ -102,8 +118,7 @@ class ChatDashboard(BaseChat):
                     )
                 )
             except Exception as e:
-                # TODO 修复流程
-                print(str(e))
+                logger.warning(f"Failed to get chart data: {str(e)}")
         return ReportData(
             conv_uid=self.chat_session_id,
             template_name=self.report_name,

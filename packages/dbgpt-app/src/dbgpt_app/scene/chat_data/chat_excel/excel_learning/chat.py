@@ -1,12 +1,13 @@
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 from dbgpt import SystemApp
 from dbgpt.core.interface.message import ModelMessageRoleType
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.json_utils import EnhancedJSONEncoder
 from dbgpt.util.tracer import trace
-from dbgpt_app.scene import BaseChat, ChatScene
+from dbgpt_app.scene import BaseChat, ChatParam, ChatScene
+from dbgpt_serve.core.config import GPTsAppCommonConfig
 
 from .out_parser import TransformedExcelResponse
 from .prompt import USER_INPUT
@@ -15,34 +16,21 @@ from .prompt import USER_INPUT
 class ExcelLearning(BaseChat):
     chat_scene: str = ChatScene.ExcelLearning.value()
 
+    @classmethod
+    def param_class(cls) -> Type[GPTsAppCommonConfig]:
+        return GPTsAppCommonConfig
+
     def __init__(
         self,
-        chat_session_id,
-        user_input,
-        temperature: float,
-        max_new_tokens: int,
+        chat_param: ChatParam,
+        system_app: SystemApp,
         parent_mode: Any = None,
-        select_param: str = None,
         excel_reader: Any = None,
-        model_name: str = None,
-        user_name: str = None,
-        system_app: SystemApp = None,
     ):
-        chat_mode = ChatScene.ExcelLearning
         from ..excel_reader import ExcelReader
 
         """ """
         self.excel_reader: ExcelReader = excel_reader
-        chat_param = {
-            "chat_mode": chat_mode,
-            "chat_session_id": chat_session_id,
-            "current_user_input": user_input,
-            "select_param": select_param,
-            "model_name": model_name,
-            "user_name": user_name,
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
-        }
         self._curr_table = self.excel_reader.temp_table_name
         super().__init__(chat_param=chat_param, system_app=system_app)
         if parent_mode:

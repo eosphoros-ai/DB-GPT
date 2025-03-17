@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExtractRefineSummaryParser(BaseOutputParser):
-    def __init__(self, is_stream_out: bool, **kwargs):
+    def __init__(self, is_stream_out: bool = True, **kwargs):
         super().__init__(is_stream_out=is_stream_out, **kwargs)
 
     def parse_prompt_response(

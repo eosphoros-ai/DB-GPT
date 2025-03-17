@@ -21,6 +21,7 @@ from dbgpt.core.awel import (
 from dbgpt.core.operators import (
     BufferedConversationMapperOperator,
     HistoryPromptBuilderOperator,
+    TokenBufferedConversationMapperOperator,
 )
 from dbgpt.model.operators import LLMOperator, StreamingLLMOperator
 from dbgpt.storage.cache.operators import (
@@ -30,6 +31,11 @@ from dbgpt.storage.cache.operators import (
     ModelCacheBranchOperator,
     ModelSaveCacheOperator,
     ModelStreamSaveCacheOperator,
+)
+from dbgpt_serve.core.config import (
+    BaseGPTsAppMemoryConfig,
+    BufferWindowGPTsAppMemoryConfig,
+    TokenBufferGPTsAppMemoryConfig,
 )
 
 
@@ -53,13 +59,12 @@ class AppChatComposerOperator(MapOperator[ChatComposerInput, ModelRequest]):
         temperature: float,
         max_new_tokens: int,
         prompt: ChatPromptTemplate,
+        llm_client: LLMClient,
+        memory: BaseGPTsAppMemoryConfig,
         message_version: str = "v2",
         echo: bool = False,
         streaming: bool = True,
         history_key: str = "chat_history",
-        history_merge_mode: str = "window",
-        keep_start_rounds: Optional[int] = None,
-        keep_end_rounds: Optional[int] = None,
         str_history: bool = False,
         request_context: ModelRequestContext = None,
         **kwargs,
@@ -68,10 +73,9 @@ class AppChatComposerOperator(MapOperator[ChatComposerInput, ModelRequest]):
         if not request_context:
             request_context = ModelRequestContext(stream=streaming)
         self._prompt_template = prompt
+        self._llm_client = llm_client
         self._history_key = history_key
-        self._history_merge_mode = history_merge_mode
-        self._keep_start_rounds = keep_start_rounds
-        self._keep_end_rounds = keep_end_rounds
+        self._memory = memory
         self._str_history = str_history
         self._model_name = model
         self._temperature = temperature
@@ -104,10 +108,21 @@ class AppChatComposerOperator(MapOperator[ChatComposerInput, ModelRequest]):
         with DAG("dbgpt_awel_app_chat_history_prompt_composer") as composer_dag:
             input_task = InputOperator(input_source=SimpleCallDataInputSource())
             # History transform task
-            history_transform_task = BufferedConversationMapperOperator(
-                keep_start_rounds=self._keep_start_rounds,
-                keep_end_rounds=self._keep_end_rounds,
-            )
+            if isinstance(self._memory, BufferWindowGPTsAppMemoryConfig):
+                history_transform_task = BufferedConversationMapperOperator(
+                    keep_start_rounds=self._memory.keep_start_rounds,
+                    keep_end_rounds=self._memory.keep_end_rounds,
+                )
+            elif isinstance(self._memory, TokenBufferGPTsAppMemoryConfig):
+                history_transform_task = TokenBufferedConversationMapperOperator(
+                    model=self._model_name,
+                    llm_client=self._llm_client,
+                    max_token_limit=self._memory.max_token_limit,
+                )
+            else:
+                raise ValueError(
+                    f"Unsupported memory configuration: {self._memory.__class__}"
+                )
             history_prompt_build_task = HistoryPromptBuilderOperator(
                 prompt=self._prompt_template,
                 history_key=self._history_key,

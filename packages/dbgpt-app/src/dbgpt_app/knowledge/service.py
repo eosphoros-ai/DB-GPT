@@ -586,15 +586,16 @@ class KnowledgeService:
         Returns:
              chat: BaseChat, refine summary chat.
         """
-        from dbgpt_app.scene import ChatScene
+        from dbgpt_app.scene import ChatParam, ChatScene
 
-        chat_param = {
-            "chat_session_id": conn_uid,
-            "current_user_input": "",
-            "select_param": doc,
-            "model_name": model_name,
-            "model_cache_enable": False,
-        }
+        chat_param = ChatParam(
+            chat_session_id=conn_uid,
+            current_user_input="",
+            select_param=doc,
+            model_name=model_name,
+            model_cache_enable=False,
+            chat_mode=ChatScene.ExtractRefineSummary,
+        )
         executor = CFG.SYSTEM_APP.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
@@ -604,6 +605,7 @@ class KnowledgeService:
             executor,
             CHAT_FACTORY.get_implementation,
             ChatScene.ExtractRefineSummary.value(),
+            CFG.SYSTEM_APP,
             **{"chat_param": chat_param},
         )
         return chat

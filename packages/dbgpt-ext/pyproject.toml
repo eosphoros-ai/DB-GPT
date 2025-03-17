@@ -75,6 +75,13 @@ storage_chromadb = [
 storage_elasticsearch = ["elasticsearch"]
 storage_obvector = ["pyobvector"]
 
+file_oss = [
+    "oss2" # Aliyun OSS
+]
+file_s3 = [
+    "boto3"
+]
+
 [tool.uv]
 managed = true
 dev-dependencies = [

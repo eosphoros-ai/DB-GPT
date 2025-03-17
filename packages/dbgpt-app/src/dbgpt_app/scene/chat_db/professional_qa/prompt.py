@@ -55,8 +55,7 @@ prompt_adapter = AppScenePromptTemplateAdapter(
     prompt=prompt,
     template_scene=ChatScene.ChatWithDbQA.value(),
     stream_out=PROMPT_NEED_STREAM_OUT,
-    output_parser=NormalChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
-    need_historical_messages=True,
+    output_parser=NormalChatOutputParser(),
 )
 
 

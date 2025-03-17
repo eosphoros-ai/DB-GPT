@@ -79,7 +79,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def upload_files(
         self,
         bucket: str,
-        storage_type: str,
         files: List[UploadFile],
         user_name: Optional[str] = None,
         sys_code: Optional[str] = None,
@@ -97,7 +96,6 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 bucket,
                 file_name,
                 file_data=file.file,
-                storage_type=storage_type,
                 custom_metadata=custom_metadata,
             )
             parsed_uri = FileStorageURI.parse(uri)

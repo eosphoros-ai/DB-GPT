@@ -1115,6 +1115,7 @@ def auto_register_resource(
     alias: Optional[List[str]] = None,
     tags: Optional[Dict[str, str]] = None,
     show_in_ui: bool = True,
+    skip_fields: Optional[List[str]] = None,
     **decorator_kwargs,
 ):
     """Auto register the resource.
@@ -1130,6 +1131,8 @@ def auto_register_resource(
         alias (Optional[List[str]], optional): The alias of the resource. Defaults to
             None. For compatibility, we can use the alias to register the resource.
         tags (Optional[Dict[str, str]]): The tags of the resource
+        show_in_ui (bool): Whether show the resource in UI.
+        skip_fields (Optional[List[str]]): The fields to skip.
     """
     from dataclasses import fields, is_dataclass
 
@@ -1147,6 +1150,8 @@ def auto_register_resource(
             parameters: List[Parameter] = []
             raw_fields = fields(cls)
             for i, fd in enumerate(fields_desc_list):
+                if skip_fields and fd.param_name in skip_fields:
+                    continue
                 param_type = fd.param_type
                 if param_type in TYPE_STRING_TO_TYPE:
                     # Basic type

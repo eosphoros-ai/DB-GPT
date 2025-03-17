@@ -7,18 +7,24 @@ ARG BASE_IMAGE
 ARG PYTHON_VERSION=3.11
 # Use Tsinghua PyPI mirror, It's faster in most countries
 ARG PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+ARG UV_TRUSTED_HOST="127.0.0.1"
 ARG UV_HTTP_TIMEOUT=180
 ARG EXTRAS="base,proxy_openai,rag,storage_chromadb,cuda121,hf,quant_bnb,dbgpts"
 ARG VERSION=latest
 ARG USE_TSINGHUA_UBUNTU
 ARG CMAKE_ARGS
+ARG INSTALL_RUST="true"
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     PIP_INDEX_URL=${PIP_INDEX_URL} \
+    PIP_TRUSTED_HOST=${UV_TRUSTED_HOST} \
+    UV_TRUSTED_HOST=${UV_TRUSTED_HOST} \
+    UV_INSECURE_HOST=${UV_TRUSTED_HOST} \
     UV_HTTP_TIMEOUT=${UV_HTTP_TIMEOUT} \
-    CMAKE_ARGS=${CMAKE_ARGS}
+    CMAKE_ARGS=${CMAKE_ARGS} \
+    INSTALL_RUST=${INSTALL_RUST}
 
 # Configure apt sources based on the USE_TSINGHUA_UBUNTU parameter
 RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
@@ -43,14 +49,17 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
     build-essential \
     pkg-config \
     && rm -rf /var/lib/apt/lists/* \
-    && python${PYTHON_VERSION} -m pip install --upgrade pip \
-    && python${PYTHON_VERSION} -m pip install --upgrade pipx \
+    && python${PYTHON_VERSION} -m pip install --upgrade pip --trusted-host ${UV_TRUSTED_HOST} \
+    && python${PYTHON_VERSION} -m pip install --upgrade pipx --trusted-host ${UV_TRUSTED_HOST} \
     && python${PYTHON_VERSION} -m pipx ensurepath \
     && pipx ensurepath --global \
-    && pipx install uv --global
+    && pipx install uv --global --pip-args="--trusted-host ${UV_TRUSTED_HOST}"
 
 # Install Rust toolchain for building lyric-py
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN if [ "$INSTALL_RUST" = "true" ]; then \
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+    fi
+
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
@@ -65,7 +74,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     extras=$(echo $EXTRAS | tr ',' '\n' | while read extra; do echo "--extra $extra"; done | tr '\n' ' ') && \
     uv sync --frozen --all-packages \
     --no-dev $extras \
-    --index-url=$PIP_INDEX_URL && \
+    --index-url=$PIP_INDEX_URL \
+    --trusted-host=$UV_TRUSTED_HOST \
+    && \
     # Verify installation
     python -c "import dbgpt; print(dbgpt.__version__)"
 ARG LANGUAGE="en"

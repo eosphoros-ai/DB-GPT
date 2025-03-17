@@ -1,10 +1,9 @@
 import logging
 import os
 import shutil
-import tempfile
 from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
@@ -12,8 +11,10 @@ from dbgpt.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.core.interface.file import FileStorageClient
 from dbgpt.rag.retriever import BaseRetriever
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt_app.knowledge.request.request import (
@@ -34,7 +35,11 @@ from dbgpt_app.knowledge.request.response import (
     KnowledgeQueryResponse,
 )
 from dbgpt_app.knowledge.service import KnowledgeService
-from dbgpt_app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
+from dbgpt_app.openapi.api_v1.api_v1 import (
+    get_executor,
+    no_stream_generator,
+    stream_generator,
+)
 from dbgpt_app.openapi.api_view_model import Result
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.chunk_manager import ChunkStrategy
@@ -71,21 +76,30 @@ def get_dag_manager() -> DAGManager:
     return DAGManager.get_instance(CFG.SYSTEM_APP)
 
 
+def get_fs() -> FileStorageClient:
+    return FileStorageClient.get_instance(CFG.SYSTEM_APP)
+
+
 @router.post("/knowledge/space/add")
-def space_add(request: KnowledgeSpaceRequest):
-    print(f"/space/add params: {request}")
+async def space_add(request: KnowledgeSpaceRequest):
+    logger.info(f"/space/add params: {request}")
     try:
-        knowledge_space_service.create_knowledge_space(request)
+        await blocking_func_to_async(
+            get_executor(), knowledge_space_service.create_knowledge_space, request
+        )
         return Result.succ([])
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space add error {e}")
 
 
 @router.post("/knowledge/space/list")
-def space_list(request: KnowledgeSpaceRequest):
-    print("/space/list params:")
+async def space_list(request: KnowledgeSpaceRequest):
+    logger.info(f"/space/list params: {request}")
     try:
-        return Result.succ(knowledge_space_service.get_knowledge_space(request))
+        res = await blocking_func_to_async(
+            get_executor(), knowledge_space_service.get_knowledge_space, request
+        )
+        return Result.succ(res)
     except Exception as e:
         logger.exception(f"Space list error!{str(e)}")
         return Result.failed(code="E000X", msg=f"space list error {e}")
@@ -93,8 +107,7 @@ def space_list(request: KnowledgeSpaceRequest):
 
 @router.post("/knowledge/space/delete")
 def space_delete(request: KnowledgeSpaceRequest):
-    print("/space/delete params:")
-    print(request.name)
+    logger.info(f"/space/delete params: {request}")
     try:
         # delete Files in 'pilot/data/
         safe_space_name = os.path.basename(request.name)
@@ -107,17 +120,20 @@ def space_delete(request: KnowledgeSpaceRequest):
             if os.path.exists(space_dir):
                 shutil.rmtree(space_dir)
         except Exception as e:
-            print(e)
+            logger.error(f"Failed to remove {safe_space_name}: {str(e)}")
         return Result.succ(knowledge_space_service.delete_space(request.name))
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space delete error {e}")
 
 
 @router.post("/knowledge/{space_id}/arguments")
-def arguments(space_id: str):
-    print("/knowledge/space/arguments params:")
+async def arguments(space_id: str):
+    logger.info(f"/knowledge/{space_id}/arguments params: {space_id}")
     try:
-        return Result.succ(knowledge_space_service.arguments(space_id))
+        res = await blocking_func_to_async(
+            get_executor(), knowledge_space_service.arguments, space_id
+        )
+        return Result.succ(res)
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space arguments error {e}")
 
@@ -127,7 +143,7 @@ async def recall_test(
     space_name: str,
     request: DocumentRecallTestRequest,
 ):
-    print(f"/knowledge/{space_name}/recall_test params:")
+    logger.info(f"/knowledge/{space_name}/recall_test params: {request}")
     try:
         return Result.succ(
             await knowledge_space_service.recall_test(space_name, request)
@@ -140,7 +156,7 @@ async def recall_test(
 def recall_retrievers(
     space_id: str,
 ):
-    print(f"/knowledge/{space_id}/recall_retrievers params:")
+    logger.info(f"/knowledge/{space_id}/recall_retrievers params:")
     try:
         logger.info(f"get_recall_retrievers {space_id}")
 
@@ -177,25 +193,31 @@ def recall_retrievers(
 
 
 @router.post("/knowledge/{space_id}/argument/save")
-def arguments_save(space_id: str, argument_request: SpaceArgumentRequest):
+async def arguments_save(space_id: str, argument_request: SpaceArgumentRequest):
     print("/knowledge/space/argument/save params:")
     try:
-        return Result.succ(
-            knowledge_space_service.argument_save(space_id, argument_request)
+        res = await blocking_func_to_async(
+            get_executor(),
+            knowledge_space_service.argument_save,
+            space_id,
+            argument_request,
         )
+        return Result.succ(res)
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space save error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/add")
-def document_add(space_name: str, request: KnowledgeDocumentRequest):
-    print(f"/document/add params: {space_name}, {request}")
+async def document_add(space_name: str, request: KnowledgeDocumentRequest):
+    logger.info(f"/document/add params: {space_name}, {request}")
     try:
-        return Result.succ(
-            knowledge_space_service.create_knowledge_document(
-                space=space_name, request=request
-            )
+        res = await blocking_func_to_async(
+            get_executor(),
+            knowledge_space_service.create_knowledge_document,
+            space=space_name,
+            request=request,
         )
+        return Result.succ(res)
         # return Result.succ([])
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document add error {e}")
@@ -207,7 +229,7 @@ def document_edit(
     request: KnowledgeDocumentRequest,
     service: Service = Depends(get_rag_service),
 ):
-    print(f"/document/edit params: {space_name}, {request}")
+    logger.info(f"/document/edit params: {space_name}, {request}")
     space = service.get({"name": space_name})
     if space is None:
         return Result.failed(
@@ -263,7 +285,11 @@ async def space_config() -> Result[KnowledgeConfigResponse]:
         dag_manager: DAGManager = get_dag_manager()
         # Vector Storage
         vs_domain_types = [KnowledgeDomainType(name="Normal", desc="Normal")]
-        dag_map = dag_manager.get_dags_by_tag_key(TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE)
+        dag_map = await blocking_func_to_async(
+            get_executor(),
+            dag_manager.get_dags_by_tag_key,
+            TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE,
+        )
         for domain_type, dags in dag_map.items():
             vs_domain_types.append(
                 KnowledgeDomainType(
@@ -318,8 +344,7 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
 
 @router.post("/knowledge/{space_name}/graphvis")
 def graph_vis(space_name: str, query_request: GraphVisRequest):
-    print(f"/document/list params: {space_name}, {query_request}")
-    print(query_request.limit)
+    logger.info(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
             knowledge_space_service.query_graph(
@@ -347,63 +372,63 @@ async def document_upload(
     doc_name: str = Form(...),
     doc_type: str = Form(...),
     doc_file: UploadFile = File(...),
+    fs: FileStorageClient = Depends(get_fs),
 ):
     print(f"/document/upload params: {space_name}")
     try:
         if doc_file:
+            safe_filename = os.path.basename(doc_file.filename)
             # Sanitize inputs to prevent path traversal
             safe_space_name = os.path.basename(space_name)
-            safe_filename = os.path.basename(doc_file.filename)
 
-            # Create absolute paths and verify they are within allowed directory
-            upload_dir = os.path.abspath(
-                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, safe_space_name)
+            custom_metadata = {
+                "space_name": space_name,
+                "doc_name": doc_name,
+                "doc_type": doc_type,
+            }
+            bucket = "dbgpt_knowledge_file"
+            file_uri = await blocking_func_to_async(
+                get_executor(),
+                fs.save_file,
+                bucket,
+                safe_filename,
+                doc_file.file,
+                custom_metadata=custom_metadata,
             )
-            target_path = os.path.abspath(os.path.join(upload_dir, safe_filename))
-
-            if os.path.abspath(KNOWLEDGE_UPLOAD_ROOT_PATH) not in target_path:
-                raise HTTPException(status_code=400, detail="Invalid path detected")
-
-            if not os.path.exists(upload_dir):
-                os.makedirs(upload_dir)
-
-            # Create temp file
-            tmp_fd, tmp_path = tempfile.mkstemp(dir=upload_dir)
 
             try:
-                with os.fdopen(tmp_fd, "wb") as tmp:
-                    tmp.write(await doc_file.read())
-
-                shutil.move(tmp_path, target_path)
-
                 request = KnowledgeDocumentRequest()
                 request.doc_name = doc_name
                 request.doc_type = doc_type
-                request.content = target_path
+                request.content = file_uri
 
-                space_res = knowledge_space_service.get_knowledge_space(
-                    KnowledgeSpaceRequest(name=safe_space_name)
+                space_res = await blocking_func_to_async(
+                    get_executor(),
+                    knowledge_space_service.get_knowledge_space,
+                    KnowledgeSpaceRequest(name=safe_space_name),
                 )
                 if len(space_res) == 0:
                     # create default space
                     if "default" != safe_space_name:
                         raise Exception("you have not create your knowledge space.")
-                    knowledge_space_service.create_knowledge_space(
+                    await blocking_func_to_async(
+                        get_executor(),
+                        knowledge_space_service.create_knowledge_space,
                         KnowledgeSpaceRequest(
                             name=safe_space_name,
                             desc="first db-gpt rag application",
                             owner="dbgpt",
-                        )
+                        ),
                     )
-                return Result.succ(
-                    knowledge_space_service.create_knowledge_document(
-                        space=safe_space_name, request=request
-                    )
+                res = await blocking_func_to_async(
+                    get_executor(),
+                    knowledge_space_service.create_knowledge_document,
+                    space=safe_space_name,
+                    request=request,
                 )
+                return Result.succ(res)
             except Exception as e:
                 # Clean up temp file if anything goes wrong
-                if os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
                 raise e
 
         return Result.failed(code="E000X", msg="doc_file is None")

@@ -231,6 +231,9 @@ class ExcelReader:
         read_type: str = "df",
         database_name: str = ":memory:",
         table_name: str = "data_analysis_table",
+        duckdb_extensions_dir: Optional[List[str]] = None,
+        force_install: bool = False,
+        show_columns: bool = False,
     ):
         if not file_name:
             file_name = os.path.basename(file_path)
@@ -246,6 +249,9 @@ class ExcelReader:
 
         self.excel_file_name = file_name
 
+        if duckdb_extensions_dir:
+            self.install_extension(duckdb_extensions_dir, force_install)
+
         if not db_exists:
             curr_table = self.temp_table_name
             if read_type == "df":
@@ -255,11 +261,12 @@ class ExcelReader:
         else:
             curr_table = self.table_name
 
-        # Print table schema
-        result = self.db.sql(f"DESCRIBE {curr_table}")
-        columns = result.fetchall()
-        for column in columns:
-            print(column)
+        if show_columns:
+            # Print table schema
+            result = self.db.sql(f"DESCRIBE {curr_table}")
+            columns = result.fetchall()
+            for column in columns:
+                print(column)
 
     def close(self):
         if self.db:
@@ -278,14 +285,17 @@ class ExcelReader:
             logger.info(f"To be executed SQL: {sql}")
             if df_res:
                 return self.db.sql(sql).df()
-            results = self.db.sql(sql)
-            colunms = []
-            for descrip in results.description:
-                colunms.append(descrip[0])
-            return colunms, results.fetchall()
+            return self._run_sql(sql)
         except Exception as e:
             logger.error(f"excel sql run error!, {str(e)}")
             raise ValueError(f"Data Query Exception!\\nSQL[{sql}].\\nError:{str(e)}")
+
+    def _run_sql(self, sql: str):
+        results = self.db.sql(sql)
+        columns = []
+        for desc in results.description:
+            columns.append(desc[0])
+        return columns, results.fetchall()
 
     def get_df_by_sql_ex(self, sql: str, table_name: Optional[str] = None):
         table_name = table_name or self.table_name
@@ -425,3 +435,62 @@ AND dc.schema_name = 'main';
                 )
 
         return new_table
+
+    def install_extension(
+        self, duckdb_extensions_dir: Optional[List[str]], force_install: bool = False
+    ) -> int:
+        if not duckdb_extensions_dir:
+            return 0
+        cnt = 0
+        for extension_dir in duckdb_extensions_dir:
+            if not os.path.exists(extension_dir):
+                logger.warning(f"Extension directory not exists: {extension_dir}")
+                continue
+            extension_files = [
+                os.path.join(extension_dir, f)
+                for f in os.listdir(extension_dir)
+                if f.endswith(".duckdb_extension.gz") or f.endswith(".duckdb_extension")
+            ]
+            _, extensions = self._query_extension()
+            installed_extensions = [ext[0] for ext in extensions if ext[1]]
+            for extension_file in extension_files:
+                try:
+                    extension_name = os.path.basename(extension_file).split(".")[0]
+                    if not force_install and extension_name in installed_extensions:
+                        logger.info(
+                            f"Extension {extension_name} has been installed, skip"
+                        )
+                        continue
+                    self.db.install_extension(
+                        extension_file, force_install=force_install
+                    )
+                    self.db.load_extension(extension_name)
+                    cnt += 1
+                    logger.info(f"Installed extension {extension_name} for DuckDB")
+                except Exception as e:
+                    logger.warning(
+                        f"Error while installing extension {extension_file}: {str(e)}"
+                    )
+        logger.debug(f"Installed extensions: {cnt}")
+        self.list_extensions()
+        return cnt
+
+    def list_extensions(self, stdout=False):
+        from prettytable import PrettyTable
+
+        table = PrettyTable()
+        columns, datas = self._query_extension()
+        table.field_names = columns
+        for data in datas:
+            table.add_row(data)
+        show_str = "DuckDB Extensions:\n"
+        show_str += table.get_formatted_string()
+        if stdout:
+            print(show_str)
+        else:
+            logger.info(show_str)
+
+    def _query_extension(self):
+        return self._run_sql(
+            "SELECT extension_name, installed, description FROM duckdb_extensions();"
+        )
