@@ -1,17 +1,18 @@
 """Neo4j store."""
 
 import logging
+from dataclasses import dataclass
 
-from dbgpt._private.pydantic import ConfigDict
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class Neo4jStoreConfig(GraphStoreConfig):
     """Neo4j store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "neo4j"
 
 
 class Neo4jStore(GraphStoreBase):

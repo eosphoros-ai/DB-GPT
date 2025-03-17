@@ -1,17 +1,18 @@
 """OpenSPG class."""
 
 import logging
+from dataclasses import dataclass
 
-from dbgpt._private.pydantic import ConfigDict
 from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class OpenSPGConfig(KnowledgeGraphConfig):
     """OpenSPG config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "openspg"
 
 
 class OpenSPG(KnowledgeGraphBase):

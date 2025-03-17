@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class TuGraphStoreConfig(GraphStoreConfig):
     """TuGraph store config."""
 
-    __type__ = "TuGraph"
+    __type__ = "tugraph"
 
     host: str = field(
         default="127.0.0.1",

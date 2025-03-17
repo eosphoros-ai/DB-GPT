@@ -147,7 +147,7 @@ class RegisterParameters(abc.ABC, metaclass=PolymorphicMeta):
         """Register a subclass with this base class using a type value."""
         if not hasattr(cls, "_type_registry"):
             cls._type_registry = {}
-        cls._type_registry[type_value] = subclass
+        cls._type_registry[type_value.lower()] = subclass
 
     @classmethod
     def get_type_value(cls) -> str:
@@ -238,7 +238,7 @@ def _get_concrete_class(base_class: Type[T], data: Dict[str, Any]) -> Type[T]:
     if not type_value:
         return base_class
     type_value = _resolve_env_vars(type_value)
-    real_cls = base_class.get_subclass(type_value)
+    real_cls = base_class.get_subclass(type_value.lower())
     if not real_cls:
         raise ValueError(
             f"Unknown type value: {type_value}, known types: "

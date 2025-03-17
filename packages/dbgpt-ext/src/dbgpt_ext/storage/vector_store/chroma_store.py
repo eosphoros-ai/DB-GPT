@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 class ChromaVectorConfig(VectorStoreConfig):
     """Chroma vector store config."""
 
-    __type__ = "Chroma"
+    __type__ = "chroma"
 
     persist_path: Optional[str] = field(
         default=os.getenv("CHROMA_PERSIST_PATH", None),
@@ -249,16 +249,6 @@ class ChromaStore(VectorStoreBase):
             # Delete collection if it exists
             self._chroma_client.delete_collection(self._collection.name)
             SharedSystemClient.clear_system_cache()
-
-            # Clean persist folder if it exists
-            if os.path.exists(self.persist_dir):
-                try:
-                    self._clean_persist_folder()
-                except Exception as e:
-                    logger.error(f"Failed to clean persist folder: {e}")
-                    # Even if folder cleanup fails, collection deletion succeeded
-                    return True
-
             return True
 
         except Exception as e:

@@ -126,7 +126,7 @@ def _normalize(vector: List[float]) -> List[float]:
 class OceanBaseConfig(VectorStoreConfig):
     """OceanBase vector store config."""
 
-    __type__ = "OceanBase"
+    __type__ = "oceanbase"
 
     ob_host: Optional[str] = field(
         default=None,
