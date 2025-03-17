@@ -10,7 +10,6 @@ from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt_ext.datasource.schema import DBType
 from dbgpt_serve.core import BaseService, ResourceTypes
@@ -19,8 +18,8 @@ from dbgpt_serve.datasource.manages.connect_config_db import (
     ConnectConfigDao,
     ConnectConfigEntity,
 )
-from dbgpt_serve.rag.connector import VectorStoreConnector
 
+from ...rag.storage_manager import StorageManager
 from ..api.schemas import (
     DatasourceCreateRequest,
     DatasourceQueryResponse,
@@ -92,6 +91,12 @@ class Service(
         if not self._system_app:
             raise ValueError("SYSTEM_APP is not set")
         return ConnectorManager.get_instance(self._system_app)
+
+    @property
+    def storage_manager(self) -> StorageManager:
+        if not self._system_app:
+            raise ValueError("SYSTEM_APP is not set")
+        return StorageManager.get_instance(self._system_app)
 
     def create(
         self, request: Union[DatasourceCreateRequest, DatasourceServeRequest]
@@ -229,13 +234,10 @@ class Service(
         """
         db_config = self._dao.get_one({"id": datasource_id})
         vector_name = db_config.db_name + "_profile"
-        vector_store_config = VectorStoreConfig(name=vector_name)
-        _vector_connector = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE,
-            vector_store_config=vector_store_config,
-            system_app=self._system_app,
+        vector_connector = self.storage_manager.create_vector_store(
+            index_name=vector_name
         )
-        _vector_connector.delete_vector_name(vector_name)
+        vector_connector.delete_vector_name(vector_name)
         if db_config:
             self._dao.delete({"id": datasource_id})
         return db_config
@@ -300,13 +302,10 @@ class Service(
         """
         db_config = self._dao.get_one({"id": datasource_id})
         vector_name = db_config.db_name + "_profile"
-        vector_store_config = VectorStoreConfig(name=vector_name)
-        _vector_connector = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE,
-            vector_store_config=vector_store_config,
-            system_app=self._system_app,
+        vector_connector = self.storage_manager.create_vector_store(
+            index_name=vector_name
         )
-        _vector_connector.delete_vector_name(vector_name)
+        vector_connector.delete_vector_name(vector_name)
         self._db_summary_client.db_summary_embedding(
             db_config.db_name, db_config.db_type
         )

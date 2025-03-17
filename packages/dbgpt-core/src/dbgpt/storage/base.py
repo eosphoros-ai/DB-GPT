@@ -4,50 +4,24 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
-from dbgpt.core import Chunk, Embeddings
+from dbgpt.core import Chunk
 from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt.util import BaseParameters
 from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 
 logger = logging.getLogger(__name__)
 
 
-class IndexStoreConfig(BaseModel):
+@dataclass
+class IndexStoreConfig(BaseParameters):
     """Index store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-
-    type: Optional[str] = Field(
-        default=None,
-        description="storage type",
-    )
-
-    name: str = Field(
-        default="dbgpt_collection",
-        description="The name of index store, if not set, will use the default name.",
-    )
-    embedding_fn: Optional[Embeddings] = Field(
-        default=None,
-        description="The embedding function of vector store, if not set, will use the "
-        "default embedding function.",
-    )
-    max_chunks_once_load: int = Field(
-        default=10,
-        description="The max number of chunks to load at once. If your document is "
-        "large, you can set this value to a larger number to speed up the loading "
-        "process. Default is 10.",
-    )
-    max_threads: int = Field(
-        default=1,
-        description="The max number of threads to use. Default is 1. If you set this "
-        "bigger than 1, please make sure your vector store is thread-safe.",
-    )
-
-    def to_dict(self, **kwargs) -> Dict[str, Any]:
-        """Convert to dict."""
-        return model_to_dict(self, **kwargs)
+    def create_store(self, **kwargs) -> "IndexStoreBase":
+        """Create a new index store from the config."""
+        raise NotImplementedError("Current index store does not support create_store")
 
 
 class IndexStoreBase(ABC):

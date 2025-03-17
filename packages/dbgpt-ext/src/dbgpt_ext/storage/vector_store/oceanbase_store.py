@@ -5,14 +5,14 @@ import logging
 import math
 import os
 import uuid
+from dataclasses import dataclass, field
 from typing import Any, List, Optional, Tuple
 
 import numpy as np
-from pydantic import Field
 from sqlalchemy import JSON, Column, String, Table, func, text
 from sqlalchemy.dialects.mysql import LONGTEXT
 
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
@@ -122,35 +122,48 @@ def _normalize(vector: List[float]) -> List[float]:
     ],
     description="OceanBase vector store config.",
 )
+@dataclass
 class OceanBaseConfig(VectorStoreConfig):
     """OceanBase vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
+    __type__ = "OceanBase"
 
-        arbitrary_types_allowed = True
+    ob_host: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The host of oceanbase, if not set, will use the default host."
+        },
+    )
+    ob_port: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "The port of oceanbase, if not set, will use the default port."
+        },
+    )
+    ob_user: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The user of oceanbase, if not set, will use the default user."
+        },
+    )
+    ob_password: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The password of oceanbase, if not set, "
+            "will use the default password"
+        },
+    )
+    ob_database: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The database for vector tables, if not set, "
+            "will use the default database."
+        },
+    )
 
-    """OceanBase config"""
-    ob_host: Optional[str] = Field(
-        default=None,
-        description="oceanbase host",
-    )
-    ob_port: Optional[int] = Field(
-        default=None,
-        description="oceanbase port",
-    )
-    ob_user: Optional[str] = Field(
-        default=None,
-        description="user to login",
-    )
-    ob_password: Optional[str] = Field(
-        default=None,
-        description="password to login",
-    )
-    ob_database: Optional[str] = Field(
-        default=None,
-        description="database for vector tables",
-    )
+    def create_store(self, **kwargs) -> "OceanBaseStore":
+        """Create OceanBase store."""
+        return OceanBaseStore(vector_store_config=self, **kwargs)
 
 
 @register_resource(
@@ -172,7 +185,12 @@ class OceanBaseConfig(VectorStoreConfig):
 class OceanBaseStore(VectorStoreBase):
     """OceanBase vector store."""
 
-    def __init__(self, vector_store_config: OceanBaseConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: OceanBaseConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+    ) -> None:
         """Create a OceanBaseStore instance."""
         try:
             from pyobvector import ObVecClient  # type: ignore
@@ -188,8 +206,8 @@ class OceanBaseStore(VectorStoreBase):
         super().__init__()
 
         self._vector_store_config = vector_store_config
-        self.embedding_function = vector_store_config.embedding_fn
-        self.table_name = vector_store_config.name
+        self.embedding_function = embedding_fn
+        self.table_name = name
 
         vector_store_config_map = vector_store_config.to_dict()
         OB_HOST = str(

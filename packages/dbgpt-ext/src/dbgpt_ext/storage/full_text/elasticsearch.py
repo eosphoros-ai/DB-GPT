@@ -11,21 +11,19 @@ from dbgpt.storage.full_text.base import FullTextStoreBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util import string_utils
 from dbgpt.util.executor_utils import blocking_func_to_async
-from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchVectorConfig
-
-
-class ElasticDocumentConfig(ElasticsearchVectorConfig):
-    """Elasticsearch document store config."""
-
-    k1: Optional[float] = 2.0
-    b: Optional[float] = 0.75
+from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchStoreConfig
 
 
 class ElasticDocumentStore(FullTextStoreBase):
     """Elasticsearch index store."""
 
     def __init__(
-        self, es_config: ElasticDocumentConfig, executor: Optional[Executor] = None
+        self,
+        es_config: ElasticsearchStoreConfig,
+        name: Optional[str] = "dbgpt",
+        k1: Optional[float] = 2.0,
+        b: Optional[float] = 0.75,
+        executor: Optional[Executor] = None,
     ):
         """Init elasticsearch index store.
 
@@ -46,17 +44,17 @@ class ElasticDocumentStore(FullTextStoreBase):
         self._es_password = es_config.password or os.getenv(
             "ELASTICSEARCH_PASSWORD", "dbgpt"
         )
-        self._index_name = es_config.name.lower()
-        if string_utils.contains_chinese(es_config.name):
-            bytes_str = es_config.name.encode("utf-8")
+        self._index_name = name.lower()
+        if string_utils.contains_chinese(name):
+            bytes_str = name.encode("utf-8")
             hex_str = bytes_str.hex()
             self._index_name = "dbgpt_" + hex_str
         # k1 (Optional[float]): Controls non-linear term frequency normalization
         #             (saturation). The default value is 2.0.
-        self._k1 = es_config.k1 or 2.0
+        self._k1 = k1 or 2.0
         # b (Optional[float]): Controls to what degree document length normalizes
         #             tf values. The default value is 0.75.
-        self._b = es_config.b or 0.75
+        self._b = b or 0.75
         if self._es_username and self._es_password:
             self._es_client = Elasticsearch(
                 hosts=[f"http://{self._es_url}:{self._es_port}"],
