@@ -17,19 +17,27 @@ class GraphExtractor(LLMExtractor):
     """GraphExtractor class."""
 
     def __init__(
-        self, llm_client: LLMClient, model_name: str, chunk_history: VectorStoreBase
+        self,
+        llm_client: LLMClient,
+        model_name: str,
+        chunk_history: VectorStoreBase,
+        index_name: str,
+        max_chunks_once_load: Optional[int] = 10,
+        max_threads: Optional[int] = 1,
+        top_k: Optional[int] = 5,
+        score_threshold: Optional[float] = 0.7,
     ):
         """Initialize the GraphExtractor."""
         super().__init__(llm_client, model_name, GRAPH_EXTRACT_PT_CN)
         self._chunk_history = chunk_history
 
-        config = self._chunk_history.get_config()
+        # config = self._chunk_history.get_config()
 
-        self._vector_space = config.name
-        self._max_chunks_once_load = config.max_chunks_once_load
-        self._max_threads = config.max_threads
-        self._topk = config.topk
-        self._score_threshold = config.score_threshold
+        self._vector_space = index_name
+        self._max_chunks_once_load = max_chunks_once_load
+        self._max_threads = max_threads
+        self._topk = top_k
+        self._score_threshold = score_threshold
 
     async def aload_chunk_context(self, texts: List[str]) -> Dict[str, str]:
         """Load chunk context."""

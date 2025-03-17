@@ -18,13 +18,11 @@ from dbgpt.configs.model_config import (
 from dbgpt.core import Chunk, LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeType
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
-from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.string_utils import remove_trailing_punctuation
 from dbgpt.util.tracer import root_tracer, trace
@@ -33,7 +31,6 @@ from dbgpt_ext.rag.assembler import EmbeddingAssembler
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt_ext.rag.knowledge import KnowledgeFactory
 from dbgpt_serve.core import BaseService
-from dbgpt_serve.rag.connector import VectorStoreConnector
 
 from ..api.schemas import (
     ChunkServeRequest,
@@ -52,6 +49,7 @@ from ..models.document_db import (
 )
 from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from ..retriever.knowledge_space import KnowledgeSpaceRetriever
+from ..storage_manager import StorageManager
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +93,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._document_dao = self._document_dao or KnowledgeDocumentDao()
         self._chunk_dao = self._chunk_dao or DocumentChunkDao()
         self._system_app = system_app
+
+    @property
+    def storage_manager(self):
+        return StorageManager.get_instance(self._system_app)
 
     @property
     def dao(
@@ -286,14 +288,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         space = self.get(query_request)
         if space is None:
             raise HTTPException(status_code=400, detail=f"Space {space_id} not found")
-        config = VectorStoreConfig(
-            name=space.name, llm_client=self.llm_client, model_name=None
-        )
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=self._system_app,
-        )
+        vector_store_connector = self.create_vector_store(space.name)
         # delete vectors
         vector_store_connector.delete_vector_name(space.name)
         document_query = KnowledgeDocumentEntity(space=space.name)
@@ -360,14 +355,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
 
         vector_ids = docuemnt.vector_ids
         if vector_ids is not None:
-            config = VectorStoreConfig(
-                name=space.name, llm_client=self.llm_client, model_name=None
-            )
-            vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type,
-                vector_store_config=config,
-                system_app=self._system_app,
-            )
+            vector_store_connector = self.create_vector_store(space.name)
             # delete vector by ids
             vector_store_connector.delete_by_ids(vector_ids)
         # delete chunks
@@ -498,25 +486,9 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         chunk_parameters: ChunkParameters,
     ) -> None:
         """sync knowledge document chunk into vector store"""
-        embedding_factory = self._system_app.get_component(
-            "embedding_factory", EmbeddingFactory
-        )
-        embedding_fn = embedding_factory.create()
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
-
         space = self.get({"id": space_id})
-        config = VectorStoreConfig(
-            name=space.name,
-            embedding_fn=embedding_fn,
-            max_chunks_once_load=self._serve_config.max_chunks_once_load,
-            max_threads=self._serve_config.max_threads,
-            llm_client=self.llm_client,
-            model_name=None,
-        )
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=self._system_app,
+        storage_connector = self.storage_manager.get_storage_connector(
+            space.name, space.vector_type
         )
         knowledge = None
         if not space.domain_type or (
@@ -531,17 +503,17 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         doc.gmt_modified = datetime.now()
         self._document_dao.update_knowledge_document(doc)
         asyncio.create_task(
-            self.async_doc_embedding(
-                knowledge, chunk_parameters, vector_store_connector, doc, space
+            self.async_doc_process(
+                knowledge, chunk_parameters, storage_connector, doc, space
             )
         )
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
 
-    @trace("async_doc_embedding")
-    async def async_doc_embedding(
-        self, knowledge, chunk_parameters, vector_store_connector, doc, space
+    @trace("async_doc_process")
+    async def async_doc_process(
+        self, knowledge, chunk_parameters, storage_connector, doc, space
     ):
-        """async document embedding into vector db
+        """async document process into storage
         Args:
             - knowledge: Knowledge
             - chunk_parameters: ChunkParameters
@@ -572,13 +544,11 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     doc.chunk_size = len(chunk_docs)
                     vector_ids = [chunk.chunk_id for chunk in chunk_docs]
                 else:
-                    max_chunks_once_load = (
-                        vector_store_connector._index_store_config.max_chunks_once_load
-                    )
-                    max_threads = vector_store_connector._index_store_config.max_threads
+                    max_chunks_once_load = self.config.max_chunks_once_load
+                    max_threads = self.config.max_threads
                     assembler = await EmbeddingAssembler.aload_from_knowledge(
                         knowledge=knowledge,
-                        index_store=vector_store_connector.index_client,
+                        index_store=storage_connector,
                         chunk_parameters=chunk_parameters,
                     )
 

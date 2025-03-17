@@ -234,7 +234,7 @@ class ChatKnowledge(BaseChat):
             from dbgpt_ext.storage import __knowledge_graph__ as graph_storages
 
             if spaces[0].vector_type in graph_storages:
-                return self.rag_config.graph_search_top_k
+                return self.rag_config.kg_chunk_search_top_k
 
         return self.rag_config.similarity_top_k
 

@@ -56,11 +56,13 @@ def _create_vector_connector():
     """Create vector connector."""
     config = ChromaVectorConfig(
         persist_path=PILOT_PATH,
-        name="embedding_api_rag_test",
-        embedding_fn=_create_embeddings(),
     )
 
-    return ChromaStore(config)
+    return ChromaStore(
+        config,
+        name="embedding_rag_test",
+        embedding_fn=_create_embeddings(),
+    )
 
 
 async def main():

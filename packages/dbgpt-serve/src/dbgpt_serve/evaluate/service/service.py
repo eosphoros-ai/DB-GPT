@@ -15,15 +15,16 @@ from dbgpt.rag.evaluation import RetrieverEvaluator
 from dbgpt.rag.evaluation.answer import AnswerRelevancyMetric
 from dbgpt.rag.evaluation.retriever import RetrieverSimilarityMetric
 from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt_serve.rag.operators.knowledge_space import SpaceRetrieverOperator
 
 from ...agent.agents.controller import multi_agents
 from ...agent.evaluation.evaluation import AgentEvaluator, AgentOutputOperator
 from ...core import BaseService
 from ...prompt.service.service import Service as PromptService
-from ...rag.connector import VectorStoreConnector
+
+# from ...rag.connector import VectorStoreConnector
 from ...rag.service.service import Service as RagService
+from ...rag.storage_manager import StorageManager
 from ..api.schemas import EvaluateServeRequest, EvaluateServeResponse, EvaluationScene
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
@@ -65,6 +66,10 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
         self._system_app = system_app
 
     @property
+    def storage_manager(self):
+        return StorageManager.get_instance(self._system_app)
+
+    @property
     def dao(self) -> BaseDao[ServeEntity, EvaluateServeRequest, EvaluateServeResponse]:
         """Returns the internal DAO."""
         return self._dao
@@ -104,17 +109,13 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
             )
             embeddings = embedding_factory.create()
 
-            config = VectorStoreConfig(
-                name=scene_value,
-                embedding_fn=embeddings,
-            )
             space = self.rag_service.get({"space_id": str(scene_value)})
             if not space:
                 raise ValueError(f"Space {scene_value} not found")
-            vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type,
-                vector_store_config=config,
-                system_app=self._system_app,
+            storage_connector = self.storage_manager.get_storage_connector(
+                index_name=space.name,
+                storage_type=space.vector_type,
+                llm_model=context.get("llm_model"),
             )
             evaluator = RetrieverEvaluator(
                 operator_cls=SpaceRetrieverOperator,
@@ -122,7 +123,7 @@ class Service(BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeRespon
                 operator_kwargs={
                     "space_id": str(scene_value),
                     "top_k": self._serve_config.similarity_top_k,
-                    "vector_store_connector": vector_store_connector,
+                    "vector_store_connector": storage_connector,
                 },
             )
             metrics = []

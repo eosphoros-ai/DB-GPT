@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 import os
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dbgpt._private.pydantic import Field
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -73,46 +73,62 @@ logger = logging.getLogger(__name__)
     ],
     description=_("Elasticsearch vector config."),
 )
-class ElasticsearchVectorConfig(VectorStoreConfig):
+@dataclass
+class ElasticsearchStoreConfig(VectorStoreConfig):
     """Elasticsearch vector store config."""
 
-    class Config:
-        """Config for BaseModel."""
+    __type__ = "ElasticSearch"
 
-        arbitrary_types_allowed = True
-
-    uri: str = Field(
+    uri: str = field(
         default="localhost",
-        description="The uri of elasticsearch store, if not set, will use the default "
-        "uri.",
+        metadata={
+            "description": "The uri of elasticsearch store, if not set, "
+            "will use the default uri."
+        },
     )
-    port: str = Field(
+    port: str = field(
         default="9200",
-        description="The port of elasticsearch store, if not set, will use the default "
-        "port.",
+        metadata={
+            "description": "The port of elasticsearch store, if not set, will use the "
+            "default port."
+        },
     )
 
-    alias: str = Field(
+    alias: str = field(
         default="default",
-        description="The alias of elasticsearch store, if not set, will use the "
-        "default "
-        "alias.",
+        metadata={
+            "description": "The alias of elasticsearch store, if not set, will use the "
+            "default alias."
+        },
     )
-    index_name: str = Field(
+    index_name: str = field(
         default="index_name_test",
-        description="The index name of elasticsearch store, if not set, will use the "
-        "default index name.",
+        metadata={
+            "description": "The index name of elasticsearch store, if not set, will"
+            " use "
+            "the default index name."
+        },
     )
-    metadata_field: str = Field(
+    metadata_field: str = field(
         default="metadata",
-        description="The metadata field of elasticsearch store, if not set, will use "
-        "the default metadata field.",
+        metadata={
+            "description": "The metadata field of elasticsearch store, "
+            "if not set, will "
+            "use the default metadata field."
+        },
     )
-    secure: str = Field(
+    secure: str = field(
         default="",
-        description="The secure of elasticsearch store, if not set, will use the "
-        "default secure.",
+        metadata={
+            "description": "The secure of elasticsearch store, i"
+            "f not set, will use the "
+            "default secure."
+        },
     )
+
+    def create_store(self, **kwargs) -> "ElasticStore":
+        """Create Elastic store."""
+        return ElasticStore(vector_store_config=self, **kwargs)
 
 
 @register_resource(
@@ -124,7 +140,7 @@ class ElasticsearchVectorConfig(VectorStoreConfig):
         Parameter.build_from(
             _("Elastic Config"),
             "vector_store_config",
-            ElasticsearchVectorConfig,
+            ElasticsearchStoreConfig,
             description=_("the elastic config of vector store."),
             optional=True,
             default=None,
@@ -134,11 +150,16 @@ class ElasticsearchVectorConfig(VectorStoreConfig):
 class ElasticStore(VectorStoreBase):
     """Elasticsearch vector store."""
 
-    def __init__(self, vector_store_config: ElasticsearchVectorConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: ElasticsearchStoreConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+    ) -> None:
         """Create a ElasticsearchStore instance.
 
         Args:
-            vector_store_config (ElasticsearchVectorConfig): ElasticsearchStore config.
+            vector_store_config (ElasticsearchStoreConfig): ElasticsearchStore config.
         """
         super().__init__()
         self._vector_store_config = vector_store_config
@@ -158,21 +179,19 @@ class ElasticStore(VectorStoreBase):
             "ELASTICSEARCH_PASSWORD"
         ) or elasticsearch_vector_config.get("password")
 
-        self.collection_name = (
-            elasticsearch_vector_config.get("name") or vector_store_config.name
-        )
+        self.collection_name = name
         # name to hex
         if string_utils.contains_chinese(self.collection_name):
             bytes_str = self.collection_name.encode("utf-8")
             hex_str = bytes_str.hex()
             self.collection_name = hex_str
-        if vector_store_config.embedding_fn is None:
+        if embedding_fn is None:
             # Perform runtime checks on self.embedding to
             # ensure it has been correctly set and loaded
             raise ValueError("embedding_fn is required for ElasticSearchStore")
         # to lower case
         self.index_name = self.collection_name.lower()
-        self.embedding: Embeddings = vector_store_config.embedding_fn
+        self.embedding: Embeddings = embedding_fn
         self.fields: List = []
 
         if (self.username is None) != (self.password is None):
@@ -251,7 +270,7 @@ class ElasticStore(VectorStoreBase):
         except Exception as e:
             logger.error(f"ElasticSearch connection failed: {e}")
 
-    def get_config(self) -> ElasticsearchVectorConfig:
+    def get_config(self) -> ElasticsearchStoreConfig:
         """Get the vector store config."""
         return self._vector_store_config
 

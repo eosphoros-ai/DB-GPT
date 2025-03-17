@@ -5,6 +5,7 @@ from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import MODEL_DISK_CACHE_DIR, resolve_root_path
 from dbgpt.util.executor_utils import DefaultExecutorFactory
 from dbgpt_app.config import ApplicationConfig, ServiceWebParameters
+from dbgpt_serve.rag.storage_manager import StorageManager
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ def initialize_components(
     system_app.register(DefaultScheduler)
     system_app.register_instance(controller)
     system_app.register(ConnectorManager)
+    system_app.register(StorageManager)
 
     from dbgpt_serve.agent.hub.controller import module_plugin
 

@@ -50,11 +50,11 @@ def _import_oceanbase() -> Tuple[Type, Type]:
 
 def _import_elastic() -> Tuple[Type, Type]:
     from dbgpt_ext.storage.vector_store.elastic_store import (
-        ElasticsearchVectorConfig,
+        ElasticsearchStoreConfig,
         ElasticStore,
     )
 
-    return ElasticStore, ElasticsearchVectorConfig
+    return ElasticStore, ElasticsearchStoreConfig
 
 
 def _import_builtin_knowledge_graph() -> Tuple[Type, Type]:
@@ -113,6 +113,35 @@ def _select_rag_storage(name: str) -> Tuple[Type, Type]:
         return _import_full_text()
     else:
         raise AttributeError(f"Could not find: {name}")
+
+
+_HAS_SCAN = False
+
+
+def scan_storage_configs():
+    """Scan storage configs."""
+    from dbgpt.storage.base import IndexStoreConfig
+    from dbgpt.util.module_utils import ModelScanner, ScannerConfig
+
+    global _HAS_SCAN
+
+    if _HAS_SCAN:
+        return
+    modules = [
+        "dbgpt_ext.storage.vector_store",
+        "dbgpt_ext.storage.knowledge_graph",
+        "dbgpt_ext.storage.graph_store",
+    ]
+
+    scanner = ModelScanner[IndexStoreConfig]()
+    for module in modules:
+        config = ScannerConfig(
+            module_path=module,
+            base_class=IndexStoreConfig,
+        )
+        scanner.scan_and_register(config)
+    _HAS_SCAN = True
+    return scanner.get_registered_items()
 
 
 __vector_store__ = [

@@ -2,35 +2,33 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
+from dataclasses import dataclass
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
-from dbgpt.core import Embeddings
+from dbgpt.util import BaseParameters, RegisterParameters
 
 logger = logging.getLogger(__name__)
 
 
-class GraphStoreConfig(BaseModel):
+@dataclass
+class GraphStoreConfig(BaseParameters, RegisterParameters):
     """Graph store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-
-    name: str = Field(
-        default="dbgpt_collection",
-        description="The name of graph store, inherit from index store.",
-    )
-    embedding_fn: Optional[Embeddings] = Field(
-        default=None,
-        description="The embedding function of graph store, optional.",
-    )
-    enable_summary: bool = Field(
-        default=False,
-        description="Enable graph community summary or not.",
-    )
-    enable_similarity_search: bool = Field(
-        default=False,
-        description="Enable similarity search or not.",
-    )
+    # name: str = Field(
+    #     default="dbgpt_collection",
+    #     description="The name of graph store, inherit from index store.",
+    # )
+    # embedding_fn: Optional[Embeddings] = Field(
+    #     default=None,
+    #     description="The embedding function of graph store, optional.",
+    # )
+    # enable_summary: bool = Field(
+    #     default=False,
+    #     description="Enable graph community summary or not.",
+    # )
+    # enable_similarity_search: bool = Field(
+    #     default=False,
+    #     description="Enable similarity search or not.",
+    # )
 
 
 class GraphStoreBase(ABC):
