@@ -41,6 +41,8 @@ logger = logging.getLogger(__name__)
 class PGVectorConfig(VectorStoreConfig):
     """PG vector store config."""
 
+    __type__ = "Postgres"
+
     connection_string: str = field(
         default=None,
         metadata={
