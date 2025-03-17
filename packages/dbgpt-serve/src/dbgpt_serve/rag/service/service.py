@@ -187,7 +187,6 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 bucket,
                 safe_filename,
                 doc_file.file,
-                storage_type="distributed",
                 custom_metadata=custom_metadata,
             )
             request.content = file_uri

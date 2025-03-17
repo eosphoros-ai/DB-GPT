@@ -181,7 +181,6 @@ class ChatExcel(BaseChat):
                 self.fs_client.upload_file,
                 self._bucket,
                 self._database_file_path,
-                storage_type="distributed",
                 file_id=self._database_file_id,
             )
         return result

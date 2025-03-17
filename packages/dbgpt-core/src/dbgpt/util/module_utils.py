@@ -253,6 +253,26 @@ class ModelScanner(Generic[T]):
                 for key, value in scanned_items.items():
                     self._registered_items[key] = value
 
+            child_items = {}
+            for key, value in self._registered_items.items():
+                if hasattr(value, "__scan_config__"):
+                    _child_scanner = ModelScanner()
+                    _child_config = value.__scan_config__
+                    if not isinstance(_child_config, ScannerConfig):
+                        continue
+                    if (
+                        hasattr(value, "__is_already_scanned__")
+                        and value.__is_already_scanned__
+                    ):
+                        continue
+                    try:
+                        _child_scanner.scan_and_register(_child_config)
+                        child_items.update(_child_scanner.get_registered_items())
+                        value.__is_already_scanned__ = True
+                    except Exception as e:
+                        logger.warning(f"Error scanning child module {key}: {str(e)}")
+            self._registered_items.update(child_items)
+
         except ImportError as e:
             logger.warning(f"Error importing module {config.module_path}: {str(e)}")
 

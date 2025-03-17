@@ -393,7 +393,6 @@ async def document_upload(
                 bucket,
                 safe_filename,
                 doc_file.file,
-                storage_type="distributed",
                 custom_metadata=custom_metadata,
             )
 
