@@ -15,7 +15,7 @@ path = "pilot/meta_data/dbgpt.db"
 
 [rag.storage]
 [rag.storage.vector]
-type = "Chroma"
+type = "chroma"
 persist_path = "pilot/data"
 
 # Model Configurations

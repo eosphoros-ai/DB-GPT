@@ -17,7 +17,7 @@ host = "127.0.0.1"
 
 [rag.storage]
 [rag.storage.vector]
-type = "Chroma"
+type = "chroma"
 persist_path = "pilot/data"
 
 # Model Configurations
