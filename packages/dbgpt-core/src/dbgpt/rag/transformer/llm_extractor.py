@@ -84,7 +84,10 @@ class LLMExtractor(ExtractorBase, ABC):
             logger.error(f"request llm failed ({code}) {reason}")
             return []
 
-        return self._parse_response(response.text, limit)
+        if response.has_text:
+            return self._parse_response(response.text, limit)
+        else:
+            return []
 
     def truncate(self):
         """Do nothing by default."""
