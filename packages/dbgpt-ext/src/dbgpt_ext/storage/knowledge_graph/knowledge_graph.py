@@ -3,9 +3,9 @@
 import asyncio
 import logging
 import os
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, Embeddings, LLMClient
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
@@ -16,6 +16,7 @@ from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 from dbgpt_ext.rag.transformer.triplet_extractor import TripletExtractor
 from dbgpt_ext.storage.graph_store.factory import GraphStoreFactory
+from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStoreConfig
 from dbgpt_ext.storage.knowledge_graph.community.base import GraphStoreAdapter
 from dbgpt_ext.storage.knowledge_graph.community.factory import GraphStoreAdapterFactory
 
@@ -98,16 +99,19 @@ GRAPH_PARAMETERS = [
         ),
     ],
 )
+@dataclass
 class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
     """Builtin knowledge graph config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "tugraph"
 
-    llm_client: LLMClient = Field(default=None, description="The default llm client.")
+    llm_model: Optional[str] = field(
+        default=None, metadata={"description": "llm model name."}
+    )
 
-    model_name: str = Field(default=None, description="The name of llm model.")
-
-    type: str = Field(default="TuGraph", description="The type of graph store.")
+    graph_type: Optional[str] = field(
+        default="TuGraph", metadata={"description": "graph store type."}
+    )
 
 
 @register_resource(
@@ -129,33 +133,38 @@ class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
 class BuiltinKnowledgeGraph(KnowledgeGraphBase):
     """Builtin knowledge graph class."""
 
-    def __init__(self, config: BuiltinKnowledgeGraphConfig):
+    def __init__(
+        self,
+        config: GraphStoreConfig = None,
+        name: Optional[str] = "dbgpt",
+        llm_client: Optional[LLMClient] = None,
+        llm_model: Optional[str] = None,
+    ):
         """Create builtin knowledge graph instance."""
         super().__init__()
         self._config = config
-
-        self._llm_client = config.llm_client
+        self._llm_client = llm_client
+        self._graph_name = name
         if not self._llm_client:
             raise ValueError("No llm client provided.")
 
-        self._model_name = config.model_name
+        self._model_name = llm_model
         self._triplet_extractor = TripletExtractor(self._llm_client, self._model_name)
         self._keyword_extractor = KeywordExtractor(self._llm_client, self._model_name)
         self._graph_store: GraphStoreBase = self.__init_graph_store(config)
         self._graph_store_adapter: GraphStoreAdapter = self.__init_graph_store_adapter()
 
-    def __init_graph_store(self, config: BuiltinKnowledgeGraphConfig) -> GraphStoreBase:
+    def __init_graph_store(self, config: GraphStoreConfig) -> GraphStoreBase:
         def configure(cfg: GraphStoreConfig):
-            cfg.name = config.name
-            cfg.embedding_fn = config.embedding_fn
+            cfg.name = self._graph_name
 
-        graph_store_type = config.type or os.getenv("GRAPH_STORE_TYPE")
-        return GraphStoreFactory.create(graph_store_type, configure, config.dict())
+        graph_store_type = config.get_type_value() or os.getenv("GRAPH_STORE_TYPE")
+        return GraphStoreFactory.create(graph_store_type, configure, config.to_dict())
 
     def __init_graph_store_adapter(self):
         return GraphStoreAdapterFactory.create(self._graph_store)
 
-    def get_config(self) -> BuiltinKnowledgeGraphConfig:
+    def get_config(self) -> TuGraphStoreConfig:
         """Get the knowledge graph config."""
         return self._config
 
@@ -171,7 +180,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
         # wait async tasks completed
         if not self.vector_name_exists():
-            self._graph_store_adapter.create_graph(self.get_config().name)
+            self._graph_store_adapter.create_graph(self._graph_name)
         tasks = [process_chunk(chunk) for chunk in chunks]
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -188,7 +197,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
             List[str]: chunk ids.
         """
         if not self.vector_name_exists():
-            self._graph_store_adapter.create_graph(self.get_config().name)
+            self._graph_store_adapter.create_graph(self._graph_name)
         for chunk in chunks:
             triplets = await self._triplet_extractor.extract(chunk.content)
             for triplet in triplets:
@@ -257,7 +266,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def truncate(self) -> List[str]:
         """Truncate knowledge graph."""
-        logger.info(f"Truncate graph {self._config.name}")
+        logger.info(f"Truncate graph {self._graph_name}")
         self._graph_store_adapter.truncate()
 
         logger.info("Truncate keyword extractor")
@@ -266,7 +275,7 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         logger.info("Truncate triplet extractor")
         self._triplet_extractor.truncate()
 
-        return [self._config.name]
+        return [self._graph_name]
 
     def delete_vector_name(self, index_name: str):
         """Delete vector name."""
@@ -286,4 +295,4 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
 
     def vector_name_exists(self) -> bool:
         """Whether name exists."""
-        return self._graph_store_adapter.graph_store.is_exist(self._config.name)
+        return self._graph_store_adapter.graph_store.is_exist(self._graph_name)

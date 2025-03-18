@@ -5,9 +5,9 @@ import os
 import uuid
 from typing import List, Optional, Tuple
 
-from dbgpt._private.pydantic import ConfigDict, Field
-from dbgpt.core import Chunk, LLMClient
+from dbgpt.core import Chunk, Embeddings, LLMClient
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.storage.graph_store.base import GraphStoreConfig
 from dbgpt.storage.knowledge_graph.base import ParagraphChunk
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.filters import MetadataFilters
@@ -17,13 +17,13 @@ from dbgpt_ext.rag.transformer.community_summarizer import CommunitySummarizer
 from dbgpt_ext.rag.transformer.graph_embedder import GraphEmbedder
 from dbgpt_ext.rag.transformer.graph_extractor import GraphExtractor
 from dbgpt_ext.rag.transformer.text_embedder import TextEmbedder
+from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStoreConfig
 from dbgpt_ext.storage.knowledge_graph.community.community_store import CommunityStore
 from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     GRAPH_PARAMETERS,
     BuiltinKnowledgeGraph,
     BuiltinKnowledgeGraphConfig,
 )
-from dbgpt_ext.storage.vector_store.factory import VectorStoreFactory
 
 logger = logging.getLogger(__name__)
 
@@ -139,87 +139,6 @@ logger = logging.getLogger(__name__)
         ),
     ],
 )
-class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
-    """Community summary knowledge graph config."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    vector_store_type: str = Field(
-        default="Chroma",
-        description="The type of vector store.",
-    )
-    user: Optional[str] = Field(
-        default=None,
-        description="The user of vector store, if not set, will use the default user.",
-    )
-    password: Optional[str] = Field(
-        default=None,
-        description=(
-            "The password of vector store, if not set, will use the default password."
-        ),
-    )
-    extract_topk: int = Field(
-        default=5,
-        description="Topk of knowledge graph extract",
-    )
-    extract_score_threshold: float = Field(
-        default=0.3,
-        description="Recall score of knowledge graph extract",
-    )
-    community_topk: int = Field(
-        default=50,
-        description="Topk of community search in knowledge graph",
-    )
-    community_score_threshold: float = Field(
-        default=0.3,
-        description="Recall score of community search in knowledge graph",
-    )
-    triplet_graph_enabled: bool = Field(
-        default=True,
-        description="Enable the graph search for triplets",
-    )
-    document_graph_enabled: bool = Field(
-        default=True,
-        description="Enable the graph search for documents and chunks",
-    )
-    knowledge_graph_chunk_search_top_size: int = Field(
-        default=5,
-        description="Top size of knowledge graph chunk search",
-    )
-    knowledge_graph_extraction_batch_size: int = Field(
-        default=20,
-        description="Batch size of triplets extraction from the text",
-    )
-    community_summary_batch_size: int = Field(
-        default=20,
-        description="Batch size of parallel community building process",
-    )
-    knowledge_graph_embedding_batch_size: int = Field(
-        default=20,
-        description="Batch size of triplets embedding from the text",
-    )
-    similarity_search_topk: int = Field(
-        default=5,
-        description="Topk of similarity search",
-    )
-    similarity_search_score_threshold: float = Field(
-        default=0.7,
-        description="Recall score of similarity search",
-    )
-    enable_text_search: bool = Field(
-        default=False,
-        description="Enable text2gql search or not.",
-    )
-    text2gql_model_enabled: bool = Field(
-        default=False,
-        description="Enable fine-tuned text2gql model for text2gql translation.",
-    )
-    text2gql_model_name: str = Field(
-        default=None,
-        description="LLM Model for text2gql translation.",
-    )
-
-
 @register_resource(
     _("Community Summary Knowledge Graph"),
     "community_summary_knowledge_graph",
@@ -239,104 +158,137 @@ class CommunitySummaryKnowledgeGraphConfig(BuiltinKnowledgeGraphConfig):
 class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     """Community summary knowledge graph class."""
 
-    def __init__(self, config: CommunitySummaryKnowledgeGraphConfig):
+    def __init__(
+        self,
+        config: GraphStoreConfig,
+        name: Optional[str] = "dbgpt",
+        llm_client: Optional[LLMClient] = None,
+        llm_model: Optional[str] = None,
+        kg_extract_top_k: Optional[int] = 5,
+        kg_extract_score_threshold: Optional[float] = 0.3,
+        kg_community_top_k: Optional[int] = 50,
+        kg_community_score_threshold: Optional[float] = 0.3,
+        kg_triplet_graph_enabled: Optional[bool] = True,
+        kg_document_graph_enabled: Optional[bool] = True,
+        kg_chunk_search_top_k: Optional[int] = 5,
+        kg_extraction_batch_size: Optional[int] = 3,
+        kg_community_summary_batch_size: Optional[int] = 20,
+        kg_embedding_batch_size: Optional[int] = 20,
+        kg_similarity_top_k: Optional[int] = 5,
+        kg_similarity_score_threshold: Optional[float] = 0.7,
+        kg_enable_text_search: Optional[float] = False,
+        kg_text2gql_model_enabled: Optional[bool] = False,
+        kg_text2gql_model_name: Optional[str] = None,
+        embedding_fn: Optional[Embeddings] = None,
+        vector_store_config: Optional["VectorStoreConfig"] = None,
+        kg_max_chunks_once_load: Optional[int] = 10,
+        kg_max_threads: Optional[int] = 1,
+    ):
         """Initialize community summary knowledge graph class."""
-        super().__init__(config)
+        super().__init__(
+            config=config, name=name, llm_client=llm_client, llm_model=llm_model
+        )
         self._config = config
 
-        self._vector_store_type = config.vector_store_type or os.getenv(
+        self._vector_store_type = config.get_type_value() or os.getenv(
             "VECTOR_STORE_TYPE"
         )
         self._extract_topk = int(
-            config.extract_topk or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE")
+            kg_extract_top_k or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE")
         )
         self._extract_score_threshold = float(
-            config.extract_score_threshold
+            kg_extract_score_threshold
             or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE")
         )
         self._community_topk = int(
-            config.community_topk
-            or os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE")
+            kg_community_top_k or os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_TOP_SIZE")
         )
         self._community_score_threshold = float(
-            config.community_score_threshold
+            kg_community_score_threshold
             or os.getenv("KNOWLEDGE_GRAPH_COMMUNITY_SEARCH_RECALL_SCORE")
         )
-        self._document_graph_enabled = config.document_graph_enabled or (
+        self._document_graph_enabled = kg_document_graph_enabled or (
             os.getenv("DOCUMENT_GRAPH_ENABLED", "").lower() == "true"
         )
-        self._triplet_graph_enabled = config.triplet_graph_enabled or (
+        self._triplet_graph_enabled = kg_triplet_graph_enabled or (
             os.getenv("TRIPLET_GRAPH_ENABLED", "").lower() == "true"
         )
         self._triplet_extraction_batch_size = int(
-            config.knowledge_graph_extraction_batch_size
+            kg_extraction_batch_size
             or os.getenv("KNOWLEDGE_GRAPH_EXTRACTION_BATCH_SIZE")
         )
         self._triplet_embedding_batch_size = int(
-            config.knowledge_graph_embedding_batch_size
-            or os.getenv("KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE")
+            kg_embedding_batch_size or os.getenv("KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE")
         )
         self._community_summary_batch_size = int(
-            config.community_summary_batch_size
-            or os.getenv("COMMUNITY_SUMMARY_BATCH_SIZE")
+            kg_community_summary_batch_size or os.getenv("COMMUNITY_SUMMARY_BATCH_SIZE")
         )
-
-        def extractor_configure(name: str, cfg: VectorStoreConfig):
-            cfg.name = name
-            cfg.embedding_fn = config.embedding_fn
-            cfg.max_chunks_once_load = config.max_chunks_once_load
-            cfg.max_threads = config.max_threads
-            cfg.user = config.user
-            cfg.password = config.password
-            cfg.topk = self._extract_topk
-            cfg.score_threshold = self._extract_score_threshold
+        self._embedding_fn = embedding_fn
+        self._vector_store_config = vector_store_config
 
         self._graph_extractor = GraphExtractor(
             self._llm_client,
             self._model_name,
-            VectorStoreFactory.create(
-                self._vector_store_type,
-                config.name + "_CHUNK_HISTORY",
-                extractor_configure,
+            vector_store_config.create_store(
+                name=name + "_CHUNK_HISTORY", embedding_fn=embedding_fn
             ),
+            index_name=name,
+            max_chunks_once_load=kg_max_chunks_once_load,
+            max_threads=kg_max_threads,
+            top_k=kg_extract_top_k,
+            score_threshold=kg_extract_score_threshold,
         )
 
-        self._graph_embedder = GraphEmbedder(self._config.embedding_fn)
-        self._text_embedder = TextEmbedder(self._config.embedding_fn)
+        self._graph_embedder = GraphEmbedder(embedding_fn)
+        self._text_embedder = TextEmbedder(embedding_fn)
 
-        def community_store_configure(name: str, cfg: VectorStoreConfig):
-            cfg.name = name
-            cfg.embedding_fn = config.embedding_fn
-            cfg.max_chunks_once_load = config.max_chunks_once_load
-            cfg.max_threads = config.max_threads
-            cfg.user = config.user
-            cfg.password = config.password
-            cfg.topk = self._community_topk
-            cfg.score_threshold = self._community_score_threshold
+        # def community_store_configure(name: str, cfg: VectorStoreConfig):
+        #     cfg.name = name
+        #     cfg.embedding_fn = self._embedding_fn
+        #     cfg.max_chunks_once_load = max_chunks_once_load
+        #     cfg.max_threads = max_threads
+        #     cfg.user = config.user
+        #     cfg.password = config.password
+        #     cfg.topk = self._community_topk
+        #     cfg.score_threshold = self._community_score_threshold
 
         self._community_store = CommunityStore(
             self._graph_store_adapter,
             CommunitySummarizer(self._llm_client, self._model_name),
-            VectorStoreFactory.create(
-                self._vector_store_type,
-                config.name + "_COMMUNITY_SUMMARY",
-                community_store_configure,
+            vector_store_config.create_store(
+                name=name + "_COMMUNITY_SUMMARY", embedding_fn=embedding_fn
             ),
+            index_name=name,
+            max_chunks_once_load=kg_max_chunks_once_load,
+            max_threads=kg_max_threads,
+            top_k=kg_community_top_k,
+            score_threshold=kg_extract_score_threshold,
         )
 
         self._graph_retriever = GraphRetriever(
-            config,
             self._graph_store_adapter,
+            llm_client=llm_client,
+            llm_model=llm_model,
+            triplet_graph_enabled=kg_triplet_graph_enabled,
+            document_graph_enabled=kg_document_graph_enabled,
+            extract_top_k=kg_extract_top_k,
+            kg_chunk_search_top_k=kg_chunk_search_top_k,
+            similarity_top_k=kg_similarity_top_k,
+            similarity_score_threshold=kg_similarity_score_threshold,
+            embedding_fn=embedding_fn,
+            embedding_batch_size=kg_embedding_batch_size,
+            text2gql_model_enabled=kg_text2gql_model_enabled,
+            text2gql_model_name=kg_text2gql_model_name,
         )
 
-    def get_config(self) -> BuiltinKnowledgeGraphConfig:
+    def get_config(self) -> TuGraphStoreConfig:
         """Get the knowledge graph config."""
         return self._config
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
         if not self.vector_name_exists():
-            self._graph_store_adapter.create_graph(self.get_config().name)
+            self._graph_store_adapter.create_graph(self._graph_name)
         await self._aload_document_graph(chunks)
         await self._aload_triplet_graph(chunks)
         await self._community_store.build_communities(
@@ -447,7 +399,8 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
             chunk_name=doc_name,
         )
 
-        # chunk.metadata = {"Header0": "title", "Header1": "title", ..., "source": "source_path"}  # noqa: E501
+        # chunk.metadata = {"Header0": "title",
+        # "Header1": "title", ..., "source": "source_path"}  # noqa: E501
         for chunk_index, chunk in enumerate(chunks):
             parent = None
             directory_keys = list(chunk.metadata.keys())[
@@ -542,7 +495,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         self._graph_embedder.truncate()
         logger.info("Truncate text embedder")
         self._text_embedder.truncate()
-        return [self._config.name]
+        return [self._graph_name]
 
     def delete_vector_name(self, index_name: str):
         """Delete knowledge graph."""

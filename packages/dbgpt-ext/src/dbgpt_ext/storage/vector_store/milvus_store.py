@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Optional
 
-from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -94,50 +94,81 @@ logger = logging.getLogger(__name__)
     ],
     description=_("Milvus vector config."),
 )
+@dataclass
 class MilvusVectorConfig(VectorStoreConfig):
     """Milvus vector store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "milvus"
 
-    uri: Optional[str] = Field(
+    uri: str = field(
         default=None,
-        description="The uri of milvus store, if not set, will use the default uri.",
+        metadata={
+            "help": _("The uri of milvus store, if not set, will use the default uri.")
+        },
     )
-    port: str = Field(
+    port: str = field(
         default="19530",
-        description="The port of milvus store, if not set, will use the default port.",
+        metadata={
+            "help": _(
+                "The port of milvus store, if not set, will use the default port."
+            )
+        },
     )
 
-    alias: str = Field(
+    alias: str = field(
         default="default",
-        description="The alias of milvus store, if not set, will use the default "
-        "alias.",
+        metadata={
+            "help": _(
+                "The alias of milvus store, if not set, will use the default alias."
+            )
+        },
     )
-    primary_field: str = Field(
+    primary_field: str = field(
         default="pk_id",
-        description="The primary field of milvus store, if not set, will use the "
-        "default primary field.",
+        metadata={
+            "help": _(
+                "The primary field of milvus store, i"
+                "f not set, will use the default primary field."
+            )
+        },
     )
-    text_field: str = Field(
+    text_field: str = field(
         default="content",
-        description="The text field of milvus store, if not set, will use the default "
-        "text field.",
+        metadata={
+            "help": _(
+                "The text field of milvus store, if not set, will use the "
+                "default text field."
+            )
+        },
     )
-    embedding_field: str = Field(
+    embedding_field: str = field(
         default="vector",
-        description="The embedding field of milvus store, if not set, will use the "
-        "default embedding field.",
+        metadata={
+            "help": _(
+                "The embedding field of milvus store, if not set, will use the "
+                "default embedding field."
+            )
+        },
     )
-    metadata_field: str = Field(
+    metadata_field: str = field(
         default="metadata",
-        description="The metadata field of milvus store, if not set, will use the "
-        "default metadata field.",
+        metadata={
+            "help": _(
+                "The metadata field of milvus store, if not set, will use the "
+                "default metadata field."
+            )
+        },
     )
-    secure: str = Field(
+    secure: str = field(
         default="",
-        description="The secure of milvus store, if not set, will use the default "
-        "secure.",
+        metadata={
+            "help": _("The secure of milvus store, if not set, will use the default ")
+        },
     )
+
+    def create_store(self, **kwargs) -> "MilvusStore":
+        """Create Milvus Store."""
+        return MilvusStore(vector_store_config=self, **kwargs)
 
 
 @register_resource(
@@ -159,7 +190,12 @@ class MilvusVectorConfig(VectorStoreConfig):
 class MilvusStore(VectorStoreBase):
     """Milvus vector store."""
 
-    def __init__(self, vector_store_config: MilvusVectorConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: MilvusVectorConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+    ) -> None:
         """Create a MilvusStore instance.
 
         Args:
@@ -190,18 +226,16 @@ class MilvusStore(VectorStoreBase):
         )
         self.secure = milvus_vector_config.get("secure") or os.getenv("MILVUS_SECURE")
 
-        self.collection_name = (
-            milvus_vector_config.get("name") or vector_store_config.name
-        )
+        self.collection_name = name
         if string_utils.contains_chinese(self.collection_name):
             bytes_str = self.collection_name.encode("utf-8")
             hex_str = bytes_str.hex()
             self.collection_name = hex_str
-        if vector_store_config.embedding_fn is None:
+        if embedding_fn is None:
             # Perform runtime checks on self.embedding to
             # ensure it has been correctly set and loaded
             raise ValueError("embedding_fn is required for MilvusStore")
-        self.embedding: Embeddings = vector_store_config.embedding_fn
+        self.embedding: Embeddings = embedding_fn
         self.fields: List = []
         self.alias = milvus_vector_config.get("alias") or "default"
 

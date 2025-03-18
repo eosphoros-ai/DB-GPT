@@ -109,6 +109,10 @@ const sidebars = {
                 },
                 {
                   type: "doc",
+                  id: "installation/integrations/bm25_rag_install"
+                },
+                {
+                  type: "doc",
                   id: "installation/integrations/milvus_rag_install"
                 }
               ]

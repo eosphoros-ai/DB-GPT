@@ -26,4 +26,5 @@ export const FlowZn = {
   Template_Name: '模版名称',
   Template_Label: '标签',
   Template_Action: '操作',
+  minimum_dynamic_fields_warning: '请保留一个以上的动态字段',
 };

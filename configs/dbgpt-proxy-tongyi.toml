@@ -1,0 +1,33 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-en}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+[rag.storage]
+[rag.storage.vector]
+type = "chroma"
+persist_path = "pilot/data"
+
+# Model Configurations
+[models]
+[[models.llms]]
+name = "qwen-plus"
+provider = "${env:LLM_MODEL_PROVIDER:proxy/tongyi}"
+api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+api_key = "${env:DASHSCOPE_API_KEY}"
+
+[[models.embeddings]]
+name = "text-embedding-v3"
+provider = "${env:EMBEDDING_MODEL_PROVIDER:proxy/tongyi}"
+api_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings"
+api_key = "${env:DASHSCOPE_API_KEY}"

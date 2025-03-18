@@ -12,10 +12,8 @@ from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
-from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
 from dbgpt_app.knowledge.request.request import (
@@ -36,7 +34,6 @@ from dbgpt_app.knowledge.request.response import (
 from dbgpt_ext.rag.assembler.summary import SummaryAssembler
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt_ext.rag.knowledge.factory import KnowledgeFactory
-from dbgpt_serve.rag.connector import VectorStoreConnector
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkDao, DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import (
     KnowledgeDocumentDao,
@@ -45,6 +42,7 @@ from dbgpt_serve.rag.models.document_db import (
 from dbgpt_serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 from dbgpt_serve.rag.service.service import SyncStatus
+from dbgpt_serve.rag.storage_manager import StorageManager
 
 knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()
@@ -82,6 +80,14 @@ class KnowledgeService:
         rag_config = CFG.SYSTEM_APP.config.configs.get("app_config").rag
         return rag_config
 
+    @property
+    def storage_manager(self):
+        return StorageManager.get_instance(CFG.SYSTEM_APP)
+
+    @property
+    def system_app(self):
+        return CFG.SYSTEM_APP
+
     def create_knowledge_space(self, request: KnowledgeSpaceRequest):
         """create knowledge space
         Args:
@@ -91,7 +97,7 @@ class KnowledgeService:
             name=request.name,
         )
         if request.vector_type == "VectorStore":
-            request.vector_type = self.rag_config.storage.vector.get("type")
+            request.vector_type = self.rag_config.storage.vector.get_type_value()
         if request.vector_type == "KnowledgeGraph":
             knowledge_space_name_pattern = r"^[a-zA-Z0-9\u4e00-\u9fa5]+$"
             if not re.match(knowledge_space_name_pattern, request.name):
@@ -341,7 +347,7 @@ class KnowledgeService:
                     top_k = max(int(CFG.RERANK_TOP_K), 20)
 
             knowledge_space_retriever = KnowledgeSpaceRetriever(
-                space_id=space.id, top_k=top_k
+                space_id=space.id, top_k=top_k, system_app=CFG.SYSTEM_APP
             )
             chunks = await knowledge_space_retriever.aretrieve_with_scores(
                 question, score_threshold
@@ -412,28 +418,15 @@ class KnowledgeService:
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")
         space = spaces[0]
-
-        embedding_factory = CFG.SYSTEM_APP.get_component(
-            "embedding_factory", EmbeddingFactory
-        )
-        embedding_fn = embedding_factory.create()
-        config = VectorStoreConfig(
-            name=space.name,
-            embedding_fn=embedding_fn,
-            llm_client=self.llm_client,
-            model_name=None,
-        )
         if space.domain_type == DOMAIN_TYPE_FINANCIAL_REPORT:
             conn_manager = CFG.local_db_manager
             conn_manager.delete_db(f"{space.name}_fin_report")
 
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=CFG.SYSTEM_APP,
+        storage_connector = self.storage_manager.get_storage_connector(
+            index_name=space_name, storage_type=space.vector_type
         )
         # delete vectors
-        vector_store_connector.delete_vector_name(space.name)
+        storage_connector.delete_vector_name(space.name)
         document_query = KnowledgeDocumentEntity(space=space.name)
         # delete chunks
         documents = knowledge_document_dao.get_documents(document_query)
@@ -462,23 +455,11 @@ class KnowledgeService:
 
         vector_ids = documents[0].vector_ids
         if vector_ids is not None:
-            embedding_factory = CFG.SYSTEM_APP.get_component(
-                "embedding_factory", EmbeddingFactory
-            )
-            embedding_fn = embedding_factory.create()
-            config = VectorStoreConfig(
-                name=space.name,
-                embedding_fn=embedding_fn,
-                llm_client=self.llm_client,
-                model_name=None,
-            )
-            vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type,
-                vector_store_config=config,
-                system_app=CFG.SYSTEM_APP,
+            storage_connector = self.storage_manager.get_storage_connector(
+                index_name=space_name, storage_type=space.vector_type
             )
             # delete vector by ids
-            vector_store_connector.delete_by_ids(vector_ids)
+            storage_connector.delete_by_ids(vector_ids)
         # delete chunks
         document_chunk_dao.raw_delete(documents[0].id)
         # delete document
@@ -605,15 +586,16 @@ class KnowledgeService:
         Returns:
              chat: BaseChat, refine summary chat.
         """
-        from dbgpt_app.scene import ChatScene
+        from dbgpt_app.scene import ChatParam, ChatScene
 
-        chat_param = {
-            "chat_session_id": conn_uid,
-            "current_user_input": "",
-            "select_param": doc,
-            "model_name": model_name,
-            "model_cache_enable": False,
-        }
+        chat_param = ChatParam(
+            chat_session_id=conn_uid,
+            current_user_input="",
+            select_param=doc,
+            model_name=model_name,
+            model_cache_enable=False,
+            chat_mode=ChatScene.ExtractRefineSummary,
+        )
         executor = CFG.SYSTEM_APP.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
@@ -623,34 +605,18 @@ class KnowledgeService:
             executor,
             CHAT_FACTORY.get_implementation,
             ChatScene.ExtractRefineSummary.value(),
+            CFG.SYSTEM_APP,
             **{"chat_param": chat_param},
         )
         return chat
 
     def query_graph(self, space_name, limit):
-        embedding_factory = CFG.SYSTEM_APP.get_component(
-            "embedding_factory", EmbeddingFactory
-        )
-        embedding_fn = embedding_factory.create()
         spaces = self.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
         if len(spaces) != 1:
             raise Exception(f"invalid space name:{space_name}")
-        space = spaces[0]
-        print(CFG.LLM_MODEL)
-        config = VectorStoreConfig(
-            name=space.name,
-            embedding_fn=embedding_fn,
-            max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
-            llm_client=self.llm_client,
-            model_name=None,
-        )
-
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=CFG.SYSTEM_APP,
-        )
-        graph = vector_store_connector.client.query_graph(limit=limit)
+        # space = spaces[0]
+        graph_store = self.storage_manager.create_kg_store(index_name=space_name)
+        graph = graph_store.query_graph(limit=limit)
         res = {"nodes": [], "edges": []}
         for node in graph.vertices():
             res["nodes"].append(

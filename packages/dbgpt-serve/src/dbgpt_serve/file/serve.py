@@ -88,6 +88,7 @@ class Serve(BaseServe):
             FileMetadataAdapter(),
             serializer,
         )
+        default_backend = self._serve_config.default_backend
         simple_distributed_storage = SimpleDistributedStorage(
             node_address=self._serve_config.get_node_address(),
             local_storage_path=self._serve_config.get_local_storage_path(),
@@ -98,6 +99,15 @@ class Serve(BaseServe):
         storage_backends = {
             simple_distributed_storage.storage_type: simple_distributed_storage,
         }
+        for backend_config in self._serve_config.backends:
+            storage_backend = backend_config.create_storage()
+            storage_backends[storage_backend.storage_type] = storage_backend
+            if not default_backend:
+                # First backend is the default backend
+                default_backend = storage_backend.storage_type
+        if not default_backend:
+            default_backend = simple_distributed_storage.storage_type
+
         fs = FileStorageSystem(
             storage_backends,
             metadata_storage=storage,
@@ -107,6 +117,7 @@ class Serve(BaseServe):
             system_app=self._system_app,
             storage_system=fs,
             save_chunk_size=self._serve_config.save_chunk_size,
+            default_storage_type=default_backend,
         )
         self._system_app.register_instance(self._file_storage_client)
 

@@ -149,14 +149,51 @@
         },
         {
             "type": "resource",
-            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
-            "type_name": "OpenAILLMClient",
-            "name": "openai_llm_client",
-            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_cls": "dbgpt.model.proxy.llms.siliconflow.SiliconFlowDeployModelParameters",
+            "type_name": "SiliconFlowDeployModelParameters",
+            "name": "SiliconFlowDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.siliconflow.SiliconFlowDeployModelParameters",
             "category": "llm_client",
             "parameters": [
-                "apk_key",
-                "api_base"
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAICompatibleDeployModelParameters",
+            "type_name": "OpenAICompatibleDeployModelParameters",
+            "name": "OpenAICompatibleDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAICompatibleDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
             ],
             "outputs": [],
             "inputs": [],
@@ -170,7 +207,7 @@
             "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
             "category": "llm_client",
             "parameters": [
-                "apk_key",
+                "api_key",
                 "api_base"
             ],
             "outputs": [],
@@ -179,13 +216,124 @@
         },
         {
             "type": "resource",
-            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
-            "type_name": "OpenAILLMClient",
-            "name": "openai_llm_client",
-            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_cls": "dbgpt.model.proxy.llms.zhipu.ZhipuDeployModelParameters",
+            "type_name": "ZhipuDeployModelParameters",
+            "name": "ZhipuDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.zhipu.ZhipuDeployModelParameters",
             "category": "llm_client",
             "parameters": [
-                "apk_key",
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.moonshot.MoonshotDeployModelParameters",
+            "type_name": "MoonshotDeployModelParameters",
+            "name": "MoonshotDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.moonshot.MoonshotDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.gitee.GiteeDeployModelParameters",
+            "type_name": "GiteeDeployModelParameters",
+            "name": "GiteeDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.gitee.GiteeDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.deepseek.DeepSeekDeployModelParameters",
+            "type_name": "DeepSeekDeployModelParameters",
+            "name": "DeepSeekDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.deepseek.DeepSeekDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.ollama.OllamaDeployModelParameters",
+            "type_name": "OllamaDeployModelParameters",
+            "name": "OllamaDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.ollama.OllamaDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
                 "api_base"
             ],
             "outputs": [],
@@ -194,14 +342,25 @@
         },
         {
             "type": "resource",
-            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
-            "type_name": "OpenAILLMClient",
-            "name": "openai_llm_client",
-            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_cls": "dbgpt.model.proxy.llms.yi.YiDeployModelParameters",
+            "type_name": "YiDeployModelParameters",
+            "name": "YiDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.yi.YiDeployModelParameters",
             "category": "llm_client",
             "parameters": [
-                "apk_key",
-                "api_base"
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
             ],
             "outputs": [],
             "inputs": [],
@@ -209,14 +368,25 @@
         },
         {
             "type": "resource",
-            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
-            "type_name": "OpenAILLMClient",
-            "name": "openai_llm_client",
-            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_cls": "dbgpt.model.proxy.llms.spark.SparkDeployModelParameters",
+            "type_name": "SparkDeployModelParameters",
+            "name": "SparkDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.spark.SparkDeployModelParameters",
             "category": "llm_client",
             "parameters": [
-                "apk_key",
-                "api_base"
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
             ],
             "outputs": [],
             "inputs": [],
@@ -224,14 +394,25 @@
         },
         {
             "type": "resource",
-            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
-            "type_name": "OpenAILLMClient",
-            "name": "openai_llm_client",
-            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_cls": "dbgpt.model.proxy.llms.baichuan.BaichuanDeployModelParameters",
+            "type_name": "BaichuanDeployModelParameters",
+            "name": "BaichuanDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.baichuan.BaichuanDeployModelParameters",
             "category": "llm_client",
             "parameters": [
-                "apk_key",
-                "api_base"
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
             ],
             "outputs": [],
             "inputs": [],
@@ -239,14 +420,126 @@
         },
         {
             "type": "resource",
-            "type_cls": "dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
-            "type_name": "OpenAILLMClient",
-            "name": "openai_llm_client",
-            "id": "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+            "type_cls": "dbgpt.model.proxy.llms.gemini.GeminiDeployModelParameters",
+            "type_name": "GeminiDeployModelParameters",
+            "name": "GeminiDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.gemini.GeminiDeployModelParameters",
             "category": "llm_client",
             "parameters": [
-                "apk_key",
-                "api_base"
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.tongyi.TongyiDeployModelParameters",
+            "type_name": "TongyiDeployModelParameters",
+            "name": "TongyiDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.tongyi.TongyiDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.volcengine.VolcengineDeployModelParameters",
+            "type_name": "VolcengineDeployModelParameters",
+            "name": "VolcengineDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.volcengine.VolcengineDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.wenxin.WenxinDeployModelParameters",
+            "type_name": "WenxinDeployModelParameters",
+            "name": "WenxinDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.wenxin.WenxinDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_key",
+                "api_secret"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt.model.proxy.llms.claude.ClaudeDeployModelParameters",
+            "type_name": "ClaudeDeployModelParameters",
+            "name": "ClaudeDeployModelParameters",
+            "id": "resource_dbgpt.model.proxy.llms.claude.ClaudeDeployModelParameters",
+            "category": "llm_client",
+            "parameters": [
+                "name",
+                "backend",
+                "provider",
+                "verbose",
+                "concurrency",
+                "prompt_template",
+                "context_length",
+                "reasoning_model",
+                "api_base",
+                "api_key",
+                "api_type",
+                "api_version",
+                "http_proxy"
             ],
             "outputs": [],
             "inputs": [],
@@ -483,20 +776,6 @@
             "type_name": "PageTextSplitter",
             "name": "page_text_splitter",
             "id": "resource_dbgpt.rag.text_splitter.text_splitter.PageTextSplitter",
-            "category": "rag",
-            "parameters": [
-                "separator"
-            ],
-            "outputs": [],
-            "inputs": [],
-            "version": "v1"
-        },
-        {
-            "type": "resource",
-            "type_cls": "dbgpt.rag.text_splitter.text_splitter.CharacterTextSplitter",
-            "type_name": "CharacterTextSplitter",
-            "name": "character_text_splitter",
-            "id": "resource_dbgpt.rag.text_splitter.text_splitter.CharacterTextSplitter",
             "category": "rag",
             "parameters": [
                 "separator"
@@ -1658,6 +1937,7 @@
                 "port",
                 "user",
                 "database",
+                "engine",
                 "password",
                 "http_pool_maxsize",
                 "http_pool_num_pools",
@@ -1703,29 +1983,6 @@
             "parameters": [
                 "path",
                 "driver"
-            ],
-            "outputs": [],
-            "inputs": [],
-            "version": "v1"
-        },
-        {
-            "type": "resource",
-            "type_cls": "dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchVectorConfig",
-            "type_name": "ElasticsearchVectorConfig",
-            "name": "elasticsearch_vector_config",
-            "id": "resource_dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchVectorConfig",
-            "category": "vector_store",
-            "parameters": [
-                "name",
-                "user",
-                "password",
-                "embedding_fn",
-                "max_chunks_once_load",
-                "max_threads",
-                "uri",
-                "port",
-                "alias",
-                "index_name"
             ],
             "outputs": [],
             "inputs": [],
@@ -2015,6 +2272,89 @@
             "version": "v1"
         },
         {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.dbgpts.my.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.dbgpts.my.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.dbgpts.hub.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.dbgpts.hub.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.model.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.model.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys",
+                "model_storage"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.evaluate.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.evaluate.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys",
+                "embedding_model",
+                "similarity_top_k"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.rag.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.rag.config.ServeConfig",
+            "category": "rag",
+            "parameters": [
+                "api_keys",
+                "embedding_model",
+                "rerank_model",
+                "chunk_size",
+                "chunk_overlap",
+                "similarity_top_k",
+                "similarity_score_threshold",
+                "query_rewrite",
+                "max_chunks_once_load",
+                "max_threads",
+                "rerank_top_k"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
             "type": "operator",
             "type_cls": "dbgpt_serve.rag.operators.knowledge_space.KnowledgeSpacePromptBuilderOperator",
             "type_name": "KnowledgeSpacePromptBuilderOperator",
@@ -2055,6 +2395,86 @@
             "version": "v1"
         },
         {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.datasource.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.datasource.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.flow.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.flow.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys",
+                "load_dbgpts_interval",
+                "encrypt_key"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.file.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.file.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys",
+                "check_hash",
+                "host",
+                "port",
+                "download_chunk_size",
+                "save_chunk_size",
+                "transfer_chunk_size",
+                "transfer_timeout",
+                "local_storage_path"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.feedback.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.feedback.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.libro.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.libro.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
             "type": "operator",
             "type_cls": "dbgpt_serve.conversation.operators.DefaultServePreChatHistoryLoadOperator",
             "type_name": "DefaultServePreChatHistoryLoadOperator",
@@ -2087,6 +2507,37 @@
             "inputs": [
                 "input_value"
             ],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.conversation.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.conversation.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys",
+                "default_model"
+            ],
+            "outputs": [],
+            "inputs": [],
+            "version": "v1"
+        },
+        {
+            "type": "resource",
+            "type_cls": "dbgpt_serve.prompt.config.ServeConfig",
+            "type_name": "ServeConfig",
+            "name": "ServeConfig",
+            "id": "resource_dbgpt_serve.prompt.config.ServeConfig",
+            "category": "common",
+            "parameters": [
+                "api_keys",
+                "default_user",
+                "default_sys_code"
+            ],
+            "outputs": [],
+            "inputs": [],
             "version": "v1"
         },
         {

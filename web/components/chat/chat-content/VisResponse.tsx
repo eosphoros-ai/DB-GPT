@@ -7,10 +7,8 @@ import { githubLightTheme } from '@uiw/react-json-view/githubLight';
 import { Alert, Spin } from 'antd';
 import classNames from 'classnames';
 import React, { useContext, useMemo } from 'react';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 
-import markdownComponents from './config';
+import markdownComponents, { markdownPlugins } from './config';
 
 interface VisResponseProps {
   name: string;
@@ -64,7 +62,7 @@ const VisResponse: React.FC<{ data: VisResponseProps }> = ({ data }) => {
         />
       )}
       {data.err_msg && (
-        <GPTVis components={markdownComponents} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+        <GPTVis components={markdownComponents} {...markdownPlugins}>
           {data.err_msg}
         </GPTVis>
       )}

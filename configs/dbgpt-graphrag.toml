@@ -26,11 +26,11 @@ rerank_top_k=3
 
 [rag.storage]
 [rag.storage.vector]
-type = "Chroma"
+type = "chroma"
 persist_path = "pilot/data"
 
 [rag.storage.graph]
-type = "TuGraph"
+type = "tugraph"
 host="127.0.0.1"
 port=7687
 username="admin"

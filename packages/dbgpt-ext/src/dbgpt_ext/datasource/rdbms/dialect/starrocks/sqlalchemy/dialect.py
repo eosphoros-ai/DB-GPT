@@ -20,7 +20,7 @@ from sqlalchemy import exc, log, text
 from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 from sqlalchemy.engine import Connection
 
-from dbgpt.datasource.rdbms.dialect.starrocks.sqlalchemy import datatype
+from dbgpt_ext.datasource.rdbms.dialect.starrocks.sqlalchemy import datatype
 
 logger = logging.getLogger(__name__)
 

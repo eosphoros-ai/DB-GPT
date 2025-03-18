@@ -17,7 +17,6 @@ PROMPT_SCENE_DEFINE = (
     PROMPT_SCENE_DEFINE_ZH if CFG.LANGUAGE == "zh" else PROMPT_SCENE_DEFINE_EN
 )
 
-PROMPT_NEED_STREAM_OUT = True
 
 prompt = ChatPromptTemplate(
     messages=[
@@ -30,9 +29,8 @@ prompt = ChatPromptTemplate(
 prompt_adapter = AppScenePromptTemplateAdapter(
     prompt=prompt,
     template_scene=ChatScene.ChatNormal.value(),
-    stream_out=PROMPT_NEED_STREAM_OUT,
-    output_parser=NormalChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
-    need_historical_messages=True,
+    stream_out=True,
+    output_parser=NormalChatOutputParser(),
 )
 
 CFG.prompt_template_registry.register(

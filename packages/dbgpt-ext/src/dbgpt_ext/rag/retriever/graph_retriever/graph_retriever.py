@@ -2,8 +2,9 @@
 
 import logging
 import os
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
+from dbgpt.core import Embeddings, LLMClient
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.rag.transformer.simple_intent_translator import SimpleIntentTranslator
 from dbgpt.storage.graph_store.graph import Graph, MemoryGraph
@@ -33,79 +34,86 @@ class GraphRetriever(GraphRetrieverBase):
 
     def __init__(
         self,
-        config,
         graph_store_adapter,
+        llm_client: Optional[LLMClient] = None,
+        llm_model: Optional[str] = None,
+        triplet_graph_enabled: Optional[bool] = True,
+        document_graph_enabled: Optional[bool] = True,
+        extract_top_k: Optional[int] = 5,
+        kg_chunk_search_top_k: Optional[int] = 5,
+        similarity_top_k: Optional[int] = 5,
+        similarity_score_threshold: Optional[float] = 0.7,
+        embedding_fn: Optional[Embeddings] = None,
+        embedding_batch_size: Optional[int] = 20,
+        enable_text_search: Optional[bool] = False,
+        text2gql_model_enabled: Optional[bool] = False,
+        text2gql_model_name: Optional[str] = None,
     ):
         """Initialize Graph Retriever."""
-        self._triplet_graph_enabled = config.triplet_graph_enabled or (
+        self._triplet_graph_enabled = triplet_graph_enabled or (
             os.getenv("TRIPLET_GRAPH_ENABLED", "").lower() == "true"
         )
-        self._document_graph_enabled = config.document_graph_enabled or (
+        self._document_graph_enabled = document_graph_enabled or (
             os.getenv("DOCUMENT_GRAPH_ENABLED", "").lower() == "true"
         )
         triplet_topk = int(
-            config.extract_topk or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE")
+            extract_top_k or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_TOP_SIZE")
         )
         document_topk = int(
-            config.knowledge_graph_chunk_search_top_size
-            or os.getenv("KNOWLEDGE_GRAPH_CHUNK_SEARCH_TOP_SIZE")
+            kg_chunk_search_top_k or os.getenv("KNOWLEDGE_GRAPH_CHUNK_SEARCH_TOP_SIZE")
         )
-        llm_client = config.llm_client
-        model_name = config.model_name
+        llm_client = llm_client
+        model_name = llm_model
         self._enable_similarity_search = (
             graph_store_adapter.graph_store.enable_similarity_search
         )
         self._embedding_batch_size = int(
-            config.knowledge_graph_embedding_batch_size
-            or os.getenv("KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE")
+            embedding_batch_size or os.getenv("KNOWLEDGE_GRAPH_EMBEDDING_BATCH_SIZE")
         )
         similarity_search_topk = int(
-            config.similarity_search_topk
-            or os.getenv("KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE")
+            similarity_top_k or os.getenv("KNOWLEDGE_GRAPH_SIMILARITY_SEARCH_TOP_SIZE")
         )
         similarity_search_score_threshold = float(
-            config.extract_score_threshold
+            similarity_score_threshold
             or os.getenv("KNOWLEDGE_GRAPH_EXTRACT_SEARCH_RECALL_SCORE")
         )
-        self._enable_text_search = config.enable_text_search or (
+        self._enable_text_search = enable_text_search or (
             os.getenv("TEXT_SEARCH_ENABLED", "").lower() == "true"
         )
-        text2gql_model_enabled = config.text2gql_model_enabled or (
+        text2gql_model_enabled = text2gql_model_enabled or (
             os.getenv("TEXT2GQL_MODEL_ENABLED", "").lower() == "true"
         )
-        text2gql_model_name = config.text2gql_model_name or os.getenv(
-            "TEXT2GQL_MODEL_NAME"
+        text2gql_model_name = text2gql_model_name or os.getenv("TEXT2GQL_MODEL_NAME")
+        text2gql_model_enabled = (
+            os.environ["TEXT2GQL_MODEL_ENABLED"].lower() == "true"
+            if "TEXT2GQL_MODEL_ENABLED" in os.environ
+            else text2gql_model_enabled
+        )
+        text2gql_model_name = os.getenv(
+            "TEXT2GQL_MODEL_NAME",
+            text2gql_model_name,
         )
         text2gql_model_enabled = (
             os.environ["TEXT2GQL_MODEL_ENABLED"].lower() == "true"
             if "TEXT2GQL_MODEL_ENABLED" in os.environ
-            else config.text2gql_model_enabled
+            else text2gql_model_enabled
         )
         text2gql_model_name = os.getenv(
             "TEXT2GQL_MODEL_NAME",
-            config.text2gql_model_name,
+            text2gql_model_name,
         )
         text2gql_model_enabled = (
             os.environ["TEXT2GQL_MODEL_ENABLED"].lower() == "true"
             if "TEXT2GQL_MODEL_ENABLED" in os.environ
-            else config.text2gql_model_enabled
+            else text2gql_model_enabled
         )
         text2gql_model_name = os.getenv(
             "TEXT2GQL_MODEL_NAME",
-            config.text2gql_model_name,
-        )
-        text2gql_model_enabled = (
-            os.environ["TEXT2GQL_MODEL_ENABLED"].lower() == "true"
-            if "TEXT2GQL_MODEL_ENABLED" in os.environ
-            else config.text2gql_model_enabled
-        )
-        text2gql_model_name = os.getenv(
-            "TEXT2GQL_MODEL_NAME",
-            config.text2gql_model_name,
+            text2gql_model_name,
         )
 
         self._keyword_extractor = KeywordExtractor(llm_client, model_name)
-        self._text_embedder = TextEmbedder(config.embedding_fn)
+        self._text_embedder = TextEmbedder(embedding_fn)
 
         intent_interpreter = SimpleIntentTranslator(llm_client, model_name)
         if text2gql_model_enabled:

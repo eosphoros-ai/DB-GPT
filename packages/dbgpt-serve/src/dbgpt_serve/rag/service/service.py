@@ -2,8 +2,6 @@ import asyncio
 import json
 import logging
 import os
-import shutil
-import tempfile
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional, cast
@@ -13,18 +11,17 @@ from fastapi import HTTPException
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
 from dbgpt.configs.model_config import (
-    KNOWLEDGE_UPLOAD_ROOT_PATH,
+    KNOWLEDGE_CACHE_ROOT_PATH,
 )
 from dbgpt.core import Chunk, LLMClient
+from dbgpt.core.interface.file import _SCHEMA, FileStorageClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeType
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
-from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.pagination_utils import PaginationResult
 from dbgpt.util.string_utils import remove_trailing_punctuation
 from dbgpt.util.tracer import root_tracer, trace
@@ -32,8 +29,7 @@ from dbgpt_app.knowledge.request.request import BusinessFieldType
 from dbgpt_ext.rag.assembler import EmbeddingAssembler
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
 from dbgpt_ext.rag.knowledge import KnowledgeFactory
-from dbgpt_serve.core import BaseService
-from dbgpt_serve.rag.connector import VectorStoreConnector
+from dbgpt_serve.core import BaseService, blocking_func_to_async
 
 from ..api.schemas import (
     ChunkServeRequest,
@@ -52,6 +48,7 @@ from ..models.document_db import (
 )
 from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from ..retriever.knowledge_space import KnowledgeSpaceRetriever
+from ..storage_manager import StorageManager
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +94,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._system_app = system_app
 
     @property
+    def storage_manager(self):
+        return StorageManager.get_instance(self._system_app)
+
+    @property
     def dao(
         self,
     ) -> BaseDao[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeResponse]:
@@ -114,6 +115,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         return DefaultLLMClient(worker_manager, True)
+
+    def get_fs(self) -> FileStorageClient:
+        """Get the FileStorageClient instance"""
+        return FileStorageClient.get_instance(self.system_app)
 
     def create_space(self, request: SpaceServeRequest) -> SpaceServeResponse:
         """Create a new Space entity
@@ -153,7 +158,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         update_obj = self._dao.update_knowledge_space(self._dao.from_request(request))
         return update_obj
 
-    async def create_document(self, request: DocumentServeRequest) -> str:
+    def create_document(self, request: DocumentServeRequest) -> str:
         """Create a new document entity
 
         Args:
@@ -171,20 +176,20 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             raise Exception(f"document name:{request.doc_name} have already named")
         if request.doc_file and request.doc_type == KnowledgeType.DOCUMENT.name:
             doc_file = request.doc_file
-            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space.name)):
-                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space.name))
-            tmp_fd, tmp_path = tempfile.mkstemp(
-                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space.name)
+            safe_filename = os.path.basename(doc_file.filename)
+            custom_metadata = {
+                "space_name": space.name,
+                "doc_name": doc_file.filename,
+                "doc_type": request.doc_type,
+            }
+            bucket = "dbgpt_knowledge_file"
+            file_uri = self.get_fs().save_file(
+                bucket,
+                safe_filename,
+                doc_file.file,
+                custom_metadata=custom_metadata,
             )
-            with os.fdopen(tmp_fd, "wb") as tmp:
-                tmp.write(await request.doc_file.read())
-            shutil.move(
-                tmp_path,
-                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space.name, doc_file.filename),
-            )
-            request.content = os.path.join(
-                KNOWLEDGE_UPLOAD_ROOT_PATH, space.name, doc_file.filename
-            )
+            request.content = file_uri
         document = KnowledgeDocumentEntity(
             doc_name=request.doc_name,
             doc_type=request.doc_type,
@@ -286,14 +291,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         space = self.get(query_request)
         if space is None:
             raise HTTPException(status_code=400, detail=f"Space {space_id} not found")
-        config = VectorStoreConfig(
-            name=space.name, llm_client=self.llm_client, model_name=None
-        )
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=self._system_app,
-        )
+        vector_store_connector = self.create_vector_store(space.name)
         # delete vectors
         vector_store_connector.delete_vector_name(space.name)
         document_query = KnowledgeDocumentEntity(space=space.name)
@@ -360,14 +358,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
 
         vector_ids = docuemnt.vector_ids
         if vector_ids is not None:
-            config = VectorStoreConfig(
-                name=space.name, llm_client=self.llm_client, model_name=None
-            )
-            vector_store_connector = VectorStoreConnector(
-                vector_store_type=space.vector_type,
-                vector_store_config=config,
-                system_app=self._system_app,
-            )
+            vector_store_connector = self.create_vector_store(space.name)
             # delete vector by ids
             vector_store_connector.delete_by_ids(vector_ids)
         # delete chunks
@@ -498,50 +489,64 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         chunk_parameters: ChunkParameters,
     ) -> None:
         """sync knowledge document chunk into vector store"""
-        embedding_factory = self._system_app.get_component(
-            "embedding_factory", EmbeddingFactory
-        )
-        embedding_fn = embedding_factory.create()
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
-
         space = self.get({"id": space_id})
-        config = VectorStoreConfig(
-            name=space.name,
-            embedding_fn=embedding_fn,
-            max_chunks_once_load=self._serve_config.max_chunks_once_load,
-            max_threads=self._serve_config.max_threads,
-            llm_client=self.llm_client,
-            model_name=None,
+        storage_connector = self.storage_manager.get_storage_connector(
+            space.name, space.vector_type
         )
-        vector_store_connector = VectorStoreConnector(
-            vector_store_type=space.vector_type,
-            vector_store_config=config,
-            system_app=self._system_app,
-        )
+        knowledge_content = doc.content
+        if (
+            doc.doc_type == KnowledgeType.DOCUMENT.value
+            and knowledge_content.startswith(_SCHEMA)
+        ):
+            logger.info(
+                f"Download file from file storage, doc: {doc.doc_name}, file url: "
+                f"{doc.content}"
+            )
+            local_file_path, file_meta = await blocking_func_to_async(
+                self.system_app,
+                self.get_fs().download_file,
+                knowledge_content,
+                dest_dir=KNOWLEDGE_CACHE_ROOT_PATH,
+            )
+            logger.info(f"Downloaded file to {local_file_path}")
+            knowledge_content = local_file_path
         knowledge = None
         if not space.domain_type or (
             space.domain_type.lower() == BusinessFieldType.NORMAL.value.lower()
         ):
             knowledge = KnowledgeFactory.create(
-                datasource=doc.content,
+                datasource=knowledge_content,
                 knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
             )
         doc.status = SyncStatus.RUNNING.name
 
         doc.gmt_modified = datetime.now()
-        self._document_dao.update_knowledge_document(doc)
+        await blocking_func_to_async(
+            self.system_app, self._document_dao.update_knowledge_document, doc
+        )
         asyncio.create_task(
-            self.async_doc_embedding(
-                knowledge, chunk_parameters, vector_store_connector, doc, space
+            self.async_doc_process(
+                knowledge,
+                chunk_parameters,
+                storage_connector,
+                doc,
+                space,
+                knowledge_content,
             )
         )
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
 
-    @trace("async_doc_embedding")
-    async def async_doc_embedding(
-        self, knowledge, chunk_parameters, vector_store_connector, doc, space
+    @trace("async_doc_process")
+    async def async_doc_process(
+        self,
+        knowledge,
+        chunk_parameters,
+        storage_connector,
+        doc,
+        space,
+        knowledge_content: str,
     ):
-        """async document embedding into vector db
+        """async document process into storage
         Args:
             - knowledge: Knowledge
             - chunk_parameters: ChunkParameters
@@ -567,18 +572,16 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                         f" and value: {space.domain_type}, dag: {dags[0]}"
                     )
                     db_name, chunk_docs = await end_task.call(
-                        {"file_path": doc.content, "space": doc.space}
+                        {"file_path": knowledge_content, "space": doc.space}
                     )
                     doc.chunk_size = len(chunk_docs)
                     vector_ids = [chunk.chunk_id for chunk in chunk_docs]
                 else:
-                    max_chunks_once_load = (
-                        vector_store_connector._index_store_config.max_chunks_once_load
-                    )
-                    max_threads = vector_store_connector._index_store_config.max_threads
+                    max_chunks_once_load = self.config.max_chunks_once_load
+                    max_threads = self.config.max_threads
                     assembler = await EmbeddingAssembler.aload_from_knowledge(
                         knowledge=knowledge,
-                        index_store=vector_store_connector.index_client,
+                        index_store=storage_connector,
                         chunk_parameters=chunk_parameters,
                     )
 

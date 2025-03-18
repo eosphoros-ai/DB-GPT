@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class VisDashboard(Vis):
     """Dashboard Vis Protocol."""
 
-    async def generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
+    def sync_generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
         """Generate the parameters required by the vis protocol."""
         charts: Optional[dict] = kwargs.get("charts", None)
         title: Optional[str] = kwargs.get("title", None)

@@ -100,6 +100,7 @@ class SpaceRetrieverOperator(RetrieverOperator[IN, OUT]):
         space_retriever = KnowledgeSpaceRetriever(
             space_id=self._space_id,
             top_k=self._top_k,
+            system_app=self._service.system_app,
         )
         if isinstance(query, str):
             candidates = space_retriever.retrieve_with_scores(query, self._recall_score)

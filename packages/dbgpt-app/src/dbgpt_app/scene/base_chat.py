@@ -2,7 +2,8 @@ import datetime
 import logging
 import traceback
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Dict, Optional, Union
+from dataclasses import dataclass, field
+from typing import Any, AsyncIterator, Dict, Optional, Type, TypeVar, Union
 
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType, SystemApp
@@ -31,6 +32,7 @@ from dbgpt_app.scene.operators.app_operator import (
     build_cached_chat_operator,
 )
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
+from dbgpt_serve.core.config import BufferWindowGPTsAppMemoryConfig, GPTsAppCommonConfig
 from dbgpt_serve.prompt.service.service import Service as PromptService
 
 from .exceptions import BaseAppException, ContextAppException
@@ -38,24 +40,52 @@ from .exceptions import BaseAppException, ContextAppException
 logger = logging.getLogger(__name__)
 CFG = Config()
 
+C = TypeVar("C", bound="GPTsAppCommonConfig")
+
+
+@dataclass
+class ChatParam:
+    chat_session_id: str
+    current_user_input: str
+    model_name: str
+    select_param: Any
+    chat_mode: ChatScene
+    user_name: str = ""
+    sys_code: str = ""
+    app_code: str = ""
+    temperature: Optional[float] = field(default=None)
+    max_new_tokens: Optional[int] = field(default=None)
+    message_version: str = "v2"
+    model_cache_enable: bool = False
+    prompt_code: Optional[str] = None
+    ext_info: Optional[Dict[str, Any]] = None
+    app_config: Optional[GPTsAppCommonConfig] = None
+
+    def real_app_config(self, type_class: Type[C]) -> C:
+        if self.app_config is None:
+            return type_class()
+        if not isinstance(self.app_config, type_class):
+            return type_class(**self.app_config.to_dict())
+        return self.app_config
+
 
 def _build_conversation(
     chat_mode: ChatScene,
-    chat_param: Dict[str, Any],
+    chat_param: ChatParam,
     model_name: str,
     conv_serve: ConversationServe,
 ) -> StorageConversation:
     param_type = ""
     param_value = ""
-    if chat_param["select_param"]:
+    if chat_param.select_param:
         if len(chat_mode.param_types()) > 0:
             param_type = chat_mode.param_types()[0]
-        param_value = chat_param["select_param"]
+        param_value = chat_param.select_param
     return StorageConversation(
-        chat_param["chat_session_id"],
+        chat_param.chat_session_id,
         chat_mode=chat_mode.value(),
-        user_name=chat_param.get("user_name"),
-        sys_code=chat_param.get("sys_code"),
+        user_name=chat_param.user_name,
+        sys_code=chat_param.sys_code,
         model_name=model_name,
         param_type=param_type,
         param_value=param_value,
@@ -73,16 +103,17 @@ class BaseChat(ABC):
 
     chat_scene: str = None
     llm_model: Any = None
-    # By default, keep the last two rounds of conversation records as the context
-    keep_start_rounds: int = 0
-    keep_end_rounds: int = 0
-
     # Some model not support system role, this config is used to control whether to
     # convert system message to human message
     auto_convert_message: bool = True
 
+    @classmethod
+    @abstractmethod
+    def param_class(cls) -> Type[GPTsAppCommonConfig]:
+        """Return the parameter class of the chat"""
+
     @trace("BaseChat.__init__")
-    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
+    def __init__(self, chat_param: ChatParam, system_app: SystemApp):
         """Chat Module Initialization
         Args:
            - chat_param: Dict
@@ -95,20 +126,20 @@ class BaseChat(ABC):
         self.app_config = self.system_app.config.configs.get("app_config")
         self.web_config = self.app_config.service.web
         self.model_config = self.app_config.models
-        self.chat_session_id = chat_param["chat_session_id"]
-        self.chat_mode = chat_param["chat_mode"]
-        self.current_user_input: str = chat_param["current_user_input"]
+        self.chat_session_id = chat_param.chat_session_id
+        self.chat_mode = chat_param.chat_mode
+        self.current_user_input: str = chat_param.current_user_input
         self.llm_model = (
-            chat_param["model_name"]
-            if chat_param["model_name"]
+            chat_param.model_name
+            if chat_param.model_name
             else self.model_config.default_llm
         )
         self.llm_echo = False
         self.worker_manager = self.system_app.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
-        self.model_cache_enable = chat_param.get("model_cache_enable", False)
-        self.prompt_code = chat_param.get("prompt_code", None)
+        self.model_cache_enable = chat_param.model_cache_enable
+        self.prompt_code = chat_param.prompt_code
 
         self.prompt_template: AppScenePromptTemplateAdapter = (
             CFG.prompt_template_registry.get_prompt_template(
@@ -135,7 +166,6 @@ class BaseChat(ABC):
                 template_scene=self.prompt_template.template_scene,
                 stream_out=self.prompt_template.stream_out,
                 output_parser=self.prompt_template.output_parser,
-                need_historical_messages=False,
             )
         self._conv_serve = ConversationServe.get_instance(self.system_app)
         self.current_message: StorageConversation = _build_conversation(
@@ -151,12 +181,8 @@ class BaseChat(ABC):
         # In v1, we will transform the message to compatible format of specific model
         # In the future, we will upgrade the message version to v2, and the message
         # will be compatible with all models
-        self._message_version = chat_param.get("message_version", "v2")
+        self._message_version = chat_param.message_version
         self._chat_param = chat_param
-
-    @property
-    def chat_type(self) -> str:
-        raise NotImplementedError("Not supported for this chat type.")
 
     @abstractmethod
     async def generate_input_values(self) -> Dict:
@@ -221,6 +247,42 @@ class BaseChat(ABC):
             speak_to_user = prompt_define_response
         return speak_to_user
 
+    def llm_max_new_tokens(self):
+        """Get the max new tokens for LLM generation.
+
+        The order of priority is:
+        1. chat_param.max_new_tokens(From API)
+        2. app_config.max_new_tokens(From config file)
+        3. prompt_template.max_new_tokens(From prompt template)
+        """
+        if self._chat_param.max_new_tokens:
+            return int(self._chat_param.max_new_tokens)
+        elif self._chat_param.app_config and self._chat_param.app_config.max_new_tokens:
+            return int(self.app_config.max_new_tokens)
+        return self.prompt_template.max_new_tokens
+
+    def llm_temperature(self):
+        """Get the temperature for LLM generation.
+
+        The order of priority is:
+        1. chat_param.temperature(From API)
+        2. app_config.temperature(From config file)
+        3. prompt_template.temperature(From prompt template)
+        """
+        if self._chat_param.temperature is not None:
+            return float(self._chat_param.temperature)
+        elif (
+            self._chat_param.app_config
+            and self._chat_param.app_config.temperature is not None
+        ):
+            return float(self.app_config.temperature)
+        return self.prompt_template.temperature
+
+    def memory_config(self):
+        if self._chat_param.app_config and self._chat_param.app_config.memory:
+            return self._chat_param.app_config.memory
+        return BufferWindowGPTsAppMemoryConfig()
+
     async def _build_model_request(self) -> ModelRequest:
         input_values = await self.generate_input_values()
         # Load history
@@ -232,41 +294,23 @@ class BaseChat(ABC):
         )
         self.current_message.tokens = 0
 
-        keep_start_rounds = (
-            self.keep_start_rounds
-            if self.prompt_template.need_historical_messages
-            else 0
-        )
-        keep_end_rounds = (
-            self.keep_end_rounds if self.prompt_template.need_historical_messages else 0
-        )
         req_ctx = ModelRequestContext(
             stream=self.prompt_template.stream_out,
-            user_name=self._chat_param.get("user_name"),
-            sys_code=self._chat_param.get("sys_code"),
+            user_name=self._chat_param.user_name,
+            sys_code=self._chat_param.sys_code,
             chat_mode=self.chat_mode.value(),
             span_id=root_tracer.get_current_span_id(),
         )
-        temperature = float(
-            self._chat_param.get("temperature")
-            if self._chat_param.get("temperature")
-            else self.prompt_template.temperature
-        )
-        max_new_tokens = int(
-            self._chat_param.get("max_new_tokens")
-            if self._chat_param.get("max_new_tokens")
-            else self.prompt_template.max_new_tokens
-        )
         node = AppChatComposerOperator(
             model=self.llm_model,
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
+            temperature=self.llm_temperature(),
+            max_new_tokens=self.llm_max_new_tokens(),
             prompt=self.prompt_template.prompt,
+            llm_client=self.llm_client,
+            memory=self.memory_config(),
             message_version=self._message_version,
             echo=self.llm_echo,
             streaming=self.prompt_template.stream_out,
-            keep_start_rounds=keep_start_rounds,
-            keep_end_rounds=keep_end_rounds,
             str_history=self.prompt_template.str_history,
             request_context=req_ctx,
         )

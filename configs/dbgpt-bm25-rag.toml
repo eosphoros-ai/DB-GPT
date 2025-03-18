@@ -1,0 +1,50 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-zh}"
+log_level = "INFO"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+
+[rag]
+chunk_size=1000
+chunk_overlap=100
+similarity_top_k=5
+similarity_score_threshold=0.0
+max_chunks_once_load=10
+max_threads=1
+rerank_top_k=3
+
+[rag.storage]
+[rag.storage.vector]
+type = "chroma"
+persist_path = "pilot/data"
+
+[rag.storage.full_text]
+type = "elasticsearch"
+host="127.0.0.1"
+port=9200
+
+
+# Model Configurations
+[models]
+[[models.llms]]
+name = "${env:LLM_MODEL_NAME:-gpt-4o}"
+provider = "${env:LLM_MODEL_PROVIDER:-proxy/openai}"
+api_base = "${env:OPENAI_API_BASE:-https://api.openai.com/v1}"
+api_key = "${env:OPENAI_API_KEY}"
+
+[[models.embeddings]]
+name = "${env:EMBEDDING_MODEL_NAME:-text-embedding-3-small}"
+provider = "${env:EMBEDDING_MODEL_PROVIDER:-proxy/openai}"
+api_url = "${env:EMBEDDING_MODEL_API_URL:-https://api.openai.com/v1/embeddings}"
+api_key = "${env:OPENAI_API_KEY}"

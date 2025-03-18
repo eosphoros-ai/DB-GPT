@@ -98,7 +98,11 @@ class BaseParameters:
         """
         all_field_names = {f.name for f in fields(cls)}
         if ignore_extra_fields:
-            data = {key: value for key, value in data.items() if key in all_field_names}
+            data = {
+                key: value
+                for key, value in data.items()
+                if key in all_field_names and value is not None
+            }
         else:
             extra_fields = set(data.keys()) - all_field_names
             if extra_fields:

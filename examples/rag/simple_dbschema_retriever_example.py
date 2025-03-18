@@ -39,14 +39,16 @@ from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVecto
 def _create_vector_connector():
     """Create vector connector."""
     config = ChromaVectorConfig(
-        persist_path=os.path.join(PILOT_PATH, "data"),
-        name="vector_name",
+        persist_path=PILOT_PATH,
+    )
+
+    return ChromaStore(
+        config,
+        name="embedding_rag_test",
         embedding_fn=DefaultEmbeddingFactory(
             default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
     )
-
-    return ChromaStore(config)
 
 
 def _create_temporary_connection():

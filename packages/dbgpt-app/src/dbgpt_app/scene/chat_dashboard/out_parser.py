@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChatDashboardOutputParser(BaseOutputParser):
-    def __init__(self, is_stream_out: bool, **kwargs):
+    def __init__(self, is_stream_out: bool = False, **kwargs):
         super().__init__(is_stream_out=is_stream_out, **kwargs)
 
     def parse_prompt_response(self, model_out_text):
