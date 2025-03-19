@@ -1,0 +1,24 @@
+---
+title: "TokenBufferGPTsAppMemoryConfig Configuration"
+description: "Token buffer memory configuration.
+
+    This configuration is used to control the token buffer memory."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "TokenBufferGPTsAppMemoryConfig",
+  "description": "Token buffer memory configuration.\n\n    This configuration is used to control the token buffer memory.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "max_token_limit",
+      "type": "integer",
+      "required": false,
+      "description": "The max token limit. Default is 100k",
+      "defaultValue": "102400"
+    }
+  ]
+}} />
+

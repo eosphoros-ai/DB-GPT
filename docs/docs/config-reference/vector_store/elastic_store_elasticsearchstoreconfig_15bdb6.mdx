@@ -1,0 +1,69 @@
+---
+title: "Elastic Vector Config Configuration"
+description: "Elasticsearch vector config."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ElasticsearchStoreConfig",
+  "description": "Elasticsearch vector config.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "The user of vector store, if not set, will use the default user."
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "The password of vector store, if not set, will use the default password."
+    },
+    {
+      "name": "uri",
+      "type": "string",
+      "required": false,
+      "description": "",
+      "defaultValue": "localhost"
+    },
+    {
+      "name": "port",
+      "type": "string",
+      "required": false,
+      "description": "",
+      "defaultValue": "9200"
+    },
+    {
+      "name": "alias",
+      "type": "string",
+      "required": false,
+      "description": "",
+      "defaultValue": "default"
+    },
+    {
+      "name": "index_name",
+      "type": "string",
+      "required": false,
+      "description": "",
+      "defaultValue": "index_name_test"
+    },
+    {
+      "name": "metadata_field",
+      "type": "string",
+      "required": false,
+      "description": "",
+      "defaultValue": "metadata"
+    },
+    {
+      "name": "secure",
+      "type": "string",
+      "required": false,
+      "description": "",
+      "defaultValue": ""
+    }
+  ]
+}} />
+

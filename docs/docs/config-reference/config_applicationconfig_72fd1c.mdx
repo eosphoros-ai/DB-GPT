@@ -1,5 +1,6 @@
 ---
 title: "ApplicationConfig Configuration"
+description: "Application configuration."
 ---
 
 import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
@@ -10,6 +11,20 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
   "documentationUrl": "",
   "parameters": [
     {
+      "name": "hooks",
+      "type": "HookConfig",
+      "required": false,
+      "description": "Configuration hooks, which will be executed before the configuration loading",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "hookconfig configuration",
+          "url": "/docs/config-reference/manager_hookconfig_d9a481"
+        }
+      ],
+      "defaultValue": "[]"
+    },
+    {
       "name": "system",
       "type": "SystemParameters",
       "required": false,
@@ -18,7 +33,7 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
         {
           "type": "link",
           "text": "systemparameters configuration",
-          "url": "././config_systemparameters_fd92b9"
+          "url": "/docs/config-reference/config_systemparameters_fd92b9"
         }
       ],
       "defaultValue": "SystemParameters"
@@ -32,7 +47,7 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
         {
           "type": "link",
           "text": "serviceconfig configuration",
-          "url": "././config_serviceconfig_81a10f"
+          "url": "/docs/config-reference/service/config_serviceconfig_81a10f"
         }
       ],
       "defaultValue": "ServiceConfig"
@@ -46,7 +61,7 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
         {
           "type": "link",
           "text": "modelsdeployparameters configuration",
-          "url": "././parameter_modelsdeployparameters_5c7bc5"
+          "url": "/docs/config-reference/service/parameter_modelsdeployparameters_5c7bc5"
         }
       ],
       "defaultValue": "ModelsDeployParameters"
@@ -60,67 +75,67 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
         {
           "type": "link",
           "text": "datasource configuration",
-          "url": "././config_serveconfig_63f1e9"
+          "url": "/docs/config-reference/serve/config_serveconfig_63f1e9"
         },
         {
           "type": "link",
           "text": "agent/chat configuration",
-          "url": "././config_serveconfig_adbd6f"
+          "url": "/docs/config-reference/serve/config_serveconfig_adbd6f"
         },
         {
           "type": "link",
           "text": "conversation configuration",
-          "url": "././config_serveconfig_313252"
+          "url": "/docs/config-reference/serve/config_serveconfig_313252"
         },
         {
           "type": "link",
           "text": "dbgpts_hub configuration",
-          "url": "././config_serveconfig_ec2d70"
+          "url": "/docs/config-reference/serve/config_serveconfig_ec2d70"
         },
         {
           "type": "link",
           "text": "dbgpts_my configuration",
-          "url": "././config_serveconfig_1a9284"
+          "url": "/docs/config-reference/serve/config_serveconfig_1a9284"
         },
         {
           "type": "link",
           "text": "evaluate configuration",
-          "url": "././config_serveconfig_8839e0"
+          "url": "/docs/config-reference/serve/config_serveconfig_8839e0"
         },
         {
           "type": "link",
           "text": "feedback configuration",
-          "url": "././config_serveconfig_fa1f35"
+          "url": "/docs/config-reference/serve/config_serveconfig_fa1f35"
         },
         {
           "type": "link",
           "text": "file configuration",
-          "url": "././config_serveconfig_cb64c6"
+          "url": "/docs/config-reference/serve/config_serveconfig_cb64c6"
         },
         {
           "type": "link",
           "text": "flow configuration",
-          "url": "././config_serveconfig_c0b589"
+          "url": "/docs/config-reference/serve/config_serveconfig_c0b589"
         },
         {
           "type": "link",
           "text": "libro configuration",
-          "url": "././config_serveconfig_b1c2b9"
+          "url": "/docs/config-reference/serve/config_serveconfig_b1c2b9"
         },
         {
           "type": "link",
           "text": "model configuration",
-          "url": "././config_serveconfig_7a0577"
+          "url": "/docs/config-reference/serve/config_serveconfig_7a0577"
         },
         {
           "type": "link",
           "text": "prompt configuration",
-          "url": "././config_serveconfig_854dad"
+          "url": "/docs/config-reference/serve/config_serveconfig_854dad"
         },
         {
           "type": "link",
           "text": "rag configuration",
-          "url": "././config_serveconfig_7889f9"
+          "url": "/docs/config-reference/serve/config_serveconfig_7889f9"
         }
       ],
       "defaultValue": "[]"
@@ -134,10 +149,24 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
         {
           "type": "link",
           "text": "ragparameters configuration",
-          "url": "././config_ragparameters_7483b2"
+          "url": "/docs/config-reference/app/config_ragparameters_7483b2"
         }
       ],
       "defaultValue": "RagParameters"
+    },
+    {
+      "name": "app",
+      "type": "GPTsAppConfig",
+      "required": false,
+      "description": "GPTs application configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "gptsappconfig configuration",
+          "url": "/docs/config-reference/app/config_gptsappconfig_134d16"
+        }
+      ],
+      "defaultValue": "GPTsAppConfig"
     },
     {
       "name": "trace",
@@ -148,7 +177,7 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
         {
           "type": "link",
           "text": "tracerparameters configuration",
-          "url": "././tracer_impl_tracerparameters_f8f272"
+          "url": "/docs/config-reference/utils/tracer_impl_tracerparameters_f8f272"
         }
       ],
       "defaultValue": "TracerParameters"
@@ -162,24 +191,10 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
         {
           "type": "link",
           "text": "loggingparameters configuration",
-          "url": "././utils_loggingparameters_4ba5c6"
+          "url": "/docs/config-reference/utils/utils_loggingparameters_4ba5c6"
         }
       ],
       "defaultValue": "LoggingParameters"
-    },
-    {
-      "name": "hooks",
-      "type": "HookConfig",
-      "required": false,
-      "description": "Configuration hooks, which will be executed before the configuration loading",
-      "nestedTypes": [
-        {
-          "type": "link",
-          "text": "hookconfig configuration",
-          "url": "././manager_hookconfig_d9a481"
-        }
-      ],
-      "defaultValue": "[]"
     }
   ]
 }} />

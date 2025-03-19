@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,6 +17,52 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:17
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:19
 msgid "API keys for the endpoint, if None, allow all"
-msgstr "端点的 API 密钥，如果为 None，则允许所有请求"
+msgstr "端点的 API 密钥，若为 None，则允许所有请求"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:67
+msgid "The number of start rounds to keep in memory"
+msgstr "内存中要保留的起始轮数"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:71
+msgid "The number of end rounds to keep in memory"
+msgstr "内存中要保留的结束轮数"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:85
+msgid "The max token limit. Default is 100k"
+msgstr "最大 Token 限制，默认值为 100k"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:96
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:131
+msgid "The top k for LLM generation"
+msgstr "大语言模型生成时的 Top k 参数"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:100
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:135
+msgid "The top p for LLM generation"
+msgstr "大语言模型生成时的 Top p 参数"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:104
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:139
+msgid "The temperature for LLM generation"
+msgstr "大语言模型生成时的温度参数"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:108
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:143
+msgid "The max new tokens for LLM generation"
+msgstr "大语言模型生成时的最大新 Token 数"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:111
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:146
+msgid "The name of your app"
+msgstr "你的应用程序名称"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:114
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:149
+msgid "The memory configuration"
+msgstr "内存配置"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:154
+msgid "The configs for specific app"
+msgstr "特定应用程序的配置"

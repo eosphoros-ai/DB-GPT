@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,74 +17,82 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:21
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:22
 msgid "Collection Name"
 msgstr "컬렉션 이름"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:25
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:26
 msgid "The name of vector store, if not set, will use the default name."
 msgstr "벡터 저장소의 이름입니다. 설정하지 않으면 기본 이름이 사용됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:31
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:32
 msgid "User"
 msgstr "사용자"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:35
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:36
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:98
 msgid "The user of vector store, if not set, will use the default user."
 msgstr "벡터 저장소의 사용자입니다. 설정하지 않으면 기본 사용자가 사용됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:41
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:42
 msgid "Password"
 msgstr "비밀번호"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:45
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:46
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:106
 msgid ""
 "The password of vector store, if not set, will use the default password."
-msgstr "벡터 저장소의 비밀번호입니다. 설정하지 않으면 기본 비밀번호가 사용됩니다."
+msgstr ""
+"벡터 저장소의 비밀번호입니다. 설정하지 않으면 기본 비밀번호가 사용됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:51
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:52
 msgid "Embedding Function"
 msgstr "임베딩 함수"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:55
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:56
 msgid ""
 "The embedding function of vector store, if not set, will use the default "
 "embedding function."
-msgstr "벡터 저장소의 임베딩 함수입니다. 설정하지 않으면 기본 임베딩 함수가 사용됩니다."
+msgstr ""
+"벡터 저장소의 임베딩 함수입니다. 설정하지 않으면 기본 임베딩 함수가 사용됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:62
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:63
 msgid "Max Chunks Once Load"
 msgstr "한 번에 로드할 최대 청크 수"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:66
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:67
 msgid ""
 "The max number of chunks to load at once. If your document is large, you can "
 "set this value to a larger number to speed up the loading process. Default "
 "is 10."
-msgstr "한 번에 로드할 최대 청크 수입니다. 문서가 크다면 이 값을 더 크게 설정하여 로드 프로세스를 가속화할 수 있습니다. 기본값은 10입니다."
+msgstr ""
+"한 번에 로드할 최대 청크 수입니다. 문서가 크다면 이 값을 더 크게 설정하여 로"
+"드 프로세스를 가속화할 수 있습니다. 기본값은 10입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:74
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:75
 msgid "Max Threads"
 msgstr "최대 스레드 수"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:78
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:79
 msgid ""
 "The max number of threads to use. Default is 1. If you set this bigger than "
 "1, please make sure your vector store is thread-safe."
-msgstr "사용할 최대 스레드 수입니다. 기본값은 1입니다. 이 값을 1보다 크게 설정하는 경우 벡터 저장소가 스레드 안전한지 확인하세요."
+msgstr ""
+"사용할 최대 스레드 수입니다. 기본값은 1입니다. 이 값을 1보다 크게 설정하는 경"
+"우 벡터 저장소가 스레드 안전한지 확인하세요."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:28
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:30
 msgid "Whether to enable model cache, default is True"
 msgstr "모델 캐시를 사용할지 여부입니다. 기본값은 True입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:34
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:36
 msgid "The storage type, default is memory"
 msgstr "저장 유형, 기본값은 메모리입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:40
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:42
 msgid "The max memory in MB, default is 256"
 msgstr "최대 메모리(MB), 기본값은 256입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:46
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:48
 msgid "The persist directory, default is model_cache"
 msgstr "영구 저장 디렉토리, 기본값은 model_cache입니다."

@@ -73,6 +73,8 @@ class BaseModelRegistryParameters(BaseParameters, RegisterParameters):
 
     __type__ = "___model_registry_placeholder___"
 
+    __cfg_type__ = "service"
+
     @classmethod
     def _from_dict_(
         cls, data: Dict, prepare_data_func, converter
@@ -193,6 +195,8 @@ class ModelWorkerParameters(BaseServerParameters):
 class ModelServiceConfig(BaseParameters):
     """Model service configuration."""
 
+    __cfg_type__ = "service"
+
     worker: ModelWorkerParameters = field(
         default_factory=ModelWorkerParameters,
         metadata={"help": _("Model worker configuration")},
@@ -208,6 +212,7 @@ class ModelServiceConfig(BaseParameters):
 
 @dataclass
 class ModelsDeployParameters(BaseParameters):
+    __cfg_type__ = "service"
     default_llm: Optional[str] = field(
         default=None,
         metadata={

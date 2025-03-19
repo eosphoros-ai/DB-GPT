@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 class ModelCacheParameters(BaseParameters):
     """Model cache configuration."""
 
+    __cfg_type__ = "utils"
+
     enable_model_cache: bool = field(
         default=True,
         metadata={

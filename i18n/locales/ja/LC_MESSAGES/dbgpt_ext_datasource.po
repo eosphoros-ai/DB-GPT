@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 07:51+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,260 +17,265 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:22
 msgid "Apache Spark datasource"
 msgstr "Apache Spark データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:25
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:25
 msgid "Unified engine for large-scale data analytics."
-msgstr "大規模データ分析用の統合エンジン。"
+msgstr "大規模データ分析のための統合エンジンです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:34
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_spark.py:34
 msgid "The file path of the data source."
-msgstr "データソースのファイルパス。"
+msgstr "データソースのファイルパスです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:18
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:18
 msgid "TuGraph datasource"
 msgstr "TuGraph データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:22
 msgid ""
 "TuGraph is a high-performance graph database jointly developed by Ant Group "
 "and Tsinghua University."
-msgstr "TuGraph は、アリババグループと清華大学が共同開発した高性能グラフデータベースです。"
+msgstr ""
+"TuGraphは、アントグループと清華大学が共同開発した高性能グラフデータベースです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:32
 msgid "TuGraph server host"
 msgstr "TuGraph サーバーホスト"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:33
 msgid "TuGraph server user"
 msgstr "TuGraph サーバーユーザー"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:38
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:38
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:49
 msgid ""
 "Database password, you can write your password directly, of course, you can "
 "also use environment variables, such as ${env:DBGPT_DB_PASSWORD}"
-msgstr "データベースのパスワードです。直接パスワードを入力することもできますし、環境変数（例：${env:DBGPT_DB_PASSWORD}）を使用することもできます。"
+msgstr ""
+"データベースのパスワードを直接入力できます。もちろん、環境変数（例：${env:DBGPT_DB_PASSWORD}）を使用することも可能です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:46
 msgid "TuGraph server port, default 7687"
-msgstr "TuGraph サーバーのポート番号、デフォルトは 7687"
+msgstr "TuGraph サーバーのポート番号（デフォルト 7687）"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:49
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:38
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:49
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:38
 msgid "Database name, default 'default'"
-msgstr "データベース名、デフォルトは 'default'"
+msgstr "データベース名（デフォルト 'default'）"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:21
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:21
 msgid "Apache Hive datasource"
 msgstr "Apache Hive データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:24
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:24
 msgid "A distributed fault-tolerant data warehouse system."
-msgstr "分散型の耐障害性データウェアハウスシステム。"
+msgstr "分散型かつ障害に強いデータウェアハウスシステムです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:33
 msgid "Hive server host"
 msgstr "Hive サーバーホスト"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:35
 msgid "Hive server port, default 10000"
-msgstr "Hive サーバーのポート番号、デフォルトは 10000"
+msgstr "Hive サーバーのポート番号（デフォルト 10000）"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:45
 msgid "Authentication mode: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
 msgstr "認証モード: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:50
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:50
 msgid "Username for authentication"
 msgstr "認証用のユーザー名"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:55
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:55
 msgid "Password for LDAP or CUSTOM auth"
 msgstr "LDAP または CUSTOM 認証用のパスワード"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:62
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:62
 msgid "Kerberos service name"
 msgstr "Kerberos サービス名"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:67
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:67
 msgid "Transport mode: binary or http"
 msgstr "トランスポートモード: binary または http"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:75
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:75
 msgid "Driver name for Hive, default is hive."
 msgstr "Hive 用のドライバー名、デフォルトは hive。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:22
 msgid "StarRocks datasource"
 msgstr "StarRocks データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:25
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:25
 msgid "An Open-Source, High-Performance Analytical Database."
 msgstr "オープンソースの高性能分析データベース。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_starrocks.py:36
 msgid "Driver name for starrocks, default is starrocks."
 msgstr "StarRocks 用のドライバー名、デフォルトは starrocks。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:16
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:16
 msgid "MySQL datasource"
 msgstr "MySQL データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:20
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:20
 msgid ""
 "Fast, reliable, scalable open-source relational database management system."
-msgstr "高速で信頼性が高く、拡張性のあるオープンソースのリレーショナルデータベース管理システム。"
+msgstr ""
+"高速で信頼性が高く、拡張性のあるオープンソースのリレーショナルデータベース管理システム。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mysql.py:32
 msgid "Driver name for MySQL, default is mysql+pymysql."
-msgstr "MySQLのドライバ名。デフォルトはmysql+pymysqlです。"
+msgstr "MySQL用のドライバ名。デフォルトはmysql+pymysqlです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:24
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:24
 msgid "SQLite datasource"
-msgstr "SQLiteデータソース"
+msgstr "SQLite データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:28
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:28
 msgid ""
 "Lightweight embedded relational database with simplicity and portability."
 msgstr "シンプルで移植性が高い軽量の組み込み型リレーショナルデータベース。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:45
 msgid "SQLite database file path. Use ':memory:' for in-memory database"
-msgstr "SQLiteデータベースファイルのパス。メモリ上のデータベースには':memory:'を使用します。"
+msgstr "SQLiteデータベースファイルのパス。メモリ上のデータベースには ':memory:' を使用します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:54
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:54
 msgid ""
 "Check same thread or not, default is False. Set False to allow sharing "
 "connection across threads"
-msgstr "同じスレッドかどうかを確認します。デフォルトはFalseです。Falseに設定すると、スレッド間で接続を共有できます。"
+msgstr "同じスレッドかどうかを確認します。デフォルトは False です。False に設定すると、スレッド間で接続を共有できます。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:61
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_sqlite.py:61
 msgid "Driver name, default is sqlite"
 msgstr "ドライバ名。デフォルトはsqliteです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:18
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:18
 msgid "MSSQL datasource"
 msgstr "MSSQLデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:22
 msgid "Powerful, scalable, secure relational database system by Microsoft."
 msgstr "Microsoftによる強力で拡張性が高く、セキュアなリレーショナルデータベースシステム。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_mssql.py:33
 msgid "Driver name for MSSQL, default is mssql+pymssql."
 msgstr "MSSQLのドライバ名。デフォルトはmssql+pymssqlです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:20
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:20
 msgid "Apache Doris datasource"
 msgstr "Apache Dorisデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:23
 msgid "A new-generation open-source real-time data warehouse."
 msgstr "新世代のオープンソースのリアルタイムデータウェアハウス。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:37
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_doris.py:37
 msgid "Driver name for Doris, default is doris."
 msgstr "Dorisのドライバ名。デフォルトはdorisです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:29
 msgid "Vertica datasource"
 msgstr "Verticaデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:33
 msgid ""
 "Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built "
 "for the scale and complexity of today`s data-driven world."
-msgstr "Verticaは、強い一貫性を持ち、ACID準拠のSQLデータウェアハウスで、今日のデータ駆動型の世界の規模と複雑さに対応して構築されています。"
+msgstr ""
+"Verticaは、強い一貫性を持ち、ACID準拠のSQLデータウェアハウスで、今日のデータ駆動型の世界の規模と複雑さに対応して構築されています。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:45
 msgid "Driver name for vertica, default is vertica+vertica_python"
 msgstr "Verticaのドライバ名。デフォルトはvertica+vertica_pythonです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:19
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:19
 msgid "OceanBase datasource"
 msgstr "OceanBaseデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:22
 msgid "An Ultra-Fast & Cost-Effective Distributed SQL Database."
 msgstr "超高速で費用対効果の高い分散型SQLデータベース。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_oceanbase.py:32
 msgid "Driver name for oceanbase, default is mysql+ob."
 msgstr "OceanBaseのドライバ名。デフォルトはmysql+obです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:25
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:25
 msgid "Clickhouse datasource"
 msgstr "ClickHouseデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:29
 msgid "Columnar database for high-performance analytics and real-time queries."
 msgstr "高性能な分析とリアルタイムクエリ用の列指向データベース。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:38
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:38
 msgid "Database host, e.g., localhost"
 msgstr "データベースホスト。例: localhost"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:39
-msgid "Database port, e.g., 3306"
-msgstr "データベースポート。例: 3306"
-
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:40
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:40
 msgid "Database user to connect"
 msgstr "接続するデータベースのユーザー"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:41
 msgid "Database name"
 msgstr "データベース名"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:54
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:43
+msgid "Storage engine, e.g., MergeTree"
+msgstr "ストレージエンジン。例: MergeTree"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:57
 msgid "http pool maxsize"
 msgstr "HTTPプールの最大サイズ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:60
 msgid "http pool num_pools"
 msgstr "HTTPプールのプール数"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:60
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:63
 msgid "Database connect timeout, default 15s"
-msgstr "データベース接続タイムアウト、デフォルト15秒"
+msgstr "データベース接続タイムアウト、デフォルトは15秒"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:63
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:66
 msgid "Distributed ddl task timeout, default 300s"
-msgstr "分散DDLタスクのタイムアウト、デフォルト300秒"
+msgstr "分散DDLタスクのタイムアウト、デフォルトは300秒"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:23
 msgid "PostreSQL datasource"
 msgstr "PostgreSQLデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:27
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:27
 msgid ""
 "Powerful open-source relational database with extensibility and SQL "
 "standards."
-msgstr "拡張性とSQL標準を備えた強力なオープンソースのリレーショナルデータベース。"
+msgstr ""
+"拡張性とSQL標準を備えた強力なオープンソースのリレーショナルデータベースです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:36
 msgid "Database schema, defaults to 'public'"
-msgstr "データベーススキーマ、デフォルトは'public'"
+msgstr "データベーススキーマ、デフォルトは'public'です"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:41
 msgid "Driver name for postgres, default is postgresql+psycopg2."
-msgstr "PostgreSQLのドライバー名、デフォルトはpostgresql+psycopg2。"
+msgstr "PostgreSQL用のドライバー名、デフォルトはpostgresql+psycopg2です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:19
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:19
 msgid "DuckDB datasource"
 msgstr "DuckDBデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:22
 msgid "In-memory analytical database with efficient query processing."
-msgstr "効率的なクエリ処理を備えたインメモリ分析データベース。"
+msgstr "効率的なクエリ処理を備えたインメモリ分析データベースです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:29
 msgid "Path to the DuckDB file."
-msgstr "DuckDBファイルのパス。"
+msgstr "DuckDBファイルへのパスです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:33
 msgid "Driver name for DuckDB, default is duckdb."
-msgstr "DuckDBのドライバー名、デフォルトはduckdb。"
+msgstr "DuckDB用のドライバー名、デフォルトはduckdbです。"

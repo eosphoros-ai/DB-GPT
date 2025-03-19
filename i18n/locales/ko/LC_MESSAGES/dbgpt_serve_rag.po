@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,131 +17,141 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:44
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:44
 msgid "Knowledge Space Operator"
 msgstr "지식 공간 연산자"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:47
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:47
 msgid "knowledge space retriever operator."
 msgstr "지식 공간 검색 연산자."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
 msgid "Query"
 msgstr "질의"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
 msgid "user query"
 msgstr "사용자 질의"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:51
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:54
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:51
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:54
 msgid "related chunk content"
 msgstr "관련 청크 내용"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:59
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:59
 msgid "Space Name"
 msgstr "공간 이름"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:65
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:65
 msgid "space name."
 msgstr "공간 이름."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:124
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:125
 msgid "Knowledge Space Prompt Builder Operator"
 msgstr "지식 공간 프롬프트 빌더 연산자"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:126
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:127
 msgid "Build messages from prompt template and chat history."
 msgstr "프롬프트 템플릿과 채팅 기록으로 메시지를 작성합니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:131
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:132
 msgid "Chat Prompt Template"
 msgstr "채팅 프롬프트 템플릿"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:134
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:135
 msgid "The chat prompt template."
 msgstr "채팅 프롬프트 템플릿입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:137
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:138
 msgid "History Key"
 msgstr "기록 키"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:142
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:143
 msgid "The key of history in prompt dict."
 msgstr "프롬프트 사전에서 기록의 키입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:145
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:146
 msgid "String History"
 msgstr "문자열 기록"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:150
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:151
 msgid "Whether to convert the history to string."
 msgstr "히스토리를 문자열로 변환할지 여부입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:155
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:159
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:156
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:160
 msgid "user input"
 msgstr "사용자 입력"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:162
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:163
 msgid "space related context"
 msgstr "공간 관련 컨텍스트"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:166
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:167
 msgid "context of knowledge space."
 msgstr "지식 공간의 컨텍스트입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:169
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:170
 msgid "History"
 msgstr "히스토리"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:173
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:174
 msgid "The history."
 msgstr "히스토리입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:178
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:179
 msgid "Formatted Messages"
 msgstr "형식이 지정된 메시지"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:182
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:183
 msgid "The formatted messages."
 msgstr "형식이 지정된 메시지입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:22
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:26
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:20
+msgid "RAG Serve Configurations"
+msgstr "RAG 서비스 구성"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:23
+msgid "This configuration is for the RAG serve module."
+msgstr "이 구성은 RAG 서비스 모듈용입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:34
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:38
 msgid "Embedding Model"
 msgstr "임베딩 모델"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:30
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:42
 msgid "Whether to verify the SSL certificate of the database"
 msgstr "데이터베이스의 SSL 인증서를 검증할지 여부입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:36
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:48
 msgid ""
 "The default thread pool size, If None, use default config of python thread "
 "pool"
-msgstr "기본 스레드 풀 크기입니다. None인 경우 Python 스레드 풀의 기본 구성을 사용합니다."
+msgstr ""
+"기본 스레드 풀 크기입니다. None인 경우 Python 스레드 풀의 기본 구성을 사용합"
+"니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:43
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:55
 msgid "knowledge search top k"
 msgstr "지식 검색 상위 k개"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:47
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:59
 msgid "knowledge search top similarity score"
 msgstr "지식 검색 상위 유사도 점수"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:51
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:63
 msgid "knowledge search rewrite"
 msgstr "지식 검색 재작성"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:55
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:67
 msgid "knowledge max chunks once load"
 msgstr "지식 한 번에 로드할 최대 청크 수"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:59
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:71
 msgid "knowledge max load thread"
 msgstr "지식 최대 로드 스레드 수"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:63
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:75
 msgid "knowledge rerank top k"
 msgstr "지식 재정렬 상위 k개"

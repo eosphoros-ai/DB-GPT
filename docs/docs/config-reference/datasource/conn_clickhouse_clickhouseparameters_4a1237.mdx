@@ -1,0 +1,81 @@
+---
+title: "Clickhouse datasource Configuration"
+description: "Columnar database for high-performance analytics and real-time queries."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ClickhouseParameters",
+  "description": "Columnar database for high-performance analytics and real-time queries.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": true,
+      "description": "Database host, e.g., localhost"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": true,
+      "description": "Database port, e.g., 8123"
+    },
+    {
+      "name": "user",
+      "type": "string",
+      "required": true,
+      "description": "Database user to connect"
+    },
+    {
+      "name": "database",
+      "type": "string",
+      "required": true,
+      "description": "Database name"
+    },
+    {
+      "name": "engine",
+      "type": "string",
+      "required": false,
+      "description": "Storage engine, e.g., MergeTree",
+      "defaultValue": "MergeTree"
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "Database password, you can write your password directly, of course, you can also use environment variables, such as ${env:DBGPT_DB_PASSWORD}",
+      "defaultValue": "${env:DBGPT_DB_PASSWORD}"
+    },
+    {
+      "name": "http_pool_maxsize",
+      "type": "integer",
+      "required": false,
+      "description": "http pool maxsize",
+      "defaultValue": "16"
+    },
+    {
+      "name": "http_pool_num_pools",
+      "type": "integer",
+      "required": false,
+      "description": "http pool num_pools",
+      "defaultValue": "12"
+    },
+    {
+      "name": "connect_timeout",
+      "type": "integer",
+      "required": false,
+      "description": "Database connect timeout, default 15s",
+      "defaultValue": "15"
+    },
+    {
+      "name": "distributed_ddl_task_timeout",
+      "type": "integer",
+      "required": false,
+      "description": "Distributed ddl task timeout, default 300s",
+      "defaultValue": "300"
+    }
+  ]
+}} />
+

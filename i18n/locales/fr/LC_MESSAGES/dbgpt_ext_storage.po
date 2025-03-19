@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,446 +17,575 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:27
 msgid "Graph Name"
 msgstr "Nom du graphe"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:30
 msgid "The name of Graph, if not set, will use the default name."
 msgstr "Le nom du graphe, s'il n'est pas défini, utilisera le nom par défaut."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:34
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:35
 msgid "Embedding Function"
 msgstr "Fonction d'incorporation"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:38
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:39
 msgid ""
 "The embedding function of vector store, if not set, will use the default "
 "embedding function."
-msgstr "La fonction d'incorporation du stockage de vecteurs, si elle n'est pas définie, utilisera la fonction d'incorporation par défaut."
+msgstr ""
+"La fonction d'incorporation du stockage de vecteurs, si elle n'est pas "
+"définie, utilisera la fonction d'incorporation par défaut."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:46
 msgid "Max Chunks Once Load"
 msgstr "Nombre maximal de blocs chargés à la fois"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:49
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:50
 msgid ""
 "The max number of chunks to load at once. If your document is large, you can "
 "set this value to a larger number to speed up the loading process. Default "
 "is 10."
-msgstr "Le nombre maximal de blocs à charger à la fois. Si votre document est volumineux, vous pouvez définir cette valeur sur un nombre plus élevé pour accélérer le processus de chargement. La valeur par défaut est 10."
+msgstr ""
+"Le nombre maximal de blocs à charger à la fois. Si votre document est "
+"volumineux, vous pouvez définir cette valeur sur un nombre plus élevé pour "
+"accélérer le processus de chargement. La valeur par défaut est 10."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:58
 msgid "Max Threads"
 msgstr "Nombre maximal de threads"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:61
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:62
 msgid ""
 "The max number of threads to use. Default is 1. If you set this bigger than "
 "1, please make sure your vector store is thread-safe."
-msgstr "Le nombre maximal de threads à utiliser. La valeur par défaut est 1. Si vous définissez cette valeur supérieure à 1, assurez-vous que votre stockage de vecteurs est sûr pour les threads."
+msgstr ""
+"Le nombre maximal de threads à utiliser. La valeur par défaut est 1. Si vous "
+"définissez cette valeur supérieure à 1, assurez-vous que votre stockage de "
+"vecteurs est sûr pour les threads."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:71
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:72
 msgid "Builtin Graph Config"
 msgstr "Configuration de graphe intégrée"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:74
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:75
 msgid "knowledge graph config."
 msgstr "Configuration du graphe de connaissances."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:78
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:39
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:79
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:39
 msgid "Knowledge Graph Type"
 msgstr "Type de graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:81
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:42
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:82
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:42
 msgid "graph store type."
 msgstr "Type de stockage de graphe."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:86
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:47
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:87
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:47
 msgid "LLM Client"
 msgstr "Client LLM"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:89
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:50
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:90
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:50
 msgid "llm client for extract graph triplets."
 msgstr "Client LLM pour extraire les triplets de graphe."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:92
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:53
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:93
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:53
 msgid "LLM Model Name"
 msgstr "Nom du modèle LLM"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:95
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:56
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:96
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:56
 msgid "llm model name."
 msgstr "Nom du modèle LLM."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:116
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:118
 msgid "Builtin Knowledge Graph"
 msgstr "Graphe de connaissances intégré"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:119
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:121
 msgid "Builtin Knowledge Graph."
 msgstr "Graphe de connaissances intégré."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:122
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:125
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:124
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:127
 msgid "Builtin Knowledge Graph Config."
 msgstr "Configuration du graphe de connaissances intégré."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:32
 msgid "Community Summary KG Config"
 msgstr "Configuration du graphe de connaissances de synthèse communautaire"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:35
 msgid "community Summary kg Config."
 msgstr "Configuration du graphe de connaissances de synthèse communautaire."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:61
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:61
 msgid "Vector Store Type"
 msgstr "Type de stockage vectoriel"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:64
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:64
 msgid "vector store type."
 msgstr "Type de stockage vectoriel."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:69
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:69
 msgid "Topk of Knowledge Graph Extract"
 msgstr "Topk de l'extraction du graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:72
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:72
 msgid "Topk of knowledge graph extract"
 msgstr "Topk de l'extraction du graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:77
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:77
 msgid "Recall Score of Knowledge Graph Extract"
 msgstr "Score de rappel de l'extraction du graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:80
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:80
 msgid "Recall score of knowledge graph extract"
 msgstr "Score de rappel de l'extraction du graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:85
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:93
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:85
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:93
 msgid "Recall Score of Community Search in Knowledge Graph"
 msgstr "Score de rappel de la recherche communautaire dans le graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:88
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:96
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:88
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:96
 msgid "Recall score of community search in knowledge graph"
 msgstr "Score de rappel de la recherche communautaire dans le graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:101
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:109
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:112
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:101
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:109
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:112
 msgid "Enable the graph search for documents and chunks"
 msgstr "Activer la recherche de graphe pour les documents et les segments"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:104
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:104
 msgid "Enable the graph search for triplets"
 msgstr "Activer la recherche de graphe pour les triplets"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:117
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:120
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:117
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:120
 msgid "Top size of knowledge graph chunk search"
 msgstr "Taille maximale de la recherche de segments dans le graphe de connaissances"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:125
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:128
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:125
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:128
 msgid "Batch size of triplets extraction from the text"
 msgstr "Taille du lot pour l'extraction de triplets à partir du texte"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:133
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:133
 msgid "Batch size of parallel community building process"
 msgstr "Taille du lot pour le processus de construction parallèle de communautés"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:136
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:136
 msgid "TBatch size of parallel community building process"
 msgstr "Taille du lot pour le processus de construction parallèle de communautés"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:216
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:143
 msgid "Community Summary Knowledge Graph"
 msgstr "Graphe de connaissances de synthèse de communauté"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:219
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:146
 msgid "Community Summary Knowledge Graph."
 msgstr "Graphe de connaissances de synthèse de communauté."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:222
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:225
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:149
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:152
 msgid "Community Summary Knowledge Graph Config."
 msgstr "Configuration du graphe de connaissances de synthèse de communauté."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:21
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:21
 msgid "PGVector Config"
 msgstr "Configuration PGVector"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:27
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:27
 msgid "Connection String"
 msgstr "Chaîne de connexion"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:31
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:31
 msgid ""
 "The connection string of vector store, if not set, will use the default "
 "connection string."
-msgstr "La chaîne de connexion du magasin de vecteurs, si elle n'est pas définie, utilisera la chaîne de connexion par défaut."
+msgstr ""
+"La chaîne de connexion du magasin de vecteurs, si elle n'est pas définie, "
+"utilisera la chaîne de connexion par défaut."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:53
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:60
 msgid "PG Vector Store"
 msgstr "Magasin de vecteurs PG"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:56
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:63
 msgid "PG vector store."
 msgstr "Magasin de vecteurs PG."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:59
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:66
 msgid "PG Config"
 msgstr "Configuration PG"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:62
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:69
 msgid "the pg config of vector store."
 msgstr "La configuration PG du magasin de vecteurs."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:22
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:70
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:80
 msgid "Weaviate Config"
 msgstr "Configuration Weaviate"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:25
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:25
 msgid "Weaviate vector config."
 msgstr "Configuration vectorielle Weaviate."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:29
 msgid "Weaviate URL"
 msgstr "URL Weaviate"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:33
 msgid "weaviate url address, if not set, will use the default url."
 msgstr "Adresse URL Weaviate. Si elle n'est pas définie, l'URL par défaut sera utilisée."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:39
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:39
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:30
 msgid "Persist Path"
 msgstr "Chemin de persistance"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:42
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:39
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:42
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:33
 msgid "the persist path of vector store."
 msgstr "Le chemin de persistance du magasin de vecteurs."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:64
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:74
 msgid "Weaviate Vector Store"
 msgstr "Magasin de vecteurs Weaviate"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:67
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:77
 msgid "Weaviate vector store."
 msgstr "Magasin de vecteurs Weaviate."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:73
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:83
 msgid "the weaviate config of vector store."
 msgstr "La configuration Weaviate du magasin de vecteurs."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:25
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:25
 msgid "Elastic Vector Config"
 msgstr "Configuration vectorielle Elastic"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:31
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:31
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:32
 msgid "Uri"
 msgstr "URI"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:35
 msgid "The uri of elasticsearch store, if not set, will use the default uri."
 msgstr "L'URI du magasin Elasticsearch. Si elle n'est pas définie, l'URI par défaut sera utilisée."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:41
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:42
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:42
 msgid "Port"
 msgstr "Port"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:45
 msgid "The port of elasticsearch store, if not set, will use the default port."
-msgstr "Le port du magasin Elasticsearch, s'il n'est pas défini, utilisera le port par défaut."
+msgstr "Le port du magasin Elasticsearch. Si celui-ci n'est pas défini, le port par défaut sera utilisé."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:52
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:52
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:52
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:52
 msgid "Alias"
 msgstr "Alias"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:56
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:56
 msgid ""
 "The alias of elasticsearch store, if not set, will use the default alias."
-msgstr "L'alias du magasin Elasticsearch, s'il n'est pas défini, utilisera l'alias par défaut."
+msgstr ""
+"L'alias du magasin Elasticsearch, s'il n'est pas défini, utilisera l'alias "
+"par défaut."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:63
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:63
 msgid "Index Name"
 msgstr "Nom de l'index"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:67
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:67
 msgid ""
 "The index name of elasticsearch store, if not set, will use the default "
 "index name."
-msgstr "Le nom de l'index du magasin Elasticsearch, s'il n'est pas défini, utilisera le nom d'index par défaut."
+msgstr ""
+"Le nom de l'index du magasin Elasticsearch, s'il n'est pas défini, utilisera "
+"le nom d'index par défaut."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:74
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:74
 msgid "Elasticsearch vector config."
 msgstr "Configuration vectorielle d'Elasticsearch."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:119
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:135
 msgid "Elastic Vector Store"
 msgstr "Magasin vectoriel Elastic"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:122
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:138
 msgid "Elastic vector store."
 msgstr "Magasin vectoriel Elastic."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:125
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:141
 msgid "Elastic Config"
 msgstr "Configuration Elastic"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:128
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:144
 msgid "the elastic config of vector store."
 msgstr "La configuration Elastic du magasin vectoriel."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:26
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:150
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:181
 msgid "Milvus Config"
 msgstr "Configuration Milvus"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:106
 msgid "The uri of milvus store, if not set, will use the default uri."
 msgstr "L'URI du magasin Milvus. Si elle n'est pas définie, l'URI par défaut sera utilisée."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:113
 msgid "The port of milvus store, if not set, will use the default port."
 msgstr "Le port du magasin Milvus. Si il n'est pas défini, le port par défaut sera utilisé."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:56
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:56
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:122
 msgid "The alias of milvus store, if not set, will use the default alias."
 msgstr "L'alias du magasin Milvus. Si il n'est pas défini, l'alias par défaut sera utilisé."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:62
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:62
 msgid "Primary Field"
 msgstr "Champ primaire"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:66
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:66
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:130
 msgid ""
 "The primary field of milvus store, if not set, will use the default primary "
 "field."
 msgstr "Le champ primaire du magasin Milvus. Si il n'est pas défini, le champ primaire par défaut sera utilisé."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:73
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:73
 msgid "Text Field"
 msgstr "Champ texte"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:77
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:77
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:139
 msgid ""
 "The text field of milvus store, if not set, will use the default text field."
-msgstr "Le champ texte du magasin Milvus. Si il n'est pas défini, le champ texte par défaut sera utilisé."
+msgstr ""
+"Le champ texte du magasin Milvus. Si il n'est pas défini, le champ texte par "
+"défaut sera utilisé."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:84
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:84
 msgid "Embedding Field"
 msgstr "Champ d'incorporation"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:88
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:88
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:148
 msgid ""
 "The embedding field of milvus store, if not set, will use the default "
 "embedding field."
-msgstr "Le champ d'incorporation du magasin Milvus. Si il n'est pas défini, le champ d'incorporation par défaut sera utilisé."
+msgstr ""
+"Le champ d'incorporation du magasin Milvus. Si il n'est pas défini, le champ "
+"d'incorporation par défaut sera utilisé."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:95
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:95
 msgid "Milvus vector config."
 msgstr "Configuration du vecteur Milvus."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:144
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:175
 msgid "Milvus Vector Store"
 msgstr "Magasin de vecteurs Milvus"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:147
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:178
 msgid "Milvus vector store."
 msgstr "Magasin de vecteurs Milvus."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:153
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:184
 msgid "the milvus config of vector store."
 msgstr "La configuration Milvus du stockage de vecteurs."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:29
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:68
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:70
 msgid "Chroma Config"
 msgstr "Configuration Chroma"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:26
 msgid "Chroma vector store config."
 msgstr "Configuration du stockage de vecteurs Chroma."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:62
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:54
+msgid "The metadata of collection."
+msgstr "Les métadonnées de la collection."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:64
 msgid "Chroma Vector Store"
 msgstr "Stockage de vecteurs Chroma"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:65
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:67
 msgid "Chroma vector store."
 msgstr "Stockage de vecteurs Chroma."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:71
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:73
 msgid "the chroma config of vector store."
 msgstr "La configuration Chroma du stockage de vecteurs."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:77
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:163
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:77
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:176
 msgid "OceanBase Config"
 msgstr "Configuration OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:83
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:83
 msgid "OceanBase Host"
 msgstr "Hôte OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:86
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:86
 msgid "oceanbase host"
 msgstr "Hôte OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:91
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:91
 msgid "OceanBase Port"
 msgstr "Port OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:94
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:94
 msgid "oceanbase port"
 msgstr "Port OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:99
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:99
 msgid "OceanBase User"
 msgstr "Utilisateur OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:102
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:102
 msgid "user to login"
 msgstr "Utilisateur pour la connexion"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:107
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:107
 msgid "OceanBase Password"
 msgstr "Mot de passe OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:110
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:110
 msgid "password to login"
 msgstr "Mot de passe pour se connecter"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:115
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:115
 msgid "OceanBase Database"
 msgstr "Base de données OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:118
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:118
 msgid "database for vector tables"
 msgstr "Base de données pour les tables de vecteurs"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:157
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:170
 msgid "OceanBase Vector Store"
 msgstr "Stockage de vecteurs OceanBase"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:160
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:173
 msgid "OceanBase vector store."
 msgstr "Stockage de vecteurs OceanBase."
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:166
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:179
 msgid "the ob config of vector store."
 msgstr "La configuration OB du stockage de vecteurs."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:14
+msgid "The endpoint of the s3 server. e.g. https://s3.us-east-1.amazonaws.com"
+msgstr "Le point de terminaison du serveur S3. Par exemple : https://s3.us-east-1.amazonaws.com"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:19
+msgid "The region of the s3 server. e.g. us-east-1"
+msgstr "La région du serveur S3. Par exemple : us-east-1"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:25
+msgid ""
+"The access key ID of the s3 server. You can also set it in the environment "
+"variable AWS_ACCESS_KEY_ID"
+msgstr "L'identifiant de la clé d'accès du serveur S3. Vous pouvez également le définir dans la variable d'environnement AWS_ACCESS_KEY_ID"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:35
+msgid ""
+"The access key secret of the s3 server. You can also set it in the "
+"environment variable AWS_SECRET_ACCESS_KEY"
+msgstr "Le secret de la clé d'accès du serveur S3. Vous pouvez également le définir dans la variable d'environnement AWS_SECRET_ACCESS_KEY"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:45
+msgid ""
+"Whether to use the environment variables AWS_ACCESS_KEY_ID and "
+"AWS_SECRET_ACCESS_KEY as the credentials. Default is False."
+msgstr ""
+"Utiliser les variables d'environnement AWS_ACCESS_KEY_ID et "
+"AWS_SECRET_ACCESS_KEY comme identifiants. La valeur par défaut est False."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:54
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:55
+msgid ""
+"The fixed bucket name to use. If set, all logical buckets in DB-GPT will be "
+"mapped to this bucket. We suggest you set this value to avoid bucket name "
+"conflicts."
+msgstr ""
+"Le nom fixe du compartiment à utiliser. Si défini, tous les compartiments logiques dans DB-GPT "
+"seront mappés à ce compartiment. Nous vous suggérons de définir cette valeur pour éviter les "
+"conflicts de noms de compartiments."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:64
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:65
+msgid ""
+"The prefix of the bucket name. If set, all logical buckets in DB-GPT will be "
+"prefixed with this value. Just work when fixed_bucket is None."
+msgstr ""
+"Le préfixe du nom du compartiment. Si défini, tous les compartiments logiques dans DB-GPT "
+"auront ce préfixe. Cela ne fonctionne que lorsque fixed_bucket est None."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:73
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:74
+msgid ""
+"Whether to create the bucket automatically if it does not exist. If set to "
+"False, the bucket must exist before using it."
+msgstr ""
+"Créer automatiquement le compartiment s'il n'existe pas. Si défini sur "
+"False, le compartiment doit exister avant de l'utiliser."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:82
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:83
+msgid ""
+"The chunk size when saving the file. When the file is larger 10x than this "
+"value, it will be uploaded in multiple parts. Default is 1M."
+msgstr ""
+"La taille des morceaux lors de la sauvegarde du fichier. Lorsque le fichier est 10 fois plus grand "
+"que cette valeur, il sera téléchargé en plusieurs parties. La valeur par défaut est 1M."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:91
+msgid "The signature version of the s3 server. e.g. s3v4, s3v2, None (default)"
+msgstr "La version de signature du serveur S3. Par exemple, s3v4, s3v2, None (par défaut)"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:99
+msgid "The additional configuration for the S3 client."
+msgstr "La configuration supplémentaire pour le client S3."
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:14
+msgid ""
+"The endpoint of the OSS server. e.g. https://oss-cn-hangzhou.aliyuncs.com"
+msgstr "Le point de terminaison du serveur OSS. Par exemple : https://oss-cn-hangzhou.aliyuncs.com"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:20
+msgid "The region of the OSS server. e.g. cn-hangzhou"
+msgstr "La région du serveur OSS. Par exemple : cn-hangzhou"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:26
+msgid ""
+"The access key ID of the OSS server. You can also set it in the environment "
+"variable OSS_ACCESS_KEY_ID"
+msgstr "L'identifiant de la clé d'accès du serveur OSS. Vous pouvez également le définir dans la variable d'environnement OSS_ACCESS_KEY_ID"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:36
+msgid ""
+"The access key secret of the OSS server. You can also set it in the "
+"environment variable OSS_ACCESS_KEY_SECRET"
+msgstr "Le secret de la clé d'accès du serveur OSS. Vous pouvez également le définir dans la variable d'environnement OSS_ACCESS_KEY_SECRET"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:46
+msgid ""
+"Whether to use the environment variables OSS_ACCESS_KEY_ID and "
+"OSS_ACCESS_KEY_SECRET as the credentials. Default is False."
+msgstr "Si vous souhaitez utiliser les variables d'environnement OSS_ACCESS_KEY_ID et OSS_ACCESS_KEY_SECRET comme informations d'identification. La valeur par défaut est False."

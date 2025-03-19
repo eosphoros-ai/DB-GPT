@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,432 +18,571 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:32
+msgid "SiliconFlow Proxy LLM"
+msgstr "Прокси LLM SiliconFlow"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:35
+msgid "SiliconFlow proxy LLM configuration."
+msgstr "Конфигурация прокси LLM SiliconFlow."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:48
 msgid "The base url of the SiliconFlow API."
 msgstr "Базовый URL API SiliconFlow."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:55
 msgid "The API key of the SiliconFlow API."
 msgstr "Ключ API SiliconFlow."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:38
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:38
+msgid "OpenAI Compatible Proxy LLM"
+msgstr "Совместимый с OpenAI прокси LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:51
 msgid "The base url of the OpenAI API."
 msgstr "Базовый URL API OpenAI."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:58
 msgid "The API key of the OpenAI API."
 msgstr "Ключ API OpenAI."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:65
 msgid "The type of the OpenAI API, if you use Azure, it can be: azure"
 msgstr "Тип API OpenAI. Если вы используете Azure, то может быть: azure"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:58
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:71
 msgid "The version of the OpenAI API."
 msgstr "Версия API OpenAI."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:65
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:65
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:78
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:78
 msgid ""
 "The context length of the OpenAI API. If None, it is determined by the model."
 msgstr "Длина контекста API OpenAI. Если None, то определяется моделью."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:86
 msgid "The http or https proxy to use openai"
 msgstr "HTTP или HTTPS - прокси для использования OpenAI"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:77
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:72
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:278
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:43
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:90
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:85
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:278
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:43
 msgid "Model concurrency limit"
 msgstr "Ограничение параллелизма модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:91
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:104
 msgid "OpenAI LLM Client"
 msgstr "Клиент OpenAI LLM"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:96
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:109
 msgid "OpenAI API Key"
 msgstr "Ключ API OpenAI"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:102
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:115
 msgid ""
 "OpenAI API Key, not required if you have set OPENAI_API_KEY environment "
 "variable."
-msgstr "Ключ API OpenAI, не требуется, если вы установили переменную окружения OPENAI_API_KEY."
+msgstr ""
+"Ключ API OpenAI, не требуется, если вы установили переменную окружения "
+"OPENAI_API_KEY."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:107
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:120
 msgid "OpenAI API Base"
 msgstr "Базовый URL API OpenAI"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:113
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:126
 msgid ""
 "OpenAI API Base, not required if you have set OPENAI_API_BASE environment "
 "variable."
-msgstr "Базовый URL API OpenAI, не требуется, если вы установили переменную окружения OPENAI_API_BASE."
+msgstr ""
+"Базовый URL API OpenAI, не требуется, если вы установили переменную "
+"окружения OPENAI_API_BASE."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:31
+msgid "Zhipu Proxy LLM"
+msgstr "Прокси LLM Zhipu"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:34
+msgid "Zhipu proxy LLM configuration."
+msgstr "Конфигурация прокси LLM Zhipu."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:47
 msgid "The base url of the Zhipu API."
 msgstr "Базовый URL API Zhipu."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:54
 msgid "The API key of the Zhipu API."
 msgstr "Ключ API Zhipu."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:31
+msgid "Moonshot Proxy LLM"
+msgstr "Прокси LLM Moonshot"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:47
 msgid "The base url of the Moonshot API."
 msgstr "Базовый URL API Moonshot."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:54
 msgid "The API key of the Moonshot API."
 msgstr "Ключ API Moonshot."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:32
+msgid "Gitee Proxy LLM"
+msgstr "Прокси LLM Gitee"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:48
 msgid "The base url of the Gitee API."
 msgstr "Базовый URL API Gitee."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:55
 msgid "The API key of the Gitee API."
 msgstr "Ключ API Gitee."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:32
+msgid "Deepseek Proxy LLM"
+msgstr "Прокси LLM Deepseek"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:35
+msgid "Deepseek proxy LLM configuration."
+msgstr "Конфигурация прокси LLM Deepseek."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:48
 msgid "The base url of the DeepSeek API."
 msgstr "Базовый URL API DeepSeek."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:55
 msgid "The API key of the DeepSeek API."
 msgstr "Ключ API DeepSeek."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:29
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:30
+msgid "Ollama Proxy LLM"
+msgstr "Прокси LLM Ollama"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:33
+msgid "Ollama proxy LLM configuration."
+msgstr "Конфигурация прокси LLM Ollama."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:46
 msgid "The base url of the Ollama API."
 msgstr "Базовый URL API Ollama."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:31
+msgid "Yi Proxy LLM"
+msgstr "Прокси LLM Yi"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:47
 msgid "The base url of the Yi API."
 msgstr "Базовый URL API Yi."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:54
 msgid "The API key of the Yi API."
-msgstr "Ключ API для API Yi."
+msgstr "Ключ API Yi."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:29
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:26
+msgid "Xunfei Spark Proxy LLM"
+msgstr "Прокси LLM Xunfei Spark"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:42
 msgid "The base url of the Spark API."
 msgstr "Базовый URL API Spark."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:36
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:49
 msgid "The API key of the Spark API."
 msgstr "Ключ API для API Spark."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:31
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:34
+msgid "Baichuan Proxy LLM"
+msgstr "Прокси LLM Baichuan"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:47
 msgid "The base url of the Baichuan API."
 msgstr "Базовый URL API Baichuan."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:54
 msgid "The API key of the Baichuan API."
 msgstr "Ключ API для API Baichuan."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:53
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:50
+msgid "Gemini Proxy LLM"
+msgstr "Прокси LLM Gemini"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:53
+msgid "Google Gemini proxy LLM configuration."
+msgstr "Конфигурация прокси LLM Google Gemini."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:66
 msgid "The base url of the gemini API."
 msgstr "Базовый URL API Gemini."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:60
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:73
 msgid "The API key of the gemini API."
 msgstr "Ключ API для API Gemini."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:39
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:36
+msgid "Tongyi Proxy LLM"
+msgstr "Прокси LLM Tongyi"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:39
+msgid "Tongyi proxy LLM configuration."
+msgstr "Конфигурация прокси LLM Tongyi."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:52
 msgid "The base url of the tongyi API."
 msgstr "Базовый URL API Tongyi."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:46
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:59
 msgid "The API key of the tongyi API."
 msgstr "Ключ API для API Tongyi."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:31
+msgid "Volcengine Proxy LLM"
+msgstr "Прокси LLM Volcengine"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:34
+msgid "Volcengine proxy LLM configuration."
+msgstr "Конфигурация прокси LLM Volcengine."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:47
 msgid "The base url of the Volcengine API."
 msgstr "Базовый URL API Volcengine."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:54
 msgid "The API key of the Volcengine API."
 msgstr "Ключ API для API Volcengine."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:49
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:46
+msgid "Baidu Wenxin Proxy LLM"
+msgstr "Прокси LLM Baidu Wenxin"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:49
+msgid "Baidu Wenxin proxy LLM configuration."
+msgstr "Конфигурация прокси LLM Baidu Wenxin."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:62
 msgid "The API key of the Wenxin API."
 msgstr "API-ключ для API Wenxin."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:56
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:69
 msgid "The API secret key of the Wenxin API."
 msgstr "Секретный API-ключ для API Wenxin."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:45
+msgid "Claude Proxy LLM"
+msgstr "Прокси LLM Claude"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:58
 msgid "The base url of the claude API."
 msgstr "Базовый URL для API Claude."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:65
 msgid "The API key of the claude API."
 msgstr "API-ключ для API Claude."
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:312
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:312
 msgid "The name of model"
 msgstr "Название модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:319
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:319
 msgid "System prompt"
 msgstr "Системное приглашение"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:443
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:443
 msgid "The config file to start server"
 msgstr "Конфигурационный файл для запуска сервера"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:451
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:451
 msgid ""
 "Run in daemon mode. It will run in the background. If you want to stop it, "
 "use `dbgpt stop` command"
-msgstr "Запуск в режиме демона. Он будет работать в фоновом режиме. Если вы хотите остановить его, используйте команду `dbgpt stop`"
+msgstr ""
+"Запуск в режиме демона. Он будет работать в фоновом режиме. Если вы хотите "
+"остановить его, используйте команду `dbgpt stop`"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:20
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:20
 msgid "Default LLM Client"
 msgstr "Клиент LLM по умолчанию"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:23
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:23
 msgid "Default LLM client(Connect to your DB-GPT model serving)"
 msgstr "Клиент LLM по умолчанию (Подключение к службе модели DB-GPT)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:26
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:128
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:26
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:128
 msgid "Auto Convert Message"
 msgstr "Автоматическое преобразование сообщения"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:32
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:134
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:32
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:134
 msgid ""
 "Whether to auto convert the messages that are not supported by the LLM to a "
 "compatible format"
-msgstr "Автоматически преобразовывать ли сообщения, которые не поддерживаются LLM, в совместимый формат"
+msgstr ""
+"Автоматически преобразовывать ли сообщения, которые не поддерживаются LLM, в "
+"совместимый формат"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:114
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:114
 msgid "Remote LLM Client"
 msgstr "Удаленный клиент LLM"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:117
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:117
 msgid "Remote LLM client(Connect to the remote DB-GPT model serving)"
 msgstr "Удаленный клиент LLM (Подключение к удаленному серверу моделей DB-GPT)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:120
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:120
 msgid "Controller Address"
 msgstr "Адрес контроллера"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:124
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:124
 msgid "http://127.0.0.1:8000"
 msgstr "http://127.0.0.1:8000"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:125
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:125
 msgid "Model controller address"
 msgstr "Адрес контроллера модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:33
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:29
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:25
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:33
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:29
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:25
 msgid "The path of the model, if you want to deploy a local model."
 msgstr "Путь к модели, если вы хотите развернуть локальную модель."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:41
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:64
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:37
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:33
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:64
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:37
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:33
 msgid "Device to run model. If None, the device is automatically determined"
 msgstr "Устройство для запуска модели. Если не указано, устройство определяется автоматически"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:47
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:96
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:47
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:99
 msgid "Trust remote code or not."
 msgstr "Доверять удаленному коду или нет."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:52
 msgid "The quantization parameters."
 msgstr "Параметры квантования."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:59
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:59
 msgid ""
 "Whether to use low CPU memory usage mode. It can reduce the memory when "
 "loading the model, if you load your model with quantization, it will be True "
 "by default. You must install `accelerate` to make it work."
-msgstr "Использовать ли режим низкого потребления памяти ЦП. Это может уменьшить потребление памяти при загрузке модели. Если вы загружаете модель с квантованием, этот параметр будет установлен в True по умолчанию. Для работы этого режима необходимо установить `accelerate`."
+msgstr ""
+"Использовать ли режим низкого потребления памяти ЦП. Это может уменьшить "
+"потребление памяти при загрузке модели. Если вы загружаете модель с "
+"квантованием, этот параметр будет установлен в True по умолчанию. Для работы "
+"этого режима необходимо установить `accelerate`."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:70
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:70
 msgid ""
 "The number of gpus you expect to use, if it is empty, use all of them as "
 "much as possible"
-msgstr "Количество GPU, которые вы хотите использовать. Если значение пустое, будут использованы все доступные GPU."
+msgstr ""
+"Количество GPU, которые вы хотите использовать. Если значение пустое, будут "
+"использованы все доступные GPU."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:79
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:79
 msgid ""
 "The maximum memory limit of each GPU, only valid in multi-GPU configuration, "
 "eg: 10GiB, 24GiB"
-msgstr "Максимальный лимит памяти для каждого GPU, действует только в конфигурации с несколькими GPU, например: 10GiB, 24GiB"
+msgstr ""
+"Максимальный лимит памяти для каждого GPU, действует только в конфигурации с "
+"несколькими GPU, например: 10GiB, 24GiB"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:87
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:87
 msgid "The dtype of the model, default is None."
 msgstr "Тип данных модели, по умолчанию None."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:45
 msgid "Local model file path"
 msgstr "Путь к локальному файлу модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:51
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:51
 msgid "Hugging Face repository for model download"
 msgstr "Репозиторий Hugging Face для загрузки модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:56
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:56
 msgid "Model file name in the Hugging Face repository"
 msgstr "Имя файла модели в репозитории Hugging Face"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:71
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:71
 msgid "Path to the server binary executable"
 msgstr "Путь к исполняемому бинарному файлу сервера"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:75
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:75
 msgid "Host address to bind the server"
 msgstr "Адрес хоста, к которому будет привязан сервер"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:80
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:80
 msgid "Port to bind the server. 0 for random available port"
-msgstr "Порт, к которому будет привязан сервер. 0 - для случайного свободного порта"
+msgstr "Порт, к которому будет привязан сервер. 0 — для случайного свободного порта"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:85
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:85
 msgid "Sampling temperature for text generation"
 msgstr "Температура семплирования для генерации текста"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:89
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:89
 msgid "Random seed for reproducibility"
 msgstr "Случайное зерно для воспроизводимости"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:92
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:92
 msgid "Enable debug mode"
 msgstr "Включить режим отладки"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:97
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:97
 msgid "Model download URL (env: LLAMA_ARG_MODEL_URL)"
 msgstr "URL для загрузки модели (переменная окружения: LLAMA_ARG_MODEL_URL)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:101
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:101
 msgid "Draft model file path"
 msgstr "Путь к файлу черновой модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:109
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:109
 msgid ""
 "Number of threads to use during generation (default: -1) (env: "
 "LLAMA_ARG_THREADS)"
-msgstr "Количество потоков для использования при генерации (по умолчанию: -1) (переменная окружения: LLAMA_ARG_THREADS)"
+msgstr ""
+"Количество потоков для использования при генерации (по умолчанию: -1) "
+"(переменная окружения: LLAMA_ARG_THREADS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:119
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:119
 msgid ""
 "Number of layers to store in VRAM (env: LLAMA_ARG_N_GPU_LAYERS), set "
 "1000000000 to use all layers"
-msgstr "Количество слоев для хранения в видеопамяти (переменная окружения: LLAMA_ARG_N_GPU_LAYERS). Установите 1000000000, чтобы использовать все слои."
+msgstr ""
+"Количество слоев для хранения в видеопамяти (переменная окружения: "
+"LLAMA_ARG_N_GPU_LAYERS). Установите 1000000000, чтобы использовать все слои."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:129
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:129
 msgid "Logical maximum batch size (default: 2048) (env: LLAMA_ARG_BATCH)"
-msgstr "Логический максимальный размер пакета (по умолчанию: 2048) (переменная окружения: LLAMA_ARG_BATCH)"
+msgstr ""
+"Логический максимальный размер пакета (по умолчанию: 2048) (переменная "
+"окружения: LLAMA_ARG_BATCH)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:138
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:138
 msgid "Physical maximum batch size (default: 512) (env: LLAMA_ARG_UBATCH)"
-msgstr "Физический максимальный размер пакета (по умолчанию: 512) (переменная окружения: LLAMA_ARG_UBATCH)"
+msgstr ""
+"Физический максимальный размер пакета (по умолчанию: 512) (переменная "
+"окружения: LLAMA_ARG_UBATCH)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:148
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:148
 msgid ""
 "Size of the prompt context (default: 4096, 0 = loaded from model) (env: "
 "LLAMA_ARG_CTX_SIZE)"
-msgstr "Размер контекста запроса (по умолчанию: 4096, 0 = загружается из модели) (переменная окружения: LLAMA_ARG_CTX_SIZE)"
+msgstr ""
+"Размер контекста запроса (по умолчанию: 4096, 0 = загружается из модели) "
+"(переменная окружения: LLAMA_ARG_CTX_SIZE)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:155
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:155
 msgid "Group-attention factor (default: 1)"
 msgstr "Фактор группового внимания (по умолчанию: 1)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:159
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:159
 msgid "Group-attention width (default: 512)"
 msgstr "Ширина группового внимания (по умолчанию: 512)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:167
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:167
 msgid ""
 "Number of tokens to predict (default: -1, -1 = infinity, -2 = until context "
 "filled) (env: LLAMA_ARG_N_PREDICT)"
-msgstr "Количество токенов для предсказания (по умолчанию: -1, -1 = бесконечность, -2 = до заполнения контекста) (переменная окружения: LLAMA_ARG_N_PREDICT)"
+msgstr ""
+"Количество токенов для предсказания (по умолчанию: -1, -1 = бесконечность, "
+"-2 = до заполнения контекста) (переменная окружения: LLAMA_ARG_N_PREDICT)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:176
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:176
 msgid "Path to save slot kv cache (default: disabled)"
 msgstr "Путь для сохранения кэша слотов KV (по умолчанию: отключено)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:180
 msgid "Number of slots for KV cache"
 msgstr "Количество слотов для KV-кэша"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:186
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:186
 msgid "Enable continuous batching (a.k.a dynamic batching)"
-msgstr "Включить непрерывную пакетную обработку (также известную как динамическая пакетная обработка)"
+msgstr ""
+"Включить непрерывную пакетную обработку (также известная как динамическая "
+"пакетная обработка)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:193
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:193
 msgid ""
 "Restrict to only support embedding use case; use only with dedicated "
 "embedding models (env: LLAMA_ARG_EMBEDDINGS)"
-msgstr "Ограничиться только поддержкой сценария использования эмбеддингов; использовать только с специальными моделями эмбеддингов (переменная окружения: LLAMA_ARG_EMBEDDINGS)"
+msgstr ""
+"Ограничиться только поддержкой сценария использования эмбеддингов; "
+"использовать только с специальными моделями эмбеддингов (переменная "
+"окружения: LLAMA_ARG_EMBEDDINGS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:202
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:202
 msgid "Enable reranking endpoint on server (env: LLAMA_ARG_RERANKING)"
-msgstr "Включить конечную точку переранжирования на сервере (переменная окружения: LLAMA_ARG_RERANKING)"
+msgstr ""
+"Включить конечную точку переранжирования на сервере (переменная окружения: "
+"LLAMA_ARG_RERANKING)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:210
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:210
 msgid ""
 "Enable prometheus compatible metrics endpoint (env: "
 "LLAMA_ARG_ENDPOINT_METRICS)"
-msgstr "Включить конечную точку метрик, совместимую с Prometheus (переменная окружения: LLAMA_ARG_ENDPOINT_METRICS)"
+msgstr ""
+"Включить конечную точку метрик, совместимую с Prometheus (переменная "
+"окружения: LLAMA_ARG_ENDPOINT_METRICS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:220
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:220
 msgid "Enable slots monitoring endpoint (env: LLAMA_ARG_ENDPOINT_SLOTS)"
-msgstr "Включить конечную точку мониторинга слотов (переменная окружения: LLAMA_ARG_ENDPOINT_SLOTS)"
+msgstr ""
+"Включить конечную точку мониторинга слотов (переменная окружения: "
+"LLAMA_ARG_ENDPOINT_SLOTS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:230
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:230
 msgid ""
 "Number of tokens to draft for speculative decoding (default: 16) (env: "
 "LLAMA_ARG_DRAFT_MAX)"
-msgstr "Количество токенов для предварительного набора при спекулятивном декодировании (по умолчанию: 16) (переменная окружения: LLAMA_ARG_DRAFT_MAX)"
+msgstr ""
+"Количество токенов для предварительного набора при спекулятивном "
+"декодировании (по умолчанию: 16) (переменная окружения: LLAMA_ARG_DRAFT_MAX)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:237
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:237
 msgid "Same as draft"
 msgstr "То же, что и предварительный набор"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:244
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:244
 msgid ""
 "Minimum number of draft tokens to use for speculative decoding (default: 5)"
-msgstr "Минимальное количество токенов предварительного набора для использования при спекулятивном декодировании (по умолчанию: 5)"
+msgstr ""
+"Минимальное количество Token предварительного набора для использования при "
+"спекулятивном декодировании (по умолчанию: 5)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:253
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:253
 msgid "API key to use for authentication (env: LLAMA_API_KEY)"
 msgstr "Ключ API для аутентификации (переменная окружения: LLAMA_API_KEY)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:260
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:260
 msgid "Path to LoRA adapter (can be repeated to use multiple adapters)"
-msgstr "Путь к адаптеру LoRA (можно повторять для использования нескольких адаптеров)"
+msgstr ""
+"Путь к адаптеру LoRA (можно повторять для использования нескольких адаптеров)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:267
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:267
 msgid "Disables context shift on infinite text generation"
 msgstr "Отключает сдвиг контекста при бесконечной генерации текста"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:271
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:271
 msgid "Disable web UI"
 msgstr "Отключить веб-интерфейс"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:274
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:274
 msgid "Server startup timeout in seconds"
 msgstr "Тайм-аут запуска сервера в секундах"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:102
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:105
 msgid ""
 "Directory to download and load the weights, default to the default cache dir "
 "of huggingface."
-msgstr "Директория для загрузки и загрузки весов, по умолчанию - стандартная кэш-директория Hugging Face."
+msgstr "Директория для загрузки и загрузки весов, по умолчанию — стандартная кэш-директория Hugging Face."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:112
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:115
 msgid ""
 "The format of the model weights to load.\n"
 "\n"
@@ -461,28 +600,37 @@ msgid ""
 "* \"runai_streamer\" will load the Safetensors weights using Run:aiModel "
 "Streamer \n"
 "* \"bitsandbytes\" will load the weights using bitsandbytes quantization.\n"
-msgstr "Формат весов модели для загрузки.\n"
+msgstr ""
+"Формат весов модели для загрузки.\n"
 "\n"
-"* \"auto\" попытается загрузить веса в формате safetensors и, если формат safetensors недоступен, переключится на формат pytorch bin.\n"
+"* \"auto\" попытается загрузить веса в формате safetensors и, если формат "
+"safetensors недоступен, переключится на формат pytorch bin.\n"
 "* \"pt\" загрузит веса в формате pytorch bin.\n"
 "* \"safetensors\" загрузит веса в формате safetensors.\n"
-"* \"npcache\" загрузит веса в формате pytorch и сохранит кэш numpy для ускорения загрузки.\n"
-"* \"dummy\" инициализирует веса случайными значениями, что в основном используется для профилирования.\n"
-"* \"tensorizer\" загрузит веса с использованием tensorizer от CoreWeave. См. скрипт Tensorize vLLM Model в разделе Примеры для получения более подробной информации.\n"
-"* \"runai_streamer\" загрузит веса в формате Safetensors с использованием Run:aiModel Streamer \n"
+"* \"npcache\" загрузит веса в формате pytorch и сохранит кэш numpy для "
+"ускорения загрузки.\n"
+"* \"dummy\" инициализирует веса случайными значениями, что в основном "
+"используется для профилирования.\n"
+"* \"tensorizer\" загрузит веса с использованием tensorizer от CoreWeave. См. "
+"скрипт Tensorize vLLM Model в разделе Примеры для получения более подробной "
+"информации.\n"
+"* \"runai_streamer\" загрузит веса в формате Safetensors с использованием "
+"Run:aiModel Streamer \n"
 "* \"bitsandbytes\" загрузит веса с использованием квантования bitsandbytes.\n"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:149
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:152
 msgid ""
 "The format of the model config to load.\n"
 "\n"
 "* \"auto\" will try to load the config in hf format if available else it "
 "will try to load in mistral format "
-msgstr "Формат конфигурации модели для загрузки.\n"
+msgstr ""
+"Формат конфигурации модели для загрузки.\n"
 "\n"
-"* \"auto\" попытается загрузить конфигурацию в формате hf, если он доступен, в противном случае попытается загрузить в формате mistral"
+"* \"auto\" попытается загрузить конфигурацию в формате hf, если он доступен, "
+"иначе попытается загрузить в формате mistral"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:164
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:167
 msgid ""
 "Data type for model weights and activations.\n"
 "\n"
@@ -496,29 +644,29 @@ msgid ""
 msgstr ""
 "Тип данных для весов модели и активаций.\n"
 "\n"
-"* \"auto\" будет использовать точность FP16 для моделей FP32 и FP16, и точность BF16 "
-"для моделей BF16.\n"
+"* \"auto\" будет использовать точность FP16 для моделей FP32 и FP16, и "
+"точность BF16 для моделей BF16.\n"
 "* \"half\" для FP16. Рекомендуется для квантования AWQ.\n"
 "* \"float16\" то же самое, что и \"half\".\n"
-"* \"bfloat16\" для баланса между точностью и диапазоном.\n"
+"* \"bfloat16\" для баланса между точностью и диапазоном значений.\n"
 "* \"float\" - сокращение для точности FP32.\n"
 "* \"float32\" для точности FP32."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:183
 msgid ""
 "Data type for kv cache storage. If \"auto\", will use model data type. CUDA "
 "11.8+ supports fp8 (=fp8_e4m3) and fp8_e5m2. ROCm (AMD GPU) supports fp8 "
 "(=fp8_e4m3)"
 msgstr ""
-"Тип данных для хранения кэша kv. Если \"auto\", будет использоваться тип данных модели. CUDA "
-"11.8+ поддерживает fp8 (=fp8_e4m3) и fp8_e5m2. ROCm (AMD GPU) поддерживает fp8 "
-"(=fp8_e4m3)"
+"Тип данных для хранения кэша kv. Если \"auto\", будет использоваться тип "
+"данных модели. CUDA 11.8+ поддерживает fp8 (=fp8_e4m3) и fp8_e5m2. ROCm (AMD "
+"GPU) поддерживает fp8 (=fp8_e4m3)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:190
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:193
 msgid "Random seed for operations."
 msgstr "Случайное зерно для операций."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:197
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:200
 msgid ""
 "Model context length. If unspecified, will be automatically derived from the "
 "model config."
@@ -526,7 +674,7 @@ msgstr ""
 "Длина контекста модели. Если не указано, будет автоматически определено из "
 "конфигурации модели."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:206
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:209
 msgid ""
 "Backend to use for distributed model workers, either \"ray\" or \"mp\" "
 "(multiprocessing). If the product of pipeline_parallel_size and "
@@ -535,43 +683,51 @@ msgid ""
 "will default to \"ray\" if Ray is installed and fail otherwise. Note that "
 "tpu only supports Ray for distributed inference."
 msgstr ""
-"Бэкенд, который будет использоваться для распределенных рабочих моделей, либо \"ray\", либо \"mp\" "
-"(многопроцессорность). Если произведение pipeline_parallel_size и "
-"tensor_parallel_size меньше или равно количеству доступных GPU, "
-"будет использоваться \"mp\" для сохранения обработки на одном узле. В противном случае, "
-"по умолчанию будет использоваться \"ray\", если Ray установлен, и возникнет ошибка в противном случае. Обратите внимание, что "
-"TPU поддерживает только Ray для распределенного вывода."
+"Бэкенд, который будет использоваться для распределенных рабочих моделей, "
+"либо \"ray\", либо \"mp\" (многопроцессорность). Если произведение "
+"pipeline_parallel_size и tensor_parallel_size меньше или равно количеству "
+"доступных GPU, будет использоваться \"mp\" для сохранения обработки на одном "
+"узле. В противном случае, по умолчанию будет использоваться \"ray\", если "
+"Ray установлен, и возникнет ошибка в противном случае. Обратите внимание, "
+"что TPU поддерживает только Ray для распределенного вывода."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:220
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:223
 msgid "Number of pipeline stages."
 msgstr "Количество этапов конвейера."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:226
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:229
 msgid "Number of tensor parallel replicas."
 msgstr "Количество тензорных параллельных реплик."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:233
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:236
 msgid ""
 "Load model sequentially in multiple batches, to avoid RAM OOM when using "
 "tensor parallel and large models."
-msgstr "Загружать модель последовательно в нескольких пакетах, чтобы избежать переполнения оперативной памяти (RAM OOM) при использовании тензорного параллелизма и больших моделей."
+msgstr ""
+"Загружать модель последовательно в нескольких пакетах, чтобы избежать "
+"переполнения оперативной памяти (RAM OOM) при использовании тензорного "
+"параллелизма и больших моделей."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:242
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:245
 msgid ""
 "Token block size for contiguous chunks of tokens. This is ignored on neuron "
 "devices and set to ``--max-model-len``. On CUDA devices, only block sizes up "
 "to 32 are supported. On HPU devices, block size defaults to 128."
-msgstr "Размер блока токенов для непрерывных фрагментов токенов. Этот параметр игнорируется на нейронных устройствах и устанавливается в ``--max-model-len``. На устройствах CUDA поддерживаются только размеры блоков до 32. На устройствах HPU размер блока по умолчанию равен 128."
+msgstr ""
+"Размер блока токенов для непрерывных фрагментов токенов. Этот параметр "
+"игнорируется на нейронных устройствах и устанавливается в ``--max-model-"
+"len``. На устройствах CUDA поддерживаются только размеры блоков до 32. На "
+"устройствах HPU размер блока по умолчанию равен 128."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:253
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:256
 msgid "Enables automatic prefix caching. "
 msgstr "Включает автоматическое кэширование префиксов. "
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:259
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:262
 msgid "CPU swap space size (GiB) per GPU."
 msgstr "Размер пространства подкачки CPU (ГиБ) на каждый GPU."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:266
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:269
 msgid ""
 "The space in GiB to offload to CPU, per GPU. Default is 0, which means no "
 "offloading. Intuitively, this argument can be seen as a virtual way to "
@@ -580,9 +736,19 @@ msgid ""
 "a 13B model with BF16 weight, which requires at least 26GB GPU memory. Note "
 "that this requires fast CPU-GPU interconnect, as part of the model is loaded "
 "from CPU memory to GPU memory on the fly in each model forward pass."
-msgstr "Объем пространства в гигабайтах, который нужно выгрузить на CPU для каждого GPU. По умолчанию значение равно 0, что означает отсутствие выгрузки. Интуитивно этот параметр можно рассматривать как виртуальный способ увеличения объема памяти GPU. Например, если у вас есть один GPU объемом 24 ГБ и вы установите этот параметр равным 10, то можно считать, что у вас есть GPU объемом 34 ГБ. Затем вы можете загрузить модель 13B с весами BF16, которая требует как минимум 26 ГБ памяти GPU. Обратите внимание, что для этого требуется быстрая связь между CPU и GPU, так как часть модели загружается из памяти CPU в память GPU на лету при каждом прямом проходе модели."
+msgstr ""
+"Объем пространства в гигабайтах, который нужно выгрузить на CPU для каждого "
+"GPU. По умолчанию значение равно 0, что означает отсутствие выгрузки. "
+"Интуитивно этот параметр можно рассматривать как виртуальный способ "
+"увеличения объема памяти GPU. Например, если у вас есть один GPU объемом 24 "
+"ГБ и вы установите этот параметр равным 10, то можно считать, что у вас есть "
+"GPU объемом 34 ГБ. Затем вы можете загрузить модель 13B с весами BF16, "
+"которая требует как минимум 26 ГБ памяти GPU. Обратите внимание, что для "
+"этого требуется быстрая связь между CPU и GPU, так как часть модели "
+"загружается из памяти CPU в память GPU на лету при каждом прямом проходе "
+"модели."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:283
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:286
 #, python-format
 msgid ""
 "The fraction of GPU memory to be used for the model executor, which can "
@@ -595,57 +761,57 @@ msgid ""
 msgstr ""
 "Доля памяти GPU, которая будет использоваться для исполнителя модели, может "
 "варьироваться от 0 до 1. Например, значение 0.5 означает использование 50%% "
-"памяти GPU. Если параметр не указан, будет использовано значение по умолчанию "
-"равное 0.9. Это ограничение действует на каждый экземпляр и применяется только "
-"к текущему экземпляру vLLM. Не имеет значения, запущен ли на том же GPU еще "
-"один экземпляр vLLM. Например, если у вас два экземпляра vLLM работают на "
-"том же GPU, вы можете установить использование памяти GPU равным 0.5 для "
-"каждого экземпляра."
+"памяти GPU. Если параметр не указан, будет использовано значение по "
+"умолчанию, равное 0.9. Это ограничение действует на каждый экземпляр и "
+"применяется только к текущему экземпляру vLLM. Не имеет значения, запущен ли "
+"на том же GPU еще один экземпляр vLLM. Например, если у вас два экземпляра "
+"vLLM работают на том же GPU, вы можете установить использование памяти GPU "
+"равным 0.5 для каждого экземпляра."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:298
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:301
 msgid "Maximum number of batched tokens per iteration."
 msgstr "Максимальное количество пакетных токенов за одну итерацию."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:304
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:307
 msgid "Maximum number of sequences per iteration."
 msgstr "Максимальное количество последовательностей за одну итерацию."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:311
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:314
 msgid ""
 "Max number of log probs to return logprobs is specified in SamplingParams."
 msgstr ""
-"Максимальное количество логарифмов вероятностей для возврата. Параметр logprobs "
-"указывается в SamplingParams."
+"Максимальное количество логарифмов вероятностей для возврата. Параметр "
+"logprobs указывается в SamplingParams."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:320
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:323
 msgid ""
 "The specific model version to use. It can be a branch name, a tag name, or a "
 "commit id. If unspecified, will use the default version."
 msgstr ""
-"Конкретная версия модели для использования. Это может быть имя ветки, имя тега "
-"или идентификатор коммита. Если параметр не указан, будет использована версия "
-"по умолчанию."
+"Конкретная версия модели для использования. Это может быть имя ветки, имя "
+"тега или идентификатор коммита. Если параметр не указан, будет использована "
+"версия по умолчанию."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:330
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:333
 msgid ""
 "The specific revision to use for the model code on Hugging Face Hub. It can "
 "be a branch name, a tag name, or a commit id. If unspecified, will use the "
 "default version."
 msgstr ""
-"Конкретная ревизия кода модели на Hugging Face Hub для использования. Это может "
-"быть имя ветки, имя тега или идентификатор коммита. Если параметр не указан, "
-"будет использована версия по умолчанию."
+"Конкретная ревизия кода модели на Hugging Face Hub для использования. Это "
+"может быть имя ветки, имя тега или идентификатор коммита. Если параметр не "
+"указан, будет использована версия по умолчанию."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:340
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:343
 msgid ""
 "Revision of the huggingface tokenizer to use. It can be a branch name, a tag "
 "name, or a commit id. If unspecified, will use the default version."
 msgstr ""
-"Ревизия токенизатора Hugging Face для использования. Это может быть имя ветки, "
-"имя тега или идентификатор коммита. Если параметр не указан, будет использована "
-"версия по умолчанию."
+"Ревизия токенизатора Hugging Face для использования. Это может быть имя "
+"ветки, имя тега или идентификатор коммита. Если параметр не указан, будет "
+"использована версия по умолчанию."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:350
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:353
 msgid ""
 "The tokenizer mode.\n"
 "\n"
@@ -659,7 +825,7 @@ msgstr ""
 "* \"slow\" всегда будет использовать медленный токенизатор. \n"
 "* \"mistral\" всегда будет использовать токенизатор `mistral_common`."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:362
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:365
 msgid ""
 "Method used to quantize the weights. If None, we first check the "
 "`quantization_config` attribute in the model config file. If that is None, "
@@ -671,7 +837,7 @@ msgstr ""
 "этот атрибут равен None, мы предполагаем, что веса модели не квантованы, и "
 "используем `dtype` для определения типа данных весов."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:400
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:403
 msgid ""
 "Maximum sequence length covered by CUDA graphs. When a sequence has context "
 "length larger than this, we fall back to eager mode. Additionally for "
@@ -680,204 +846,286 @@ msgid ""
 msgstr ""
 "Максимальная длина последовательности, обрабатываемая графиками CUDA. Когда "
 "длина контекста последовательности превышает это значение, мы переключаемся "
-"в режим eager. Кроме того, для моделей с кодировщиком и декодером, если длина "
-"последовательности входных данных кодировщика превышает это значение, мы "
-"переключаемся в режим eager."
+"в режим eager. Кроме того, для моделей с кодировщиком и декодером, если "
+"длина последовательности входных данных кодировщика превышает это значение, "
+"мы переключаемся в режим eager."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:411
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:414
 msgid "The worker class to use for distributed execution."
 msgstr "Класс рабочего процесса, используемый для распределенного выполнения."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:415
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:418
 msgid "Extra parameters, it will be passed to the vllm engine."
 msgstr "Дополнительные параметры, которые будут переданы в движок vllm."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:27
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:27
 msgid ""
 "The embedding model are trained by BAAI, it support more than 100 working "
 "languages."
 msgstr ""
 "Модель эмбеддингов была обучена BAAI и поддерживает более 100 рабочих языков."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:36
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:36
 msgid "The embedding model are trained by BAAI, it support Chinese."
 msgstr "Модель эмбеддингов была обучена BAAI и поддерживает китайский язык."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:44
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:44
 msgid "The embedding model are trained by BAAI, it support English."
 msgstr "Модель эмбеддингов была обучена BAAI и поддерживает английский язык."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:54
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:54
 msgid ""
 "The embedding model are trained by Jina AI, it support multiple languages. "
 "And it has 0.57B parameters."
 msgstr ""
 "Модель эмбеддингов была обучена Jina AI и поддерживает несколько языков. "
-"И у нее 0.57 миллиарда параметров."
+"У неё 0.57 миллиарда параметров."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:65
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:65
 msgid "The reranker model are trained by BAAI, it support multiple languages."
-msgstr "Модель переранжировщика была обучена BAAI, она поддерживает несколько языков."
+msgstr "Модель переранжировщика была обучена BAAI и поддерживает несколько языков."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:73
 msgid "The reranker model are trained by BAAI, it support Chinese and English."
-msgstr "Модель переранжировщика была обучена BAAI, она поддерживает китайский и английский языки."
+msgstr "Модель переранжировщика была обучена BAAI и поддерживает китайский и английский языки."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:85
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:85
 msgid ""
 "The reranker model are trained by Jina AI, it support multiple languages."
-msgstr "Модель переранжировщика была обучена Jina AI, она поддерживает несколько языков."
+msgstr ""
+"Модель переранжировщика была обучена Jina AI и поддерживает несколько языков."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:39
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:39
 msgid "Random seed for llama-cpp models. -1 for random"
 msgstr "Случайное зерно для моделей llama-cpp. -1 для случайного выбора"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:45
 msgid ""
 "Number of threads to use. If None, the number of threads is automatically "
 "determined"
-msgstr "Количество потоков для использования. Если None, количество потоков определяется автоматически"
+msgstr ""
+"Количество потоков для использования. Если None, количество потоков "
+"определяется автоматически"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:54
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:54
 msgid ""
 "Maximum number of prompt tokens to batch together when calling llama_eval"
-msgstr "Максимальное количество токенов запроса, которые можно объединять в пакет при вызове llama_eval"
+msgstr ""
+"Максимальное количество токенов запроса, которые можно объединять в пакет "
+"при вызове llama_eval"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:63
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:63
 msgid ""
 "Number of layers to offload to the GPU, Set this to 1000000000 to offload "
 "all layers to the GPU."
-msgstr "Количество слоев, которые нужно выгрузить на GPU. Установите это значение равным 1000000000, чтобы выгрузить все слои на GPU."
+msgstr ""
+"Количество слоев, которые нужно выгрузить на GPU. Установите это значение "
+"равным 1000000000, чтобы выгрузить все слои на GPU."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:70
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:70
 msgid "Grouped-query attention. Must be 8 for llama-2 70b."
 msgstr "Группированное внимание к запросам. Для llama-2 70b должно быть равно 8."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:73
 msgid "5e-6 is a good value for llama-2 models."
 msgstr "5e-6 - хорошее значение для моделей llama-2."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:79
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:79
 msgid ""
 "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without "
 "units, bytes will be assumed. "
-msgstr "Максимальная емкость кэша. Примеры: 2000MiB, 2GiB. Если не указаны единицы измерения, предполагается, что это байты."
+msgstr ""
+"Максимальная емкость кэша. Примеры: 2000MiB, 2GiB. Если не указаны единицы "
+"измерения, предполагается, что это байты."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:88
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:88
 msgid ""
 "If a GPU is available, it will be preferred by default, unless "
 "prefer_cpu=False is configured."
-msgstr "Если доступна GPU, по умолчанию она будет использоваться, если не настроено prefer_cpu=False."
+msgstr ""
+"Если доступна GPU, по умолчанию она будет использоваться, если не настроено "
+"prefer_cpu=False."
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:94
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:96
 msgid "Database configuration for model registry"
 msgstr "Конфигурация базы данных для реестра моделей"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:106
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:108
 msgid "Model registry configuration. If None, use embedded registry"
-msgstr "Конфигурация реестра моделей. Если None, используется встроенный реестр"
+msgstr ""
+"Конфигурация реестра моделей. Если None, используется встроенный реестр"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:125
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:114
+msgid "The interval for checking heartbeats (seconds)"
+msgstr "Интервал проверки сердечных ударов (секунды)"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:120
+msgid ""
+"The timeout for checking heartbeats (seconds), it will be set unhealthy if "
+"the worker is not responding in this time"
+msgstr ""
+"Тайм-аут для проверки сердечных ударов (секунды). Если рабочий узел не отвечает в течение этого времени, он будет помечен как неработоспособный."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:130
 msgid "Model API server deploy port"
 msgstr "Порт развертывания сервера API модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:129
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:134
 msgid "The Model controller address to connect"
 msgstr "Адрес контроллера модели для подключения"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:189
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:139
+msgid "Optional list of comma separated API keys"
+msgstr "Необязательный список API-ключей, разделенных запятыми"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:142
+msgid "Embedding batch size"
+msgstr "Размер пакета эмбеддингов"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:145
+msgid "Ignore exceeds stop words error"
+msgstr "Игнорировать ошибку превышения стоп-слов"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:153
+msgid "Worker type"
+msgstr "Тип рабочего узла"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:158
+msgid "Model worker class, dbgpt.model.cluster.DefaultModelWorker"
+msgstr "Класс рабочего узла модели, dbgpt.model.cluster.DefaultModelWorker"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:167
+msgid "Standalone mode. If True, embedded Run ModelController"
+msgstr "Режим автономной работы. Если True, встроенный запуск Контроллера модели"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:171
+msgid "Register current worker to model controller"
+msgstr "Зарегистрировать текущий рабочий узел в Контроллере модели"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:190
+msgid "The interval for sending heartbeats (seconds)"
+msgstr "Интервал отправки сервисных пакетов (секунды)"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:202
 msgid "Model worker configuration"
 msgstr "Конфигурация рабочего узла модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:192
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:205
 msgid "Model API"
 msgstr "API модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:196
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:209
 msgid "Model controller"
 msgstr "Контроллер модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:206
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:220
 msgid ""
 "Default LLM model name, used to specify which model to use when you have "
 "multiple LLMs"
-msgstr "Имя модели LLM по умолчанию, используется для указания, какую модель использовать, если у вас есть несколько моделей LLM"
+msgstr ""
+"Имя модели LLM по умолчанию, используется для указания, какую модель "
+"использовать, если у вас есть несколько моделей LLM"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:215
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:229
 msgid ""
 "Default embedding model name, used to specify which model to use when you "
 "have multiple embedding models"
-msgstr "Имя модели эмбеддинга по умолчанию, используется для указания, какую модель использовать, если у вас есть несколько моделей эмбеддинга"
+msgstr ""
+"Имя модели эмбеддинга по умолчанию, используется для указания, какую модель "
+"использовать, если у вас есть несколько моделей эмбеддинга"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:224
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:238
 msgid ""
 "Default reranker model name, used to specify which model to use when you "
 "have multiple reranker models"
-msgstr "Имя модели переранжирования по умолчанию, используется для указания, какую модель использовать, если у вас есть несколько моделей переранжирования"
+msgstr ""
+"Имя модели переранжирования по умолчанию, используется для указания, какую "
+"модель использовать, если у вас есть несколько моделей переранжирования"
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:176
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:247
+msgid ""
+"LLM model deploy configuration. If you deploy in cluster mode, you just "
+"deploy one model."
+msgstr ""
+"Конфигурация развертывания модели LLM. Если вы развертываете в кластерном режиме, вы развертываете только одну модель."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:256
+msgid ""
+"Embedding model deploy configuration. If you deploy in cluster mode, you "
+"just deploy one model."
+msgstr ""
+"Конфигурация развертывания модели эмбеддинга. Если вы развертываете в кластерном режиме, вы развертываете только одну модель."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:265
+msgid ""
+"Reranker model deploy configuration. If you deploy in cluster mode, you just "
+"deploy one model."
+msgstr ""
+"Конфигурация развертывания модели переранжирования. Если вы развертываете в кластерном режиме, вы развертываете только одну модель."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:140
 msgid "OpenAI Streaming Output Operator"
 msgstr "Оператор потокового вывода OpenAI"
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:144
 msgid "The OpenAI streaming LLM operator."
 msgstr "Оператор потокового вывода LLM OpenAI."
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:184
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:148
 msgid "Upstream Model Output"
 msgstr "Вывод модели верхнего уровня"
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:188
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:152
 msgid "The model output of upstream."
 msgstr "Выход модели от предыдущего этапа."
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:193
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:97
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:152
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:157
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:97
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:152
 msgid "Model Output"
 msgstr "Выход модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:198
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:162
 msgid "The model output after transformed to openai stream format."
 msgstr "Выход модели после преобразования в формат потока OpenAI."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:73
 msgid "LLM Operator"
 msgstr "Оператор LLM"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:76
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:76
 msgid "The LLM operator."
 msgstr "Оператор LLM."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:79
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:134
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:79
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:134
 msgid "LLM Client"
 msgstr "Клиент LLM"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:84
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:139
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:84
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:139
 msgid "The LLM Client."
 msgstr "Клиент LLM."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:89
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:144
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:89
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:144
 msgid "Model Request"
 msgstr "Запрос к модели"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:92
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:147
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:92
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:147
 msgid "The model request."
 msgstr "Запрос к модели."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:100
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:155
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:100
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:155
 msgid "The model output."
 msgstr "Выход модели."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:127
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:127
 msgid "Streaming LLM Operator"
 msgstr "Оператор потокового LLM"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:131
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:131
 msgid "The streaming LLM operator."
 msgstr "Потоковый LLM-оператор."

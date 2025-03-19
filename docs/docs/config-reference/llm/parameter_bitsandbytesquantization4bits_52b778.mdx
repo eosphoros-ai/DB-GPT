@@ -1,0 +1,58 @@
+---
+title: "BitsandbytesQuantization4bits Configuration"
+description: "Bits and bytes quantization 4 bits parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "BitsandbytesQuantization4bits",
+  "description": "Bits and bytes quantization 4 bits parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "load_in_8bits",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to load the model in 8 bits(LLM.int8() algorithm), default is False.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "load_in_4bits",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to load the model in 4 bits.",
+      "defaultValue": "True"
+    },
+    {
+      "name": "bnb_4bit_compute_dtype",
+      "type": "string",
+      "required": false,
+      "description": "To speedup computation, you can change the data type from float32 (the default value) to bfloat16",
+      "validValues": [
+        "bfloat16",
+        "float16",
+        "float32"
+      ]
+    },
+    {
+      "name": "bnb_4bit_quant_type",
+      "type": "string",
+      "required": false,
+      "description": "Quantization datatypes, `fp4` (four bit float) and `nf4` (normal four bit float), only valid when load_4bit=True",
+      "defaultValue": "nf4",
+      "validValues": [
+        "nf4",
+        "fp4"
+      ]
+    },
+    {
+      "name": "bnb_4bit_use_double_quant",
+      "type": "boolean",
+      "required": false,
+      "description": "Nested quantization is a technique that can save additional memory at no additional performance cost. This feature performs a second quantization of the already quantized weights to save an additional 0.4 bits/parameter. ",
+      "defaultValue": "True"
+    }
+  ]
+}} />
+

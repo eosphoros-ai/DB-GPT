@@ -1,0 +1,91 @@
+---
+title: "RAG Serve Configurations Configuration"
+description: "This configuration is for the RAG serve module."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ServeConfig",
+  "description": "This configuration is for the RAG serve module.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "api_keys",
+      "type": "string",
+      "required": false,
+      "description": "API keys for the endpoint, if None, allow all"
+    },
+    {
+      "name": "embedding_model",
+      "type": "string",
+      "required": false,
+      "description": "Embedding Model",
+      "defaultValue": "None"
+    },
+    {
+      "name": "rerank_model",
+      "type": "string",
+      "required": false,
+      "description": "Embedding Model",
+      "defaultValue": "None"
+    },
+    {
+      "name": "chunk_size",
+      "type": "integer",
+      "required": false,
+      "description": "Whether to verify the SSL certificate of the database",
+      "defaultValue": "500"
+    },
+    {
+      "name": "chunk_overlap",
+      "type": "integer",
+      "required": false,
+      "description": "The default thread pool size, If None, use default config of python thread pool",
+      "defaultValue": "50"
+    },
+    {
+      "name": "similarity_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge search top k",
+      "defaultValue": "10"
+    },
+    {
+      "name": "similarity_score_threshold",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge search top similarity score",
+      "defaultValue": "0.0"
+    },
+    {
+      "name": "query_rewrite",
+      "type": "boolean",
+      "required": false,
+      "description": "knowledge search rewrite",
+      "defaultValue": "False"
+    },
+    {
+      "name": "max_chunks_once_load",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge max chunks once load",
+      "defaultValue": "10"
+    },
+    {
+      "name": "max_threads",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge max load thread",
+      "defaultValue": "1"
+    },
+    {
+      "name": "rerank_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge rerank top k",
+      "defaultValue": "3"
+    }
+  ]
+}} />
+

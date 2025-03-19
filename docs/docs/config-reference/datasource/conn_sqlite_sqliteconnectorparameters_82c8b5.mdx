@@ -1,0 +1,35 @@
+---
+title: "SQLite datasource Configuration"
+description: "Lightweight embedded relational database with simplicity and portability."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "SQLiteConnectorParameters",
+  "description": "Lightweight embedded relational database with simplicity and portability.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "path",
+      "type": "string",
+      "required": true,
+      "description": "SQLite database file path. Use ':memory:' for in-memory database"
+    },
+    {
+      "name": "check_same_thread",
+      "type": "boolean",
+      "required": false,
+      "description": "Check same thread or not, default is False. Set False to allow sharing connection across threads",
+      "defaultValue": "False"
+    },
+    {
+      "name": "driver",
+      "type": "string",
+      "required": false,
+      "description": "Driver name, default is sqlite",
+      "defaultValue": "sqlite"
+    }
+  ]
+}} />
+

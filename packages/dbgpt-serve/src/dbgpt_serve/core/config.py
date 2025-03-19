@@ -12,6 +12,7 @@ class BaseServeConfig(BaseParameters, RegisterParameters):
     """Base configuration class for serve"""
 
     __type__ = "___serve_type_placeholder___"
+    __cfg_type__ = "serve"
 
     api_keys: Optional[str] = field(
         default=None,
@@ -50,6 +51,7 @@ class BaseServeConfig(BaseParameters, RegisterParameters):
 @dataclass
 class BaseGPTsAppMemoryConfig(BaseParameters, RegisterParameters):
     __type__ = "___memory_placeholder___"
+    __cfg_type__ = "memory"
 
 
 @dataclass
@@ -87,6 +89,8 @@ class TokenBufferGPTsAppMemoryConfig(BaseGPTsAppMemoryConfig):
 @dataclass
 class GPTsAppCommonConfig(BaseParameters, RegisterParameters):
     __type_field__ = "name"
+    __cfg_type__ = "app"
+
     top_k: Optional[int] = field(
         default=None,
         metadata={"help": _("The top k for LLM generation")},
@@ -112,13 +116,39 @@ class GPTsAppCommonConfig(BaseParameters, RegisterParameters):
 
 
 @dataclass
-class GPTsAppConfig(GPTsAppCommonConfig, BaseParameters):
+class GPTsAppConfig(BaseParameters):
     """GPTs application configuration.
 
     For global configuration, you can set the parameters here.
     """
 
+    __cfg_type__ = "app"
+
     name: str = "app"
+
+    top_k: Optional[int] = field(
+        default=None,
+        metadata={"help": _("The top k for LLM generation")},
+    )
+    top_p: Optional[float] = field(
+        default=None,
+        metadata={"help": _("The top p for LLM generation")},
+    )
+    temperature: Optional[float] = field(
+        default=None,
+        metadata={"help": _("The temperature for LLM generation")},
+    )
+    max_new_tokens: Optional[int] = field(
+        default=None,
+        metadata={"help": _("The max new tokens for LLM generation")},
+    )
+    name: Optional[str] = field(
+        default=None, metadata={"help": _("The name of your app")}
+    )
+    memory: Optional[BaseGPTsAppMemoryConfig] = field(
+        default=None, metadata={"help": _("The memory configuration")}
+    )
+
     configs: List[GPTsAppCommonConfig] = field(
         default_factory=list,
         metadata={"help": _("The configs for specific app")},

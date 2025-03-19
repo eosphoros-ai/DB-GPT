@@ -1,0 +1,69 @@
+---
+title: "JinaEmbeddingsDeployModelParameters Configuration"
+description: "Jina AI Embeddings deploy model parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "JinaEmbeddingsDeployModelParameters",
+  "description": "Jina AI Embeddings deploy model parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "proxy/jina"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "100"
+    },
+    {
+      "name": "api_url",
+      "type": "string",
+      "required": false,
+      "description": "The URL of the embeddings API.",
+      "defaultValue": "https://api.jina.ai/v1/embeddings"
+    },
+    {
+      "name": "api_key",
+      "type": "string",
+      "required": false,
+      "description": "The API key for the embeddings API."
+    },
+    {
+      "name": "backend",
+      "type": "string",
+      "required": false,
+      "description": "The real model name to pass to the provider, default is None. If backend is None, use name as the real model name.",
+      "defaultValue": "jina-embeddings-v2-base-en"
+    },
+    {
+      "name": "timeout",
+      "type": "integer",
+      "required": false,
+      "description": "The timeout for the request in seconds.",
+      "defaultValue": "60"
+    }
+  ]
+}} />
+

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,10 +17,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/prompt/config.py:24
+#: ../packages/dbgpt-serve/src/dbgpt_serve/prompt/config.py:22
+msgid "Prompt Serve Configurations"
+msgstr "프롬프트 서비스 구성"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/prompt/config.py:25
+msgid "This configuration is for the prompt serve module."
+msgstr "이 구성은 프롬프트 서비스 모듈용입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/prompt/config.py:36
 msgid "Default user name for prompt"
 msgstr "프롬프트의 기본 사용자 이름"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/prompt/config.py:28
+#: ../packages/dbgpt-serve/src/dbgpt_serve/prompt/config.py:40
 msgid "Default system code for prompt"
 msgstr "프롬프트의 기본 시스템 코드"

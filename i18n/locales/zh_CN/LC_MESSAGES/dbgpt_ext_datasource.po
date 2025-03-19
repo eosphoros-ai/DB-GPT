@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 07:51+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -48,15 +48,16 @@ msgid "TuGraph server user"
 msgstr "TuGraph 服务器用户"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:38
-#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:49
 msgid ""
 "Database password, you can write your password directly, of course, you can "
 "also use environment variables, such as ${env:DBGPT_DB_PASSWORD}"
-msgstr "数据库密码，你可以直接写入密码，当然也可以使用环境变量，例如 ${env:DBGPT_DB_PASSWORD}"
+msgstr ""
+"数据库密码，您可以直接输入密码，当然也可以使用环境变量，例如 ${env:DBGPT_DB_PASSWORD}。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:46
 msgid "TuGraph server port, default 7687"
-msgstr "TuGraph 服务器端口，默认 7687"
+msgstr "TuGraph 服务器端口，默认为 7687"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/conn_tugraph.py:49
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:38
@@ -77,7 +78,7 @@ msgstr "Hive 服务器主机"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:35
 msgid "Hive server port, default 10000"
-msgstr "Hive 服务器端口，默认 10000"
+msgstr "Hive 服务器端口，默认为 10000"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_hive.py:45
 msgid "Authentication mode: NONE, NOSASL, LDAP, KERBEROS, CUSTOM"
@@ -183,7 +184,8 @@ msgstr "Vertica 数据源"
 msgid ""
 "Vertica is a strongly consistent, ACID-compliant, SQL data warehouse, built "
 "for the scale and complexity of today`s data-driven world."
-msgstr "Vertica 是一个强一致性的、ACID 兼容的 SQL 数据仓库，专为当今数据驱动世界的大规模和复杂性而构建。"
+msgstr ""
+"Vertica 是一个强一致性、符合 ACID 标准的 SQL 数据仓库，专为当今数据驱动世界的规模和复杂性而构建。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_vertica.py:45
 msgid "Driver name for vertica, default is vertica+vertica_python"
@@ -213,10 +215,6 @@ msgstr "用于高性能分析和实时查询的列式数据库。"
 msgid "Database host, e.g., localhost"
 msgstr "数据库主机，例如 localhost"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:39
-msgid "Database port, e.g., 3306"
-msgstr "数据库端口，例如 3306"
-
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:40
 msgid "Database user to connect"
 msgstr "用于连接数据库的用户"
@@ -225,19 +223,23 @@ msgstr "用于连接数据库的用户"
 msgid "Database name"
 msgstr "数据库名称"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:54
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:43
+msgid "Storage engine, e.g., MergeTree"
+msgstr "存储引擎，例如 MergeTree"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:57
 msgid "http pool maxsize"
 msgstr "HTTP 连接池最大大小"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:60
 msgid "http pool num_pools"
 msgstr "HTTP 连接池数量"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:60
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:63
 msgid "Database connect timeout, default 15s"
 msgstr "数据库连接超时，默认 15 秒"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:63
+#: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_clickhouse.py:66
 msgid "Distributed ddl task timeout, default 300s"
 msgstr "分布式 DDL 任务超时，默认 300 秒"
 
@@ -249,7 +251,7 @@ msgstr "PostgreSQL 数据源"
 msgid ""
 "Powerful open-source relational database with extensibility and SQL "
 "standards."
-msgstr "功能强大的开源关系型数据库，具有可扩展性和 SQL 标准。"
+msgstr "功能强大的开源关系型数据库，具有可扩展性并遵循 SQL 标准。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_postgresql.py:36
 msgid "Database schema, defaults to 'public'"
@@ -265,7 +267,7 @@ msgstr "DuckDB 数据源"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:22
 msgid "In-memory analytical database with efficient query processing."
-msgstr "内存中的分析型数据库，具有高效的查询处理能力。"
+msgstr "内存中的分析型数据库，具备高效的查询处理能力。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:29
 msgid "Path to the DuckDB file."
@@ -273,4 +275,4 @@ msgstr "DuckDB 文件路径。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/conn_duckdb.py:33
 msgid "Driver name for DuckDB, default is duckdb."
-msgstr "DuckDB 的驱动名称，默认是 duckdb。"
+msgstr "DuckDB 的驱动名称，默认为 duckdb。"

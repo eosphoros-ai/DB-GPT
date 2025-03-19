@@ -1,0 +1,34 @@
+---
+title: "AWEL Flow Serve Configurations Configuration"
+description: "This configuration is for the flow serve module."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ServeConfig",
+  "description": "This configuration is for the flow serve module.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "api_keys",
+      "type": "string",
+      "required": false,
+      "description": "API keys for the endpoint, if None, allow all"
+    },
+    {
+      "name": "load_dbgpts_interval",
+      "type": "integer",
+      "required": false,
+      "description": "Interval to load dbgpts from installed packages",
+      "defaultValue": "5"
+    },
+    {
+      "name": "encrypt_key",
+      "type": "string",
+      "required": false,
+      "description": "The key to encrypt the data"
+    }
+  ]
+}} />
+
