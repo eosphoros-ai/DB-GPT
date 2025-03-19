@@ -1,0 +1,43 @@
+---
+title: "ModelCacheParameters Configuration"
+description: "Model cache configuration."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ModelCacheParameters",
+  "description": "Model cache configuration.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "enable_model_cache",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to enable model cache, default is True",
+      "defaultValue": "True"
+    },
+    {
+      "name": "storage_type",
+      "type": "string",
+      "required": false,
+      "description": "The storage type, default is memory",
+      "defaultValue": "memory"
+    },
+    {
+      "name": "max_memory_mb",
+      "type": "integer",
+      "required": false,
+      "description": "The max memory in MB, default is 256",
+      "defaultValue": "256"
+    },
+    {
+      "name": "persist_dir",
+      "type": "string",
+      "required": false,
+      "description": "The persist directory, default is model_cache",
+      "defaultValue": "model_cache"
+    }
+  ]
+}} />
+

@@ -1,0 +1,78 @@
+# French translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
+"PO-Revision-Date: 2025-03-19 00:06+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_knowledge/v1/config.py:21
+msgid "The number of chunks to retrieve from the knowledge space."
+msgstr "Le nombre de segments à extraire de l'espace de connaissances."
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_knowledge/v1/config.py:26
+msgid "The number of chunks after reranking."
+msgstr "Le nombre de segments après le réordonnancement."
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_knowledge/v1/config.py:30
+msgid "The minimum similarity score to return from the query."
+msgstr "Le score de similarité minimal à retourner à partir de la requête."
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_knowledge/v1/config.py:36
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/professional_qa/config.py:39
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/auto_execute/config.py:39
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_normal/config.py:22
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_data/chat_excel/config.py:44
+msgid "Memory configuration"
+msgstr "Configuration de la mémoire"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/professional_qa/config.py:20
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/auto_execute/config.py:20
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_dashboard/config.py:15
+msgid "The number of tables to retrieve from the database."
+msgstr "Le nombre de tables à extraire de la base de données."
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/professional_qa/config.py:26
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/auto_execute/config.py:26
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_dashboard/config.py:21
+msgid ""
+"The maximum number of tokens to pass to the model, default 100 * 1024.Just "
+"work for the schema retrieval failed, and load all tables schema."
+msgstr "Le nombre maximal de tokens à passer au modèle, par défaut 100 * 1024. Ne fonctionne que si la récupération du schéma a échoué et charge le schéma de toutes les tables."
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/professional_qa/config.py:33
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_db/auto_execute/config.py:33
+msgid "The maximum number of results to return from the query."
+msgstr "Le nombre maximal de résultats à retourner à partir de la requête."
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_data/chat_excel/config.py:22
+msgid ""
+"The directory of the duckdb extensions.Duckdb will download the extensions "
+"from the internet if not provided.This configuration is used to tell duckdb "
+"where to find the extensions and avoid downloading. Note that the extensions "
+"are platform-specific and version-specific."
+msgstr ""
+"Le répertoire des extensions DuckDB. DuckDB téléchargera les extensions "
+"à partir d'Internet si elles ne sont pas fournies. Cette configuration "
+"est utilisée pour indiquer à DuckDB où trouver les extensions et éviter "
+"le téléchargement. Notez que les extensions sont spécifiques à la plateforme "
+"et à la version."
+
+#: ../packages/dbgpt-app/src/dbgpt_app/scene/chat_data/chat_excel/config.py:34
+msgid ""
+"Whether to force install the duckdb extensions. If True, the extensions will "
+"be installed even if they are already installed."
+msgstr ""
+"Indique s'il faut forcer l'installation des extensions DuckDB. Si True, "
+"les extensions seront installées même si elles sont déjà installées."

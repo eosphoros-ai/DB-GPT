@@ -1,0 +1,50 @@
+---
+title: "BitsandbytesQuantization8bits Configuration"
+description: "Bits and bytes quantization 8 bits parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "BitsandbytesQuantization8bits",
+  "description": "Bits and bytes quantization 8 bits parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "load_in_8bits",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to load the model in 8 bits(LLM.int8() algorithm).",
+      "defaultValue": "True"
+    },
+    {
+      "name": "load_in_4bits",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to load the model in 4 bits, default is False.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "llm_int8_enable_fp32_cpu_offload",
+      "type": "boolean",
+      "required": false,
+      "description": "8-bit models can offload weights between the CPU and GPU to support fitting very large models into memory. The weights dispatched to the CPU are actually stored in float32, and aren’t converted to 8-bit. ",
+      "defaultValue": "False"
+    },
+    {
+      "name": "llm_int8_threshold",
+      "type": "number",
+      "required": false,
+      "description": "An “outlier” is a hidden state value greater than a certain threshold, and these values are computed in fp16. While the values are usually normally distributed ([-3.5, 3.5]), this distribution can be very different for large models ([-60, 6] or [6, 60]). 8-bit quantization works well for values ~5, but beyond that, there is a significant performance penalty. A good default threshold value is 6, but a lower threshold may be needed for more unstable models (small models or finetuning).",
+      "defaultValue": "6.0"
+    },
+    {
+      "name": "llm_int8_skip_modules",
+      "type": "string",
+      "required": false,
+      "description": "An explicit list of the modules that we do not want to convert in 8-bit. This is useful for models such as Jukebox that has several heads in different places and not necessarily at the last position. For example for `CausalLM` models, the last `lm_head` is kept in its original `dtype`",
+      "defaultValue": "[]"
+    }
+  ]
+}} />
+

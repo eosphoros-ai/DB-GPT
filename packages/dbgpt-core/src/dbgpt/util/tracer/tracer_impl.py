@@ -242,6 +242,8 @@ def _parse_operation_name(func, *args):
 
 @dataclass
 class TracerParameters(BaseParameters):
+    __cfg_type__ = "utils"
+
     file: Optional[str] = field(
         default=None,
         metadata={

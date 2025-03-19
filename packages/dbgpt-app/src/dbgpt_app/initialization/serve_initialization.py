@@ -32,14 +32,16 @@ def scan_serve_configs():
     ]
 
     scanner = ModelScanner[BaseServeConfig]()
+    registered_items = {}
     for module in modules:
         config = ScannerConfig(
             module_path=module,
             base_class=BaseServeConfig,
             specific_files=["config"],
         )
-        scanner.scan_and_register(config)
-    return scanner.get_registered_items()
+        items = scanner.scan_and_register(config)
+        registered_items[module] = items
+    return registered_items
 
 
 def get_config(

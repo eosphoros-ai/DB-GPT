@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,113 +17,145 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:30
+#: ../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:32
 msgid ""
 "The module to scan, if not set, will scan all DB-GPT "
 "modules('dbgpt,dbgpt_client,dbgpt_ext,dbgpt_serve,dbgpt_app')."
 msgstr ""
-"스캔할 모듈입니다. 설정하지 않으면 모든 DB-GPT 모듈('dbgpt,dbgpt_client,dbgpt_ext,dbgpt_serve,dbgpt_app')을 "
-"스캔합니다."
+"스캔할 모듈입니다. 설정하지 않으면 모든 DB-GPT 모듈"
+"('dbgpt,dbgpt_client,dbgpt_ext,dbgpt_serve,dbgpt_app')을 스캔합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:40
+#: ../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:42
 msgid ""
 "The output path, if not set, will print to packages/dbgpt-serve/src/"
 "dbgpt_serve/flow/compat/"
 msgstr ""
-"출력 경로입니다. 설정하지 않으면 packages/dbgpt-serve/src/dbgpt_serve/flow/compat/에 출력됩니다."
+"출력 경로입니다. 설정하지 않으면 packages/dbgpt-serve/src/dbgpt_serve/flow/"
+"compat/에 출력됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:50
+#: ../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:52
 msgid ""
 "The current version of the flow, if not set, will read from dbgpt.__version__"
 msgstr ""
 "현재 흐름의 버전입니다. 설정하지 않으면 dbgpt.__version__에서 읽어옵니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:59
+#: ../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:61
 msgid ""
 "The last version to compatible, if not set, will big than the current "
 "version by one minor version."
 msgstr ""
-"호환 가능한 마지막 버전입니다. 설정하지 않으면 현재 버전보다 한 마이너 버전 높은 버전이 됩니다."
+"호환 가능한 마지막 버전입니다. 설정하지 않으면 현재 버전보다 한 마이너 버전 "
+"높은 버전이 됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:75
+#: ../packages/dbgpt-core/src/dbgpt/util/cli/flow_compat.py:70
+msgid "Update the template file."
+msgstr "템플릿 파일을 업데이트합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:255
 msgid "Repos"
 msgstr "저장소들"
 
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:76
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:408
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:498
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:256
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:628
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:718
 msgid "Repository"
 msgstr "저장소"
 
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:77
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:499
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:257
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:719
 msgid "Path"
 msgstr "경로"
 
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:406
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:626
 msgid "dbgpts In All Repos"
 msgstr "모든 저장소의 dbgpts"
 
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:409
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:497
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:629
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:717
 msgid "Type"
 msgstr "유형"
 
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:410
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:496
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:630
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:716
 msgid "Name"
 msgstr "이름"
 
-#:../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:494
+#: ../packages/dbgpt-core/src/dbgpt/util/dbgpts/repo.py:714
 msgid "Installed dbgpts"
 msgstr "설치된 DB-GPT"
 
-#:../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:23
+#: ../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:23
 msgid "Json Serializer"
 msgstr "JSON 시리얼라이저"
 
-#:../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:26
+#: ../packages/dbgpt-core/src/dbgpt/util/serialization/json_serialization.py:26
 msgid "The serializer for serializing data with json format."
 msgstr "데이터를 JSON 형식으로 직렬화하는 시리얼라이저입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/utils.py:40
+#: ../packages/dbgpt-core/src/dbgpt/util/configure/manager.py:104
+msgid ""
+"Hook path, it can be a class path or a function path. eg: "
+"'dbgpt.config.hooks.env_var_hook'"
+msgstr "훅 경로입니다. 클래스 경로 또는 함수 경로일 수 있습니다. 예: 'dbgpt.config.hooks.env_var_hook'"
+
+#: ../packages/dbgpt-core/src/dbgpt/util/configure/manager.py:113
+msgid ""
+"Hook init params to pass to the hook constructor(Just for class hook), must "
+"be key-value pairs"
+msgstr "훅 생성자에 전달할 훅 초기 매개변수입니다(클래스 훅에만 해당). 키-값 쌍이어야 합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/util/configure/manager.py:121
+msgid "Hook params to pass to the hook, must be key-value pairs"
+msgstr "훅에 전달할 훅 매개변수입니다. 키-값 쌍이어야 합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/util/configure/manager.py:126
+msgid "Whether the hook is enabled, default is True"
+msgstr "훅이 활성화되었는지 여부입니다. 기본값은 True입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/util/utils.py:42
 msgid "Logging level, just support FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
 msgstr "로깅 수준은 FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET만 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/utils.py:56
+#: ../packages/dbgpt-core/src/dbgpt/util/utils.py:58
 msgid "The filename to store logs"
 msgstr "로그를 저장할 파일명"
 
-#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:249
+#: ../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:251
 msgid "The file to store the tracer, e.g. dbgpt_webserver_tracer.jsonl"
 msgstr "트레이서를 저장할 파일입니다. 예: dbgpt_webserver_tracer.jsonl"
 
-#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:256
+#: ../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:258
 msgid "The root operation name of the tracer"
 msgstr "트레이서의 루트 작업 이름"
 
-#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:262
+#: ../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:264
 msgid "The exporter of the tracer, e.g. telemetry"
 msgstr "트레이서의 익스포터입니다. 예: telemetry"
 
-#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:269
+#: ../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:271
 msgid ""
 "The endpoint of the OpenTelemetry Protocol, you can set '$"
 "{env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}' to use the environment variable"
-msgstr "OpenTelemetry 프로토콜의 엔드포인트입니다. 환경 변수를 사용하려면 '${env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}'를 설정할 수 있습니다."
+msgstr ""
+"OpenTelemetry 프로토콜의 엔드포인트입니다. 환경 변수를 사용하려면 '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}'를 설정할 수 있습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:279
+#: ../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:281
 msgid ""
 "Whether to use insecure connection, you can set '$"
 "{env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}' to use the environment "
-msgstr "비보안 연결을 사용할지 여부입니다. 환경 변수를 사용하려면 '${env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}'를 설정할 수 있습니다."
+msgstr ""
+"비보안 연결을 사용할지 여부입니다. 환경 변수를 사용하려면 '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}'를 설정할 수 있습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:288
+#: ../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:290
 msgid ""
 "The timeout of the connection, in seconds, you can set '$"
 "{env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}' to use the environment "
-msgstr "연결 제한 시간(초)입니다. 환경 변수를 사용하려면 '${env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}'를 설정할 수 있습니다."
+msgstr ""
+"연결 제한 시간(초)입니다. 환경 변수를 사용하려면 '$"
+"{env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}'를 설정할 수 있습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:296
+#: ../packages/dbgpt-core/src/dbgpt/util/tracer/tracer_impl.py:298
 msgid "The class of the tracer storage"
 msgstr "트레이서 저장소의 클래스"

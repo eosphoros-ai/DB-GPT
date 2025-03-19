@@ -1,0 +1,60 @@
+---
+title: "QianfanEmbeddingDeployModelParameters Configuration"
+description: "Qianfan Embeddings deploy model parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "QianfanEmbeddingDeployModelParameters",
+  "description": "Qianfan Embeddings deploy model parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "proxy/qianfan"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "100"
+    },
+    {
+      "name": "api_key",
+      "type": "string",
+      "required": false,
+      "description": "The API key for the embeddings API."
+    },
+    {
+      "name": "api_secret",
+      "type": "string",
+      "required": false,
+      "description": "The Secret key for the embeddings API. It's the sk for qianfan."
+    },
+    {
+      "name": "backend",
+      "type": "string",
+      "required": false,
+      "description": "The real model name to pass to the provider, default is None. If backend is None, use name as the real model name."
+    }
+  ]
+}} />
+

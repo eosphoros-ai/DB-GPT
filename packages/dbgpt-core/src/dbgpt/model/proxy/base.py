@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
@@ -28,6 +29,8 @@ from dbgpt.core import (
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.util.configure.manager import _resolve_env_vars
 from dbgpt.util.executor_utils import blocking_func_to_async
+
+from ..utils.token_utils import LRUTokenCache
 
 if TYPE_CHECKING:
     from tiktoken import Encoding
@@ -83,17 +86,50 @@ class ProxyTokenizer(ABC):
 
 
 class TiktokenProxyTokenizer(ProxyTokenizer):
-    def __init__(self):
+    def __init__(self, cache_size: int = 100000, cache_memory_mb: int = 100):
+        self._token_cache = LRUTokenCache(
+            max_size=cache_size, max_memory_mb=cache_memory_mb
+        )
         self._cache = {}
 
     def count_token(self, model_name: str, prompts: List[str]) -> List[int]:
         encoding_model = self._get_or_create_encoding_model(model_name)
         if not encoding_model:
             return [-1] * len(prompts)
-        return [
-            len(encoding_model.encode(prompt, disallowed_special=()))
-            for prompt in prompts
-        ]
+        results = []
+        for prompt in prompts:
+            # Generate cache key
+            cache_key = self._generate_cache_key(model_name, prompt)
+
+            # Try to get from cache
+            cached_count = self._token_cache.get(cache_key)
+            if cached_count is not None:
+                results.append(cached_count)
+                continue
+
+            # Cache miss, calculate token count
+            token_count = len(encoding_model.encode(prompt, disallowed_special=()))
+
+            # Cache the result
+            self._token_cache.put(cache_key, token_count)
+            results.append(token_count)
+
+        return results
+
+    def _generate_cache_key(self, model_name: str, prompt: str) -> str:
+        """
+        Generate a cache key for a model name and prompt
+
+        Args:
+            model_name: Model name
+            prompt: Prompt text
+
+        Returns:
+            Cache key string
+        """
+        # Use hash to avoid storing the full prompt in memory
+        prompt_hash = hashlib.md5(prompt.encode("utf-8")).hexdigest()
+        return f"{model_name}:{prompt_hash}"
 
     def _get_or_create_encoding_model(self, model_name: str) -> Optional["Encoding"]:
         if model_name in self._cache:
@@ -123,6 +159,24 @@ class TiktokenProxyTokenizer(ProxyTokenizer):
         if encoding_model:
             self._cache[model_name] = encoding_model
         return encoding_model
+
+    def get_token_cache_stats(self) -> Dict[str, any]:
+        """
+        Get token cache statistics
+
+        Returns:
+            Dictionary containing token cache statistics
+        """
+        return {
+            "cache_size": len(self._token_cache.cache),
+            "max_cache_size": self._token_cache.max_size,
+            "memory_usage_bytes": self._token_cache.current_memory,
+            "max_memory_bytes": self._token_cache.max_memory_bytes,
+        }
+
+    def clear_token_cache(self):
+        """Clear the token count cache"""
+        self._token_cache.clear()
 
 
 class ProxyLLMClient(LLMClient):

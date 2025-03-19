@@ -1,0 +1,34 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
+"PO-Revision-Date: 2025-03-19 00:06+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/my/config.py:21
+msgid "My dbgpts Serve Configurations"
+msgstr "내 DB-GPT 서비스 구성 설정"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/my/config.py:24
+msgid "This configuration is for the my dbgpts serve module."
+msgstr "이 구성은 내 DB-GPT 서비스 모듈에 대한 것입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/hub/config.py:21
+msgid "Hub dbgpts Serve Configurations"
+msgstr "허브 DB-GPT 서비스 구성 설정"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/hub/config.py:24
+msgid "This configuration is for the hub dbgpts serve module."
+msgstr "이 구성은 허브 DB-GPT 서비스 모듈에 대한 것입니다."

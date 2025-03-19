@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,6 +18,52 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:17
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:19
 msgid "API keys for the endpoint, if None, allow all"
 msgstr "API-ключи для конечной точки. Если значение равно None, разрешить все."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:67
+msgid "The number of start rounds to keep in memory"
+msgstr "Количество начальных раундов, которые нужно сохранить в памяти"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:71
+msgid "The number of end rounds to keep in memory"
+msgstr "Количество конечных раундов, которые нужно сохранить в памяти"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:85
+msgid "The max token limit. Default is 100k"
+msgstr "Максимальное ограничение по токенам. По умолчанию 100 тысяч."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:96
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:131
+msgid "The top k for LLM generation"
+msgstr "Значение top k для генерации Large Language Model"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:100
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:135
+msgid "The top p for LLM generation"
+msgstr "Значение top p для генерации Large Language Model"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:104
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:139
+msgid "The temperature for LLM generation"
+msgstr "Температура для генерации Large Language Model"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:108
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:143
+msgid "The max new tokens for LLM generation"
+msgstr "Максимальное количество новых токенов для генерации Large Language Model"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:111
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:146
+msgid "The name of your app"
+msgstr "Название вашего приложения"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:114
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:149
+msgid "The memory configuration"
+msgstr "Конфигурация памяти"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:154
+msgid "The configs for specific app"
+msgstr "Конфигурации для конкретного приложения"

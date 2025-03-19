@@ -1,0 +1,73 @@
+---
+title: "OSSStorageConfig Configuration"
+description: "OSSStorageConfig(endpoint: str, region: str, access_key_id: Optional[str] = None, access_key_secret: Optional[str] = None, use_environment_credentials: Optional[bool] = False, fixed_bucket: Optional[str] = None, bucket_prefix: Optional[str] = 'dbgpt-fs-', auto_create_bucket: Optional[bool] = True, save_chunk_size: Optional[int] = 1048576)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "OSSStorageConfig",
+  "description": "OSSStorageConfig(endpoint: str, region: str, access_key_id: Optional[str] = None, access_key_secret: Optional[str] = None, use_environment_credentials: Optional[bool] = False, fixed_bucket: Optional[str] = None, bucket_prefix: Optional[str] = 'dbgpt-fs-', auto_create_bucket: Optional[bool] = True, save_chunk_size: Optional[int] = 1048576)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "endpoint",
+      "type": "string",
+      "required": true,
+      "description": "The endpoint of the OSS server. e.g. https://oss-cn-hangzhou.aliyuncs.com"
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "required": true,
+      "description": "The region of the OSS server. e.g. cn-hangzhou"
+    },
+    {
+      "name": "access_key_id",
+      "type": "string",
+      "required": false,
+      "description": "The access key ID of the OSS server. You can also set it in the environment variable OSS_ACCESS_KEY_ID"
+    },
+    {
+      "name": "access_key_secret",
+      "type": "string",
+      "required": false,
+      "description": "The access key secret of the OSS server. You can also set it in the environment variable OSS_ACCESS_KEY_SECRET"
+    },
+    {
+      "name": "use_environment_credentials",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to use the environment variables OSS_ACCESS_KEY_ID and OSS_ACCESS_KEY_SECRET as the credentials. Default is False.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "fixed_bucket",
+      "type": "string",
+      "required": false,
+      "description": "The fixed bucket name to use. If set, all logical buckets in DB-GPT will be mapped to this bucket. We suggest you set this value to avoid bucket name conflicts."
+    },
+    {
+      "name": "bucket_prefix",
+      "type": "string",
+      "required": false,
+      "description": "The prefix of the bucket name. If set, all logical buckets in DB-GPT will be prefixed with this value. Just work when fixed_bucket is None.",
+      "defaultValue": "dbgpt-fs-"
+    },
+    {
+      "name": "auto_create_bucket",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to create the bucket automatically if it does not exist. If set to False, the bucket must exist before using it.",
+      "defaultValue": "True"
+    },
+    {
+      "name": "save_chunk_size",
+      "type": "integer",
+      "required": false,
+      "description": "The chunk size when saving the file. When the file is larger 10x than this value, it will be uploaded in multiple parts. Default is 1M.",
+      "defaultValue": "1048576"
+    }
+  ]
+}} />
+

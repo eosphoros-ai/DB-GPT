@@ -1,12 +1,23 @@
-"""Trigger for iterator data."""
+"""Trigger for iterator data with caching support."""
 
 import asyncio
 import logging
-from typing import Any, AsyncIterator, Iterator, List, Optional, Tuple, Union, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from ..operators.base import BaseOperator
 from ..task.base import InputSource, TaskState
 from ..task.task_impl import DefaultTaskContext, _is_async_iterator, _is_iterable
+from ..util.cache_util import CacheStorage, stream_from_cached_data
 from .base import Trigger
 
 logger = logging.getLogger(__name__)
@@ -36,11 +47,13 @@ async def _to_async_iterator(iter_data: IterDataType, task_id: str) -> AsyncIter
 
 
 class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
-    """Trigger for iterator data.
+    """Trigger for iterator data with caching support.
 
     Trigger the dag with iterator data.
     Return the list of results of the leaf nodes in the dag.
     The times of dag running is the length of the iterator data.
+
+    Supports caching of results to avoid redundant computation.
     """
 
     def __init__(
@@ -49,9 +62,14 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
         parallel_num: int = 1,
         streaming_call: bool = False,
         show_progress: bool = True,
-        max_retries: int = 0,  # New: Maximum retry attempts for non-streaming
-        retry_delay: float = 1.0,  # New: Delay between retries in seconds
-        timeout: Optional[float] = None,  # New: Timeout per task in seconds
+        max_retries: int = 0,
+        retry_delay: float = 1.0,
+        timeout: Optional[float] = None,
+        # New caching parameters
+        cache_storage: Optional[CacheStorage] = None,
+        cache_key_fn: Optional[Callable[[Any], str]] = None,
+        cache_ttl: Optional[int] = None,
+        cache_enabled: bool = False,
         **kwargs,
     ):
         """Create a IteratorTrigger.
@@ -70,6 +88,14 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
                 Defaults to 1.0.
             timeout (Optional[float], optional): Timeout per task in seconds.
                 Defaults to None (no timeout).
+            cache_storage (Optional[CacheStorage], optional): Storage interface for
+                caching.  Defaults to None.
+            cache_key_fn (Optional[Callable[[Any], str]], optional): Function to
+                calculate cache key from input data. Defaults to None.
+            cache_ttl (Optional[int], optional): Time-to-live for cached items in
+                seconds. Defaults to None (no expiration).
+            cache_enabled (bool, optional): Whether to enable caching.
+                Defaults to False.
         """
         self._iter_data = data
         self._parallel_num = parallel_num
@@ -78,12 +104,56 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
         self._max_retries = max_retries
         self._retry_delay = retry_delay
         self._timeout = timeout
+
+        # Cache-related attributes
+        self._cache_enabled = cache_enabled
+        self._cache_storage = cache_storage
+        self._cache_key_fn = cache_key_fn
+        self._cache_ttl = cache_ttl
+
         super().__init__(**kwargs)
+
+    async def _get_cache_key(self, data: Any) -> Optional[str]:
+        """Generate cache key for the given data if caching is enabled.
+
+        Returns None if caching is disabled or no key function is provided.
+        """
+        if not self._cache_enabled or not self._cache_storage or not self._cache_key_fn:
+            return None
+
+        try:
+            return self._cache_key_fn(data)
+        except Exception as e:
+            logger.warning(f"Failed to generate cache key: {str(e)}")
+            return None
+
+    async def _get_cached_result(self, cache_key: str) -> Optional[Any]:
+        """Retrieve cached result if available."""
+        if not self._cache_storage:
+            return None
+
+        try:
+            if await self._cache_storage.exists(cache_key):
+                return await self._cache_storage.get(cache_key)
+        except Exception as e:
+            logger.warning(f"Cache retrieval error for key {cache_key}: {str(e)}")
+
+        return None
+
+    async def _store_in_cache(self, cache_key: str, result: Any) -> None:
+        """Store result in cache."""
+        if not self._cache_storage:
+            return
+
+        try:
+            await self._cache_storage.set(cache_key, result, self._cache_ttl)
+        except Exception as e:
+            logger.warning(f"Cache storage error for key {cache_key}: {str(e)}")
 
     async def trigger(
         self, parallel_num: Optional[int] = None, **kwargs
     ) -> List[Tuple[Any, Any]]:
-        """Trigger the dag with iterator data.
+        """Trigger the dag with iterator data, with optional caching.
 
         If the dag is a streaming call, return the list of async iterator.
 
@@ -93,40 +163,29 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
                 import asyncio
                 from dbgpt.core.awel import DAG, IteratorTrigger, MapOperator
 
+
+                # Define a cache key function
+                def cache_key_fn(data):
+                    return f"calculation_{data}"
+
+
+                # Create a memory cache
+                cache = MemoryCacheStorage()
+
                 with DAG("test_dag") as dag:
-                    trigger_task = IteratorTrigger([0, 1, 2, 3])
+                    trigger_task = IteratorTrigger(
+                        [0, 1, 2, 3],
+                        cache_storage=cache,
+                        cache_key_fn=cache_key_fn,
+                        cache_enabled=True,
+                    )
                     task = MapOperator(lambda x: x * x)
                     trigger_task >> task
                 results = asyncio.run(trigger_task.trigger())
-                # Fist element of the tuple is the input data, the second element is the
-                # output data of the leaf node.
+                # First element of the tuple is the input data, the second element is
+                # the output data of the leaf node.
                 assert results == [(0, 0), (1, 1), (2, 4), (3, 9)]
 
-            .. code-block:: python
-
-                import asyncio
-                from datasets import Dataset
-                from dbgpt.core.awel import (
-                    DAG,
-                    IteratorTrigger,
-                    MapOperator,
-                    InputSource,
-                )
-
-                data_samples = {
-                    "question": ["What is 1+1?", "What is 7*7?"],
-                    "answer": [2, 49],
-                }
-                dataset = Dataset.from_dict(data_samples)
-                with DAG("test_dag_stream") as dag:
-                    trigger_task = IteratorTrigger(InputSource.from_iterable(dataset))
-                    task = MapOperator(lambda x: x["answer"])
-                    trigger_task >> task
-                results = asyncio.run(trigger_task.trigger())
-                assert results == [
-                    ({"question": "What is 1+1?", "answer": 2}, 2),
-                    ({"question": "What is 7*7?", "answer": 49}, 49),
-                ]
         Args:
             parallel_num (Optional[int], optional): The parallel number of the dag
                 running. Defaults to None.
@@ -148,26 +207,70 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
         task_id = self.node_id
         max_retries = self._max_retries
 
-        async def call_stream(call_data: Any):
+        async def call_stream(call_data: Any, cache_key: Optional[str] = None):
+            """Process streaming data with optional caching."""
+            # If caching is enabled and we have a cache key, try to get cached results
+            if cache_key is not None:
+                cached_result = await self._get_cached_result(cache_key)
+                if cached_result is not None:
+                    # For streaming cached results, we need to yield each item
+                    for item in cached_result:
+                        yield item
+                    return
+
+            # Store results for caching if needed
+            cached_items = []
             try:
                 async for out in await end_node.call_stream(call_data):
+                    # Store the result for caching
+                    if cache_key is not None:
+                        cached_items.append(out)
                     yield out
             finally:
+                # Cache the collection of results after processing is complete
+                if cache_key is not None and cached_items:
+                    await self._store_in_cache(cache_key, cached_items)
                 await dag._after_dag_end(end_node.current_event_loop_task_id)
 
         async def run_node_with_control(call_data: Any) -> Tuple[Any, Any]:
             async with semaphore:
-                if streaming_call:
-                    # Streaming calls don't support retries
-                    if self._timeout:
-                        task_output = await asyncio.wait_for(
-                            call_stream(call_data), timeout=self._timeout
-                        )
-                    else:
-                        task_output = call_stream(call_data)
-                    return call_data, task_output
+                # Generate cache key if caching is enabled
+                cache_key = await self._get_cache_key(call_data)
 
-                # Non-streaming call with retry logic
+                if streaming_call:
+                    # Streaming calls
+                    if self._timeout:
+                        stream_generator = call_stream(call_data, cache_key)
+                        task_output = await asyncio.wait_for(
+                            anext(stream_generator.__aiter__()), timeout=self._timeout
+                        )
+
+                        # Create a combined generator that includes the first item and
+                        # the rest
+                        async def combined_generator():
+                            yield task_output
+                            async for item in stream_generator:
+                                yield item
+
+                        return call_data, combined_generator()
+                    else:
+                        return call_data, call_stream(call_data, cache_key)
+
+                # Non-streaming call with cache and retry logic
+                # Try to get from cache first if caching is enabled
+                if cache_key is not None:
+                    cached_result = await self._get_cached_result(cache_key)
+                    if cached_result is not None:
+                        logger.info(f"Cache hit for key {cache_key}")
+                        # For non-streaming calls, just return the cached result
+                        # directly
+                        # For streaming calls that were previously cached, recreate the
+                        # stream
+                        if isinstance(cached_result, list) and self._streaming_call:
+                            return call_data, stream_from_cached_data(cached_result)
+                        return call_data, cached_result
+
+                # If not cached or cache miss, proceed with regular execution
                 nonlocal max_retries
                 attempts = 0
                 while True:
@@ -178,6 +281,11 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
                             )
                         else:
                             task_output = await end_node.call(call_data)
+
+                        # Cache the result if caching is enabled
+                        if cache_key is not None:
+                            await self._store_in_cache(cache_key, task_output)
+
                         return call_data, task_output
                     except (Exception, asyncio.TimeoutError) as e:
                         attempts += 1

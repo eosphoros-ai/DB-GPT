@@ -1,0 +1,29 @@
+---
+title: "BitsandbytesQuantization Configuration"
+description: "Bits and bytes quantization parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "BitsandbytesQuantization",
+  "description": "Bits and bytes quantization parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "load_in_8bits",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to load the model in 8 bits(LLM.int8() algorithm), default is False.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "load_in_4bits",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to load the model in 4 bits, default is False.",
+      "defaultValue": "False"
+    }
+  ]
+}} />
+

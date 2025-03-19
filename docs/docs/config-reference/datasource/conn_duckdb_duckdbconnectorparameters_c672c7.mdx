@@ -1,0 +1,28 @@
+---
+title: "DuckDB datasource Configuration"
+description: "In-memory analytical database with efficient query processing."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "DuckDbConnectorParameters",
+  "description": "In-memory analytical database with efficient query processing.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "path",
+      "type": "string",
+      "required": true,
+      "description": "Path to the DuckDB file."
+    },
+    {
+      "name": "driver",
+      "type": "string",
+      "required": false,
+      "description": "Driver name for DuckDB, default is duckdb.",
+      "defaultValue": "duckdb"
+    }
+  ]
+}} />
+

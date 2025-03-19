@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,6 +17,52 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:17
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:19
 msgid "API keys for the endpoint, if None, allow all"
 msgstr "엔드포인트용 API 키입니다. None인 경우 모든 요청을 허용합니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:67
+msgid "The number of start rounds to keep in memory"
+msgstr "메모리에 유지할 시작 라운드 수입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:71
+msgid "The number of end rounds to keep in memory"
+msgstr "메모리에 유지할 종료 라운드 수입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:85
+msgid "The max token limit. Default is 100k"
+msgstr "최대 토큰 제한입니다. 기본값은 100k입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:96
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:131
+msgid "The top k for LLM generation"
+msgstr "LLM 생성을 위한 상위 k값입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:100
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:135
+msgid "The top p for LLM generation"
+msgstr "LLM 생성을 위한 상위 p값입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:104
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:139
+msgid "The temperature for LLM generation"
+msgstr "LLM 생성을 위한 온도값입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:108
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:143
+msgid "The max new tokens for LLM generation"
+msgstr "LLM 생성을 위한 최대 새 토큰 수입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:111
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:146
+msgid "The name of your app"
+msgstr "귀하의 앱 이름입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:114
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:149
+msgid "The memory configuration"
+msgstr "메모리 구성입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/core/config.py:154
+msgid "The configs for specific app"
+msgstr "특정 앱에 대한 구성 설정"

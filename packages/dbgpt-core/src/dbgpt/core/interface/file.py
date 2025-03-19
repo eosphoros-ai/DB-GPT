@@ -122,6 +122,7 @@ class StorageBackendConfig(BaseParameters, RegisterParameters):
     """Storage backend configuration"""
 
     __type__ = "___storage_backend_config___"
+    __cfg_type__ = "utils"
 
     def create_storage(self) -> "StorageBackend":
         """Create the storage"""

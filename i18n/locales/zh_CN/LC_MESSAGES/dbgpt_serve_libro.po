@@ -1,0 +1,26 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
+"PO-Revision-Date: 2025-03-19 00:06+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/libro/config.py:21
+msgid "Libro Serve Configurations"
+msgstr "Libro 服务配置"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/libro/config.py:24
+msgid "This configuration is for the libro serve module."
+msgstr "此配置适用于 Libro 服务模块。"

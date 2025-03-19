@@ -74,6 +74,8 @@ class BaseDeployModelParameters(BaseParameters):
 class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """LLM deploy model parameters."""
 
+    __cfg_type__ = "llm"
+
     backend: Optional[str] = field(
         default=None,
         metadata={
@@ -137,6 +139,8 @@ class LLMDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
 class EmbeddingDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Embedding deploy model parameters."""
 
+    __cfg_type__ = "embedding"
+
     concurrency: Optional[int] = field(
         default=100, metadata={"help": _("Model concurrency limit")}
     )
@@ -153,6 +157,8 @@ class EmbeddingDeployModelParameters(BaseDeployModelParameters, RegisterParamete
 class RerankerDeployModelParameters(BaseDeployModelParameters, RegisterParameters):
     """Reranker deploy model parameters."""
 
+    __cfg_type__ = "reranker"
+
     concurrency: Optional[int] = field(
         default=50, metadata={"help": _("Model concurrency limit")}
     )
@@ -168,6 +174,8 @@ class RerankerDeployModelParameters(BaseDeployModelParameters, RegisterParameter
 @dataclass
 class BaseHFQuantization(BaseParameters, RegisterParameters):
     """HF quantization parameters."""
+
+    __cfg_type__ = "llm"
 
     def generate_quantization_config(self) -> Optional[Dict[str, Any]]:
         """Generate quantization config."""
@@ -389,6 +397,8 @@ class BitsandbytesQuantization4bits(BitsandbytesQuantization):
 
 @dataclass
 class BaseServerParameters(BaseParameters):
+    __cfg_type__ = "service"
+
     host: Optional[str] = field(
         default="0.0.0.0", metadata={"help": _("The host IP address to bind to.")}
     )

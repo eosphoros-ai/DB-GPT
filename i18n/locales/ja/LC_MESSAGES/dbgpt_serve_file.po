@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 07:51+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,34 +17,48 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:24
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:24
+msgid "File Serve Configurations"
+msgstr "ファイルサービス設定"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:28
+msgid ""
+"This configuration is for the file serve module. In DB-GPT, you can store "
+"yourfiles in the file server."
+msgstr "この設定はファイルサービスモジュール用です。DB-GPT では、ファイルをファイルサーバーに保存できます。"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:49
 msgid "Check the hash of the file when downloading"
-msgstr "ファイルをダウンロードする際にファイルのハッシュをチェックする"
+msgstr "ファイルをダウンロードする際にファイルのハッシュ値をチェックする"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:27
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:52
 msgid "The host of the file server"
-msgstr "ファイルサーバーのホスト"
+msgstr "ファイルサーバーのホスト名"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:31
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:56
 msgid "The port of the file server, default is 5670"
-msgstr "ファイルサーバーのポート、デフォルトは5670"
+msgstr "ファイルサーバーのポート番号、デフォルトは 5670"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:35
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:60
 msgid "The chunk size when downloading the file"
 msgstr "ファイルをダウンロードする際のチャンクサイズ"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:38
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:63
 msgid "The chunk size when saving the file"
 msgstr "ファイルを保存する際のチャンクサイズ"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:42
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:67
 msgid "The chunk size when transferring the file"
 msgstr "ファイルを転送する際のチャンクサイズ"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:45
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:70
 msgid "The timeout when transferring the file"
-msgstr "ファイルを転送する際のタイムアウト"
+msgstr "ファイルを転送する際のタイムアウト時間"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:48
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:73
 msgid "The local storage path"
-msgstr "ローカルの保存パス"
+msgstr "ローカルストレージパス"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:81
+msgid "The storage backend configurations"
+msgstr "ストレージバックエンド設定"

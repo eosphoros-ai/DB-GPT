@@ -52,6 +52,8 @@ class SystemParameters:
 
 @dataclass
 class StorageConfig(BaseParameters):
+    __cfg_type__ = "app"
+
     vector: Optional[ChromaVectorConfig] = field(
         default_factory=lambda: ChromaVectorConfig(),
         metadata={
@@ -75,6 +77,8 @@ class StorageConfig(BaseParameters):
 @dataclass
 class RagParameters(BaseParameters):
     """Rag configuration."""
+
+    __cfg_type__ = "app"
 
     chunk_size: Optional[int] = field(
         default=500,
@@ -201,6 +205,7 @@ class RagParameters(BaseParameters):
 
 @dataclass
 class ServiceWebParameters(BaseParameters):
+    __cfg_type__ = "service"
     host: str = field(default="0.0.0.0", metadata={"help": _("Webserver deploy host")})
     port: int = field(
         default=5670, metadata={"help": _("Webserver deploy port, default is 5670")}
@@ -315,6 +320,8 @@ class ServiceWebParameters(BaseParameters):
 
 @dataclass
 class ServiceConfig(BaseParameters):
+    __cfg_type__ = "service"
+
     web: ServiceWebParameters = field(
         default_factory=ServiceWebParameters,
         metadata={"help": _("Web service configuration")},

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,34 +17,48 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:24
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:24
+msgid "File Serve Configurations"
+msgstr "파일 서비스 구성"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:28
+msgid ""
+"This configuration is for the file serve module. In DB-GPT, you can store "
+"yourfiles in the file server."
+msgstr "이 구성은 파일 서비스 모듈용입니다. DB-GPT에서는 파일 서버에 파일을 저장할 수 있습니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:49
 msgid "Check the hash of the file when downloading"
 msgstr "파일 다운로드 시 파일의 해시값 확인"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:27
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:52
 msgid "The host of the file server"
 msgstr "파일 서버의 호스트"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:31
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:56
 msgid "The port of the file server, default is 5670"
 msgstr "파일 서버의 포트, 기본값은 5670"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:35
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:60
 msgid "The chunk size when downloading the file"
 msgstr "파일 다운로드 시 청크 크기"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:38
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:63
 msgid "The chunk size when saving the file"
 msgstr "파일 저장 시 청크 크기"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:42
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:67
 msgid "The chunk size when transferring the file"
 msgstr "파일 전송 시 청크 크기"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:45
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:70
 msgid "The timeout when transferring the file"
 msgstr "파일 전송 시 타임아웃"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:48
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:73
 msgid "The local storage path"
 msgstr "로컬 저장 경로"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/file/config.py:81
+msgid "The storage backend configurations"
+msgstr "저장 백엔드 구성"

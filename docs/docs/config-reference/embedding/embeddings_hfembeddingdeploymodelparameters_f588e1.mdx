@@ -1,0 +1,100 @@
+---
+title: "HFEmbeddingDeployModelParameters Configuration"
+description: "HFEmbeddingDeployModelParameters(name: str, provider: str = 'hf', verbose: Optional[bool] = False, concurrency: Optional[int] = 100, path: Optional[str] = None, device: Optional[str] = None, cache_folder: Optional[str] = None, normalize_embeddings: bool = False, multi_process: bool = False, model_kwargs: Dict[str, Any] = <factory>, encode_kwargs: Dict[str, Any] = <factory>, embed_instruction: Optional[str] = None, query_instruction: Optional[str] = None)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "HFEmbeddingDeployModelParameters",
+  "description": "HFEmbeddingDeployModelParameters(name: str, provider: str = 'hf', verbose: Optional[bool] = False, concurrency: Optional[int] = 100, path: Optional[str] = None, device: Optional[str] = None, cache_folder: Optional[str] = None, normalize_embeddings: bool = False, multi_process: bool = False, model_kwargs: Dict[str, Any] = <factory>, encode_kwargs: Dict[str, Any] = <factory>, embed_instruction: Optional[str] = None, query_instruction: Optional[str] = None)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "path",
+      "type": "string",
+      "required": false,
+      "description": "The path of the model, if you want to deploy a local model."
+    },
+    {
+      "name": "device",
+      "type": "string",
+      "required": false,
+      "description": "Device to run model. If None, the device is automatically determined"
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "hf"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "100"
+    },
+    {
+      "name": "cache_folder",
+      "type": "string",
+      "required": false,
+      "description": "Path of the cache folder."
+    },
+    {
+      "name": "normalize_embeddings",
+      "type": "boolean",
+      "required": false,
+      "description": "Normalize embeddings.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "multi_process",
+      "type": "boolean",
+      "required": false,
+      "description": "Run encode() on multiple GPUs.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "model_kwargs",
+      "type": "object",
+      "required": false,
+      "description": "Keyword arguments to pass to the model.",
+      "defaultValue": "{}"
+    },
+    {
+      "name": "encode_kwargs",
+      "type": "object",
+      "required": false,
+      "description": "Keyword arguments to pass when calling the `encode` method.",
+      "defaultValue": "{}"
+    },
+    {
+      "name": "embed_instruction",
+      "type": "string",
+      "required": false,
+      "description": "Instruction to use for embedding documents. Just for Instructor model."
+    },
+    {
+      "name": "query_instruction",
+      "type": "string",
+      "required": false,
+      "description": "Instruction to use for embedding query. Just for Instructor model."
+    }
+  ]
+}} />
+

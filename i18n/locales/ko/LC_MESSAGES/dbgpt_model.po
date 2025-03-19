@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,432 +17,549 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:32
+msgid "SiliconFlow Proxy LLM"
+msgstr "SiliconFlow 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:35
+msgid "SiliconFlow proxy LLM configuration."
+msgstr "SiliconFlow 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:48
 msgid "The base url of the SiliconFlow API."
 msgstr "SiliconFlow API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:55
 msgid "The API key of the SiliconFlow API."
 msgstr "SiliconFlow API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:38
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:38
+msgid "OpenAI Compatible Proxy LLM"
+msgstr "OpenAI 호환 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:51
 msgid "The base url of the OpenAI API."
 msgstr "OpenAI API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:58
 msgid "The API key of the OpenAI API."
 msgstr "OpenAI API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:65
 msgid "The type of the OpenAI API, if you use Azure, it can be: azure"
 msgstr "OpenAI API의 유형입니다. Azure를 사용하는 경우 'azure'로 설정할 수 있습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:58
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:71
 msgid "The version of the OpenAI API."
 msgstr "OpenAI API의 버전입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:65
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:65
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:78
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:78
 msgid ""
 "The context length of the OpenAI API. If None, it is determined by the model."
-msgstr "OpenAI API의 컨텍스트 길이입니다. None으로 설정하면 모델에 따라 결정됩니다."
+msgstr ""
+"OpenAI API의 컨텍스트 길이입니다. None으로 설정하면 모델에 따라 결정됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:86
 msgid "The http or https proxy to use openai"
 msgstr "OpenAI를 사용할 때의 HTTP 또는 HTTPS 프록시입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:77
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:72
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:278
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:43
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:90
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:85
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:278
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:43
 msgid "Model concurrency limit"
 msgstr "모델 동시성 제한"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:91
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:104
 msgid "OpenAI LLM Client"
 msgstr "OpenAI LLM 클라이언트"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:96
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:109
 msgid "OpenAI API Key"
 msgstr "OpenAI API 키"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:102
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:115
 msgid ""
 "OpenAI API Key, not required if you have set OPENAI_API_KEY environment "
 "variable."
-msgstr "OpenAI API 키입니다. OPENAI_API_KEY 환경 변수를 설정한 경우 필요하지 않습니다."
+msgstr ""
+"OpenAI API 키입니다. OPENAI_API_KEY 환경 변수를 설정한 경우 필요하지 않습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:107
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:120
 msgid "OpenAI API Base"
 msgstr "OpenAI API 기본 주소"
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:113
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:126
 msgid ""
 "OpenAI API Base, not required if you have set OPENAI_API_BASE environment "
 "variable."
-msgstr "OpenAI API 기본 주소입니다. OPENAI_API_BASE 환경 변수를 설정한 경우 필요하지 않습니다."
+msgstr ""
+"OpenAI API 기본 주소입니다. OPENAI_API_BASE 환경 변수를 설정한 경우 필요하지 "
+"않습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:31
+msgid "Zhipu Proxy LLM"
+msgstr "지푸 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:34
+msgid "Zhipu proxy LLM configuration."
+msgstr "지푸 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:47
 msgid "The base url of the Zhipu API."
 msgstr "지푸 API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:54
 msgid "The API key of the Zhipu API."
 msgstr "지푸 API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:31
+msgid "Moonshot Proxy LLM"
+msgstr "문숏 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:47
 msgid "The base url of the Moonshot API."
 msgstr "문숏 API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:54
 msgid "The API key of the Moonshot API."
 msgstr "문숏 API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:32
+msgid "Gitee Proxy LLM"
+msgstr "지티 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:48
 msgid "The base url of the Gitee API."
 msgstr "지티 API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:55
 msgid "The API key of the Gitee API."
 msgstr "지티 API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:35
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:32
+msgid "Deepseek Proxy LLM"
+msgstr "딥시크 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:35
+msgid "Deepseek proxy LLM configuration."
+msgstr "딥시크 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:48
 msgid "The base url of the DeepSeek API."
 msgstr "딥시크 API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:55
 msgid "The API key of the DeepSeek API."
 msgstr "딥시크 API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:29
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:30
+msgid "Ollama Proxy LLM"
+msgstr "올라마 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:33
+msgid "Ollama proxy LLM configuration."
+msgstr "올라마 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:46
 msgid "The base url of the Ollama API."
 msgstr "Ollama API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:31
+msgid "Yi Proxy LLM"
+msgstr "이 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:47
 msgid "The base url of the Yi API."
 msgstr "Yi API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:54
 msgid "The API key of the Yi API."
 msgstr "Yi API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:29
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:26
+msgid "Xunfei Spark Proxy LLM"
+msgstr "순페이 스파크 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:42
 msgid "The base url of the Spark API."
 msgstr "Spark API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:36
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:49
 msgid "The API key of the Spark API."
 msgstr "Spark API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:31
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:34
+msgid "Baichuan Proxy LLM"
+msgstr "Baichuan 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:47
 msgid "The base url of the Baichuan API."
 msgstr "Baichuan API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:54
 msgid "The API key of the Baichuan API."
 msgstr "Baichuan API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:53
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:50
+msgid "Gemini Proxy LLM"
+msgstr "Gemini 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:53
+msgid "Google Gemini proxy LLM configuration."
+msgstr "Google Gemini 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:66
 msgid "The base url of the gemini API."
 msgstr "Gemini API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:60
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:73
 msgid "The API key of the gemini API."
 msgstr "Gemini API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:39
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:36
+msgid "Tongyi Proxy LLM"
+msgstr "Tongyi 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:39
+msgid "Tongyi proxy LLM configuration."
+msgstr "Tongyi 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:52
 msgid "The base url of the tongyi API."
 msgstr "Tongyi API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:46
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:59
 msgid "The API key of the tongyi API."
 msgstr "Tongyi API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:34
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:31
+msgid "Volcengine Proxy LLM"
+msgstr "Volcengine 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:34
+msgid "Volcengine proxy LLM configuration."
+msgstr "Volcengine 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:47
 msgid "The base url of the Volcengine API."
 msgstr "Volcengine API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:54
 msgid "The API key of the Volcengine API."
 msgstr "Volcengine API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:49
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:46
+msgid "Baidu Wenxin Proxy LLM"
+msgstr "Baidu Wenxin 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:49
+msgid "Baidu Wenxin proxy LLM configuration."
+msgstr "Baidu Wenxin 프록시 LLM 구성입니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:62
 msgid "The API key of the Wenxin API."
 msgstr "Wenxin API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:56
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:69
 msgid "The API secret key of the Wenxin API."
 msgstr "Wenxin API의 API 비밀 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:45
+msgid "Claude Proxy LLM"
+msgstr "Claude 프록시 LLM"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:58
 msgid "The base url of the claude API."
 msgstr "Claude API의 기본 URL입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:65
 msgid "The API key of the claude API."
 msgstr "Claude API의 API 키입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:312
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:312
 msgid "The name of model"
 msgstr "모델의 이름"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:319
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:319
 msgid "System prompt"
 msgstr "시스템 프롬프트"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:443
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:443
 msgid "The config file to start server"
 msgstr "서버를 시작하는 데 사용되는 구성 파일"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cli.py:451
+#: ../packages/dbgpt-core/src/dbgpt/model/cli.py:451
 msgid ""
 "Run in daemon mode. It will run in the background. If you want to stop it, "
 "use `dbgpt stop` command"
-msgstr "데몬 모드로 실행합니다. 백그라운드에서 실행됩니다. 중지하려면 `dbgpt stop` 명령을 사용하세요."
+msgstr ""
+"데몬 모드로 실행합니다. 백그라운드에서 실행됩니다. 중지하려면 `dbgpt stop` 명"
+"령을 사용하세요."
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:20
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:20
 msgid "Default LLM Client"
 msgstr "기본 LLM 클라이언트"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:23
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:23
 msgid "Default LLM client(Connect to your DB-GPT model serving)"
 msgstr "기본 LLM 클라이언트(DB-GPT 모델 서비스에 연결)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:26
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:128
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:26
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:128
 msgid "Auto Convert Message"
 msgstr "메시지 자동 변환"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:32
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:134
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:32
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:134
 msgid ""
 "Whether to auto convert the messages that are not supported by the LLM to a "
 "compatible format"
 msgstr "LLM에서 지원하지 않는 메시지를 호환 가능한 형식으로 자동 변환할지 여부"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:114
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:114
 msgid "Remote LLM Client"
 msgstr "원격 LLM 클라이언트"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:117
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:117
 msgid "Remote LLM client(Connect to the remote DB-GPT model serving)"
 msgstr "원격 LLM 클라이언트(원격 DB-GPT 모델 서비스에 연결)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:120
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:120
 msgid "Controller Address"
 msgstr "컨트롤러 주소"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:124
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:124
 msgid "http://127.0.0.1:8000"
 msgstr "http://127.0.0.1:8000"
 
-#:../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:125
+#: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:125
 msgid "Model controller address"
 msgstr "모델 컨트롤러 주소"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:33
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:29
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:25
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:33
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:29
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:25
 msgid "The path of the model, if you want to deploy a local model."
 msgstr "로컬 모델을 배포하려는 경우 모델의 경로입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:41
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:64
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:37
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:33
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:64
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:37
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:33
 msgid "Device to run model. If None, the device is automatically determined"
 msgstr "모델을 실행할 장치입니다. None인 경우 장치가 자동으로 결정됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:47
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:96
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:47
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:99
 msgid "Trust remote code or not."
 msgstr "원격 코드를 신뢰할지 여부입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:52
 msgid "The quantization parameters."
 msgstr "양자화 매개변수입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:59
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:59
 msgid ""
 "Whether to use low CPU memory usage mode. It can reduce the memory when "
 "loading the model, if you load your model with quantization, it will be True "
 "by default. You must install `accelerate` to make it work."
-msgstr "낮은 CPU 메모리 사용 모드를 사용할지 여부입니다. 모델을 로드할 때 메모리를 줄일 수 있습니다. 양자화를 사용하여 모델을 로드하는 경우 기본적으로 True입니다. 이 기능을 사용하려면 `accelerate`를 설치해야 합니다."
+msgstr ""
+"낮은 CPU 메모리 사용 모드를 사용할지 여부입니다. 모델을 로드할 때 메모리를 줄일 수 있습니다. "
+"양자화를 사용하여 모델을 로드하는 경우 기본적으로 True입니다. 이 기능을 사용하려면 `accelerate`를 설치해야 합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:70
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:70
 msgid ""
 "The number of gpus you expect to use, if it is empty, use all of them as "
 "much as possible"
-msgstr "사용하려는 GPU의 수입니다. 비어 있으면 가능한 한 모든 GPU를 사용합니다."
+msgstr ""
+"사용하려는 GPU의 수입니다. 비어 있으면 가능한 한 모든 GPU를 사용합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:79
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:79
 msgid ""
 "The maximum memory limit of each GPU, only valid in multi-GPU configuration, "
 "eg: 10GiB, 24GiB"
-msgstr "각 GPU의 최대 메모리 제한입니다. 다중 GPU 구성에서만 유효합니다. 예: 10GiB, 24GiB"
+msgstr ""
+"각 GPU의 최대 메모리 제한입니다. 다중 GPU 구성에서만 유효합니다. 예: 10GiB, "
+"24GiB"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:87
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:87
 msgid "The dtype of the model, default is None."
 msgstr "모델의 데이터 유형입니다. 기본값은 None입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:45
 msgid "Local model file path"
 msgstr "로컬 모델 파일 경로"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:51
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:51
 msgid "Hugging Face repository for model download"
 msgstr "모델 다운로드를 위한 Hugging Face 저장소"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:56
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:56
 msgid "Model file name in the Hugging Face repository"
 msgstr "Hugging Face 저장소의 모델 파일 이름"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:71
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:71
 msgid "Path to the server binary executable"
 msgstr "서버 바이너리 실행 파일의 경로"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:75
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:75
 msgid "Host address to bind the server"
 msgstr "서버를 바인딩할 호스트 주소"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:80
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:80
 msgid "Port to bind the server. 0 for random available port"
 msgstr "서버를 바인딩할 포트입니다. 0은 임의의 사용 가능한 포트를 의미합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:85
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:85
 msgid "Sampling temperature for text generation"
 msgstr "텍스트 생성을 위한 샘플링 온도"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:89
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:89
 msgid "Random seed for reproducibility"
 msgstr "재현성을 위한 랜덤 시드"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:92
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:92
 msgid "Enable debug mode"
 msgstr "디버그 모드 활성화"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:97
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:97
 msgid "Model download URL (env: LLAMA_ARG_MODEL_URL)"
 msgstr "모델 다운로드 URL (환경 변수: LLAMA_ARG_MODEL_URL)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:101
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:101
 msgid "Draft model file path"
 msgstr "초안 모델 파일 경로"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:109
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:109
 msgid ""
 "Number of threads to use during generation (default: -1) (env: "
 "LLAMA_ARG_THREADS)"
 msgstr "생성 중에 사용할 스레드 수 (기본값: -1) (환경 변수: LLAMA_ARG_THREADS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:119
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:119
 msgid ""
 "Number of layers to store in VRAM (env: LLAMA_ARG_N_GPU_LAYERS), set "
 "1000000000 to use all layers"
 msgstr "VRAM에 저장할 레이어 수 (환경 변수: LLAMA_ARG_N_GPU_LAYERS), 모든 레이어를 사용하려면 1000000000으로 설정"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:129
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:129
 msgid "Logical maximum batch size (default: 2048) (env: LLAMA_ARG_BATCH)"
 msgstr "논리적 최대 배치 크기 (기본값: 2048) (환경 변수: LLAMA_ARG_BATCH)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:138
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:138
 msgid "Physical maximum batch size (default: 512) (env: LLAMA_ARG_UBATCH)"
 msgstr "물리적 최대 배치 크기 (기본값: 512) (환경 변수: LLAMA_ARG_UBATCH)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:148
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:148
 msgid ""
 "Size of the prompt context (default: 4096, 0 = loaded from model) (env: "
 "LLAMA_ARG_CTX_SIZE)"
-msgstr "프롬프트 컨텍스트 크기 (기본값: 4096, 0 = 모델에서 로드) (환경 변수: LLAMA_ARG_CTX_SIZE)"
+msgstr ""
+"프롬프트 컨텍스트 크기 (기본값: 4096, 0 = 모델에서 로드) (환경 변수: "
+"LLAMA_ARG_CTX_SIZE)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:155
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:155
 msgid "Group-attention factor (default: 1)"
 msgstr "그룹 어텐션 계수 (기본값: 1)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:159
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:159
 msgid "Group-attention width (default: 512)"
 msgstr "그룹 어텐션 너비 (기본값: 512)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:167
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:167
 msgid ""
 "Number of tokens to predict (default: -1, -1 = infinity, -2 = until context "
 "filled) (env: LLAMA_ARG_N_PREDICT)"
-msgstr "예측할 토큰 수 (기본값: -1, -1 = 무한대, -2 = 컨텍스트가 채워질 때까지) (환경 변수: LLAMA_ARG_N_PREDICT)"
+msgstr ""
+"예측할 토큰 수 (기본값: -1, -1 = 무한대, -2 = 컨텍스트가 채워질 때까지) (환"
+"경 변수: LLAMA_ARG_N_PREDICT)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:176
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:176
 msgid "Path to save slot kv cache (default: disabled)"
 msgstr "슬롯 키-값 캐시를 저장할 경로 (기본값: 비활성화)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:180
 msgid "Number of slots for KV cache"
 msgstr "KV 캐시를 위한 슬롯 수"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:186
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:186
 msgid "Enable continuous batching (a.k.a dynamic batching)"
 msgstr "연속 배치 처리(즉, 동적 배치 처리) 활성화"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:193
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:193
 msgid ""
 "Restrict to only support embedding use case; use only with dedicated "
 "embedding models (env: LLAMA_ARG_EMBEDDINGS)"
-msgstr "임베딩 사용 사례만 지원하도록 제한; 전용 임베딩 모델과 함께만 사용 (환경 변수: LLAMA_ARG_EMBEDDINGS)"
+msgstr ""
+"임베딩 사용 사례만 지원하도록 제한; 전용 임베딩 모델과 함께만 사용 (환경 변"
+"수: LLAMA_ARG_EMBEDDINGS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:202
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:202
 msgid "Enable reranking endpoint on server (env: LLAMA_ARG_RERANKING)"
 msgstr "서버에서 재정렬 엔드포인트 활성화 (환경 변수: LLAMA_ARG_RERANKING)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:210
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:210
 msgid ""
 "Enable prometheus compatible metrics endpoint (env: "
 "LLAMA_ARG_ENDPOINT_METRICS)"
-msgstr "프로메테우스 호환 메트릭 엔드포인트 활성화 (환경 변수: LLAMA_ARG_ENDPOINT_METRICS)"
+msgstr ""
+"프로메테우스 호환 메트릭 엔드포인트 활성화 (환경 변수: "
+"LLAMA_ARG_ENDPOINT_METRICS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:220
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:220
 msgid "Enable slots monitoring endpoint (env: LLAMA_ARG_ENDPOINT_SLOTS)"
 msgstr "슬롯 모니터링 엔드포인트 활성화 (환경 변수: LLAMA_ARG_ENDPOINT_SLOTS)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:230
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:230
 msgid ""
 "Number of tokens to draft for speculative decoding (default: 16) (env: "
 "LLAMA_ARG_DRAFT_MAX)"
-msgstr "추측 디코딩을 위해 작성할 토큰 수(기본값: 16) (환경 변수: LLAMA_ARG_DRAFT_MAX)"
+msgstr ""
+"추측 디코딩을 위해 작성할 토큰 수(기본값: 16) (환경 변수: "
+"LLAMA_ARG_DRAFT_MAX)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:237
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:237
 msgid "Same as draft"
 msgstr "초안과 동일"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:244
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:244
 msgid ""
 "Minimum number of draft tokens to use for speculative decoding (default: 5)"
 msgstr "추측 디코딩에 사용할 최소 초안 토큰 수(기본값: 5)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:253
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:253
 msgid "API key to use for authentication (env: LLAMA_API_KEY)"
 msgstr "인증에 사용할 API 키 (환경 변수: LLAMA_API_KEY)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:260
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:260
 msgid "Path to LoRA adapter (can be repeated to use multiple adapters)"
 msgstr "LoRA 어댑터 경로(여러 어댑터를 사용하려면 반복 가능)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:267
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:267
 msgid "Disables context shift on infinite text generation"
 msgstr "무한 텍스트 생성 시 컨텍스트 이동 비활성화"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:271
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:271
 msgid "Disable web UI"
 msgstr "웹 UI 비활성화"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:274
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:274
 msgid "Server startup timeout in seconds"
 msgstr "서버 시작 제한 시간(초)"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:102
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:105
 msgid ""
 "Directory to download and load the weights, default to the default cache dir "
 "of huggingface."
-msgstr "가중치를 다운로드하고 로드할 디렉토리, 기본값은 Hugging Face의 기본 캐시 디렉토리입니다."
+msgstr ""
+"가중치를 다운로드하고 로드할 디렉토리, 기본값은 Hugging Face의 기본 캐시 디렉토리입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:112
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:115
 msgid ""
 "The format of the model weights to load.\n"
 "\n"
@@ -460,7 +577,8 @@ msgid ""
 "* \"runai_streamer\" will load the Safetensors weights using Run:aiModel "
 "Streamer \n"
 "* \"bitsandbytes\" will load the weights using bitsandbytes quantization.\n"
-msgstr "로드할 모델 가중치의 형식입니다.\n"
+msgstr ""
+"로드할 모델 가중치의 형식입니다.\n"
 "\n"
 "* \"auto\": safetensors 형식으로 가중치를 로드하려고 시도하며, safetensors 형식을 사용할 수 없는 경우 pytorch 바이너리 형식으로 대체합니다.\n"
 "* \"pt\": pytorch 바이너리 형식으로 가중치를 로드합니다.\n"
@@ -471,17 +589,19 @@ msgstr "로드할 모델 가중치의 형식입니다.\n"
 "* \"runai_streamer\": Run:aiModel Streamer를 사용하여 Safetensors 가중치를 로드합니다.\n"
 "* \"bitsandbytes\": bitsandbytes 양자화를 사용하여 가중치를 로드합니다.\n"
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:149
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:152
 msgid ""
 "The format of the model config to load.\n"
 "\n"
 "* \"auto\" will try to load the config in hf format if available else it "
 "will try to load in mistral format "
-msgstr "로드할 모델 구성의 형식입니다.\n"
+msgstr ""
+"로드할 모델 구성의 형식입니다.\n"
 "\n"
-"* \"auto\": 사용 가능한 경우 hf 형식으로 구성을 로드하려고 시도하고, 그렇지 않으면 미스트랄 형식으로 로드하려고 시도합니다."
+"* \"auto\": 사용 가능한 경우 hf 형식으로 구성을 로드하려고 시도하고, 그렇지 "
+"않으면 미스트랄 형식으로 로드하려고 시도합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:164
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:167
 msgid ""
 "Data type for model weights and activations.\n"
 "\n"
@@ -495,33 +615,35 @@ msgid ""
 msgstr ""
 "모델 가중치 및 활성화 함수에 사용되는 데이터 유형입니다.\n"
 "\n"
-"* \"auto\"는 FP32 및 FP16 모델에 FP16 정밀도를 사용하고, BF16 모델에 BF16 정밀도를 사용합니다.\n"
-"* \"half\"는 FP16을 나타냅니다. AWQ 양자화에 권장됩니다.\n"
-"* \"float16\"은 \"half\"와 동일합니다.\n"
-"* \"bfloat16\"은 정밀도와 범위 간의 균형을 위해 사용됩니다.\n"
-"* \"float\"은 FP32 정밀도의 약어입니다.\n"
-"* \"float32\"는 FP32 정밀도를 나타냅니다."
+"* \"auto\": FP32 및 FP16 모델에는 FP16 정밀도를, BF16 모델에는 BF16 정밀도를 사용합니다.\n"
+"* \"half\": FP16을 나타냅니다. AWQ 양자화에 권장됩니다.\n"
+"* \"float16\": \"half\"와 동일합니다.\n"
+"* \"bfloat16\": 정밀도와 범위 간의 균형을 위해 사용됩니다.\n"
+"* \"float\": FP32 정밀도의 약어입니다.\n"
+"* \"float32\": FP32 정밀도를 나타냅니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:183
 msgid ""
 "Data type for kv cache storage. If \"auto\", will use model data type. CUDA "
 "11.8+ supports fp8 (=fp8_e4m3) and fp8_e5m2. ROCm (AMD GPU) supports fp8 "
 "(=fp8_e4m3)"
 msgstr ""
-"KV 캐시 저장에 사용되는 데이터 유형입니다. \"auto\"로 설정하면 모델의 데이터 유형을 사용합니다. CUDA 11.8 이상은 fp8(=fp8_e4m3)과 fp8_e5m2를 지원합니다. ROCm(AMD GPU)은 fp8(=fp8_e4m3)를 지원합니다."
+"KV 캐시 저장에 사용되는 데이터 유형입니다. \"auto\"로 설정하면 모델의 데이터 "
+"유형을 사용합니다. CUDA 11.8 이상은 fp8(=fp8_e4m3)과 fp8_e5m2를 지원합니다. "
+"ROCm(AMD GPU)은 fp8(=fp8_e4m3)를 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:190
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:193
 msgid "Random seed for operations."
 msgstr "연산을 위한 난수 시드입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:197
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:200
 msgid ""
 "Model context length. If unspecified, will be automatically derived from the "
 "model config."
 msgstr ""
 "모델의 컨텍스트 길이입니다. 지정하지 않으면 모델 구성에서 자동으로 파생됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:206
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:209
 msgid ""
 "Backend to use for distributed model workers, either \"ray\" or \"mp\" "
 "(multiprocessing). If the product of pipeline_parallel_size and "
@@ -530,38 +652,48 @@ msgid ""
 "will default to \"ray\" if Ray is installed and fail otherwise. Note that "
 "tpu only supports Ray for distributed inference."
 msgstr ""
-"분산 모델 작업자에 사용할 백엔드입니다. \"ray\" 또는 \"mp\"(멀티프로세싱) 중 하나를 선택할 수 있습니다. pipeline_parallel_size와 tensor_parallel_size의 곱이 사용 가능한 GPU 수보다 작거나 같으면 단일 호스트에서 처리하기 위해 \"mp\"가 사용됩니다. 그렇지 않을 경우 Ray가 설치되어 있으면 기본값으로 \"ray\"가 사용되며, 설치되어 있지 않으면 실패합니다. 참고로 TPU는 분산 추론에 Ray만 지원합니다."
+"분산 모델 작업자에 사용할 백엔드입니다. \"ray\" 또는 \"mp\"(멀티프로세싱) 중 "
+"하나를 선택할 수 있습니다. pipeline_parallel_size와 tensor_parallel_size의 곱"
+"이 사용 가능한 GPU 수보다 작거나 같으면 단일 호스트에서 처리하기 위해 "
+"\"mp\"가 사용됩니다. 그렇지 않을 경우 Ray가 설치되어 있으면 기본값으로 "
+"\"ray\"가 사용되며, 설치되어 있지 않으면 실패합니다. 참고로 TPU는 분산 추론"
+"에 Ray만 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:220
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:223
 msgid "Number of pipeline stages."
 msgstr "파이프라인 단계 수입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:226
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:229
 msgid "Number of tensor parallel replicas."
 msgstr "텐서 병렬 복제본 수입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:233
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:236
 msgid ""
 "Load model sequentially in multiple batches, to avoid RAM OOM when using "
 "tensor parallel and large models."
-msgstr "모델을 여러 배치로 순차적으로 로드하여 텐서 병렬 및 대형 모델 사용 시 RAM OOM을 방지합니다."
+msgstr ""
+"모델을 여러 배치로 순차적으로 로드하여 텐서 병렬 및 대형 모델 사용 시 RAM OOM"
+"을 방지합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:242
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:245
 msgid ""
 "Token block size for contiguous chunks of tokens. This is ignored on neuron "
 "devices and set to ``--max-model-len``. On CUDA devices, only block sizes up "
 "to 32 are supported. On HPU devices, block size defaults to 128."
-msgstr "연속적인 토큰 청크에 대한 토큰 블록 크기입니다. 이는 뉴런 장치에서는 무시되며 ``--max-model-len``으로 설정됩니다. CUDA 장치에서는 최대 32까지의 블록 크기만 지원됩니다. HPU 장치에서는 블록 크기가 기본적으로 128로 설정됩니다."
+msgstr ""
+"연속적인 토큰 청크에 대한 토큰 블록 크기입니다. 이는 뉴런 장치에서는 무시되"
+"며 ``--max-model-len``으로 설정됩니다. CUDA 장치에서는 최대 32까지의 블록 크"
+"기만 지원됩니다. HPU 장치에서는 블록 크기가 기본적으로 128로 설정됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:253
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:256
 msgid "Enables automatic prefix caching. "
 msgstr "자동 접두사 캐싱을 활성화합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:259
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:262
 msgid "CPU swap space size (GiB) per GPU."
 msgstr "GPU당 CPU 스왑 공간 크기(GiB)입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:266
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:269
 msgid ""
 "The space in GiB to offload to CPU, per GPU. Default is 0, which means no "
 "offloading. Intuitively, this argument can be seen as a virtual way to "
@@ -570,9 +702,10 @@ msgid ""
 "a 13B model with BF16 weight, which requires at least 26GB GPU memory. Note "
 "that this requires fast CPU-GPU interconnect, as part of the model is loaded "
 "from CPU memory to GPU memory on the fly in each model forward pass."
-msgstr "GPU당 CPU로 오프로드할 공간(GiB)입니다. 기본값은 0이며, 이는 오프로드하지 않음을 의미합니다. 직관적으로 이 인수는 GPU 메모리 크기를 가상으로 늘리는 방법으로 볼 수 있습니다. 예를 들어, 24GB GPU가 하나 있고 이를 10으로 설정하면 사실상 34GB GPU로 생각할 수 있습니다. 그러면 적어도 26GB GPU 메모리가 필요한 BF16 가중치를 가진 13B 모델을 로드할 수 있습니다. 각 모델 순전파에서 모델의 일부가 CPU 메모리에서 GPU 메모리로 즉시 로드되므로 이를 위해서는 빠른 CPU-GPU 상호 연결이 필요합니다."
+msgstr ""
+"GPU당 CPU로 오프로드할 공간(GiB)입니다. 기본값은 0이며, 이는 오프로드하지 않음을 의미합니다. 직관적으로 이 인수는 GPU 메모리 크기를 가상으로 늘리는 방법으로 볼 수 있습니다. 예를 들어, 24GB GPU가 하나 있고 이를 10으로 설정하면 실질적으로 34GB GPU로 생각할 수 있습니다. 그러면 적어도 26GB GPU 메모리가 필요한 BF16 가중치를 가진 13B 모델을 로드할 수 있습니다. 각 모델 순전파에서 모델의 일부가 CPU 메모리에서 GPU 메모리로 즉시 로드되므로 이를 위해서는 빠른 CPU - GPU 상호 연결이 필요합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:283
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:286
 #, python-format
 msgid ""
 "The fraction of GPU memory to be used for the model executor, which can "
@@ -583,53 +716,45 @@ msgid ""
 "example, if you have two vLLM instances running on the same GPU, you can set "
 "the GPU memory utilization to 0.5 for each instance."
 msgstr ""
-"모델 실행기에 사용할 GPU 메모리의 비율로 0에서 1 사이의 값을 가질 수 있습니다. "
-"예를 들어, 0.5의 값은 50% GPU 메모리 사용률을 의미합니다. "
-"지정하지 않으면 기본값인 0.9를 사용합니다. 이는 인스턴스별 제한이며 "
-"현재 vLLM 인스턴스에만 적용됩니다. 동일한 GPU에서 다른 vLLM 인스턴스를 실행 중이더라도 "
-"영향을 받지 않습니다. 예를 들어, 동일한 GPU에서 두 개의 vLLM 인스턴스를 실행 중인 경우 "
-"각 인스턴스의 GPU 메모리 사용률을 0.5로 설정할 수 있습니다."
+"모델 실행기에 사용할 GPU 메모리의 비율로 0에서 1 사이의 값을 가질 수 있습니다. 예를 들어, 0.5의 값은 50% GPU 메모리 사용률을 의미합니다. 지정하지 않으면 기본값인 0.9를 사용합니다. 이는 인스턴스별 제한이며 현재 vLLM 인스턴스에만 적용됩니다. 동일한 GPU에서 다른 vLLM 인스턴스를 실행 중이더라도 영향을 받지 않습니다. 예를 들어, 동일한 GPU에서 두 개의 vLLM 인스턴스를 실행 중인 경우 각 인스턴스의 GPU 메모리 사용률을 0.5로 설정할 수 있습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:298
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:301
 msgid "Maximum number of batched tokens per iteration."
 msgstr "반복당 배치 처리된 토큰의 최대 개수입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:304
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:307
 msgid "Maximum number of sequences per iteration."
 msgstr "반복당 시퀀스의 최대 개수입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:311
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:314
 msgid ""
 "Max number of log probs to return logprobs is specified in SamplingParams."
 msgstr ""
 "반환할 로그 확률의 최대 개수입니다. 로그 확률은 SamplingParams에 지정됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:320
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:323
 msgid ""
 "The specific model version to use. It can be a branch name, a tag name, or a "
 "commit id. If unspecified, will use the default version."
 msgstr ""
-"사용할 특정 모델 버전입니다. 브랜치 이름, 태그 이름 또는 커밋 ID일 수 있습니다. "
-"지정하지 않으면 기본 버전을 사용합니다."
+"사용할 특정 모델 버전입니다. 브랜치 이름, 태그 이름 또는 커밋 ID일 수 있습니다. 지정하지 않으면 기본 버전을 사용합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:330
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:333
 msgid ""
 "The specific revision to use for the model code on Hugging Face Hub. It can "
 "be a branch name, a tag name, or a commit id. If unspecified, will use the "
 "default version."
 msgstr ""
-"Hugging Face Hub에서 모델 코드에 사용할 특정 리비전입니다. 브랜치 이름, 태그 이름 또는 "
-"커밋 ID일 수 있습니다. 지정하지 않으면 기본 버전을 사용합니다."
+"Hugging Face Hub에서 모델 코드에 사용할 특정 리비전입니다. 브랜치 이름, 태그 이름 또는 커밋 ID일 수 있습니다. 지정하지 않으면 기본 버전을 사용합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:340
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:343
 msgid ""
 "Revision of the huggingface tokenizer to use. It can be a branch name, a tag "
 "name, or a commit id. If unspecified, will use the default version."
 msgstr ""
-"사용할 Hugging Face 토크나이저의 리비전입니다. 브랜치 이름, 태그 이름 또는 커밋 ID일 수 있습니다. "
-"지정하지 않으면 기본 버전을 사용합니다."
+"사용할 Hugging Face 토크나이저의 리비전입니다. 브랜치 이름, 태그 이름 또는 커밋 ID일 수 있습니다. 지정하지 않으면 기본 버전을 사용합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:350
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:353
 msgid ""
 "The tokenizer mode.\n"
 "\n"
@@ -643,7 +768,7 @@ msgstr ""
 "* \"slow\"는 항상 느린 토크나이저를 사용합니다. \n"
 "* \"mistral\"은 항상 `mistral_common` 토크나이저를 사용합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:362
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:365
 msgid ""
 "Method used to quantize the weights. If None, we first check the "
 "`quantization_config` attribute in the model config file. If that is None, "
@@ -651,215 +776,290 @@ msgid ""
 "the data type of the weights."
 msgstr ""
 "가중치를 양자화하는 데 사용되는 방법입니다. None인 경우 모델 구성 파일의 "
-"`quantization_config` 속성을 먼저 확인합니다. 그 값이 None이면 "
-"모델 가중치가 양자화되지 않았다고 가정하고 `dtype`을 사용하여 "
-"가중치의 데이터 유형을 결정합니다."
+"`quantization_config` 속성을 먼저 확인합니다. 그 값이 None이면 모델 가중치가 "
+"양자화되지 않았다고 가정하고 `dtype`을 사용하여 가중치의 데이터 유형을 결정합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:400
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:403
 msgid ""
 "Maximum sequence length covered by CUDA graphs. When a sequence has context "
 "length larger than this, we fall back to eager mode. Additionally for "
 "encoder-decoder models, if the sequence length of the encoder input is "
 "larger than this, we fall back to the eager mode."
 msgstr ""
-"CUDA 그래프가 지원하는 최대 시퀀스 길이입니다. 시퀀스의 컨텍스트 길이가 이보다 길면 "
-"즉시 실행 모드로 돌아갑니다. 또한 인코더-디코더 모델의 경우 인코더 입력의 시퀀스 길이가 "
-"이보다 길면 즉시 실행 모드로 돌아갑니다."
+"CUDA 그래프가 지원하는 최대 시퀀스 길이입니다. 시퀀스의 컨텍스트 길이가 이보다 길면 즉시 실행 모드로 전환됩니다. 또한 인코더-디코더 모델의 경우 인코더 입력의 시퀀스 길이가 이보다 길면 즉시 실행 모드로 전환됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:411
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:414
 msgid "The worker class to use for distributed execution."
 msgstr "분산 실행에 사용할 워커 클래스입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:415
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:418
 msgid "Extra parameters, it will be passed to the vllm engine."
 msgstr "추가 매개변수이며, vllm 엔진에 전달됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:27
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:27
 msgid ""
 "The embedding model are trained by BAAI, it support more than 100 working "
 "languages."
 msgstr ""
 "임베딩 모델은 BAAI에서 학습시켰으며 100가지 이상의 작업 언어를 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:36
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:36
 msgid "The embedding model are trained by BAAI, it support Chinese."
 msgstr "임베딩 모델은 BAAI에서 학습시켰으며 중국어를 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:44
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:44
 msgid "The embedding model are trained by BAAI, it support English."
 msgstr "임베딩 모델은 BAAI에서 학습시켰으며 영어를 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:54
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:54
 msgid ""
 "The embedding model are trained by Jina AI, it support multiple languages. "
 "And it has 0.57B parameters."
 msgstr ""
-"임베딩 모델은 Jina AI에서 학습시켰으며 다국어를 지원합니다. "
+"임베딩 모델은 Jina AI에서 학습시켰으며, 다국어를 지원합니다. "
 "또한 0.57B개의 매개변수를 가지고 있습니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:65
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:65
 msgid "The reranker model are trained by BAAI, it support multiple languages."
 msgstr "재정렬 모델은 BAAI에서 학습되었으며, 다국어를 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:73
 msgid "The reranker model are trained by BAAI, it support Chinese and English."
 msgstr "재정렬 모델은 BAAI에서 학습되었으며, 중국어와 영어를 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:85
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:85
 msgid ""
 "The reranker model are trained by Jina AI, it support multiple languages."
-msgstr "재정렬 모델은 Jina AI에서 학습되었으며, 다국어를 지원합니다."
+msgstr ""
+"재정렬 모델은 Jina AI에서 학습되었으며, 다국어를 지원합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:39
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:39
 msgid "Random seed for llama-cpp models. -1 for random"
 msgstr "llama-cpp 모델의 랜덤 시드입니다. -1은 랜덤을 의미합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:45
 msgid ""
 "Number of threads to use. If None, the number of threads is automatically "
 "determined"
-msgstr "사용할 스레드 수입니다. None으로 설정하면 스레드 수가 자동으로 결정됩니다."
+msgstr ""
+"사용할 스레드 수입니다. None으로 설정하면 스레드 수가 자동으로 결정됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:54
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:54
 msgid ""
 "Maximum number of prompt tokens to batch together when calling llama_eval"
 msgstr "llama_eval을 호출할 때 함께 배치할 최대 프롬프트 토큰 수입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:63
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:63
 msgid ""
 "Number of layers to offload to the GPU, Set this to 1000000000 to offload "
 "all layers to the GPU."
-msgstr "GPU로 오프로드할 레이어 수입니다. 모든 레이어를 GPU로 오프로드하려면 이 값을 1000000000으로 설정하세요."
+msgstr ""
+"GPU로 오프로드할 레이어 수입니다. 모든 레이어를 GPU로 오프로드하려면 이 값을 "
+"1000000000으로 설정하세요."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:70
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:70
 msgid "Grouped-query attention. Must be 8 for llama-2 70b."
 msgstr "그룹화된 쿼리 어텐션입니다. llama-2 70b 모델에서는 8로 설정해야 합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:73
 msgid "5e-6 is a good value for llama-2 models."
 msgstr "5e-6은 llama-2 모델에 적합한 값입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:79
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:79
 msgid ""
 "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without "
 "units, bytes will be assumed. "
-msgstr "최대 캐시 용량입니다. 예: 2000MiB, 2GiB. 단위를 지정하지 않으면 바이트 단위로 간주됩니다."
+msgstr ""
+"최대 캐시 용량입니다. 예: 2000MiB, 2GiB. 단위를 지정하지 않으면 바이트 단위"
+"로 간주됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:88
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:88
 msgid ""
 "If a GPU is available, it will be preferred by default, unless "
 "prefer_cpu=False is configured."
-msgstr "GPU가 사용 가능한 경우 기본적으로 GPU를 우선 사용합니다. 단, prefer_cpu=False로 구성된 경우는 제외합니다."
+msgstr ""
+"GPU가 사용 가능한 경우 기본적으로 GPU를 우선 사용합니다. 단, prefer_cpu=False"
+"로 구성된 경우는 제외합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:94
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:96
 msgid "Database configuration for model registry"
 msgstr "모델 등록을 위한 데이터베이스 구성"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:106
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:108
 msgid "Model registry configuration. If None, use embedded registry"
 msgstr "모델 등록 구성입니다. None인 경우 내장 등록기를 사용합니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:125
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:114
+msgid "The interval for checking heartbeats (seconds)"
+msgstr "허트비트 확인 간격(초)"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:120
+msgid ""
+"The timeout for checking heartbeats (seconds), it will be set unhealthy if "
+"the worker is not responding in this time"
+msgstr ""
+"허트비트 확인 타임아웃(초)입니다. 이 시간 동안 워커가 응답하지 않으면 비정상으로 설정됩니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:130
 msgid "Model API server deploy port"
 msgstr "모델 API 서버 배포 포트"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:129
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:134
 msgid "The Model controller address to connect"
 msgstr "연결할 모델 컨트롤러 주소"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:189
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:139
+msgid "Optional list of comma separated API keys"
+msgstr "쉼표로 구분된 선택적 API 키 목록"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:142
+msgid "Embedding batch size"
+msgstr "임베딩 배치 크기"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:145
+msgid "Ignore exceeds stop words error"
+msgstr "정지 단어 초과 오류 무시"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:153
+msgid "Worker type"
+msgstr "워커 유형"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:158
+msgid "Model worker class, dbgpt.model.cluster.DefaultModelWorker"
+msgstr "모델 워커 클래스, dbgpt.model.cluster.DefaultModelWorker"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:167
+msgid "Standalone mode. If True, embedded Run ModelController"
+msgstr "독립 모드입니다. True인 경우 내장된 모델 컨트롤러를 실행합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:171
+msgid "Register current worker to model controller"
+msgstr "현재 워커를 모델 컨트롤러에 등록합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:190
+msgid "The interval for sending heartbeats (seconds)"
+msgstr "하트비트 전송 간격(초)"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:202
 msgid "Model worker configuration"
 msgstr "모델 워커 구성"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:192
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:205
 msgid "Model API"
 msgstr "모델 API"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:196
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:209
 msgid "Model controller"
 msgstr "모델 컨트롤러"
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:206
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:220
 msgid ""
 "Default LLM model name, used to specify which model to use when you have "
 "multiple LLMs"
-msgstr "기본 LLM 모델 이름입니다. 여러 개의 LLM이 있는 경우 사용할 모델을 지정하는 데 사용됩니다."
+msgstr ""
+"기본 LLM 모델 이름입니다. 여러 개의 LLM이 있는 경우 사용할 모델을 지정하는 "
+"데 사용됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:215
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:229
 msgid ""
 "Default embedding model name, used to specify which model to use when you "
 "have multiple embedding models"
-msgstr "기본 임베딩 모델 이름입니다. 여러 개의 임베딩 모델이 있는 경우 사용할 모델을 지정하는 데 사용됩니다."
+msgstr ""
+"기본 임베딩 모델 이름입니다. 여러 개의 임베딩 모델이 있는 경우 사용할 모델을 "
+"지정하는 데 사용됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/parameter.py:224
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:238
 msgid ""
 "Default reranker model name, used to specify which model to use when you "
 "have multiple reranker models"
-msgstr "기본 재정렬 모델 이름입니다. 여러 개의 재정렬 모델이 있는 경우 사용할 모델을 지정하는 데 사용됩니다."
+msgstr ""
+"기본 재정렬 모델 이름입니다. 여러 개의 재정렬 모델이 있는 경우 사용할 모델을 "
+"지정하는 데 사용됩니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:176
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:247
+msgid ""
+"LLM model deploy configuration. If you deploy in cluster mode, you just "
+"deploy one model."
+msgstr ""
+"LLM 모델 배포 구성입니다. 클러스터 모드로 배포하는 경우 한 개의 모델만 배포합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:256
+msgid ""
+"Embedding model deploy configuration. If you deploy in cluster mode, you "
+"just deploy one model."
+msgstr ""
+"임베딩 모델 배포 구성입니다. 클러스터 모드로 배포하는 경우 한 개의 모델만 배포합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:265
+msgid ""
+"Reranker model deploy configuration. If you deploy in cluster mode, you just "
+"deploy one model."
+msgstr ""
+"재정렬 모델 배포 구성입니다. 클러스터 모드로 배포하는 경우 한 개의 모델만 배포합니다."
+
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:140
 msgid "OpenAI Streaming Output Operator"
 msgstr "OpenAI 스트리밍 출력 연산자"
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:144
 msgid "The OpenAI streaming LLM operator."
 msgstr "OpenAI 스트리밍 LLM 연산자입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:184
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:148
 msgid "Upstream Model Output"
 msgstr "상위 모델 출력"
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:188
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:152
 msgid "The model output of upstream."
 msgstr "상위 모델의 출력입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:193
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:97
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:152
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:157
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:97
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:152
 msgid "Model Output"
 msgstr "모델 출력"
 
-#:../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:198
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:162
 msgid "The model output after transformed to openai stream format."
 msgstr "OpenAI 스트림 형식으로 변환된 후의 모델 출력입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:73
 msgid "LLM Operator"
 msgstr "LLM 연산자"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:76
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:76
 msgid "The LLM operator."
 msgstr "LLM 연산자입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:79
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:134
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:79
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:134
 msgid "LLM Client"
 msgstr "LLM 클라이언트"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:84
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:139
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:84
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:139
 msgid "The LLM Client."
 msgstr "LLM 클라이언트입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:89
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:144
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:89
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:144
 msgid "Model Request"
 msgstr "모델 요청"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:92
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:147
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:92
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:147
 msgid "The model request."
 msgstr "모델 요청입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:100
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:155
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:100
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:155
 msgid "The model output."
 msgstr "모델 출력입니다."
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:127
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:127
 msgid "Streaming LLM Operator"
 msgstr "스트리밍 LLM 연산자"
 
-#:../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:131
+#: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:131
 msgid "The streaming LLM operator."
 msgstr "스트리밍 LLM 算子입니다."
