@@ -1,0 +1,77 @@
+{
+    // Set container runtime user
+    "build": {
+        "dockerfile": ".devcontainer/Dockerfile.dev",
+        "context": "./",
+        "args": {
+            "USERNAME": "${localEnv:USER}"
+        },
+        "options": [
+            "--no-cache"
+        ]
+    },
+    "initializeCommand": ".devcontainer/init_env.sh",
+    "name": "dbgpt",
+    "workspaceFolder": "/app",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
+    "runArgs": [
+        "--network",
+        "host",
+        "--runtime=nvidia",
+        "--gpus",
+        "all",
+        "-e",
+        "LOCAL_DB_HOST=${localEnv:LOCAL_DB_HOST}",
+        "-e",
+        "LOCAL_DB_PASSWORD=${localEnv:LOCAL_DB_PASSWORD}",
+        "-e",
+        "MYSQL_ROOT_PASSWORD=${localEnv:MYSQL_ROOT_PASSWORD}",
+        "-e",
+        "LLM_MODEL=${localEnv:LLM_MODEL}",
+        "-e",
+        "LANGUAGE=${localEnv:LANGUAGE}",
+        "-e",
+        "PROXY_SERVER_URL=${localEnv:PROXY_SERVER_URL}",
+        "-e",
+        "HF_HOME=/app/models"
+    ],
+    "mounts": [
+        // sharing-git-credentials see https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials
+        // This will enable you to work with the repository code using Git inside the Dev container.
+        "source=${localEnv:SSH_AUTH_SOCK},target=/run/host-services/ssh-auth.sock,type=bind",
+        // mount to local models
+        // Persist the model to avoid redundant downloads.
+        "source=${localWorkspaceFolder}/models,target=/app/models,type=bind"
+    ],
+    "containerEnv": {
+        "SSH_AUTH_SOCK": "/run/host-services/ssh-auth.sock"
+    },
+    "postCreateCommand": "chmod +x /app/.devcontainer/post-create.sh && /app/.devcontainer/post-create.sh",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "extensions.verifySignature": false,
+                "http.proxyStrictSSL": false,
+                "python.linting.flake8Enabled": true,
+                "python.languageServer": "Pylance",
+                "python.linting.enabled": true,
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "terminal.integrated.shell.linux": "/bin/zsh",
+                "python.linting.mypyEnabled": true,
+                "python.linting.provider": "ruff",
+                "python.formatting.provider": "ruff"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.isort",
+                "ms-python.vscode-pylance",
+                "ms-python.autopep8",
+                "ms-vscode.makefile-tools",
+                "ms-python.flake8",
+                "ms-azuretools.vscode-docker",
+                "ms-python.mypy-type-checker",
+                "charliermarsh.ruff"
+            ]
+        }
+    }
+}
