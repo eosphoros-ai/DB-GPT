@@ -159,7 +159,7 @@ def setup_dev_environment(
 
     if not logger_filename:
         logger_filename = "dbgpt_awel_dev.log"
-    setup_logging("dbgpt", logging_level=logging_level, logger_filename=logger_filename)
+    setup_logging("dbgpt", default_logger_level=logging_level, default_logger_filename=logger_filename)
 
     start_http = _check_has_http_trigger(dags)
     if start_http:
