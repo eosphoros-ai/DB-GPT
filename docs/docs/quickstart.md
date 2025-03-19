@@ -397,12 +397,12 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 
 ## (Optional) More Configuration
 
-You can view the configuration in [Configuration](/docs/config-reference) to learn more about 
+You can view the configuration in [Configuration](./config/config-reference) to learn more about 
 the configuration options.
 
-For example, if you want to configure the LLM model, you can see all available options in the [LLM Configuration](/docs/config-reference/llm/).
+For example, if you want to configure the LLM model, you can see all available options in the [LLM Configuration](./config-reference/llm/).
 
-And another example, if you want to how to configure the vllm model, you can see all available options in the [VLLM Configuration](/docs/config-reference/llm/vllm_adapter_vllmdeploymodelparameters_1d4a24).
+And another example, if you want to how to configure the vllm model, you can see all available options in the [VLLM Configuration](./config-reference/llm/vllm_adapter_vllmdeploymodelparameters_1d4a24.mdx).
 
 
 ## DB-GPT Install Help Tool
