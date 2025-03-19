@@ -41,6 +41,17 @@ def is_scientific_notation(string):
         return False
 
 
+def is_valid_ipv4(address):
+    """Check if the address is a valid IPv4 address."""
+    pattern = re.compile(
+        r"^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\."
+        r"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\."
+        r"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\."
+        r"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+    )
+    return pattern.match(address) is not None
+
+
 def extract_content(long_string, s1, s2, is_include: bool = False) -> Dict[int, str]:
     # extract text
     match_map = {}
