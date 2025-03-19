@@ -82,12 +82,10 @@ def _import_openspg() -> Tuple[Type, Type]:
 
 
 def _import_full_text() -> Tuple[Type, Type]:
-    from dbgpt_ext.storage.full_text.elasticsearch import (
-        ElasticDocumentConfig,
-        ElasticDocumentStore,
-    )
+    from dbgpt_ext.storage.full_text.elasticsearch import ElasticDocumentStore
+    from dbgpt_ext.storage.vector_store.elastic_store import ElasticsearchStoreConfig
 
-    return ElasticDocumentStore, ElasticDocumentConfig
+    return ElasticDocumentStore, ElasticsearchStoreConfig
 
 
 def _select_rag_storage(name: str) -> Tuple[Type, Type]:
