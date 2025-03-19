@@ -201,6 +201,21 @@ class DorisConnector(RDBMSConnector):
             tables = cursor.fetchall()
             return [(table[0], table[1]) for table in tables]
 
+    def get_table_comment(self, table_name=None):
+        """Get table comment."""
+        cursor = self.get_session().execute(
+            text(
+                f"SELECT TABLE_COMMENT "
+                f"FROM information_schema.tables "
+                f'where TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'
+            )
+        )
+        table_comment = cursor.fetchone()
+        if table_comment:
+            return {'text': str(table_comment[0])}
+        else:
+            return {'text': None}
+
     def get_database_names(self):
         """Get database names."""
         with self.session_scope() as session:
