@@ -14,6 +14,7 @@ from dbgpt.storage.vector_store.base import (
     VectorStoreConfig,
 )
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
+from dbgpt.util import string_utils
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
@@ -110,6 +111,11 @@ class ChromaStore(VectorStoreBase):
         self.embeddings = embedding_fn
         if not self.embeddings:
             raise ValueError("Embeddings is None")
+        self._collection_name = name
+        if string_utils.contains_chinese(name):
+            bytes_str = self._collection_name.encode("utf-8")
+            hex_str = bytes_str.hex()
+            self._collection_name = hex_str
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
@@ -121,9 +127,9 @@ class ChromaStore(VectorStoreBase):
                 path=self.persist_dir, settings=chroma_settings
             )
         collection_metadata = collection_metadata or {"hnsw:space": "cosine"}
-        self._collection_name = name
+
         self._collection = self._chroma_client.get_or_create_collection(
-            name=name,
+            name=self._collection_name,
             embedding_function=None,
             metadata=collection_metadata,
         )
