@@ -99,7 +99,7 @@ class KnowledgeService:
         if request.vector_type == "VectorStore":
             request.vector_type = self.rag_config.storage.vector.get_type_value()
         if request.vector_type == "KnowledgeGraph":
-            knowledge_space_name_pattern = r"^[a-zA-Z0-9\u4e00-\u9fa5]+$"
+            knowledge_space_name_pattern = r"^[_a-zA-Z0-9\u4e00-\u9fa5]+$"
             if not re.match(knowledge_space_name_pattern, request.name):
                 raise Exception(f"space name:{request.name} invalid")
         spaces = knowledge_space_dao.get_knowledge_space(query)
