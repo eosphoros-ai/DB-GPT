@@ -92,7 +92,7 @@ class Resource(ABC, Generic[P]):
         """Initialize the resource with parameters."""
         pass
 
-    def preload_resource(self):
+    async def preload_resource(self):
         """Preload the resource."""
         pass
 
