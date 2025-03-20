@@ -207,14 +207,14 @@ class DorisConnector(RDBMSConnector):
             text(
                 f"SELECT TABLE_COMMENT "
                 f"FROM information_schema.tables "
-                f'where TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'
+                f"where TABLE_NAME={table_name} and TABLE_SCHEMA=database()"
             )
         )
         table_comment = cursor.fetchone()
         if table_comment:
-            return {'text': str(table_comment[0])}
+            return {"text": str(table_comment[0])}
         else:
-            return {'text': None}
+            return {"text": None}
 
     def get_database_names(self):
         """Get database names."""
