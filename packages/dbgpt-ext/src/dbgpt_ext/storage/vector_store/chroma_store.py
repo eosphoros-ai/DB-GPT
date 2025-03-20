@@ -1,7 +1,9 @@
 """Chroma vector store."""
 
+import hashlib
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
@@ -112,10 +114,11 @@ class ChromaStore(VectorStoreBase):
         if not self.embeddings:
             raise ValueError("Embeddings is None")
         self._collection_name = name
-        if string_utils.contains_chinese(name):
-            bytes_str = self._collection_name.encode("utf-8")
-            hex_str = bytes_str.hex()
-            self._collection_name = hex_str
+        if not _valid_chroma_collection_name(name):
+            hash_object = hashlib.sha256(name.encode("utf-8"))
+            hex_hash = hash_object.hexdigest()
+            # ensure the collection name is less than 64 characters
+            self._collection_name = hex_hash[:63] if len(hex_hash) > 63 else hex_hash
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
@@ -420,3 +423,31 @@ def _transform_chroma_metadata(
         if isinstance(value, (str, int, float, bool)):
             transformed[key] = value
     return transformed
+
+
+def _valid_chroma_collection_name(name):
+    """Check if the collection name is valid."""
+    # ensure the collection name is less than 64 characters
+    if not (3 <= len(name) <= 63):
+        return False
+
+    # ensure the collection name starts and ends with an alphanumeric character
+    if not re.match(r"^[a-zA-Z0-9].*[a-zA-Z0-9]$", name):
+        return False
+
+    # ensure the collection name contains only alphanumeric characters,
+    # hyphens, underscores, and dots
+    if not re.match(r"^[a-zA-Z0-9_][-a-zA-Z0-9_.]*$", name):
+        return False
+
+    # ensure the collection name does not contain the '..' substring
+    if ".." in name:
+        return False
+
+    if string_utils.is_valid_ipv4(name):
+        return False
+
+    if string_utils.contains_chinese(name):
+        return False
+
+    return True
