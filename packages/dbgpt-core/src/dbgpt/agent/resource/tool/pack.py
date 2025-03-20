@@ -16,11 +16,11 @@ ToolResourceType = Union[BaseTool, List[BaseTool], ToolFunc, List[ToolFunc]]
 
 def _is_function_tool(resources: Any) -> bool:
     return (
-        callable(resources)
-        and hasattr(resources, DB_GPT_TOOL_IDENTIFIER)
-        and getattr(resources, DB_GPT_TOOL_IDENTIFIER)
-        and hasattr(resources, "_tool")
-        and isinstance(getattr(resources, "_tool"), BaseTool)
+            callable(resources)
+            and hasattr(resources, DB_GPT_TOOL_IDENTIFIER)
+            and getattr(resources, DB_GPT_TOOL_IDENTIFIER)
+            and hasattr(resources, "_tool")
+            and isinstance(getattr(resources, "_tool"), BaseTool)
     )
 
 
@@ -28,7 +28,7 @@ def _to_tool_list(resources: ToolResourceType) -> List[BaseTool]:
     if isinstance(resources, BaseTool):
         return [resources]
     elif isinstance(resources, list) and all(
-        isinstance(r, BaseTool) for r in resources
+            isinstance(r, BaseTool) for r in resources
     ):
         return cast(List[BaseTool], resources)
     elif isinstance(resources, list) and all(_is_function_tool(r) for r in resources):
@@ -43,7 +43,7 @@ class ToolPack(ResourcePack):
     """Tool resource pack class."""
 
     def __init__(
-        self, resources: ToolResourceType, name: str = "Tool Resource Pack", **kwargs
+            self, resources: ToolResourceType, name: str = "Tool Resource Pack", **kwargs
     ):
         """Initialize the tool resource pack."""
         tools = cast(List[Resource], _to_tool_list(resources))
@@ -51,9 +51,9 @@ class ToolPack(ResourcePack):
 
     @classmethod
     def from_resource(
-        cls: Type[T],
-        resource: Optional[Resource],
-        expected_type: Optional[ResourceType] = None,
+            cls: Type[T],
+            resource: Optional[Resource],
+            expected_type: Optional[ResourceType] = None,
     ) -> List[T]:
         """Create a resource from another resource."""
         if not resource:
@@ -67,11 +67,11 @@ class ToolPack(ResourcePack):
         return [ToolPack(typed_tools)]  # type: ignore
 
     def add_command(
-        self,
-        command_label: str,
-        command_name: str,
-        args: Optional[Dict[str, Any]] = None,
-        function: Optional[Callable] = None,
+            self,
+            command_label: str,
+            command_name: str,
+            args: Optional[Dict[str, Any]] = None,
+            function: Optional[Callable] = None,
     ) -> None:
         """Add a command to the commands.
 
@@ -121,8 +121,8 @@ class ToolPack(ResourcePack):
         self.append(ft)
 
     def _get_execution_tool(
-        self,
-        name: Optional[str] = None,
+            self,
+            name: Optional[str] = None,
     ) -> BaseTool:
         if not name and name not in self._resources:
             raise ToolNotFoundException("No tool found for execution")
@@ -137,10 +137,10 @@ class ToolPack(ResourcePack):
         return arguments
 
     def execute(
-        self,
-        *args,
-        resource_name: Optional[str] = None,
-        **kwargs,
+            self,
+            *args,
+            resource_name: Optional[str] = None,
+            **kwargs,
     ) -> Any:
         """Execute the tool.
 
@@ -164,10 +164,10 @@ class ToolPack(ResourcePack):
             raise ToolExecutionException(f"Execution error: {str(e)}")
 
     async def async_execute(
-        self,
-        *args,
-        resource_name: Optional[str] = None,
-        **kwargs,
+            self,
+            *args,
+            resource_name: Optional[str] = None,
+            **kwargs,
     ) -> Any:
         """Execute the tool asynchronously.
 
@@ -249,9 +249,9 @@ class MCPToolPack(ToolPack):
 
     @classmethod
     def from_resource(
-        cls: Type[T],
-        resource: Optional[Resource],
-        expected_type: Optional[ResourceType] = None,
+            cls: Type[T],
+            resource: Optional[Resource],
+            expected_type: Optional[ResourceType] = None,
     ) -> List[T]:
         """Create a resource from another resource."""
         if not resource:
@@ -285,9 +285,23 @@ class MCPToolPack(ToolPack):
             required = input_schema["required"]
             for k, v in properties.items():
                 arg = {}
-                arg["type"] = v["type"]
-                arg["description"] = v["description"]
+
+                title = v.get("title", None)
+                description = v.get("description", None)
+                items = v.get("items", None)
+                items_str = str(items) if items else None
+                any_of = v.get("anyOf", None)
+                any_of_str = str(any_of) if any_of else None
+
+                default = v.get("default", None)
+                type = v.get("type", "string")
+
+
+                arg["type"] = type
+                arg["title"] = title
+                arg["description"] = description or items_str or any_of_str or str(v)
                 arg["required"] = True if k in required else False
+                arg["default"] = default
                 args[k] = arg
             return args
         except Exception as e:

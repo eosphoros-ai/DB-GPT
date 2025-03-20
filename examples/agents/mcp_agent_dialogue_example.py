@@ -30,15 +30,19 @@ async def main():
     ### Test method
     # 1.start mcp server as a sse server
     # Reference https://github.com/supercorp-ai/supergateway
-    # npx -y supergateway --stdio "uv run mcp-server-git"
+    # npx -y supergateway --stdio "uvx mcp-server-git"
 
     # 2.bind dbgpt resource MCPToolPack use mcp sse server lisk this：
     # MCPToolPack("http://127.0.0.1:8000/sse")
 
-    llm_client = SiliconFlowLLMClient(
-        model_alias=os.getenv(
-            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
-        ),
+    # llm_client = SiliconFlowLLMClient(
+    #     model_alias=os.getenv(
+    #         "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+    #     ),
+    # )
+    from dbgpt.model.proxy import GiteeLLMClient
+    llm_client = GiteeLLMClient(
+        api_key = "W7LRHBLWM0XMW0AGLDRKEITZNZCSUUHAVFOYWO1C"
     )
 
     agent_memory = AgentMemory()
@@ -64,7 +68,7 @@ async def main():
     await user_proxy.initiate_chat(
         recipient=tool_engineer,
         reviewer=user_proxy,
-        message="查看成都今天天气怎么样",
+        message="看下有多少分支",
     )
 
     # dbgpt-vis message infos
