@@ -298,10 +298,12 @@ class MCPToolPack(ToolPack):
 
 
                 arg["type"] = type
-                arg["title"] = title
+                if title:
+                    arg["title"] = title
                 arg["description"] = description or items_str or any_of_str or str(v)
                 arg["required"] = True if k in required else False
-                arg["default"] = default
+                if default:
+                    arg["default"] = default
                 args[k] = arg
             return args
         except Exception as e:

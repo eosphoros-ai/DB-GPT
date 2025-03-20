@@ -31,6 +31,8 @@ async def main():
     # 1.start mcp server as a sse server
     # Reference https://github.com/supercorp-ai/supergateway
     # npx -y supergateway --stdio "uvx mcp-server-fetch"
+    # or
+    # npx -y supergateway --stdio "npx -y @modelcontextprotocol/server-filesystem ./"
 
     # 2.bind dbgpt resource MCPToolPack use mcp sse server lisk this：
     # MCPToolPack("http://127.0.0.1:8000/sse")
@@ -40,6 +42,7 @@ async def main():
             "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
         ),
     )
+
 
     agent_memory = AgentMemory()
     agent_memory.gpts_memory.init(conv_id="test456")
@@ -64,7 +67,8 @@ async def main():
     await user_proxy.initiate_chat(
         recipient=tool_engineer,
         reviewer=user_proxy,
-        message="看下这个页面https://github.com/modelcontextprotocol",
+        message="看下这个页面https://github.com/modelcontextprotocol", ##配合 mcp-server-fetch 使用
+        # message="有多少个文件", ## 配合server-filesystem 这个mcp使用
     )
 
     # dbgpt-vis message infos
