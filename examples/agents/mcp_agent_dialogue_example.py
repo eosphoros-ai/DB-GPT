@@ -35,14 +35,10 @@ async def main():
     # 2.bind dbgpt resource MCPToolPack use mcp sse server lisk this：
     # MCPToolPack("http://127.0.0.1:8000/sse")
 
-    # llm_client = SiliconFlowLLMClient(
-    #     model_alias=os.getenv(
-    #         "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
-    #     ),
-    # )
-    from dbgpt.model.proxy import GiteeLLMClient
-    llm_client = GiteeLLMClient(
-        api_key = "W7LRHBLWM0XMW0AGLDRKEITZNZCSUUHAVFOYWO1C"
+    llm_client = SiliconFlowLLMClient(
+        model_alias=os.getenv(
+            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+        ),
     )
 
     agent_memory = AgentMemory()
