@@ -33,6 +33,7 @@ async def main():
     # npx -y supergateway --stdio "uvx mcp-server-fetch"
     # or
     # npx -y supergateway --stdio "npx -y @modelcontextprotocol/server-filesystem ./"
+    ## ./ 可以替换为你需要代理的目录
 
     # 2.bind dbgpt resource MCPToolPack use mcp sse server lisk this：
     # MCPToolPack("http://127.0.0.1:8000/sse")
