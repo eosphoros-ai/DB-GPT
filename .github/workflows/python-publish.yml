@@ -48,7 +48,7 @@ jobs:
             echo "Prepping package for release"
           fi
       - name: Install the project
-        run: uv sync --all-extras --dev
+        run: uv sync --all-packages --dev
            
       - name: Build package using Make
         run: |
