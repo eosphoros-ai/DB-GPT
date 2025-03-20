@@ -43,6 +43,7 @@ jobs:
             echo "Updating version in all files to $DB_GPT_VERSION"
             cd scripts
             uv run update_version_all.py $DB_GPT_VERSION -y
+            cd ..
           else
             echo "Prepping package for release"
           fi
@@ -55,7 +56,7 @@ jobs:
           ls dist/
 
       - name: Upload wheel as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist-packages
           path: dist/*
