@@ -30,7 +30,7 @@ async def main():
     ### Test method
     # 1.start mcp server as a sse server
     # Reference https://github.com/supercorp-ai/supergateway
-    # npx -y supergateway --stdio "uvx mcp-server-git"
+    # npx -y supergateway --stdio "uvx mcp-server-fetch"
 
     # 2.bind dbgpt resource MCPToolPack use mcp sse server lisk this：
     # MCPToolPack("http://127.0.0.1:8000/sse")
@@ -45,7 +45,7 @@ async def main():
     agent_memory.gpts_memory.init(conv_id="test456")
 
     context: AgentContext = AgentContext(
-        conv_id="test456", gpts_app_name="插件对话助手"
+        conv_id="test456", gpts_app_name="MCP工具对话助手"
     )
 
     tools = MCPToolPack("http://127.0.0.1:8000/sse")
@@ -64,7 +64,7 @@ async def main():
     await user_proxy.initiate_chat(
         recipient=tool_engineer,
         reviewer=user_proxy,
-        message="看下有多少分支",
+        message="看下这个页面https://github.com/modelcontextprotocol",
     )
 
     # dbgpt-vis message infos
