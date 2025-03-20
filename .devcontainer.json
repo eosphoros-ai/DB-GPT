@@ -7,9 +7,12 @@
             "USERNAME": "${localEnv:USER}"
         },
         "options": [
-            "--no-cache"
+            "--no-cache",
+            "--network=host"
         ]
     },
+    "updateRemoteUserUID": false,
+    "remoteUser": "${localEnv:USER}",
     "initializeCommand": ".devcontainer/init_env.sh",
     "name": "dbgpt",
     "workspaceFolder": "/app",

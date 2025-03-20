@@ -35,8 +35,8 @@ fi
 
 # Configuration section remains the same...
 # Apply custom configuration
-if [ -f /workspace/.devcontainer/zshrc-config ]; then
-  cp /workspace/.devcontainer/zshrc-config ~/.zshrc
+if [ -f /app/.devcontainer/zshrc-config ]; then
+  cp /app/.devcontainer/zshrc-config ~/.zshrc
 else
   # Generate basic .zshrc if no custom configuration exists
   cat << EOF >> ~/.zshrc

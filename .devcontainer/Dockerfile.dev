@@ -2,7 +2,8 @@ FROM eosphorosai/dbgpt:latest
 ARG PYTHON_VERSION=3.11
 ARG PIP_INDEX_URL="https://mirrors.aliyun.com/pypi/simple"
 ARG USERNAME
-ARG DEFAULT_VEN=/opt/.uv.venv
+ARG EXTRAS="base,proxy_openai,rag,storage_chromadb, storage_elasticsearch,cuda121,hf,quant_bnb,dbgpts"
+ARG DEFAULT_VENV=/opt/.uv.venv
 WORKDIR /app
 COPY . .
 USER root
@@ -11,29 +12,35 @@ USER root
 # between the container user (root) and the host user,
 # and to resolve the issue of the host user lacking write permissions.
 RUN . .devcontainer/.env && \
-    groupadd -g $USER_GID $USERNAME && \
+    groupadd -g $USER_GID $GROUPNAME && \
     useradd -u $USER_UID -g $USER_GID -m $USERNAME && \
     chown -R $USER_UID:$USER_GID /app
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     wget \
+    python${PYTHON_VERSION}-dev \
+    default-libmysqlclient-dev \
     ssh zsh autojump curl git-flow vim sudo \
     && python${PYTHON_VERSION} -m pip install --upgrade pip \
     && python${PYTHON_VERSION} -m pip install --upgrade pipx \
     && pipx install -i $PIP_INDEX_URL uv --global \
-    && chown -R $USERNAME:$USERNAME $DEFAULT_VEN \
+    && chown -R $USERNAME:$GROUPNAME $DEFAULT_VENV \
     && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 USER $USERNAME
 ENV UV_LINK_MODE=copy \
     PIP_INDEX_URL=$PIP_INDEX_URL \
-    VIRTUAL_ENV=$DEFAULT_VEN \
-    UV_PROJECT_ENVIRONMENT=$DEFAULT_VEN \
-    UV_PYTHON=$DEFAULT_VEN/bin/python3
+    VIRTUAL_ENV=$DEFAULT_VENV \
+    UV_PROJECT_ENVIRONMENT=$DEFAULT_VENV \
+    UV_PYTHON=$DEFAULT_VENV/bin/python3
 
-RUN . $DEFAULT_VEN/bin/activate && \
-    uv pip install --prefix $VIRTUAL_ENV -r pyproject.toml --all-extras --index-url=$PIP_INDEX_URL && \
+RUN sed -i "s|/app/\.venv|${FINAL_VENV_NAME}|g" /${DEFAULT_VENV}/bin/activate && \
+    pip config set global.index-url $PIP_INDEX_URL && \
+    pip config set global.trusted-host $(echo "$PIP_INDEX_URL" | sed -E 's|^https?://([^/]+).*|\1|') && \
+    . $DEFAULT_VENV/bin/activate && \
+    extras=$(echo $EXTRAS | tr ',' '\n' | while read extra; do echo "--extra $extra"; done | tr '\n' ' ') && \
+    uv sync --active --frozen --all-packages $extras && \
     uv pip install --prefix $VIRTUAL_ENV -r requirements/dev-requirements.txt --index-url=$PIP_INDEX_URL && \
     uv pip install --prefix $VIRTUAL_ENV -r requirements/lint-requirements.txt --index-url=$PIP_INDEX_URL && \
     cp .devcontainer/dbgpt.pth  /opt/.uv.venv/lib/python${PYTHON_VERSION}/site-packages/dbgpt.pth && \

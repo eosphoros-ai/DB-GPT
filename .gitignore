@@ -187,3 +187,5 @@ thirdparty
 /i18n/locales/**/**/*_ai_translated.po
 /i18n/locales/**/**/*~
 configs/my
+.devcontainer/dev.toml
+test_docs
