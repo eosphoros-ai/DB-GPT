@@ -1659,7 +1659,7 @@ dev = []
 [[package]]
 name = "dbgpt-acc-auto"
 version = "0.7.0"
-source = { virtual = "packages/dbgpt-accelerator/dbgpt-acc-auto" }
+source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-auto" }
 
 [package.optional-dependencies]
 auto = [
@@ -1742,7 +1742,7 @@ requires-dist = [
     { name = "auto-gptq", marker = "extra == 'quant-gptq'" },
     { name = "autoawq", marker = "extra == 'quant-awq'" },
     { name = "bitsandbytes", marker = "(sys_platform == 'linux' and extra == 'quant-bnb') or (sys_platform == 'win32' and extra == 'quant-bnb')", specifier = ">=0.39.0" },
-    { name = "dbgpt-acc-flash-attn", marker = "extra == 'flash-attn'", virtual = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" },
+    { name = "dbgpt-acc-flash-attn", marker = "extra == 'flash-attn'", editable = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" },
     { name = "device-smi", marker = "extra == 'quant-gptqmodel'", specifier = ">=0.3.3" },
     { name = "gptqmodel", marker = "extra == 'quant-gptqmodel'" },
     { name = "optimum", marker = "extra == 'quant-gptq'" },
@@ -1794,8 +1794,8 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-flash-attn"
-version = "0.1.0"
-source = { virtual = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" }
+version = "0.7.0"
+source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" }
 
 [package.dev-dependencies]
 build = [
@@ -1856,7 +1856,7 @@ requires-dist = [
     { name = "build", marker = "extra == 'dbgpts'" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
     { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'base'", editable = "packages/dbgpt-core" },
-    { name = "dbgpt-acc-auto", virtual = "packages/dbgpt-accelerator/dbgpt-acc-auto" },
+    { name = "dbgpt-acc-auto", editable = "packages/dbgpt-accelerator/dbgpt-acc-auto" },
     { name = "dbgpt-client", editable = "packages/dbgpt-client" },
     { name = "dbgpt-ext", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-serve", editable = "packages/dbgpt-serve" },

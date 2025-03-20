@@ -1,14 +1,12 @@
 """DB-GPT: Next Generation Data Interaction Solution with LLMs."""
 
-from dbgpt import _version  # noqa: E402
 from dbgpt.component import BaseComponent, SystemApp  # noqa: F401
+
+from ._version import version as __version__  # noqa: F401
 
 _CORE_LIBS = ["core", "rag", "model", "agent", "datasource", "vis", "storage", "train"]
 _SERVE_LIBS = ["serve"]
 _LIBS = _CORE_LIBS + _SERVE_LIBS
-
-
-__version__ = _version.version
 
 __ALL__ = ["__version__", "SystemApp", "BaseComponent"]
 
