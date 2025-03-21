@@ -357,4 +357,5 @@ export const CommonEn = {
   workflow: 'Workflow',
   resources: 'Resources',
   app: 'App',
+  please_select_resource_type: 'Please select resource type',
 } as const;

@@ -54,6 +54,7 @@ dev-dependencies = [
     "pytest-cov>=6.0.0",
     "jupyter",
     "pre-commit>=4.2.0",
+    "mypy>=1.15.0",
 ]
 
 

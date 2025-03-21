@@ -25,6 +25,7 @@ class ResourcePack(Resource[PackResourceParameters]):
         resources: List[Resource],
         name: str = "Resource Pack",
         prompt_separator: str = "\n",
+        **kwargs,
     ):
         """Initialize the resource pack."""
         self._resources: Dict[str, Resource] = {

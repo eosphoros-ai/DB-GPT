@@ -362,4 +362,5 @@ export const CommonZh: Resources['translation'] = {
   workflow: '工作流',
   resources: '资源',
   app: '应用',
+  please_select_resource_type: '请选择资源类型',
 } as const;
