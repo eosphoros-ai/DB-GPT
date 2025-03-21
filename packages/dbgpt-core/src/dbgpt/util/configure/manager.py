@@ -11,6 +11,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Type,
     TypeVar,
     Union,
@@ -20,7 +21,7 @@ from typing import (
 )
 
 from ..i18n_utils import _
-from ..parameter_utils import ParameterDescription
+from ..parameter_utils import BaseParameters, ParameterDescription
 
 try:
     # tomllib in stdlib after Python 3.11, try to import it first
@@ -658,7 +659,13 @@ class ConfigurationManager:
 
     @classmethod
     def parse_description(
-        cls, target_cls: Type[T], cache_enable: bool = True, skip_base: bool = False
+        cls,
+        target_cls: Type[T],
+        cache_enable: bool = False,
+        skip_base: bool = False,
+        _visited: Optional[Set[str]] = None,
+        _call_path: Optional[List[str]] = None,
+        verbose: bool = False,
     ) -> List[ParameterDescription]:
         """Parse configuration description into a list of ParameterDescription.
 
@@ -675,6 +682,34 @@ class ConfigurationManager:
         """
         from ..function_utils import type_to_string
 
+        if target_cls is BaseParameters:
+            return []
+
+        # Initialize tracking structures for first call
+        if _visited is None:
+            _visited = set()
+        if _call_path is None:
+            _call_path = []
+
+        class_key = f"{target_cls.__module__}.{target_cls.__name__}"
+        logger.debug(f"Begin parse: {class_key}")
+        logger.debug(f"Call Path: {_call_path}")
+        # Check for circular reference
+        if class_key in _call_path:
+            cycle_start = _call_path.index(class_key)
+            cycle_path = _call_path[cycle_start:] + [class_key]
+            raise ValueError(
+                f"Circular dependency detected: {' -> '.join(cycle_path)}\n"
+                f"Current call path: {' -> '.join(_call_path)}"
+            )
+
+        logger.debug(
+            f"Parsing description for {target_cls.__module__}.{target_cls.__name__}"
+        )
+
+        # Add current class to call path
+        _call_path.append(class_key)
+
         if (
             skip_base
             and hasattr(target_cls, "__config_type__")
@@ -686,6 +721,7 @@ class ConfigurationManager:
             raise ValueError(f"{target_cls.__name__} is not a dataclass")
         cache_key = f"{target_cls.__module__}.{target_cls.__name__}"
         if cache_key in cls._description_cache and cache_enable:
+            _call_path.pop()
             return cls._description_cache[cache_key]
 
         descriptions = []
@@ -693,9 +729,11 @@ class ConfigurationManager:
 
         parent_descriptions = {}
         for parent in target_cls.__mro__[1:]:
-            if parent is object or not is_dataclass(parent):
+            if parent is object or not is_dataclass(parent) or parent is target_cls:
                 continue
-            for parent_param in cls.parse_description(parent):
+            for parent_param in cls.parse_description(
+                parent, _visited=_visited, _call_path=_call_path, verbose=verbose
+            ):
                 if parent_param.description:
                     parent_descriptions[parent_param.param_name] = parent_param
 
@@ -782,14 +820,24 @@ class ConfigurationManager:
                     implementations = _get_all_subclasses(element_type)
                     desc.nested_fields = {
                         type_value: cls.parse_description(
-                            impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                            impl_cls,
+                            cache_enable=cache_enable,
+                            skip_base=skip_base,
+                            _visited=_visited,
+                            _call_path=_call_path,
+                            verbose=verbose,
                         )
                         for type_value, impl_cls in implementations.items()
                     }
                 else:
                     desc.nested_fields = {
                         element_type.__name__.lower(): cls.parse_description(
-                            element_type, cache_enable=cache_enable, skip_base=skip_base
+                            element_type,
+                            cache_enable=cache_enable,
+                            skip_base=skip_base,
+                            _visited=_visited,
+                            _call_path=_call_path,
+                            verbose=verbose,
                         )
                     }
 
@@ -801,7 +849,12 @@ class ConfigurationManager:
                         implementations = _get_all_subclasses(value_type)
                         desc.nested_fields = {
                             type_value: cls.parse_description(
-                                impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                                impl_cls,
+                                cache_enable=cache_enable,
+                                skip_base=skip_base,
+                                _visited=_visited,
+                                _call_path=_call_path,
+                                verbose=verbose,
                             )
                             for type_value, impl_cls in implementations.items()
                         }
@@ -811,6 +864,9 @@ class ConfigurationManager:
                                 value_type,
                                 cache_enable=cache_enable,
                                 skip_base=skip_base,
+                                _visited=_visited,
+                                _call_path=_call_path,
+                                verbose=verbose,
                             )
                         }
 
@@ -820,14 +876,24 @@ class ConfigurationManager:
                     implementations = _get_all_subclasses(field_type)
                     desc.nested_fields = {
                         type_value: cls.parse_description(
-                            impl_cls, cache_enable=cache_enable, skip_base=skip_base
+                            impl_cls,
+                            cache_enable=cache_enable,
+                            skip_base=skip_base,
+                            _visited=_visited,
+                            _call_path=_call_path,
+                            verbose=verbose,
                         )
                         for type_value, impl_cls in implementations.items()
                     }
                 else:
                     desc.nested_fields = {
                         field_type.__name__.lower(): cls.parse_description(
-                            field_type, cache_enable=cache_enable, skip_base=skip_base
+                            field_type,
+                            cache_enable=cache_enable,
+                            skip_base=skip_base,
+                            _visited=_visited,
+                            _call_path=_call_path,
+                            verbose=verbose,
                         )
                     }
 
@@ -836,6 +902,7 @@ class ConfigurationManager:
         # Sort descriptions by order
         descriptions.sort(key=lambda d: d.param_order)
         cls._description_cache[cache_key] = descriptions
+        _call_path.pop()
         return descriptions
 
 

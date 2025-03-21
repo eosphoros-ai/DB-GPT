@@ -1,5 +1,10 @@
 ---
 title: "HookConfig Configuration"
+description: "Hook configuration.
+
+    You can define a hook configuration with a path and optional parameters.
+    It will be used to dynamically load and execute a hook function or a callable
+    object."
 ---
 
 import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
@@ -9,6 +14,12 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
   "description": "Hook configuration.\n\n    You can define a hook configuration with a path and optional parameters.\n    It will be used to dynamically load and execute a hook function or a callable\n    object.",
   "documentationUrl": "",
   "parameters": [
+    {
+      "name": "path",
+      "type": "string",
+      "required": true,
+      "description": "Hook path, it can be a class path or a function path. eg: 'dbgpt.config.hooks.env_var_hook'"
+    },
     {
       "name": "init_params",
       "type": "object",
@@ -29,12 +40,6 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
       "required": false,
       "description": "Whether the hook is enabled, default is True",
       "defaultValue": "True"
-    },
-    {
-      "name": "path",
-      "type": "string",
-      "required": true,
-      "description": "Hook path, it can be a class path or a function path. eg: 'dbgpt.config.hooks.env_var_hook'"
     }
   ]
 }} />

@@ -8,7 +8,8 @@ import cls from 'classnames';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuid } from 'uuid';
-import ResourcesCard from './ResourcesCard';
+// import ResourcesCard from './ResourcesCard';
+import ResourcesCardV2 from './ResourcesCardV2';
 
 type PromptSelectType = {
   promptList: Record<string, any>[];
@@ -157,7 +158,7 @@ const DetailsCard: React.FC<{
           </Form.Item>
         )}
         <Form.Item label={t('available_resources')} name='resources'>
-          <ResourcesCard
+          <ResourcesCardV2
             resourceTypeOptions={resourceTypeOptions}
             initValue={initVal?.resources?.map((res: any) => {
               return {

@@ -45,9 +45,17 @@
 🚀 **データ3.0時代には、モデルとデータベースを基盤として、企業や開発者がより少ないコードで独自のアプリケーションを構築できます。**
 
 ### AIネイティブデータアプリ
----
-- 🔥🔥🔥 [V0.5.0リリース | ワークフローとエージェントを通じてネイティブデータアプリケーションを開発](https://docs.dbgpt.site/docs/changelog/Released_V0.5.0)
----
+- 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
+  - [サポート MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+  - [サポート DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
+  - [サポート QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+  - [基本モジュールをリファクタリングする]()
+    - [dbgpt-app](./packages/dbgpt-app)
+    - [dbgpt-core](./packages/dbgpt-core)
+    - [dbgpt-serve](./packages/dbgpt-serve)
+    - [dbgpt-client](./packages/dbgpt-client)
+    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
+    - [dbgpt-ext](./packages/dbgpt-ext)
 
 ![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
 
@@ -154,6 +162,17 @@ DB-GPTのアーキテクチャは以下の図に示されています：
   私たちは、LLaMA/LLaMA2、Baichuan、ChatGLM、Wenxin、Tongyi、Zhipuなど、オープンソースおよびAPIエージェントからの数十の大規模言語モデル（LLM）を含む幅広いモデルをサポートしています。
 
   - ニュース
+    - 🔥🔥🔥  [QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+    - 🔥🔥🔥  [DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1)
+    - 🔥🔥🔥  [DeepSeek-V3](https://huggingface.co/deepseek-ai/DeepSeek-V3)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-32B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-14B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Llama-8B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-7B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)
+    - 🔥🔥🔥  [Qwen2.5-Coder-32B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-Coder-14B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct)
     - 🔥🔥🔥  [Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
     - 🔥🔥🔥  [Qwen2.5-32B-Instruct](https://huggingface.co/Qwen/Qwen2.5-32B-Instruct)
     - 🔥🔥🔥  [Qwen2.5-14B-Instruct](https://huggingface.co/Qwen/Qwen2.5-14B-Instruct)

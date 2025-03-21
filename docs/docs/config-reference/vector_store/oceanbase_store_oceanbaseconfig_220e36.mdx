@@ -1,0 +1,57 @@
+---
+title: "OceanBase Config Configuration"
+description: "OceanBase vector store config."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "OceanBaseConfig",
+  "description": "OceanBase vector store config.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "The user of vector store, if not set, will use the default user."
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "The password of vector store, if not set, will use the default password."
+    },
+    {
+      "name": "ob_host",
+      "type": "string",
+      "required": false,
+      "description": "The host of oceanbase, if not set, will use the default host."
+    },
+    {
+      "name": "ob_port",
+      "type": "integer",
+      "required": false,
+      "description": "The port of oceanbase, if not set, will use the default port."
+    },
+    {
+      "name": "ob_user",
+      "type": "string",
+      "required": false,
+      "description": "The user of oceanbase, if not set, will use the default user."
+    },
+    {
+      "name": "ob_password",
+      "type": "string",
+      "required": false,
+      "description": "The password of oceanbase, if not set, will use the default password"
+    },
+    {
+      "name": "ob_database",
+      "type": "string",
+      "required": false,
+      "description": "The database for vector tables, if not set, will use the default database."
+    }
+  ]
+}} />
+

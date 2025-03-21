@@ -7,7 +7,14 @@ interface ParamValues {
   [key: string]: string | number | boolean | Record<string, any>;
 }
 
+// Check if valid_values is an array of objects containing label and key
+const isComplexValidValues = (values: any[]): boolean => {
+  if (!Array.isArray(values) || values.length === 0) return false;
+  return typeof values[0] === 'object' && values[0] !== null && 'key' in values[0] && 'label' in values[0];
+};
+
 function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> | null; form: FormInstance<any> }) {
+  // Initialize the default value of the form
   useEffect(() => {
     if (params) {
       const initialValues: ParamValues = {};
@@ -81,15 +88,29 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
     if (type === 'str' || type === 'string') {
       // Handle dropdown selection box
       if (param.valid_values) {
-        return (
-          <Select disabled={isFixed}>
-            {param.valid_values.map(value => (
-              <Select.Option key={value} value={value}>
-                {value}
-              </Select.Option>
-            ))}
-          </Select>
-        );
+        // Check if valid_values is an array of objects containing label and key
+        if (isComplexValidValues(param.valid_values)) {
+          return (
+            <Select disabled={isFixed}>
+              {param.valid_values.map((item: any) => (
+                <Select.Option key={item.key} value={item.key}>
+                  {item.label}
+                </Select.Option>
+              ))}
+            </Select>
+          );
+        } else {
+          // Simple string array
+          return (
+            <Select disabled={isFixed}>
+              {param.valid_values.map((value: string) => (
+                <Select.Option key={value} value={value}>
+                  {value}
+                </Select.Option>
+              ))}
+            </Select>
+          );
+        }
       }
 
       // Handle password input box
@@ -126,7 +147,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
               : 'value'
           }
           tooltip={param.description}
-          rules={param.required ? [{ required: true, message: `Please input ${param.param_name}` }] : []}
+          rules={param.required ? [{ required: true, message: `Please input ${param.label || param.param_name}` }] : []}
         >
           {renderItem(param)}
         </Form.Item>

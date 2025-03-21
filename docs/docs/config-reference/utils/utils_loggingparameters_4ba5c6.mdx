@@ -1,0 +1,37 @@
+---
+title: "LoggingParameters Configuration"
+description: "Logging parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "LoggingParameters",
+  "description": "Logging parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "level",
+      "type": "string",
+      "required": false,
+      "description": "Logging level, just support FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET",
+      "defaultValue": "${env:DBGPT_LOG_LEVEL:-INFO}",
+      "validValues": [
+        "FATAL",
+        "ERROR",
+        "WARNING",
+        "WARNING",
+        "INFO",
+        "DEBUG",
+        "NOTSET"
+      ]
+    },
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "The filename to store logs"
+    }
+  ]
+}} />
+

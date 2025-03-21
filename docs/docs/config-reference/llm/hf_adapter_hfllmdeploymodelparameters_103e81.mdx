@@ -1,0 +1,148 @@
+---
+title: "HFLLMDeployModelParameters Configuration"
+description: "Local deploy model parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "HFLLMDeployModelParameters",
+  "description": "Local deploy model parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "path",
+      "type": "string",
+      "required": false,
+      "description": "The path of the model, if you want to deploy a local model."
+    },
+    {
+      "name": "backend",
+      "type": "string",
+      "required": false,
+      "description": "The real model name to pass to the provider, default is None. If backend is None, use name as the real model name."
+    },
+    {
+      "name": "device",
+      "type": "string",
+      "required": false,
+      "description": "Device to run model. If None, the device is automatically determined"
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "hf"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "5"
+    },
+    {
+      "name": "prompt_template",
+      "type": "string",
+      "required": false,
+      "description": "Prompt template. If None, the prompt template is automatically determined from model. Just for local deployment."
+    },
+    {
+      "name": "context_length",
+      "type": "integer",
+      "required": false,
+      "description": "The context length of the model. If None, it is automatically determined from model."
+    },
+    {
+      "name": "reasoning_model",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether the model is a reasoning model. If None, it is automatically determined from model."
+    },
+    {
+      "name": "trust_remote_code",
+      "type": "boolean",
+      "required": false,
+      "description": "Trust remote code or not.",
+      "defaultValue": "True"
+    },
+    {
+      "name": "quantization",
+      "type": "BaseHFQuantization",
+      "required": false,
+      "description": "The quantization parameters.",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "bitsandbytes configuration",
+          "url": "parameter_bitsandbytesquantization_d40e3b"
+        },
+        {
+          "type": "link",
+          "text": "bitsandbytes_8bits configuration",
+          "url": "parameter_bitsandbytesquantization8bits_909aed"
+        },
+        {
+          "type": "link",
+          "text": "bitsandbytes_4bits configuration",
+          "url": "parameter_bitsandbytesquantization4bits_52b778"
+        }
+      ]
+    },
+    {
+      "name": "low_cpu_mem_usage",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to use low CPU memory usage mode. It can reduce the memory when loading the model, if you load your model with quantization, it will be True by default. You must install `accelerate` to make it work."
+    },
+    {
+      "name": "num_gpus",
+      "type": "integer",
+      "required": false,
+      "description": "The number of gpus you expect to use, if it is empty, use all of them as much as possible"
+    },
+    {
+      "name": "max_gpu_memory",
+      "type": "string",
+      "required": false,
+      "description": "The maximum memory limit of each GPU, only valid in multi-GPU configuration, eg: 10GiB, 24GiB"
+    },
+    {
+      "name": "torch_dtype",
+      "type": "string",
+      "required": false,
+      "description": "The dtype of the model, default is None.",
+      "validValues": [
+        "auto",
+        "float16",
+        "bfloat16",
+        "float",
+        "float32"
+      ]
+    },
+    {
+      "name": "attn_implementation",
+      "type": "string",
+      "required": false,
+      "description": "The attention implementation, only valid in multi-GPU configuration",
+      "validValues": [
+        "flash_attention_2"
+      ]
+    }
+  ]
+}} />
+

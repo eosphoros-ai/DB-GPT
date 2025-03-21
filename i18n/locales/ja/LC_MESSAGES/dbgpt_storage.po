@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,74 +17,68 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:21
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:22
 msgid "Collection Name"
 msgstr "コレクション名"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:25
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:26
 msgid "The name of vector store, if not set, will use the default name."
 msgstr "ベクトルストアの名前。設定されていない場合は、デフォルトの名前を使用します。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:31
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:32
 msgid "User"
 msgstr "ユーザー"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:35
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:36
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:98
 msgid "The user of vector store, if not set, will use the default user."
 msgstr "ベクトルストアのユーザー。設定されていない場合は、デフォルトのユーザーを使用します。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:41
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:42
 msgid "Password"
 msgstr "パスワード"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:45
-msgid ""
-"The password of vector store, if not set, will use the default password."
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:46
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:106
+msgid "The password of vector store, if not set, will use the default password."
 msgstr "ベクトルストアのパスワード。設定されていない場合は、デフォルトのパスワードを使用します。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:51
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:52
 msgid "Embedding Function"
 msgstr "埋め込み関数"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:55
-msgid ""
-"The embedding function of vector store, if not set, will use the default "
-"embedding function."
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:56
+msgid "The embedding function of vector store, if not set, will use the default embedding function."
 msgstr "ベクトルストアの埋め込み関数。設定されていない場合は、デフォルトの埋め込み関数を使用します。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:62
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:63
 msgid "Max Chunks Once Load"
 msgstr "一度に読み込む最大チャンク数"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:66
-msgid ""
-"The max number of chunks to load at once. If your document is large, you can "
-"set this value to a larger number to speed up the loading process. Default "
-"is 10."
-msgstr "一度に読み込む最大チャンク数。ドキュメントが大きい場合は、この値を大きくして読み込み速度を上げることができます。デフォルトは 10 です。"
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:67
+msgid "The max number of chunks to load at once. If your document is large, you can set this value to a larger number to speed up the loading process. Default is 10."
+msgstr "一度に読み込む最大チャンク数。ドキュメントが大きい場合は、この値を大きく設定することで読み込み速度を向上させることができます。デフォルトは 10 です。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:74
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:75
 msgid "Max Threads"
 msgstr "最大スレッド数"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:78
-msgid ""
-"The max number of threads to use. Default is 1. If you set this bigger than "
-"1, please make sure your vector store is thread-safe."
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:79
+msgid "The max number of threads to use. Default is 1. If you set this bigger than 1, please make sure your vector store is thread-safe."
 msgstr "使用する最大スレッド数。デフォルトは 1 です。この値を 1 より大きく設定する場合は、ベクトルストアがスレッドセーフであることを確認してください。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:28
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:30
 msgid "Whether to enable model cache, default is True"
 msgstr "モデルキャッシュを有効にするかどうか。デフォルトは True です。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:34
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:36
 msgid "The storage type, default is memory"
-msgstr "ストレージの種類、デフォルトはメモリ"
+msgstr "ストレージの種類。デフォルトはメモリです。"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:40
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:42
 msgid "The max memory in MB, default is 256"
-msgstr "最大メモリ容量（MB）、デフォルトは 256"
+msgstr "最大メモリ容量（MB）、デフォルトは 256 MB"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:46
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:48
 msgid "The persist directory, default is model_cache"
-msgstr "永続化ディレクトリです。デフォルトは model_cache です。"
+msgstr "永続化ディレクトリ、デフォルトは model_cache です"

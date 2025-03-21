@@ -1,0 +1,89 @@
+---
+title: "ModelAPIServerParameters Configuration"
+description: "ModelAPIServerParameters(host: Optional[str] = '0.0.0.0', port: Optional[int] = 8100, daemon: Optional[bool] = False, log: dbgpt.util.utils.LoggingParameters = <factory>, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, controller_addr: Optional[str] = 'http://127.0.0.1:8000', api_keys: Optional[str] = None, embedding_batch_size: Optional[int] = None, ignore_stop_exceeds_error: Optional[bool] = False)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ModelAPIServerParameters",
+  "description": "ModelAPIServerParameters(host: Optional[str] = '0.0.0.0', port: Optional[int] = 8100, daemon: Optional[bool] = False, log: dbgpt.util.utils.LoggingParameters = <factory>, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, controller_addr: Optional[str] = 'http://127.0.0.1:8000', api_keys: Optional[str] = None, embedding_batch_size: Optional[int] = None, ignore_stop_exceeds_error: Optional[bool] = False)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": false,
+      "description": "The host IP address to bind to.",
+      "defaultValue": "0.0.0.0"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "Model API server deploy port",
+      "defaultValue": "8100"
+    },
+    {
+      "name": "daemon",
+      "type": "boolean",
+      "required": false,
+      "description": "Run the server as a daemon.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "log",
+      "type": "LoggingParameters",
+      "required": false,
+      "description": "Logging configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "loggingparameters configuration",
+          "url": "../utils/utils_loggingparameters_4ba5c6"
+        }
+      ],
+      "defaultValue": "LoggingParameters"
+    },
+    {
+      "name": "trace",
+      "type": "TracerParameters",
+      "required": false,
+      "description": "Tracer configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "tracerparameters configuration",
+          "url": "../utils/tracer_impl_tracerparameters_f8f272"
+        }
+      ]
+    },
+    {
+      "name": "controller_addr",
+      "type": "string",
+      "required": false,
+      "description": "The Model controller address to connect",
+      "defaultValue": "http://127.0.0.1:8000"
+    },
+    {
+      "name": "api_keys",
+      "type": "string",
+      "required": false,
+      "description": "Optional list of comma separated API keys"
+    },
+    {
+      "name": "embedding_batch_size",
+      "type": "integer",
+      "required": false,
+      "description": "Embedding batch size"
+    },
+    {
+      "name": "ignore_stop_exceeds_error",
+      "type": "boolean",
+      "required": false,
+      "description": "Ignore exceeds stop words error",
+      "defaultValue": "False"
+    }
+  ]
+}} />
+

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 07:51+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,93 +17,95 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:27
 msgid "Graph Name"
 msgstr "图名称"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:30
 msgid "The name of Graph, if not set, will use the default name."
 msgstr "图的名称，如果不设置，将使用默认名称。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:34
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:35
 msgid "Embedding Function"
 msgstr "嵌入函数"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:38
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:39
 msgid ""
 "The embedding function of vector store, if not set, will use the default "
 "embedding function."
 msgstr "向量存储的嵌入函数，如果不设置，将使用默认嵌入函数。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:46
 msgid "Max Chunks Once Load"
 msgstr "一次加载的最大块数"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:49
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:50
 msgid ""
 "The max number of chunks to load at once. If your document is large, you can "
 "set this value to a larger number to speed up the loading process. Default "
 "is 10."
-msgstr "一次加载的最大块数。如果文档较大，可以将此值设置为较大的数字以加快加载过程，默认值为 10。"
+msgstr ""
+"一次加载的最大块数。如果文档较大，可将此值设大以加快加载速度，默认值为 10。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:58
 msgid "Max Threads"
 msgstr "最大线程数"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:61
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:62
 msgid ""
 "The max number of threads to use. Default is 1. If you set this bigger than "
 "1, please make sure your vector store is thread-safe."
-msgstr "使用的最大线程数，默认值为 1。如果设置为大于 1，请确保向量存储是线程安全的。"
+msgstr ""
+"使用的最大线程数，默认值为 1。若设置大于 1，请确保向量存储是线程安全的。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:71
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:72
 msgid "Builtin Graph Config"
 msgstr "内置图配置"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:74
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:75
 msgid "knowledge graph config."
 msgstr "知识图谱配置。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:78
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:79
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:39
 msgid "Knowledge Graph Type"
 msgstr "知识图谱类型"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:81
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:82
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:42
 msgid "graph store type."
 msgstr "图存储类型。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:86
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:87
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:47
 msgid "LLM Client"
-msgstr "LLM 客户端"
+msgstr "大语言模型客户端"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:89
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:90
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:50
 msgid "llm client for extract graph triplets."
-msgstr "用于提取图三元组的 LLM 客户端。"
+msgstr "用于提取图三元组的大语言模型客户端。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:92
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:93
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:53
 msgid "LLM Model Name"
-msgstr "LLM 模型名称"
+msgstr "大语言模型名称"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:95
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:96
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:56
 msgid "llm model name."
-msgstr "LLM 模型名称。"
+msgstr "大语言模型名称。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:116
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:118
 msgid "Builtin Knowledge Graph"
 msgstr "内置知识图谱"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:119
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:121
 msgid "Builtin Knowledge Graph."
 msgstr "内置知识图谱。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:122
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:125
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:124
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/knowledge_graph.py:127
 msgid "Builtin Knowledge Graph Config."
 msgstr "内置知识图谱配置。"
 
@@ -177,16 +179,16 @@ msgstr "并行社区构建过程的批处理大小"
 msgid "TBatch size of parallel community building process"
 msgstr "并行社区构建过程的批处理大小"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:216
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:143
 msgid "Community Summary Knowledge Graph"
 msgstr "社区摘要知识图谱"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:219
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:146
 msgid "Community Summary Knowledge Graph."
 msgstr "社区摘要知识图谱。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:222
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:225
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:149
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/knowledge_graph/community_summary.py:152
 msgid "Community Summary Knowledge Graph Config."
 msgstr "社区摘要知识图谱配置。"
 
@@ -202,26 +204,26 @@ msgstr "连接字符串"
 msgid ""
 "The connection string of vector store, if not set, will use the default "
 "connection string."
-msgstr "向量存储的连接字符串，如果未设置，则使用默认连接字符串。"
+msgstr "向量存储的连接字符串，若未设置，则使用默认连接字符串。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:53
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:60
 msgid "PG Vector Store"
 msgstr "PG 向量存储"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:56
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:63
 msgid "PG vector store."
 msgstr "PG 向量存储。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:59
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:66
 msgid "PG Config"
 msgstr "PG 配置"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:62
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/pgvector_store.py:69
 msgid "the pg config of vector store."
 msgstr "向量存储的 PG 配置。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:22
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:70
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:80
 msgid "Weaviate Config"
 msgstr "Weaviate 配置"
 
@@ -238,24 +240,24 @@ msgid "weaviate url address, if not set, will use the default url."
 msgstr "Weaviate URL 地址，如果未设置，则使用默认 URL。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:39
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:30
 msgid "Persist Path"
 msgstr "持久化路径"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:42
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:39
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:33
 msgid "the persist path of vector store."
 msgstr "向量存储的持久化路径。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:64
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:74
 msgid "Weaviate Vector Store"
 msgstr "Weaviate 向量存储"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:67
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:77
 msgid "Weaviate vector store."
 msgstr "Weaviate 向量存储。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:73
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/weaviate_store.py:83
 msgid "the weaviate config of vector store."
 msgstr "向量存储的 Weaviate 配置。"
 
@@ -305,107 +307,117 @@ msgstr "Elasticsearch 存储的索引名称，如果不设置，将使用默认�
 msgid "Elasticsearch vector config."
 msgstr "Elasticsearch 向量配置。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:119
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:135
 msgid "Elastic Vector Store"
 msgstr "Elastic 向量存储"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:122
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:138
 msgid "Elastic vector store."
 msgstr "Elastic 向量存储。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:125
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:141
 msgid "Elastic Config"
 msgstr "Elastic 配置"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:128
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/elastic_store.py:144
 msgid "the elastic config of vector store."
 msgstr "向量存储的 Elastic 配置。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:26
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:150
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:181
 msgid "Milvus Config"
 msgstr "Milvus 配置"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:106
 msgid "The uri of milvus store, if not set, will use the default uri."
 msgstr "Milvus 存储的 URI，如果不设置，将使用默认 URI。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:113
 msgid "The port of milvus store, if not set, will use the default port."
 msgstr "Milvus 存储的端口，如果不设置，将使用默认端口。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:56
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:122
 msgid "The alias of milvus store, if not set, will use the default alias."
-msgstr "Milvus 存储的别名，如果不设置，将使用默认别名。"
+msgstr "Milvus 存储的别名，若未设置，则使用默认别名。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:62
 msgid "Primary Field"
 msgstr "主字段"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:66
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:130
 msgid ""
 "The primary field of milvus store, if not set, will use the default primary "
 "field."
-msgstr "Milvus 存储的主字段，如果不设置，将使用默认主字段。"
+msgstr "Milvus 存储的主字段，若未设置，则使用默认主字段。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:73
 msgid "Text Field"
 msgstr "文本字段"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:77
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:139
 msgid ""
 "The text field of milvus store, if not set, will use the default text field."
-msgstr "Milvus 存储的文本字段，如果不设置，将使用默认文本字段。"
+msgstr "Milvus 存储的文本字段，若未设置，则使用默认文本字段。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:84
 msgid "Embedding Field"
 msgstr "嵌入字段"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:88
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:148
 msgid ""
 "The embedding field of milvus store, if not set, will use the default "
 "embedding field."
-msgstr "Milvus 存储的嵌入字段，如果不设置，将使用默认嵌入字段。"
+msgstr "Milvus 存储的嵌入字段，若未设置，则使用默认嵌入字段。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:95
 msgid "Milvus vector config."
 msgstr "Milvus 向量配置。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:144
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:175
 msgid "Milvus Vector Store"
 msgstr "Milvus 向量存储"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:147
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:178
 msgid "Milvus vector store."
 msgstr "Milvus 向量存储。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:153
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/milvus_store.py:184
 msgid "the milvus config of vector store."
 msgstr "向量存储的 Milvus 配置。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:29
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:68
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:70
 msgid "Chroma Config"
 msgstr "Chroma 配置"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:26
 msgid "Chroma vector store config."
 msgstr "Chroma 向量存储配置。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:62
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:54
+msgid "The metadata of collection."
+msgstr "集合的元数据。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:64
 msgid "Chroma Vector Store"
 msgstr "Chroma 向量存储"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:65
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:67
 msgid "Chroma vector store."
 msgstr "Chroma 向量存储。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:71
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/chroma_store.py:73
 msgid "the chroma config of vector store."
 msgstr "向量存储的 Chroma 配置。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:77
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:163
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:176
 msgid "OceanBase Config"
 msgstr "OceanBase 配置"
 
@@ -449,14 +461,113 @@ msgstr "OceanBase 数据库"
 msgid "database for vector tables"
 msgstr "用于向量表的数据库"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:157
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:170
 msgid "OceanBase Vector Store"
 msgstr "OceanBase 向量存储"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:160
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:173
 msgid "OceanBase vector store."
 msgstr "OceanBase 向量存储。"
 
-#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:166
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/vector_store/oceanbase_store.py:179
 msgid "the ob config of vector store."
 msgstr "向量存储的 OceanBase 配置。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:14
+msgid "The endpoint of the s3 server. e.g. https://s3.us-east-1.amazonaws.com"
+msgstr "S3 服务器的端点。例如：https://s3.us-east-1.amazonaws.com"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:19
+msgid "The region of the s3 server. e.g. us-east-1"
+msgstr "S3 服务器的区域。例如：us-east-1"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:25
+msgid ""
+"The access key ID of the s3 server. You can also set it in the environment "
+"variable AWS_ACCESS_KEY_ID"
+msgstr ""
+"S3 服务器的访问密钥 ID。你也可以将其设置在环境变量 AWS_ACCESS_KEY_ID 中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:35
+msgid ""
+"The access key secret of the s3 server. You can also set it in the "
+"environment variable AWS_SECRET_ACCESS_KEY"
+msgstr ""
+"S3 服务器的访问密钥密钥。你也可以将其设置在环境变量 AWS_SECRET_ACCESS_KEY 中。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:45
+msgid ""
+"Whether to use the environment variables AWS_ACCESS_KEY_ID and "
+"AWS_SECRET_ACCESS_KEY as the credentials. Default is False."
+msgstr ""
+"是否使用环境变量 AWS_ACCESS_KEY_ID 和 AWS_SECRET_ACCESS_KEY 作为凭证。默认值为 False。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:54
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:55
+msgid ""
+"The fixed bucket name to use. If set, all logical buckets in DB-GPT will be "
+"mapped to this bucket. We suggest you set this value to avoid bucket name "
+"conflicts."
+msgstr ""
+"要使用的固定存储桶名称。若设置该值，DB-GPT 中的所有逻辑存储桶都将映射到这个存储桶。建议您设置此值以避免存储桶名称冲突。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:64
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:65
+msgid ""
+"The prefix of the bucket name. If set, all logical buckets in DB-GPT will be "
+"prefixed with this value. Just work when fixed_bucket is None."
+msgstr ""
+"存储桶名称的前缀。若设置该值，DB-GPT 中的所有逻辑存储桶都将以该值作为前缀。仅在 fixed_bucket 为 None 时生效。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:73
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:74
+msgid ""
+"Whether to create the bucket automatically if it does not exist. If set to "
+"False, the bucket must exist before using it."
+msgstr ""
+"若存储桶不存在，是否自动创建。若设置为 False，则使用前存储桶必须已存在。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:82
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:83
+msgid ""
+"The chunk size when saving the file. When the file is larger 10x than this "
+"value, it will be uploaded in multiple parts. Default is 1M."
+msgstr ""
+"保存文件时的分块大小。当文件大小超过此值的 10 倍时，将分多部分上传。默认值为 "
+"1M。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:91
+msgid "The signature version of the s3 server. e.g. s3v4, s3v2, None (default)"
+msgstr "S3 服务器的签名版本。例如：s3v4、s3v2、无（默认）。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/s3/config.py:99
+msgid "The additional configuration for the S3 client."
+msgstr "S3 客户端的额外配置。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:14
+msgid ""
+"The endpoint of the OSS server. e.g. https://oss-cn-hangzhou.aliyuncs.com"
+msgstr "OSS 服务器的端点。例如：https://oss-cn-hangzhou.aliyuncs.com。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:20
+msgid "The region of the OSS server. e.g. cn-hangzhou"
+msgstr "OSS 服务器的区域。例如：cn-hangzhou。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:26
+msgid ""
+"The access key ID of the OSS server. You can also set it in the environment "
+"variable OSS_ACCESS_KEY_ID"
+msgstr "OSS 服务器的访问密钥 ID。你也可以在环境变量 OSS_ACCESS_KEY_ID 中设置。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:36
+msgid ""
+"The access key secret of the OSS server. You can also set it in the "
+"environment variable OSS_ACCESS_KEY_SECRET"
+msgstr "OSS 服务器的访问密钥。你也可以在环境变量 OSS_ACCESS_KEY_SECRET 中设置。"
+
+#: ../packages/dbgpt-ext/src/dbgpt_ext/storage/file/oss/config.py:46
+msgid ""
+"Whether to use the environment variables OSS_ACCESS_KEY_ID and "
+"OSS_ACCESS_KEY_SECRET as the credentials. Default is False."
+msgstr ""
+"是否使用环境变量 OSS_ACCESS_KEY_ID 和 OSS_ACCESS_KEY_SECRET 作为凭证。默认值为 False。"

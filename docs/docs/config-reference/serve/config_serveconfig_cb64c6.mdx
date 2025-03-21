@@ -1,0 +1,100 @@
+---
+title: "File Serve Configurations Configuration"
+description: "This configuration is for the file serve module. In DB-GPT, you can store yourfiles in the file server."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ServeConfig",
+  "description": "This configuration is for the file serve module. In DB-GPT, you can store yourfiles in the file server.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "api_keys",
+      "type": "string",
+      "required": false,
+      "description": "API keys for the endpoint, if None, allow all"
+    },
+    {
+      "name": "check_hash",
+      "type": "boolean",
+      "required": false,
+      "description": "Check the hash of the file when downloading",
+      "defaultValue": "True"
+    },
+    {
+      "name": "host",
+      "type": "string",
+      "required": false,
+      "description": "The host of the file server"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "The port of the file server, default is 5670",
+      "defaultValue": "5670"
+    },
+    {
+      "name": "download_chunk_size",
+      "type": "integer",
+      "required": false,
+      "description": "The chunk size when downloading the file",
+      "defaultValue": "1048576"
+    },
+    {
+      "name": "save_chunk_size",
+      "type": "integer",
+      "required": false,
+      "description": "The chunk size when saving the file",
+      "defaultValue": "1048576"
+    },
+    {
+      "name": "transfer_chunk_size",
+      "type": "integer",
+      "required": false,
+      "description": "The chunk size when transferring the file",
+      "defaultValue": "1048576"
+    },
+    {
+      "name": "transfer_timeout",
+      "type": "integer",
+      "required": false,
+      "description": "The timeout when transferring the file",
+      "defaultValue": "360"
+    },
+    {
+      "name": "local_storage_path",
+      "type": "string",
+      "required": false,
+      "description": "The local storage path"
+    },
+    {
+      "name": "default_backend",
+      "type": "string",
+      "required": false,
+      "description": "The default storage backend"
+    },
+    {
+      "name": "backends",
+      "type": "StorageBackendConfig",
+      "required": false,
+      "description": "The storage backend configurations",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "s3 configuration",
+          "url": "../utils/config_s3storageconfig_f0cdc9"
+        },
+        {
+          "type": "link",
+          "text": "oss configuration",
+          "url": "../utils/config_ossstorageconfig_1ad505"
+        }
+      ],
+      "defaultValue": "[]"
+    }
+  ]
+}} />
+

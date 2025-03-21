@@ -267,7 +267,12 @@ class ModelScanner(Generic[T]):
                         continue
                     try:
                         _child_scanner.scan_and_register(_child_config)
-                        child_items.update(_child_scanner.get_registered_items())
+                        _child_times = _child_scanner.get_registered_items()
+                        child_items.update(_child_times)
+                        logger.debug(
+                            f"Scanning child module {key}, _child_config: "
+                            f"{_child_config}"
+                        )
                         value.__is_already_scanned__ = True
                     except Exception as e:
                         logger.warning(f"Error scanning child module {key}: {str(e)}")

@@ -1,0 +1,33 @@
+---
+title: "PGVector Config Configuration"
+description: "PG vector config."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "PGVectorConfig",
+  "description": "PG vector config.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "The user of vector store, if not set, will use the default user."
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "The password of vector store, if not set, will use the default password."
+    },
+    {
+      "name": "connection_string",
+      "type": "string",
+      "required": false,
+      "description": ""
+    }
+  ]
+}} />
+

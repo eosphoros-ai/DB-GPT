@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -25,7 +25,7 @@ msgstr "上下文键"
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:40
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:150
 msgid "The key of the context, it will be used in building the prompt"
-msgstr "上下文的键，它将用于构建提示"
+msgstr "上下文的键，它将用于构建提示信息"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:43
 msgid "Top K"
@@ -33,7 +33,7 @@ msgstr "前 K 项"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:48
 msgid "The number of chunks to retrieve"
-msgstr "要检索的块数"
+msgstr "要检索的块数量"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/rag.py:51
 msgid "Minimum Match Score"
@@ -110,7 +110,7 @@ msgstr "字符串"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:18
 msgid "The string to be converted to other types."
-msgstr "要转换为其他类型的字符串。"
+msgstr "要转换为其他类型的字符串"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:21
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:46
@@ -119,7 +119,7 @@ msgstr "整数"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:24
 msgid "The integer to be converted to other types."
-msgstr "要转换为其他类型的整数。"
+msgstr "要转换为其他类型的整数"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:27
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:52
@@ -128,7 +128,7 @@ msgstr "浮点数"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:30
 msgid "The float to be converted to other types."
-msgstr "要转换为其他类型的浮点数。"
+msgstr "要转换为其他类型的浮点数"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:33
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:58
@@ -137,23 +137,23 @@ msgstr "布尔值"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:36
 msgid "The boolean to be converted to other types."
-msgstr "要转换为其他类型的布尔值。"
+msgstr "要转换为其他类型的布尔值"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:43
 msgid "The string converted from other types."
-msgstr "从其他类型转换来的字符串。"
+msgstr "从其他类型转换而来的字符串"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:49
 msgid "The integer converted from other types."
-msgstr "从其他类型转换来的整数。"
+msgstr "从其他类型转换而来的整数"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:55
 msgid "The float converted from other types."
-msgstr "从其他类型转换来的浮点数。"
+msgstr "从其他类型转换而来的浮点数"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:61
 msgid "The boolean converted from other types."
-msgstr "从其他类型转换来的布尔值。"
+msgstr "从其他类型转换而来的布尔值"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:69
 msgid "String to Integer"
@@ -220,7 +220,7 @@ msgid "Converts a model output to a dictionary."
 msgstr "将模型输出转换为字典。"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/converter.py:199
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:374
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:391
 msgid "Model Output"
 msgstr "模型输出"
 
@@ -237,7 +237,7 @@ msgid "The datasource to retrieve the context"
 msgstr "用于获取上下文的数据源"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:109
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:268
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:283
 msgid "Prompt Template"
 msgstr "提示模板"
 
@@ -311,7 +311,7 @@ msgstr "从数据源检索表结构。"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:228
 msgid "Retrieved schema chunks"
-msgstr "检索到的结构片段"
+msgstr "已检索的结构片段"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/datasource.py:232
 msgid "The retrieved schema chunks from the datasource"
@@ -412,141 +412,145 @@ msgstr "代码字典到模型请求算子"
 msgid ""
 "Handle input dictionary with code and return output ModelRequest after "
 "execution."
-msgstr "处理输入字典中的代码，并在执行后返回输出的 ModelRequest。"
+msgstr "处理包含代码的输入字典，并在执行后返回输出的 ModelRequest。"
 
 #: ../packages/dbgpt-app/src/dbgpt_app/operators/code.py:261
 msgid "The output ModelRequest."
 msgstr "输出的 ModelRequest。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:50
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:53
 msgid "The context key can be used as the key for formatting prompt."
-msgstr "上下文键可以用作格式化提示的键。"
+msgstr "上下文键可用作格式化提示的键。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:54
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:57
 msgid "The context."
 msgstr "上下文。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:271
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:63
+msgid "You are a helpful AI assistant."
+msgstr "你是一个乐于助人的 AI 助手。"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:286
 msgid "The prompt template for the conversation."
 msgstr "对话的提示模板。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:274
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:291
 msgid "Model Name"
 msgstr "模型名称"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:279
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:296
 msgid "The model name."
 msgstr "模型名称。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:283
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:300
 msgid "LLM Client"
 msgstr "LLM 客户端"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:289
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:306
 msgid ""
 "The LLM Client, how to connect to the LLM model, if not provided, it will "
 "use the default client deployed by DB-GPT."
-msgstr "LLM 客户端，如何连接到 LLM 模型，如果未提供，则使用由 DB-GPT 部署的默认客户端。"
+msgstr "大语言模型客户端，用于连接到大语言模型，若未提供，则使用 DB-GPT 部署的默认客户端。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:294
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:311
 msgid "History Message Merge Mode"
 msgstr "历史消息合并模式"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:305
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:322
 msgid ""
 "The history merge mode, supports 'none', 'window' and 'token'. 'none': no "
 "history merge, 'window': merge by conversation window, 'token': merge by "
 "token length."
 msgstr "历史合并模式，支持 'none'、'window' 和 'token'。'none'：不合并历史，'window'：按对话窗口合并，'token'：按 Token 长度合并。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:312
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:329
 msgid "User Message Key"
 msgstr "用户消息键"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:318
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:335
 msgid "The key of the user message in your prompt, default is 'user_input'."
 msgstr "提示词中用户消息的键，默认为 'user_input'。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:322
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:339
 msgid "History Key"
 msgstr "历史键"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:328
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:345
 msgid ""
 "The chat history key, with chat history message pass to prompt template, if "
 "not provided, it will parse the prompt template to get the key."
-msgstr "聊天历史键，用于将聊天历史消息传递给提示模板，如果未提供，它将解析提示模板以获取键。"
+msgstr "聊天历史键，用于将聊天历史消息传递给提示模板，若未提供，将解析提示模板以获取该键。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:333
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:350
 msgid "Keep Start Rounds"
 msgstr "保留起始轮次"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:338
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:355
 msgid "The start rounds to keep in the chat history."
 msgstr "在聊天历史中保留的起始轮次。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:341
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:358
 msgid "Keep End Rounds"
 msgstr "保留结束轮次"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:346
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:363
 msgid "The end rounds to keep in the chat history."
 msgstr "在聊天历史中保留的结束轮次。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:349
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:366
 msgid "Max Token Limit"
 msgstr "最大 Token 限制"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:354
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:371
 msgid "The max token limit to keep in the chat history."
 msgstr "在聊天历史中保留的最大 Token 数量。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:358
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:375
 msgid "Common LLM Request Body"
-msgstr "通用 LLM 请求体"
+msgstr "通用大语言模型请求体"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:361
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:378
 msgid "The common LLM request body."
-msgstr "通用 LLM 请求体。"
+msgstr "通用大语言模型请求体。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:364
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:381
 msgid "Extra Context"
 msgstr "额外上下文"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:368
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:385
 msgid ""
 "Extra context for building prompt(Knowledge context, database schema, etc), "
 "you can add multiple context."
 msgstr "用于构建提示的额外上下文（知识上下文、数据库模式等），您可以添加多个上下文。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:377
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:394
 msgid "The model output."
 msgstr "模型输出。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:380
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:397
 msgid "Streaming Model Output"
 msgstr "流式模型输出"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:384
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:401
 msgid "The streaming model output."
 msgstr "流式模型输出。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:390
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:407
 msgid "LLM Operator"
-msgstr "LLM 算子"
+msgstr "大语言模型算子"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:394
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:411
 msgid ""
 "High-level LLM operator, supports multi-round conversation (conversation "
 "window, token length and no multi-round)."
-msgstr "高级 LLM 算子，支持多轮对话（对话窗口、Token 长度和无多轮）。"
+msgstr "高级大语言模型算子，支持多轮对话（对话窗口、Token 长度和无多轮）。"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:424
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:441
 msgid "Streaming LLM Operator"
-msgstr "流式 LLM 算子"
+msgstr "流式大语言模型算子"
 
-#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:428
+#: ../packages/dbgpt-app/src/dbgpt_app/operators/llm.py:445
 msgid ""
 "High-level streaming LLM operator, supports multi-round conversation "
 "(conversation window, token length and no multi-round)."
-msgstr "高级流式 LLM 算子，支持多轮对话（对话窗口、Token 长度和无多轮）。"
+msgstr "高级流式大语言模型算子，支持多轮对话（对话窗口、Token 长度和无多轮）。"

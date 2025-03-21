@@ -1,7 +1,9 @@
 """Chroma vector store."""
 
+import hashlib
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
@@ -14,6 +16,7 @@ from dbgpt.storage.vector_store.base import (
     VectorStoreConfig,
 )
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
+from dbgpt.util import string_utils
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
@@ -110,6 +113,12 @@ class ChromaStore(VectorStoreBase):
         self.embeddings = embedding_fn
         if not self.embeddings:
             raise ValueError("Embeddings is None")
+        self._collection_name = name
+        if not _valid_chroma_collection_name(name):
+            hash_object = hashlib.sha256(name.encode("utf-8"))
+            hex_hash = hash_object.hexdigest()
+            # ensure the collection name is less than 64 characters
+            self._collection_name = hex_hash[:63] if len(hex_hash) > 63 else hex_hash
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
@@ -121,9 +130,9 @@ class ChromaStore(VectorStoreBase):
                 path=self.persist_dir, settings=chroma_settings
             )
         collection_metadata = collection_metadata or {"hnsw:space": "cosine"}
-        self._collection_name = name
+
         self._collection = self._chroma_client.get_or_create_collection(
-            name=name,
+            name=self._collection_name,
             embedding_function=None,
             metadata=collection_metadata,
         )
@@ -414,3 +423,31 @@ def _transform_chroma_metadata(
         if isinstance(value, (str, int, float, bool)):
             transformed[key] = value
     return transformed
+
+
+def _valid_chroma_collection_name(name):
+    """Check if the collection name is valid."""
+    # ensure the collection name is less than 64 characters
+    if not (3 <= len(name) <= 63):
+        return False
+
+    # ensure the collection name starts and ends with an alphanumeric character
+    if not re.match(r"^[a-zA-Z0-9].*[a-zA-Z0-9]$", name):
+        return False
+
+    # ensure the collection name contains only alphanumeric characters,
+    # hyphens, underscores, and dots
+    if not re.match(r"^[a-zA-Z0-9_][-a-zA-Z0-9_.]*$", name):
+        return False
+
+    # ensure the collection name does not contain the '..' substring
+    if ".." in name:
+        return False
+
+    if string_utils.is_valid_ipv4(name):
+        return False
+
+    if string_utils.contains_chinese(name):
+        return False
+
+    return True

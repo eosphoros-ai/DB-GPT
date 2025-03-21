@@ -1,0 +1,57 @@
+---
+title: "ModelServiceConfig Configuration"
+description: "Model service configuration."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ModelServiceConfig",
+  "description": "Model service configuration.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "worker",
+      "type": "ModelWorkerParameters",
+      "required": false,
+      "description": "Model worker configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "modelworkerparameters configuration",
+          "url": "parameter_modelworkerparameters_3fd00b"
+        }
+      ],
+      "defaultValue": "ModelWorkerParameters"
+    },
+    {
+      "name": "api",
+      "type": "ModelAPIServerParameters",
+      "required": false,
+      "description": "Model API",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "modelapiserverparameters configuration",
+          "url": "parameter_modelapiserverparameters_763bec"
+        }
+      ],
+      "defaultValue": "ModelControllerParameters"
+    },
+    {
+      "name": "controller",
+      "type": "ModelControllerParameters",
+      "required": false,
+      "description": "Model controller",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "modelcontrollerparameters configuration",
+          "url": "parameter_modelcontrollerparameters_689309"
+        }
+      ],
+      "defaultValue": "ModelControllerParameters"
+    }
+  ]
+}} />
+

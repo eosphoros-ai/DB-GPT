@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,184 +18,257 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:26
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:30
 msgid "Language setting"
 msgstr "Настройка языка"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:33
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:37
 msgid "Logging level"
 msgstr "Уровень логирования"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:40
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:44
 msgid "API keys"
 msgstr "Ключи API"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:45
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:49
 msgid "The key to encrypt the data"
 msgstr "Ключ для шифрования данных"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:54
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:74
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:60
 msgid "default vector type"
 msgstr "Тип вектора по умолчанию"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:64
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:80
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:66
 msgid "default graph type"
 msgstr "Тип графа по умолчанию"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:91
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:203
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:85
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:270
 msgid "Whether to verify the SSL certificate of the database"
 msgstr "Проверять ли SSL-сертификат базы данных"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:97
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:209
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:91
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:276
 msgid ""
 "The default thread pool size, If None, use default config of python thread "
 "pool"
-msgstr "Размер пула потоков по умолчанию. Если None, используется конфигурация пула потоков Python по умолчанию"
+msgstr ""
+"Размер пула потоков по умолчанию. Если None, используется конфигурация пула "
+"потоков Python по умолчанию"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:104
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:98
 msgid "knowledge search top k"
 msgstr "Топ-k результатов поиска в знаниях"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:108
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:102
 msgid "knowledge search top similarity score"
 msgstr "Максимальный балл сходства при поиске в знаниях"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:112
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:106
 msgid "knowledge search rewrite"
 msgstr "Перезапись запроса при поиске в знаниях"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:116
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:110
 msgid "knowledge max chunks once load"
 msgstr "Максимальное количество блоков знаний при загрузке за один раз"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:120
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:114
 msgid "knowledge max load thread"
 msgstr "Максимальное количество потоков для загрузки знаний"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:124
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:118
 msgid "knowledge rerank top k"
 msgstr "Топ-k переранжированных результатов поиска в знаниях"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:128
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:122
 msgid "Storage configuration"
 msgstr "Конфигурация хранилища"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:132
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:126
 msgid "knowledge graph search top k"
 msgstr "Топ-k результатов поиска в графе знаний"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:136
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:130
 msgid "graph community summary enabled"
 msgstr "Включить обобщение сообществ графа"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:142
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:134
+msgid "kg extract llm model"
+msgstr "Модель LLM для извлечения из графа знаний"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:142
+msgid "kg extract score threshold"
+msgstr "Пороговое значение оценки для извлечения из графа знаний"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:146
+msgid "kg community top k"
+msgstr "Топ-k сообществ в графе знаний"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:150
+msgid "kg_community_score_threshold"
+msgstr "Пороговое значение оценки сообществ в графе знаний"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:154
+msgid "kg_triplet_graph_enabled"
+msgstr "Включить триплетный граф знаний"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:158
+msgid "kg_document_graph_enabled"
+msgstr "Включить документный граф знаний"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:162
+msgid "kg_chunk_search_top_k"
+msgstr "Топ-k результатов поиска по блокам в графе знаний"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:166
+msgid "kg_extraction_batch_size"
+msgstr "Размер пакета для извлечения из KG"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:174
+msgid "kg_embedding_batch_size"
+msgstr "Размер пакета для эмбеддинга KG"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:178
+msgid "kg_similarity_top_k"
+msgstr "Топ-k по сходству в KG"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:182
+msgid "kg_similarity_score_threshold"
+msgstr "Порог оценки сходства в KG"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:186
+msgid "kg_enable_text_search"
+msgstr "Включить текстовый поиск в KG"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:190
+msgid "kg_text2gql_model_enabled"
+msgstr "Включить модель текста в GQL для KG"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:194
+msgid "text2gql_model_name"
+msgstr "Название модели текста в GQL"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:198
+msgid "bm25_k1"
+msgstr "bm25_k1"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:202
+msgid "bm25_b"
+msgstr "bm25_b"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:209
 msgid "Webserver deploy host"
 msgstr "Хост для развертывания веб-сервера"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:144
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:211
 msgid "Webserver deploy port, default is 5670"
 msgstr "Порт для развертывания веб-сервера, по умолчанию 5670"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:147
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:214
 msgid "Run Webserver in light mode"
 msgstr "Запуск веб-сервера в легком режиме"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:153
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:220
 msgid ""
 "The Model controller address to connect. If None, read model controller "
 "address from environment key `MODEL_SERVER`."
-msgstr "Адрес контроллера модели для подключения. Если None, то адрес контроллера модели считывается из переменной окружения `MODEL_SERVER`."
+msgstr ""
+"Адрес контроллера модели для подключения. Если None, то адрес контроллера "
+"модели считывается из переменной окружения `MODEL_SERVER`."
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:164
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:231
 msgid "Database connection config, now support SQLite, OceanBase and MySQL"
 msgstr "Конфигурация подключения к базе данных, в настоящее время поддерживаются SQLite, OceanBase и MySQL"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:172
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:239
 msgid ""
 "The storage type of model configures, if None, use the default "
 "storage(current database). When you run in light mode, it will not use any "
 "storage."
 msgstr "Тип хранилища для конфигураций модели. Если None, используется хранилище по умолчанию (текущая база данных). При запуске в легком режиме не используется никакое хранилище."
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:182
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:249
 msgid "Tracer config for web server, if None, use global tracer config"
 msgstr "Конфигурация трассировщика для веб-сервера. Если None, используется глобальная конфигурация трассировщика"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:189
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:256
 msgid "Logging configuration for web server, if None, use global config"
 msgstr "Конфигурация логирования для веб-сервера. Если None, используется глобальная конфигурация"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:197
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:264
 msgid "Whether to disable alembic to initialize and upgrade database metadata"
 msgstr "Отключать ли Alembic для инициализации и обновления метаданных базы данных"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:218
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:285
 msgid ""
 "Whether to enable remote embedding models. If it is True, you need to start "
 "a embedding model through `dbgpt start worker --worker_type text2vec --"
 "model_name xxx --model_path xxx`"
-msgstr "Включать ли удаленные модели эмбеддингов. Если True, необходимо запустить модель эмбеддингов с помощью команды `dbgpt start worker --worker_type text2vec --model_name xxx --model_path xxx`"
+msgstr ""
+"Включать ли удаленные модели эмбеддингов. Если True, необходимо запустить "
+"модель эмбеддингов с помощью команды `dbgpt start worker --worker_type "
+"text2vec --model_name xxx --model_path xxx`"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:228
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:295
 msgid ""
 "Whether to enable remote rerank models. If it is True, you need to start a "
 "rerank model through `dbgpt start worker --worker_type text2vec --rerank --"
 "model_name xxx --model_path xxx`"
-msgstr "Включать ли удаленные модели переранжирования. Если значение равно True, вам нужно запустить модель переранжирования с помощью команды `dbgpt start worker --worker_type text2vec --rerank --model_name xxx --model_path xxx`"
+msgstr ""
+"Включать ли удаленные модели переранжирования. Если значение равно True, вам "
+"нужно запустить модель переранжирования с помощью команды `dbgpt start "
+"worker --worker_type text2vec --rerank --model_name xxx --model_path xxx`"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:236
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:303
 msgid "The directories to search awel files, split by `,`"
 msgstr "Директории для поиска файлов AWEL, разделенные запятой `,`"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:240
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:307
 msgid "Whether to use the new web UI, default is True"
 msgstr "Использовать ли новый веб-интерфейс, по умолчанию True"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:244
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:311
 msgid "Model cache configuration"
 msgstr "Конфигурация кэша модели"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:249
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:316
 msgid "The max sequence length of the embedding model, default is 512"
 msgstr "Максимальная длина последовательности для модели эмбеддинга, по умолчанию 512"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:258
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:327
 msgid "Web service configuration"
 msgstr "Конфигурация веб-сервиса"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:262
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:331
 msgid "Model service configuration"
 msgstr "Конфигурация сервиса модели"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:274
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:343
 msgid ""
 "Configuration hooks, which will be executed before the configuration loading"
-msgstr "Хуки конфигурации, которые будут выполнены перед загрузкой конфигурации"
+msgstr ""
+"Хуки конфигурации, которые будут выполнены перед загрузкой конфигурации"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:283
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:352
 msgid "System configuration"
 msgstr "Системная конфигурация"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:290
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:359
 msgid "Model deployment configuration"
 msgstr "Конфигурация развертывания модели"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:296
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:365
 msgid "Serve configuration"
 msgstr "Конфигурация сервера"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:301
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:370
 msgid "Rag Knowledge Parameters"
 msgstr "Параметры знаний RAG"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:306
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:379
 msgid "Global tracer configuration"
 msgstr "Конфигурация глобального трассировщика"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:312
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:385
 msgid "Logging configuration"
 msgstr "Конфигурация логирования"

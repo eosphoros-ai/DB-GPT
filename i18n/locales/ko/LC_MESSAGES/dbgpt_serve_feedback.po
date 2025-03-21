@@ -1,0 +1,26 @@
+# Korean translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
+"PO-Revision-Date: 2025-03-19 00:06+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/feedback/config.py:21
+msgid "Feedback Serve Configurations"
+msgstr "피드백 서비스 구성"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/feedback/config.py:24
+msgid "This configuration is for the feedback serve module."
+msgstr "이 구성은 피드백 서비스 모듈용입니다."

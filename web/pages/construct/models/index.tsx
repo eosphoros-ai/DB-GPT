@@ -3,7 +3,7 @@ import ModelForm from '@/components/model/model-form';
 import BlurredCard, { InnerDropdown } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { IModelData } from '@/types/model';
-import { MODEL_ICON_DICT } from '@/utils/constants';
+import { getModelIcon } from '@/utils/constants';
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, Modal, Tag, message } from 'antd';
 import moment from 'moment';
@@ -97,15 +97,7 @@ function Models() {
   // ).run;
 
   const returnLogo = (name: string) => {
-    const formatterModal = name?.replaceAll('-', '_').split('_')[0];
-    const dict = Object.keys(MODEL_ICON_DICT);
-    for (let i = 0; i < dict.length; i++) {
-      const element = dict[i];
-      if (formatterModal?.includes(element)) {
-        return MODEL_ICON_DICT[element];
-      }
-    }
-    return '/pictures/model.png';
+    return getModelIcon(name);
   };
 
   return (

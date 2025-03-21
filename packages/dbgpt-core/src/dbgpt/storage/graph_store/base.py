@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 class GraphStoreConfig(BaseParameters, RegisterParameters):
     """Graph store config."""
 
+    __cfg_type__ = "graph_store"
+
     # name: str = Field(
     #     default="dbgpt_collection",
     #     description="The name of graph store, inherit from index store.",

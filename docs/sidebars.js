@@ -822,7 +822,7 @@ const sidebars = {
         type: 'generated-index',
         title: 'Config Reference',
         description: 'All system configurable parameters and their detailed descriptions',
-        // slug: '/config-reference'
+        slug: '/config/config-reference'
       },
       items: [
         {

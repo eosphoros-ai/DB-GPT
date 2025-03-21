@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import logging
+import sys
+import time
+from collections import OrderedDict
 from typing import TYPE_CHECKING, List, Optional, Union
 
 if TYPE_CHECKING:
@@ -80,3 +83,111 @@ class ProxyTokenizerWrapper:
             )
             self._encoding_model = tiktoken.get_encoding("cl100k_base")
         return self._encoding_model
+
+
+class LRUTokenCache:
+    """LRU cache implementation based on count and memory size for token counting
+    results"""
+
+    def __init__(self, max_size: int = 1000, max_memory_mb: float = 100):
+        """
+        Initialize LRU cache
+
+        Args:
+            max_size: Maximum number of cache entries
+            max_memory_mb: Maximum memory usage (MB)
+        """
+        # Ensure max_size is at least 1
+        self.max_size = max(1, max_size)
+        self.max_memory_bytes = max_memory_mb * 1024 * 1024  # Convert to bytes
+        self.cache = OrderedDict()  # {key: (value, size_in_bytes, last_access_time)}
+        self.current_memory = 0  # Current total memory usage (bytes)
+
+    def get(self, key):
+        """Get cache item and update its position"""
+        if key not in self.cache:
+            return None
+
+        # Get cached value and update access time
+        value, size, _ = self.cache[key]
+        current_time = time.time()
+
+        # Update cache item position (move to most recently used position)
+        self.cache.move_to_end(key)
+        # Update last access time
+        self.cache[key] = (value, size, current_time)
+
+        return value
+
+    def put(self, key, value):
+        """
+        Add or update a cache item
+
+        Args:
+            key: Cache key
+            value: Cache value (token count)
+        """
+        # Estimate memory size for an integer token count
+        size_estimate = sys.getsizeof(key) + sys.getsizeof(value)
+        current_time = time.time()
+
+        # If key already exists, remove old value's memory usage
+        if key in self.cache:
+            _, old_size, _ = self.cache[key]
+            self.current_memory -= old_size
+            # Move to most recently used position
+            self.cache.move_to_end(key)
+
+        # If adding new item would exceed memory limit, delete old items until there's
+        # enough space
+        while (
+            self.current_memory + size_estimate > self.max_memory_bytes
+            and self.cache
+            and len(self.cache) > 0
+        ):
+            # Make sure the item we're evicting isn't the one we're about to update
+            if len(self.cache) == 1 and key in self.cache:
+                # If we only have one item and it's the key we're updating,
+                # we should just update it instead of trying to evict
+                break
+
+            oldest_key, (_, oldest_size, _) = next(iter(self.cache.items()))
+            if oldest_key == key:
+                # Skip evicting the key we're about to update
+                # Move to the next oldest item
+                self.cache.move_to_end(oldest_key)
+                if len(self.cache) <= 1:
+                    break
+                oldest_key, (_, oldest_size, _) = next(iter(self.cache.items()))
+
+            self.cache.pop(oldest_key)  # Remove oldest item
+            self.current_memory -= oldest_size
+            logger.debug(
+                f"LRU cache: Removed token count entry '{oldest_key}' due to memory "
+                "limit"
+            )
+
+        # If reached count limit but not memory limit, remove oldest item
+        if len(self.cache) >= self.max_size and key not in self.cache:
+            # Check if the cache is not empty before trying to pop
+            if self.cache:
+                oldest_key, (_, oldest_size, _) = next(iter(self.cache.items()))
+                self.cache.pop(oldest_key)
+                self.current_memory -= oldest_size
+                logger.debug(
+                    f"LRU cache: Removed token count entry '{oldest_key}' due to count "
+                    "limit"
+                )
+
+        # Add new item
+        self.cache[key] = (value, size_estimate, current_time)
+        self.current_memory += size_estimate
+
+    def clear(self):
+        """Clear the cache"""
+        self.cache.clear()
+        self.current_memory = 0
+
+    def __len__(self):
+        """Return the number of items in the cache"""
+        return len(self.cache)

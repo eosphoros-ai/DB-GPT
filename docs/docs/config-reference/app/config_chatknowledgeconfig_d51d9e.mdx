@@ -1,0 +1,85 @@
+---
+title: "ChatKnowledgeConfig Configuration"
+description: "Chat Knowledge Configuration"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ChatKnowledgeConfig",
+  "description": "Chat Knowledge Configuration",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "top_k",
+      "type": "integer",
+      "required": false,
+      "description": "The top k for LLM generation"
+    },
+    {
+      "name": "top_p",
+      "type": "number",
+      "required": false,
+      "description": "The top p for LLM generation"
+    },
+    {
+      "name": "temperature",
+      "type": "number",
+      "required": false,
+      "description": "The temperature for LLM generation"
+    },
+    {
+      "name": "max_new_tokens",
+      "type": "integer",
+      "required": false,
+      "description": "The max new tokens for LLM generation"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "required": false,
+      "description": "The name of your app"
+    },
+    {
+      "name": "memory",
+      "type": "BaseGPTsAppMemoryConfig",
+      "required": false,
+      "description": "Memory configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "window configuration",
+          "url": "../memory/config_bufferwindowgptsappmemoryconfig_c31071"
+        },
+        {
+          "type": "link",
+          "text": "token configuration",
+          "url": "../memory/config_tokenbuffergptsappmemoryconfig_6a2000"
+        }
+      ],
+      "defaultValue": "BufferWindowGPTsAppMemoryConfig"
+    },
+    {
+      "name": "knowledge_retrieve_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "The number of chunks to retrieve from the knowledge space.",
+      "defaultValue": "10"
+    },
+    {
+      "name": "knowledge_retrieve_rerank_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "The number of chunks after reranking.",
+      "defaultValue": "10"
+    },
+    {
+      "name": "similarity_score_threshold",
+      "type": "number",
+      "required": false,
+      "description": "The minimum similarity score to return from the query.",
+      "defaultValue": "0.0"
+    }
+  ]
+}} />
+

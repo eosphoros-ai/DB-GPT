@@ -1,0 +1,105 @@
+---
+title: "StorageConfig Configuration"
+description: "StorageConfig(vector: Optional[dbgpt_ext.storage.vector_store.chroma_store.ChromaVectorConfig] = <factory>, graph: Optional[dbgpt_ext.storage.graph_store.tugraph_store.TuGraphStoreConfig] = None, full_text: Optional[dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchStoreConfig] = None)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "StorageConfig",
+  "description": "StorageConfig(vector: Optional[dbgpt_ext.storage.vector_store.chroma_store.ChromaVectorConfig] = <factory>, graph: Optional[dbgpt_ext.storage.graph_store.tugraph_store.TuGraphStoreConfig] = None, full_text: Optional[dbgpt_ext.storage.vector_store.elastic_store.ElasticsearchStoreConfig] = None)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "vector",
+      "type": "ChromaVectorConfig",
+      "required": false,
+      "description": "default vector type",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "chroma configuration",
+          "url": "../vector_store/chroma_store_chromavectorconfig_16224f"
+        },
+        {
+          "type": "link",
+          "text": "elasticsearch configuration",
+          "url": "../vector_store/elastic_store_elasticsearchstoreconfig_15bdb6"
+        },
+        {
+          "type": "link",
+          "text": "pgvector configuration",
+          "url": "../vector_store/pgvector_store_pgvectorconfig_3ef448"
+        },
+        {
+          "type": "link",
+          "text": "weaviate configuration",
+          "url": "../vector_store/weaviate_store_weaviatevectorconfig_093ce3"
+        },
+        {
+          "type": "link",
+          "text": "milvus configuration",
+          "url": "../vector_store/milvus_store_milvusvectorconfig_20af52"
+        },
+        {
+          "type": "link",
+          "text": "oceanbase configuration",
+          "url": "../vector_store/oceanbase_store_oceanbaseconfig_220e36"
+        }
+      ],
+      "defaultValue": "ChromaVectorConfig"
+    },
+    {
+      "name": "graph",
+      "type": "TuGraphStoreConfig",
+      "required": false,
+      "description": "default graph type",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "tugraph configuration",
+          "url": "../graph_store/tugraph_store_tugraphstoreconfig_7ca8a8"
+        }
+      ]
+    },
+    {
+      "name": "full_text",
+      "type": "ElasticsearchStoreConfig",
+      "required": false,
+      "description": "default full text type",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "chroma configuration",
+          "url": "../vector_store/chroma_store_chromavectorconfig_16224f"
+        },
+        {
+          "type": "link",
+          "text": "elasticsearch configuration",
+          "url": "../vector_store/elastic_store_elasticsearchstoreconfig_15bdb6"
+        },
+        {
+          "type": "link",
+          "text": "pgvector configuration",
+          "url": "../vector_store/pgvector_store_pgvectorconfig_3ef448"
+        },
+        {
+          "type": "link",
+          "text": "weaviate configuration",
+          "url": "../vector_store/weaviate_store_weaviatevectorconfig_093ce3"
+        },
+        {
+          "type": "link",
+          "text": "milvus configuration",
+          "url": "../vector_store/milvus_store_milvusvectorconfig_20af52"
+        },
+        {
+          "type": "link",
+          "text": "oceanbase configuration",
+          "url": "../vector_store/oceanbase_store_oceanbaseconfig_220e36"
+        }
+      ]
+    }
+  ]
+}} />
+

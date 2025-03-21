@@ -50,14 +50,17 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ### AI-Native Data App 
 ---
-- 🔥🔥🔥 [Released V0.6.0 | A set of significant upgrades](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
-  - [The AWEL upgrade to 2.0]()
-  - [GraphRAG]()
-  - [AI Native Data App construction and management]()
-  - [The GPT-Vis upgrade, supporting a variety of visualization charts]()
-  - [Support Text2NLU and Text2GQL fine-tuning]()
-  - [Support Intent recognition, slot filling, and Prompt management]()
-
+- 🔥🔥🔥 [Released V0.7.0 | A set of significant upgrades](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
+  - [Suppport MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+  - [Support DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
+  - [Support QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+  - [Refactor the basic modules]()
+    - [dbgpt-app](./packages/dbgpt-app)
+    - [dbgpt-core](./packages/dbgpt-core)
+    - [dbgpt-serve](./packages/dbgpt-serve)
+    - [dbgpt-client](./packages/dbgpt-client)
+    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
+    - [dbgpt-ext](./packages/dbgpt-ext)
 ---
 
 ![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
@@ -115,9 +118,6 @@ The core capabilities include the following parts:
   - [x] XVERSE
   - [x] ChatGLM2
 
--  SFT Accuracy
-As of October 10, 2023, through the fine-tuning of an open-source model with 13 billion parameters using this project, we have achieved execution accuracy on the Spider dataset that surpasses even GPT-4!
-
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 - [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins that can run Auto-GPT plugin directly
@@ -169,6 +169,17 @@ At present, we have introduced several key features to showcase our current capa
   We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more. 
 
   - News
+    - 🔥🔥🔥  [QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+    - 🔥🔥🔥  [DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1)
+    - 🔥🔥🔥  [DeepSeek-V3](https://huggingface.co/deepseek-ai/DeepSeek-V3)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Llama-70B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-32B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-14B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Llama-8B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-7B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B)
+    - 🔥🔥🔥  [DeepSeek-R1-Distill-Qwen-1.5B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B)
+    - 🔥🔥🔥  [Qwen2.5-Coder-32B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct)
+    - 🔥🔥🔥  [Qwen2.5-Coder-14B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct)
     - 🔥🔥🔥  [Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
     - 🔥🔥🔥  [Qwen2.5-32B-Instruct](https://huggingface.co/Qwen/Qwen2.5-32B-Instruct)
     - 🔥🔥🔥  [Qwen2.5-14B-Instruct](https://huggingface.co/Qwen/Qwen2.5-14B-Instruct)

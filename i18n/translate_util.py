@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import hashlib
 import logging
 import os
 from pathlib import Path
@@ -21,6 +22,7 @@ from dbgpt.core.awel import (
     JoinOperator,
     MapOperator,
 )
+from dbgpt.core.awel.util.cache_util import FileCacheStorage
 from dbgpt.core.operators import PromptBuilderOperator, RequestBuilderOperator
 from dbgpt.model import AutoLLMClient
 from dbgpt.model.operators import LLMOperator
@@ -276,6 +278,8 @@ class ParsePoFileOperator(MapOperator[List[str], List[str]]):
 
     async def map(self, content_lines: List[str]) -> List[str]:
         block_lines, header_lines = extract_messages_with_comments(content_lines)
+        block_lines = [line for line in block_lines if "#, fuzzy" not in line]
+        header_lines = [line for line in header_lines if "#, fuzzy" not in line]
         await self.current_dag_context.save_to_share_data(
             self._HEADER_SHARE_DATA_KEY, header_lines
         )
@@ -333,13 +337,16 @@ class BatchOperator(JoinOperator[str]):
         model_name = ext_dict.get("model_name", self._model_name)
         count_token_model = ext_dict.get("count_token_model", "cl100k_base")
         support_system_role = ext_dict.get("support_system_role", True)
+        language = ext_dict["language_desc"]
         llm_client = AutoLLMClient(provider=provider, name=model_name)
         batch_blocks = await self.split_blocks(
             llm_client, blocks, count_token_model, input_token
         )
         new_blocks = []
         for block in batch_blocks:
-            new_blocks.append({"user_input": "".join(block), **ext_dict})
+            new_blocks.append(
+                {"user_input": "".join(block), "raw_blocks": block, **ext_dict}
+            )
         if support_system_role:
             messages = [
                 SystemPromptTemplate.from_template(PROMPT_ZH),
@@ -348,9 +355,33 @@ class BatchOperator(JoinOperator[str]):
         else:
             new_temp = PROMPT_ZH + "\n\n" + "{user_input}"
             messages = [HumanPromptTemplate.from_template(new_temp)]
+        # ~/.cache/dbgpt/i18n/cache
+        cache_dir = Path.home() / ".cache" / "dbgpt" / "i18n" / "cache"
+        cache = FileCacheStorage(
+            cache_dir=cache_dir,
+            create_dir=True,
+            hash_keys=True,  # Use hash keys to avoid long file names
+        )
+
+        def cache_key_fn(data):
+            cache_blocks = []
+            for block in data["raw_blocks"]:
+                cache_blocks.append(block.split("msgstr")[0])
+            data_str = (
+                data["model_name"]
+                + "".join(cache_blocks).strip().replace(" ", "")
+                + str(data["language"])
+            )
+            return hashlib.md5(data_str.encode()).hexdigest()
+
         with DAG("split_blocks_dag"):
             trigger = IteratorTrigger(
-                data=InputSource.from_iterable(new_blocks), max_retries=3
+                data=InputSource.from_iterable(new_blocks),
+                max_retries=3,
+                cache_storage=cache,
+                cache_key_fn=cache_key_fn,
+                cache_enabled=True,
+                cache_ttl=30 * 24 * 3600,  # 30 days
             )
             prompt_task = PromptBuilderOperator(
                 ChatPromptTemplate(
@@ -371,23 +402,39 @@ class BatchOperator(JoinOperator[str]):
                 >> out_parse_task
             )
         results = await trigger.trigger(parallel_num=parallel_num)
-        outs = []
-        for input_data, out_data in results:
-            user_input: str = input_data["user_input"]
-            if not out_data:
-                raise ValueError("Output data is empty.")
+        try:
+            outs = []
+            for input_data, out_data in results:
+                user_input: str = input_data["user_input"]
+                if not out_data:
+                    raise ValueError("Output data is empty.")
 
-            # Count 'msgstr' in user_input
-            count_msgstr = user_input.count("msgstr")
-            count_out_msgstr = out_data.count("msgstr")
-            if count_msgstr != count_out_msgstr:
-                logger.error(f"Input: {user_input}\n\n" + "==" * 100)
-                logger.error(f"Output: {out_data}")
-                raise ValueError(
-                    f"Output msgstr count {count_out_msgstr} is not equal to input {count_msgstr}."
-                )
-            outs.append(out_data)
-        return "\n\n".join(outs)
+                # Count 'msgstr' in user_input
+                count_msgstr = user_input.count("msgstr")
+                count_out_msgstr = out_data.count("msgstr")
+                if count_msgstr != count_out_msgstr:
+                    logger.error(f"Input: {user_input}\n\n" + "==" * 100)
+                    logger.error(f"Output: {out_data}")
+                    outfile = os.path.join(
+                        "/tmp", f"dbgpt_i18n_{model_name}_{language}"
+                    )
+                    input_file = f"{outfile}_input.txt"
+                    output_file = f"{outfile}_output.txt"
+                    with open(input_file, "w") as f:
+                        f.write(user_input)
+                    with open(output_file, "w") as f:
+                        f.write(out_data)
+                    raise ValueError(
+                        f"Output msgstr count {count_out_msgstr} is not equal to input "
+                        f"{count_msgstr}. You can check the input and output in "
+                        f"{input_file} and {output_file}."
+                    )
+                outs.append(out_data)
+            await cache.commit()
+            return "\n\n".join(outs)
+        except Exception as _e:
+            await cache.rollback()
+            raise
 
     async def split_blocks(
         self,
@@ -404,7 +451,8 @@ class BatchOperator(JoinOperator[str]):
                 llm_client, blocks[start:], model_name, input_token
             )
             new_end = start + split_point + 1
-            batch_blocks.append(blocks[start:new_end])
+            curr_blocks = blocks[start:new_end]
+            batch_blocks.append(curr_blocks)
             last_block_end = new_end
 
         if sum(len(block) for block in batch_blocks) != len(blocks):
@@ -414,10 +462,16 @@ class BatchOperator(JoinOperator[str]):
         for block in batch_blocks:
             block_tokens = await llm_client.count_token(model_name, "".join(block))
             if block_tokens > input_token:
-                raise ValueError(
-                    f"Block size {block_tokens} exceeds the max token limit "
-                    f"{input_token}, your bin_search function is wrong."
-                )
+                if len(block) == 1:
+                    logger.warning(
+                        f"Single block size {block_tokens} exceeds the max token limit {input_token}."
+                    )
+                else:
+                    logger.error(f"Error block: \n{block}")
+                    raise ValueError(
+                        f"Block size {block_tokens} exceeds the max token limit "
+                        f"{input_token}, your bin_search function is wrong."
+                    )
         return batch_blocks
 
     async def bin_search(

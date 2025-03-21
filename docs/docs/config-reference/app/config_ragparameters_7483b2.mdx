@@ -1,0 +1,223 @@
+---
+title: "RagParameters Configuration"
+description: "Rag configuration."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "RagParameters",
+  "description": "Rag configuration.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "chunk_size",
+      "type": "integer",
+      "required": false,
+      "description": "Whether to verify the SSL certificate of the database",
+      "defaultValue": "500"
+    },
+    {
+      "name": "chunk_overlap",
+      "type": "integer",
+      "required": false,
+      "description": "The default thread pool size, If None, use default config of python thread pool",
+      "defaultValue": "50"
+    },
+    {
+      "name": "similarity_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge search top k",
+      "defaultValue": "10"
+    },
+    {
+      "name": "similarity_score_threshold",
+      "type": "number",
+      "required": false,
+      "description": "knowledge search top similarity score",
+      "defaultValue": "0.0"
+    },
+    {
+      "name": "query_rewrite",
+      "type": "boolean",
+      "required": false,
+      "description": "knowledge search rewrite",
+      "defaultValue": "False"
+    },
+    {
+      "name": "max_chunks_once_load",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge max chunks once load",
+      "defaultValue": "10"
+    },
+    {
+      "name": "max_threads",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge max load thread",
+      "defaultValue": "1"
+    },
+    {
+      "name": "rerank_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge rerank top k",
+      "defaultValue": "3"
+    },
+    {
+      "name": "storage",
+      "type": "StorageConfig",
+      "required": false,
+      "description": "Storage configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "storageconfig configuration",
+          "url": "config_storageconfig_028579"
+        }
+      ],
+      "defaultValue": "StorageConfig"
+    },
+    {
+      "name": "knowledge_graph_chunk_search_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "knowledge graph search top k",
+      "defaultValue": "5"
+    },
+    {
+      "name": "kg_enable_summary",
+      "type": "boolean",
+      "required": false,
+      "description": "graph community summary enabled",
+      "defaultValue": "False"
+    },
+    {
+      "name": "llm_model",
+      "type": "string",
+      "required": false,
+      "description": "kg extract llm model"
+    },
+    {
+      "name": "kg_extract_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "kg extract top k",
+      "defaultValue": "5"
+    },
+    {
+      "name": "kg_extract_score_threshold",
+      "type": "number",
+      "required": false,
+      "description": "kg extract score threshold",
+      "defaultValue": "0.3"
+    },
+    {
+      "name": "kg_community_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "kg community top k",
+      "defaultValue": "50"
+    },
+    {
+      "name": "kg_community_score_threshold",
+      "type": "number",
+      "required": false,
+      "description": "kg_community_score_threshold",
+      "defaultValue": "0.3"
+    },
+    {
+      "name": "kg_triplet_graph_enabled",
+      "type": "boolean",
+      "required": false,
+      "description": "kg_triplet_graph_enabled",
+      "defaultValue": "True"
+    },
+    {
+      "name": "kg_document_graph_enabled",
+      "type": "boolean",
+      "required": false,
+      "description": "kg_document_graph_enabled",
+      "defaultValue": "True"
+    },
+    {
+      "name": "kg_chunk_search_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "kg_chunk_search_top_k",
+      "defaultValue": "5"
+    },
+    {
+      "name": "kg_extraction_batch_size",
+      "type": "integer",
+      "required": false,
+      "description": "kg_extraction_batch_size",
+      "defaultValue": "3"
+    },
+    {
+      "name": "kg_community_summary_batch_size",
+      "type": "integer",
+      "required": false,
+      "description": "kg_community_summary_batch_size",
+      "defaultValue": "20"
+    },
+    {
+      "name": "kg_embedding_batch_size",
+      "type": "integer",
+      "required": false,
+      "description": "kg_embedding_batch_size",
+      "defaultValue": "20"
+    },
+    {
+      "name": "kg_similarity_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "kg_similarity_top_k",
+      "defaultValue": "5"
+    },
+    {
+      "name": "kg_similarity_score_threshold",
+      "type": "number",
+      "required": false,
+      "description": "kg_similarity_score_threshold",
+      "defaultValue": "0.7"
+    },
+    {
+      "name": "kg_enable_text_search",
+      "type": "boolean",
+      "required": false,
+      "description": "kg_enable_text_search",
+      "defaultValue": "False"
+    },
+    {
+      "name": "kg_text2gql_model_enabled",
+      "type": "boolean",
+      "required": false,
+      "description": "kg_text2gql_model_enabled",
+      "defaultValue": "False"
+    },
+    {
+      "name": "kg_text2gql_model_name",
+      "type": "string",
+      "required": false,
+      "description": "text2gql_model_name"
+    },
+    {
+      "name": "bm25_k1",
+      "type": "number",
+      "required": false,
+      "description": "bm25_k1",
+      "defaultValue": "2.0"
+    },
+    {
+      "name": "bm25_b",
+      "type": "number",
+      "required": false,
+      "description": "bm25_b",
+      "defaultValue": "0.75"
+    }
+  ]
+}} />
+

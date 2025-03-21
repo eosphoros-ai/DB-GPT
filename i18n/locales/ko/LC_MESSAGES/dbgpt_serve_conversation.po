@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,32 +17,41 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:90
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:90
 msgid "Default Chat History Load Operator"
 msgstr "기본 채팅 기록 로드 연산자"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:94
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:94
 msgid ""
 "Load chat history from the storage of the serve component.It is the default "
 "storage of DB-GPT"
-msgstr "서비스 구성 요소의 스토리지에서 채팅 기록을 로드합니다. 이는 DB-GPT의 기본 스토리지입니다."
+msgstr ""
+"서비스 구성 요소의 스토리지에서 채팅 기록을 로드합니다. 이는 DB-GPT의 기본 스토리지입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:100
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:100
 msgid "Model Request"
 msgstr "모델 요청"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:103
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:103
 msgid "The model request."
 msgstr "모델 요청입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:108
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:108
 msgid "Stored Messages"
 msgstr "저장된 메시지"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:111
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:111
 msgid "The messages stored in the storage."
 msgstr "스토리지에 저장된 메시지입니다."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:24
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:22
+msgid "Conversation Serve Configurations"
+msgstr "대화 서비스 구성 설정"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:25
+msgid "This configuration is for the conversation serve module."
+msgstr "이 구성은 대화 서비스 모듈을 위한 것입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:36
 msgid "Default model for the conversation"
 msgstr "대화를 위한 기본 모델"

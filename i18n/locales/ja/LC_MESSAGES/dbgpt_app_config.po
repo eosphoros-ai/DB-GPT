@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 07:51+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,184 +17,253 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:26
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:30
 msgid "Language setting"
 msgstr "言語設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:33
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:37
 msgid "Logging level"
 msgstr "ログレベル"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:40
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:44
 msgid "API keys"
 msgstr "API キー"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:45
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:49
 msgid "The key to encrypt the data"
 msgstr "データを暗号化するキー"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:54
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:74
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:60
 msgid "default vector type"
 msgstr "デフォルトのベクトルタイプ"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:64
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:80
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:66
 msgid "default graph type"
 msgstr "デフォルトのグラフタイプ"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:91
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:203
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:85
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:270
 msgid "Whether to verify the SSL certificate of the database"
 msgstr "データベースの SSL 証明書を検証するかどうか"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:97
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:209
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:91
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:276
 msgid ""
 "The default thread pool size, If None, use default config of python thread "
 "pool"
-msgstr "デフォルトのスレッドプールサイズ。None の場合は、Python スレッドプールのデフォルト設定を使用します"
+msgstr ""
+"デフォルトのスレッドプールサイズ。None の場合は、Python スレッドプールのデフォルト設定を使用します"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:104
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:98
 msgid "knowledge search top k"
 msgstr "知識検索の上位 k 件"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:108
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:102
 msgid "knowledge search top similarity score"
-msgstr "知識検索の類似度スコアの上位"
+msgstr "知識検索の類似度スコア上位"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:112
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:106
 msgid "knowledge search rewrite"
 msgstr "知識検索の書き換え"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:116
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:110
 msgid "knowledge max chunks once load"
 msgstr "一度に読み込む知識の最大チャンク数"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:120
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:114
 msgid "knowledge max load thread"
 msgstr "知識読み込みの最大スレッド数"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:124
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:118
 msgid "knowledge rerank top k"
 msgstr "知識再ランキングの上位 k 件"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:128
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:122
 msgid "Storage configuration"
 msgstr "ストレージ設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:132
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:126
 msgid "knowledge graph search top k"
 msgstr "知識グラフ検索の上位 k 件"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:136
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:130
 msgid "graph community summary enabled"
 msgstr "グラフコミュニティ要約が有効"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:142
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:134
+msgid "kg extract llm model"
+msgstr "KG 抽出用の Large Language Model"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:142
+msgid "kg extract score threshold"
+msgstr "KG 抽出のスコア閾値"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:146
+msgid "kg community top k"
+msgstr "KG コミュニティの上位 k 件"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:150
+msgid "kg_community_score_threshold"
+msgstr "KG コミュニティのスコア閾値"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:154
+msgid "kg_triplet_graph_enabled"
+msgstr "KG トリプレットグラフが有効"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:158
+msgid "kg_document_graph_enabled"
+msgstr "KG ドキュメントグラフが有効"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:162
+msgid "kg_chunk_search_top_k"
+msgstr "KG チャンク検索の上位 k 件"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:166
+msgid "kg_extraction_batch_size"
+msgstr "KG 抽出のバッチサイズ"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:174
+msgid "kg_embedding_batch_size"
+msgstr "KG 埋め込みバッチサイズ"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:178
+msgid "kg_similarity_top_k"
+msgstr "KG 類似度上位 k 件"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:182
+msgid "kg_similarity_score_threshold"
+msgstr "KG 類似度スコア閾値"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:186
+msgid "kg_enable_text_search"
+msgstr "KG テキスト検索を有効化"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:190
+msgid "kg_text2gql_model_enabled"
+msgstr "KG テキストから GQL へのモデルを有効化"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:194
+msgid "text2gql_model_name"
+msgstr "テキストから GQL へのモデル名"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:198
+msgid "bm25_k1"
+msgstr "BM25 の k1 パラメータ"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:202
+msgid "bm25_b"
+msgstr "BM25 の b パラメータ"
+
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:209
 msgid "Webserver deploy host"
-msgstr "Webサーバー展開ホスト"
+msgstr "Web サーバー展開ホスト"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:144
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:211
 msgid "Webserver deploy port, default is 5670"
-msgstr "Webサーバー展開ポート、デフォルトは 5670"
+msgstr "Web サーバーのデプロイポート、デフォルトは 5670"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:147
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:214
 msgid "Run Webserver in light mode"
-msgstr "Webサーバーを軽量モードで実行"
+msgstr "Web サーバーを軽量モードで実行する"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:153
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:220
 msgid ""
 "The Model controller address to connect. If None, read model controller "
 "address from environment key `MODEL_SERVER`."
-msgstr "接続するモデルコントローラのアドレス。Noneの場合、環境変数 `MODEL_SERVER` からモデルコントローラのアドレスを読み取ります。"
+msgstr ""
+"接続するモデルコントローラのアドレス。Noneの場合、環境変数 `MODEL_SERVER` からモデルコントローラのアドレスを読み取ります。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:164
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:231
 msgid "Database connection config, now support SQLite, OceanBase and MySQL"
-msgstr "データベース接続設定です。現在は、SQLite、OceanBase、MySQLをサポートしています。"
+msgstr "データベース接続設定。現在は、SQLite、OceanBase、MySQLをサポートしています。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:172
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:239
 msgid ""
 "The storage type of model configures, if None, use the default "
 "storage(current database). When you run in light mode, it will not use any "
 "storage."
-msgstr "モデル設定のストレージタイプです。Noneの場合、デフォルトのストレージ（現在のデータベース）を使用します。ライトモードで実行する場合は、ストレージを使用しません。"
+msgstr ""
+"モデル設定のストレージタイプ。Noneの場合、デフォルトのストレージ（現在のデータベース）を使用します。ライトモードで実行する場合は、ストレージを使用しません。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:182
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:249
 msgid "Tracer config for web server, if None, use global tracer config"
-msgstr "Webサーバーのトレーサー設定です。Noneの場合、グローバルなトレーサー設定を使用します。"
+msgstr "Web サーバーのトレーサー設定。Noneの場合、グローバルなトレーサー設定を使用します。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:189
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:256
 msgid "Logging configuration for web server, if None, use global config"
-msgstr "Webサーバーのログ設定です。Noneの場合、グローバルな設定を使用します。"
+msgstr "Webサーバーのログ設定です。Noneの場合、グローバル設定を使用します。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:197
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:264
 msgid "Whether to disable alembic to initialize and upgrade database metadata"
-msgstr "Alembicを無効にしてデータベースのメタデータの初期化とアップグレードを行わないかどうか"
+msgstr "Alembicを無効にしてデータベースのメタデータの初期化と更新を行わないかどうか"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:218
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:285
 msgid ""
 "Whether to enable remote embedding models. If it is True, you need to start "
 "a embedding model through `dbgpt start worker --worker_type text2vec --"
 "model_name xxx --model_path xxx`"
-msgstr "リモート埋め込みモデルを有効にするかどうか。Trueの場合、`dbgpt start worker --worker_type text2vec --model_name xxx --model_path xxx` を使って埋め込みモデルを起動する必要があります。"
+msgstr ""
+"リモート埋め込みモデルを有効にするかどうか。Trueの場合、`dbgpt start worker "
+"--worker_type text2vec --model_name xxx --model_path xxx` で埋め込みモデルを起動する必要があります。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:228
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:295
 msgid ""
 "Whether to enable remote rerank models. If it is True, you need to start a "
 "rerank model through `dbgpt start worker --worker_type text2vec --rerank --"
 "model_name xxx --model_path xxx`"
-msgstr "リモートの再ランキングモデルを有効にするかどうか。Trueの場合、`dbgpt start worker --worker_type text2vec --rerank --model_name xxx --model_path xxx` を使って再ランキングモデルを起動する必要があります。"
+msgstr ""
+"リモート再ランキングモデルを有効にするかどうか。Trueの場合、`dbgpt start worker "
+"--worker_type text2vec --rerank --model_name xxx --model_path xxx` で再ランキングモデルを起動する必要があります。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:236
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:303
 msgid "The directories to search awel files, split by `,`"
-msgstr "AWELファイルを検索するディレクトリです。`,` で区切ります。"
+msgstr "AWELファイルを検索するディレクトリで、`,` で区切ります。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:240
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:307
 msgid "Whether to use the new web UI, default is True"
 msgstr "新しいWeb UIを使用するかどうか。デフォルトはTrueです。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:244
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:311
 msgid "Model cache configuration"
 msgstr "モデルキャッシュの設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:249
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:316
 msgid "The max sequence length of the embedding model, default is 512"
-msgstr "埋め込みモデルの最大シーケンス長。デフォルトは 512"
+msgstr "埋め込みモデルの最大シーケンス長。デフォルトは 512 です。"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:258
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:327
 msgid "Web service configuration"
 msgstr "Web サービスの設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:262
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:331
 msgid "Model service configuration"
 msgstr "モデルサービスの設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:274
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:343
 msgid ""
 "Configuration hooks, which will be executed before the configuration loading"
 msgstr "設定読み込み前に実行される設定フック"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:283
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:352
 msgid "System configuration"
 msgstr "システム設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:290
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:359
 msgid "Model deployment configuration"
 msgstr "モデル展開の設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:296
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:365
 msgid "Serve configuration"
 msgstr "サービス設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:301
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:370
 msgid "Rag Knowledge Parameters"
 msgstr "RAG 知識パラメータ"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:306
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:379
 msgid "Global tracer configuration"
 msgstr "グローバルトレーサーの設定"
 
-#:../packages/dbgpt-app/src/dbgpt_app/config.py:312
+#: ../packages/dbgpt-app/src/dbgpt_app/config.py:385
 msgid "Logging configuration"
-msgstr "ログ記録の設定"
+msgstr "ログ設定"

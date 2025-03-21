@@ -1,0 +1,82 @@
+---
+title: "Milvus Config Configuration"
+description: "Milvus vector config."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "MilvusVectorConfig",
+  "description": "Milvus vector config.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "The user of vector store, if not set, will use the default user."
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "The password of vector store, if not set, will use the default password."
+    },
+    {
+      "name": "uri",
+      "type": "string",
+      "required": false,
+      "description": "The uri of milvus store, if not set, will use the default uri."
+    },
+    {
+      "name": "port",
+      "type": "string",
+      "required": false,
+      "description": "The port of milvus store, if not set, will use the default port.",
+      "defaultValue": "19530"
+    },
+    {
+      "name": "alias",
+      "type": "string",
+      "required": false,
+      "description": "The alias of milvus store, if not set, will use the default alias.",
+      "defaultValue": "default"
+    },
+    {
+      "name": "primary_field",
+      "type": "string",
+      "required": false,
+      "description": "The primary field of milvus store, if not set, will use the default primary field.",
+      "defaultValue": "pk_id"
+    },
+    {
+      "name": "text_field",
+      "type": "string",
+      "required": false,
+      "description": "The text field of milvus store, if not set, will use the default text field.",
+      "defaultValue": "content"
+    },
+    {
+      "name": "embedding_field",
+      "type": "string",
+      "required": false,
+      "description": "The embedding field of milvus store, if not set, will use the default embedding field.",
+      "defaultValue": "vector"
+    },
+    {
+      "name": "metadata_field",
+      "type": "string",
+      "required": false,
+      "description": "The metadata field of milvus store, if not set, will use the default metadata field.",
+      "defaultValue": "metadata"
+    },
+    {
+      "name": "secure",
+      "type": "string",
+      "required": false,
+      "description": "The secure of milvus store, if not set, will use the default ",
+      "defaultValue": ""
+    }
+  ]
+}} />
+

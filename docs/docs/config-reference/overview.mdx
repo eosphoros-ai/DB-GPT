@@ -1,483 +1,275 @@
-import { ConfigDiagram } from "@site/src/components/mdx/ConfigDiagram";
+---
+title: "Configuration Overview"
+---
 
 # Configuration Overview
 
-## The layout of configuration classes
+This document provides an overview of all configuration classes organized by type.
 
-<ConfigDiagram relationships={[
-  {
-    "from": "ApplicationConfig",
-    "to": "HookConfig",
-    "label": "hooks"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "SystemParameters",
-    "label": "system"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServiceConfig",
-    "label": "service"
-  },
-  {
-    "from": "ServiceConfig",
-    "to": "ServiceWebParameters",
-    "label": "web"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "RDBMSDatasourceParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "SQLiteConnectorParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "TuGraphParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "SparkParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "ClickhouseParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "DorisParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "DuckDbConnectorParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "HiveParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "MSSQLParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "MySQLParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "OceanBaseParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "PostgreSQLParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "StarRocksParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "VerticaParameters",
-    "label": "database"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "TracerParameters",
-    "label": "trace"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "LoggingParameters",
-    "label": "log"
-  },
-  {
-    "from": "ServiceWebParameters",
-    "to": "ModelCacheParameters",
-    "label": "model_cache"
-  },
-  {
-    "from": "ServiceConfig",
-    "to": "ModelServiceConfig",
-    "label": "model"
-  },
-  {
-    "from": "ModelServiceConfig",
-    "to": "ModelWorkerParameters",
-    "label": "worker"
-  },
-  {
-    "from": "ModelWorkerParameters",
-    "to": "LoggingParameters",
-    "label": "log"
-  },
-  {
-    "from": "ModelWorkerParameters",
-    "to": "TracerParameters",
-    "label": "trace"
-  },
-  {
-    "from": "ModelServiceConfig",
-    "to": "ModelAPIServerParameters",
-    "label": "api"
-  },
-  {
-    "from": "ModelAPIServerParameters",
-    "to": "LoggingParameters",
-    "label": "log"
-  },
-  {
-    "from": "ModelAPIServerParameters",
-    "to": "TracerParameters",
-    "label": "trace"
-  },
-  {
-    "from": "ModelServiceConfig",
-    "to": "ModelControllerParameters",
-    "label": "controller"
-  },
-  {
-    "from": "ModelControllerParameters",
-    "to": "LoggingParameters",
-    "label": "log"
-  },
-  {
-    "from": "ModelControllerParameters",
-    "to": "TracerParameters",
-    "label": "trace"
-  },
-  {
-    "from": "ModelControllerParameters",
-    "to": "DBModelRegistryParameters",
-    "label": "registry"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "RDBMSDatasourceParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "SQLiteConnectorParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "TuGraphParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "SparkParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "ClickhouseParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "DorisParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "DuckDbConnectorParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "HiveParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "MSSQLParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "MySQLParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "OceanBaseParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "PostgreSQLParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "StarRocksParameters",
-    "label": "database"
-  },
-  {
-    "from": "DBModelRegistryParameters",
-    "to": "VerticaParameters",
-    "label": "database"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ModelsDeployParameters",
-    "label": "models"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "HFLLMDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "HFLLMDeployModelParameters",
-    "to": "BitsandbytesQuantization",
-    "label": "quantization"
-  },
-  {
-    "from": "HFLLMDeployModelParameters",
-    "to": "BitsandbytesQuantization8bits",
-    "label": "quantization"
-  },
-  {
-    "from": "HFLLMDeployModelParameters",
-    "to": "BitsandbytesQuantization4bits",
-    "label": "quantization"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "VLLMDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "LlamaServerParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "LlamaCppModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "OpenAICompatibleDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "SiliconFlowDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "ZhipuDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "MoonshotDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "GiteeDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "DeepSeekDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "OllamaDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "YiDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "SparkDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "BaichuanDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "GeminiDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "TongyiDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "VolcengineDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "WenxinDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "ClaudeDeployModelParameters",
-    "label": "llms"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "HFEmbeddingDeployModelParameters",
-    "label": "embeddings"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "OpenAPIEmbeddingDeployModelParameters",
-    "label": "embeddings"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "JinaEmbeddingsDeployModelParameters",
-    "label": "embeddings"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "OllamaEmbeddingDeployModelParameters",
-    "label": "embeddings"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "QianfanEmbeddingDeployModelParameters",
-    "label": "embeddings"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "TongyiEmbeddingDeployModelParameters",
-    "label": "embeddings"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "CrossEncoderRerankEmbeddingsParameters",
-    "label": "rerankers"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "OpenAPIRerankerDeployModelParameters",
-    "label": "rerankers"
-  },
-  {
-    "from": "ModelsDeployParameters",
-    "to": "SiliconFlowRerankEmbeddingsParameters",
-    "label": "rerankers"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "ServeConfig",
-    "label": "serves"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "RagParameters",
-    "label": "rag"
-  },
-  {
-    "from": "RagParameters",
-    "to": "StorageConfig",
-    "label": "storage"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "TracerParameters",
-    "label": "trace"
-  },
-  {
-    "from": "ApplicationConfig",
-    "to": "LoggingParameters",
-    "label": "log"
-  }
-]} />
+## Configuration Types
+
+- [app](#type-app) (6 classes)
+- [datasource](#type-datasource) (14 classes)
+- [embedding](#type-embedding) (6 classes)
+- [graph_store](#type-graph_store) (4 classes)
+- [llm](#type-llm) (22 classes)
+- [memory](#type-memory) (2 classes)
+- [other](#type-other) (1 classes)
+- [reranker](#type-reranker) (3 classes)
+- [serve](#type-serve) (13 classes)
+- [service](#type-service) (1 classes)
+- [utils](#type-utils) (2 classes)
+- [vector_store](#type-vector_store) (6 classes)
+
+## Type Details
+
+### app {#type-app}
+
+This type contains 6 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [ChatDashboardConfig](app/config_chatdashboardconfig_2480d0) |  |
+| [ChatExcelConfig](app/config_chatexcelconfig_8dcf86) |  |
+| [ChatKnowledgeConfig](app/config_chatknowledgeconfig_d51d9e) |  |
+| [ChatNormalConfig](app/config_chatnormalconfig_83c865) |  |
+| [ChatWithDBExecuteConfig](app/config_chatwithdbexecuteconfig_64fe0f) |  |
+| [ChatWithDBQAConfig](app/config_chatwithdbqaconfig_62cbe4) |  |
+
+---
+
+### datasource {#type-datasource}
+
+This type contains 14 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [ClickhouseParameters](datasource/conn_clickhouse_clickhouseparameters_4a1237) |  |
+| [DorisParameters](datasource/conn_doris_dorisparameters_e33c53) |  |
+| [DuckDbConnectorParameters](datasource/conn_duckdb_duckdbconnectorparameters_c672c7) |  |
+| [HiveParameters](datasource/conn_hive_hiveparameters_ec3601) |  |
+| [MSSQLParameters](datasource/conn_mssql_mssqlparameters_d79d1c) |  |
+| [MySQLParameters](datasource/conn_mysql_mysqlparameters_4393c4) |  |
+| [OceanBaseParameters](datasource/conn_oceanbase_oceanbaseparameters_260d2d) |  |
+| [PostgreSQLParameters](datasource/conn_postgresql_postgresqlparameters_22efa5) |  |
+| [RDBMSDatasourceParameters](datasource/base_rdbmsdatasourceparameters_4f774f) |  |
+| [SQLiteConnectorParameters](datasource/conn_sqlite_sqliteconnectorparameters_82c8b5) |  |
+| [SparkParameters](datasource/conn_spark_sparkparameters_174bbc) |  |
+| [StarRocksParameters](datasource/conn_starrocks_starrocksparameters_e511f7) |  |
+| [TuGraphParameters](datasource/conn_tugraph_tugraphparameters_0c844e) |  |
+| [VerticaParameters](datasource/conn_vertica_verticaparameters_c712b8) |  |
+
+---
+
+### embedding {#type-embedding}
+
+This type contains 6 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [HFEmbeddingDeployModelParameters](embedding/embeddings_hfembeddingdeploymodelparameters_f588e1) |  |
+| [JinaEmbeddingsDeployModelParameters](embedding/jina_jinaembeddingsdeploymodelparameters_40b0f2) |  |
+| [OllamaEmbeddingDeployModelParameters](embedding/ollama_ollamaembeddingdeploymodelparameters_b511e0) |  |
+| [OpenAPIEmbeddingDeployModelParameters](embedding/embeddings_openapiembeddingdeploymodelparameters_f9ba47) |  |
+| [QianfanEmbeddingDeployModelParameters](embedding/qianfan_qianfanembeddingdeploymodelparameters_257d2a) |  |
+| [TongyiEmbeddingDeployModelParameters](embedding/tongyi_tongyiembeddingdeploymodelparameters_a7cbb4) |  |
+
+---
+
+### graph_store {#type-graph_store}
+
+This type contains 4 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [BuiltinKnowledgeGraphConfig](graph_store/knowledge_graph_builtinknowledgegraphconfig_f26e05) |  |
+| [Neo4jStoreConfig](graph_store/neo4j_store_neo4jstoreconfig_a4db5d) |  |
+| [OpenSPGConfig](graph_store/open_spg_openspgconfig_a744fd) |  |
+| [TuGraphStoreConfig](graph_store/tugraph_store_tugraphstoreconfig_7ca8a8) |  |
+
+---
+
+### llm {#type-llm}
+
+This type contains 22 configuration classes.
+
+#### Relationships
+
+```mermaid
+graph TD
+    HFLLMDeployModelParameters -->|quantization| BitsandbytesQuantization
+    HFLLMDeployModelParameters -->|quantization| BitsandbytesQuantization8bits
+    HFLLMDeployModelParameters -->|quantization| BitsandbytesQuantization4bits
+```
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [BaichuanDeployModelParameters](llm/baichuan_baichuandeploymodelparameters_0bf9cc) |  |
+| [BitsandbytesQuantization](llm/parameter_bitsandbytesquantization_d40e3b) |  |
+| [BitsandbytesQuantization4bits](llm/parameter_bitsandbytesquantization4bits_52b778) |  |
+| [BitsandbytesQuantization8bits](llm/parameter_bitsandbytesquantization8bits_909aed) |  |
+| [ClaudeDeployModelParameters](llm/claude_claudedeploymodelparameters_1f0c45) |  |
+| [DeepSeekDeployModelParameters](llm/deepseek_deepseekdeploymodelparameters_194cbd) |  |
+| [GeminiDeployModelParameters](llm/gemini_geminideploymodelparameters_5113b9) |  |
+| [GiteeDeployModelParameters](llm/gitee_giteedeploymodelparameters_d1bdb3) |  |
+| [HFLLMDeployModelParameters](llm/hf_adapter_hfllmdeploymodelparameters_103e81) |  |
+| [LlamaCppModelParameters](llm/llama_cpp_py_adapter_llamacppmodelparameters_e88874) |  |
+| [LlamaServerParameters](llm/llama_cpp_adapter_llamaserverparameters_421f40) |  |
+| [MoonshotDeployModelParameters](llm/moonshot_moonshotdeploymodelparameters_aa2f6b) |  |
+| [OllamaDeployModelParameters](llm/ollama_ollamadeploymodelparameters_d55be6) |  |
+| [OpenAICompatibleDeployModelParameters](llm/chatgpt_openaicompatibledeploymodelparameters_c3d426) |  |
+| [SiliconFlowDeployModelParameters](llm/siliconflow_siliconflowdeploymodelparameters_abe22f) |  |
+| [SparkDeployModelParameters](llm/spark_sparkdeploymodelparameters_afba3c) |  |
+| [TongyiDeployModelParameters](llm/tongyi_tongyideploymodelparameters_02a91b) |  |
+| [VLLMDeployModelParameters](llm/vllm_adapter_vllmdeploymodelparameters_1d4a24) |  |
+| [VolcengineDeployModelParameters](llm/volcengine_volcenginedeploymodelparameters_938015) |  |
+| [WenxinDeployModelParameters](llm/wenxin_wenxindeploymodelparameters_63c66b) |  |
+| [YiDeployModelParameters](llm/yi_yideploymodelparameters_92dbaa) |  |
+| [ZhipuDeployModelParameters](llm/zhipu_zhipudeploymodelparameters_c51e31) |  |
+
+---
+
+### memory {#type-memory}
+
+This type contains 2 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [BufferWindowGPTsAppMemoryConfig](memory/config_bufferwindowgptsappmemoryconfig_c31071) |  |
+| [TokenBufferGPTsAppMemoryConfig](memory/config_tokenbuffergptsappmemoryconfig_6a2000) |  |
+
+---
+
+### other {#type-other}
+
+This type contains 1 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [ApplicationConfig](config_applicationconfig_72fd1c) |  |
+
+---
+
+### reranker {#type-reranker}
+
+This type contains 3 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [CrossEncoderRerankEmbeddingsParameters](reranker/rerank_crossencoderrerankembeddingsparameters_63ec13) |  |
+| [OpenAPIRerankerDeployModelParameters](reranker/rerank_openapirerankerdeploymodelparameters_778108) |  |
+| [SiliconFlowRerankEmbeddingsParameters](reranker/rerank_siliconflowrerankembeddingsparameters_af0257) |  |
+
+---
+
+### serve {#type-serve}
+
+This type contains 13 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [ServeConfig](serve/config_serveconfig_63f1e9) |  |
+| [ServeConfig](serve/config_serveconfig_adbd6f) |  |
+| [ServeConfig](serve/config_serveconfig_313252) |  |
+| [ServeConfig](serve/config_serveconfig_ec2d70) |  |
+| [ServeConfig](serve/config_serveconfig_1a9284) |  |
+| [ServeConfig](serve/config_serveconfig_8839e0) |  |
+| [ServeConfig](serve/config_serveconfig_fa1f35) |  |
+| [ServeConfig](serve/config_serveconfig_cb64c6) |  |
+| [ServeConfig](serve/config_serveconfig_c0b589) |  |
+| [ServeConfig](serve/config_serveconfig_b1c2b9) |  |
+| [ServeConfig](serve/config_serveconfig_7a0577) |  |
+| [ServeConfig](serve/config_serveconfig_854dad) |  |
+| [ServeConfig](serve/config_serveconfig_7889f9) |  |
+
+---
+
+### service {#type-service}
+
+This type contains 1 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [DBModelRegistryParameters](service/parameter_dbmodelregistryparameters_87d036) |  |
+
+---
+
+### utils {#type-utils}
+
+This type contains 2 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [OSSStorageConfig](utils/config_ossstorageconfig_1ad505) |  |
+| [S3StorageConfig](utils/config_s3storageconfig_f0cdc9) |  |
+
+---
+
+### vector_store {#type-vector_store}
+
+This type contains 6 configuration classes.
+
+#### Configuration Classes
+
+| Class | Description |
+|-------|-------------|
+| [ChromaVectorConfig](vector_store/chroma_store_chromavectorconfig_16224f) |  |
+| [ElasticsearchStoreConfig](vector_store/elastic_store_elasticsearchstoreconfig_15bdb6) |  |
+| [MilvusVectorConfig](vector_store/milvus_store_milvusvectorconfig_20af52) |  |
+| [OceanBaseConfig](vector_store/oceanbase_store_oceanbaseconfig_220e36) |  |
+| [PGVectorConfig](vector_store/pgvector_store_pgvectorconfig_3ef448) |  |
+| [WeaviateVectorConfig](vector_store/weaviate_store_weaviatevectorconfig_093ce3) |  |
+
+---
+
+## Cross-Type Relationships
+
+The following diagram shows relationships between different configuration types:
+
+```mermaid
+graph TD
+    other[other - 1 classes]
+    datasource[datasource - 14 classes]
+    llm[llm - 22 classes]
+    embedding[embedding - 6 classes]
+    reranker[reranker - 3 classes]
+    service[service - 1 classes]
+    graph_store[graph_store - 4 classes]
+    vector_store[vector_store - 6 classes]
+    serve[serve - 13 classes]
+    memory[memory - 2 classes]
+    app[app - 6 classes]
+    utils[utils - 2 classes]
+    service -->|14 connections| datasource
+    other -->|13 connections| serve
+    serve -->|2 connections| utils
+    app -->|14 connections| memory
+```
+
+## Looking for a specific configuration?
+
+1. Use the search function in the documentation site
+2. Browse the configuration types above
+3. Check the specific class documentation for detailed parameter information

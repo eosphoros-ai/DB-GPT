@@ -1,0 +1,26 @@
+# French translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
+"PO-Revision-Date: 2025-03-19 00:06+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/datasource/config.py:19
+msgid "Datasource Serve Configurations"
+msgstr "Configurations du service de sources de données"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/datasource/config.py:22
+msgid "This configuration is for the datasource serve module."
+msgstr "Cette configuration est destinée au module de service de sources de données."

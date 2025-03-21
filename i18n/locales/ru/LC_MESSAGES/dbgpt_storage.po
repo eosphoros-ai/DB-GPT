@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,74 +18,79 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:21
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:22
 msgid "Collection Name"
 msgstr "Название коллекции"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:25
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:26
 msgid "The name of vector store, if not set, will use the default name."
 msgstr "Название векторного хранилища. Если не задано, будет использовано имя по умолчанию."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:31
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:32
 msgid "User"
 msgstr "Пользователь"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:35
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:36
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:98
 msgid "The user of vector store, if not set, will use the default user."
 msgstr "Пользователь векторного хранилища. Если не задан, будет использован пользователь по умолчанию."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:41
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:42
 msgid "Password"
 msgstr "Пароль"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:45
-msgid ""
-"The password of vector store, if not set, will use the default password."
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:46
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:106
+msgid "The password of vector store, if not set, will use the default password."
 msgstr "Пароль векторного хранилища. Если не задан, будет использован пароль по умолчанию."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:51
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:52
 msgid "Embedding Function"
 msgstr "Функция эмбеддинга"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:55
-msgid ""
-"The embedding function of vector store, if not set, will use the default "
-"embedding function."
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:56
+msgid "The embedding function of vector store, if not set, will use the default embedding function."
 msgstr "Функция эмбеддинга векторного хранилища. Если не задана, будет использована функция эмбеддинга по умолчанию."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:62
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:63
 msgid "Max Chunks Once Load"
 msgstr "Максимальное количество чанков при одном загрузке"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:66
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:67
 msgid ""
 "The max number of chunks to load at once. If your document is large, you can "
 "set this value to a larger number to speed up the loading process. Default "
 "is 10."
-msgstr "Максимальное количество чанков, которое можно загрузить за один раз. Если ваш документ большой, вы можете установить это значение большим, чтобы ускорить процесс загрузки. По умолчанию равно 10."
+msgstr ""
+"Максимальное количество чанков, которое можно загрузить за один раз. Если "
+"ваш документ большой, вы можете установить это значение большим, чтобы "
+"ускорить процесс загрузки. По умолчанию равно 10."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:74
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:75
 msgid "Max Threads"
 msgstr "Максимальное количество потоков"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:78
+#: ../packages/dbgpt-core/src/dbgpt/storage/vector_store/base.py:79
 msgid ""
 "The max number of threads to use. Default is 1. If you set this bigger than "
 "1, please make sure your vector store is thread-safe."
-msgstr "Максимальное количество потоков для использования. По умолчанию равно 1. Если вы установите это значение больше 1, убедитесь, что ваше векторное хранилище потокобезопасно."
+msgstr ""
+"Максимальное количество потоков для использования. По умолчанию равно 1. "
+"Если вы установите это значение больше 1, убедитесь, что ваше векторное "
+"хранилище потокобезопасно."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:28
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:30
 msgid "Whether to enable model cache, default is True"
 msgstr "Включать ли кэш модели. По умолчанию - да."
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:34
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:36
 msgid "The storage type, default is memory"
 msgstr "Тип хранилища, по умолчанию - память"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:40
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:42
 msgid "The max memory in MB, default is 256"
 msgstr "Максимальный объем памяти в МБ, по умолчанию - 256"
 
-#:../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:46
+#: ../packages/dbgpt-core/src/dbgpt/storage/cache/manager.py:48
 msgid "The persist directory, default is model_cache"
 msgstr "Директория для постоянного хранения, по умолчанию - model_cache"

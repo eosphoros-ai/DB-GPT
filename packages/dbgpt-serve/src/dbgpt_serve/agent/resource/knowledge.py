@@ -8,6 +8,7 @@ from dbgpt.agent.resource.knowledge import (
     RetrieverResourceParameters,
 )
 from dbgpt.util import ParameterDescription
+from dbgpt.util.i18n_utils import _
 from dbgpt_serve.rag.retriever.knowledge_space import KnowledgeSpaceRetriever
 
 logger = logging.getLogger(__name__)
@@ -16,10 +17,10 @@ logger = logging.getLogger(__name__)
 @dataclasses.dataclass
 class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
     space_name: str = dataclasses.field(
-        default=None, metadata={"help": "Knowledge space name"}
+        default=None, metadata={"help": _("Knowledge space name")}
     )
-    context: int = dataclasses.field(
-        default=None, metadata={"help": "Knowledge retriver params"}
+    top_k: int = dataclasses.field(
+        default=10, metadata={"help": _("Knowledge retriver top k")}
     )
 
     @classmethod
@@ -65,13 +66,13 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
         self,
         name: str,
         space_name: str,
-        context: Optional[dict] = None,
+        top_k: int = 10,
         system_app: SystemApp = None,
     ):
         # TODO: Build the retriever in a thread pool, it will block the event loop
         retriever = KnowledgeSpaceRetriever(
             space_id=space_name,
-            top_k=(context.get("top_k", None) if context is not None else None),
+            top_k=top_k,
             system_app=system_app,
         )
         super().__init__(name, retriever=retriever)
@@ -117,7 +118,7 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
             space_name: str = dataclasses.field(
                 default=None,
                 metadata={
-                    "help": "Knowledge space name",
+                    "help": _("Knowledge space name"),
                     "valid_values": results,
                 },
             )

@@ -1,0 +1,67 @@
+---
+title: "CrossEncoderRerankEmbeddingsParameters Configuration"
+description: "CrossEncoder Rerank Embeddings Parameters."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "CrossEncoderRerankEmbeddingsParameters",
+  "description": "CrossEncoder Rerank Embeddings Parameters.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "path",
+      "type": "string",
+      "required": false,
+      "description": "The path of the model, if you want to deploy a local model."
+    },
+    {
+      "name": "device",
+      "type": "string",
+      "required": false,
+      "description": "Device to run model. If None, the device is automatically determined"
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "hf"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "50"
+    },
+    {
+      "name": "max_length",
+      "type": "integer",
+      "required": false,
+      "description": "Max length for input sequences. Longer sequences will be truncated."
+    },
+    {
+      "name": "model_kwargs",
+      "type": "object",
+      "required": false,
+      "description": "Keyword arguments to pass to the model.",
+      "defaultValue": "{}"
+    }
+  ]
+}} />
+

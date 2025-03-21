@@ -3,6 +3,9 @@
 import os
 from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
+from mcp import ClientSession
+from mcp.client.sse import sse_client
+
 from ..base import ResourceType, T
 from ..pack import Resource, ResourcePack
 from .base import DB_GPT_TOOL_IDENTIFIER, BaseTool, FunctionTool, ToolFunc
@@ -87,11 +90,23 @@ class ToolPack(ResourcePack):
         if args is not None:
             tool_args = {}
             for name, value in args.items():
-                tool_args[name] = {
-                    "name": name,
-                    "type": "str",
-                    "description": value,
-                }
+                if isinstance(value, dict):
+                    tool_args[name] = {
+                        "name": name,
+                        "type": value.get("type", "str"),
+                        "description": value.get("description", str(value)),
+                        "required": value.get("required", False),
+                    }
+                    if "title" in value:
+                        tool_args[name]["title"] = value["title"]
+                    if "default" in value:
+                        tool_args[name]["default"] = value["default"]
+                else:
+                    tool_args[name] = {
+                        "name": name,
+                        "type": "str",
+                        "description": value,
+                    }
         else:
             tool_args = {}
         if not function:
@@ -186,7 +201,7 @@ class AutoGPTPluginToolPack(ToolPack):
         self._plugin_path = plugin_path
         self._loaded = False
 
-    def preload_resource(self):
+    async def preload_resource(self):
         """Preload the resource."""
         from .autogpt.plugins_util import scan_plugin_file, scan_plugins
 
@@ -210,4 +225,107 @@ class AutoGPTPluginToolPack(ToolPack):
             if not plugin.can_handle_post_prompt():
                 continue
             plugin.post_prompt(self)
+        self._loaded = True
+
+
+async def call_mcp_tool(server, tool_name, args: dict):
+    try:
+        async with sse_client(url=server) as (read, write):
+            async with ClientSession(read, write) as session:
+                # Initialize the connection
+                await session.initialize()
+                return await session.call_tool(tool_name, arguments=args)
+    except Exception:
+        raise ValueError("MCP Call Exception!{str(e)}")
+
+
+class MCPToolPack(ToolPack):
+    def __init__(self, mcp_servers: Union[str, List[str]], **kwargs):
+        """Create an Auto-GPT plugin tool pack."""
+        super().__init__([], **kwargs)
+        self._mcp_servers = mcp_servers
+        self._loaded = False
+        self.tool_server_map = {}
+
+    @classmethod
+    def from_resource(
+        cls: Type[T],
+        resource: Optional[Resource],
+        expected_type: Optional[ResourceType] = None,
+    ) -> List[T]:
+        """Create a resource from another resource."""
+        if not resource:
+            return []
+        if isinstance(resource, ToolPack):
+            return [cast(T, resource)]
+        tools = super().from_resource(resource, ResourceType.Tool)
+        if not tools:
+            return []
+        typed_tools = [cast(BaseTool, t) for t in tools]
+        return [ToolPack(typed_tools)]  # type: ignore
+
+    def _get_call_args(self, arguments: Dict[str, Any], tl: BaseTool) -> Dict[str, Any]:
+        """Get the call arguments."""
+        # Delete non-defined parameters
+        diff_args = list(set(arguments.keys()).difference(set(tl.args.keys())))
+        for arg_name in diff_args:
+            del arguments[arg_name]
+
+        # Rebuild dbgpt mcp call param
+        return {
+            "server": self.tool_server_map[tl.name],
+            "args": arguments,
+            "tool_name": tl.name,
+        }
+
+    def switch_mcp_input_schema(self, input_schema: dict):
+        args = {}
+        try:
+            properties = input_schema["properties"]
+            required = input_schema["required"]
+            for k, v in properties.items():
+                arg = {}
+
+                title = v.get("title", None)
+                description = v.get("description", None)
+                items = v.get("items", None)
+                items_str = str(items) if items else None
+                any_of = v.get("anyOf", None)
+                any_of_str = str(any_of) if any_of else None
+
+                default = v.get("default", None)
+                type = v.get("type", "string")
+
+                arg["type"] = type
+                if title:
+                    arg["title"] = title
+                arg["description"] = description or items_str or any_of_str or str(v)
+                arg["required"] = True if k in required else False
+                if default:
+                    arg["default"] = default
+                args[k] = arg
+            return args
+        except Exception as e:
+            raise ValueError(f"MCP input_schema can't parase!{str(e)},{input_schema}")
+
+    async def preload_resource(self):
+        """Preload the resource."""
+        server_list = []
+        if isinstance(self._mcp_servers, List):
+            server_list = self._mcp_servers.copy()
+        else:
+            server_list = self._mcp_servers.split(";")
+
+        for server in server_list:
+            async with sse_client(url=server) as (read, write):
+                async with ClientSession(read, write) as session:
+                    # Initialize the connection
+                    await session.initialize()
+                    result = await session.list_tools()
+                    for tool in result.tools:
+                        self.tool_server_map[tool.name] = server
+                        args = self.switch_mcp_input_schema(tool.inputSchema)
+                        self.add_command(
+                            tool.description, tool.name, args, call_mcp_tool
+                        )
         self._loaded = True

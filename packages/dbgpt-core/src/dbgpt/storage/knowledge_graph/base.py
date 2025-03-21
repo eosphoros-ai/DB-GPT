@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 class KnowledgeGraphConfig(IndexStoreConfig, RegisterParameters):
     """Knowledge graph config."""
 
+    __cfg_type__ = "graph_store"
+
 
 class KnowledgeGraphBase(IndexStoreBase, ABC):
     """Knowledge graph base class."""

@@ -89,6 +89,8 @@ _COMMON_PARAMETERS = [
 class VectorStoreConfig(IndexStoreConfig, RegisterParameters):
     """Vector store config."""
 
+    __cfg_type__ = "vector_store"
+
     user: Optional[str] = field(
         default=None,
         metadata={

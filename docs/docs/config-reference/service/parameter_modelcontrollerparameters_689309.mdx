@@ -1,0 +1,90 @@
+---
+title: "ModelControllerParameters Configuration"
+description: "ModelControllerParameters(host: Optional[str] = '0.0.0.0', port: Optional[int] = 8000, daemon: Optional[bool] = False, log: dbgpt.util.utils.LoggingParameters = <factory>, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, registry: Optional[dbgpt.model.parameter.BaseModelRegistryParameters] = None, heartbeat_interval_secs: Optional[int] = 20, heartbeat_timeout_secs: Optional[int] = 60)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ModelControllerParameters",
+  "description": "ModelControllerParameters(host: Optional[str] = '0.0.0.0', port: Optional[int] = 8000, daemon: Optional[bool] = False, log: dbgpt.util.utils.LoggingParameters = <factory>, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, registry: Optional[dbgpt.model.parameter.BaseModelRegistryParameters] = None, heartbeat_interval_secs: Optional[int] = 20, heartbeat_timeout_secs: Optional[int] = 60)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": false,
+      "description": "The host IP address to bind to.",
+      "defaultValue": "0.0.0.0"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "Model Controller deploy port",
+      "defaultValue": "8000"
+    },
+    {
+      "name": "daemon",
+      "type": "boolean",
+      "required": false,
+      "description": "Run the server as a daemon.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "log",
+      "type": "LoggingParameters",
+      "required": false,
+      "description": "Logging configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "loggingparameters configuration",
+          "url": "../utils/utils_loggingparameters_4ba5c6"
+        }
+      ],
+      "defaultValue": "LoggingParameters"
+    },
+    {
+      "name": "trace",
+      "type": "TracerParameters",
+      "required": false,
+      "description": "Tracer configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "tracerparameters configuration",
+          "url": "../utils/tracer_impl_tracerparameters_f8f272"
+        }
+      ]
+    },
+    {
+      "name": "registry",
+      "type": "BaseModelRegistryParameters",
+      "required": false,
+      "description": "Model registry configuration. If None, use embedded registry",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "___model_registry_placeholder___ configuration",
+          "url": "parameter_dbmodelregistryparameters_87d036"
+        }
+      ]
+    },
+    {
+      "name": "heartbeat_interval_secs",
+      "type": "integer",
+      "required": false,
+      "description": "The interval for checking heartbeats (seconds)",
+      "defaultValue": "20"
+    },
+    {
+      "name": "heartbeat_timeout_secs",
+      "type": "integer",
+      "required": false,
+      "description": "The timeout for checking heartbeats (seconds), it will be set unhealthy if the worker is not responding in this time",
+      "defaultValue": "60"
+    }
+  ]
+}} />
+

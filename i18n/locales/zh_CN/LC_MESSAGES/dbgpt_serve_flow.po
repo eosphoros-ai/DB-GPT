@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -97,10 +97,18 @@ msgstr "所有知识空间"
 msgid "Fetch all knowledge spaces in the system"
 msgstr "获取系统中的所有知识空间"
 
-#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:26
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:24
+msgid "AWEL Flow Serve Configurations"
+msgstr "AWEL 工作流服务配置"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:27
+msgid "This configuration is for the flow serve module."
+msgstr "此配置用于工作流服务模块。"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:38
 msgid "Interval to load dbgpts from installed packages"
 msgstr "从已安装的包中加载 dbgpts 的间隔时间"
 
-#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:29
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:41
 msgid "The key to encrypt the data"
 msgstr "用于加密数据的密钥"

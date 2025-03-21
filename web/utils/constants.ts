@@ -1,79 +1,216 @@
 import { ModelType } from '@/types/chat';
 import { DBType } from '@/types/db';
+import { ModelIconInfo } from '@/types/models';
 
-export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> = {
-  proxyllm: { label: 'Proxy LLM', icon: '/models/chatgpt.png' },
-  'flan-t5-base': { label: 'flan-t5-base', icon: '/models/google.png' },
-  'vicuna-13b': { label: 'vicuna-13b', icon: '/models/vicuna.jpeg' },
-  'vicuna-7b': { label: 'vicuna-7b', icon: '/models/vicuna.jpeg' },
-  'vicuna-13b-v1.5': { label: 'vicuna-13b-v1.5', icon: '/models/vicuna.jpeg' },
-  'vicuna-7b-v1.5': { label: 'vicuna-7b-v1.5', icon: '/models/vicuna.jpeg' },
-  'codegen2-1b': { label: 'codegen2-1B', icon: '/models/vicuna.jpeg' },
-  'codet5p-2b': { label: 'codet5p-2b', icon: '/models/vicuna.jpeg' },
-  'chatglm-6b-int4': { label: 'chatglm-6b-int4', icon: '/models/chatglm.png' },
-  'chatglm-6b': { label: 'chatglm-6b', icon: '/models/chatglm.png' },
-  'chatglm2-6b': { label: 'chatglm2-6b', icon: '/models/chatglm.png' },
-  'chatglm2-6b-int4': { label: 'chatglm2-6b-int4', icon: '/models/chatglm.png' },
-  'guanaco-33b-merged': { label: 'guanaco-33b-merged', icon: '/models/huggingface.svg' },
-  'falcon-40b': { label: 'falcon-40b', icon: '/models/falcon.jpeg' },
-  'gorilla-7b': { label: 'gorilla-7b', icon: '/models/gorilla.png' },
-  'gptj-6b': { label: 'ggml-gpt4all-j-v1.3-groovy.bin', icon: '' },
-  chatgpt_proxyllm: { label: 'chatgpt_proxyllm', icon: '/models/chatgpt.png' },
-  bard_proxyllm: { label: 'bard_proxyllm', icon: '/models/bard.gif' },
-  claude_proxyllm: { label: 'claude_proxyllm', icon: '/models/claude.png' },
-  wenxin_proxyllm: { label: 'wenxin_proxyllm', icon: '' },
-  tongyi_proxyllm: { label: 'tongyi_proxyllm', icon: '/models/qwen2.png' },
-  zhipu_proxyllm: { label: 'zhipu_proxyllm', icon: '/models/zhipu.png' },
-  yi_proxyllm: { label: 'yi_proxyllm', icon: '/models/yi.svg' },
-  'yi-34b-chat': { label: 'yi-34b-chat', icon: '/models/yi.svg' },
-  'yi-34b-chat-8bits': { label: 'yi-34b-chat-8bits', icon: '/models/yi.svg' },
-  'yi-34b-chat-4bits': { label: 'yi-34b-chat-4bits', icon: '/models/yi.svg' },
-  'yi-6b-chat': { label: 'yi-6b-chat', icon: '/models/yi.svg' },
-  bailing_proxyllm: { label: 'bailing_proxyllm', icon: '/models/bailing.svg' },
-  antglm_proxyllm: { label: 'antglm_proxyllm', icon: '/models/huggingface.svg' },
-  chatglm_proxyllm: { label: 'chatglm_proxyllm', icon: '/models/chatglm.png' },
-  qwen7b_proxyllm: { label: 'qwen7b_proxyllm', icon: '/models/tongyi.apng' },
-  qwen72b_proxyllm: { label: 'qwen72b_proxyllm', icon: '/models/qwen2.png' },
-  qwen110b_proxyllm: { label: 'qwen110b_proxyllm', icon: '/models/qwen2.png' },
-  'llama-2-7b': { label: 'Llama-2-7b-chat-hf', icon: '/models/llama.jpg' },
-  'llama-2-13b': { label: 'Llama-2-13b-chat-hf', icon: '/models/llama.jpg' },
-  'llama-2-70b': { label: 'Llama-2-70b-chat-hf', icon: '/models/llama.jpg' },
-  'baichuan-13b': { label: 'Baichuan-13B-Chat', icon: '/models/baichuan.png' },
-  'baichuan-7b': { label: 'baichuan-7b', icon: '/models/baichuan.png' },
-  'baichuan2-7b': { label: 'Baichuan2-7B-Chat', icon: '/models/baichuan.png' },
-  'baichuan2-13b': { label: 'Baichuan2-13B-Chat', icon: '/models/baichuan.png' },
-  'wizardlm-13b': { label: 'WizardLM-13B-V1.2', icon: '/models/wizardlm.png' },
-  'llama-cpp': { label: 'ggml-model-q4_0.bin', icon: '/models/huggingface.svg' },
-  'internlm-7b': { label: 'internlm-chat-7b-v1_1', icon: '/models/internlm.png' },
-  'internlm-7b-8k': { label: 'internlm-chat-7b-8k', icon: '/models/internlm.png' },
-  'solar-10.7b-instruct-v1.0': { label: 'solar-10.7b-instruct-v1.0', icon: '/models/solar_logo.png' },
-  bailing_65b_v21_0520_proxyllm: { label: 'bailing_65b_v21_0520_proxyllm', icon: '/models/bailing.svg' },
+export const DEFAULT_ICON_URL = '/models/huggingface.svg';
+
+export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> = new Proxy({} as any, {
+  get: (_target, prop) => {
+    const modelId = prop as string;
+    return {
+      label: getModelLabel(modelId),
+      icon: getModelIcon(modelId),
+    };
+  },
+});
+
+export const MODEL_ICON_INFO: Record<string, ModelIconInfo> = {
+  deepseek: {
+    label: 'DeepSeek',
+    icon: '/models/deepseek.png',
+    patterns: ['deepseek', 'r1'],
+  },
+  qwen: {
+    label: 'Qwen',
+    icon: '/models/qwen2.png',
+    patterns: ['qwen', 'qwen2', 'qwen2.5', 'qwq', 'qvq'],
+  },
+  gemini: {
+    label: 'Gemini',
+    icon: '/models/gemini.png',
+    patterns: ['gemini'],
+  },
+  moonshot: {
+    label: 'Moonshot',
+    icon: '/models/moonshot.png',
+    patterns: ['moonshot'],
+  },
+  doubao: {
+    label: 'Doubao',
+    icon: '/models/doubao.png',
+    patterns: ['doubao'],
+  },
+  ernie: {
+    label: 'ERNIE',
+    icon: '/models/ernie.png',
+    patterns: ['ernie'],
+  },
+  proxyllm: {
+    label: 'Proxy LLM',
+    icon: '/models/chatgpt.png',
+    patterns: ['proxy'],
+  },
+  chatgpt: {
+    label: 'ChatGPT',
+    icon: '/models/chatgpt.png',
+    patterns: ['chatgpt', 'gpt', 'o1', 'o3'],
+  },
+  vicuna: {
+    label: 'Vicuna',
+    icon: '/models/vicuna.jpeg',
+    patterns: ['vicuna'],
+  },
+  chatglm: {
+    label: 'ChatGLM',
+    icon: '/models/chatglm.png',
+    patterns: ['chatglm', 'glm'],
+  },
+  llama: {
+    label: 'Llama',
+    icon: '/models/llama.jpg',
+    patterns: ['llama', 'llama2', 'llama3'],
+  },
+  baichuan: {
+    label: 'Baichuan',
+    icon: '/models/baichuan.png',
+    patterns: ['baichuan'],
+  },
+  claude: {
+    label: 'Claude',
+    icon: '/models/claude.png',
+    patterns: ['claude'],
+  },
+  bard: {
+    label: 'Bard',
+    icon: '/models/bard.gif',
+    patterns: ['bard'],
+  },
+  tongyi: {
+    label: 'Tongyi',
+    icon: '/models/tongyi.apng',
+    patterns: ['tongyi'],
+  },
+  yi: {
+    label: 'Yi',
+    icon: '/models/yi.svg',
+    patterns: ['yi'],
+  },
+  bailing: {
+    label: 'Bailing',
+    icon: '/models/bailing.svg',
+    patterns: ['bailing'],
+  },
+  wizardlm: {
+    label: 'WizardLM',
+    icon: '/models/wizardlm.png',
+    patterns: ['wizard'],
+  },
+  internlm: {
+    label: 'InternLM',
+    icon: '/models/internlm.png',
+    patterns: ['internlm'],
+  },
+  solar: {
+    label: 'Solar',
+    icon: '/models/solar_logo.png',
+    patterns: ['solar'],
+  },
+  gorilla: {
+    label: 'Gorilla',
+    icon: '/models/gorilla.png',
+    patterns: ['gorilla'],
+  },
+  zhipu: {
+    label: 'Zhipu',
+    icon: '/models/zhipu.png',
+    patterns: ['zhipu'],
+  },
+  falcon: {
+    label: 'Falcon',
+    icon: '/models/falcon.jpeg',
+    patterns: ['falcon'],
+  },
+  huggingface: {
+    label: 'Hugging Face',
+    icon: '/models/huggingface.svg',
+    patterns: ['huggingface', 'hf'],
+  },
 };
 
-export const MODEL_ICON_DICT: Record<string, string> = {
-  proxyllm: '/models/chatgpt.png',
-  qwen: '/models/qwen2.png',
-  bailing: '/models/bailing.svg',
-  antglm: '/models/huggingface.svg',
-  chatgpt: '/models/chatgpt.png',
-  vicuna: '/models/vicuna.jpeg',
-  flan: '/models/google.png',
-  code: '/models/vicuna.jpeg',
-  chatglm: '/models/chatglm.png',
-  guanaco: '/models/huggingface.svg',
-  gorilla: '/models/gorilla.png',
-  gptj: '/models/huggingface.svg',
-  bard: '/models/bard.gif',
-  claude: '/models/claude.png',
-  wenxin: '/models/huggingface.svg',
-  tongyi: '/models/qwen2.png',
-  zhipu: '/models/zhipu.png',
-  llama: '/models/llama.jpg',
-  baichuan: '/models/baichuan.png',
-  wizardlm: '/models/wizardlm.png',
-  internlm: '/models/internlm.png',
-  solar: '/models/solar_logo.png',
-};
+export function getModelLabel(modelId: string): string {
+  if (!modelId) return '';
+
+  // 1. Try to match directly
+  if (MODEL_ICON_INFO[modelId]?.label) {
+    return MODEL_ICON_INFO[modelId].label;
+  }
+
+  // 2. Try to match by patterns to get the base name, then add version information
+  const formattedModelId = modelId.toLowerCase();
+  for (const key in MODEL_ICON_INFO) {
+    const modelInfo = MODEL_ICON_INFO[key];
+
+    if (modelInfo.patterns && modelInfo.patterns.some(pattern => formattedModelId.includes(pattern.toLowerCase()))) {
+      // Try to extract version information from the model ID
+      const versionMatch = modelId.match(/[-_](\d+b|\d+\.\d+b?|v\d+(\.\d+)?)/i);
+      const sizePart = modelId.match(/[-_](\d+b)/i);
+
+      // Build the display name
+      let displayName = modelInfo.label;
+
+      // Add version information
+      if (versionMatch && !sizePart) {
+        displayName += ` ${versionMatch[1]}`;
+      }
+
+      // Add size information
+      if (sizePart) {
+        displayName += ` ${sizePart[1]}`;
+      }
+
+      return displayName;
+    }
+  }
+
+  // If no match
+  return modelId;
+}
+
+export function getModelIcon(modelId: string): string {
+  if (!modelId) return DEFAULT_ICON_URL;
+
+  // Format the model ID for matching
+  const formattedModelId = modelId.toLowerCase();
+
+  // 1. Try to match directly
+  if (MODEL_ICON_INFO[modelId]?.icon) {
+    return MODEL_ICON_INFO[modelId].icon;
+  }
+
+  // 2. Try to match by patterns
+  for (const key in MODEL_ICON_INFO) {
+    const modelInfo = MODEL_ICON_INFO[key];
+
+    // Check if the model ID contains one of the patterns
+    if (modelInfo.patterns && modelInfo.patterns.some(pattern => formattedModelId.includes(pattern.toLowerCase()))) {
+      return modelInfo.icon;
+    }
+  }
+
+  // Try to match by the model prefix
+  const modelParts = formattedModelId.split(/[-_]/);
+  if (modelParts.length > 0) {
+    const modelPrefix = modelParts[0];
+    for (const key in MODEL_ICON_INFO) {
+      if (modelPrefix === key.toLowerCase()) {
+        return MODEL_ICON_INFO[key].icon;
+      }
+    }
+  }
+
+  // If no match, return the default icon
+  return DEFAULT_ICON_URL;
+}
 
 export const dbMapper: Record<DBType, { label: string; icon: string; desc: string }> = {
   mysql: {

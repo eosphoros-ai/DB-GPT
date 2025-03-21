@@ -1,0 +1,131 @@
+---
+title: "LlamaCppModelParameters Configuration"
+description: "LlamaCppModelParameters(name: str, provider: str = 'llama.cpp', verbose: Optional[bool] = False, concurrency: Optional[int] = 5, backend: Optional[str] = None, prompt_template: Optional[str] = None, context_length: Optional[int] = None, reasoning_model: Optional[bool] = None, path: Optional[str] = None, device: Optional[str] = None, seed: Optional[int] = -1, n_threads: Optional[int] = None, n_batch: Optional[int] = 512, n_gpu_layers: Optional[int] = 1000000000, n_gqa: Optional[int] = None, rms_norm_eps: Optional[float] = 5e-06, cache_capacity: Optional[str] = None, prefer_cpu: Optional[bool] = False)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "LlamaCppModelParameters",
+  "description": "LlamaCppModelParameters(name: str, provider: str = 'llama.cpp', verbose: Optional[bool] = False, concurrency: Optional[int] = 5, backend: Optional[str] = None, prompt_template: Optional[str] = None, context_length: Optional[int] = None, reasoning_model: Optional[bool] = None, path: Optional[str] = None, device: Optional[str] = None, seed: Optional[int] = -1, n_threads: Optional[int] = None, n_batch: Optional[int] = 512, n_gpu_layers: Optional[int] = 1000000000, n_gqa: Optional[int] = None, rms_norm_eps: Optional[float] = 5e-06, cache_capacity: Optional[str] = None, prefer_cpu: Optional[bool] = False)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "path",
+      "type": "string",
+      "required": false,
+      "description": "The path of the model, if you want to deploy a local model."
+    },
+    {
+      "name": "backend",
+      "type": "string",
+      "required": false,
+      "description": "The real model name to pass to the provider, default is None. If backend is None, use name as the real model name."
+    },
+    {
+      "name": "device",
+      "type": "string",
+      "required": false,
+      "description": "Device to run model. If None, the device is automatically determined"
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "llama.cpp"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "5"
+    },
+    {
+      "name": "prompt_template",
+      "type": "string",
+      "required": false,
+      "description": "Prompt template. If None, the prompt template is automatically determined from model. Just for local deployment."
+    },
+    {
+      "name": "context_length",
+      "type": "integer",
+      "required": false,
+      "description": "The context length of the model. If None, it is automatically determined from model."
+    },
+    {
+      "name": "reasoning_model",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether the model is a reasoning model. If None, it is automatically determined from model."
+    },
+    {
+      "name": "seed",
+      "type": "integer",
+      "required": false,
+      "description": "Random seed for llama-cpp models. -1 for random",
+      "defaultValue": "-1"
+    },
+    {
+      "name": "n_threads",
+      "type": "integer",
+      "required": false,
+      "description": "Number of threads to use. If None, the number of threads is automatically determined"
+    },
+    {
+      "name": "n_batch",
+      "type": "integer",
+      "required": false,
+      "description": "Maximum number of prompt tokens to batch together when calling llama_eval",
+      "defaultValue": "512"
+    },
+    {
+      "name": "n_gpu_layers",
+      "type": "integer",
+      "required": false,
+      "description": "Number of layers to offload to the GPU, Set this to 1000000000 to offload all layers to the GPU.",
+      "defaultValue": "1000000000"
+    },
+    {
+      "name": "n_gqa",
+      "type": "integer",
+      "required": false,
+      "description": "Grouped-query attention. Must be 8 for llama-2 70b."
+    },
+    {
+      "name": "rms_norm_eps",
+      "type": "number",
+      "required": false,
+      "description": "5e-6 is a good value for llama-2 models.",
+      "defaultValue": "5e-06"
+    },
+    {
+      "name": "cache_capacity",
+      "type": "string",
+      "required": false,
+      "description": "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without units, bytes will be assumed. "
+    },
+    {
+      "name": "prefer_cpu",
+      "type": "boolean",
+      "required": false,
+      "description": "If a GPU is available, it will be preferred by default, unless prefer_cpu=False is configured.",
+      "defaultValue": "False"
+    }
+  ]
+}} />
+

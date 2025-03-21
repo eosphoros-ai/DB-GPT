@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 class BaseDatasourceParameters(BaseParameters, RegisterParameters):
     """Base class for datasource parameters."""
 
+    __cfg_type__ = "datasource"
+
     def engine_args(self) -> Optional[Dict[str, Any]]:
         """Return engine arguments."""
         return None

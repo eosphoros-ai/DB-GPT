@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,11 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/model/config.py:26
+#: ../packages/dbgpt-serve/src/dbgpt_serve/model/config.py:22
+msgid "Model Serve Configurations"
+msgstr "모델 서비스 구성"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/model/config.py:25
+msgid "This configuration is for the model serve module."
+msgstr "이 구성은 모델 서비스 모듈용입니다."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/model/config.py:38
 msgid ""
 "The storage type of model configures, if None, use the default "
 "storage(current database). When you run in light mode, it will not use any "
 "storage."
 msgstr ""
-"모델 구성의 저장 유형입니다. None인 경우 기본 저장소(현재 데이터베이스)를 사용합니다. "
-"경량 모드로 실행할 때는 어떠한 저장소도 사용하지 않습니다."
+"모델 구성의 저장 유형입니다. None인 경우 기본 저장소(현재 데이터베이스)를 사"
+"용합니다. 경량 모드로 실행할 때는 어떠한 저장소도 사용하지 않습니다."

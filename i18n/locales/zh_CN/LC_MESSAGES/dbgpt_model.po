@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 07:51+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,170 +17,264 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:32
+msgid "SiliconFlow Proxy LLM"
+msgstr "SiliconFlow 代理大语言模型"
+
 #: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:35
+msgid "SiliconFlow proxy LLM configuration."
+msgstr "SiliconFlow 代理大语言模型配置。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:48
 msgid "The base url of the SiliconFlow API."
 msgstr "SiliconFlow API 的基础 URL"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/siliconflow.py:55
 msgid "The API key of the SiliconFlow API."
 msgstr "SiliconFlow API 的 API 密钥"
 
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:35
 #: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:38
+msgid "OpenAI Compatible Proxy LLM"
+msgstr "OpenAI 兼容代理大语言模型"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:51
 msgid "The base url of the OpenAI API."
 msgstr "OpenAI API 的基础 URL"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:45
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:58
 msgid "The API key of the OpenAI API."
 msgstr "OpenAI API 的 API 密钥"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:65
 msgid "The type of the OpenAI API, if you use Azure, it can be: azure"
-msgstr "OpenAI API 的类型，如果你使用 Azure，则可以是：azure"
+msgstr "OpenAI API 的类型，若使用 Azure，则可为：azure"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:58
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:71
 msgid "The version of the OpenAI API."
 msgstr "OpenAI API 的版本"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:65
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:65
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:78
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:78
 msgid ""
 "The context length of the OpenAI API. If None, it is determined by the model."
-msgstr "OpenAI API 的上下文长度。如果为 None，则由模型确定。"
+msgstr "OpenAI API 的上下文长度，若为 None，则由模型确定。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:73
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:86
 msgid "The http or https proxy to use openai"
 msgstr "用于 OpenAI 的 http 或 https 代理"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:77
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:72
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:90
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:85
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:278
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:43
 msgid "Model concurrency limit"
 msgstr "模型并发限制"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:91
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:104
 msgid "OpenAI LLM Client"
 msgstr "OpenAI 大语言模型客户端"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:96
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:109
 msgid "OpenAI API Key"
 msgstr "OpenAI API 密钥"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:102
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:115
 msgid ""
 "OpenAI API Key, not required if you have set OPENAI_API_KEY environment "
 "variable."
-msgstr ""
-"OpenAI API 密钥，如果您已设置 OPENAI_API_KEY 环境变量，则不需要此参数。"
+msgstr "OpenAI API 密钥，如果已设置 OPENAI_API_KEY 环境变量，则无需此参数。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:107
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:120
 msgid "OpenAI API Base"
 msgstr "OpenAI API 基础 URL"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:113
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py:126
 msgid ""
 "OpenAI API Base, not required if you have set OPENAI_API_BASE environment "
 "variable."
 msgstr ""
-"OpenAI API 基础 URL，如果您已设置 OPENAI_API_BASE 环境变量，则不需要此参数。"
+"OpenAI API 基础地址，若已设置 OPENAI_API_BASE 环境变量，则无需配置此项。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:31
+msgid "Zhipu Proxy LLM"
+msgstr "智谱代理大语言模型"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:34
-msgid "The base url of the Zhipu API."
-msgstr "智谱 API 的基础 URL。"
+msgid "Zhipu proxy LLM configuration."
+msgstr "智谱代理大语言模型配置。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:47
+msgid "The base url of the Zhipu API."
+msgstr "智谱 API 的基础地址。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/zhipu.py:54
 msgid "The API key of the Zhipu API."
 msgstr "智谱 API 的密钥。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:34
-msgid "The base url of the Moonshot API."
-msgstr "Moonshot API 的基础 URL。"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:31
+msgid "Moonshot Proxy LLM"
+msgstr "Moonshot 代理大语言模型"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:47
+msgid "The base url of the Moonshot API."
+msgstr "Moonshot API 的基础地址。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/moonshot.py:54
 msgid "The API key of the Moonshot API."
 msgstr "Moonshot API 的密钥。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:35
-msgid "The base url of the Gitee API."
-msgstr "Gitee API 的基础 URL。"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:32
+msgid "Gitee Proxy LLM"
+msgstr "Gitee 代理大语言模型"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:48
+msgid "The base url of the Gitee API."
+msgstr "Gitee API 的基础地址。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gitee.py:55
 msgid "The API key of the Gitee API."
 msgstr "Gitee API 的密钥。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:35
-msgid "The base url of the DeepSeek API."
-msgstr "DeepSeek API 的基础 URL。"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:32
+msgid "Deepseek Proxy LLM"
+msgstr "Deepseek 代理大语言模型"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:42
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:35
+msgid "Deepseek proxy LLM configuration."
+msgstr "Deepseek 代理大语言模型配置。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:48
+msgid "The base url of the DeepSeek API."
+msgstr "DeepSeek API 的基础地址。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/deepseek.py:55
 msgid "The API key of the DeepSeek API."
 msgstr "DeepSeek API 的密钥。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:29
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:30
+msgid "Ollama Proxy LLM"
+msgstr "Ollama 代理大语言模型"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:33
+msgid "Ollama proxy LLM configuration."
+msgstr "Ollama 代理大语言模型配置。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/ollama.py:46
 msgid "The base url of the Ollama API."
-msgstr "Ollama API 的基础 URL"
+msgstr "Ollama API 的基础地址。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:34
-msgid "The base url of the Yi API."
-msgstr "Yi API 的基础 URL"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:31
+msgid "Yi Proxy LLM"
+msgstr "Yi 代理大语言模型"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:41
-msgid "The API key of the Yi API."
-msgstr "Yi API 的 API 密钥"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:47  
+msgid "The base url of the Yi API."  
+msgstr "Yi API 的基础地址。"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:29
-msgid "The base url of the Spark API."
-msgstr "Spark API 的基础 URL"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/yi.py:54  
+msgid "The API key of the Yi API."  
+msgstr "Yi API 的 API 密钥。"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:36
-msgid "The API key of the Spark API."
-msgstr "Spark API 的 API 密钥"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:26  
+msgid "Xunfei Spark Proxy LLM"  
+msgstr "讯飞星火代理大语言模型"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:34
-msgid "The base url of the Baichuan API."
-msgstr "Baichuan API 的基础 URL"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:42  
+msgid "The base url of the Spark API."  
+msgstr "Spark API 的基础 URL。"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:41
-msgid "The API key of the Baichuan API."
-msgstr "Baichuan API 的 API 密钥"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/spark.py:49  
+msgid "The API key of the Spark API."  
+msgstr "Spark API 的 API 密钥。"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:53
-msgid "The base url of the gemini API."
-msgstr "Gemini API 的基础 URL"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:31  
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:34  
+msgid "Baichuan Proxy LLM"  
+msgstr "百川代理大语言模型"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:60
-msgid "The API key of the gemini API."
-msgstr "Gemini API 的 API 密钥"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:47  
+msgid "The base url of the Baichuan API."  
+msgstr "百川 API 的基础 URL。"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:39
-msgid "The base url of the tongyi API."
-msgstr "通义 API 的基础 URL"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/baichuan.py:54  
+msgid "The API key of the Baichuan API."  
+msgstr "百川 API 的 API 密钥。"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:46
-msgid "The API key of the tongyi API."
-msgstr "通义 API 的 API 密钥"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:50  
+msgid "Gemini Proxy LLM"  
+msgstr "Gemini 代理大语言模型"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:34
-msgid "The base url of the Volcengine API."
-msgstr "Volcengine API 的基础 URL"
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:53  
+msgid "Google Gemini proxy LLM configuration."  
+msgstr "谷歌 Gemini 代理大语言模型配置。"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:41
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:66  
+msgid "The base url of the gemini API."  
+msgstr "Gemini API 的基础 URL。"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/gemini.py:73  
+msgid "The API key of the gemini API."  
+msgstr "Gemini API 的 API 密钥。"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:36  
+msgid "Tongyi Proxy LLM"  
+msgstr "通义代理大语言模型"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:39  
+msgid "Tongyi proxy LLM configuration."  
+msgstr "通义代理大语言模型配置。"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:52  
+msgid "The base url of the tongyi API."  
+msgstr "通义 API 的基础 URL。"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/tongyi.py:59  
+msgid "The API key of the tongyi API."  
+msgstr "通义 API 的 API 密钥。"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:31  
+msgid "Volcengine Proxy LLM"  
+msgstr "火山引擎代理大语言模型"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:34  
+msgid "Volcengine proxy LLM configuration."  
+msgstr "火山引擎代理大语言模型配置。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:47  
+msgid "The base url of the Volcengine API."  
+msgstr "火山引擎 API 的基础 URL。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/volcengine.py:54
 msgid "The API key of the Volcengine API."
-msgstr "Volcengine API 的 API 密钥"
+msgstr "火山引擎 API 的 API 密钥"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:46
+msgid "Baidu Wenxin Proxy LLM"
+msgstr "百度文心代理大语言模型"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:49
+msgid "Baidu Wenxin proxy LLM configuration."
+msgstr "百度文心代理大语言模型配置。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:62
 msgid "The API key of the Wenxin API."
 msgstr "文心 API 的 API 密钥"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:56
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/wenxin.py:69
 msgid "The API secret key of the Wenxin API."
 msgstr "文心 API 的 API 秘钥"
 
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:42
 #: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:45
+msgid "Claude Proxy LLM"
+msgstr "Claude 代理大语言模型"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:58
 msgid "The base url of the claude API."
 msgstr "Claude API 的基础 URL"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:52
+#: ../packages/dbgpt-core/src/dbgpt/model/proxy/llms/claude.py:65
 msgid "The API key of the claude API."
 msgstr "Claude API 的 API 密钥"
 
@@ -200,15 +294,15 @@ msgstr "启动服务器的配置文件"
 msgid ""
 "Run in daemon mode. It will run in the background. If you want to stop it, "
 "use `dbgpt stop` command"
-msgstr "以守护进程模式运行。它将在后台运行。如果你想停止它，请使用 `dbgpt stop` 命令"
+msgstr "以守护进程模式运行，它将在后台运行。如果想停止，请使用 `dbgpt stop` 命令。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:20
 msgid "Default LLM Client"
-msgstr "默认 LLM 客户端"
+msgstr "默认大语言模型客户端"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:23
 msgid "Default LLM client(Connect to your DB-GPT model serving)"
-msgstr "默认 LLM 客户端（连接到你的 DB-GPT 模型服务）"
+msgstr "默认大语言模型客户端（连接到你的 DB-GPT 模型服务）"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:26
 #: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:128
@@ -220,15 +314,15 @@ msgstr "自动转换消息"
 msgid ""
 "Whether to auto convert the messages that are not supported by the LLM to a "
 "compatible format"
-msgstr "是否自动将 LLM 不支持的消息转换为兼容格式"
+msgstr "是否自动将大语言模型不支持的消息转换为兼容格式"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:114
 msgid "Remote LLM Client"
-msgstr "远程 LLM 客户端"
+msgstr "远程大语言模型客户端"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:117
 msgid "Remote LLM client(Connect to the remote DB-GPT model serving)"
-msgstr "远程 LLM 客户端 (连接到远程 DB-GPT 模型服务)"
+msgstr "远程大语言模型客户端（连接到远程 DB-GPT 模型服务）"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/cluster/client.py:120
 msgid "Controller Address"
@@ -253,10 +347,10 @@ msgstr "模型路径，如果您想部署本地模型。"
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:37
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:33
 msgid "Device to run model. If None, the device is automatically determined"
-msgstr "运行模型的设备。如果为 None，则设备会自动确定。"
+msgstr "运行模型的设备。若为 None，则自动确定设备。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:47
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:96
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:99
 msgid "Trust remote code or not."
 msgstr "是否信任远程代码。"
 
@@ -270,23 +364,23 @@ msgid ""
 "loading the model, if you load your model with quantization, it will be True "
 "by default. You must install `accelerate` to make it work."
 msgstr ""
-"是否使用低 CPU 内存使用模式。这可以在加载模型时减少内存占用，如果您使用量化加载模型，默认情况下它将为 True。您必须安装 `accelerate` 才能使其生效。"
+"是否使用低 CPU 内存使用模式。这可以在加载模型时减少内存占用，如果使用量化方式加载模型，此模式默认开启。必须安装 `accelerate` 才能使其生效。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:70
 msgid ""
 "The number of gpus you expect to use, if it is empty, use all of them as "
 "much as possible"
-msgstr "期望使用的 GPU 数量，如果为空，则尽可能使用所有 GPU"
+msgstr "期望使用的 GPU 数量，若为空，则尽可能使用所有 GPU。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:79
 msgid ""
 "The maximum memory limit of each GPU, only valid in multi-GPU configuration, "
 "eg: 10GiB, 24GiB"
-msgstr "每个 GPU 的最大内存限制，仅在多 GPU 配置中有效，例如：10GiB、24GiB"
+msgstr "每个 GPU 的最大内存限制，仅在多 GPU 配置中有效，例如：10GiB、24GiB。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/hf_adapter.py:87
 msgid "The dtype of the model, default is None."
-msgstr "模型的数据类型，默认为 None"
+msgstr "模型的数据类型，默认为 None。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:45
 msgid "Local model file path"
@@ -310,7 +404,7 @@ msgstr "绑定服务器的主机地址"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:80
 msgid "Port to bind the server. 0 for random available port"
-msgstr "绑定服务器的端口。0 表示随机可用端口"
+msgstr "绑定服务器的端口。0 表示随机可用端口。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:85
 msgid "Sampling temperature for text generation"
@@ -342,7 +436,7 @@ msgstr "生成时使用的线程数（默认：-1）（环境变量：LLAMA_ARG_
 msgid ""
 "Number of layers to store in VRAM (env: LLAMA_ARG_N_GPU_LAYERS), set "
 "1000000000 to use all layers"
-msgstr "存储在 VRAM 中的层数（环境变量：LLAMA_ARG_N_GPU_LAYERS），设置为 1000000000 表示使用所有层"
+msgstr "存储在显存（VRAM）中的层数（环境变量：LLAMA_ARG_N_GPU_LAYERS），设置为 1000000000 表示使用所有层"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:129
 msgid "Logical maximum batch size (default: 2048) (env: LLAMA_ARG_BATCH)"
@@ -388,7 +482,8 @@ msgstr "启用连续批处理（即动态批处理）"
 msgid ""
 "Restrict to only support embedding use case; use only with dedicated "
 "embedding models (env: LLAMA_ARG_EMBEDDINGS)"
-msgstr "仅支持嵌入用例；仅与专用嵌入模型一起使用（环境变量：LLAMA_ARG_EMBEDDINGS）"
+msgstr ""
+"仅支持嵌入用例；仅与专用嵌入模型一起使用（环境变量：LLAMA_ARG_EMBEDDINGS）"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:202
 msgid "Enable reranking endpoint on server (env: LLAMA_ARG_RERANKING)"
@@ -398,7 +493,8 @@ msgstr "在服务器上启用重排序端点（环境变量：LLAMA_ARG_RERANKIN
 msgid ""
 "Enable prometheus compatible metrics endpoint (env: "
 "LLAMA_ARG_ENDPOINT_METRICS)"
-msgstr "启用与 Prometheus 兼容的指标端点（环境变量：LLAMA_ARG_ENDPOINT_METRICS）"
+msgstr ""
+"启用与 Prometheus 兼容的指标端点（环境变量：LLAMA_ARG_ENDPOINT_METRICS）"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:220
 msgid "Enable slots monitoring endpoint (env: LLAMA_ARG_ENDPOINT_SLOTS)"
@@ -408,7 +504,8 @@ msgstr "启用槽位监控端点（环境变量：LLAMA_ARG_ENDPOINT_SLOTS）"
 msgid ""
 "Number of tokens to draft for speculative decoding (default: 16) (env: "
 "LLAMA_ARG_DRAFT_MAX)"
-msgstr "为推测解码草拟的 Token 数量（默认值：16）（环境变量：LLAMA_ARG_DRAFT_MAX）"
+msgstr ""
+"为推测解码草拟的 Token 数量（默认值：16）（环境变量：LLAMA_ARG_DRAFT_MAX）"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_adapter.py:237
 msgid "Same as draft"
@@ -439,13 +536,13 @@ msgstr "禁用 Web 用户界面"
 msgid "Server startup timeout in seconds"
 msgstr "服务器启动超时时间（秒）"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:102
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:105
 msgid ""
 "Directory to download and load the weights, default to the default cache dir "
 "of huggingface."
 msgstr "下载和加载权重的目录，默认为 Hugging Face 的默认缓存目录。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:112
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:115
 msgid ""
 "The format of the model weights to load.\n"
 "\n"
@@ -466,16 +563,16 @@ msgid ""
 msgstr ""
 "要加载的模型权重格式。\n"
 "\n"
-"* \"auto\" 会尝试以 safetensors 格式加载权重，如果 safetensors 格式不可用则回退到 pytorch bin 格式。\n"
-"* \"pt\" 会以 pytorch bin 格式加载权重。\n"
+"* \"auto\" 会尝试以 safetensors 格式加载权重，若该格式不可用则回退到 PyTorch 二进制格式。\n"
+"* \"pt\" 会以 PyTorch 二进制格式加载权重。\n"
 "* \"safetensors\" 会以 safetensors 格式加载权重。\n"
-"* \"npcache\" 会以 pytorch 格式加载权重并存储一个 numpy 缓存以加快加载速度。\n"
+"* \"npcache\" 会以 PyTorch 格式加载权重并存储一个 NumPy 缓存以加速加载。\n"
 "* \"dummy\" 会用随机值初始化权重，主要用于性能分析。\n"
 "* \"tensorizer\" 会使用来自 CoreWeave 的 tensorizer 加载权重。有关更多信息，请参阅示例部分中的 Tensorize vLLM 模型脚本。\n"
-"* \"runai_streamer\" 会使用 Run:aiModel Streamer 加载 Safetensors 权重\n"
-"* \"bitsandbytes\" 会使用 bitsandbytes 量化加载权重。\n"
+"* \"runai_streamer\" 会使用 Run:ai 模型流加载器加载 Safetensors 权重。\n"
+"* \"bitsandbytes\" 会使用 bitsandbytes 量化方法加载权重。\n"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:149
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:152
 msgid ""
 "The format of the model config to load.\n"
 "\n"
@@ -484,9 +581,9 @@ msgid ""
 msgstr ""
 "要加载的模型配置格式。\n"
 "\n"
-"* \"auto\" 如果可用将尝试以 hf 格式加载配置，否则将尝试以 mistral 格式加载配置。"
+"* \"auto\" 若可用将尝试以 hf 格式加载配置，否则将尝试以 mistral 格式加载配置。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:164
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:167
 msgid ""
 "Data type for model weights and activations.\n"
 "\n"
@@ -498,35 +595,34 @@ msgid ""
 "* \"float\" is shorthand for FP32 precision.\n"
 "* \"float32\" for FP32 precision."
 msgstr ""
-"模型权重和激活的数据类型。\n"
+"模型权重和激活值的数据类型。\n"
 "\n"
 "* \"auto\" 会为 FP32 和 FP16 模型使用 FP16 精度，为 BF16 模型使用 BF16 精度。\n"
-"* \"half\" 表示 FP16。推荐用于 AWQ 量化。\n"
-"* \"float16\" 与 \"half\" 相同。\n"
-"* \"bfloat16\" 在精度和范围之间取得平衡。\n"
+"* \"half\" 代表 FP16，推荐用于 AWQ 量化。\n"
+"* \"float16\" 与 \"half\" 含义相同。\n"
+"* \"bfloat16\" 可在精度和取值范围之间取得平衡。\n"
 "* \"float\" 是 FP32 精度的简写。\n"
 "* \"float32\" 表示 FP32 精度。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:183
 msgid ""
 "Data type for kv cache storage. If \"auto\", will use model data type. CUDA "
 "11.8+ supports fp8 (=fp8_e4m3) and fp8_e5m2. ROCm (AMD GPU) supports fp8 "
 "(=fp8_e4m3)"
 msgstr ""
-"kv 缓存存储的数据类型。如果设置为 \"auto\"，将使用模型的数据类型。CUDA 11.8+ 支持 fp8 (=fp8_e4m3) 和 fp8_e5m2。ROCm (AMD GPU) 支持 fp8 (=fp8_e4m3)。"
+"kv 缓存存储的数据类型。如果设置为 \"auto\"，将使用模型的数据类型。CUDA 11.8 及以上版本支持 fp8 (=fp8_e4m3) 和 fp8_e5m2。ROCm (AMD GPU) 支持 fp8 (=fp8_e4m3)。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:190
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:193
 msgid "Random seed for operations."
 msgstr "操作的随机种子。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:197
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:200
 msgid ""
 "Model context length. If unspecified, will be automatically derived from the "
 "model config."
-msgstr ""
-"模型上下文长度。如果未指定，将从模型配置中自动推导。"
+msgstr "模型上下文长度。如果未指定，将从模型配置中自动推导。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:206
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:209
 msgid ""
 "Backend to use for distributed model workers, either \"ray\" or \"mp\" "
 "(multiprocessing). If the product of pipeline_parallel_size and "
@@ -535,38 +631,40 @@ msgid ""
 "will default to \"ray\" if Ray is installed and fail otherwise. Note that "
 "tpu only supports Ray for distributed inference."
 msgstr ""
-"用于分布式模型工作器的后端，可以是 \"ray\" 或 \"mp\"（多进程）。如果流水线并行大小和张量并行大小的乘积小于或等于可用的 GPU 数量，将使用 \"mp\" 以保持处理在单个主机上。否则，如果安装了 Ray，则默认使用 \"ray\"，否则将失败。请注意，TPU 仅支持 Ray 进行分布式推理。"
+"用于分布式模型工作器的后端，可以是 \"ray\" 或 \"mp\"（多进程）。如果流水线并行大小和张量并行大小的乘积小于或等于可用的 GPU 数量，将使用 \"mp\" 以保持处理在单个主机上。否则，如果安装了 Ray，则默认使用 \"ray\"，否则将失败。请注意，TPU 仅支持使用 Ray 进行分布式推理。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:220
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:223
 msgid "Number of pipeline stages."
 msgstr "流水线阶段的数量。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:226
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:229
 msgid "Number of tensor parallel replicas."
 msgstr "张量并行副本的数量。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:233
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:236
 msgid ""
 "Load model sequentially in multiple batches, to avoid RAM OOM when using "
 "tensor parallel and large models."
-msgstr "按多个批次顺序加载模型，以避免在使用张量并行和大模型时出现内存不足（OOM）。"
+msgstr ""
+"按多个批次顺序加载模型，以避免在使用张量并行和大模型时出现内存不足（OOM）。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:242
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:245
 msgid ""
 "Token block size for contiguous chunks of tokens. This is ignored on neuron "
 "devices and set to ``--max-model-len``. On CUDA devices, only block sizes up "
 "to 32 are supported. On HPU devices, block size defaults to 128."
-msgstr "连续 Token 块的大小。在神经元设备上忽略此设置，并设置为 ``--max-model-len``。在 CUDA 设备上，仅支持最大为 32 的块大小。在 HPU 设备上，默认块大小为 128。"
+msgstr ""
+"连续 Token 块的大小。在神经元设备上忽略此设置，并设置为 ``--max-model-len``。在 CUDA 设备上，仅支持最大为 32 的块大小。在 HPU 设备上，默认块大小为 128。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:253
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:256
 msgid "Enables automatic prefix caching. "
 msgstr "启用自动前缀缓存。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:259
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:262
 msgid "CPU swap space size (GiB) per GPU."
 msgstr "每个 GPU 的 CPU 交换空间大小（GiB）。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:266
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:269
 msgid ""
 "The space in GiB to offload to CPU, per GPU. Default is 0, which means no "
 "offloading. Intuitively, this argument can be seen as a virtual way to "
@@ -575,9 +673,10 @@ msgid ""
 "a 13B model with BF16 weight, which requires at least 26GB GPU memory. Note "
 "that this requires fast CPU-GPU interconnect, as part of the model is loaded "
 "from CPU memory to GPU memory on the fly in each model forward pass."
-msgstr "每个 GPU 卸载到 CPU 的空间（GiB）。默认值为 0，表示不卸载。直观来看，这个参数可以被视为一种虚拟增加 GPU 内存大小的方式。例如，如果你有一个 24 GB 的 GPU 并将此参数设置为 10，则可以将其视为一个 34 GB 的 GPU。这样你就可以加载需要至少 26 GB GPU 内存的 13B 模型（BF16 权重）。请注意，这需要快速的 CPU-GPU 互连，因为在每次模型前向传递时，部分模型会从 CPU 内存动态加载到 GPU 内存中。"
+msgstr ""
+"每个 GPU 卸载到 CPU 的空间（以 GiB 为单位）。默认值为 0，意味着不进行卸载。直观地说，这个参数可以看作是一种虚拟增加 GPU 内存大小的方式。例如，如果你有一块 24 GB 的 GPU ，并将该参数设置为 10 ，实际上你可以把它当作一块 34 GB 的 GPU 。这样，你就可以加载一个使用 BF16 权重、至少需要 26 GB GPU 内存的 13B 模型。请注意，这需要快速的 CPU - GPU 互连，因为在每次模型前向传播时，部分模型会从 CPU 内存即时加载到 GPU 内存中。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:283
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:286
 #, python-format
 msgid ""
 "The fraction of GPU memory to be used for the model executor, which can "
@@ -588,77 +687,76 @@ msgid ""
 "example, if you have two vLLM instances running on the same GPU, you can set "
 "the GPU memory utilization to 0.5 for each instance."
 msgstr ""
-"用于模型执行器的 GPU 内存比例，范围可以从 0 到 1。例如，值为 0.5 表示使用 50% 的 GPU 内存。如果未指定，则使用默认值 0.9。这是一个每实例限制，仅适用于当前 vLLM 实例。即使在同一 GPU 上运行另一个 vLLM 实例也无关紧要。例如，如果你在同一 GPU 上运行两个 vLLM 实例，可以将每个实例的 GPU 内存利用率设置为 0.5。"
+"用于模型执行器的 GPU 内存占比，范围为 0 到 1。例如，值为 0.5 意味着 GPU 内存利用率为 50%。若未指定，则使用默认值 0.9。这是每个实例的限制，仅适用于当前 vLLM 实例。即使同一 GPU 上运行着另一个 vLLM 实例，也不受影响。例如，若同一 GPU 上运行两个 vLLM 实例，可将每个实例的 GPU 内存利用率都设为 0.5。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:298
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:301
 msgid "Maximum number of batched tokens per iteration."
-msgstr "每次迭代的最大批处理 Token 数量。"
+msgstr "每次迭代允许的最大批处理 Token 数量。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:304
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:307
 msgid "Maximum number of sequences per iteration."
-msgstr "每次迭代的最大序列数量。"
+msgstr "每次迭代允许的最大序列数量。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:311
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:314
 msgid ""
 "Max number of log probs to return logprobs is specified in SamplingParams."
-msgstr "SamplingParams 中指定的返回日志概率的最大数量。"
+msgstr "SamplingParams 中指定的返回对数概率的最大数量。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:320
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:323
 msgid ""
 "The specific model version to use. It can be a branch name, a tag name, or a "
 "commit id. If unspecified, will use the default version."
-msgstr "要使用的特定模型版本。它可以是分支名称、标签名称或提交 ID。如果未指定，则使用默认版本。"
+msgstr "要使用的特定模型版本。它可以是分支名称、标签名称或提交 ID 。若未指定，则使用默认版本。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:330
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:333
 msgid ""
 "The specific revision to use for the model code on Hugging Face Hub. It can "
 "be a branch name, a tag name, or a commit id. If unspecified, will use the "
 "default version."
-msgstr "要在 Hugging Face Hub 上使用的模型代码的具体修订版本。它可以是分支名称、标签名称或提交 ID。如果未指定，则使用默认版本。"
+msgstr "要在 Hugging Face 模型中心使用的模型代码的具体修订版本。它可以是分支名称、标签名称或提交 ID。若未指定，则使用默认版本。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:340
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:343
 msgid ""
 "Revision of the huggingface tokenizer to use. It can be a branch name, a tag "
 "name, or a commit id. If unspecified, will use the default version."
-msgstr "要使用的 Hugging Face 分词器的修订版本。它可以是分支名称、标签名称或提交 ID。如果未指定，则使用默认版本。"
+msgstr "要使用的 Hugging Face 分词器的修订版本。它可以是分支名称、标签名称或提交 ID。若未指定，则使用默认版本。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:350
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:353
 msgid ""
 "The tokenizer mode.\n"
 "\n"
 "* \"auto\" will use the fast tokenizer if available.\n"
 "* \"slow\" will always use the slow tokenizer. \n"
 "* \"mistral\" will always use the `mistral_common` tokenizer."
-msgstr ""
-"分词器模式。\n"
+msgstr "分词器模式。\n"
 "\n"
-"* \"auto\" 如果可用将使用快速分词器。\n"
-"* \"slow\" 将始终使用慢速分词器。 \n"
-"* \"mistral\" 将始终使用 `mistral_common` 分词器。"
+"* \"auto\" 若可用则使用快速分词器。\n"
+"* \"slow\" 始终使用慢速分词器。\n"
+"* \"mistral\" 始终使用 `mistral_common` 分词器。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:362
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:365
 msgid ""
 "Method used to quantize the weights. If None, we first check the "
 "`quantization_config` attribute in the model config file. If that is None, "
 "we assume the model weights are not quantized and use `dtype` to determine "
 "the data type of the weights."
 msgstr ""
-"用于量化权重的方法。如果为 None，我们首先检查模型配置文件中的 `quantization_config` 属性。如果该属性为 None，我们假设模型权重未被量化，并使用 `dtype` 来确定权重的数据类型。"
+"用于量化权重的方法。若为 None，我们首先检查模型配置文件中的 `quantization_config` 属性。若该属性为 None，我们假设模型权重未被量化，并使用 `dtype` 来确定权重的数据类型。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:400
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:403
 msgid ""
 "Maximum sequence length covered by CUDA graphs. When a sequence has context "
 "length larger than this, we fall back to eager mode. Additionally for "
 "encoder-decoder models, if the sequence length of the encoder input is "
 "larger than this, we fall back to the eager mode."
 msgstr ""
-"CUDA 图覆盖的最大序列长度。当序列的上下文长度超过此值时，我们将回退到急切模式。对于编码器-解码器模型，如果编码器输入的序列长度超过此值，我们也会回退到急切模式。"
+"CUDA 图覆盖的最大序列长度。当序列的上下文长度超过此值时，我们将回退到急切模式。此外，对于编码器 - 解码器模型，若编码器输入的序列长度超过此值，我们也会回退到急切模式。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:411
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:414
 msgid "The worker class to use for distributed execution."
 msgstr "用于分布式执行的工作进程类。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:415
+#: ../packages/dbgpt-core/src/dbgpt/model/adapter/vllm_adapter.py:418
 msgid "Extra parameters, it will be passed to the vllm engine."
 msgstr "额外参数，这些参数将传递给 vllm 引擎。"
 
@@ -666,25 +764,21 @@ msgstr "额外参数，这些参数将传递给 vllm 引擎。"
 msgid ""
 "The embedding model are trained by BAAI, it support more than 100 working "
 "languages."
-msgstr ""
-"嵌入模型由 BAAI 训练，支持超过 100 种工作语言。"
+msgstr "嵌入模型由 BAAI 训练，支持超过 100 种工作语言。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:36
 msgid "The embedding model are trained by BAAI, it support Chinese."
-msgstr ""
-"嵌入模型由 BAAI 训练，支持中文。"
+msgstr "嵌入模型由 BAAI 训练，支持中文。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:44
 msgid "The embedding model are trained by BAAI, it support English."
-msgstr ""
-"嵌入模型由 BAAI 训练，支持英文。"
+msgstr "嵌入模型由 BAAI 训练，支持英文。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:54
 msgid ""
 "The embedding model are trained by Jina AI, it support multiple languages. "
 "And it has 0.57B parameters."
-msgstr ""
-"嵌入模型由 Jina AI 训练，支持多种语言，并且有 0.57B 参数。"
+msgstr "嵌入模型由 Jina AI 训练，支持多种语言，并且包含 0.57B 参数。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/embed_metadata.py:65
 msgid "The reranker model are trained by BAAI, it support multiple languages."
@@ -701,134 +795,194 @@ msgstr "重排序模型由 Jina AI 训练，支持多种语言。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:39
 msgid "Random seed for llama-cpp models. -1 for random"
-msgstr "llama-cpp 模型的随机种子。-1 表示随机。"
+msgstr "llama-cpp 模型的随机种子。-1 表示随机生成。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:45
 msgid ""
 "Number of threads to use. If None, the number of threads is automatically "
 "determined"
-msgstr "使用的线程数。如果为 None，则线程数会自动确定。"
+msgstr "使用的线程数。若为 None，则自动确定线程数。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:54
 msgid ""
 "Maximum number of prompt tokens to batch together when calling llama_eval"
-msgstr "调用 llama_eval 时，提示词的最大批处理数量。"
+msgstr "调用 llama_eval 时，提示词 Token 的最大批处理数量。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:63
 msgid ""
 "Number of layers to offload to the GPU, Set this to 1000000000 to offload "
 "all layers to the GPU."
-msgstr "卸载到 GPU 的层数。设置为 1000000000 可将所有层卸载到 GPU。"
+msgstr "卸载到 GPU 的层数。将此值设为 1000000000 可将所有层卸载到 GPU。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:70
 msgid "Grouped-query attention. Must be 8 for llama-2 70b."
-msgstr "分组查询注意力机制。对于 llama-2 70b 必须设置为 8。"
+msgstr "分组查询注意力机制。对于 llama-2 70b 模型，此值必须为 8。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:73
 msgid "5e-6 is a good value for llama-2 models."
-msgstr "对于 llama-2 模型，5e-6 是一个合适的值。"
+msgstr "对于 llama-2 模型，5e-6 是个不错的值。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:79
 msgid ""
 "Maximum cache capacity. Examples: 2000MiB, 2GiB. When provided without "
 "units, bytes will be assumed. "
-msgstr "最大缓存容量。示例：2000MiB、2GiB。如果不提供单位，默认为字节。"
+msgstr "最大缓存容量。示例：2000MiB、2GiB。如果不提供单位，默认以字节为单位。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/adapter/llama_cpp_py_adapter.py:88
 msgid ""
 "If a GPU is available, it will be preferred by default, unless "
 "prefer_cpu=False is configured."
-msgstr "如果可用，将优先使用 GPU，除非配置了 prefer_cpu=False。"
+msgstr "如果存在可用的 GPU，默认会优先使用 GPU，除非配置了 prefer_cpu=False。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:94
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:96
 msgid "Database configuration for model registry"
 msgstr "模型注册表的数据库配置"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:106
-msgid "Model registry configuration. If None, use embedded registry"
-msgstr "模型注册表配置。如果为 None，则使用嵌入式注册表"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:108  
+msgid "Model registry configuration. If None, use embedded registry"  
+msgstr "模型注册表配置。若为 None，则使用嵌入式注册表"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:125
-msgid "Model API server deploy port"
-msgstr "模型 API 服务器部署端口"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:114  
+msgid "The interval for checking heartbeats (seconds)"  
+msgstr "心跳检查间隔（秒）"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:129
-msgid "The Model controller address to connect"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:120  
+msgid ""  
+"The timeout for checking heartbeats (seconds), it will be set unhealthy if "  
+"the worker is not responding in this time"  
+msgstr "心跳检查超时时间（秒），若工作器在此时间内无响应，将被标记为不健康"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:130  
+msgid "Model API server deploy port"  
+msgstr "模型 API 服务器部署端口"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:134  
+msgid "The Model controller address to connect"  
 msgstr "要连接的模型控制器地址"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:189
-msgid "Model worker configuration"
-msgstr "模型工作器配置"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:139  
+msgid "Optional list of comma separated API keys"  
+msgstr "可选的、用逗号分隔的 API 密钥列表"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:192
-msgid "Model API"
-msgstr "模型 API"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:142  
+msgid "Embedding batch size"  
+msgstr "嵌入批量大小"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:196
-msgid "Model controller"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:145  
+msgid "Ignore exceeds stop words error"  
+msgstr "忽略超出停止词错误"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:153  
+msgid "Worker type"  
+msgstr "工作器类型"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:158  
+msgid "Model worker class, dbgpt.model.cluster.DefaultModelWorker"  
+msgstr "模型工作器类，dbgpt.model.cluster.DefaultModelWorker"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:167  
+msgid "Standalone mode. If True, embedded Run ModelController"  
+msgstr "独立模式。若为 True，则嵌入运行模型控制器"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:171  
+msgid "Register current worker to model controller"  
+msgstr "将当前工作器注册到模型控制器"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:190  
+msgid "The interval for sending heartbeats (seconds)"  
+msgstr "发送心跳的间隔（秒）"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:202  
+msgid "Model worker configuration"  
+msgstr "模型工作器配置"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:205  
+msgid "Model API"  
+msgstr "模型 API"  
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:209  
+msgid "Model controller"  
 msgstr "模型控制器"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:206
-msgid ""
-"Default LLM model name, used to specify which model to use when you have "
-"multiple LLMs"
-msgstr "默认的大语言模型名称，用于在有多个大语言模型时指定使用哪个模型"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:220  
+msgid ""  
+"Default LLM model name, used to specify which model to use when you have "  
+"multiple LLMs"  
+msgstr "默认大语言模型名称，用于在拥有多个大语言模型时指定使用的模型"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:215
-msgid ""
-"Default embedding model name, used to specify which model to use when you "
-"have multiple embedding models"
-msgstr "默认的嵌入模型名称，用于在有多个嵌入模型时指定使用哪个模型"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:229  
+msgid ""  
+"Default embedding model name, used to specify which model to use when you "  
+"have multiple embedding models"  
+msgstr "默认嵌入模型名称，用于在拥有多个嵌入模型时指定使用的模型"  
 
-#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:224
-msgid ""
-"Default reranker model name, used to specify which model to use when you "
-"have multiple reranker models"
-msgstr "默认的重排序模型名称，用于在有多个重排序模型时指定使用哪个模型"
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:238  
+msgid ""  
+"Default reranker model name, used to specify which model to use when you "  
+"have multiple reranker models"  
+msgstr "默认重排序模型名称，用于在拥有多个重排序模型时指定使用的模型"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:176
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:247
+msgid ""
+"LLM model deploy configuration. If you deploy in cluster mode, you just "
+"deploy one model."
+msgstr "大语言模型部署配置。如果以集群模式部署，只需部署一个模型。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:256
+msgid ""
+"Embedding model deploy configuration. If you deploy in cluster mode, you "
+"just deploy one model."
+msgstr "嵌入模型部署配置。如果以集群模式部署，只需部署一个模型。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/parameter.py:265
+msgid ""
+"Reranker model deploy configuration. If you deploy in cluster mode, you just "
+"deploy one model."
+msgstr "重排序模型部署配置。如果以集群模式部署，只需部署一个模型。"
+
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:140
 msgid "OpenAI Streaming Output Operator"
 msgstr "OpenAI 流式输出算子"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:180
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:144
 msgid "The OpenAI streaming LLM operator."
 msgstr "OpenAI 流式大语言模型算子。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:184
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:148
 msgid "Upstream Model Output"
 msgstr "上游模型输出"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:188
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:152
 msgid "The model output of upstream."
 msgstr "上游模型的输出。"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:193
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:157
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:97
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:152
 msgid "Model Output"
 msgstr "模型输出"
 
-#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:198
+#: ../packages/dbgpt-core/src/dbgpt/model/utils/chatgpt_utils.py:162
 msgid "The model output after transformed to openai stream format."
 msgstr "转换为 OpenAI 流格式后的模型输出。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:73
 msgid "LLM Operator"
-msgstr "LLM 算子"
+msgstr "大语言模型算子"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:76
 msgid "The LLM operator."
-msgstr "LLM 算子。"
+msgstr "大语言模型算子。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:79
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:134
 msgid "LLM Client"
-msgstr "LLM 客户端"
+msgstr "大语言模型客户端"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:84
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:139
 msgid "The LLM Client."
-msgstr "LLM 客户端。"
+msgstr "大语言模型客户端。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:89
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:144
@@ -847,8 +1001,8 @@ msgstr "模型输出。"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:127
 msgid "Streaming LLM Operator"
-msgstr "流式 LLM 算子"
+msgstr "流式大语言模型算子"
 
 #: ../packages/dbgpt-core/src/dbgpt/model/operators/llm_operator.py:131
 msgid "The streaming LLM operator."
-msgstr "流式 LLM 算子。"
+msgstr "流式大语言模型算子。"

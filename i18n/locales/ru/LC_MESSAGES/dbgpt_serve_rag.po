@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,131 +18,141 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:44
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:44
 msgid "Knowledge Space Operator"
 msgstr "Оператор пространства знаний"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:47
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:47
 msgid "knowledge space retriever operator."
 msgstr "Оператор извлечения из пространства знаний."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
 msgid "Query"
 msgstr "Запрос"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:48
 msgid "user query"
 msgstr "Запрос пользователя"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:51
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:54
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:51
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:54
 msgid "related chunk content"
 msgstr "Связанное содержимое фрагмента"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:59
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:59
 msgid "Space Name"
 msgstr "Название пространства"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:65
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:65
 msgid "space name."
 msgstr "Название пространства."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:124
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:125
 msgid "Knowledge Space Prompt Builder Operator"
 msgstr "Оператор построения промптов для пространства знаний"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:126
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:127
 msgid "Build messages from prompt template and chat history."
 msgstr "Создавать сообщения на основе шаблона промпта и истории чата."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:131
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:132
 msgid "Chat Prompt Template"
 msgstr "Шаблон чат-промпта"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:134
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:135
 msgid "The chat prompt template."
 msgstr "Шаблон чат-промпта."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:137
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:138
 msgid "History Key"
 msgstr "Ключ истории"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:142
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:143
 msgid "The key of history in prompt dict."
 msgstr "Ключ истории в словаре промпта."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:145
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:146
 msgid "String History"
 msgstr "Строковая история"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:150
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:151
 msgid "Whether to convert the history to string."
 msgstr "Преобразовывать ли историю в строку?"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:155
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:159
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:156
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:160
 msgid "user input"
 msgstr "ввод пользователя"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:162
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:163
 msgid "space related context"
 msgstr "контекст, связанный с пространством"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:166
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:167
 msgid "context of knowledge space."
 msgstr "контекст пространства знаний."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:169
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:170
 msgid "History"
 msgstr "История"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:173
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:174
 msgid "The history."
 msgstr "История."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:178
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:179
 msgid "Formatted Messages"
 msgstr "Отформатированные сообщения"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:182
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/operators/knowledge_space.py:183
 msgid "The formatted messages."
 msgstr "Отформатированные сообщения."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:22
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:26
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:20
+msgid "RAG Serve Configurations"
+msgstr "Конфигурации сервиса RAG"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:23
+msgid "This configuration is for the RAG serve module."
+msgstr "Эта конфигурация предназначена для модуля сервиса RAG."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:34
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:38
 msgid "Embedding Model"
 msgstr "Модель эмбеддинга"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:30
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:42
 msgid "Whether to verify the SSL certificate of the database"
 msgstr "Проверять ли SSL-сертификат базы данных"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:36
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:48
 msgid ""
 "The default thread pool size, If None, use default config of python thread "
 "pool"
-msgstr "Размер пула потоков по умолчанию. Если None, используется конфигурация пула потоков Python по умолчанию."
+msgstr ""
+"Размер пула потоков по умолчанию. Если None, используется конфигурация пула "
+"потоков Python по умолчанию."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:43
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:55
 msgid "knowledge search top k"
 msgstr "Топ-k результатов поиска в пространстве знаний"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:47
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:59
 msgid "knowledge search top similarity score"
 msgstr "Максимальный балл сходства при поиске в пространстве знаний"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:51
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:63
 msgid "knowledge search rewrite"
 msgstr "Перезапись поиска знаний"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:55
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:67
 msgid "knowledge max chunks once load"
 msgstr "Максимальное количество блоков знаний при одном загрузке"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:59
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:71
 msgid "knowledge max load thread"
 msgstr "Максимальное количество потоков загрузки знаний"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:63
+#: ../packages/dbgpt-serve/src/dbgpt_serve/rag/config.py:75
 msgid "knowledge rerank top k"
 msgstr "Топ-K переранжирования знаний"

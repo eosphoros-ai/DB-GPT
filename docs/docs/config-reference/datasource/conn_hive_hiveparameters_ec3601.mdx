@@ -1,0 +1,84 @@
+---
+title: "Apache Hive datasource Configuration"
+description: "A distributed fault-tolerant data warehouse system."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "HiveParameters",
+  "description": "A distributed fault-tolerant data warehouse system.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": true,
+      "description": "Hive server host"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "Hive server port, default 10000",
+      "defaultValue": "10000"
+    },
+    {
+      "name": "database",
+      "type": "string",
+      "required": false,
+      "description": "Database name, default 'default'",
+      "defaultValue": "default"
+    },
+    {
+      "name": "auth",
+      "type": "string",
+      "required": false,
+      "description": "Authentication mode: NONE, NOSASL, LDAP, KERBEROS, CUSTOM",
+      "defaultValue": "NONE",
+      "validValues": [
+        "NONE",
+        "NOSASL",
+        "LDAP",
+        "KERBEROS",
+        "CUSTOM"
+      ]
+    },
+    {
+      "name": "username",
+      "type": "string",
+      "required": false,
+      "description": "Username for authentication",
+      "defaultValue": ""
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "Password for LDAP or CUSTOM auth",
+      "defaultValue": ""
+    },
+    {
+      "name": "kerberos_service_name",
+      "type": "string",
+      "required": false,
+      "description": "Kerberos service name",
+      "defaultValue": "hive"
+    },
+    {
+      "name": "transport_mode",
+      "type": "string",
+      "required": false,
+      "description": "Transport mode: binary or http",
+      "defaultValue": "binary"
+    },
+    {
+      "name": "driver",
+      "type": "string",
+      "required": false,
+      "description": "Driver name for Hive, default is hive.",
+      "defaultValue": "hive"
+    }
+  ]
+}} />
+

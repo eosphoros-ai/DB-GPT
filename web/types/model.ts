@@ -49,3 +49,9 @@ export type SupportModel = {
   provider: string;
   description: string;
 };
+
+export interface ModelIconInfo {
+  label: string;
+  icon: string;
+  patterns?: string[]; // The patterns that the model name may contain
+}

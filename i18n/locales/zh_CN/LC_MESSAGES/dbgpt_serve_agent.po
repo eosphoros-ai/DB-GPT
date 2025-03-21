@@ -49,4 +49,4 @@ msgstr "提示模板"
 
 #: ../packages/dbgpt-serve/src/dbgpt_serve/agent/resource/datasource.py:121
 msgid "The prompt template to build a database prompt."
-msgstr "用于构建数据库提示的模板。"
+msgstr "用于构建数据库提示的提示模板。"
