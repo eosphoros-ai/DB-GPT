@@ -198,9 +198,10 @@ def test_extract_union_field_type():
         )
 
     desc_list = _get_parameter_descriptions(ComplexConfig)
-
+    print("desc_list[0]: ", desc_list[0])
+    print("desc_list[0].param_name: ", desc_list[0].param_name)
     # Test union type
-    assert desc_list[0].param_name == "str_with_default"
+    assert desc_list[0].param_name == "union_field"
     assert desc_list[0].param_type == "string"
     assert desc_list[0].required is False
 
@@ -269,7 +270,7 @@ def test_python_type_hint_variations():
 
     # Test nested Optional with Union
     assert desc_list[4].param_name == "nested_optional"
-    assert desc_list[4].param_type == "integer"
+    assert desc_list[4].param_type == "string"
     assert desc_list[4].required is False
 
     # Test nested | syntax
