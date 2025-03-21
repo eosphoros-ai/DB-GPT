@@ -1488,6 +1488,7 @@ dependencies = [
 [package.optional-dependencies]
 agent = [
     { name = "auto-gpt-plugin-template" },
+    { name = "mcp" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "termcolor" },
@@ -1613,6 +1614,7 @@ requires-dist = [
     { name = "lyric-js-worker", marker = "extra == 'code'", specifier = ">=0.1.7" },
     { name = "lyric-py", marker = "extra == 'code'", specifier = ">=0.1.7" },
     { name = "lyric-py-worker", marker = "extra == 'code'", specifier = ">=0.1.7" },
+    { name = "mcp", marker = "extra == 'agent'", specifier = ">=1.4.1" },
     { name = "msgpack", marker = "extra == 'code'" },
     { name = "msgpack", marker = "extra == 'simple-framework'" },
     { name = "numpy", marker = "extra == 'agent'", specifier = ">=1.21.0,<2.0.0" },
@@ -1659,7 +1661,7 @@ dev = []
 [[package]]
 name = "dbgpt-acc-auto"
 version = "0.7.0"
-source = { virtual = "packages/dbgpt-accelerator/dbgpt-acc-auto" }
+source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-auto" }
 
 [package.optional-dependencies]
 auto = [
@@ -1742,7 +1744,7 @@ requires-dist = [
     { name = "auto-gptq", marker = "extra == 'quant-gptq'" },
     { name = "autoawq", marker = "extra == 'quant-awq'" },
     { name = "bitsandbytes", marker = "(sys_platform == 'linux' and extra == 'quant-bnb') or (sys_platform == 'win32' and extra == 'quant-bnb')", specifier = ">=0.39.0" },
-    { name = "dbgpt-acc-flash-attn", marker = "extra == 'flash-attn'", virtual = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" },
+    { name = "dbgpt-acc-flash-attn", marker = "extra == 'flash-attn'", editable = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" },
     { name = "device-smi", marker = "extra == 'quant-gptqmodel'", specifier = ">=0.3.3" },
     { name = "gptqmodel", marker = "extra == 'quant-gptqmodel'" },
     { name = "optimum", marker = "extra == 'quant-gptq'" },
@@ -1794,8 +1796,8 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-flash-attn"
-version = "0.1.0"
-source = { virtual = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" }
+version = "0.7.0"
+source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" }
 
 [package.dev-dependencies]
 build = [
@@ -1856,7 +1858,7 @@ requires-dist = [
     { name = "build", marker = "extra == 'dbgpts'" },
     { name = "dbgpt", editable = "packages/dbgpt-core" },
     { name = "dbgpt", extras = ["client", "cli", "agent", "simple-framework", "framework", "code"], marker = "extra == 'base'", editable = "packages/dbgpt-core" },
-    { name = "dbgpt-acc-auto", virtual = "packages/dbgpt-accelerator/dbgpt-acc-auto" },
+    { name = "dbgpt-acc-auto", editable = "packages/dbgpt-accelerator/dbgpt-acc-auto" },
     { name = "dbgpt-client", editable = "packages/dbgpt-client" },
     { name = "dbgpt-ext", editable = "packages/dbgpt-ext" },
     { name = "dbgpt-serve", editable = "packages/dbgpt-serve" },
@@ -2011,6 +2013,7 @@ source = { virtual = "." }
 dev = [
     { name = "asynctest" },
     { name = "jupyter" },
+    { name = "mypy" },
     { name = "pip" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -2031,6 +2034,7 @@ dev = [
 dev = [
     { name = "asynctest", specifier = ">=0.13.0" },
     { name = "jupyter" },
+    { name = "mypy", specifier = ">=1.15.0" },
     { name = "pip" },
     { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "pytest", specifier = ">=7.0.0" },
@@ -4381,6 +4385,25 @@ wheels = [
 ]
 
 [[package]]
+name = "mcp"
+version = "1.4.1"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "httpx" },
+    { name = "httpx-sse" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "sse-starlette" },
+    { name = "starlette" },
+    { name = "uvicorn" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/50/cc/5c5bb19f1a0f8f89a95e25cb608b0b07009e81fd4b031e519335404e1422/mcp-1.4.1.tar.gz", hash = "sha256:b9655d2de6313f9d55a7d1df62b3c3fe27a530100cc85bf23729145b0dba4c7a", size = 154942 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e8/0e/885f156ade60108e67bf044fada5269da68e29d758a10b0c513f4d85dd76/mcp-1.4.1-py3-none-any.whl", hash = "sha256:a7716b1ec1c054e76f49806f7d96113b99fc1166fc9244c2c6f19867cb75b593", size = 72448 },
+]
+
+[[package]]
 name = "mdurl"
 version = "0.1.2"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
@@ -4750,6 +4773,44 @@ wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a0/0c/f9a868eb39751b9dceb9e35d91e8cf321dad8ce9e3e965d067b0fff0547a/murmurhash-1.0.12-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:8bd5524de195991ce3551b14286ec0b730cc9dd2e10565dad2ae470eec082028", size = 124858 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b6/fc/52bcb3afc95733f30ec76e07cae4b5d0081fa049ade418303faeee619766/murmurhash-1.0.12-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:19de30edaaa2217cd0c41b6cf6bbfa418be5d7fdf267ca92e5e3710d4daac593", size = 124686 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/cf/99/9cdea62dec8ea26a35a8231ee09c83b16f9dedf16280a7a15f41d2061706/murmurhash-1.0.12-cp313-cp313-win_amd64.whl", hash = "sha256:7dc4ebdfed7ef8ed70519962ac9b704e91978ee14e049f1ff37bca2f579ce84d", size = 24702 },
+]
+
+[[package]]
+name = "mypy"
+version = "1.15.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "mypy-extensions" },
+    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cpu') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda121' and extra == 'extra-14-dbgpt-acc-auto-cuda124')" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ce/43/d5e49a86afa64bd3839ea0d5b9c7103487007d728e1293f52525d6d5486a/mypy-1.15.0.tar.gz", hash = "sha256:404534629d51d3efea5c800ee7c42b72a6554d6c400e6a79eafe15d11341fd43", size = 3239717 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/68/f8/65a7ce8d0e09b6329ad0c8d40330d100ea343bd4dd04c4f8ae26462d0a17/mypy-1.15.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:979e4e1a006511dacf628e36fadfecbcc0160a8af6ca7dad2f5025529e082c13", size = 10738433 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b4/95/9c0ecb8eacfe048583706249439ff52105b3f552ea9c4024166c03224270/mypy-1.15.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c4bb0e1bd29f7d34efcccd71cf733580191e9a264a2202b0239da95984c5b559", size = 9861472 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/84/09/9ec95e982e282e20c0d5407bc65031dfd0f0f8ecc66b69538296e06fcbee/mypy-1.15.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:be68172e9fd9ad8fb876c6389f16d1c1b5f100ffa779f77b1fb2176fcc9ab95b", size = 11611424 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/78/13/f7d14e55865036a1e6a0a69580c240f43bc1f37407fe9235c0d4ef25ffb0/mypy-1.15.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c7be1e46525adfa0d97681432ee9fcd61a3964c2446795714699a998d193f1a3", size = 12365450 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/48/e1/301a73852d40c241e915ac6d7bcd7fedd47d519246db2d7b86b9d7e7a0cb/mypy-1.15.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:2e2c2e6d3593f6451b18588848e66260ff62ccca522dd231cd4dd59b0160668b", size = 12551765 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/77/ba/c37bc323ae5fe7f3f15a28e06ab012cd0b7552886118943e90b15af31195/mypy-1.15.0-cp310-cp310-win_amd64.whl", hash = "sha256:6983aae8b2f653e098edb77f893f7b6aca69f6cffb19b2cc7443f23cce5f4828", size = 9274701 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/03/bc/f6339726c627bd7ca1ce0fa56c9ae2d0144604a319e0e339bdadafbbb599/mypy-1.15.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:2922d42e16d6de288022e5ca321cd0618b238cfc5570e0263e5ba0a77dbef56f", size = 10662338 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e2/90/8dcf506ca1a09b0d17555cc00cd69aee402c203911410136cd716559efe7/mypy-1.15.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:2ee2d57e01a7c35de00f4634ba1bbf015185b219e4dc5909e281016df43f5ee5", size = 9787540 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/05/05/a10f9479681e5da09ef2f9426f650d7b550d4bafbef683b69aad1ba87457/mypy-1.15.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:973500e0774b85d9689715feeffcc980193086551110fd678ebe1f4342fb7c5e", size = 11538051 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e9/9a/1f7d18b30edd57441a6411fcbc0c6869448d1a4bacbaee60656ac0fc29c8/mypy-1.15.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5a95fb17c13e29d2d5195869262f8125dfdb5c134dc8d9a9d0aecf7525b10c2c", size = 12286751 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/72/af/19ff499b6f1dafcaf56f9881f7a965ac2f474f69f6f618b5175b044299f5/mypy-1.15.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:1905f494bfd7d85a23a88c5d97840888a7bd516545fc5aaedff0267e0bb54e2f", size = 12421783 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/96/39/11b57431a1f686c1aed54bf794870efe0f6aeca11aca281a0bd87a5ad42c/mypy-1.15.0-cp311-cp311-win_amd64.whl", hash = "sha256:c9817fa23833ff189db061e6d2eff49b2f3b6ed9856b4a0a73046e41932d744f", size = 9265618 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/98/3a/03c74331c5eb8bd025734e04c9840532226775c47a2c39b56a0c8d4f128d/mypy-1.15.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:aea39e0583d05124836ea645f412e88a5c7d0fd77a6d694b60d9b6b2d9f184fd", size = 10793981 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/f0/1a/41759b18f2cfd568848a37c89030aeb03534411eef981df621d8fad08a1d/mypy-1.15.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:2f2147ab812b75e5b5499b01ade1f4a81489a147c01585cda36019102538615f", size = 9749175 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/12/7e/873481abf1ef112c582db832740f4c11b2bfa510e829d6da29b0ab8c3f9c/mypy-1.15.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ce436f4c6d218a070048ed6a44c0bbb10cd2cc5e272b29e7845f6a2f57ee4464", size = 11455675 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b3/d0/92ae4cde706923a2d3f2d6c39629134063ff64b9dedca9c1388363da072d/mypy-1.15.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8023ff13985661b50a5928fc7a5ca15f3d1affb41e5f0a9952cb68ef090b31ee", size = 12410020 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/46/8b/df49974b337cce35f828ba6fda228152d6db45fed4c86ba56ffe442434fd/mypy-1.15.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:1124a18bc11a6a62887e3e137f37f53fbae476dc36c185d549d4f837a2a6a14e", size = 12498582 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/13/50/da5203fcf6c53044a0b699939f31075c45ae8a4cadf538a9069b165c1050/mypy-1.15.0-cp312-cp312-win_amd64.whl", hash = "sha256:171a9ca9a40cd1843abeca0e405bc1940cd9b305eaeea2dda769ba096932bb22", size = 9366614 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/6a/9b/fd2e05d6ffff24d912f150b87db9e364fa8282045c875654ce7e32fffa66/mypy-1.15.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:93faf3fdb04768d44bf28693293f3904bbb555d076b781ad2530214ee53e3445", size = 10788592 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/74/37/b246d711c28a03ead1fd906bbc7106659aed7c089d55fe40dd58db812628/mypy-1.15.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:811aeccadfb730024c5d3e326b2fbe9249bb7413553f15499a4050f7c30e801d", size = 9753611 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a6/ac/395808a92e10cfdac8003c3de9a2ab6dc7cde6c0d2a4df3df1b815ffd067/mypy-1.15.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:98b7b9b9aedb65fe628c62a6dc57f6d5088ef2dfca37903a7d9ee374d03acca5", size = 11438443 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/d2/8b/801aa06445d2de3895f59e476f38f3f8d610ef5d6908245f07d002676cbf/mypy-1.15.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c43a7682e24b4f576d93072216bf56eeff70d9140241f9edec0c104d0c515036", size = 12402541 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c7/67/5a4268782eb77344cc613a4cf23540928e41f018a9a1ec4c6882baf20ab8/mypy-1.15.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:baefc32840a9f00babd83251560e0ae1573e2f9d1b067719479bfb0e987c6357", size = 12494348 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/83/3e/57bb447f7bbbfaabf1712d96f9df142624a386d98fb026a761532526057e/mypy-1.15.0-cp313-cp313-win_amd64.whl", hash = "sha256:b9378e2c00146c44793c98b8d5a61039a048e31f429fb0eb546d93f4b000bedf", size = 9373648 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/09/4e/a7d65c7322c510de2c409ff3828b03354a7c43f5a8ed458a7a131b41c7b9/mypy-1.15.0-py3-none-any.whl", hash = "sha256:5469affef548bd1895d86d3bf10ce2b44e33d86923c29e4d675b3e323437ea3e", size = 2221777 },
 ]
 
 [[package]]
@@ -8073,6 +8134,20 @@ wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/70/a2/f642334db0cabd187fa86b8773257ee6993c6009338a6831d4804e2c5b3c/srsly-2.5.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:6e57b8138082f09e35db60f99757e16652489e9e3692471d8e0c39aa95180688", size = 1086098 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/0d/9b/be48e185c5a010e71b5135e4cdf317ff56b8ac4bc08f394bbf882ac13b05/srsly-2.5.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:bab90b85a63a1fe0bbc74d373c8bb9bb0499ddfa89075e0ebe8d670f12d04691", size = 1100354 },
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/3a/e2/745aeba88a8513017fbac2fd2f9f07b8a36065e51695f818541eb795ec0c/srsly-2.5.1-cp313-cp313-win_amd64.whl", hash = "sha256:e73712be1634b5e1de6f81c273a7d47fe091ad3c79dc779c03d3416a5c117cee", size = 630634 },
+]
+
+[[package]]
+name = "sse-starlette"
+version = "2.1.3"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "starlette" },
+    { name = "uvicorn" },
+]
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/72/fc/56ab9f116b2133521f532fce8d03194cf04dcac25f583cf3d839be4c0496/sse_starlette-2.1.3.tar.gz", hash = "sha256:9cd27eb35319e1414e3d2558ee7414487f9529ce3b3cf9b21434fd110e017169", size = 19678 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/52/aa/36b271bc4fa1d2796311ee7c7283a3a1c348bad426d37293609ca4300eef/sse_starlette-2.1.3-py3-none-any.whl", hash = "sha256:8ec846438b4665b9e8c560fcdea6bc8081a3abf7942faa95e5a744999d219772", size = 9383 },
 ]
 
 [[package]]

@@ -1,34 +1,20 @@
 import dataclasses
 import logging
-from typing import Any, List, Optional, Type, cast
+from typing import Any, List, Optional, Type, Union, cast
 
-from dbgpt._private.config import Config
-from dbgpt.agent.resource import MCPToolPack, PackResourceParameters, ToolPack
+from dbgpt.agent.resource import MCPToolPack, PackResourceParameters
 from dbgpt.util import ParameterDescription
 from dbgpt.util.i18n_utils import _
-
-CFG = Config()
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
 class MCPPackResourceParameters(PackResourceParameters):
-    mcp_name: str = dataclasses.field(
-        metadata={
-            "help": _("MCP name")
-        }
-    )
-    sse_server: str = dataclasses.field(
-        metadata={
-            "help": _("MCP SSE Server URL(Default Local)")
-        }
-    )
-
     @classmethod
     def _resource_version(cls) -> str:
         """Return the resource version."""
-        return "v2"
+        return "v1"
 
     @classmethod
     def to_configurations(
@@ -46,7 +32,7 @@ class MCPPackResourceParameters(PackResourceParameters):
             return conf
         # Compatible with old version
         for param in conf:
-            if param.param_name == "mcp_name":
+            if param.param_name == "tool_name":
                 return param.valid_values or []
         return []
 
@@ -61,13 +47,9 @@ class MCPPackResourceParameters(PackResourceParameters):
         return super().from_dict(copied_data, ignore_extra_fields=ignore_extra_fields)
 
 
-class MCPSSEToolPack(ToolPack):
-    def __init__(self, mcp_name: str, mcp_server:str, **kwargs):
-        kwargs.pop("name")
-        super().__init__([], name="MCP Tool Pack", **kwargs)
-        # Select tool name
-        self._mcp_server = mcp_server
-        self._mcp_name = mcp_name
+class MCPSSEToolPack(MCPToolPack):
+    def __init__(self, mcp_servers: Union[str, List[str]], **kwargs):
+        super().__init__(mcp_servers=mcp_servers, **kwargs)
 
     @classmethod
     def type_alias(cls) -> str:
@@ -79,24 +61,11 @@ class MCPSSEToolPack(ToolPack):
 
         @dataclasses.dataclass
         class _DynMCPSSEPackResourceParameters(MCPPackResourceParameters):
-            __type__ = "tool(mcp)"
-            mcp_name: str = dataclasses.field(
+            mcp_servers: str = dataclasses.field(
+                default="http://127.0.0.1:8000/sse",
                 metadata={
-                    "help": _("MCP name")
-                }
+                    "help": _("MCP SSE Server URL, split by ':'"),
+                },
             )
-            sse_server: str = dataclasses.field(
-                metadata={
-                    "help": _("MCP SSE Server URL(Default Local)")
-                }
-            )
-
 
         return _DynMCPSSEPackResourceParameters
-
-    async def preload_resource(self):
-        """Preload the resource."""
-        tool_pack: MCPToolPack = MCPToolPack(self._mcp_server)
-        if not tool_pack:
-            raise ValueError(f"MPC {self._mcp_server} not found")
-        self._resources = tool_pack._resources

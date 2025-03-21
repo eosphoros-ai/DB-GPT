@@ -57,6 +57,44 @@ class MDXDocGenerator:
         link_url += filename[:-4]
         return link_url
 
+    def get_rel_link(self, cls: Type, doc_id: str, source_cls: Type = None) -> str:
+        """Generate a relative link from the source class to the target class.
+
+        Args:
+            cls: The target class to generate a link to
+            doc_id: The document ID of the target class
+            source_cls: The source class that will contain the link (optional)
+
+        Returns:
+            A relative URL path to the target class documentation
+        """
+        filename = self.generate_safe_filename(doc_id)
+        target_type, _ = self._parse_class_metadata(cls)
+
+        # If source_cls is not provided, return a simple path without relative
+        # navigation
+        if not source_cls:
+            if target_type:
+                return f"{target_type}/{filename[:-4]}"
+            return filename[:-4]
+
+        # Get the source class type to determine relative path
+        source_type, _ = self._parse_class_metadata(source_cls)
+
+        # Same type - link within the same directory
+        if source_type == target_type:
+            return filename[:-4]
+
+        # Different types - need to navigate up and then down
+        if source_type and target_type:
+            return f"../{target_type}/{filename[:-4]}"
+        elif source_type and not target_type:
+            return f"../{filename[:-4]}"
+        elif not source_type and target_type:
+            return f"{target_type}/{filename[:-4]}"
+        else:
+            return filename[:-4]
+
     def get_desc_for_class(self, cls: Type, default_desc: str = "") -> str:
         """Get the description for a class."""
         doc_id = self.get_class_doc_id(cls)
@@ -87,7 +125,10 @@ class MDXDocGenerator:
         return {"type": "code", "content": str(value)}
 
     def process_nested_fields(
-        self, nested_fields: Dict[str, List[ParameterDescription]], output_dir: Path
+        self,
+        nested_fields: Dict[str, List[ParameterDescription]],
+        output_dir: Path,
+        source_cls: Type,
     ) -> Tuple[List[Dict], List[str]]:
         """Handle nested fields in a parameter description."""
         links = []
@@ -105,7 +146,8 @@ class MDXDocGenerator:
                 if doc_id not in self.processed_classes:
                     new_files = self.generate_class_doc(nested_cls, output_dir)
                     generated_files.extend(new_files)
-                link_url = self.get_abs_link(nested_cls, doc_id)
+                # Use relative link instead of absolute link
+                link_url = self.get_rel_link(nested_cls, doc_id, source_cls=source_cls)
                 links.append(
                     {
                         "type": "link",
@@ -210,7 +252,7 @@ class MDXDocGenerator:
                 # Handle nested fields
                 if param.nested_fields:
                     nested_links, nested_files = self.process_nested_fields(
-                        param.nested_fields, output_dir
+                        param.nested_fields, output_dir, source_cls=cls
                     )
                     generated_files.extend(nested_files)
                     if nested_links:
@@ -393,15 +435,15 @@ class MDXDocGenerator:
                             cfg_desc = self.get_desc_for_class(cls, cfg_desc)
 
                             doc_id = self.get_class_doc_id(cls)
-                            doc_link = self.get_abs_link(cls, doc_id)
-
+                            # doc_link = self.get_abs_link(cls, doc_id)
+                            doc_link = self.generate_safe_filename(doc_id)
                             f_index.write("  {\n")
                             f_index.write(f'    "name": "{cls_name}",\n')
                             f_index.write(
                                 f'    "description": {json.dumps(cfg_desc)},\n'
                             )  # noqa
                             if doc_link:
-                                f_index.write(f'    "link": "{doc_link}"\n')
+                                f_index.write(f'    "link": "./{doc_link[:-4]}"\n')
                             else:
                                 f_index.write('    "link": ""\n')
                             f_index.write("  },\n")
@@ -446,7 +488,13 @@ class MDXDocGenerator:
                     # cfg_desc = cfg_desc.replace("`", "'")
                     doc_id = self.get_class_doc_id(cls)
                     if doc_id in self.link_cache:
-                        link_url = self.get_abs_link(cls, doc_id)
+                        # Use relative links based on the config type
+                        if cfg_type != "other":
+                            link_url = (
+                                f"{cfg_type}/{self.generate_safe_filename(doc_id)[:-4]}"
+                            )
+                        else:
+                            link_url = f"{self.generate_safe_filename(doc_id)[:-4]}"
                         f.write(f"| [{cls_name}]({link_url}) | {cfg_desc} |\n")
                     else:
                         f.write(f"| {cls_name} | {cfg_desc} |\n")

@@ -44,7 +44,6 @@ async def main():
         ),
     )
 
-
     agent_memory = AgentMemory()
     agent_memory.gpts_memory.init(conv_id="test456")
 
@@ -68,7 +67,7 @@ async def main():
     await user_proxy.initiate_chat(
         recipient=tool_engineer,
         reviewer=user_proxy,
-        message="看下这个页面https://github.com/modelcontextprotocol", ##配合 mcp-server-fetch 使用
+        message="看下这个页面: https://www.cnblogs.com/fnng/p/18744210",  ##配合 mcp-server-fetch 使用
         # message="有多少个文件", ## 配合server-filesystem 这个mcp使用
     )
 
