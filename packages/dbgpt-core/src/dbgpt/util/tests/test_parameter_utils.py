@@ -198,8 +198,6 @@ def test_extract_union_field_type():
         )
 
     desc_list = _get_parameter_descriptions(ComplexConfig)
-    print("desc_list[0]: ", desc_list[0])
-    print("desc_list[0].param_name: ", desc_list[0].param_name)
     # Test union type
     assert desc_list[0].param_name == "union_field"
     assert desc_list[0].param_type == "string"
