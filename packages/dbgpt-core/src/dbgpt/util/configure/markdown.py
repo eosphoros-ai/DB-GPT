@@ -201,7 +201,9 @@ class MDXDocGenerator:
         self.processed_classes.add(doc_id)
         generated_files = []
 
-        descriptions = ConfigurationManager.parse_description(cls, verbose=True)
+        descriptions = ConfigurationManager.parse_description(
+            cls, cache_enable=True, verbose=True
+        )
         cfg_type, cfg_desc = self._parse_class_metadata(cls)
 
         filename = self.generate_safe_filename(doc_id)
@@ -308,7 +310,9 @@ class MDXDocGenerator:
             return
         processed.add(class_id)
 
-        descriptions = ConfigurationManager.parse_description(cls, verbose=True)
+        descriptions = ConfigurationManager.parse_description(
+            cls, cache_enable=True, verbose=True
+        )
         for param in descriptions:
             if param.nested_fields:
                 for nested_type, nested_params in param.nested_fields.items():
