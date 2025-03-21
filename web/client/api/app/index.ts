@@ -8,6 +8,8 @@ import {
   TeamMode,
 } from '@/types/app';
 
+import { ConfigurableParams } from '@/types/common';
+
 import { GET, POST } from '../index';
 
 /**
@@ -57,6 +59,11 @@ export const getAppStrategy = () => {
 export const getResource = (data: Record<string, string>) => {
   return GET<Record<string, string>, Record<string, any>[]>(`/api/v1/app/resources/list?type=${data.type}`);
 };
+
+export const getResourceV2 = (data: Record<string, string>) => {
+  return GET<Record<string, string>, ConfigurableParams[]>(`/api/v1/app/resources/list?type=${data.type}&version=v2`);
+};
+
 /**
  *  创建native_app应用
  *  获取应用类型

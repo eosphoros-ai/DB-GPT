@@ -21,7 +21,7 @@ from .manage import (  # noqa: F401
 )
 from .pack import PackResourceParameters, ResourcePack  # noqa: F401
 from .tool.base import BaseTool, FunctionTool, ToolParameter, tool  # noqa: F401
-from .tool.pack import AutoGPTPluginToolPack, ToolPack  # noqa: F401
+from .tool.pack import AutoGPTPluginToolPack, MCPToolPack, ToolPack  # noqa: F401
 
 __all__ = [
     "AgentResource",
@@ -46,4 +46,5 @@ __all__ = [
     "tool",
     "AutoGPTPluginToolPack",
     "ToolPack",
+    "MCPToolPack",
 ]

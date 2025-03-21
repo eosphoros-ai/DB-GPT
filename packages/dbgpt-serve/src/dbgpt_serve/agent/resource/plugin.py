@@ -85,7 +85,7 @@ class PluginToolPack(ToolPack):
 
         return _DynPluginPackResourceParameters
 
-    def preload_resource(self):
+    async def preload_resource(self):
         """Preload the resource."""
         agent_module: ModulePlugin = CFG.SYSTEM_APP.get_component(
             ComponentType.PLUGIN_HUB, ModulePlugin
