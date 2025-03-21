@@ -44,16 +44,32 @@
 
 🚀 **データ3.0時代には、モデルとデータベースを基盤として、企業や開発者がより少ないコードで独自のアプリケーションを構築できます。**
 
+### DISCKAIMER
+- [disckaimer](./DISCKAIMER.md)
+
 ### AIネイティブデータアプリ
+
 ---
-- 🔥🔥🔥 [V0.5.0リリース | ワークフローとエージェントを通じてネイティブデータアプリケーションを開発](https://docs.dbgpt.site/docs/changelog/Released_V0.5.0)
+- 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
+  - [サポート MCP Protocol](https://github.com/modelcontextprotocol)
+  - [サポート DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
+  - [サポート QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+  - [基本モジュールをリファクタリングする]()
+    - [dbgpt-app](./packages/dbgpt-app)
+    - [dbgpt-core](./packages/dbgpt-core)
+    - [dbgpt-serve](./packages/dbgpt-serve)
+    - [dbgpt-client](./packages/dbgpt-client)
+    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
+    - [dbgpt-ext](./packages/dbgpt-ext)
 ---
 
-![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
+![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
 
-![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
+![app_manage_chat_data_v0 6](https://github.com/user-attachments/assets/c8cc85bb-e3c2-4fab-8fb9-7b4b469d0611)
 
-![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
+![chat_dashboard_display_v0 6](https://github.com/user-attachments/assets/b15d6ebe-54c4-4527-a16d-02fbbaf20dc9)
+
+![agent_prompt_awel_v0 6](https://github.com/user-attachments/assets/40761507-a1e1-49d4-b49a-3dd9a5ea41cc)
 
 ## 目次
 - [紹介](#紹介)
