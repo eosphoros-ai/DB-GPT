@@ -103,14 +103,19 @@ clean: ## Clean up the environment
 clean-dist: ## Clean up the distribution
 	rm -rf dist/ *.egg-info build/
 
-.PHONY: package
-package: clean-dist ## Package the project for distribution
-	IS_DEV_MODE=false python setup.py sdist bdist_wheel
+.PHONY: build 
+build: clean-dist ## Package the project for distribution
+	uv build --all-packages
+	rm -rf dist/dbgpt_app-*
+	rm -rf dist/dbgpt_serve-*
 
-.PHONY: upload
-upload: ## Upload the package to PyPI
-	# upload to testpypi: twine upload --repository testpypi dist/*
-	twine upload dist/*
+.PHONY: publish
+publish: build ## Upload the package to PyPI
+	uv publish
+
+.PHONY: publish-test
+publish-test: build ## Upload the package to PyPI
+	uv publish --index testpypi
 
 .PHONY: help
 help:  ## Display this help screen
