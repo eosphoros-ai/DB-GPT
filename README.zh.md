@@ -49,7 +49,7 @@
 ### AI原生数据智能应用
 ---
 - [V0.7.0发布——一系列重大功能更新](https://www.yuque.com/eosphoros/dbgpt-docs/asweou4i9rhnwchm)
-  - 支持MCP协议
+  - [支持MCP协议](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
   - 支持DeepSeek-R1、QwQ-32B等推理模型
   - 重构基础模块
     - [dbgpt-app](./packages/dbgpt-app)

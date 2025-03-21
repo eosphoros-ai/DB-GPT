@@ -51,7 +51,7 @@
 
 ---
 - 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
-  - [サポート MCP Protocol](https://github.com/modelcontextprotocol)
+  - [サポート MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
   - [サポート DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
   - [サポート QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
   - [基本モジュールをリファクタリングする]()
