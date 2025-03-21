@@ -305,7 +305,9 @@ class AWELAgentOperator(
                 self.awel_agent.agent_prompt.code
             )
 
-        resource = get_resource_manager().build_resource(self.awel_agent.resources)
+        resource = await self.blocking_func_to_async(
+            get_resource_manager().build_resource, self.awel_agent.resources
+        )
         agent = (
             await agent_cls(**kwargs)
             .bind(input_value.memory)

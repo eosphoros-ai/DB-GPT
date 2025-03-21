@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, cast
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.agent import AgentMessage, ConversableAgent
 from dbgpt.util import ParameterDescription
+from dbgpt.util.i18n_utils import _
 
 from .base import Resource, ResourceParameters, ResourceType
 
@@ -63,18 +64,7 @@ class AppResource(Resource[ResourceParameters]):
         class _DynAppResourceParameters(ResourceParameters):
             """Application resource class."""
 
-            valid_values = []
-
             apps = cls._get_app_list()
-            for app in apps:
-                valid_values.append(
-                    {
-                        "label": f"{app.name}({app.code})",
-                        "key": app.code,
-                        "description": app.desc,
-                    }
-                )
-
             valid_values = [
                 {
                     "label": f"{app.name}({app.code})",
@@ -86,7 +76,7 @@ class AppResource(Resource[ResourceParameters]):
 
             app_code: str = dataclasses.field(
                 metadata={
-                    "help": "app code",
+                    "help": _("App code"),
                     "valid_values": valid_values,
                 },
             )

@@ -22,6 +22,7 @@ from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import LLMClient, PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
+from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.prompt.api.endpoints import get_service
 
 from ..db import GptsMessagesDao
@@ -216,8 +217,8 @@ async def create_agent_from_gpt_detail(
             prompt_code=record.prompt_template
         )
 
-    depend_resource = get_resource_manager().build_resource(
-        record.resources, version="v1"
+    depend_resource = await blocking_func_to_async(
+        CFG.SYSTEM_APP, get_resource_manager().build_resource, record.resources
     )
 
     agent = (

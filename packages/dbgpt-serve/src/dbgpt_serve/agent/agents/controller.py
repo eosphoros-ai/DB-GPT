@@ -36,6 +36,7 @@ from dbgpt.util.tracer import TracerManager
 from dbgpt_app.dbgpt_server import system_app
 from dbgpt_app.scene.base import ChatScene
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
+from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.prompt.api.endpoints import get_service
 from dbgpt_serve.prompt.service import service as PromptService
 
@@ -510,7 +511,9 @@ class MultiAgents(BaseComponent, ABC):
                     prompt_template: PromptTemplate = prompt_service.get_template(
                         prompt_code=record.prompt_template
                     )
-                depend_resource = rm.build_resource(record.resources, version="v1")
+                depend_resource = await blocking_func_to_async(
+                    CFG.SYSTEM_APP, rm.build_resource, record.resources
+                )
                 agent = (
                     await cls()
                     .bind(context)
