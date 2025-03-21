@@ -45,9 +45,17 @@
 🚀 **データ3.0時代には、モデルとデータベースを基盤として、企業や開発者がより少ないコードで独自のアプリケーションを構築できます。**
 
 ### AIネイティブデータアプリ
----
-- 🔥🔥🔥 [V0.5.0リリース | ワークフローとエージェントを通じてネイティブデータアプリケーションを開発](https://docs.dbgpt.site/docs/changelog/Released_V0.5.0)
----
+- 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
+  - [サポート MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+  - [サポート DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
+  - [サポート QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+  - [基本モジュールをリファクタリングする]()
+    - [dbgpt-app](./packages/dbgpt-app)
+    - [dbgpt-core](./packages/dbgpt-core)
+    - [dbgpt-serve](./packages/dbgpt-serve)
+    - [dbgpt-client](./packages/dbgpt-client)
+    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
+    - [dbgpt-ext](./packages/dbgpt-ext)
 
 ![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
 
