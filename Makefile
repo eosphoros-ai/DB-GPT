@@ -19,18 +19,30 @@ $(VENV)/.venv-timestamp: uv.lock
 	uv venv --python 3.11 $(VENV)
 	uv pip install --prefix $(VENV) ruff
 	uv pip install --prefix $(VENV) mypy
+	uv pip install --prefix $(VENV) pytest
 	touch $(VENV)/.venv-timestamp
 
 testenv: $(VENV)/.testenv
 
 $(VENV)/.testenv: $(VENV)/bin/activate
-	. $(VENV_BIN)/activate && uv sync --active --all-packages \
-		--extra "base" \
-		--extra "proxy_openai" \
-		--extra "rag" \
-		--extra "storage_chromadb" \
-		--extra "dbgpts" \
-		--link-mode=copy
+	# check uv version and use appropriate parameters
+	if . $(VENV_BIN)/activate && uv sync --help | grep -q -- "--active"; then \
+		. $(VENV_BIN)/activate && uv sync --active --all-packages \
+			--extra "base" \
+			--extra "proxy_openai" \
+			--extra "rag" \
+			--extra "storage_chromadb" \
+			--extra "dbgpts" \
+			--link-mode=copy; \
+	else \
+		. $(VENV_BIN)/activate && uv sync --all-packages \
+			--extra "base" \
+			--extra "proxy_openai" \
+			--extra "rag" \
+			--extra "storage_chromadb" \
+			--extra "dbgpts" \
+			--link-mode=copy; \
+	fi
 	cp .devcontainer/dbgpt.pth $(VENV)/lib/python3.11/site-packages
 	touch $(VENV)/.testenv
 
@@ -96,7 +108,7 @@ clean: ## Clean up the environment
 	rm -rf $(VENV)
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -delete
-	find . -type d -name '.pytest_cache' -delete
+	# find . -type d -name '.pytest_cache' -delete
 	find . -type d -name '.coverage' -delete
 
 .PHONY: clean-dist
