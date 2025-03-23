@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import os
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings, LLMClient
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -147,7 +147,6 @@ GRAPH_PARAMETERS = [
             optional=True,
             default=None,
         ),
-
     ],
 )
 class BuiltinKnowledgeGraph(KnowledgeGraphBase):

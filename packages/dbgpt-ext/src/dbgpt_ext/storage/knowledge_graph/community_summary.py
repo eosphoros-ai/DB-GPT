@@ -172,7 +172,7 @@ logger = logging.getLogger(__name__)
             optional=True,
             default=None,
         ),
-    ]
+    ],
 )
 class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     """Community summary knowledge graph class."""
@@ -303,7 +303,6 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     def get_config(self) -> TuGraphStoreConfig:
         """Get the knowledge graph config."""
         return self._config
-
 
     @property
     def embeddings(self) -> Embeddings:

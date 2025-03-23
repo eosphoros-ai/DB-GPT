@@ -9,8 +9,9 @@ from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
+    _VECTOR_STORE_COMMON_PARAMETERS,
     VectorStoreBase,
-    VectorStoreConfig, _VECTOR_STORE_COMMON_PARAMETERS,
+    VectorStoreConfig,
 )
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _

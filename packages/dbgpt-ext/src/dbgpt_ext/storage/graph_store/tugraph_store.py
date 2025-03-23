@@ -7,11 +7,11 @@ import os
 from dataclasses import dataclass, field
 from typing import List
 
-from dbgpt.core.awel.flow import register_resource, ResourceCategory, Parameter
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.graph import GraphElemType
-from dbgpt_ext.datasource.conn_tugraph import TuGraphConnector
 from dbgpt.util.i18n_utils import _
+from dbgpt_ext.datasource.conn_tugraph import TuGraphConnector
 
 logger = logging.getLogger(__name__)
 
