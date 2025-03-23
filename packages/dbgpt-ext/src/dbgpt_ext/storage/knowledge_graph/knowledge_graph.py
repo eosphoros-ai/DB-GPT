@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import os
-from dataclasses import dataclass, field
 from typing import List, Optional, Any
 
 from dbgpt.core import Chunk, Embeddings, LLMClient
@@ -11,7 +10,7 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.graph import Graph
-from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase, KnowledgeGraphConfig
+from dbgpt.storage.knowledge_graph.base import KnowledgeGraphBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 from dbgpt_ext.rag.transformer.triplet_extractor import TripletExtractor
