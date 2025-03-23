@@ -21,6 +21,12 @@ dbgpt-app = { workspace = true }
 dbgpt-acc-auto = { workspace = true }
 dbgpt-acc-flash-attn = { workspace = true }
 
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
+
 [tool.uv.workspace]
 members = [
   "packages/dbgpt-app", 
@@ -28,7 +34,7 @@ members = [
   "packages/dbgpt-core", 
   "packages/dbgpt-ext", 
   "packages/dbgpt-serve", 
-  "packages/dbgpt-accelerator/*"
+  "packages/dbgpt-accelerator/dbgpt-acc*"
 ]
 
 [tool.uv]
@@ -48,7 +54,9 @@ dev-dependencies = [
     "pytest-cov>=6.0.0",
     "jupyter",
     "pre-commit>=4.2.0",
+    "mypy>=1.15.0",
 ]
+
 
 [tool.pytest.ini_options]
 pythonpath = ["packages"]

@@ -4,16 +4,20 @@ import dataclasses
 import json
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union, cast
 
 from pydantic import field_validator
 
 from dbgpt._private.pydantic import BaseModel, model_to_dict
 from dbgpt.core import Chunk
+from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters, _get_parameter_descriptions
 
 P = TypeVar("P", bound="ResourceParameters")
 T = TypeVar("T", bound="Resource")
+
+_DEFAULT_RESOURCE_NAME = _("My Agent Resource")
+_DEFAULT_RESOURCE_NAME_DESCRIPTION = _("Resource name")
 
 
 class ResourceType(str, Enum):
@@ -40,7 +44,7 @@ class ResourceParameters(BaseParameters):
     It defines the parameters for building a resource.
     """
 
-    name: str = dataclasses.field(metadata={"help": "Resource name", "tags": "fixed"})
+    name: str = dataclasses.field(metadata={"help": _("Resource name")})
 
     @classmethod
     def _resource_version(cls) -> str:
@@ -54,7 +58,12 @@ class ResourceParameters(BaseParameters):
         version: Optional[str] = None,
     ) -> Any:
         """Convert the parameters to configurations."""
-        return _get_parameter_descriptions(parameters)
+        desc_list = _get_parameter_descriptions(parameters)
+        for desc in desc_list:
+            if desc.param_name == "name" and not desc.default_value:
+                desc.default_value = str(_DEFAULT_RESOURCE_NAME)
+                desc.description = str(_DEFAULT_RESOURCE_NAME_DESCRIPTION)
+        return desc_list
 
 
 class Resource(ABC, Generic[P]):
@@ -92,7 +101,7 @@ class Resource(ABC, Generic[P]):
         """Initialize the resource with parameters."""
         pass
 
-    def preload_resource(self):
+    async def preload_resource(self):
         """Preload the resource."""
         pass
 
@@ -224,13 +233,14 @@ class AgentResource(BaseModel):
     """Agent resource class."""
 
     type: str
-    value: str
+    value: Union[str, Dict[str, Any]]
     name: Optional[str] = None
 
     is_dynamic: bool = (
         False  # Is the current resource predefined or dynamically passed in?
     )
     context: Optional[dict] = None
+    version: Optional[str] = "v2"
 
     def resource_prompt_template(self, **kwargs) -> str:
         """Get the resource prompt template."""
@@ -239,6 +249,8 @@ class AgentResource(BaseModel):
     @field_validator("value", mode="before")
     def parse_value(cls, value):
         """Parse value."""
+        if value is not None and isinstance(value, dict):
+            return value
         return str(value)
 
     @staticmethod
@@ -246,14 +258,40 @@ class AgentResource(BaseModel):
         """Create an AgentResource object from a dictionary."""
         if d is None:
             return None
-        return AgentResource(
+
+        v2_resource = False
+        resource_value = d.get("value")
+        if resource_value and isinstance(resource_value, str):
+            try:
+                json.loads(resource_value)
+                # V2 value is JSON string
+                v2_resource = True
+            except json.JSONDecodeError:
+                pass
+
+        if not v2_resource:
+            pass
+
+        raw_resource = AgentResource(
             type=d.get("type"),
             name=d.get("name"),
-            introduce=d.get("introduce"),
-            value=d.get("value", None),
+            # introduce=d.get("introduce"),
+            value=resource_value,
             is_dynamic=d.get("is_dynamic", False),
             context=d.get("context", None),
         )
+        if v2_resource:
+            return raw_resource
+        else:
+            # Transform the old resource to the new one
+            from .manage import get_resource_manager
+
+            v2_resource_dict = get_resource_manager().build_resource_by_type(
+                raw_resource.type, raw_resource, return_resource=False
+            )
+            # To JSON string
+            raw_resource.value = json.dumps(v2_resource_dict, ensure_ascii=False)
+            return raw_resource
 
     @staticmethod
     def from_json_list_str(d: Optional[str]) -> Optional[List["AgentResource"]]:

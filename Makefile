@@ -19,18 +19,31 @@ $(VENV)/.venv-timestamp: uv.lock
 	uv venv --python 3.11 $(VENV)
 	uv pip install --prefix $(VENV) ruff
 	uv pip install --prefix $(VENV) mypy
+	uv pip install --prefix $(VENV) pytest
 	touch $(VENV)/.venv-timestamp
 
 testenv: $(VENV)/.testenv
 
 $(VENV)/.testenv: $(VENV)/bin/activate
-	uv sync --all-packages \
-		--extra "base" \
-		--extra "proxy_openai" \
-		--extra "rag" \
-		--extra "storage_chromadb" \
-		--extra "dbgpts" \
-		--link-mode=copy
+	# check uv version and use appropriate parameters
+	if . $(VENV_BIN)/activate && uv sync --help | grep -q -- "--active"; then \
+		. $(VENV_BIN)/activate && uv sync --active --all-packages \
+			--extra "base" \
+			--extra "proxy_openai" \
+			--extra "rag" \
+			--extra "storage_chromadb" \
+			--extra "dbgpts" \
+			--link-mode=copy; \
+	else \
+		. $(VENV_BIN)/activate && uv sync --all-packages \
+			--extra "base" \
+			--extra "proxy_openai" \
+			--extra "rag" \
+			--extra "storage_chromadb" \
+			--extra "dbgpts" \
+			--link-mode=copy; \
+	fi
+	cp .devcontainer/dbgpt.pth $(VENV)/lib/python3.11/site-packages
 	touch $(VENV)/.testenv
 
 
@@ -69,7 +82,7 @@ fmt-check: setup ## Check Python code formatting and style without making change
 pre-commit: fmt-check test test-doc mypy ## Run formatting and unit tests before committing
 
 test: $(VENV)/.testenv ## Run unit tests
-	$(VENV_BIN)/pytest dbgpt
+	$(VENV_BIN)/pytest --pyargs dbgpt
 
 .PHONY: test-doc
 test-doc: $(VENV)/.testenv ## Run doctests
@@ -88,28 +101,33 @@ mypy: $(VENV)/.testenv ## Run mypy checks
 
 .PHONY: coverage
 coverage: setup ## Run tests and report coverage
-	$(VENV_BIN)/pytest dbgpt --cov=dbgpt
+	$(VENV_BIN)/pytest --pyargs dbgpt --cov=dbgpt
 
 .PHONY: clean
 clean: ## Clean up the environment
 	rm -rf $(VENV)
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -delete
-	find . -type d -name '.pytest_cache' -delete
+	# find . -type d -name '.pytest_cache' -delete
 	find . -type d -name '.coverage' -delete
 
 .PHONY: clean-dist
 clean-dist: ## Clean up the distribution
 	rm -rf dist/ *.egg-info build/
 
-.PHONY: package
-package: clean-dist ## Package the project for distribution
-	IS_DEV_MODE=false python setup.py sdist bdist_wheel
+.PHONY: build 
+build: clean-dist ## Package the project for distribution
+	uv build --all-packages
+	rm -rf dist/dbgpt_app-*
+	rm -rf dist/dbgpt_serve-*
 
-.PHONY: upload
-upload: ## Upload the package to PyPI
-	# upload to testpypi: twine upload --repository testpypi dist/*
-	twine upload dist/*
+.PHONY: publish
+publish: build ## Upload the package to PyPI
+	uv publish
+
+.PHONY: publish-test
+publish-test: build ## Upload the package to PyPI
+	uv publish --index testpypi
 
 .PHONY: help
 help:  ## Display this help screen

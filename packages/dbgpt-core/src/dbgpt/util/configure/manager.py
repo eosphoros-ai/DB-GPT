@@ -661,7 +661,7 @@ class ConfigurationManager:
     def parse_description(
         cls,
         target_cls: Type[T],
-        cache_enable: bool = True,
+        cache_enable: bool = False,
         skip_base: bool = False,
         _visited: Optional[Set[str]] = None,
         _call_path: Optional[List[str]] = None,
