@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from dbgpt.core import Chunk, Embeddings, LLMClient
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -68,50 +68,50 @@ GRAPH_PARAMETERS = [
 ]
 
 
-@register_resource(
-    _("Builtin Graph Config"),
-    "knowledge_graph_config",
-    category=ResourceCategory.KNOWLEDGE_GRAPH,
-    description=_("knowledge graph config."),
-    parameters=[
-        *GRAPH_PARAMETERS,
-        Parameter.build_from(
-            _("Knowledge Graph Type"),
-            "graph_store_type",
-            str,
-            description=_("graph store type."),
-            optional=True,
-            default="TuGraph",
-        ),
-        Parameter.build_from(
-            _("LLM Client"),
-            "llm_client",
-            LLMClient,
-            description=_("llm client for extract graph triplets."),
-        ),
-        Parameter.build_from(
-            _("LLM Model Name"),
-            "model_name",
-            str,
-            description=_("llm model name."),
-            optional=True,
-            default=None,
-        ),
-    ],
-)
-@dataclass
-class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
-    """Builtin knowledge graph config."""
-
-    __type__ = "tugraph"
-
-    llm_model: Optional[str] = field(
-        default=None, metadata={"description": "llm model name."}
-    )
-
-    graph_type: Optional[str] = field(
-        default="TuGraph", metadata={"description": "graph store type."}
-    )
+# @register_resource(
+#     _("Builtin Graph Config"),
+#     "knowledge_graph_config",
+#     category=ResourceCategory.KNOWLEDGE_GRAPH,
+#     description=_("knowledge graph config."),
+#     parameters=[
+#         *GRAPH_PARAMETERS,
+#         Parameter.build_from(
+#             _("Knowledge Graph Type"),
+#             "graph_store_type",
+#             str,
+#             description=_("graph store type."),
+#             optional=True,
+#             default="TuGraph",
+#         ),
+#         Parameter.build_from(
+#             _("LLM Client"),
+#             "llm_client",
+#             LLMClient,
+#             description=_("llm client for extract graph triplets."),
+#         ),
+#         Parameter.build_from(
+#             _("LLM Model Name"),
+#             "model_name",
+#             str,
+#             description=_("llm model name."),
+#             optional=True,
+#             default=None,
+#         ),
+#     ],
+# )
+# @dataclass
+# class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
+#     """Builtin knowledge graph config."""
+#
+#     __type__ = "tugraph"
+#
+#     llm_model: Optional[str] = field(
+#         default=None, metadata={"description": "llm model name."}
+#     )
+#
+#     graph_type: Optional[str] = field(
+#         default="TuGraph", metadata={"description": "graph store type."}
+#     )
 
 
 @register_resource(
@@ -121,13 +121,34 @@ class BuiltinKnowledgeGraphConfig(KnowledgeGraphConfig):
     description=_("Builtin Knowledge Graph."),
     parameters=[
         Parameter.build_from(
-            _("Builtin Knowledge Graph Config."),
+            _("Graph Store Config"),
             "config",
-            BuiltinKnowledgeGraphConfig,
-            description=_("Builtin Knowledge Graph Config."),
+            GraphStoreConfig,
+            description=_("graph store config."),
+        ),
+        Parameter.build_from(
+            _("Graph Store Name"),
+            "name",
+            str,
+            optional=True,
+            default="dbgpt",
+            description=_("Graph Store Name"),
+        ),
+        Parameter.build_from(
+            _("LLM Client"),
+            "llm_client",
+            LLMClient,
+            description=_("llm client for extract graph triplets."),
+        ),
+        Parameter.build_from(
+            _("LLM Model Name"),
+            "llm_model",
+            str,
+            description=_("kg extract llm model name."),
             optional=True,
             default=None,
         ),
+
     ],
 )
 class BuiltinKnowledgeGraph(KnowledgeGraphBase):
@@ -167,6 +188,11 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
     def get_config(self) -> TuGraphStoreConfig:
         """Get the knowledge graph config."""
         return self._config
+
+    @property
+    def embeddings(self) -> Any:
+        """Get the knowledge graph config."""
+        return None
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist triplets to graph store."""

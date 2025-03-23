@@ -13,7 +13,7 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
     VectorStoreBase,
-    VectorStoreConfig,
+    VectorStoreConfig, _VECTOR_STORE_COMMON_PARAMETERS,
 )
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
 from dbgpt.util import string_utils
@@ -77,6 +77,7 @@ class ChromaVectorConfig(VectorStoreConfig):
             optional=True,
             default=None,
         ),
+        *_VECTOR_STORE_COMMON_PARAMETERS,
     ],
 )
 class ChromaStore(VectorStoreBase):

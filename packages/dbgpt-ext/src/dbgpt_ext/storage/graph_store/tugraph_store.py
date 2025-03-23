@@ -7,13 +7,55 @@ import os
 from dataclasses import dataclass, field
 from typing import List
 
+from dbgpt.core.awel.flow import register_resource, ResourceCategory, Parameter
 from dbgpt.storage.graph_store.base import GraphStoreBase, GraphStoreConfig
 from dbgpt.storage.graph_store.graph import GraphElemType
 from dbgpt_ext.datasource.conn_tugraph import TuGraphConnector
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
 
+@register_resource(
+    _("TuGraph Graph Config"),
+    "tugraph_config",
+    category=ResourceCategory.KNOWLEDGE_GRAPH,
+    description=_("TuGraph config."),
+    parameters=[
+        Parameter.build_from(
+            _("host"),
+            "host",
+            str,
+            optional=True,
+            default="127.0.0.1",
+            description=_("TuGraph host"),
+        ),
+        Parameter.build_from(
+            _("port"),
+            "port",
+            int,
+            optional=True,
+            default="7687",
+            description=_("TuGraph port"),
+        ),
+        Parameter.build_from(
+            _("username"),
+            "username",
+            str,
+            optional=True,
+            default="admin",
+            description=_("TuGraph username"),
+        ),
+        Parameter.build_from(
+            _("password"),
+            "password",
+            str,
+            optional=True,
+            default="73@TuGraph",
+            description=_("TuGraph password"),
+        ),
+    ],
+)
 @dataclass
 class TuGraphStoreConfig(GraphStoreConfig):
     """TuGraph store config."""

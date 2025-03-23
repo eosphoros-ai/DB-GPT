@@ -285,6 +285,12 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         """Get the knowledge graph config."""
         return self._config
 
+
+    @property
+    def embeddings(self) -> Embeddings:
+        """Get the knowledge graph config."""
+        return self._embedding_fn
+
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""
         if not self.vector_name_exists():

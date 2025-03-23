@@ -58,7 +58,7 @@ class VectorStorageOperator(MapOperator[List[Chunk], List[Chunk]]):
         """Init the datasource operator."""
         MapOperator.__init__(self, **kwargs)
         self._vector_store = vector_store
-        self._embeddings = vector_store.get_config().embedding_fn
+        self._embeddings = vector_store.embeddings
         self._max_chunks_once_load = max_chunks_once_load
         self.vector_store = vector_store
 

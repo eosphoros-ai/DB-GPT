@@ -17,7 +17,7 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
     VectorStoreBase,
-    VectorStoreConfig,
+    VectorStoreConfig, _VECTOR_STORE_COMMON_PARAMETERS,
 )
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
 from dbgpt.util.i18n_utils import _
@@ -180,6 +180,7 @@ class OceanBaseConfig(VectorStoreConfig):
             optional=True,
             default=None,
         ),
+        *_VECTOR_STORE_COMMON_PARAMETERS,
     ],
 )
 class OceanBaseStore(VectorStoreBase):
