@@ -391,6 +391,7 @@ class SiliconFlowRerankEmbeddings(OpenAPIRerankEmbeddings):
         scores = [float(result.get("relevance_score")) for result in results]
         return scores
 
+
 @dataclass
 class TeiEmbeddingsParameters(OpenAPIRerankerDeployModelParameters):
     """Text Embeddings Inference  Rerank Embeddings Parameters."""
@@ -409,6 +410,7 @@ class TeiEmbeddingsParameters(OpenAPIRerankerDeployModelParameters):
             "help": _("The API key for the rerank API."),
         },
     )
+
 
 class TeiRerankEmbeddings(OpenAPIRerankEmbeddings):
     """Text Embeddings Inference Rerank Model.
@@ -467,7 +469,7 @@ class TeiRerankEmbeddings(OpenAPIRerankEmbeddings):
         if self.pass_trace_id and current_span_id:
             # Set the trace ID if available
             headers[DBGPT_TRACER_SPAN_ID] = current_span_id
-        data = { "query": query, "texts": candidates}
+        data = {"query": query, "texts": candidates}
         response = self.session.post(  # type: ignore
             self.api_url, json=data, timeout=self.timeout, headers=headers
         )
