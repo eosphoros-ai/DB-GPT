@@ -561,7 +561,7 @@ class MilvusStore(VectorStoreBase):
         # use default index params.
         if param is None:
             index_type = self.col.indexes[0].params["index_type"]
-            param = self.index_params_map[index_type].get("params")
+            param = self.index_params_map[index_type]
         #  query text embedding.
         query_vector = self.embedding.embed_query(query)
         # Determine result metadata fields.
