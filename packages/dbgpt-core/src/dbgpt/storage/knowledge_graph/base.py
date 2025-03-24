@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 from dbgpt.storage.graph_store.graph import Graph
 from dbgpt.util import RegisterParameters
@@ -28,6 +28,11 @@ class KnowledgeGraphBase(IndexStoreBase, ABC):
     @abstractmethod
     def get_config(self) -> KnowledgeGraphConfig:
         """Get the knowledge graph config."""
+
+    @property
+    def embeddings(self) -> Embeddings:
+        """Get the knowledge graph embeddings."""
+        raise NotImplementedError
 
     @abstractmethod
     def query_graph(self, limit: Optional[int] = None) -> Graph:

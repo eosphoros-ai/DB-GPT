@@ -84,7 +84,7 @@ class KnowledgeProcessBranchOperator(BranchOperator[Knowledge, Knowledge]):
 
         async def check_graph_process(r: Knowledge) -> bool:
             # If check graph is true, we will run extract knowledge graph triplets.
-            from dbgpt.rag.operators import KnowledgeGraphOperator
+            from dbgpt_ext.rag.operators import KnowledgeGraphOperator
 
             if KnowledgeGraphOperator in download_cls_list:
                 return True
@@ -92,7 +92,7 @@ class KnowledgeProcessBranchOperator(BranchOperator[Knowledge, Knowledge]):
 
         async def check_embedding_process(r: Knowledge) -> bool:
             # If check embedding is true, we will run extract document embedding.
-            from dbgpt.rag.operators import VectorStorageOperator
+            from dbgpt_ext.rag.operators import VectorStorageOperator
 
             if VectorStorageOperator in download_cls_list:
                 return True
@@ -100,7 +100,7 @@ class KnowledgeProcessBranchOperator(BranchOperator[Knowledge, Knowledge]):
 
         async def check_full_text_process(r: Knowledge) -> bool:
             # If check full text is true, we will run extract document keywords.
-            from dbgpt.rag.operators.full_text import FullTextStorageOperator
+            from dbgpt_ext.rag.operators.full_text import FullTextStorageOperator
 
             if FullTextStorageOperator in download_cls_list:
                 return True
