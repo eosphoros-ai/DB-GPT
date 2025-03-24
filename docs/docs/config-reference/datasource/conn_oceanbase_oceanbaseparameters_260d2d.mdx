@@ -1,0 +1,88 @@
+---
+title: "OceanBase datasource Configuration"
+description: "An Ultra-Fast & Cost-Effective Distributed SQL Database."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "OceanBaseParameters",
+  "description": "An Ultra-Fast & Cost-Effective Distributed SQL Database.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": true,
+      "description": "Database host, e.g., localhost"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": true,
+      "description": "Database port, e.g., 3306"
+    },
+    {
+      "name": "user",
+      "type": "string",
+      "required": true,
+      "description": "Database user to connect"
+    },
+    {
+      "name": "database",
+      "type": "string",
+      "required": true,
+      "description": "Database name"
+    },
+    {
+      "name": "driver",
+      "type": "string",
+      "required": false,
+      "description": "Driver name for oceanbase, default is mysql+ob.",
+      "defaultValue": "mysql+ob"
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "Database password, you can write your password directly, of course, you can also use environment variables, such as ${env:DBGPT_DB_PASSWORD}",
+      "defaultValue": "${env:DBGPT_DB_PASSWORD}"
+    },
+    {
+      "name": "pool_size",
+      "type": "integer",
+      "required": false,
+      "description": "Connection pool size, default 5",
+      "defaultValue": "5"
+    },
+    {
+      "name": "max_overflow",
+      "type": "integer",
+      "required": false,
+      "description": "Max overflow connections, default 10",
+      "defaultValue": "10"
+    },
+    {
+      "name": "pool_timeout",
+      "type": "integer",
+      "required": false,
+      "description": "Connection pool timeout, default 30",
+      "defaultValue": "30"
+    },
+    {
+      "name": "pool_recycle",
+      "type": "integer",
+      "required": false,
+      "description": "Connection pool recycle, default 3600",
+      "defaultValue": "3600"
+    },
+    {
+      "name": "pool_pre_ping",
+      "type": "boolean",
+      "required": false,
+      "description": "Connection pool pre ping, default True",
+      "defaultValue": "True"
+    }
+  ]
+}} />
+

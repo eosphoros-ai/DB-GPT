@@ -1,0 +1,80 @@
+---
+title: "Baidu Wenxin Proxy LLM Configuration"
+description: "Baidu Wenxin proxy LLM configuration."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "WenxinDeployModelParameters",
+  "description": "Baidu Wenxin proxy LLM configuration.",
+  "documentationUrl": "https://cloud.baidu.com/doc/WENXINWORKSHOP/s/clntwmv7t",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "backend",
+      "type": "string",
+      "required": false,
+      "description": "The real model name to pass to the provider, default is None. If backend is None, use name as the real model name."
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "proxy/wenxin"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "100"
+    },
+    {
+      "name": "prompt_template",
+      "type": "string",
+      "required": false,
+      "description": "Prompt template. If None, the prompt template is automatically determined from model. Just for local deployment."
+    },
+    {
+      "name": "context_length",
+      "type": "integer",
+      "required": false,
+      "description": "The context length of the OpenAI API. If None, it is determined by the model."
+    },
+    {
+      "name": "reasoning_model",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether the model is a reasoning model. If None, it is automatically determined from model."
+    },
+    {
+      "name": "api_key",
+      "type": "string",
+      "required": false,
+      "description": "The API key of the Wenxin API.",
+      "defaultValue": "${env:WEN_XIN_API_KEY}"
+    },
+    {
+      "name": "api_secret",
+      "type": "string",
+      "required": false,
+      "description": "The API secret key of the Wenxin API.",
+      "defaultValue": "${env:WEN_XIN_API_SECRET}"
+    }
+  ]
+}} />
+

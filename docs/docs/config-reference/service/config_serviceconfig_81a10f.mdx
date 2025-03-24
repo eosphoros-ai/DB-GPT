@@ -1,0 +1,43 @@
+---
+title: "ServiceConfig Configuration"
+description: "ServiceConfig(web: dbgpt_app.config.ServiceWebParameters = <factory>, model: dbgpt.model.parameter.ModelServiceConfig = <factory>)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ServiceConfig",
+  "description": "ServiceConfig(web: dbgpt_app.config.ServiceWebParameters = <factory>, model: dbgpt.model.parameter.ModelServiceConfig = <factory>)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "web",
+      "type": "ServiceWebParameters",
+      "required": false,
+      "description": "Web service configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "servicewebparameters configuration",
+          "url": "config_servicewebparameters_3ab7fd"
+        }
+      ],
+      "defaultValue": "ServiceWebParameters"
+    },
+    {
+      "name": "model",
+      "type": "ModelServiceConfig",
+      "required": false,
+      "description": "Model service configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "modelserviceconfig configuration",
+          "url": "parameter_modelserviceconfig_20d67d"
+        }
+      ],
+      "defaultValue": "ModelServiceConfig"
+    }
+  ]
+}} />
+

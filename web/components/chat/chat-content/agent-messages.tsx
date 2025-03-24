@@ -1,10 +1,8 @@
 import ModelIcon from '@/new-components/chat/content/ModelIcon';
 import { SwapRightOutlined } from '@ant-design/icons';
 import { GPTVis } from '@antv/gpt-vis';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 import ReferencesContent from './ReferencesContent';
-import markdownComponents from './config';
+import markdownComponents, { markdownPlugins, preprocessLaTeX } from './config';
 
 interface Props {
   data: {
@@ -31,8 +29,8 @@ function AgentMessages({ data }: Props) {
             </div>
           </div>
           <div className='whitespace-normal text-sm mb-3'>
-            <GPTVis components={markdownComponents} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-              {item.markdown}
+            <GPTVis components={markdownComponents} {...markdownPlugins}>
+              {preprocessLaTeX(item.markdown)}
             </GPTVis>
           </div>
           {item.resource && item.resource !== 'null' && <ReferencesContent references={item.resource} />}

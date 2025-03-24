@@ -1,0 +1,225 @@
+---
+title: "ServiceWebParameters Configuration"
+description: "ServiceWebParameters(host: str = '0.0.0.0', port: int = 5670, light: Optional[bool] = False, controller_addr: Optional[str] = None, database: dbgpt.datasource.parameter.BaseDatasourceParameters = <factory>, model_storage: Optional[str] = None, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, log: Optional[dbgpt.util.utils.LoggingParameters] = None, disable_alembic_upgrade: Optional[bool] = False, db_ssl_verify: Optional[bool] = False, default_thread_pool_size: Optional[int] = None, remote_embedding: Optional[bool] = False, remote_rerank: Optional[bool] = False, awel_dirs: Optional[str] = None, new_web_ui: bool = True, model_cache: dbgpt.storage.cache.manager.ModelCacheParameters = <factory>, embedding_model_max_seq_len: Optional[int] = 512)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ServiceWebParameters",
+  "description": "ServiceWebParameters(host: str = '0.0.0.0', port: int = 5670, light: Optional[bool] = False, controller_addr: Optional[str] = None, database: dbgpt.datasource.parameter.BaseDatasourceParameters = <factory>, model_storage: Optional[str] = None, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, log: Optional[dbgpt.util.utils.LoggingParameters] = None, disable_alembic_upgrade: Optional[bool] = False, db_ssl_verify: Optional[bool] = False, default_thread_pool_size: Optional[int] = None, remote_embedding: Optional[bool] = False, remote_rerank: Optional[bool] = False, awel_dirs: Optional[str] = None, new_web_ui: bool = True, model_cache: dbgpt.storage.cache.manager.ModelCacheParameters = <factory>, embedding_model_max_seq_len: Optional[int] = 512)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": false,
+      "description": "Webserver deploy host",
+      "defaultValue": "0.0.0.0"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "Webserver deploy port, default is 5670",
+      "defaultValue": "5670"
+    },
+    {
+      "name": "light",
+      "type": "boolean",
+      "required": false,
+      "description": "Run Webserver in light mode",
+      "defaultValue": "False"
+    },
+    {
+      "name": "controller_addr",
+      "type": "string",
+      "required": false,
+      "description": "The Model controller address to connect. If None, read model controller address from environment key `MODEL_SERVER`."
+    },
+    {
+      "name": "database",
+      "type": "BaseDatasourceParameters",
+      "required": false,
+      "description": "Database connection config, now support SQLite, OceanBase and MySQL",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "rdbmsdatasourceparameters configuration",
+          "url": "../datasource/base_rdbmsdatasourceparameters_4f774f"
+        },
+        {
+          "type": "link",
+          "text": "sqlite configuration",
+          "url": "../datasource/conn_sqlite_sqliteconnectorparameters_82c8b5"
+        },
+        {
+          "type": "link",
+          "text": "tugraph configuration",
+          "url": "../datasource/conn_tugraph_tugraphparameters_0c844e"
+        },
+        {
+          "type": "link",
+          "text": "spark configuration",
+          "url": "../datasource/conn_spark_sparkparameters_174bbc"
+        },
+        {
+          "type": "link",
+          "text": "clickhouse configuration",
+          "url": "../datasource/conn_clickhouse_clickhouseparameters_4a1237"
+        },
+        {
+          "type": "link",
+          "text": "doris configuration",
+          "url": "../datasource/conn_doris_dorisparameters_e33c53"
+        },
+        {
+          "type": "link",
+          "text": "duckdb configuration",
+          "url": "../datasource/conn_duckdb_duckdbconnectorparameters_c672c7"
+        },
+        {
+          "type": "link",
+          "text": "hive configuration",
+          "url": "../datasource/conn_hive_hiveparameters_ec3601"
+        },
+        {
+          "type": "link",
+          "text": "mssql configuration",
+          "url": "../datasource/conn_mssql_mssqlparameters_d79d1c"
+        },
+        {
+          "type": "link",
+          "text": "mysql configuration",
+          "url": "../datasource/conn_mysql_mysqlparameters_4393c4"
+        },
+        {
+          "type": "link",
+          "text": "oceanbase configuration",
+          "url": "../datasource/conn_oceanbase_oceanbaseparameters_260d2d"
+        },
+        {
+          "type": "link",
+          "text": "postgresql configuration",
+          "url": "../datasource/conn_postgresql_postgresqlparameters_22efa5"
+        },
+        {
+          "type": "link",
+          "text": "starrocks configuration",
+          "url": "../datasource/conn_starrocks_starrocksparameters_e511f7"
+        },
+        {
+          "type": "link",
+          "text": "vertica configuration",
+          "url": "../datasource/conn_vertica_verticaparameters_c712b8"
+        }
+      ],
+      "defaultValue": "SQLiteConnectorParameters"
+    },
+    {
+      "name": "model_storage",
+      "type": "string",
+      "required": false,
+      "description": "The storage type of model configures, if None, use the default storage(current database). When you run in light mode, it will not use any storage.",
+      "validValues": [
+        "database",
+        "memory"
+      ]
+    },
+    {
+      "name": "trace",
+      "type": "TracerParameters",
+      "required": false,
+      "description": "Tracer config for web server, if None, use global tracer config",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "tracerparameters configuration",
+          "url": "../utils/tracer_impl_tracerparameters_f8f272"
+        }
+      ]
+    },
+    {
+      "name": "log",
+      "type": "LoggingParameters",
+      "required": false,
+      "description": "Logging configuration for web server, if None, use global config",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "loggingparameters configuration",
+          "url": "../utils/utils_loggingparameters_4ba5c6"
+        }
+      ]
+    },
+    {
+      "name": "disable_alembic_upgrade",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to disable alembic to initialize and upgrade database metadata",
+      "defaultValue": "False"
+    },
+    {
+      "name": "db_ssl_verify",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to verify the SSL certificate of the database",
+      "defaultValue": "False"
+    },
+    {
+      "name": "default_thread_pool_size",
+      "type": "integer",
+      "required": false,
+      "description": "The default thread pool size, If None, use default config of python thread pool"
+    },
+    {
+      "name": "remote_embedding",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to enable remote embedding models. If it is True, you need to start a embedding model through `dbgpt start worker --worker_type text2vec --model_name xxx --model_path xxx`",
+      "defaultValue": "False"
+    },
+    {
+      "name": "remote_rerank",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to enable remote rerank models. If it is True, you need to start a rerank model through `dbgpt start worker --worker_type text2vec --rerank --model_name xxx --model_path xxx`",
+      "defaultValue": "False"
+    },
+    {
+      "name": "awel_dirs",
+      "type": "string",
+      "required": false,
+      "description": "The directories to search awel files, split by `,`"
+    },
+    {
+      "name": "new_web_ui",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to use the new web UI, default is True",
+      "defaultValue": "True"
+    },
+    {
+      "name": "model_cache",
+      "type": "ModelCacheParameters",
+      "required": false,
+      "description": "Model cache configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "modelcacheparameters configuration",
+          "url": "../utils/manager_modelcacheparameters_152367"
+        }
+      ],
+      "defaultValue": "ModelCacheParameters"
+    },
+    {
+      "name": "embedding_model_max_seq_len",
+      "type": "integer",
+      "required": false,
+      "description": "The max sequence length of the embedding model, default is 512",
+      "defaultValue": "512"
+    }
+  ]
+}} />
+

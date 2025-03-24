@@ -90,6 +90,7 @@ def _get_type_cls(type_name: str) -> Type[Any]:
 
     if type_name in _TYPE_REGISTRY:
         return _TYPE_REGISTRY[type_name]
+    # Not registered, try to get the new class name from the compat config.
     new_cls = get_new_class_name(type_name)
     if new_cls and new_cls in _TYPE_REGISTRY:
         return _TYPE_REGISTRY[new_cls]
@@ -1114,6 +1115,7 @@ def auto_register_resource(
     alias: Optional[List[str]] = None,
     tags: Optional[Dict[str, str]] = None,
     show_in_ui: bool = True,
+    skip_fields: Optional[List[str]] = None,
     **decorator_kwargs,
 ):
     """Auto register the resource.
@@ -1129,6 +1131,8 @@ def auto_register_resource(
         alias (Optional[List[str]], optional): The alias of the resource. Defaults to
             None. For compatibility, we can use the alias to register the resource.
         tags (Optional[Dict[str, str]]): The tags of the resource
+        show_in_ui (bool): Whether show the resource in UI.
+        skip_fields (Optional[List[str]]): The fields to skip.
     """
     from dataclasses import fields, is_dataclass
 
@@ -1146,6 +1150,8 @@ def auto_register_resource(
             parameters: List[Parameter] = []
             raw_fields = fields(cls)
             for i, fd in enumerate(fields_desc_list):
+                if skip_fields and fd.param_name in skip_fields:
+                    continue
                 param_type = fd.param_type
                 if param_type in TYPE_STRING_TO_TYPE:
                     # Basic type
@@ -1289,17 +1295,17 @@ class ViewMetadata(BaseMetadata):
             for field in self.inputs:
                 if field.mappers:
                     raise ValueError("Input field can't have mappers.")
-            dyn_cnt, is_last_field_dynamic = 0, False
-            for field in self.inputs:
-                if field.dynamic:
-                    dyn_cnt += 1
-                    is_last_field_dynamic = True
-                else:
-                    if is_last_field_dynamic:
-                        raise ValueError("Dynamic field input must be the last field.")
-                    is_last_field_dynamic = False
-            if dyn_cnt > 1:
-                raise ValueError("Only one dynamic input field is allowed.")
+            # dyn_cnt, is_last_field_dynamic = 0, False
+            # for field in self.inputs:
+            #     if field.dynamic:
+            #         dyn_cnt += 1
+            #         is_last_field_dynamic = True
+            #     else:
+            #         if is_last_field_dynamic:
+            #             raise ValueError("Dynamic field input must be the last field.") # noqa
+            #         is_last_field_dynamic = False
+            # if dyn_cnt > 1:
+            #     raise ValueError("Only one dynamic input field is allowed.")
         if self.outputs:
             dyn_cnt, is_last_field_dynamic = 0, False
             for field in self.outputs:
@@ -1521,4 +1527,6 @@ def _register_resource(
     alias_ids: Optional[List[str]] = None,
 ):
     """Register the operator."""
+    # Register the type
+    _ = _get_type_name(cls)
     _OPERATOR_REGISTRY.register_flow(cls, resource_metadata, alias_ids)

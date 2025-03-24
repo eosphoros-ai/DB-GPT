@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,48 +17,49 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:55
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:57
 msgid "Database host, e.g., localhost"
-msgstr "データベースホスト、例えば localhost"
+msgstr "データベースホスト、例: localhost"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:56
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:58
 msgid "Database port, e.g., 3306"
-msgstr "データベースポート、例えば 3306"
+msgstr "データベースポート、例: 3306"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:57
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:59
 msgid "Database user to connect"
-msgstr "接続するデータベースユーザー"
+msgstr "接続に使用するデータベースユーザー"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:58
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:60
 msgid "Database name"
 msgstr "データベース名"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:59
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:61
 msgid "Database driver, e.g., mysql+pymysql"
-msgstr "データベースドライバー、例えば mysql+pymysql"
+msgstr "データベースドライバー、例: mysql+pymysql"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:64
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:66
 msgid ""
 "Database password, you can write your password directly, of course, you can "
 "also use environment variables, such as ${env:DBGPT_DB_PASSWORD}"
-msgstr "データベースパスワードです。直接パスワードを記入することも、環境変数（例：${env:DBGPT_DB_PASSWORD}）を使用することもできます。"
+msgstr ""
+"データベースパスワードです。パスワードを直接入力することもできますし、環境変数を使用することもできます。例: ${env:DBGPT_DB_PASSWORD}"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:73
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:75
 msgid "Connection pool size, default 5"
-msgstr "接続プールサイズ、デフォルトは 5"
+msgstr "接続プールのサイズ、デフォルトは 5"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:76
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:78
 msgid "Max overflow connections, default 10"
 msgstr "最大オーバーフロー接続数、デフォルトは 10"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:79
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:81
 msgid "Connection pool timeout, default 30"
-msgstr "接続プールタイムアウト、デフォルトは 30 秒"
+msgstr "接続プールのタイムアウト時間、デフォルトは 30 秒"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:82
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:84
 msgid "Connection pool recycle, default 3600"
 msgstr "接続プールのリサイクル時間、デフォルトは 3600 秒"
 
-#:../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:85
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:87
 msgid "Connection pool pre ping, default True"
-msgstr "接続プールの事前ピング、デフォルトは有効"
+msgstr "コネクションプールの事前ピング、デフォルトは True"

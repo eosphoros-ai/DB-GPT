@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import AsyncIterator, List, Optional, cast
+from typing import AsyncIterator, Dict, List, Optional, Tuple, cast
 
 import schedule
 from fastapi import HTTPException
@@ -413,7 +413,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         sys_code: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> PaginationResult[ServerResponse]:
+    ) -> PaginationResult[Dict]:
         """Get a list of Flow templates
 
         Args:
@@ -424,29 +424,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
-        local_file_templates = self._get_flow_templates_from_files()
-        return PaginationResult.build_from_all(local_file_templates, page, page_size)
-
-    def _get_flow_templates_from_files(self) -> List[ServerResponse]:
-        """Get a list of Flow templates from files"""
         user_lang = self._system_app.config.get_current_lang(default="en")
-        # List files in current directory
-        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        template_dir = os.path.join(parent_dir, "templates", user_lang)
-        default_template_dir = os.path.join(parent_dir, "templates", "en")
-        if not os.path.exists(template_dir):
-            template_dir = default_template_dir
+        local_file_templates = _get_flow_templates_from_files(user_lang)
         templates = []
-        for root, _, files in os.walk(template_dir):
-            for file in files:
-                if file.endswith(".json"):
-                    try:
-                        with open(os.path.join(root, file), "r") as f:
-                            data = json.load(f)
-                            templates.append(_parse_flow_template_from_json(data))
-                    except Exception as e:
-                        logger.warning(f"Load template {file} error: {str(e)}")
-        return templates
+        for _, t in local_file_templates:
+            fill_flow_panel(t)
+            templates.append(t.to_dict())
+        return PaginationResult.build_from_all(templates, page, page_size)
 
     async def chat_stream_flow_str(
         self, flow_uid: str, request: CommonLLMHttpRequestBody
@@ -734,3 +718,29 @@ def _parse_flow_template_from_json(json_dict: dict) -> ServerResponse:
     flow_json["state"] = State.INITIALIZING
     flow_json["dag_id"] = None
     return ServerResponse(**flow_json)
+
+
+def _get_flow_templates_from_files(
+    user_lang: str = "en",
+) -> List[Tuple[str, ServerResponse]]:
+    """Get a list of Flow templates from files"""
+    # List files in current directory
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    template_dir = os.path.join(parent_dir, "templates", user_lang)
+    default_template_dir = os.path.join(parent_dir, "templates", "en")
+    if not os.path.exists(template_dir):
+        template_dir = default_template_dir
+    templates = []
+    for root, _, files in os.walk(template_dir):
+        for file in files:
+            if file.endswith(".json"):
+                try:
+                    full_path = os.path.join(root, file)
+                    with open(full_path, "r") as f:
+                        data = json.load(f)
+                        templates.append(
+                            (full_path, _parse_flow_template_from_json(data))
+                        )
+                except Exception as e:
+                    logger.warning(f"Load template {file} error: {str(e)}")
+    return templates

@@ -1,0 +1,39 @@
+---
+title: "Chroma Config Configuration"
+description: "Chroma vector store config."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ChromaVectorConfig",
+  "description": "Chroma vector store config.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "The user of vector store, if not set, will use the default user."
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "The password of vector store, if not set, will use the default password."
+    },
+    {
+      "name": "persist_path",
+      "type": "string",
+      "required": false,
+      "description": "The persist path of vector store."
+    },
+    {
+      "name": "collection_metadata",
+      "type": "object",
+      "required": false,
+      "description": "The metadata of collection."
+    }
+  ]
+}} />
+

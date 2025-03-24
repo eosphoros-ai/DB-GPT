@@ -1,0 +1,35 @@
+# Russian translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
+"PO-Revision-Date: 2025-03-19 00:06+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/my/config.py:21
+msgid "My dbgpts Serve Configurations"
+msgstr "Мои настройки сервиса dbgpts"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/my/config.py:24
+msgid "This configuration is for the my dbgpts serve module."
+msgstr "Эта конфигурация предназначена для модуля сервиса my dbgpts."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/hub/config.py:21
+msgid "Hub dbgpts Serve Configurations"
+msgstr "Настройки сервиса Hub dbgpts"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/dbgpts/hub/config.py:24
+msgid "This configuration is for the hub dbgpts serve module."
+msgstr "Эта конфигурация предназначена для модуля сервиса hub dbgpts."

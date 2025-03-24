@@ -2,10 +2,10 @@
 
 import logging
 import os
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dbgpt._private.pydantic import ConfigDict, Field
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
@@ -45,19 +45,29 @@ logger = logging.getLogger(__name__)
         ),
     ],
 )
+@dataclass
 class WeaviateVectorConfig(VectorStoreConfig):
     """Weaviate vector store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "weaviate"
 
-    weaviate_url: str = Field(
+    weaviate_url: str = field(
         default=os.getenv("WEAVIATE_URL", None),
-        description="weaviate url address, if not set, will use the default url.",
+        metadata={
+            "description": "weaviate url address, if not set, "
+            "will use the default url.",
+        },
     )
-    persist_path: str = Field(
+    persist_path: str = field(
         default=os.getenv("WEAVIATE_PERSIST_PATH", None),
-        description="weaviate persist path.",
+        metadata={
+            "description": "weaviate persist path.",
+        },
     )
+
+    def create_store(self, **kwargs) -> "WeaviateStore":
+        """Create Weaviate Store store."""
+        return WeaviateStore(vector_store_config=self, **kwargs)
 
 
 @register_resource(
@@ -79,7 +89,12 @@ class WeaviateVectorConfig(VectorStoreConfig):
 class WeaviateStore(VectorStoreBase):
     """Weaviate database."""
 
-    def __init__(self, vector_store_config: WeaviateVectorConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: WeaviateVectorConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+    ) -> None:
         """Initialize with Weaviate client."""
         try:
             import weaviate
@@ -92,10 +107,10 @@ class WeaviateStore(VectorStoreBase):
         self._vector_store_config = vector_store_config
 
         self.weaviate_url = vector_store_config.weaviate_url
-        self.embedding = vector_store_config.embedding_fn
-        self.vector_name = vector_store_config.name
+        self.embedding = embedding_fn
+        self.vector_name = name
         self.persist_dir = os.path.join(
-            vector_store_config.persist_path, vector_store_config.name + ".vectordb"
+            vector_store_config.persist_path, name + ".vectordb"
         )
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)

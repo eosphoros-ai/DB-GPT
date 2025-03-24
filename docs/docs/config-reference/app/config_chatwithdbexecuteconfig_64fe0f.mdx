@@ -1,0 +1,85 @@
+---
+title: "ChatWithDBExecuteConfig Configuration"
+description: "Chat With DB Execute Configuration"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ChatWithDBExecuteConfig",
+  "description": "Chat With DB Execute Configuration",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "top_k",
+      "type": "integer",
+      "required": false,
+      "description": "The top k for LLM generation"
+    },
+    {
+      "name": "top_p",
+      "type": "number",
+      "required": false,
+      "description": "The top p for LLM generation"
+    },
+    {
+      "name": "temperature",
+      "type": "number",
+      "required": false,
+      "description": "The temperature for LLM generation"
+    },
+    {
+      "name": "max_new_tokens",
+      "type": "integer",
+      "required": false,
+      "description": "The max new tokens for LLM generation"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "required": false,
+      "description": "The name of your app"
+    },
+    {
+      "name": "memory",
+      "type": "BaseGPTsAppMemoryConfig",
+      "required": false,
+      "description": "Memory configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "window configuration",
+          "url": "../memory/config_bufferwindowgptsappmemoryconfig_c31071"
+        },
+        {
+          "type": "link",
+          "text": "token configuration",
+          "url": "../memory/config_tokenbuffergptsappmemoryconfig_6a2000"
+        }
+      ],
+      "defaultValue": "BufferWindowGPTsAppMemoryConfig"
+    },
+    {
+      "name": "schema_retrieve_top_k",
+      "type": "integer",
+      "required": false,
+      "description": "The number of tables to retrieve from the database.",
+      "defaultValue": "10"
+    },
+    {
+      "name": "schema_max_tokens",
+      "type": "integer",
+      "required": false,
+      "description": "The maximum number of tokens to pass to the model, default 100 * 1024.Just work for the schema retrieval failed, and load all tables schema.",
+      "defaultValue": "102400"
+    },
+    {
+      "name": "max_num_results",
+      "type": "integer",
+      "required": false,
+      "description": "The maximum number of results to return from the query.",
+      "defaultValue": "50"
+    }
+  ]
+}} />
+

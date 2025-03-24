@@ -52,9 +52,11 @@ with underscores
 4. If it's in other languages, translate them to English, and replace spaces with \
 underscores
 5. If it's special characters, delete them directly
-6. All column fields must be analyzed and converted, remember to output in JSON
+6. DuckDB adheres to the SQL standard, which requires that identifiers \
+(column names, table names) cannot start with a number.
+7. All column fields must be analyzed and converted, remember to output in JSON
 Avoid phrases like ' // ... (similar analysis for other columns) ...'
-7. You need to provide the original column names and the transformed new column names \
+8. You need to provide the original column names and the transformed new column names \
 in the JSON, as well as your analysis of the meaning and function of that column. If \
 it's a time type, please provide the time format, such as: \
 yyyy-MM-dd HH:MM:ss
@@ -111,9 +113,10 @@ DuckDB 表结构信息如下：
 3. 如果是中文，将中文字段名翻译为英文，并且将空格替换为下划线
 4. 如果是其它语言，将其翻译为英文，并且将空格替换为下划线
 5. 如果是特殊字符，直接删除
-6. 所以列的字段都必须分析和转换，切记在 JSON 中输出
+6. DuckDB遵循SQL标准，要求标识符(列名、表名)不能以数字开头
+7. 所以列的字段都必须分析和转换，切记在 JSON 中输出
 ' // ... (其他列的类似分析) ...)' 之类的话术
-7. 你需要在json中提供原始列名和转化后的新的列名，以及你分析\
+8. 你需要在json中提供原始列名和转化后的新的列名，以及你分析\
 的该列的含义和作用，如果是时间类型请给出时间格式类似:\
 yyyy-MM-dd HH:MM:ss
 
@@ -199,8 +202,7 @@ prompt_adapter = AppScenePromptTemplateAdapter(
     prompt=prompt,
     template_scene=ChatScene.ExcelLearning.value(),
     stream_out=PROMPT_NEED_STREAM_OUT,
-    output_parser=LearningExcelOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
-    need_historical_messages=False,
+    output_parser=LearningExcelOutputParser(),
     temperature=PROMPT_TEMPERATURE,
 )
 CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

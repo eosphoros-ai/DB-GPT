@@ -33,6 +33,8 @@ def _get_logging_level() -> str:
 class LoggingParameters(BaseParameters):
     """Logging parameters."""
 
+    __cfg_type__ = "utils"
+
     level: Optional[str] = field(
         default="${env:DBGPT_LOG_LEVEL:-INFO}",
         metadata={

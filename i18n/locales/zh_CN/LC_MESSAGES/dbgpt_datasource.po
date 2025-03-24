@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,48 +17,49 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:55
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:57
 msgid "Database host, e.g., localhost"
 msgstr "数据库主机，例如：localhost"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:56
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:58
 msgid "Database port, e.g., 3306"
 msgstr "数据库端口，例如：3306"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:57
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:59
 msgid "Database user to connect"
 msgstr "用于连接数据库的用户"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:58
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:60
 msgid "Database name"
 msgstr "数据库名称"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:59
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:61
 msgid "Database driver, e.g., mysql+pymysql"
 msgstr "数据库驱动程序，例如：mysql+pymysql"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:64
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:66
 msgid ""
 "Database password, you can write your password directly, of course, you can "
 "also use environment variables, such as ${env:DBGPT_DB_PASSWORD}"
-msgstr "数据库密码，你可以直接写入密码，当然也可以使用环境变量，例如：${env:DBGPT_DB_PASSWORD}"
+msgstr ""
+"数据库密码，你可以直接写入密码，当然也可以使用环境变量，例如：${env:DBGPT_DB_PASSWORD}"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:73
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:75
 msgid "Connection pool size, default 5"
 msgstr "连接池大小，默认为 5"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:76
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:78
 msgid "Max overflow connections, default 10"
 msgstr "最大溢出连接数，默认为 10"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:79
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:81
 msgid "Connection pool timeout, default 30"
 msgstr "连接池超时时间，默认为 30 秒"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:82
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:84
 msgid "Connection pool recycle, default 3600"
 msgstr "连接池回收时间，默认为 3600 秒"
 
-#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:85
+#: ../packages/dbgpt-core/src/dbgpt/datasource/rdbms/base.py:87
 msgid "Connection pool pre ping, default True"
-msgstr "连接池预连接，默认为 True"
+msgstr "连接池预检查，默认开启"

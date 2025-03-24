@@ -1,5 +1,6 @@
 ---
 title: "SystemParameters Configuration"
+description: "System parameters."
 ---
 
 import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
@@ -9,6 +10,21 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
   "description": "System parameters.",
   "documentationUrl": "",
   "parameters": [
+    {
+      "name": "language",
+      "type": "string",
+      "required": false,
+      "description": "Language setting",
+      "defaultValue": "en",
+      "validValues": [
+        "en",
+        "zh",
+        "fr",
+        "ja",
+        "ko",
+        "ru"
+      ]
+    },
     {
       "name": "log_level",
       "type": "string",
@@ -36,21 +52,6 @@ import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
       "required": false,
       "description": "The key to encrypt the data",
       "defaultValue": "your_secret_key"
-    },
-    {
-      "name": "language",
-      "type": "string",
-      "required": false,
-      "description": "Language setting",
-      "defaultValue": "en",
-      "validValues": [
-        "en",
-        "zh",
-        "fr",
-        "ja",
-        "ko",
-        "ru"
-      ]
     }
   ]
 }} />

@@ -345,7 +345,15 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             model_request = ModelRequest(**payload)
 
             async for output in llm_client.generate_stream(model_request.copy()):  # type: ignore
-                yield f"data:{output.text}\n\n"
+                text = ""
+                if output.has_thinking:
+                    text = output.thinking_text
+                    lines = text.split("\n")
+                    text = ">" + "\n>".join(lines)
+                if output.has_text:
+                    text += output.text
+                text = text.replace("\n", "\\n")
+                yield f"data:{text}\n\n"
             yield "data:[DONE]\n\n"
         except Exception as e:
             logger.error(f"Call LLMClient error, {str(e)}, detail: {payload}")

@@ -44,7 +44,7 @@ from dbgpt_app.openapi.api_view_model import (
     MessageVo,
     Result,
 )
-from dbgpt_app.scene import BaseChat, ChatFactory, ChatScene
+from dbgpt_app.scene import BaseChat, ChatFactory, ChatParam, ChatScene
 from dbgpt_serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
 from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.datasource.manages.db_conn_info import DBConfig, DbTypeInfo
@@ -359,7 +359,6 @@ async def file_upload(
         bucket,
         file_name,
         doc_file.file,
-        storage_type="distributed",
         custom_metadata=custom_metadata,
     )
 
@@ -454,19 +453,20 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
             Result.failed("Unsupported Chat Mode," + dialogue.chat_mode + "!")
         )
 
-    chat_param = {
-        "chat_session_id": dialogue.conv_uid,
-        "user_name": dialogue.user_name,
-        "sys_code": dialogue.sys_code,
-        "current_user_input": dialogue.user_input,
-        "select_param": dialogue.select_param,
-        "model_name": dialogue.model_name,
-        "app_code": dialogue.app_code,
-        "ext_info": dialogue.ext_info,
-        "temperature": dialogue.temperature,
-        "max_new_tokens": dialogue.max_new_tokens,
-        "prompt_code": dialogue.prompt_code,
-    }
+    chat_param = ChatParam(
+        chat_session_id=dialogue.conv_uid,
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        current_user_input=dialogue.user_input,
+        select_param=dialogue.select_param,
+        model_name=dialogue.model_name,
+        app_code=dialogue.app_code,
+        ext_info=dialogue.ext_info,
+        temperature=dialogue.temperature,
+        max_new_tokens=dialogue.max_new_tokens,
+        prompt_code=dialogue.prompt_code,
+        chat_mode=ChatScene.of_mode(dialogue.chat_mode),
+    )
     chat: BaseChat = await blocking_func_to_async(
         CFG.SYSTEM_APP,
         CHAT_FACTORY.get_implementation,
@@ -814,7 +814,7 @@ def _parse_domain_type(dialogue: ConversationVo) -> Optional[str]:
             )
         else:
             spaces = knowledge_service.get_knowledge_space(
-                KnowledgeSpaceRequest(id=dialogue.select_param)
+                KnowledgeSpaceRequest(name=dialogue.select_param)
             )
         if len(spaces) == 0:
             raise ValueError(f"Knowledge space {dialogue.select_param} not found")

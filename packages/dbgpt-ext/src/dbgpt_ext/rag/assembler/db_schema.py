@@ -21,7 +21,7 @@ class DBSchemaAssembler(BaseAssembler):
 
             from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
             from dbgpt_serve.rag.assembler.db_struct import DBSchemaAssembler
-            from dbgpt.storage.vector_store.connector import VectorStoreConnector
+            from dbgpt.storage.vector_store.connector import VectorStoreBase
             from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 
             connection = SQLiteTempConnector.create_temporary_db()

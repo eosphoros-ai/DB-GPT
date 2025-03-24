@@ -5,6 +5,7 @@ from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import MODEL_DISK_CACHE_DIR, resolve_root_path
 from dbgpt.util.executor_utils import DefaultExecutorFactory
 from dbgpt_app.config import ApplicationConfig, ServiceWebParameters
+from dbgpt_serve.rag.storage_manager import StorageManager
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ def initialize_components(
     system_app.register(DefaultScheduler)
     system_app.register_instance(controller)
     system_app.register(ConnectorManager)
+    system_app.register(StorageManager)
 
     from dbgpt_serve.agent.hub.controller import module_plugin
 
@@ -106,6 +108,7 @@ def _initialize_resource_manager(system_app: SystemApp):
     from dbgpt_serve.agent.resource.app import GptAppResource
     from dbgpt_serve.agent.resource.datasource import DatasourceResource
     from dbgpt_serve.agent.resource.knowledge import KnowledgeSpaceRetrieverResource
+    from dbgpt_serve.agent.resource.mcp import MCPSSEToolPack
     from dbgpt_serve.agent.resource.plugin import PluginToolPack
 
     initialize_resource(system_app)
@@ -121,6 +124,8 @@ def _initialize_resource_manager(system_app: SystemApp):
     rm.register_resource(resource_instance=get_current_host_cpu_status)
     rm.register_resource(resource_instance=get_current_host_memory_status)
     rm.register_resource(resource_instance=get_current_host_system_load)
+    # Register mcp tool
+    rm.register_resource(MCPSSEToolPack, resource_type=ResourceType.Tool)
 
 
 def _initialize_openapi(system_app: SystemApp):

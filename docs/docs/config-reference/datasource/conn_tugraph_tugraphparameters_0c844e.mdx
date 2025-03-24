@@ -1,0 +1,48 @@
+---
+title: "TuGraph datasource Configuration"
+description: "TuGraph is a high-performance graph database jointly developed by Ant Group and Tsinghua University."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "TuGraphParameters",
+  "description": "TuGraph is a high-performance graph database jointly developed by Ant Group and Tsinghua University.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": true,
+      "description": "TuGraph server host"
+    },
+    {
+      "name": "user",
+      "type": "string",
+      "required": true,
+      "description": "TuGraph server user"
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "Database password, you can write your password directly, of course, you can also use environment variables, such as ${env:DBGPT_DB_PASSWORD}",
+      "defaultValue": "${env:DBGPT_DB_PASSWORD}"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "TuGraph server port, default 7687",
+      "defaultValue": "7687"
+    },
+    {
+      "name": "database",
+      "type": "string",
+      "required": false,
+      "description": "Database name, default 'default'",
+      "defaultValue": "default"
+    }
+  ]
+}} />
+

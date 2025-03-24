@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,460 +17,464 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:24
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:138
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:24
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:138
 msgid "Chunk Parameters"
 msgstr "チャンクパラメータ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:29
 msgid "Chunk Strategy"
 msgstr "チャンク戦略"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:32
 msgid "chunk strategy"
 msgstr "チャンク戦略"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:37
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:37
 msgid "Text Splitter"
 msgstr "テキスト分割器"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:41
 msgid "Text splitter, if not set, will use the default text splitter."
 msgstr "テキスト分割器が設定されていない場合、デフォルトのテキスト分割器が使用されます。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:47
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:47
 msgid "Splitter Type"
 msgstr "分割器タイプ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:50
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:50
 msgid "Splitter type"
 msgstr "分割器タイプ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:55
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:55
 msgid "Chunk Size"
 msgstr "チャンクサイズ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:58
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:58
 msgid "Chunk size"
 msgstr "チャンクサイズ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:63
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:63
 msgid "Chunk Overlap"
 msgstr "チャンク重複"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:71
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:112
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:71
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:112
 msgid "Separator"
 msgstr "区切り文字"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:74
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:74
 msgid "Chunk separator"
 msgstr "チャンク区切り文字"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:79
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:79
 msgid "Enable Merge"
 msgstr "マージを有効にする"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:82
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:82
 msgid "Enable chunk merge by chunk_size."
-msgstr "チャンクサイズによるチャンクマージを有効にする。"
+msgstr "チャンクサイズによるチャンクマージを有効にします。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:21
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:20
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:21
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:20
 msgid "The API key for the embeddings API."
-msgstr "埋め込みAPIのAPIキー。"
+msgstr "埋め込みAPI用のAPIキーです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:26
 msgid "The Secret key for the embeddings API. It's the sk for qianfan."
-msgstr "埋め込みAPIのシークレットキー。これは千帆のskです。"
+msgstr "埋め込みAPI用のシークレットキーです。これは千帆のskです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:33
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:29
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:29
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:26
 msgid ""
 "The real model name to pass to the provider, default is None. If backend is "
 "None, use name as the real model name."
-msgstr "プロバイダに渡す実際のモデル名。デフォルトはNoneです。バックエンドがNoneの場合、名前を実際のモデル名として使用します。"
+msgstr "プロバイダに渡す実際のモデル名です。デフォルトはNoneです。バックエンドがNoneの場合、名前を実際のモデル名として使用します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:169
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:169
 msgid "Embedding-V1 by Baidu Qianfan. "
-msgstr "百度千帆のEmbedding-V1。"
+msgstr "百度千帆によるEmbedding-V1です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:22
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:22
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:26
 msgid "The URL of the embeddings API."
 msgstr "埋め込みAPIのURL。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:157
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:157
 msgid ""
 "The embedding model are trained by BAAI, it support more than 100 working "
 "languages."
-msgstr "この埋め込みモデルはBAAIによって学習され、100以上の作業言語をサポートしています。"
+msgstr ""
+"この埋め込みモデルはBAAIによって訓練され、100以上の作業言語をサポートしています。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:33
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:33
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:57
 msgid "The name of the model to use for text embeddings."
 msgstr "テキスト埋め込みに使用するモデルの名前。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:40
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:40
 msgid "Jina AI Embeddings"
-msgstr "Jina AI埋め込み"
+msgstr "Jina AI 埋め込み"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:43
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:43
 msgid "Jina AI embeddings."
-msgstr "Jina AI埋め込み。"
+msgstr "Jina AI 埋め込み。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:46
 msgid "API Key"
-msgstr "APIキー"
+msgstr "API キー"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:49
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:49
 msgid "Your API key for the Jina AI API."
-msgstr "Jina AI API の API キーです。"
+msgstr "Jina AI API用のAPIキーです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:52
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:52
 msgid "Model Name"
 msgstr "モデル名"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:159
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:159
 msgid ""
 "The embedding model are trained by TongYi, it support more than 50 working "
 "languages."
-msgstr "この埋め込みモデルは通义によって訓練されており、50 以上の作業言語をサポートしています。"
+msgstr ""
+"この埋め込みモデルは通義によって訓練されており、50以上の作業言語をサポートしています。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:17
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:17
 msgid "Knowledge Graph Operator"
-msgstr "知識グラフオペレーター"
+msgstr "知識グラフ オペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:19
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:19
 msgid "Extract Documents and persist into graph database."
 msgstr "ドキュメントを抽出し、グラフデータベースに保存します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:23
 msgid "Knowledge Graph Connector"
-msgstr "知識グラフコネクター"
+msgstr "知識グラフ コネクター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:26
 msgid "The knowledge graph."
 msgstr "知識グラフです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:32
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:156
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:122
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:43
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:50
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:57
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:145
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:32
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:41
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:32
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:156
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:122
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:43
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:50
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:145
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:32
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:41
 msgid "Chunks"
 msgstr "チャンク"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:35
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:35
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:35
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:35
 msgid "The text split chunks by chunk manager."
 msgstr "チャンクマネージャーによって分割されたテキストチャンクです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge_graph.py:45
 msgid "The assembled chunks, it has been persisted to graph store."
 msgstr "組み立てられたチャンクは、グラフストアに保存されています。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:17
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:17
 msgid "Summary Operator"
 msgstr "要約オペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:20
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:20
 msgid "The summary assembler operator."
 msgstr "要約アセンブラーオペレーターです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:148
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:39
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:148
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:39
 msgid "Knowledge"
 msgstr "知識"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:23
 msgid "Knowledge datasource"
 msgstr "知識データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:28
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:28
 msgid "Document summary"
 msgstr "ドキュメントの要約"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:36
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:36
 msgid "LLM Client"
 msgstr "LLM クライアント"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:41
 msgid "The LLM Client."
 msgstr "LLM クライアントです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:44
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:44
 msgid "Model name"
 msgstr "モデル名"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:49
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:49
 msgid "LLM model name"
 msgstr "LLM モデル名"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:52
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:57
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:65
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:52
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:57
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:65
 msgid "prompt language"
 msgstr "プロンプト言語"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:60
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:60
 msgid "Max iteration with LLM"
-msgstr "LLMとの最大反復回数"
+msgstr "LLM との最大反復回数"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:68
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:68
 msgid "Concurrency limit with LLM"
-msgstr "LLMとの同時実行数制限"
+msgstr "LLM との同時実行数制限"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:73
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:73
 msgid "The concurrency limit with llm"
-msgstr "LLMとの同時実行数制限"
+msgstr "LLM との同時実行数制限"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:25
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:25
 msgid "Embedding Retriever Operator"
 msgstr "埋め込み検索オペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:27
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:27
 msgid "Retrieve candidates from vector store."
 msgstr "ベクトルストアから候補を検索します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:31
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:31
 msgid "Storage Index Store"
 msgstr "ストレージインデックスストア"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:34
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:134
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:34
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:134
 msgid "The vector store connector."
 msgstr "ベクトルストアコネクターです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:38
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:38
 msgid "Top K"
-msgstr "上位K件"
+msgstr "上位 K 件"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:41
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:41
 msgid "The number of candidates."
 msgstr "候補の数です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:44
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:44
 msgid "Score Threshold"
 msgstr "スコア閾値"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:48
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:48
 msgid ""
 "The score threshold, if score of candidate is less than it, it will be "
 "filtered."
-msgstr "スコア閾値です。候補のスコアがこの値より低い場合、フィルタリングされます。"
+msgstr ""
+"スコア閾値です。候補のスコアがこの値より低い場合、フィルタリングされます。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:55
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:55
 msgid "Query Rewrite"
 msgstr "クエリ書き換え"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:58
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:58
 msgid "The query rewrite resource."
 msgstr "クエリ書き換えリソースです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:63
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:63
 msgid "Rerank"
 msgstr "再ランキング"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:66
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:66
 msgid "The rerank."
 msgstr "再ランキングです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:73
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:73
 msgid "Query"
 msgstr "クエリ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:76
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:76
 msgid "The query to retrieve."
 msgstr "検索するクエリです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:81
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:81
 msgid "Candidates"
 msgstr "候補"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:84
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:84
 msgid "The retrieved candidates."
 msgstr "検索された候補です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:125
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:125
 msgid "Embedding Assembler Operator"
 msgstr "埋め込みアセンブラーオペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:127
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:127
 msgid "Load knowledge and assemble embedding chunks to vector store."
 msgstr "知識を読み込み、埋め込みチャンクをベクトルストアにアセンブルします。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:131
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:131
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:23
 msgid "Vector Store Connector"
 msgstr "ベクトルストアコネクター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:141
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:141
 msgid "The chunk parameters."
 msgstr "チャンクパラメーターです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:151
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:151
 msgid "The knowledge to be loaded."
 msgstr "読み込む知識です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:160
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:160
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:45
 msgid "The assembled chunks, it has been persisted to vector store."
 msgstr "アセンブルされたチャンクで、ベクトルストアに保存されています。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:23
 msgid "Knowledge Loader Operator"
 msgstr "知識ローダーオペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:27
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:27
 msgid "The knowledge operator, which can create knowledge from datasource."
 msgstr "データソースから知識を作成できる知識オペレーターです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:31
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:31
 msgid "knowledge datasource"
 msgstr "知識データソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:34
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:34
 msgid "knowledge datasource, which can be a document, url, or text."
-msgstr "知識データソースで、ドキュメント、URL、またはテキストにすることができます。"
+msgstr "ドキュメント、URL、またはテキストとなることができる知識データソースです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:42
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:42
 msgid "Knowledge object."
-msgstr "知識オブジェクト。"
+msgstr "知識オブジェクトです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:47
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:47
 msgid "Default datasource"
 msgstr "デフォルトのデータソース"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:52
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:52
 msgid "Default datasource."
-msgstr "デフォルトのデータソース。"
+msgstr "デフォルトのデータソースです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:55
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:55
 msgid "Knowledge type"
 msgstr "知識タイプ"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:71
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:71
 msgid "Knowledge type."
-msgstr "知識タイプ。"
+msgstr "知識タイプです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:106
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:106
 msgid "Chunks To String Operator"
 msgstr "チャンクを文字列に変換するオペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:108
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:108
 msgid "Convert chunks to string."
 msgstr "チャンクを文字列に変換します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:115
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:115
 msgid "The separator between chunks."
-msgstr "チャンク間の区切り文字。"
+msgstr "チャンク間の区切り文字です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:125
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:125
 msgid "The input chunks."
-msgstr "入力されたチャンク。"
+msgstr "入力されたチャンクです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:131
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:131
 msgid "String"
 msgstr "文字列"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:134
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:134
 msgid "The output string."
-msgstr "出力される文字列。"
+msgstr "出力される文字列です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:26
 msgid "Knowledge Process Branch Operator"
 msgstr "知識処理分岐オペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:30
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:30
 msgid "Branch the workflow based on the stream flag of the request."
 msgstr "リクエストのストリームフラグに基づいてワークフローを分岐させます。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:34
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:34
 msgid "Document Chunks"
 msgstr "ドキュメントチャンク"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:37
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:37
 msgid "The input value of the operator."
-msgstr "オペレーターの入力値。"
+msgstr "オペレーターの入力値です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:46
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:46
 msgid "Chunks for Vector Storage Connector."
-msgstr "ベクトルストレージコネクター用のチャンク。"
+msgstr "ベクトルストレージコネクター用のチャンクです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:53
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:53
 msgid "Chunks for Knowledge Graph Connector."
-msgstr "知識グラフコネクター用のチャンク。"
+msgstr "知識グラフコネクター用のチャンクです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:60
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:60
 msgid "Chunks for Full Text Connector."
-msgstr "全文検索コネクター用のチャンク。"
+msgstr "全文検索コネクター用のチャンクです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:119
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:119
 msgid "Knowledge Process Join Operator"
 msgstr "知識処理結合オペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:124
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:124
 msgid "Join Branch the workflow based on the Knowledge Process Results."
-msgstr "知識処理結果に基づいてワークフローを結合分岐させます。"
+msgstr "知識処理結果に基づいてワークフローを結合します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:129
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:129
 msgid "Vector Storage Results"
 msgstr "ベクトルストレージの結果"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:132
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:132
 msgid "vector storage results."
-msgstr "ベクトルストレージの結果。"
+msgstr "ベクトルストレージの結果です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:136
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:136
 msgid "Knowledge Graph Storage Results"
 msgstr "知識グラフストレージの結果"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:139
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:139
 msgid "knowledge graph storage results."
-msgstr "知識グラフストレージの結果。"
+msgstr "知識グラフの保存結果です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:148
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:148
 msgid "Knowledge Process Results."
-msgstr "知識処理の結果。"
+msgstr "知識処理結果です。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:17
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:17
 msgid "Full Text Storage Operator"
-msgstr "全文検索ストレージオペレーター"
+msgstr "全文ストレージオペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:19
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:19
 msgid "Persist embeddings into full text storage."
-msgstr "埋め込みを全文検索ストレージに保存します。"
+msgstr "埋め込みを全文ストレージに保存します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:23
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:23
 msgid "Full Text Connector"
-msgstr "全文検索コネクター"
+msgstr "全文コネクター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:26
 msgid "The full text store."
-msgstr "全文検索ストア。"
+msgstr "全文ストアです。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:45
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:45
 msgid "The assembled chunks, it has been persisted to full text store."
-msgstr "組み立てられたチャンクは、全文ストアに保存されました。"
+msgstr "組み立てられたチャンクは、全文ストアに保存されています。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:17
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:17
 msgid "Vector Storage Operator"
 msgstr "ベクトルストレージオペレーター"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:19
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:19
 msgid "Persist embeddings into vector storage."
 msgstr "埋め込みをベクトルストレージに保存します。"
 
-#:../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:26
+#: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:26
 msgid "The vector store."
-msgstr "ベクトルストア。"
+msgstr "ベクトルストアです。"

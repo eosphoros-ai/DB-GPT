@@ -25,7 +25,7 @@ msgstr "智能体分支算子"
 msgid ""
 "Branch the workflow based on the agent actionreport nexspeakers of the "
 "request."
-msgstr "根据请求的智能体操作报告中的 nexspeakers 分支工作流。"
+msgstr "根据请求的智能体操作报告中的后续发言者对工作流进行分支处理。"
 
 #: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:372
 #: ../packages/dbgpt-core/src/dbgpt/agent/core/plan/awel/agent_operator.py:380

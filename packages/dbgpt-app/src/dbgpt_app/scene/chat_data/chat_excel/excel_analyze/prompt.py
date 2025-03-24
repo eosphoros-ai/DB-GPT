@@ -227,8 +227,7 @@ prompt_adapter = AppScenePromptTemplateAdapter(
     prompt=prompt,
     template_scene=ChatScene.ChatExcel.value(),
     stream_out=PROMPT_NEED_STREAM_OUT,
-    output_parser=ChatExcelOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
-    need_historical_messages=True,
+    output_parser=ChatExcelOutputParser(),
     temperature=PROMPT_TEMPERATURE,
 )
 CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

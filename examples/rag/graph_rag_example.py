@@ -10,13 +10,12 @@ from dbgpt.rag.retriever import RetrieverStrategy
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.assembler import EmbeddingAssembler
 from dbgpt_ext.rag.knowledge import KnowledgeFactory
+from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStoreConfig
 from dbgpt_ext.storage.knowledge_graph.community_summary import (
     CommunitySummaryKnowledgeGraph,
-    CommunitySummaryKnowledgeGraphConfig,
 )
 from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     BuiltinKnowledgeGraph,
-    BuiltinKnowledgeGraphConfig,
 )
 
 """GraphRAG example.
@@ -61,26 +60,22 @@ async def test_community_graph_rag():
 def __create_naive_kg_connector():
     """Create knowledge graph connector."""
     return BuiltinKnowledgeGraph(
-        config=BuiltinKnowledgeGraphConfig(
-            name="naive_graph_rag_test",
-            embedding_fn=None,
-            llm_client=llm_client,
-            model_name=model_name,
-            graph_store_type="MemoryGraph",
-        ),
+        config=TuGraphStoreConfig(),
+        name="naive_graph_rag_test",
+        embedding_fn=None,
+        llm_client=llm_client,
+        llm_model=model_name,
     )
 
 
 def __create_community_kg_connector():
     """Create community knowledge graph connector."""
     return CommunitySummaryKnowledgeGraph(
-        config=CommunitySummaryKnowledgeGraphConfig(
-            name="community_graph_rag_test",
-            embedding_fn=DefaultEmbeddingFactory.openai(),
-            llm_client=llm_client,
-            model_name=model_name,
-            graph_store_type="TuGraphGraph",
-        ),
+        config=TuGraphStoreConfig(),
+        name="community_graph_rag_test",
+        embedding_fn=DefaultEmbeddingFactory.openai(),
+        llm_client=llm_client,
+        llm_model=model_name,
     )
 
 

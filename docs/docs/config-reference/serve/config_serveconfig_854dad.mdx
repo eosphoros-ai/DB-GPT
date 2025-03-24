@@ -1,0 +1,33 @@
+---
+title: "Prompt Serve Configurations Configuration"
+description: "This configuration is for the prompt serve module."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ServeConfig",
+  "description": "This configuration is for the prompt serve module.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "api_keys",
+      "type": "string",
+      "required": false,
+      "description": "API keys for the endpoint, if None, allow all"
+    },
+    {
+      "name": "default_user",
+      "type": "string",
+      "required": false,
+      "description": "Default user name for prompt"
+    },
+    {
+      "name": "default_sys_code",
+      "type": "string",
+      "required": false,
+      "description": "Default system code for prompt"
+    }
+  ]
+}} />
+

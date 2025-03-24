@@ -1,11 +1,17 @@
-from typing import Dict
+import logging
+from typing import Dict, Type
 
 from dbgpt import SystemApp
 from dbgpt.agent.util.api_call import ApiCall
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
 from dbgpt_app.scene import BaseChat, ChatScene
+from dbgpt_app.scene.base_chat import ChatParam
+from dbgpt_app.scene.chat_db.auto_execute.config import ChatWithDBExecuteConfig
+from dbgpt_serve.core.config import GPTsAppCommonConfig
 from dbgpt_serve.datasource.manages import ConnectorManager
+
+logger = logging.getLogger(__name__)
 
 
 class ChatWithDbAutoExecute(BaseChat):
@@ -13,7 +19,11 @@ class ChatWithDbAutoExecute(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_param: Dict, system_app: SystemApp = None):
+    @classmethod
+    def param_class(cls) -> Type[GPTsAppCommonConfig]:
+        return ChatWithDBExecuteConfig
+
+    def __init__(self, chat_param: ChatParam, system_app: SystemApp):
         """Chat Data Module Initialization
         Args:
            - chat_param: Dict
@@ -22,10 +32,8 @@ class ChatWithDbAutoExecute(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) dbname
         """
-        chat_mode = ChatScene.ChatWithDbExecute
-        self.db_name = chat_param["select_param"]
-        chat_param["chat_mode"] = chat_mode
-        """ """
+        self.db_name = chat_param.select_param
+        self.curr_config = chat_param.real_app_config(ChatWithDBExecuteConfig)
         super().__init__(chat_param=chat_param, system_app=system_app)
         if not self.db_name:
             raise ValueError(
@@ -36,7 +44,6 @@ class ChatWithDbAutoExecute(BaseChat):
         ):
             local_db_manager = ConnectorManager.get_instance(self.system_app)
             self.database = local_db_manager.get_connector(self.db_name)
-        self.top_k: int = 50
         self.api_call = ApiCall()
 
     @trace()
@@ -49,7 +56,6 @@ class ChatWithDbAutoExecute(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
         client = DBSummaryClient(system_app=self.system_app)
-        table_infos = None
         try:
             with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
                 table_infos = await blocking_func_to_async(
@@ -57,19 +63,23 @@ class ChatWithDbAutoExecute(BaseChat):
                     client.get_db_summary,
                     self.db_name,
                     self.current_user_input,
-                    self.app_config.rag.similarity_top_k,
+                    self.curr_config.schema_retrieve_top_k,
                 )
         except Exception as e:
-            print("db summary find error!" + str(e))
-        if not table_infos:
+            logger.error(f"Retrieved table info error: {str(e)}")
             table_infos = await blocking_func_to_async(
                 self._executor, self.database.table_simple_info
             )
+            if len(table_infos) > self.curr_config.schema_max_tokens:
+                # Load all tables schema, must be less then schema_max_tokens
+                # Here we just truncate the table_infos
+                # TODO: Count the number of tokens by LLMClient
+                table_infos = table_infos[: self.curr_config.schema_max_tokens]
 
         input_values = {
             "db_name": self.db_name,
             "user_input": self.current_user_input,
-            "top_k": str(self.top_k),
+            "top_k": self.curr_config.max_num_results,
             "dialect": self.database.dialect,
             "table_info": table_infos,
             "display_type": self._generate_numbered_list(),

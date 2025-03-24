@@ -3,7 +3,7 @@
 from contextlib import contextmanager
 from typing import Dict, Iterator, List, Optional, Type, Union
 
-from sqlalchemy import URL
+from sqlalchemy import URL, inspect
 from sqlalchemy.orm import DeclarativeMeta, Session
 
 from dbgpt.core import Serializer
@@ -20,11 +20,12 @@ from .db_manager import BaseModel, BaseQuery, DatabaseManager
 
 def _copy_public_properties(src: BaseModel, dest: BaseModel):
     """Copy public properties from src to dest."""
-    for column in src.__table__.columns:  # type: ignore
-        if column.name != "id":
-            value = getattr(src, column.name)
+    for column in inspect(src).mapper.column_attrs:
+        if column.key != "id":
+            alais = column.key
+            value = getattr(src, alais)
             if value is not None:
-                setattr(dest, column.name, value)
+                setattr(dest, column.key, value)
 
 
 class SQLAlchemyStorage(StorageInterface[T, BaseModel]):

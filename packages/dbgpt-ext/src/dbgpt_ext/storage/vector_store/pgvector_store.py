@@ -1,10 +1,10 @@
 """Postgres vector store."""
 
 import logging
+from dataclasses import dataclass, field
 from typing import List, Optional
 
-from dbgpt._private.pydantic import ConfigDict, Field
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
@@ -37,16 +37,23 @@ logger = logging.getLogger(__name__)
     ],
     description="PG vector config.",
 )
+@dataclass
 class PGVectorConfig(VectorStoreConfig):
     """PG vector store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "pgvector"
 
-    connection_string: str = Field(
+    connection_string: str = field(
         default=None,
-        description="the connection string of vector store, if not set, will use the "
-        "default connection string.",
+        metadata={
+            "description": "the connection string of vector store, "
+            "if not set, will use the default connection string."
+        },
     )
+
+    def create_store(self, **kwargs) -> "PGVectorStore":
+        """Create a PGVectorStore instance."""
+        return PGVectorStore(vector_store_config=self, **kwargs)
 
 
 @register_resource(
@@ -71,7 +78,12 @@ class PGVectorStore(VectorStoreBase):
     To use this, you should have the ``pgvector`` python package installed.
     """
 
-    def __init__(self, vector_store_config: PGVectorConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: PGVectorConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+    ) -> None:
         """Create a PGVectorStore instance."""
         try:
             from langchain.vectorstores import PGVector  # mypy: ignore
@@ -83,8 +95,8 @@ class PGVectorStore(VectorStoreBase):
         self._vector_store_config = vector_store_config
 
         self.connection_string = vector_store_config.connection_string
-        self.embeddings = vector_store_config.embedding_fn
-        self.collection_name = vector_store_config.name
+        self.embeddings = embedding_fn
+        self.collection_name = name
 
         self.vector_store_client = PGVector(
             embedding_function=self.embeddings,  # type: ignore

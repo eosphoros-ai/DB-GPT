@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,32 +17,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:90
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:90
 msgid "Default Chat History Load Operator"
 msgstr "Opérateur de chargement de l'historique de chat par défaut"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:94
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:94
 msgid ""
 "Load chat history from the storage of the serve component.It is the default "
 "storage of DB-GPT"
-msgstr "Charge l'historique de chat depuis le stockage du composant de service. C'est le stockage par défaut de DB-GPT"
+msgstr ""
+"Charge l'historique de chat depuis le stockage du composant de service. "
+"C'est le stockage par défaut de DB-GPT"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:100
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:100
 msgid "Model Request"
 msgstr "Demande de modèle"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:103
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:103
 msgid "The model request."
 msgstr "La demande de modèle."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:108
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:108
 msgid "Stored Messages"
 msgstr "Messages stockés"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:111
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/operators.py:111
 msgid "The messages stored in the storage."
 msgstr "Les messages stockés dans le stockage."
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:24
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:22
+msgid "Conversation Serve Configurations"
+msgstr "Configurations du service de conversation"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:25
+msgid "This configuration is for the conversation serve module."
+msgstr "Cette configuration est destinée au module de service de conversation."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/conversation/config.py:36
 msgid "Default model for the conversation"
 msgstr "Modèle par défaut pour la conversation"

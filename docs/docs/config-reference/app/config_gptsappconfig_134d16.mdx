@@ -1,0 +1,104 @@
+---
+title: "GPTsAppConfig Configuration"
+description: "GPTs application configuration.
+
+    For global configuration, you can set the parameters here."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "GPTsAppConfig",
+  "description": "GPTs application configuration.\n\n    For global configuration, you can set the parameters here.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": false,
+      "description": "The name of your app"
+    },
+    {
+      "name": "top_k",
+      "type": "integer",
+      "required": false,
+      "description": "The top k for LLM generation"
+    },
+    {
+      "name": "top_p",
+      "type": "number",
+      "required": false,
+      "description": "The top p for LLM generation"
+    },
+    {
+      "name": "temperature",
+      "type": "number",
+      "required": false,
+      "description": "The temperature for LLM generation"
+    },
+    {
+      "name": "max_new_tokens",
+      "type": "integer",
+      "required": false,
+      "description": "The max new tokens for LLM generation"
+    },
+    {
+      "name": "memory",
+      "type": "BaseGPTsAppMemoryConfig",
+      "required": false,
+      "description": "The memory configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "window configuration",
+          "url": "../memory/config_bufferwindowgptsappmemoryconfig_c31071"
+        },
+        {
+          "type": "link",
+          "text": "token configuration",
+          "url": "../memory/config_tokenbuffergptsappmemoryconfig_6a2000"
+        }
+      ]
+    },
+    {
+      "name": "configs",
+      "type": "GPTsAppCommonConfig",
+      "required": false,
+      "description": "The configs for specific app",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "chat_knowledge configuration",
+          "url": "config_chatknowledgeconfig_d51d9e"
+        },
+        {
+          "type": "link",
+          "text": "chat_with_db_qa configuration",
+          "url": "config_chatwithdbqaconfig_62cbe4"
+        },
+        {
+          "type": "link",
+          "text": "chat_with_db_execute configuration",
+          "url": "config_chatwithdbexecuteconfig_64fe0f"
+        },
+        {
+          "type": "link",
+          "text": "chat_normal configuration",
+          "url": "config_chatnormalconfig_83c865"
+        },
+        {
+          "type": "link",
+          "text": "chat_excel configuration",
+          "url": "config_chatexcelconfig_8dcf86"
+        },
+        {
+          "type": "link",
+          "text": "chat_dashboard configuration",
+          "url": "config_chatdashboardconfig_2480d0"
+        }
+      ],
+      "defaultValue": "[]"
+    }
+  ]
+}} />
+

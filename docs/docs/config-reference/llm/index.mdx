@@ -1,0 +1,126 @@
+---
+title: "llm"
+description: "llm Configuration"
+---
+
+# llm Configuration
+
+This document provides an overview of all configuration classes in llm type.
+
+import { ConfigClassTable } from '@site/src/components/mdx/ConfigClassTable';
+
+## Configuration Classes
+
+<ConfigClassTable classes={[
+  {
+    "name": "BaichuanDeployModelParameters",
+    "description": "Baichuan Proxy LLM",
+    "link": "./baichuan_baichuandeploymodelparameters_0bf9cc"
+  },
+  {
+    "name": "BitsandbytesQuantization",
+    "description": "Bits and bytes quantization parameters.",
+    "link": "./parameter_bitsandbytesquantization_d40e3b"
+  },
+  {
+    "name": "BitsandbytesQuantization4bits",
+    "description": "Bits and bytes quantization 4 bits parameters.",
+    "link": "./parameter_bitsandbytesquantization4bits_52b778"
+  },
+  {
+    "name": "BitsandbytesQuantization8bits",
+    "description": "Bits and bytes quantization 8 bits parameters.",
+    "link": "./parameter_bitsandbytesquantization8bits_909aed"
+  },
+  {
+    "name": "ClaudeDeployModelParameters",
+    "description": "Claude Proxy LLM",
+    "link": "./claude_claudedeploymodelparameters_1f0c45"
+  },
+  {
+    "name": "DeepSeekDeployModelParameters",
+    "description": "Deepseek proxy LLM configuration.",
+    "link": "./deepseek_deepseekdeploymodelparameters_194cbd"
+  },
+  {
+    "name": "GeminiDeployModelParameters",
+    "description": "Google Gemini proxy LLM configuration.",
+    "link": "./gemini_geminideploymodelparameters_5113b9"
+  },
+  {
+    "name": "GiteeDeployModelParameters",
+    "description": "Gitee proxy LLM configuration.",
+    "link": "./gitee_giteedeploymodelparameters_d1bdb3"
+  },
+  {
+    "name": "HFLLMDeployModelParameters",
+    "description": "Local deploy model parameters.",
+    "link": "./hf_adapter_hfllmdeploymodelparameters_103e81"
+  },
+  {
+    "name": "LlamaCppModelParameters",
+    "description": "LlamaCppModelParameters(name: str, provider: str = 'llama.cpp', verbose: Optional[bool] = False, concurrency: Optional[int] = 5, backend: Optional[str] = None, prompt_template: Optional[str] = None, context_length: Optional[int] = None, reasoning_model: Optional[bool] = None, path: Optional[str] = None, device: Optional[str] = None, seed: Optional[int] = -1, n_threads: Optional[int] = None, n_batch: Optional[int] = 512, n_gpu_layers: Optional[int] = 1000000000, n_gqa: Optional[int] = None, rms_norm_eps: Optional[float] = 5e-06, cache_capacity: Optional[str] = None, prefer_cpu: Optional[bool] = False)",
+    "link": "./llama_cpp_py_adapter_llamacppmodelparameters_e88874"
+  },
+  {
+    "name": "LlamaServerParameters",
+    "description": "LlamaServerParameters(name: str, provider: str = 'llama.cpp.server', verbose: Optional[bool] = False, concurrency: Optional[int] = 20, backend: Optional[str] = None, prompt_template: Optional[str] = None, context_length: Optional[int] = None, reasoning_model: Optional[bool] = None, path: Optional[str] = None, model_hf_repo: Optional[str] = None, model_hf_file: Optional[str] = None, device: Optional[str] = None, server_bin_path: Optional[str] = None, server_host: str = '127.0.0.1', server_port: int = 0, temperature: float = 0.8, seed: int = 42, debug: bool = False, model_url: Optional[str] = None, model_draft: Optional[str] = None, threads: Optional[int] = None, n_gpu_layers: Optional[int] = None, batch_size: Optional[int] = None, ubatch_size: Optional[int] = None, ctx_size: Optional[int] = None, grp_attn_n: Optional[int] = None, grp_attn_w: Optional[int] = None, n_predict: Optional[int] = None, slot_save_path: Optional[str] = None, n_slots: Optional[int] = None, cont_batching: bool = False, embedding: bool = False, reranking: bool = False, metrics: bool = False, slots: bool = False, draft: Optional[int] = None, draft_max: Optional[int] = None, draft_min: Optional[int] = None, api_key: Optional[str] = None, lora_files: List[str] = <factory>, no_context_shift: bool = False, no_webui: Optional[bool] = None, startup_timeout: Optional[int] = None)",
+    "link": "./llama_cpp_adapter_llamaserverparameters_421f40"
+  },
+  {
+    "name": "MoonshotDeployModelParameters",
+    "description": "Moonshot proxy LLM configuration.",
+    "link": "./moonshot_moonshotdeploymodelparameters_aa2f6b"
+  },
+  {
+    "name": "OllamaDeployModelParameters",
+    "description": "Ollama proxy LLM configuration.",
+    "link": "./ollama_ollamadeploymodelparameters_d55be6"
+  },
+  {
+    "name": "OpenAICompatibleDeployModelParameters",
+    "description": "OpenAI Compatible Proxy LLM",
+    "link": "./chatgpt_openaicompatibledeploymodelparameters_c3d426"
+  },
+  {
+    "name": "SiliconFlowDeployModelParameters",
+    "description": "SiliconFlow proxy LLM configuration.",
+    "link": "./siliconflow_siliconflowdeploymodelparameters_abe22f"
+  },
+  {
+    "name": "SparkDeployModelParameters",
+    "description": "Xunfei Spark proxy LLM configuration.",
+    "link": "./spark_sparkdeploymodelparameters_afba3c"
+  },
+  {
+    "name": "TongyiDeployModelParameters",
+    "description": "Tongyi proxy LLM configuration.",
+    "link": "./tongyi_tongyideploymodelparameters_02a91b"
+  },
+  {
+    "name": "VLLMDeployModelParameters",
+    "description": "Local deploy model parameters.",
+    "link": "./vllm_adapter_vllmdeploymodelparameters_1d4a24"
+  },
+  {
+    "name": "VolcengineDeployModelParameters",
+    "description": "Volcengine proxy LLM configuration.",
+    "link": "./volcengine_volcenginedeploymodelparameters_938015"
+  },
+  {
+    "name": "WenxinDeployModelParameters",
+    "description": "Baidu Wenxin proxy LLM configuration.",
+    "link": "./wenxin_wenxindeploymodelparameters_63c66b"
+  },
+  {
+    "name": "YiDeployModelParameters",
+    "description": "Yi proxy LLM configuration.",
+    "link": "./yi_yideploymodelparameters_92dbaa"
+  },
+  {
+    "name": "ZhipuDeployModelParameters",
+    "description": "Zhipu proxy LLM configuration.",
+    "link": "./zhipu_zhipudeploymodelparameters_c51e31"
+  },
+]} />
+

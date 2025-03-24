@@ -173,9 +173,10 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
             before parent operator(Streaming Operator is trigger by downstream
             Operator).
             """
-            return await self.current_dag_context.get_from_share_data(
+            model_name = await self.current_dag_context.get_from_share_data(
                 BaseLLM.SHARE_DATA_KEY_MODEL_NAME
             )
+            return model_name
 
         async for output in _to_openai_stream(model_output, None, model_caller):
             yield output
@@ -221,7 +222,7 @@ async def _to_openai_stream(
     previous_thinking_text = ""
     finish_stream_events = []
     async for model_output in output_iter:
-        if model_caller is not None:
+        if model is None and model_caller is not None:
             if asyncio.iscoroutinefunction(model_caller):
                 model = await model_caller()
             else:
@@ -257,7 +258,9 @@ async def _to_openai_stream(
             delta=DeltaMessage(content=delta_text, reasoning_content=thinking_text),
             finish_reason=model_output.finish_reason,
         )
-        chunk = ChatCompletionStreamResponse(id=id, choices=[choice_data], model=model)
+        chunk = ChatCompletionStreamResponse(
+            id=id, choices=[choice_data], model=model or ""
+        )
         if delta_text is None and thinking_text is None:
             if model_output.finish_reason is not None:
                 finish_stream_events.append(chunk)

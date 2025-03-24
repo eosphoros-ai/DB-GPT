@@ -25,11 +25,23 @@ class CommunityStore:
         graph_store_adapter: GraphStoreAdapter,
         community_summarizer: CommunitySummarizer,
         vector_store: VectorStoreBase,
+        index_name: Optional[str] = None,
+        max_chunks_once_load: Optional[int] = 10,
+        max_threads: Optional[int] = 1,
+        top_k: Optional[int] = 5,
+        score_threshold: Optional[float] = 0.7,
     ):
         """Initialize the CommunityStore class."""
         self._graph_store_adapter = graph_store_adapter
         self._community_summarizer = community_summarizer
-        self._meta_store = BuiltinCommunityMetastore(vector_store)
+        self._meta_store = BuiltinCommunityMetastore(
+            vector_store=vector_store,
+            index_name=index_name,
+            max_chunks_once_load=max_chunks_once_load,
+            max_threads=max_threads,
+            top_k=top_k,
+            score_threshold=score_threshold,
+        )
 
     async def build_communities(self, batch_size: int = 1):
         """Discover communities."""

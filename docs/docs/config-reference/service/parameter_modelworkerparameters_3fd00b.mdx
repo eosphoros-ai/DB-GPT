@@ -1,0 +1,120 @@
+---
+title: "ModelWorkerParameters Configuration"
+description: "ModelWorkerParameters(host: Optional[str] = '0.0.0.0', port: Optional[int] = 8001, daemon: Optional[bool] = False, log: dbgpt.util.utils.LoggingParameters = <factory>, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, worker_type: Optional[str] = None, worker_class: Optional[str] = None, standalone: Optional[bool] = False, register: Optional[bool] = True, worker_register_host: Optional[str] = None, controller_addr: Optional[str] = None, send_heartbeat: Optional[bool] = True, heartbeat_interval: Optional[int] = 20)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ModelWorkerParameters",
+  "description": "ModelWorkerParameters(host: Optional[str] = '0.0.0.0', port: Optional[int] = 8001, daemon: Optional[bool] = False, log: dbgpt.util.utils.LoggingParameters = <factory>, trace: Optional[dbgpt.util.tracer.tracer_impl.TracerParameters] = None, worker_type: Optional[str] = None, worker_class: Optional[str] = None, standalone: Optional[bool] = False, register: Optional[bool] = True, worker_register_host: Optional[str] = None, controller_addr: Optional[str] = None, send_heartbeat: Optional[bool] = True, heartbeat_interval: Optional[int] = 20)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "host",
+      "type": "string",
+      "required": false,
+      "description": "The host IP address to bind to.",
+      "defaultValue": "0.0.0.0"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "Model worker deploy port",
+      "defaultValue": "8001"
+    },
+    {
+      "name": "daemon",
+      "type": "boolean",
+      "required": false,
+      "description": "Run the server as a daemon.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "log",
+      "type": "LoggingParameters",
+      "required": false,
+      "description": "Logging configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "loggingparameters configuration",
+          "url": "../utils/utils_loggingparameters_4ba5c6"
+        }
+      ],
+      "defaultValue": "LoggingParameters"
+    },
+    {
+      "name": "trace",
+      "type": "TracerParameters",
+      "required": false,
+      "description": "Tracer configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "tracerparameters configuration",
+          "url": "../utils/tracer_impl_tracerparameters_f8f272"
+        }
+      ]
+    },
+    {
+      "name": "worker_type",
+      "type": "string",
+      "required": false,
+      "description": "Worker type",
+      "validValues": [
+        "llm",
+        "text2vec",
+        "reranker"
+      ]
+    },
+    {
+      "name": "worker_class",
+      "type": "string",
+      "required": false,
+      "description": "Model worker class, dbgpt.model.cluster.DefaultModelWorker"
+    },
+    {
+      "name": "standalone",
+      "type": "boolean",
+      "required": false,
+      "description": "Standalone mode. If True, embedded Run ModelController",
+      "defaultValue": "False"
+    },
+    {
+      "name": "register",
+      "type": "boolean",
+      "required": false,
+      "description": "Register current worker to model controller",
+      "defaultValue": "True"
+    },
+    {
+      "name": "worker_register_host",
+      "type": "string",
+      "required": false,
+      "description": "The ip address of current worker to register to ModelController. If None, the address is automatically determined"
+    },
+    {
+      "name": "controller_addr",
+      "type": "string",
+      "required": false,
+      "description": "The Model controller address to register"
+    },
+    {
+      "name": "send_heartbeat",
+      "type": "boolean",
+      "required": false,
+      "description": "Send heartbeat to model controller",
+      "defaultValue": "True"
+    },
+    {
+      "name": "heartbeat_interval",
+      "type": "integer",
+      "required": false,
+      "description": "The interval for sending heartbeats (seconds)",
+      "defaultValue": "20"
+    }
+  ]
+}} />
+

@@ -96,8 +96,6 @@ RESPONSE_FORMAT_SIMPLE = {
 }
 
 
-PROMPT_NEED_STREAM_OUT = False
-
 # Temperature is a configuration hyperparameter that controls the randomness of
 # language model output.
 # A high temperature produces more unpredictable and creative results, while a low
@@ -124,8 +122,7 @@ prompt_adapter = AppScenePromptTemplateAdapter(
     prompt=prompt,
     template_scene=ChatScene.ChatWithDbExecute.value(),
     stream_out=True,
-    output_parser=DbChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
+    output_parser=DbChatOutputParser(),
     temperature=PROMPT_TEMPERATURE,
-    need_historical_messages=False,
 )
 CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

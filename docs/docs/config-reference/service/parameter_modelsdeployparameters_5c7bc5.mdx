@@ -1,0 +1,200 @@
+---
+title: "ModelsDeployParameters Configuration"
+description: "ModelsDeployParameters(default_llm: Optional[str] = None, default_embedding: Optional[str] = None, default_reranker: Optional[str] = None, llms: List[dbgpt.core.interface.parameter.LLMDeployModelParameters] = <factory>, embeddings: List[dbgpt.core.interface.parameter.EmbeddingDeployModelParameters] = <factory>, rerankers: List[dbgpt.core.interface.parameter.RerankerDeployModelParameters] = <factory>)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ModelsDeployParameters",
+  "description": "ModelsDeployParameters(default_llm: Optional[str] = None, default_embedding: Optional[str] = None, default_reranker: Optional[str] = None, llms: List[dbgpt.core.interface.parameter.LLMDeployModelParameters] = <factory>, embeddings: List[dbgpt.core.interface.parameter.EmbeddingDeployModelParameters] = <factory>, rerankers: List[dbgpt.core.interface.parameter.RerankerDeployModelParameters] = <factory>)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "default_llm",
+      "type": "string",
+      "required": false,
+      "description": "Default LLM model name, used to specify which model to use when you have multiple LLMs"
+    },
+    {
+      "name": "default_embedding",
+      "type": "string",
+      "required": false,
+      "description": "Default embedding model name, used to specify which model to use when you have multiple embedding models"
+    },
+    {
+      "name": "default_reranker",
+      "type": "string",
+      "required": false,
+      "description": "Default reranker model name, used to specify which model to use when you have multiple reranker models"
+    },
+    {
+      "name": "llms",
+      "type": "LLMDeployModelParameters",
+      "required": false,
+      "description": "LLM model deploy configuration. If you deploy in cluster mode, you just deploy one model.",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "hf configuration",
+          "url": "../llm/hf_adapter_hfllmdeploymodelparameters_103e81"
+        },
+        {
+          "type": "link",
+          "text": "vllm configuration",
+          "url": "../llm/vllm_adapter_vllmdeploymodelparameters_1d4a24"
+        },
+        {
+          "type": "link",
+          "text": "llama.cpp.server configuration",
+          "url": "../llm/llama_cpp_adapter_llamaserverparameters_421f40"
+        },
+        {
+          "type": "link",
+          "text": "llama.cpp configuration",
+          "url": "../llm/llama_cpp_py_adapter_llamacppmodelparameters_e88874"
+        },
+        {
+          "type": "link",
+          "text": "proxy/openai configuration",
+          "url": "../llm/chatgpt_openaicompatibledeploymodelparameters_c3d426"
+        },
+        {
+          "type": "link",
+          "text": "proxy/siliconflow configuration",
+          "url": "../llm/siliconflow_siliconflowdeploymodelparameters_abe22f"
+        },
+        {
+          "type": "link",
+          "text": "proxy/zhipu configuration",
+          "url": "../llm/zhipu_zhipudeploymodelparameters_c51e31"
+        },
+        {
+          "type": "link",
+          "text": "proxy/moonshot configuration",
+          "url": "../llm/moonshot_moonshotdeploymodelparameters_aa2f6b"
+        },
+        {
+          "type": "link",
+          "text": "proxy/gitee configuration",
+          "url": "../llm/gitee_giteedeploymodelparameters_d1bdb3"
+        },
+        {
+          "type": "link",
+          "text": "proxy/deepseek configuration",
+          "url": "../llm/deepseek_deepseekdeploymodelparameters_194cbd"
+        },
+        {
+          "type": "link",
+          "text": "proxy/ollama configuration",
+          "url": "../llm/ollama_ollamadeploymodelparameters_d55be6"
+        },
+        {
+          "type": "link",
+          "text": "proxy/yi configuration",
+          "url": "../llm/yi_yideploymodelparameters_92dbaa"
+        },
+        {
+          "type": "link",
+          "text": "proxy/spark configuration",
+          "url": "../llm/spark_sparkdeploymodelparameters_afba3c"
+        },
+        {
+          "type": "link",
+          "text": "proxy/baichuan configuration",
+          "url": "../llm/baichuan_baichuandeploymodelparameters_0bf9cc"
+        },
+        {
+          "type": "link",
+          "text": "proxy/gemini configuration",
+          "url": "../llm/gemini_geminideploymodelparameters_5113b9"
+        },
+        {
+          "type": "link",
+          "text": "proxy/tongyi configuration",
+          "url": "../llm/tongyi_tongyideploymodelparameters_02a91b"
+        },
+        {
+          "type": "link",
+          "text": "proxy/volcengine configuration",
+          "url": "../llm/volcengine_volcenginedeploymodelparameters_938015"
+        },
+        {
+          "type": "link",
+          "text": "proxy/wenxin configuration",
+          "url": "../llm/wenxin_wenxindeploymodelparameters_63c66b"
+        },
+        {
+          "type": "link",
+          "text": "proxy/claude configuration",
+          "url": "../llm/claude_claudedeploymodelparameters_1f0c45"
+        }
+      ],
+      "defaultValue": "[]"
+    },
+    {
+      "name": "embeddings",
+      "type": "EmbeddingDeployModelParameters",
+      "required": false,
+      "description": "Embedding model deploy configuration. If you deploy in cluster mode, you just deploy one model.",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "hf configuration",
+          "url": "../embedding/embeddings_hfembeddingdeploymodelparameters_f588e1"
+        },
+        {
+          "type": "link",
+          "text": "proxy/openai configuration",
+          "url": "../embedding/embeddings_openapiembeddingdeploymodelparameters_f9ba47"
+        },
+        {
+          "type": "link",
+          "text": "proxy/jina configuration",
+          "url": "../embedding/jina_jinaembeddingsdeploymodelparameters_40b0f2"
+        },
+        {
+          "type": "link",
+          "text": "proxy/ollama configuration",
+          "url": "../embedding/ollama_ollamaembeddingdeploymodelparameters_b511e0"
+        },
+        {
+          "type": "link",
+          "text": "proxy/qianfan configuration",
+          "url": "../embedding/qianfan_qianfanembeddingdeploymodelparameters_257d2a"
+        },
+        {
+          "type": "link",
+          "text": "proxy/tongyi configuration",
+          "url": "../embedding/tongyi_tongyiembeddingdeploymodelparameters_a7cbb4"
+        }
+      ],
+      "defaultValue": "[]"
+    },
+    {
+      "name": "rerankers",
+      "type": "RerankerDeployModelParameters",
+      "required": false,
+      "description": "Reranker model deploy configuration. If you deploy in cluster mode, you just deploy one model.",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "hf configuration",
+          "url": "../reranker/rerank_crossencoderrerankembeddingsparameters_63ec13"
+        },
+        {
+          "type": "link",
+          "text": "proxy/openapi configuration",
+          "url": "../reranker/rerank_openapirerankerdeploymodelparameters_778108"
+        },
+        {
+          "type": "link",
+          "text": "proxy/siliconflow configuration",
+          "url": "../reranker/rerank_siliconflowrerankembeddingsparameters_af0257"
+        }
+      ],
+      "defaultValue": "[]"
+    }
+  ]
+}} />
+

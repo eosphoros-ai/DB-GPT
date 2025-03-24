@@ -1,12 +1,14 @@
 """Chroma vector store."""
 
+import hashlib
 import logging
 import os
+import re
+from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
-from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.configs.model_config import PILOT_PATH, resolve_root_path
-from dbgpt.core import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
@@ -14,11 +16,10 @@ from dbgpt.storage.vector_store.base import (
     VectorStoreConfig,
 )
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
+from dbgpt.util import string_utils
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
-
-CHROMA_COLLECTION_NAME = "langchain"
 
 
 @register_resource(
@@ -38,20 +39,28 @@ CHROMA_COLLECTION_NAME = "langchain"
         ),
     ],
 )
+@dataclass
 class ChromaVectorConfig(VectorStoreConfig):
     """Chroma vector store config."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    __type__ = "chroma"
 
-    persist_path: Optional[str] = Field(
+    persist_path: Optional[str] = field(
         default=os.getenv("CHROMA_PERSIST_PATH", None),
-        description="the persist path of vector store.",
+        metadata={
+            "help": _("The persist path of vector store."),
+        },
     )
-    collection_metadata: Optional[dict] = Field(
+    collection_metadata: Optional[dict] = field(
         default=None,
-        description="the index metadata of vector store, if not set, will use the "
-        "default metadata.",
+        metadata={
+            "help": _("The metadata of collection."),
+        },
     )
+
+    def create_store(self, **kwargs) -> "ChromaStore":
+        """Create index store."""
+        return ChromaStore(vector_store_config=self, **kwargs)
 
 
 @register_resource(
@@ -73,11 +82,22 @@ class ChromaVectorConfig(VectorStoreConfig):
 class ChromaStore(VectorStoreBase):
     """Chroma vector store."""
 
-    def __init__(self, vector_store_config: ChromaVectorConfig) -> None:
+    def __init__(
+        self,
+        vector_store_config: ChromaVectorConfig,
+        name: Optional[str],
+        embedding_fn: Optional[Embeddings] = None,
+        chroma_client: Optional["PersistentClient"] = None,  # type: ignore # noqa
+        collection_metadata: Optional[dict] = None,
+    ) -> None:
         """Create a ChromaStore instance.
 
         Args:
             vector_store_config(ChromaVectorConfig): vector store config.
+            name(str): collection name.
+            embedding_fn(Embeddings): embedding function.
+            chroma_client(PersistentClient): chroma client.
+            collection_metadata(dict): collection metadata.
         """
         super().__init__()
         self._vector_store_config = vector_store_config
@@ -85,28 +105,34 @@ class ChromaStore(VectorStoreBase):
             from chromadb import PersistentClient, Settings
         except ImportError:
             raise ImportError("Please install chroma package first.")
-        chroma_vector_config = vector_store_config.to_dict(exclude_none=True)
+        chroma_vector_config = vector_store_config.to_dict()
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
         )
-        self.persist_dir = os.path.join(
-            resolve_root_path(chroma_path), vector_store_config.name + ".vectordb"
-        )
-        self.embeddings = vector_store_config.embedding_fn
+        self.persist_dir = os.path.join(resolve_root_path(chroma_path) + "/chromadb")
+        self.embeddings = embedding_fn
+        if not self.embeddings:
+            raise ValueError("Embeddings is None")
+        self._collection_name = name
+        if not _valid_chroma_collection_name(name):
+            hash_object = hashlib.sha256(name.encode("utf-8"))
+            hex_hash = hash_object.hexdigest()
+            # ensure the collection name is less than 64 characters
+            self._collection_name = hex_hash[:63] if len(hex_hash) > 63 else hex_hash
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
             anonymized_telemetry=False,
         )
-        self._chroma_client = PersistentClient(
-            path=self.persist_dir, settings=chroma_settings
-        )
+        self._chroma_client = chroma_client
+        if not self._chroma_client:
+            self._chroma_client = PersistentClient(
+                path=self.persist_dir, settings=chroma_settings
+            )
+        collection_metadata = collection_metadata or {"hnsw:space": "cosine"}
 
-        collection_metadata = chroma_vector_config.get("collection_metadata") or {
-            "hnsw:space": "cosine"
-        }
         self._collection = self._chroma_client.get_or_create_collection(
-            name=CHROMA_COLLECTION_NAME,
+            name=self._collection_name,
             embedding_function=None,
             metadata=collection_metadata,
         )
@@ -180,13 +206,12 @@ class ChromaStore(VectorStoreBase):
 
     def vector_name_exists(self) -> bool:
         """Whether vector name exists."""
-        logger.info(f"Check persist_dir: {self.persist_dir}")
-        if not os.path.exists(self.persist_dir):
+        try:
+            collection = self._chroma_client.get_collection(self._collection_name)
+            return collection.count() > 0
+        except Exception as _e:
+            logger.info(f"Collection {self._collection_name} does not exist")
             return False
-        files = os.listdir(self.persist_dir)
-        # Skip default file: chroma.sqlite3
-        files = list(filter(lambda f: f != "chroma.sqlite3", files))
-        return len(files) > 0
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document to vector store."""
@@ -201,16 +226,43 @@ class ChromaStore(VectorStoreBase):
         return ids
 
     def delete_vector_name(self, vector_name: str):
-        """Delete vector name."""
+        """Delete vector name and clean up resources.
+
+        Args:
+            vector_name (str): Name of the vector to delete
+
+        Returns:
+            bool: True if deletion was successful, False otherwise
+
+        Raises:
+            Exception: If any error occurs during deletion
+        """
         try:
             from chromadb.api.client import SharedSystemClient
         except ImportError:
             raise ImportError("Please install chroma package first.")
+
         logger.info(f"chroma vector_name:{vector_name} begin delete...")
-        self._chroma_client.delete_collection(self._collection.name)
-        SharedSystemClient.clear_system_cache()
-        self._clean_persist_folder()
-        return True
+
+        try:
+            # Check if collection exists first
+            collections = self._chroma_client.list_collections()
+            collection_exists = self._collection.name in collections
+
+            if not collection_exists:
+                logger.warning(
+                    f"Collection {self._collection.name} does not exist, skip delete"
+                )
+                return True
+
+            # Delete collection if it exists
+            self._chroma_client.delete_collection(self._collection.name)
+            SharedSystemClient.clear_system_cache()
+            return True
+
+        except Exception as e:
+            logger.error(f"Error during vector store deletion: {e}")
+            raise
 
     def delete_by_ids(self, ids):
         """Delete vector by ids."""
@@ -371,3 +423,31 @@ def _transform_chroma_metadata(
         if isinstance(value, (str, int, float, bool)):
             transformed[key] = value
     return transformed
+
+
+def _valid_chroma_collection_name(name):
+    """Check if the collection name is valid."""
+    # ensure the collection name is less than 64 characters
+    if not (3 <= len(name) <= 63):
+        return False
+
+    # ensure the collection name starts and ends with an alphanumeric character
+    if not re.match(r"^[a-zA-Z0-9].*[a-zA-Z0-9]$", name):
+        return False
+
+    # ensure the collection name contains only alphanumeric characters,
+    # hyphens, underscores, and dots
+    if not re.match(r"^[a-zA-Z0-9_][-a-zA-Z0-9_.]*$", name):
+        return False
+
+    # ensure the collection name does not contain the '..' substring
+    if ".." in name:
+        return False
+
+    if string_utils.is_valid_ipv4(name):
+        return False
+
+    if string_utils.contains_chinese(name):
+        return False
+
+    return True

@@ -736,8 +736,13 @@ class DAGContext:
         async with self._share_data_lock:
             if key in self._share_data and not overwrite:
                 raise ValueError(f"Share data key {key} already exists")
-            logger.debug(f"Save share data by key {key} to {id(self._share_data)}")
-            self._share_data[key] = data
+            if overwrite and key in self._share_data and data is None:
+                logger.warning(
+                    f"Overwrite share data key {key} with None, nothing to do"
+                )
+            else:
+                logger.debug(f"Save share data by key {key} to {id(self._share_data)}")
+                self._share_data[key] = data
 
     async def get_task_share_data(self, task_name: str, key: str) -> Any:
         """Get share data by task name and key.

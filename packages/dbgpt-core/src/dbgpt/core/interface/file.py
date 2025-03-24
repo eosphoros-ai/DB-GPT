@@ -16,6 +16,7 @@ import requests
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.util.tracer import root_tracer, trace
 
+from ...util import BaseParameters, RegisterParameters
 from .storage import (
     InMemoryStorage,
     QuerySpec,
@@ -114,6 +115,18 @@ class FileMetadata(StorageItem):
         self.custom_metadata = obj.custom_metadata
         self.file_hash = obj.file_hash
         self._identifier = obj._identifier
+
+
+@dataclasses.dataclass
+class StorageBackendConfig(BaseParameters, RegisterParameters):
+    """Storage backend configuration"""
+
+    __type__ = "___storage_backend_config___"
+    __cfg_type__ = "utils"
+
+    def create_storage(self) -> "StorageBackend":
+        """Create the storage"""
+        raise NotImplementedError()
 
 
 class FileStorageURI:
@@ -489,6 +502,7 @@ class FileStorageClient(BaseComponent):
         system_app: Optional[SystemApp] = None,
         storage_system: Optional[FileStorageSystem] = None,
         save_chunk_size: int = 1024 * 1024,
+        default_storage_type: Optional[str] = None,
     ):
         """Initialize the file storage client."""
         super().__init__(system_app=system_app)
@@ -503,10 +517,14 @@ class FileStorageClient(BaseComponent):
                     )
                 }
             )
+        if not default_storage_type:
+            if storage_system and storage_system.storage_backends:
+                default_storage_type = list(storage_system.storage_backends.keys())[0]
 
         self.system_app = system_app
         self._storage_system = storage_system
         self.save_chunk_size = save_chunk_size
+        self.default_storage_type = default_storage_type
 
     def init_app(self, system_app: SystemApp):
         """Initialize the application."""
@@ -523,7 +541,7 @@ class FileStorageClient(BaseComponent):
         self,
         bucket: str,
         file_path: str,
-        storage_type: str,
+        storage_type: Optional[str] = None,
         custom_metadata: Optional[Dict[str, Any]] = None,
         file_id: Optional[str] = None,
     ) -> str:
@@ -556,7 +574,7 @@ class FileStorageClient(BaseComponent):
         bucket: str,
         file_name: str,
         file_data: BinaryIO,
-        storage_type: str,
+        storage_type: Optional[str] = None,
         custom_metadata: Optional[Dict[str, Any]] = None,
         file_id: Optional[str] = None,
     ) -> str:
@@ -575,12 +593,20 @@ class FileStorageClient(BaseComponent):
         Returns:
             str: The file URI
         """
+        if not storage_type:
+            storage_type = self.default_storage_type
+        if not storage_type:
+            raise ValueError("Storage type not provided")
         return self.storage_system.save_file(
             bucket, file_name, file_data, storage_type, custom_metadata, file_id
         )
 
     def download_file(
-        self, uri: str, dest_path: Optional[str] = None, dest_dir: Optional[str] = None
+        self,
+        uri: str,
+        dest_path: Optional[str] = None,
+        dest_dir: Optional[str] = None,
+        cache: bool = True,
     ) -> Tuple[str, FileMetadata]:
         """Download a file from the storage system.
 
@@ -595,6 +621,7 @@ class FileStorageClient(BaseComponent):
             uri (str): The file URI
             dest_path (str, optional): The destination path. Defaults to None.
             dest_dir (str, optional): The destination directory. Defaults to None.
+            cache (bool, optional): Whether to cache the file. Defaults to True.
 
         Raises:
             FileNotFoundError: If the file is not found
@@ -607,6 +634,7 @@ class FileStorageClient(BaseComponent):
         if dest_path:
             target_path = dest_path
         elif dest_dir:
+            os.makedirs(dest_dir, exist_ok=True)
             target_path = os.path.join(dest_dir, file_metadata.file_id + extension)
         else:
             from pathlib import Path
@@ -616,7 +644,7 @@ class FileStorageClient(BaseComponent):
             os.makedirs(base_path, exist_ok=True)
             target_path = os.path.join(base_path, file_metadata.file_id + extension)
         file_hash = file_metadata.file_hash
-        if os.path.exists(target_path):
+        if os.path.exists(target_path) and cache:
             logger.debug(f"File {target_path} already exists, begin hash check")
             with open(target_path, "rb") as f:
                 if file_hash == calculate_file_hash(f, self.save_chunk_size):

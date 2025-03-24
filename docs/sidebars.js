@@ -109,6 +109,10 @@ const sidebars = {
                 },
                 {
                   type: "doc",
+                  id: "installation/integrations/bm25_rag_install"
+                },
+                {
+                  type: "doc",
                   id: "installation/integrations/milvus_rag_install"
                 }
               ]
@@ -818,7 +822,7 @@ const sidebars = {
         type: 'generated-index',
         title: 'Config Reference',
         description: 'All system configurable parameters and their detailed descriptions',
-        // slug: '/config-reference'
+        slug: '/config/config-reference'
       },
       items: [
         {

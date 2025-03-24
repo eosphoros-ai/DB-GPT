@@ -1,0 +1,57 @@
+---
+title: "TracerParameters Configuration"
+description: "TracerParameters(file: Optional[str] = None, root_operation_name: Optional[str] = None, exporter: Optional[str] = None, otlp_endpoint: Optional[str] = None, otlp_insecure: Optional[bool] = None, otlp_timeout: Optional[int] = None, tracer_storage_cls: Optional[str] = None)"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "TracerParameters",
+  "description": "TracerParameters(file: Optional[str] = None, root_operation_name: Optional[str] = None, exporter: Optional[str] = None, otlp_endpoint: Optional[str] = None, otlp_insecure: Optional[bool] = None, otlp_timeout: Optional[int] = None, tracer_storage_cls: Optional[str] = None)",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "The file to store the tracer, e.g. dbgpt_webserver_tracer.jsonl"
+    },
+    {
+      "name": "root_operation_name",
+      "type": "string",
+      "required": false,
+      "description": "The root operation name of the tracer"
+    },
+    {
+      "name": "exporter",
+      "type": "string",
+      "required": false,
+      "description": "The exporter of the tracer, e.g. telemetry"
+    },
+    {
+      "name": "otlp_endpoint",
+      "type": "string",
+      "required": false,
+      "description": "The endpoint of the OpenTelemetry Protocol, you can set '${env:OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}' to use the environment variable"
+    },
+    {
+      "name": "otlp_insecure",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to use insecure connection, you can set '${env:OTEL_EXPORTER_OTLP_TRACES_INSECURE}' to use the environment "
+    },
+    {
+      "name": "otlp_timeout",
+      "type": "integer",
+      "required": false,
+      "description": "The timeout of the connection, in seconds, you can set '${env:OTEL_EXPORTER_OTLP_TRACES_TIMEOUT}' to use the environment "
+    },
+    {
+      "name": "tracer_storage_cls",
+      "type": "string",
+      "required": false,
+      "description": "The class of the tracer storage"
+    }
+  ]
+}} />
+

@@ -1,0 +1,26 @@
+---
+title: "utils"
+description: "utils Configuration"
+---
+
+# utils Configuration
+
+This document provides an overview of all configuration classes in utils type.
+
+import { ConfigClassTable } from '@site/src/components/mdx/ConfigClassTable';
+
+## Configuration Classes
+
+<ConfigClassTable classes={[
+  {
+    "name": "OSSStorageConfig",
+    "description": "OSSStorageConfig(endpoint: str, region: str, access_key_id: Optional[str] = None, access_key_secret: Optional[str] = None, use_environment_credentials: Optional[bool] = False, fixed_bucket: Optional[str] = None, bucket_prefix: Optional[str] = 'dbgpt-fs-', auto_create_bucket: Optional[bool] = True, save_chunk_size: Optional[int] = 1048576)",
+    "link": "./config_ossstorageconfig_1ad505"
+  },
+  {
+    "name": "S3StorageConfig",
+    "description": "S3StorageConfig(endpoint: str, region: str, access_key_id: Optional[str] = None, access_key_secret: Optional[str] = None, use_environment_credentials: Optional[bool] = False, fixed_bucket: Optional[str] = None, bucket_prefix: Optional[str] = 'dbgpt-fs-', auto_create_bucket: Optional[bool] = True, save_chunk_size: Optional[int] = 1048576, signature_version: Optional[str] = None, s3_config: Optional[Dict[str, Any]] = <factory>)",
+    "link": "./config_s3storageconfig_f0cdc9"
+  },
+]} />
+

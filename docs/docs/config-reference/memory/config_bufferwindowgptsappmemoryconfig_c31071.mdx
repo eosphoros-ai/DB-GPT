@@ -1,0 +1,31 @@
+---
+title: "BufferWindowGPTsAppMemoryConfig Configuration"
+description: "Buffer window memory configuration.
+
+    This configuration is used to control the buffer window memory."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "BufferWindowGPTsAppMemoryConfig",
+  "description": "Buffer window memory configuration.\n\n    This configuration is used to control the buffer window memory.",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "keep_start_rounds",
+      "type": "integer",
+      "required": false,
+      "description": "The number of start rounds to keep in memory",
+      "defaultValue": "0"
+    },
+    {
+      "name": "keep_end_rounds",
+      "type": "integer",
+      "required": false,
+      "description": "The number of end rounds to keep in memory",
+      "defaultValue": "0"
+    }
+  ]
+}} />
+

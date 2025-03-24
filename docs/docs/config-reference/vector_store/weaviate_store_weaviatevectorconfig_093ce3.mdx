@@ -1,0 +1,39 @@
+---
+title: "Weaviate Config Configuration"
+description: "Weaviate vector config."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "WeaviateVectorConfig",
+  "description": "Weaviate vector config.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "The user of vector store, if not set, will use the default user."
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "The password of vector store, if not set, will use the default password."
+    },
+    {
+      "name": "weaviate_url",
+      "type": "string",
+      "required": false,
+      "description": ""
+    },
+    {
+      "name": "persist_path",
+      "type": "string",
+      "required": false,
+      "description": ""
+    }
+  ]
+}} />
+

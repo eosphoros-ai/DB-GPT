@@ -1,0 +1,98 @@
+---
+title: "Xunfei Spark Proxy LLM Configuration"
+description: "Xunfei Spark proxy LLM configuration."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "SparkDeployModelParameters",
+  "description": "Xunfei Spark proxy LLM configuration.",
+  "documentationUrl": "https://www.xfyun.cn/doc/spark/HTTP%E8%B0%83%E7%94%A8%E6%96%87%E6%A1%A3.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E",
+  "parameters": [
+    {
+      "name": "name",
+      "type": "string",
+      "required": true,
+      "description": "The name of the model."
+    },
+    {
+      "name": "backend",
+      "type": "string",
+      "required": false,
+      "description": "The real model name to pass to the provider, default is None. If backend is None, use name as the real model name."
+    },
+    {
+      "name": "provider",
+      "type": "string",
+      "required": false,
+      "description": "The provider of the model. If model is deployed in local, this is the inference type. If model is deployed in third-party service, this is platform name('proxy/<platform>')",
+      "defaultValue": "proxy/spark"
+    },
+    {
+      "name": "verbose",
+      "type": "boolean",
+      "required": false,
+      "description": "Show verbose output.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "concurrency",
+      "type": "integer",
+      "required": false,
+      "description": "Model concurrency limit",
+      "defaultValue": "100"
+    },
+    {
+      "name": "prompt_template",
+      "type": "string",
+      "required": false,
+      "description": "Prompt template. If None, the prompt template is automatically determined from model. Just for local deployment."
+    },
+    {
+      "name": "context_length",
+      "type": "integer",
+      "required": false,
+      "description": "The context length of the OpenAI API. If None, it is determined by the model."
+    },
+    {
+      "name": "reasoning_model",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether the model is a reasoning model. If None, it is automatically determined from model."
+    },
+    {
+      "name": "api_base",
+      "type": "string",
+      "required": false,
+      "description": "The base url of the Spark API.",
+      "defaultValue": "${env:XUNFEI_SPARK_API_BASE:-https://spark-api-open.xf-yun.com/v1}"
+    },
+    {
+      "name": "api_key",
+      "type": "string",
+      "required": false,
+      "description": "The API key of the Spark API.",
+      "defaultValue": "${env:XUNFEI_SPARK_API_KEY}"
+    },
+    {
+      "name": "api_type",
+      "type": "string",
+      "required": false,
+      "description": "The type of the OpenAI API, if you use Azure, it can be: azure"
+    },
+    {
+      "name": "api_version",
+      "type": "string",
+      "required": false,
+      "description": "The version of the OpenAI API."
+    },
+    {
+      "name": "http_proxy",
+      "type": "string",
+      "required": false,
+      "description": "The http or https proxy to use openai"
+    }
+  ]
+}} />
+

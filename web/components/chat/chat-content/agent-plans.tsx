@@ -1,10 +1,8 @@
 import { CaretRightOutlined, CheckOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { GPTVis } from '@antv/gpt-vis';
 import { Collapse } from 'antd';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
 
-import markdownComponents from './config';
+import markdownComponents, { markdownPlugins, preprocessLaTeX } from './config';
 
 interface Props {
   data: {
@@ -40,8 +38,8 @@ function AgentPlans({ data }: Props) {
             </div>
           ),
           children: (
-            <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>
-              {item.markdown}
+            <GPTVis components={markdownComponents} {...markdownPlugins}>
+              {preprocessLaTeX(item.markdown)}
             </GPTVis>
           ),
         };

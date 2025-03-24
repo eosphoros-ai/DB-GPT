@@ -3,8 +3,7 @@ import { IChatDialogueMessageSchema } from '@/types/chat';
 import { GPTVis } from '@antv/gpt-vis';
 import classNames from 'classnames';
 import { memo, useContext } from 'react';
-import rehypeRaw from 'rehype-raw';
-import markdownComponents from './chat-content/config';
+import markdownComponents, { markdownPlugins, preprocessLaTeX } from './chat-content/config';
 
 interface Props {
   content: IChatDialogueMessageSchema;
@@ -27,8 +26,8 @@ function AgentContent({ content }: Props) {
       })}
     >
       {isView ? (
-        <GPTVis components={markdownComponents} rehypePlugins={[rehypeRaw]}>
-          {formatMarkdownVal(content.context)}
+        <GPTVis components={markdownComponents} {...markdownPlugins}>
+          {preprocessLaTeX(formatMarkdownVal(content.context))}
         </GPTVis>
       ) : (
         <div className=''>{content.context}</div>

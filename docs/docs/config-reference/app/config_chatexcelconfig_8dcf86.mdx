@@ -1,0 +1,78 @@
+---
+title: "ChatExcelConfig Configuration"
+description: "Chat Excel Configuration"
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ChatExcelConfig",
+  "description": "Chat Excel Configuration",
+  "documentationUrl": "",
+  "parameters": [
+    {
+      "name": "top_k",
+      "type": "integer",
+      "required": false,
+      "description": "The top k for LLM generation"
+    },
+    {
+      "name": "top_p",
+      "type": "number",
+      "required": false,
+      "description": "The top p for LLM generation"
+    },
+    {
+      "name": "temperature",
+      "type": "number",
+      "required": false,
+      "description": "The temperature for LLM generation"
+    },
+    {
+      "name": "max_new_tokens",
+      "type": "integer",
+      "required": false,
+      "description": "The max new tokens for LLM generation"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "required": false,
+      "description": "The name of your app"
+    },
+    {
+      "name": "memory",
+      "type": "BaseGPTsAppMemoryConfig",
+      "required": false,
+      "description": "Memory configuration",
+      "nestedTypes": [
+        {
+          "type": "link",
+          "text": "window configuration",
+          "url": "../memory/config_bufferwindowgptsappmemoryconfig_c31071"
+        },
+        {
+          "type": "link",
+          "text": "token configuration",
+          "url": "../memory/config_tokenbuffergptsappmemoryconfig_6a2000"
+        }
+      ],
+      "defaultValue": "BufferWindowGPTsAppMemoryConfig"
+    },
+    {
+      "name": "duckdb_extensions_dir",
+      "type": "string",
+      "required": false,
+      "description": "The directory of the duckdb extensions.Duckdb will download the extensions from the internet if not provided.This configuration is used to tell duckdb where to find the extensions and avoid downloading. Note that the extensions are platform-specific and version-specific.",
+      "defaultValue": "[]"
+    },
+    {
+      "name": "force_install",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to force install the duckdb extensions. If True, the extensions will be installed even if they are already installed.",
+      "defaultValue": "False"
+    }
+  ]
+}} />
+

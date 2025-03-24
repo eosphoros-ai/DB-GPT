@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 07:51+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -36,7 +36,7 @@ msgstr "文本分割器"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:41
 msgid "Text splitter, if not set, will use the default text splitter."
-msgstr "文本分割器，如果不设置，将使用默认的文本分割器。"
+msgstr "文本分割器，若未设置，则使用默认的文本分割器。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:47
 msgid "Splitter Type"
@@ -73,16 +73,16 @@ msgstr "启用合并"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/chunk_manager.py:82
 msgid "Enable chunk merge by chunk_size."
-msgstr "根据分块大小启用合并。"
+msgstr "根据分块大小启用分块合并。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:21
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/tongyi.py:20
 msgid "The API key for the embeddings API."
-msgstr "嵌入式 API 的 API 密钥。"
+msgstr "嵌入向量 API 的 API 密钥。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:26
 msgid "The Secret key for the embeddings API. It's the sk for qianfan."
-msgstr "嵌入式 API 的密钥。这是千帆的 sk。"
+msgstr "嵌入向量 API 的密钥，这是千帆的 sk。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:33
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:29
@@ -90,7 +90,8 @@ msgstr "嵌入式 API 的密钥。这是千帆的 sk。"
 msgid ""
 "The real model name to pass to the provider, default is None. If backend is "
 "None, use name as the real model name."
-msgstr "传递给提供者的实际模型名称，默认为 None。如果后端为 None，则使用名称作为实际模型名称。"
+msgstr ""
+"传递给服务提供商的实际模型名称，默认为 None。若后端为 None，则使用名称作为实际模型名称。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/qianfan.py:169
 msgid "Embedding-V1 by Baidu Qianfan. "
@@ -99,7 +100,7 @@ msgstr "百度千帆 Embedding-V1。"
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:22
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/jina.py:26
 msgid "The URL of the embeddings API."
-msgstr "嵌入式 API 的 URL。"
+msgstr "嵌入向量 API 的 URL。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/embeddings/ollama.py:157
 msgid ""
@@ -203,11 +204,11 @@ msgstr "文档摘要"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:36
 msgid "LLM Client"
-msgstr "LLM 客户端"
+msgstr "大语言模型客户端"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:41
 msgid "The LLM Client."
-msgstr "LLM 客户端。"
+msgstr "大语言模型客户端。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:44
 msgid "Model name"
@@ -215,7 +216,7 @@ msgstr "模型名称"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:49
 msgid "LLM model name"
-msgstr "LLM 模型名称"
+msgstr "大语言模型名称"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:52
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:57
@@ -225,15 +226,15 @@ msgstr "提示语言"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:60
 msgid "Max iteration with LLM"
-msgstr "与 LLM 的最大迭代次数"
+msgstr "与大语言模型的最大迭代次数"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:68
 msgid "Concurrency limit with LLM"
-msgstr "与 LLM 的并发限制"
+msgstr "与大语言模型的并发限制"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/summary.py:73
 msgid "The concurrency limit with llm"
-msgstr "与 LLM 的并发限制"
+msgstr "与大语言模型的并发限制"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:25
 msgid "Embedding Retriever Operator"
@@ -280,11 +281,11 @@ msgstr "查询重写资源。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:63
 msgid "Rerank"
-msgstr "重新排序"
+msgstr "重排"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:66
 msgid "The rerank."
-msgstr "重新排序。"
+msgstr "重排。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:73
 msgid "Query"
@@ -296,11 +297,11 @@ msgstr "要检索的查询。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:81
 msgid "Candidates"
-msgstr "候选对象"
+msgstr "候选项"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:84
 msgid "The retrieved candidates."
-msgstr "已检索的候选对象。"
+msgstr "已检索的候选项。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:125
 msgid "Embedding Assembler Operator"
@@ -308,7 +309,7 @@ msgstr "嵌入组装算子"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:127
 msgid "Load knowledge and assemble embedding chunks to vector store."
-msgstr "加载知识并组装嵌入块到向量存储中。"
+msgstr "加载知识并将嵌入块组装到向量存储中。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/embedding.py:131
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/vector_store.py:23
@@ -334,7 +335,7 @@ msgstr "知识加载算子"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:27
 msgid "The knowledge operator, which can create knowledge from datasource."
-msgstr "知识算子，可以从数据源创建知识。"
+msgstr "知识算子，可从数据源创建知识。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/knowledge.py:31
 msgid "knowledge datasource"
@@ -394,7 +395,7 @@ msgstr "知识处理分支算子"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:30
 msgid "Branch the workflow based on the stream flag of the request."
-msgstr "根据请求的流标志分支工作流。"
+msgstr "根据请求的流标志对工作流进行分支处理。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:34
 msgid "Document Chunks"
@@ -410,11 +411,11 @@ msgstr "用于向量存储连接器的片段。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:53
 msgid "Chunks for Knowledge Graph Connector."
-msgstr "知识图谱连接器的片段。"
+msgstr "用于知识图谱连接器的片段。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:60
 msgid "Chunks for Full Text Connector."
-msgstr "全文连接器的片段。"
+msgstr "用于全文连接器的片段。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/process_branch.py:119
 msgid "Knowledge Process Join Operator"
@@ -450,7 +451,7 @@ msgstr "全文存储算子"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:19
 msgid "Persist embeddings into full text storage."
-msgstr "将嵌入持久化到全文存储中。"
+msgstr "将嵌入向量持久化到全文存储中。"
 
 #: ../packages/dbgpt-ext/src/dbgpt_ext/rag/operators/full_text.py:23
 msgid "Full Text Connector"

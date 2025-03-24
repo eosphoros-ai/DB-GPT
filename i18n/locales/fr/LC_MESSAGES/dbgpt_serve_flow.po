@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-23 13:40+0800\n"
+"POT-Creation-Date: 2025-03-19 00:06+0800\n"
 "PO-Revision-Date: 2025-02-23 13:40+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,90 +17,98 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:32
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:32
 msgid "All AWEL Flows"
 msgstr "Tous les flux AWEL"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:33
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:33
 msgid "Fetch all AWEL flows in the system"
 msgstr "Récupérer tous les flux AWEL dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:40
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:40
 msgid "All AWEL Flow Nodes"
 msgstr "Tous les nœuds de flux AWEL"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:41
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:41
 msgid "Fetch all AWEL flow nodes in the system"
 msgstr "Récupérer tous les nœuds de flux AWEL dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:48
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:48
 msgid "All Variables"
 msgstr "Toutes les variables"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:49
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:49
 msgid "Fetch all variables in the system"
 msgstr "Récupérer toutes les variables dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:56
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:56
 msgid "All Secrets"
 msgstr "Tous les secrets"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:57
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:57
 msgid "Fetch all secrets in the system"
 msgstr "Récupérer tous les secrets dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:64
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:64
 msgid "All LLMs"
 msgstr "Toutes les Grandes Modèles de Langage"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:65
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:65
 msgid "Fetch all LLMs in the system"
 msgstr "Récupérer toutes les Grandes Modèles de Langage dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:72
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:72
 msgid "All Embeddings"
 msgstr "Tous les plongements"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:73
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:73
 msgid "Fetch all embeddings models in the system"
 msgstr "Récupérer tous les modèles de plongement dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:80
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:80
 msgid "All Rerankers"
 msgstr "Tous les réordonnanceurs"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:81
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:81
 msgid "Fetch all rerankers in the system"
 msgstr "Récupérer tous les réordonnanceurs dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:88
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:88
 msgid "All Data Sources"
 msgstr "Toutes les sources de données"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:89
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:89
 msgid "Fetch all data sources in the system"
 msgstr "Récupérer toutes les sources de données dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:96
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:96
 msgid "All Agents"
 msgstr "Tous les Agents"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:97
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:97
 msgid "Fetch all agents in the system"
 msgstr "Récupérer tous les Agents dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:104
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:104
 msgid "All Knowledge Spaces"
 msgstr "Tous les espaces de connaissances"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:105
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/service/variables_service.py:105
 msgid "Fetch all knowledge spaces in the system"
 msgstr "Récupérer tous les espaces de connaissances dans le système"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:26
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:24
+msgid "AWEL Flow Serve Configurations"
+msgstr "Configurations du service de flux AWEL"
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:27
+msgid "This configuration is for the flow serve module."
+msgstr "Cette configuration est destinée au module de service de flux."
+
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:38
 msgid "Interval to load dbgpts from installed packages"
 msgstr "Intervalle pour charger les DB-GPT à partir des packages installés"
 
-#:../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:29
+#: ../packages/dbgpt-serve/src/dbgpt_serve/flow/config.py:41
 msgid "The key to encrypt the data"
 msgstr "La clé pour chiffrer les données"
