@@ -51,7 +51,7 @@ The purpose is to build infrastructure in the field of large models, through the
 ### AI-Native Data App 
 ---
 - 🔥🔥🔥 [Released V0.7.0 | A set of significant upgrades](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
-  - [Suppport MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+  - [Support MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
   - [Support DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
   - [Support QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
   - [Refactor the basic modules]()
