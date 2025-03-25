@@ -16,6 +16,8 @@ import VisResponse from './VisResponse';
 import AgentMessages from './agent-messages';
 import AgentPlans from './agent-plans';
 import { CodePreview } from './code-preview';
+import HtmlPreview from './html-preview';
+import SvgPreview from './svg-preview';
 import VisChart from './vis-chart';
 import VisCode from './vis-code';
 import VisConvertError from './vis-convert-error';
@@ -188,6 +190,33 @@ const codeComponents = {
         const content = String(children);
         const _lang = className?.replace('language-', '') || 'javascript';
         return <VisThinking content={content} />;
+      },
+      // Add HTML language processor
+      html: ({ className, children }) => {
+        const content = String(children);
+        const _lang = className;
+        return <HtmlPreview code={content} language='html' />;
+      },
+      // Support for Web languages that mix HTML, CSS, and JS
+      web: ({ className, children }) => {
+        const content = String(children);
+        const _lang = className;
+        return <HtmlPreview code={content} language='html' />;
+      },
+      svg: ({ className, children }) => {
+        const content = String(children);
+        const _lang = className;
+        return <SvgPreview code={content} language='svg' />;
+      },
+      xml: ({ className, children }) => {
+        const content = String(children);
+        const _lang = className;
+        // Check if the content is SVG
+        if (content.includes('<svg') && content.includes('</svg>')) {
+          return <SvgPreview code={content} language='svg' />;
+        }
+        // If it is not SVG, use normal XML highlighting
+        return <CodePreview code={content} language='xml' />;
       },
     },
     defaultRenderer({ node, className, children, style, ...props }) {
