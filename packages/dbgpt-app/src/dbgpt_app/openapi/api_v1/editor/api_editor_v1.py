@@ -320,7 +320,7 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
     logger.info(f"sql_editor_submit:{chart_edit_context.__dict__}")
 
     chat_history_fac = ChatHistory()
-    history_mem = chat_history_fac.get_store_instance(chart_edit_context.con_uid)
+    history_mem = chat_history_fac.get_store_instance(chart_edit_context.conv_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
