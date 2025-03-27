@@ -201,7 +201,20 @@ class SQLiteDBResource(RDBMSConnectorResource):
         self, name: str, db_name: str, executor: Optional[Executor] = None, **kwargs
     ):
         """Initialize the SQLite database resource."""
-        from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnector
+        from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
         conn = SQLiteConnector.from_file_path(db_name)
+        super().__init__(name, conn, executor=executor, **kwargs)
+
+
+class MysqlDBResource(RDBMSConnectorResource):
+    """Mysql database resource class."""
+
+    def __init__(
+        self, name: str, engine: Any, executor: Optional[Executor] = None, **kwargs
+    ):
+        """Initialize the Mysql database resource."""
+        from dbgpt_ext.datasource.rdbms.conn_mysql import MySQLConnector
+
+        conn = MySQLConnector(engine=engine)
         super().__init__(name, conn, executor=executor, **kwargs)
