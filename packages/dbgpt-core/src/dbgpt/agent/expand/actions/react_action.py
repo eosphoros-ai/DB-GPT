@@ -2,53 +2,72 @@ import json
 import logging
 from typing import Optional
 
-from dbgpt.agent import ResourceType
-from dbgpt.agent.expand.actions.tool_action import ToolAction, ToolInput
-from dbgpt.vis import Vis, VisPlugin
+from dbgpt.agent import ActionOutput, AgentResource, Resource
+
+from ...util.react_parser import ReActOutputParser
+from .tool_action import ToolAction, run_tool
 
 logger = logging.getLogger(__name__)
 
 
 class ReActAction(ToolAction):
-    """ReAct action class."""
+    """React action class."""
 
     def __init__(self, **kwargs):
         """Tool action init."""
         super().__init__(**kwargs)
-        self._render_protocol = VisPlugin()
 
-    @property
-    def resource_need(self) -> Optional[ResourceType]:
-        """Return the resource type needed for the action."""
-        return ResourceType.Tool
+    @classmethod
+    def parse_action(
+        cls,
+        ai_message: str,
+        default_action: "ReActAction",
+        resource: Optional[Resource] = None,
+    ) -> Optional["ReActAction"]:
+        """Parse the action from the message.
 
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return self._render_protocol
-
-    @property
-    def out_model_type(self):
-        """Return the output model type."""
-        return ToolInput
-
-    @property
-    def ai_out_schema(self) -> Optional[str]:
-        """Return the AI output schema."""
-        out_put_schema = {
-            "Thought": "Summary of thoughts to the user",
-            "Action": {
-                "tool_name": "The name of a tool that can be used to answer "
-                "the current"
-                "question or solve the current task.",
-                "args": {
-                    "arg name1": "arg value1",
-                    "arg name2": "arg value2",
-                },
-            },
-        }
-
-        return f"""Please response in the following json format:
-        {json.dumps(out_put_schema, indent=2, ensure_ascii=False)}
-        Make sure the response is correct json and can be parsed by Python json.loads.
+        If you want skip the action, return None.
         """
+        return default_action
+
+    async def run(
+        self,
+        ai_message: str,
+        resource: Optional[AgentResource] = None,
+        rely_action_out: Optional[ActionOutput] = None,
+        need_vis_render: bool = True,
+        **kwargs,
+    ) -> ActionOutput:
+        """Perform the action."""
+        parser = ReActOutputParser()
+        steps = parser.parse(ai_message)
+        if len(steps) != 1:
+            raise ValueError("Only one action is allowed each time.")
+        step = steps[0]
+        name = step.action
+        action_input = step.action_input
+        action_input_str = action_input
+        thought = step.thought
+        tool_args = {}
+        try:
+            if action_input and isinstance(action_input, str):
+                tool_args = json.loads(action_input)
+            elif isinstance(action_input, dict):
+                tool_args = action_input
+                action_input_str = json.dumps(action_input, ensure_ascii=False)
+        except json.JSONDecodeError:
+            logger.error(f"Failed to parse the args: {action_input}")
+        act_out = await run_tool(
+            name,
+            tool_args,
+            self.resource,
+            self.render_protocol,
+            need_vis_render=need_vis_render,
+        )
+        if not act_out.action:
+            act_out.action = name
+        if not act_out.action_input:
+            act_out.action_input = action_input_str
+        if thought:
+            act_out.thoughts = thought
+        return act_out

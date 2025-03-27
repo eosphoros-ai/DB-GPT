@@ -16,5 +16,5 @@ and make an iron pick in the game.
 and strike a balance between exploring and exploiting.
 """
 
-from .base import Action, ActionOutput  # noqa: F401
+from .base import Action, ActionOutput, Terminate  # noqa: F401
 from .blank_action import BlankAction  # noqa: F401

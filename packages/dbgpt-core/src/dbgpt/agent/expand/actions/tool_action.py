@@ -9,7 +9,7 @@ from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 
 from ...core.action.base import Action, ActionOutput
 from ...core.schema import Status
-from ...resource.base import AgentResource, ResourceType
+from ...resource.base import AgentResource, Resource, ResourceType
 from ...resource.tool.pack import ToolPack
 
 logger = logging.getLogger(__name__)
@@ -99,48 +99,69 @@ class ToolAction(Action[ToolInput]):
                 is_exe_success=False,
                 content="The requested correctly structured answer could not be found.",
             )
+        return await run_tool(
+            param.tool_name,
+            param.args,
+            self.resource,
+            self.render_protocol,
+            need_vis_render=need_vis_render,
+        )
 
+
+async def run_tool(
+    name: str,
+    args: dict,
+    resource: Resource,
+    render_protocol: Optional[Vis] = None,
+    need_vis_render: bool = False,
+) -> ActionOutput:
+    """Run the tool."""
+    is_terminal = None
+    try:
+        tool_packs = ToolPack.from_resource(resource)
+        if not tool_packs:
+            raise ValueError("The tool resource is not found！")
+        tool_pack = tool_packs[0]
+        response_success = True
+        status = Status.RUNNING.value
+        err_msg = None
         try:
-            tool_packs = ToolPack.from_resource(self.resource)
-            if not tool_packs:
-                raise ValueError("The tool resource is not found！")
-            tool_pack = tool_packs[0]
-            response_success = True
-            status = Status.RUNNING.value
-            err_msg = None
-            try:
-                tool_result = await tool_pack.async_execute(
-                    resource_name=param.tool_name, **param.args
-                )
-                status = Status.COMPLETE.value
-            except Exception as e:
-                response_success = False
-                logger.exception(f"Tool [{param.tool_name}] execute failed!")
-                status = Status.FAILED.value
-                err_msg = f"Tool [{param.tool_name}] execute failed! {str(e)}"
-                tool_result = err_msg
-
-            plugin_param = {
-                "name": param.tool_name,
-                "args": param.args,
-                "status": status,
-                "logo": None,
-                "result": str(tool_result),
-                "err_msg": err_msg,
-            }
-            if not self.render_protocol:
-                raise NotImplementedError("The render_protocol should be implemented.")
-
-            view = await self.render_protocol.display(content=plugin_param)
-
-            return ActionOutput(
-                is_exe_success=response_success,
-                content=str(tool_result),
-                view=view,
-                observations=str(tool_result),
-            )
+            tool_result = await tool_pack.async_execute(resource_name=name, **args)
+            status = Status.COMPLETE.value
+            is_terminal = tool_pack.is_terminal(name)
         except Exception as e:
-            logger.exception("Tool Action Run Failed！")
-            return ActionOutput(
-                is_exe_success=False, content=f"Tool action run failed!{str(e)}"
-            )
+            response_success = False
+            logger.exception(f"Tool [{name}] execute failed!")
+            status = Status.FAILED.value
+            err_msg = f"Tool [{name}] execute failed! {str(e)}"
+            tool_result = err_msg
+
+        plugin_param = {
+            "name": name,
+            "args": args,
+            "status": status,
+            "logo": None,
+            "result": str(tool_result),
+            "err_msg": err_msg,
+        }
+        if render_protocol:
+            view = await render_protocol.display(content=plugin_param)
+        elif need_vis_render:
+            raise NotImplementedError("The render_protocol should be implemented.")
+        else:
+            view = None
+
+        return ActionOutput(
+            is_exe_success=response_success,
+            content=str(tool_result),
+            view=view,
+            observations=str(tool_result),
+            terminate=is_terminal,
+        )
+    except Exception as e:
+        logger.exception("Tool Action Run Failed！")
+        return ActionOutput(
+            is_exe_success=False,
+            content=f"Tool action run failed!{str(e)}",
+            terminate=is_terminal,
+        )

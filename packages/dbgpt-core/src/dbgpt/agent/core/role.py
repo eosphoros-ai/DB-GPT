@@ -1,6 +1,7 @@
 """Role class for role-based conversation."""
 
 from abc import ABC
+from enum import Enum
 from typing import Dict, List, Optional
 
 from jinja2 import Environment, Template, meta
@@ -12,6 +13,15 @@ from .action.base import ActionOutput
 from .memory.agent_memory import AgentMemory, AgentMemoryFragment
 from .memory.llm import LLMImportanceScorer, LLMInsightExtractor
 from .profile import Profile, ProfileConfig
+
+
+class AgentRunMode(str, Enum):
+    """Agent run mode."""
+
+    DEFAULT = "default"
+    # Run the agent in loop mode, until the conversation is over(Maximum retries or
+    # encounter a stop signal)
+    LOOP = "loop"
 
 
 class Role(ABC, BaseModel):
