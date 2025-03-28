@@ -42,7 +42,6 @@ class GdbmsSummary(DBSummary):
             collation=self.db.get_collation(),
         )
         tables = self.db.get_table_names()
-        print(list(tables), "!!!!!!!!!!!!!!!!!!!!!!1")
         self.table_info_summaries = {
             "vertex_tables": [
                 self.get_table_summary(table_name.split("_")[0], "vertex")
