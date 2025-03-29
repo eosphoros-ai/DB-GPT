@@ -88,7 +88,6 @@ def _parse_db_summary(
             for table_name in table_names
             if table_name.endswith("_edge")
         ]
-        print(v_tables, e_tables)
         table_info_summaries = [
             _parse_table_summary(conn, summary_template, table_name, "vertex")
             for table_name in v_tables
