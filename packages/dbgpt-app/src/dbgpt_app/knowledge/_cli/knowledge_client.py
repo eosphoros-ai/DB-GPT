@@ -383,7 +383,7 @@ def knowledge_delete(
             # Confirm by user
             user_input = (
                 input(
-                    f"Are you sure you want to delete the doucment {doc_name} in "
+                    f"Are you sure you want to delete the document {doc_name} in "
                     f"knowledge space {space_name}? Type 'yes' to confirm: "
                 )
                 .strip()
@@ -394,6 +394,6 @@ def knowledge_delete(
                 return
         client.document_delete(space_name, KnowledgeDocumentRequest(doc_name=doc_name))
         logger.info(
-            f"Delete the doucment {doc_name} in knowledge space {space_name} "
+            f"Delete the document {doc_name} in knowledge space {space_name} "
             f"successfully!"
         )

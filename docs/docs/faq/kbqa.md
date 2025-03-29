@@ -26,7 +26,7 @@ If you want to use OceanBase, please first start a docker container via the foll
 docker run --name=ob433 -e MODE=slim -p 2881:2881 -d quay.io/oceanbase/oceanbase-ce:4.3.3.0-100000142024101215
 ```
 
-Donwload the partner package:
+Download the partner package:
 ```shell
 pip install --upgrade --quiet pyobvector
 ```
