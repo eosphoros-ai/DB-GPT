@@ -111,7 +111,7 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
 
 WORKDIR /app
 # Copy the virtual environment from the previous stage
-# Use antoher name to avoid conflict when mounting user's local .venv
+# Use another name to avoid conflict when mounting user's local .venv
 ENV FINAL_VENV_NAME="/opt/.uv.venv"
 COPY --from=builder /app/.venv ${FINAL_VENV_NAME}
 COPY . .

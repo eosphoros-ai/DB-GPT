@@ -1,9 +1,9 @@
 # Text2SQL Fine-Tuning
 We have split the Text2SQL-related fine-tuning code into the `DB-GPT-Hub `sub-project, and you can also view the source code directly.
 
-## Fine-tune pipline
+## Fine-tune pipeline
 
-Text2SQL pipline mainly includes the following processes:
+Text2SQL pipeline mainly includes the following processes:
 - [Build environment](#build-environment)
 - [Data processing](#data-processing)
 - [Model train](#model-train)
