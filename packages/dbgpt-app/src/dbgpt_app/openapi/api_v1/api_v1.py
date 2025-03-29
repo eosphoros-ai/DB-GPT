@@ -524,6 +524,7 @@ async def chat_completions(
             return StreamingResponse(
                 multi_agents.app_agent_chat(
                     conv_uid=dialogue.conv_uid,
+                    chat_mode=dialogue.chat_mode,
                     gpts_name=dialogue.app_code,
                     user_query=dialogue.user_input,
                     user_code=dialogue.user_name,
