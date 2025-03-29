@@ -50,14 +50,17 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ### AI-Native Data App 
 ---
-- 🔥🔥🔥 [Released V0.6.0 | A set of significant upgrades](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
-  - [The AWEL upgrade to 2.0]()
-  - [GraphRAG]()
-  - [AI Native Data App construction and management]()
-  - [The GPT-Vis upgrade, supporting a variety of visualization charts]()
-  - [Support Text2NLU and Text2GQL fine-tuning]()
-  - [Support Intent recognition, slot filling, and Prompt management]()
-
+- 🔥🔥🔥 [Released V0.7.0 | A set of significant upgrades](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
+  - [Support MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+  - [Support DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
+  - [Support QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+  - [Refactor the basic modules]()
+    - [dbgpt-app](./packages/dbgpt-app)
+    - [dbgpt-core](./packages/dbgpt-core)
+    - [dbgpt-serve](./packages/dbgpt-serve)
+    - [dbgpt-client](./packages/dbgpt-client)
+    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
+    - [dbgpt-ext](./packages/dbgpt-ext)
 ---
 
 ![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
@@ -114,9 +117,6 @@ The core capabilities include the following parts:
   - [x] Qwen
   - [x] XVERSE
   - [x] ChatGLM2
-
--  SFT Accuracy
-As of October 10, 2023, through the fine-tuning of an open-source model with 13 billion parameters using this project, we have achieved execution accuracy on the Spider dataset that surpasses even GPT-4!
 
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 

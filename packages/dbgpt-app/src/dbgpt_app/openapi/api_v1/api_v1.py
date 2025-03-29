@@ -814,7 +814,7 @@ def _parse_domain_type(dialogue: ConversationVo) -> Optional[str]:
             )
         else:
             spaces = knowledge_service.get_knowledge_space(
-                KnowledgeSpaceRequest(id=dialogue.select_param)
+                KnowledgeSpaceRequest(name=dialogue.select_param)
             )
         if len(spaces) == 0:
             raise ValueError(f"Knowledge space {dialogue.select_param} not found")

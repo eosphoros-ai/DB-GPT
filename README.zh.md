@@ -48,15 +48,16 @@
 
 ### AI原生数据智能应用
 ---
-- [V0.6.0发布——一系列重大功能更新](https://www.yuque.com/eosphoros/dbgpt-docs/fho86kk4e9y4rkpd)
-  - AWEL协议升级2.0，支持更复杂的编排，同时优化了前端可视化与交互能力。
-  - 支持数据应用的创建与生命周期管理，提供多种应用构建模式。1. 多智能体自动规划模式、2. 任务流编排模式、3. 单一智能体模式、4. 原生应用模式
-  - GraphRAG支持图社区摘要与混合检索，性能与检索效果有显著优势，同时支持丰富的前端可视化。
-  - 支持意图识别、槽位填充与Prompt管理。
-  - GPT-Vis前端可视化升级，支持更丰富的可视化图表。 
-  - 支持Text2NLU与Text2GQL微调, 即新增意图分类与从自然语言到图语言的微调。 
-
-
+- [V0.7.0发布——一系列重大功能更新](https://www.yuque.com/eosphoros/dbgpt-docs/asweou4i9rhnwchm)
+  - [支持MCP协议](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+  - 支持DeepSeek-R1、QwQ-32B等推理模型
+  - 重构基础模块
+    - [dbgpt-app](./packages/dbgpt-app)
+    - [dbgpt-core](./packages/dbgpt-core)
+    - [dbgpt-serve](./packages/dbgpt-serve)
+    - [dbgpt-client](./packages/dbgpt-client)
+    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
+    - [dbgpt-ext](./packages/dbgpt-ext)
 ### Data Agents 
 
 ![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
@@ -316,16 +317,6 @@ The MIT License (MIT)
           钉钉
         </p>
     </figure>
-    <figure style="display: flex; flex-direction: column;">
-        <img src="./assets/wechat.jpg" alt="图片1" style="width: 200px;">
-        <p style="text-align: center;">
-          微信
-        </p> 
-    </figure>
 </div>
-
-<!-- <p align="center">
-  <img src="./assets/wechat.jpg" width="300px" />
-</p> -->
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)

@@ -171,6 +171,7 @@ class KnowledgeFactory:
 
         from .csv import CSVKnowledge  # noqa: F401
         from .datasource import DatasourceKnowledge  # noqa: F401
+        from .doc import Word97DocKnowledge  # noqa: F401
         from .docx import DocxKnowledge  # noqa: F401
         from .excel import ExcelKnowledge  # noqa: F401
         from .html import HTMLKnowledge  # noqa: F401

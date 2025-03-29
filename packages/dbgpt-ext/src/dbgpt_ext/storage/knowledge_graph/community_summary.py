@@ -22,7 +22,6 @@ from dbgpt_ext.storage.knowledge_graph.community.community_store import Communit
 from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
     GRAPH_PARAMETERS,
     BuiltinKnowledgeGraph,
-    BuiltinKnowledgeGraphConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -146,10 +145,30 @@ logger = logging.getLogger(__name__)
     description=_("Community Summary Knowledge Graph."),
     parameters=[
         Parameter.build_from(
-            _("Community Summary Knowledge Graph Config."),
+            _("Graph Store Config"),
             "config",
-            BuiltinKnowledgeGraphConfig,
-            description=_("Community Summary Knowledge Graph Config."),
+            GraphStoreConfig,
+            description=_("graph store config."),
+        ),
+        Parameter.build_from(
+            _("Graph Store Name"),
+            "name",
+            str,
+            optional=True,
+            default="dbgpt",
+            description=_("Graph Store Name"),
+        ),
+        Parameter.build_from(
+            _("LLM Client"),
+            "llm_client",
+            LLMClient,
+            description=_("llm client for extract graph triplets."),
+        ),
+        Parameter.build_from(
+            _("LLM Model Name"),
+            "llm_model",
+            str,
+            description=_("kg extract llm model name."),
             optional=True,
             default=None,
         ),
@@ -284,6 +303,11 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
     def get_config(self) -> TuGraphStoreConfig:
         """Get the knowledge graph config."""
         return self._config
+
+    @property
+    def embeddings(self) -> Embeddings:
+        """Get the knowledge graph config."""
+        return self._embedding_fn
 
     async def aload_document(self, chunks: List[Chunk]) -> List[str]:
         """Extract and persist graph from the document file."""

@@ -58,7 +58,7 @@ class KnowledgeGraphOperator(MapOperator[List[Chunk], List[Chunk]]):
         """Init the Knowledge Graph operator."""
         MapOperator.__init__(self, **kwargs)
         self._graph_store = graph_store
-        self._embeddings = graph_store.get_config().embedding_fn
+        self._embeddings = graph_store.embeddings
         self._max_chunks_once_load = max_chunks_once_load
         self.graph_store = graph_store
 

@@ -55,7 +55,7 @@ RUN git config --global --add safe.directory /app && \
     fi && \
     for TAG in $TAGS; do \
         echo "Creating version $TAG"; \
-        cd /app/docs && git checkout $TAG; \
+        cd /app/docs && git checkout . && git checkout $TAG; \
         echo "Checked out to tag: $TAG"; \
         # Check if there is a patch for the current version in app-build
         echo "Checking patch in /app-build/docs/patchs..." && \
@@ -80,7 +80,8 @@ RUN git config --global --add safe.directory /app && \
         cd /app-build/docs && npm run docusaurus docs:version $TAG || exit 1; \
     done && \
     # Return to the original position, build dev version
-    cd /app/docs && git checkout . && git checkout $CURRENT_POSITION && \
+    cd /app && git checkout . && git checkout $CURRENT_POSITION && \
+    cd /app/docs && \
     rm -rf /app-build/docs/docs /app-build/docs/sidebars.js /app-build/docs/static /app-build/docs/src && \
     cp -r /app/docs/docs /app-build/docs/ && \
     cp /app/docs/sidebars.js /app-build/docs/ && \

@@ -17,6 +17,7 @@ from dbgpt_serve.agent.db.gpts_app import (
     native_app_params,
 )
 from dbgpt_serve.agent.team.base import TeamMode
+from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
 CFG = Config()
@@ -36,21 +37,26 @@ async def create(
         gpts_app.user_code = (
             user_info.user_id if user_info.user_id is not None else gpts_app.user_code
         )
-        return Result.succ(gpts_dao.create(gpts_app))
+        res = await blocking_func_to_async(CFG.SYSTEM_APP, gpts_dao.create, gpts_app)
+        return Result.succ(res)
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"create app error: {ex}")
 
 
 @router.post("/v1/app/list")
 async def app_list(
-    query: GptsAppQuery, user_info: UserRequest = Depends(get_user_from_headers)
+    query: GptsAppQuery,
+    user_info: UserRequest = Depends(get_user_from_headers),
 ):
     try:
         # query.user_code = (
         #     user_info.user_id if user_info.user_id is not None else query.user_code
         # )
         query.ignore_user = "true"
-        return Result.succ(gpts_dao.app_list(query, True))
+        res = await blocking_func_to_async(
+            CFG.SYSTEM_APP, gpts_dao.app_list, query, True
+        )
+        return Result.succ(res)
     except Exception as ex:
         logger.exception("app_list exception!")
         return Result.failed(code="E000X", msg=f"query app list error: {ex}")
@@ -64,12 +70,18 @@ async def app_detail(
     logger.info(f"app_detail:{chat_scene},{app_code}")
     try:
         if app_code:
-            return Result.succ(gpts_dao.app_detail(app_code))
+            res = await blocking_func_to_async(
+                CFG.SYSTEM_APP, gpts_dao.app_detail, app_code
+            )
+            return Result.succ(res)
         else:
             from dbgpt_app.scene.base import ChatScene
 
             scene: ChatScene = ChatScene.of_mode(chat_scene)
-            return Result.succ(gpts_dao.native_app_detail(scene.scene_name()))
+            res = await blocking_func_to_async(
+                CFG.SYSTEM_APP, gpts_dao.native_app_detail, scene.scene_name()
+            )
+            return Result.succ(res)
     except Exception as ex:
         logger.exception("query app detail error!")
         return Result.failed(code="E000X", msg=f"query app detail error: {ex}")
@@ -83,12 +95,16 @@ async def app_export(
     logger.info(f"app_export:{app_code}")
     try:
         if app_code:
-            app_info = gpts_dao.app_detail(app_code)
+            app_info = await blocking_func_to_async(
+                CFG.SYSTEM_APP, gpts_dao.app_detail, app_code
+            )
         else:
             from dbgpt_app.scene.base import ChatScene
 
             scene: ChatScene = ChatScene.of_mode(chat_scene)
-            app_info = gpts_dao.native_app_detail(scene.scene_name())
+            app_info = await blocking_func_to_async(
+                CFG.SYSTEM_APP, gpts_dao.native_app_detail, scene.scene_name()
+            )
 
         return Result.succ(app_info)
     except Exception as ex:
@@ -257,6 +273,7 @@ async def llm_strategy_values(
 async def app_resources(
     type: str,
     name: Optional[str] = None,
+    version: Optional[str] = None,
     user_code: Optional[str] = None,
     sys_code: Optional[str] = None,
     user_info: UserRequest = Depends(get_user_from_headers),
@@ -265,8 +282,12 @@ async def app_resources(
     Get agent resources, such as db, knowledge, internet, plugin.
     """
     try:
-        resources = get_resource_manager().get_supported_resources(
-            version="v1", type=type, user_id=None
+        resources = await blocking_func_to_async(
+            CFG.SYSTEM_APP,
+            get_resource_manager().get_supported_resources,
+            version=version or "v1",
+            type=type,
+            user_id=None,
         )
         results = resources.get(type, [])
         return Result.succ(results)

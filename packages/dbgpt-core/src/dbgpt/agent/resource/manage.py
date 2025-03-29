@@ -1,5 +1,6 @@
 """Resource manager."""
 
+import json
 import logging
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Type, Union, cast
@@ -153,9 +154,9 @@ class ResourceManager(BaseComponent):
                 parameter_class,
                 version=version,
             )
+            all_instance_options = []
             if (
-                version == "v1"
-                and isinstance(configs, list)
+                isinstance(configs, list)
                 and len(configs) > 0
                 and isinstance(configs[0], ParameterDescription)
             ):
@@ -172,8 +173,28 @@ class ResourceManager(BaseComponent):
                                     "description": r.resource_instance.description,  # type: ignore # noqa
                                 }
                             )  # type: ignore
-                configs = set_configs
-            results[resource_type] = configs
+                all_instance_options = set_configs
+
+            if all_instance_options and version == "v1":
+                # v1 resource instance options
+                results[resource_type] = all_instance_options
+            elif (
+                all_instance_options
+                and version != "v1"
+                and isinstance(configs, list)
+                and isinstance(configs[0], ParameterDescription)
+            ):
+                idx = -1
+                for i, config in enumerate(configs):
+                    if config.param_name == "name":
+                        idx = i
+                        break
+                if idx >= 0:
+                    configs[idx].valid_values = all_instance_options
+                # New version, Update the valid values
+                results[resource_type] = configs
+            else:
+                results[resource_type] = configs
 
         return results
 
@@ -181,25 +202,43 @@ class ResourceManager(BaseComponent):
         self,
         type_unique_key: str,
         agent_resource: AgentResource,
-        version: Optional[str] = None,
-    ) -> Resource:
+        return_resource: bool = True,
+    ) -> Union[Resource, Dict[str, Any]]:
         """Return the resource by type."""
         item = self._type_to_resources.get(type_unique_key)
         if not item:
             raise ValueError(f"Resource type {type_unique_key} not found.")
         inst_items = [i for i in item if not i.is_class]
+        resource_value: Union[str, Dict[str, Any]] = agent_resource.value
+        v2_resource = False
+        if resource_value and isinstance(resource_value, str):
+            try:
+                resource_value = json.loads(resource_value)
+                # V2 value is JSON string
+                v2_resource = True
+            except json.JSONDecodeError:
+                pass
+
         if inst_items:
-            if version == "v1":
-                for i in inst_items:
-                    if (
+            real_resource_name = (
+                resource_value.get("name")
+                if isinstance(resource_value, dict)
+                else resource_value
+            )
+            for i in inst_items:
+                if (
+                    i.resource_instance
+                    and i.resource_instance.name == real_resource_name
+                ):
+                    return (
                         i.resource_instance
-                        and i.resource_instance.name == agent_resource.value
-                    ):
-                        return i.resource_instance
-                raise ValueError(
-                    f"Resource {agent_resource.value} not found in {type_unique_key}"
-                )
-            return cast(Resource, inst_items[0].resource_instance)
+                        if return_resource
+                        else {"name": real_resource_name}
+                    )
+            raise ValueError(
+                f"Resource {real_resource_name} not found in {type_unique_key}"
+            )
+            # return cast(Resource, inst_items[0].resource_instance)
         elif len(inst_items) > 1:
             raise ValueError(
                 f"Multiple instances of resource {type_unique_key} found, "
@@ -209,8 +248,12 @@ class ResourceManager(BaseComponent):
             single_item = item[0]
             try:
                 parameter_cls = single_item.get_parameter_class()
-                param = parameter_cls.from_dict(agent_resource.to_dict())
+                param = parameter_cls.from_dict(
+                    resource_value if v2_resource else agent_resource.to_dict()
+                )
                 param_dict = param.to_dict()
+                if not return_resource:
+                    return param_dict
                 param_dict["system_app"] = self.system_app
                 resource_inst = single_item.resource_cls(**param_dict)
                 return resource_inst
@@ -223,7 +266,6 @@ class ResourceManager(BaseComponent):
     def build_resource(
         self,
         agent_resources: Optional[List[AgentResource]] = None,
-        version: Optional[str] = None,
     ) -> Optional[Resource]:
         """Build a resource.
 
@@ -241,8 +283,8 @@ class ResourceManager(BaseComponent):
             return None
         dependencies: List[Resource] = []
         for resource in agent_resources:
-            resource_inst = self.build_resource_by_type(
-                resource.type, resource, version=version
+            resource_inst = cast(
+                Resource, self.build_resource_by_type(resource.type, resource)
             )
             dependencies.append(resource_inst)
         if len(dependencies) == 1:

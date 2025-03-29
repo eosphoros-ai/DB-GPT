@@ -28,4 +28,13 @@ export const ChatZh: Resources['translation'] = {
   max_new_tokens_tip: '当前应用暂不支持max_new_tokens配置',
   extend_tip: '当前应用暂不支持拓展配置',
   cot_title: '思考',
+  code_preview: '预览',
+  code_preview_full_screen: '全屏',
+  code_preview_exit_full_screen: '退出全屏',
+  code_preview_code: '代码',
+  code_preview_copy: '复制',
+  code_preview_already_copied: '已复制',
+  code_preview_download: '下载',
+  code_preview_run: '运行',
+  code_preview_close: '关闭',
 } as const;

@@ -12,6 +12,7 @@ from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
     _COMMON_PARAMETERS,
+    _VECTOR_STORE_COMMON_PARAMETERS,
     VectorStoreBase,
     VectorStoreConfig,
 )
@@ -185,6 +186,7 @@ class MilvusVectorConfig(VectorStoreConfig):
             optional=True,
             default=None,
         ),
+        *_VECTOR_STORE_COMMON_PARAMETERS,
     ],
 )
 class MilvusStore(VectorStoreBase):
@@ -561,7 +563,7 @@ class MilvusStore(VectorStoreBase):
         # use default index params.
         if param is None:
             index_type = self.col.indexes[0].params["index_type"]
-            param = self.index_params_map[index_type].get("params")
+            param = self.index_params_map[index_type]
         #  query text embedding.
         query_vector = self.embedding.embed_query(query)
         # Determine result metadata fields.
