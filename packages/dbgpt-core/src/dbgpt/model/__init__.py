@@ -40,6 +40,7 @@ def scan_model_providers():
             "hf_adapter",
             "llama_cpp_adapter",
             "llama_cpp_py_adapter",
+            "sglang_adapter",
         ],
     )
     config_llms = ScannerConfig(

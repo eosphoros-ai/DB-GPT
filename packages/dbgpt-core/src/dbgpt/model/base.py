@@ -17,6 +17,7 @@ class ModelType:
     LLAMA_CPP_SERVER = "llama.cpp.server"
     PROXY = "proxy"
     VLLM = "vllm"
+    SGLANG = "sglang"
     # TODO, support more model type
 
 

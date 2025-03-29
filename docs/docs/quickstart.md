@@ -97,6 +97,7 @@ This tutorial assumes that you can establish network communication with the depe
     {label: 'DeepSeek (proxy)', value: 'deepseek'},
     {label: 'GLM4 (local)', value: 'glm-4'},
     {label: 'VLLM (local)', value: 'vllm'},
+    {label: 'SGLang (local)', value: 'sglang'},
     {label: 'LLAMA_CPP (local)', value: 'llama_cpp'},
     {label: 'Ollama (proxy)', value: 'ollama'},
   ]}>
@@ -291,6 +292,54 @@ uv run dbgpt start webserver --config configs/dbgpt-local-vllm.toml
 ```
 
   </TabItem>
+
+   <TabItem value="sglang" label="SGLang(local)">
+
+```bash
+# Use uv to install dependencies needed for vllm
+# Install core dependencies and select desired extensions
+uv sync --all-packages \
+--extra "base" \
+--extra "hf" \
+--extra "cuda121" \
+--extra "sglang" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "quant_bnb" \
+--extra "dbgpts"
+```
+
+### Run Webserver
+
+To run DB-GPT with the local model. You can modify the `configs/dbgpt-local-sglang.toml` configuration file to specify the model path and other parameters.
+
+```toml
+# Model Configurations
+[models]
+[[models.llms]]
+name = "THUDM/glm-4-9b-chat-hf"
+provider = "sglang"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+```
+In the above configuration file, `[[models.llms]]` specifies the LLM model, and `[[models.embeddings]]` specifies the embedding model. If you not provide the `path` parameter, the model will be downloaded from the Hugging Face model hub according to the `name` parameter.
+
+Then run the following command to start the webserver:
+
+```bash
+uv run dbgpt start webserver --config configs/dbgpt-local-sglang.toml
+```
+
+</TabItem>
+
   <TabItem value="llama_cpp" label="LLAMA_CPP(local)">
 
 If you has a Nvidia GPU, you can enable the CUDA support by setting the environment variable `CMAKE_ARGS="-DGGML_CUDA=ON"`.

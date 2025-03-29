@@ -40,6 +40,7 @@ class BaseDeployModelParameters(BaseParameters):
                 "llama_cpp_server",
                 "proxy/*",
                 "vllm",
+                "sglang",
             ],
         },
     )
