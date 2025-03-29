@@ -118,6 +118,8 @@ COPY . .
 # Fix the shebang of the dbgpt script
 RUN sed -i "s|^#\!/app/\.venv/bin/python[0-9.]*|#!/${FINAL_VENV_NAME}/bin/python${PYTHON_VERSION}|" /${FINAL_VENV_NAME}/bin/dbgpt
 RUN sed -i "s|^#\!/app/\.venv/bin/python[0-9.]*|#!/${FINAL_VENV_NAME}/bin/python${PYTHON_VERSION}|" /${FINAL_VENV_NAME}/bin/pip
+RUN sed -i "s|/app/\.venv|${FINAL_VENV_NAME}|g" /${FINAL_VENV_NAME}/bin/activate
+
 ENV PATH="${FINAL_VENV_NAME}/bin:$PATH" \
     VIRTUAL_ENV="${FINAL_VENV_NAME}"
 # Default command
