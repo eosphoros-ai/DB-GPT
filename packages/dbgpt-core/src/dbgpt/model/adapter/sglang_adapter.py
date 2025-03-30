@@ -314,20 +314,20 @@ class SGLangModelAdapterWrapper(LLMModelAdapter):
     def load_from_params(self, params: SGlangDeployModelParameters):
         try:
             import sglang as sgl
-            from sglang.srt.managers.server import AsyncServerManager
+            from sglang.srt.entrypoints.engine import Engine as AsyncLLMEngine
         except ImportError:
             raise ImportError("Please install sglang first: pip install sglang")
 
         logger.info(
-            f" Start SGLang AsyncServerManager with args: \
+            f" Start SGLang AsyncLLMEngine with args: \
                 {_get_dataclass_print_str(params)}"
         )
 
         sglang_args_dict = params.to_sglang_params()
         model_path = sglang_args_dict.pop("model")
 
-        # 创建SGLang服务器配置
-        server_config = sgl.RuntimeConfig(
+        # Create sglang config args
+        server_config = sgl.ServerArgs(
             model=model_path,
             tensor_parallel_size=params.tensor_parallel_size,
             max_model_len=params.max_model_len or 4096,
@@ -337,18 +337,9 @@ class SGLangModelAdapterWrapper(LLMModelAdapter):
             **sglang_args_dict.get("extras", {}),
         )
 
-        # 创建异步服务器管理器
-        engine = AsyncServerManager(server_config)
-
-        # 获取tokenizer
-        from transformers import AutoTokenizer
-
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path,
-            trust_remote_code=params.trust_remote_code,
-            revision=params.tokenizer_revision,
-        )
-
+        # Create sglang engine
+        engine = AsyncLLMEngine(server_config)
+        tokenizer = engine.tokenizer_manager.tokenizer
         return engine, tokenizer
 
     def support_async(self) -> bool:

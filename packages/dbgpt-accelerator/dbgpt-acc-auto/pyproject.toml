@@ -72,6 +72,10 @@ vllm = [
 #    # https://github.com/sasha0552/pascal-pkgs-ci
 #    "vllm-pascal==0.7.2; sys_platform == 'linux'"
 # ]
+sglang = [
+    # Just support GPU version on Linux
+    "sglang>=0.2.0; sys_platform == 'linux'",
+]
 quant_bnb = [
     "bitsandbytes>=0.39.0; sys_platform == 'win32' or sys_platform == 'linux'",
     "accelerate"
