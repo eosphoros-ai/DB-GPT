@@ -6,8 +6,7 @@ import sys
 from typing_extensions import Annotated, Doc
 
 from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
-from dbgpt.agent.core.action.base import Terminate
-from dbgpt.agent.expand.actions.react_action import ReActAction
+from dbgpt.agent.expand.actions.react_action import ReActAction, Terminate
 from dbgpt.agent.expand.react_agent import ReActAgent
 from dbgpt.agent.resource import ToolPack, tool
 
@@ -53,10 +52,10 @@ async def main():
     from dbgpt.model import AutoLLMClient
 
     llm_client = AutoLLMClient(
-        provider=os.getenv("LLM_PROVIDER", "proxy/deepseek"),
-        name=os.getenv("LLM_MODEL_NAME", "deepseek-chat"),
-        # provider=os.getenv("LLM_PROVIDER", "proxy/siliconflow"),
-        # name=os.getenv("LLM_MODEL_NAME", "Qwen/Qwen2.5-Coder-32B-Instruct"),
+        # provider=os.getenv("LLM_PROVIDER", "proxy/deepseek"),
+        # name=os.getenv("LLM_MODEL_NAME", "deepseek-chat"),
+        provider=os.getenv("LLM_PROVIDER", "proxy/siliconflow"),
+        name=os.getenv("LLM_MODEL_NAME", "Qwen/Qwen2.5-Coder-32B-Instruct"),
     )
     agent_memory = AgentMemory()
     agent_memory.gpts_memory.init(conv_id="test456")
@@ -76,7 +75,6 @@ async def main():
         .bind(LLMConfig(llm_client=llm_client))
         .bind(agent_memory)
         .bind(tools)
-        .bind([ReActAction])
         .build()
     )
 

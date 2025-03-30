@@ -345,6 +345,8 @@ class Memory(ABC, Generic[T]):
     insight_extractor: Optional[InsightExtractor] = None
     _real_memory_fragment_class: Optional[Type[T]] = None
     importance_weight: float = 0.15
+    # The session id is used to identify the session of the agent.
+    session_id: Optional[str] = None
 
     @mutable
     def initialize(
@@ -354,6 +356,7 @@ class Memory(ABC, Generic[T]):
         importance_scorer: Optional[ImportanceScorer] = None,
         insight_extractor: Optional[InsightExtractor] = None,
         real_memory_fragment_class: Optional[Type[T]] = None,
+        session_id: Optional[str] = None,
     ) -> None:
         """Initialize memory.
 
@@ -364,6 +367,7 @@ class Memory(ABC, Generic[T]):
         self.importance_scorer = importance_scorer
         self.insight_extractor = insight_extractor
         self._real_memory_fragment_class = real_memory_fragment_class
+        self.session_id = session_id
 
     @abstractmethod
     @immutable
@@ -400,6 +404,7 @@ class Memory(ABC, Generic[T]):
         self.importance_scorer = memory.importance_scorer
         self.insight_extractor = memory.insight_extractor
         self._real_memory_fragment_class = memory._real_memory_fragment_class
+        self.session_id = memory.session_id
 
     @abstractmethod
     @mutable
@@ -442,7 +447,22 @@ class Memory(ABC, Generic[T]):
             Optional[DiscardedMemoryFragments]: The discarded memory fragments, None
                 means no memory fragments are discarded.
         """
-        raise NotImplementedError
+        discarded_memory_fragments = []
+        discarded_insights = []
+        for memory_fragment in memory_fragments:
+            discarded_memory = await self.write(memory_fragment, now)
+            if discarded_memory:
+                if discarded_memory.discarded_memory_fragments:
+                    discarded_memory_fragments.extend(
+                        discarded_memory.discarded_memory_fragments
+                    )
+                if discarded_memory.discarded_insights:
+                    discarded_insights.extend(discarded_memory.discarded_insights)
+        return (
+            DiscardedMemoryFragments(discarded_memory_fragments, discarded_insights)
+            if discarded_memory_fragments
+            else None
+        )
 
     @abstractmethod
     @immutable
@@ -698,7 +718,9 @@ class ShortTermMemory(Memory, Generic[T]):
         self: "ShortTermMemory[T]", now: Optional[datetime] = None
     ) -> "ShortTermMemory[T]":
         """Return a structure clone of the memory."""
-        m: ShortTermMemory[T] = ShortTermMemory(buffer_size=self._buffer_size)
+        m: ShortTermMemory[T] = ShortTermMemory(
+            buffer_size=self._buffer_size,
+        )
         m._copy_from(self)
         return m
 

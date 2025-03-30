@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import Field
 from dbgpt.agent import (
@@ -13,14 +13,24 @@ from dbgpt.agent import (
     ResourceType,
 )
 from dbgpt.agent.core.role import AgentRunMode
-from dbgpt.agent.resource import ToolPack
+from dbgpt.agent.resource import BaseTool, ToolPack
 from dbgpt.agent.util.react_parser import ReActOutputParser
 from dbgpt.util.configure import DynConfig
+
+from .actions.react_action import ReActAction
 
 logger = logging.getLogger(__name__)
 
 _REACT_DEFAULT_GOAL = """Answer the following questions or solve the tasks by \
 selecting the right ACTION from the ACTION SPACE as best as you can. 
+# ACTION SPACE Simple Description #
+{{ action_space_simple_desc }}
+"""
+
+_REACT_SYSTEM_TEMPLATE = """\
+You are a {{ role }}, {% if name %}named {{ name }}. {% endif %}\
+{{ goal }}
+
 You can only use one action in the actions provided in the ACTION SPACE to solve the \
 task. For each step, you must output an Action; it cannot be empty. The maximum number \
 of steps you can take is {{ max_steps }}.
@@ -49,16 +59,19 @@ Action Input: ...
 Please Solve this task:
 
 {{ question }}\
-"""
 
-_REACT_SYSTEM_TEMPLATE = """\
-You are a {{ role }}, {% if name %}named {{ name }}. {% endif %}\
-{{ goal }}
+Please answer in the same language as the user's question.
+The current time is: {{ now_time }}.
 """
 _REACT_USER_TEMPLATE = """\
 {% if most_recent_memories %}\
+Most recent message:
 {{ most_recent_memories }}
 {% endif %}\
+
+{% if question %}\
+Question: {{ question }}
+{% endif %}
 """
 
 
@@ -71,6 +84,7 @@ _REACT_WRITE_MEMORY_TEMPLATE = """\
 
 
 class ReActAgent(ConversableAgent):
+    max_retry_count: int = 15
     run_mode: AgentRunMode = AgentRunMode.LOOP
 
     profile: ProfileConfig = ProfileConfig(
@@ -80,7 +94,7 @@ class ReActAgent(ConversableAgent):
             key="dbgpt_agent_expand_plugin_assistant_agent_name",
         ),
         role=DynConfig(
-            "ToolMaster",
+            "ReActToolMaster",
             category="agent",
             key="dbgpt_agent_expand_plugin_assistant_agent_role",
         ),
@@ -95,6 +109,12 @@ class ReActAgent(ConversableAgent):
     )
     parser: ReActOutputParser = Field(default_factory=ReActOutputParser)
 
+    def __init__(self, **kwargs):
+        """Init indicator AssistantAgent."""
+        super().__init__(**kwargs)
+
+        self._init_actions([ReActAction])
+
     async def _a_init_reply_message(
         self,
         received_message: AgentMessage,
@@ -105,12 +125,18 @@ class ReActAgent(ConversableAgent):
         tool_packs = ToolPack.from_resource(self.resource)
         action_space = []
         action_space_names = []
+        action_space_simple_desc = []
         if tool_packs:
             tool_pack = tool_packs[0]
             for tool in tool_pack.sub_resources:
                 tool_desc, _ = await tool.get_prompt(lang=self.language)
                 action_space_names.append(tool.name)
                 action_space.append(tool_desc)
+                if isinstance(tool, BaseTool):
+                    tool_simple_desc = tool.description
+                else:
+                    tool_simple_desc = tool.get_prompt()
+                action_space_simple_desc.append(f"{tool.name}: {tool_simple_desc}")
         else:
             for action in self.actions:
                 action_space_names.append(action.name)
@@ -120,6 +146,7 @@ class ReActAgent(ConversableAgent):
             "max_steps": self.max_retry_count,
             "action_space": "\n".join(action_space),
             "action_space_names": ", ".join(action_space_names),
+            "action_space_simple_desc": "\n".join(action_space_simple_desc),
         }
         return reply_message
 
@@ -141,6 +168,18 @@ class ReActAgent(ConversableAgent):
                 )
                 return resource_prompt, resource_reference
         return None, None
+
+    def prepare_act_param(
+        self,
+        received_message: Optional[AgentMessage],
+        sender: Agent,
+        rely_messages: Optional[List[AgentMessage]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Prepare the parameters for the act method."""
+        return {
+            "parser": self.parser,
+        }
 
     async def act(
         self,
@@ -184,7 +223,7 @@ class ReActAgent(ConversableAgent):
         action_output: Optional[ActionOutput] = None,
         check_pass: bool = True,
         check_fail_reason: Optional[str] = None,
-    ) -> None:
+    ) -> AgentMemoryFragment:
         """Write the memories to the memory.
 
         We suggest you to override this method to save the conversation to memory
@@ -196,6 +235,9 @@ class ReActAgent(ConversableAgent):
             action_output(ActionOutput): The action output.
             check_pass(bool): Whether the check pass.
             check_fail_reason(str): The check fail reason.
+
+        Returns:
+            AgentMemoryFragment: The memory fragment created.
         """
         if not action_output:
             raise ValueError("Action output is required to save to memory.")
@@ -217,3 +259,9 @@ class ReActAgent(ConversableAgent):
         memory_content = self._render_template(write_memory_template, **memory_map)
         fragment = AgentMemoryFragment(memory_content)
         await self.memory.write(fragment)
+        action_output.memory_fragments = {
+            "memory": fragment.raw_observation,
+            "id": fragment.id,
+            "importance": fragment.importance,
+        }
+        return fragment

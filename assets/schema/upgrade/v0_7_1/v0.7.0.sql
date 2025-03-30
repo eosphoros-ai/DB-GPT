@@ -1,5 +1,4 @@
--- You can change `dbgpt` to your actual metadata database name in your `.env` file
--- eg. `LOCAL_DB_NAME=dbgpt`
+-- Full SQL of v0.7.0, please not modify this file(It must be same as the file in the release package)
 
 CREATE
 DATABASE IF NOT EXISTS dbgpt;
@@ -259,7 +258,7 @@ CREATE TABLE `gpts_messages` (
   `current_goal` text COMMENT 'The target corresponding to the current message',
   `context` text COMMENT 'Current conversation context',
   `review_info` text COMMENT 'Current conversation review info',
-  `action_report` longtext COMMENT 'Current conversation action report',
+  `action_report` text COMMENT 'Current conversation action report',
   `resource_info` text DEFAULT NULL  COMMENT 'Current conversation resource info',
   `role` varchar(255) DEFAULT NULL COMMENT 'The role of the current message content',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',

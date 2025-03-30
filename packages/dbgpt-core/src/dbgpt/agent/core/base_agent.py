@@ -19,6 +19,7 @@ from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt.util.utils import colored
 
 from ..resource.base import Resource
+from ..util.conv_utils import parse_conv_id
 from ..util.llm.llm import LLMConfig, LLMStrategyType
 from ..util.llm.llm_client import AIWrapper
 from .action.base import Action, ActionOutput
@@ -159,24 +160,21 @@ class ConversableAgent(Role, Agent):
             if not self.llm_config or not self.llm_config.llm_client:
                 raise ValueError("LLM client is not initialized！")
             self.llm_client = AIWrapper(llm_client=self.llm_config.llm_client)
+            real_conv_id, _ = parse_conv_id(self.not_null_agent_context.conv_id)
+            memory_session = f"{real_conv_id}_{self.role}_{self.name}"
             self.memory.initialize(
                 self.name,
                 self.llm_config.llm_client,
                 importance_scorer=self.memory_importance_scorer,
                 insight_extractor=self.memory_insight_extractor,
+                session_id=memory_session,
             )
             # Clone the memory structure
             self.memory = self.memory.structure_clone()
-            # init agent memory
-            if is_retry_chat:
-                # recover agent memory message
-                agent_history_memories = (
-                    await self.memory.gpts_memory.get_agent_history_memory(
-                        self.not_null_agent_context.conv_id, self.role
-                    )
-                )
-                for agent_history_memory in agent_history_memories:
-                    await self.write_memories(**agent_history_memory)
+            action_outputs = await self.memory.gpts_memory.get_agent_history_memory(
+                real_conv_id, self.role
+            )
+            await self.recovering_memory(action_outputs)
         return self
 
     def bind(self, target: Any) -> "ConversableAgent":
@@ -195,11 +193,17 @@ class ConversableAgent(Role, Agent):
             self.profile = target
         elif isinstance(target, type) and issubclass(target, Action):
             self.actions.append(target())
+        elif isinstance(target, Action):
+            self.actions.append(target)
         elif isinstance(target, list) and all(
             [isinstance(item, type) and issubclass(item, Action) for item in target]
         ):
             for action in target:
                 self.actions.append(action())
+        elif isinstance(target, list) and all(
+            [isinstance(item, Action) for item in target]
+        ):
+            self.actions.extend(target)
         elif isinstance(target, PromptTemplate):
             self.bind_prompt = target
 
@@ -487,6 +491,7 @@ class ConversableAgent(Role, Agent):
                 # 5.Optimize wrong answers myself
                 if not check_pass:
                     if not act_out.have_retry:
+                        logger.warning("No retry available!")
                         break
                     fail_reason = reason
                     await self.write_memories(
@@ -616,7 +621,9 @@ class ConversableAgent(Role, Agent):
                 },
             ) as span:
                 ai_message = message.content if message.content else ""
-                real_action = action.parse_action(ai_message, default_action=action)
+                real_action = action.parse_action(
+                    ai_message, default_action=action, **kwargs
+                )
                 if real_action is None:
                     continue
 
@@ -1073,6 +1080,7 @@ class ConversableAgent(Role, Agent):
         if not observation:
             raise ValueError("The received message content is empty!")
         memories = await self.read_memories(observation)
+        has_memories = True if memories else False
         reply_message_str = ""
         if context is None:
             context = {}
@@ -1129,21 +1137,22 @@ class ConversableAgent(Role, Agent):
                     role=ModelMessageRoleType.SYSTEM,
                 )
             )
-        # 关联上下文的历史消息
-        if historical_dialogues:
+        if historical_dialogues and not has_memories:
+            # If we can't read the memory, we need to rely on the historical dialogue
             for i in range(len(historical_dialogues)):
                 if i % 2 == 0:
-                    # 偶数开始， 偶数是用户信息
+                    # The even number starts, and the even number is the user
+                    # information
                     message = historical_dialogues[i]
                     message.role = ModelMessageRoleType.HUMAN
                     agent_messages.append(message)
                 else:
-                    # 奇数是AI信息
+                    # The odd number is AI information
                     message = historical_dialogues[i]
                     message.role = ModelMessageRoleType.AI
                     agent_messages.append(message)
 
-        # 当前的用户输入信息
+        # Current user input information
         agent_messages.append(
             AgentMessage(
                 content=user_prompt,

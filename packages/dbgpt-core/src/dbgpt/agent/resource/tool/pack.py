@@ -200,7 +200,7 @@ class ToolPack(ResourcePack):
 
     def is_terminal(self, resource_name: Optional[str] = None) -> bool:
         """Check if the tool is terminal."""
-        from ...core.action.base import Terminate
+        from ...expand.actions.react_action import Terminate
 
         if not resource_name:
             return False
