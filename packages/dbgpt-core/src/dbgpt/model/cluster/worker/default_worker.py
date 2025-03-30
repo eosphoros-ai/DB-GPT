@@ -15,7 +15,7 @@ from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
     LLMDeployModelParameters,
 )
-from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.base import LLMModelAdapter, ModelType
 from dbgpt.model.adapter.loader import ModelLoader
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.model.cluster.worker_base import ModelWorker
@@ -252,6 +252,9 @@ class DefaultModelWorker(ModelWorker):
             return await self.model.proxy_llm_client.count_token(
                 self.model.proxy_llm_client.default_model, prompt
             )
+
+        if self._model_params.provider == ModelType.VLLM:
+            return _try_to_count_token(prompt, self.tokenizer, self.model)
         raise NotImplementedError
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
