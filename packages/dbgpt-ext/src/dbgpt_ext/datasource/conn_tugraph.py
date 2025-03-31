@@ -158,11 +158,15 @@ class TuGraphConnector(BaseConnector):
         with self._driver.session(database=self._graph) as session:
             # Run the query to get vertex labels
             raw_vertex_labels = session.run("CALL db.vertexLabels()").data()
-            vertex_labels = [table_name["label"] for table_name in raw_vertex_labels]
+            vertex_labels = [
+                table_name["label"] + "_vertex" for table_name in raw_vertex_labels
+            ]
 
             # Run the query to get edge labels
             raw_edge_labels = session.run("CALL db.edgeLabels()").data()
-            edge_labels = [table_name["label"] for table_name in raw_edge_labels]
+            edge_labels = [
+                table_name["label"] + "_edge" for table_name in raw_edge_labels
+            ]
 
             return iter(vertex_labels + edge_labels)
 
