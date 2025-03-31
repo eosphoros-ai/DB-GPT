@@ -20,4 +20,13 @@ export const ChatEn = {
   max_new_tokens_tip: 'The current application does not support max_new_tokens configuration',
   extend_tip: 'Extended configuration is not supported for the current application',
   cot_title: 'Thoughts',
+  code_preview: 'Preview',
+  code_preview_full_screen: 'Full Screen',
+  code_preview_exit_full_screen: 'Exit Full Screen',
+  code_preview_code: 'Code',
+  code_preview_copy: 'Copy',
+  code_preview_already_copied: 'Already Copied',
+  code_preview_download: 'Download',
+  code_preview_run: 'Run',
+  code_preview_close: 'Close',
 };

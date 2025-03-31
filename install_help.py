@@ -8,13 +8,14 @@
 # [tool.uv]
 # exclude-newer = "2025-03-07T00:00:00Z"
 # ///
-import os
-import tomli
 import glob
+import os
+from pathlib import Path
+from typing import Any, Dict
+
 import click
 import inquirer
-from pathlib import Path
-from typing import Dict, Any
+import tomli
 
 
 # For I18N support, we use a simple class to store translations and a global instance

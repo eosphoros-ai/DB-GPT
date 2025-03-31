@@ -96,6 +96,7 @@ def _initialize_agent(system_app: SystemApp):
 
 
 def _initialize_resource_manager(system_app: SystemApp):
+    from dbgpt.agent.expand.actions.react_action import Terminate
     from dbgpt.agent.expand.resources.dbgpt_tool import list_dbgpt_support_models
     from dbgpt.agent.expand.resources.host_tool import (
         get_current_host_cpu_status,
@@ -117,6 +118,7 @@ def _initialize_resource_manager(system_app: SystemApp):
     rm.register_resource(KnowledgeSpaceRetrieverResource)
     rm.register_resource(PluginToolPack, resource_type=ResourceType.Tool)
     rm.register_resource(GptAppResource)
+    rm.register_resource(resource_instance=Terminate())
     # Register a search tool
     rm.register_resource(resource_instance=baidu_search)
     rm.register_resource(resource_instance=list_dbgpt_support_models)

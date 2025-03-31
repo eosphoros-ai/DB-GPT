@@ -7,8 +7,6 @@ from typing import Dict, List, Optional, Set, Tuple, Type, cast
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
-from ..expand.Indicator_assistant_agent import IndicatorAssistantAgent
-from ..expand.simple_assistant_agent import SimpleAssistantAgent
 from .agent import Agent
 from .base_agent import ConversableAgent
 
@@ -67,22 +65,11 @@ class AgentManager(BaseComponent):
 
     def after_start(self):
         """Register all agents."""
-        from ..expand.code_assistant_agent import CodeAssistantAgent
-        from ..expand.dashboard_assistant_agent import DashboardAssistantAgent
-        from ..expand.data_scientist_agent import DataScientistAgent
-        from ..expand.summary_assistant_agent import SummaryAssistantAgent
-        from ..expand.tool_assistant_agent import ToolAssistantAgent
+        core_agents = scan_agents()
+        for _, agent in core_agents.items():
+            self.register_agent(agent)
 
-        core_agents = set()
-        core_agents.add(self.register_agent(CodeAssistantAgent))
-        core_agents.add(self.register_agent(DashboardAssistantAgent))
-        core_agents.add(self.register_agent(DataScientistAgent))
-        core_agents.add(self.register_agent(SummaryAssistantAgent))
-        core_agents.add(self.register_agent(ToolAssistantAgent))
-        core_agents.add(self.register_agent(IndicatorAssistantAgent))
-        core_agents.add(self.register_agent(SimpleAssistantAgent))
-
-        self._core_agents = core_agents
+        self._core_agents = list(core_agents.values())
 
     def register_agent(
         self, cls: Type[ConversableAgent], ignore_duplicate: bool = False
@@ -163,3 +150,27 @@ def get_agent_manager(system_app: Optional[SystemApp] = None) -> AgentManager:
         initialize_agent(system_app)
     app = system_app or _SYSTEM_APP
     return AgentManager.get_instance(cast(SystemApp, app))
+
+
+_HAS_SCAN = False
+
+
+def scan_agents():
+    """Scan and register all agents."""
+    from dbgpt.util.module_utils import ModelScanner, ScannerConfig
+
+    from .base_agent import ConversableAgent
+
+    global _HAS_SCAN
+
+    if _HAS_SCAN:
+        return
+    scanner = ModelScanner[ConversableAgent]()
+    config = ScannerConfig(
+        module_path="dbgpt.agent.expand",
+        base_class=ConversableAgent,
+        recursive=True,
+    )
+    scanner.scan_and_register(config)
+    _HAS_SCAN = True
+    return scanner.get_registered_items()

@@ -4,8 +4,9 @@ Resource pack is a collection of resources(also, it is a resource) that can be e
 together.
 """
 
+import copy
 import dataclasses
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from .base import Resource, ResourceParameters, ResourceType
 
@@ -117,3 +118,38 @@ class ResourcePack(Resource[PackResourceParameters]):
     def sub_resources(self) -> List[Resource]:
         """Return the resources."""
         return list(self._resources.values())
+
+    def apply(
+        self, apply_func: Callable[[Resource], Union[Resource, List[Resource], None]]
+    ) -> Union[Resource, None]:
+        """Apply the function to the resource."""
+        if not self.is_pack:
+            return self
+
+        def _apply_func_to_resource(
+            resource: Resource,
+        ) -> Union[Resource, List[Resource], None]:
+            if resource.is_pack:
+                resources = []
+                resource_copy = cast(ResourcePack, copy.copy(resource))
+                for resource_copy in resource_copy.sub_resources:
+                    result = _apply_func_to_resource(resource_copy)
+                    if result:
+                        if isinstance(result, list):
+                            resources.extend(result)
+                        else:
+                            resources.append(result)
+                # Replace the resources
+                resource_copy._resources = {
+                    resource.name: resource for resource in resources
+                }
+            else:
+                return apply_func(resource)
+
+        new_resource = _apply_func_to_resource(self)
+        resource_copy = cast(ResourcePack, copy.copy(self))
+        if isinstance(new_resource, list):
+            resource_copy._resources = {
+                resource.name: resource for resource in new_resource
+            }
+        return new_resource

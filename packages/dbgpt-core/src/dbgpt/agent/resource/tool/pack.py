@@ -1,7 +1,7 @@
 """Tool resource pack module."""
 
 import os
-from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union, cast
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -24,15 +24,22 @@ def _is_function_tool(resources: Any) -> bool:
     )
 
 
+def _is_tool(resources: Any) -> bool:
+    return isinstance(resources, BaseTool) or _is_function_tool(resources)
+
+
 def _to_tool_list(resources: ToolResourceType) -> List[BaseTool]:
     if isinstance(resources, BaseTool):
         return [resources]
-    elif isinstance(resources, list) and all(
-        isinstance(r, BaseTool) for r in resources
-    ):
-        return cast(List[BaseTool], resources)
-    elif isinstance(resources, list) and all(_is_function_tool(r) for r in resources):
-        return [cast(FunctionTool, getattr(r, "_tool")) for r in resources]
+    elif isinstance(resources, Sequence) and all(_is_tool(r) for r in resources):
+        new_resources = []
+        for r in resources:
+            if isinstance(r, BaseTool):
+                new_resources.append(r)
+            else:
+                function_tool = cast(FunctionTool, getattr(r, "_tool"))
+                new_resources.append(function_tool)
+        return new_resources
     elif _is_function_tool(resources):
         function_tool = cast(FunctionTool, getattr(resources, "_tool"))
         return [function_tool]
@@ -190,6 +197,15 @@ class ToolPack(ResourcePack):
                 return tl.execute(**arguments)
         except Exception as e:
             raise ToolExecutionException(f"Execution error: {str(e)}")
+
+    def is_terminal(self, resource_name: Optional[str] = None) -> bool:
+        """Check if the tool is terminal."""
+        from ...expand.actions.react_action import Terminate
+
+        if not resource_name:
+            return False
+        tl = self._get_execution_tool(resource_name)
+        return isinstance(tl, Terminate)
 
 
 class AutoGPTPluginToolPack(ToolPack):

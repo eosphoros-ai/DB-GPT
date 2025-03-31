@@ -259,7 +259,7 @@ CREATE TABLE `gpts_messages` (
   `current_goal` text COMMENT 'The target corresponding to the current message',
   `context` text COMMENT 'Current conversation context',
   `review_info` text COMMENT 'Current conversation review info',
-  `action_report` text COMMENT 'Current conversation action report',
+  `action_report` longtext COMMENT 'Current conversation action report',
   `resource_info` text DEFAULT NULL  COMMENT 'Current conversation resource info',
   `role` varchar(255) DEFAULT NULL COMMENT 'The role of the current message content',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
