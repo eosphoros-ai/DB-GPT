@@ -224,6 +224,7 @@ class AgentMemory(Memory[AgentMemoryFragment]):
         importance_scorer: Optional[ImportanceScorer[AgentMemoryFragment]] = None,
         insight_extractor: Optional[InsightExtractor[AgentMemoryFragment]] = None,
         real_memory_fragment_class: Optional[Type[AgentMemoryFragment]] = None,
+        session_id: Optional[str] = None,
     ) -> None:
         """Initialize the memory."""
         self.memory.initialize(
@@ -233,6 +234,7 @@ class AgentMemory(Memory[AgentMemoryFragment]):
             insight_extractor=insight_extractor or self.insight_extractor,
             real_memory_fragment_class=real_memory_fragment_class
             or AgentMemoryFragment,
+            session_id=session_id,
         )
 
     @mutable
@@ -244,6 +246,15 @@ class AgentMemory(Memory[AgentMemoryFragment]):
     ) -> Optional[DiscardedMemoryFragments[AgentMemoryFragment]]:
         """Write a memory fragment to the memory."""
         return await self.memory.write(memory_fragment, now)
+
+    @mutable
+    async def write_batch(
+        self,
+        memory_fragments: List[AgentMemoryFragment],
+        now: Optional[datetime] = None,
+    ) -> Optional[DiscardedMemoryFragments[AgentMemoryFragment]]:
+        """Write a batch of memory fragments to the memory."""
+        return await self.memory.write_batch(memory_fragments, now)
 
     @immutable
     async def read(

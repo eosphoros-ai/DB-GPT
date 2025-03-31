@@ -1,6 +1,7 @@
 """Role class for role-based conversation."""
 
 from abc import ABC
+from enum import Enum
 from typing import Dict, List, Optional
 
 from jinja2 import Environment, Template, meta
@@ -12,6 +13,15 @@ from .action.base import ActionOutput
 from .memory.agent_memory import AgentMemory, AgentMemoryFragment
 from .memory.llm import LLMImportanceScorer, LLMInsightExtractor
 from .profile import Profile, ProfileConfig
+
+
+class AgentRunMode(str, Enum):
+    """Agent run mode."""
+
+    DEFAULT = "default"
+    # Run the agent in loop mode, until the conversation is over(Maximum retries or
+    # encounter a stop signal)
+    LOOP = "loop"
 
 
 class Role(ABC, BaseModel):
@@ -216,7 +226,7 @@ class Role(ABC, BaseModel):
         action_output: Optional[ActionOutput] = None,
         check_pass: bool = True,
         check_fail_reason: Optional[str] = None,
-    ) -> None:
+    ) -> AgentMemoryFragment:
         """Write the memories to the memory.
 
         We suggest you to override this method to save the conversation to memory
@@ -228,6 +238,9 @@ class Role(ABC, BaseModel):
             action_output(ActionOutput): The action output.
             check_pass(bool): Whether the check pass.
             check_fail_reason(str): The check fail reason.
+
+        Returns:
+            AgentMemoryFragment: The memory fragment created.
         """
         if not action_output:
             raise ValueError("Action output is required to save to memory.")
@@ -245,3 +258,23 @@ class Role(ABC, BaseModel):
         memory_content = self._render_template(write_memory_template, **memory_map)
         fragment = AgentMemoryFragment(memory_content)
         await self.memory.write(fragment)
+
+        action_output.memory_fragments = {
+            "memory": fragment.raw_observation,
+            "id": fragment.id,
+            "importance": fragment.importance,
+        }
+        return fragment
+
+    async def recovering_memory(self, action_outputs: List[ActionOutput]) -> None:
+        """Recover the memory from the action outputs."""
+        fragments = []
+        for action_output in action_outputs:
+            if action_output.memory_fragments:
+                fragment = AgentMemoryFragment.build_from(
+                    observation=action_output.memory_fragments["memory"],
+                    importance=action_output.memory_fragments.get("importance"),
+                    memory_id=action_output.memory_fragments.get("id"),
+                )
+                fragments.append(fragment)
+        await self.memory.write_batch(fragments)

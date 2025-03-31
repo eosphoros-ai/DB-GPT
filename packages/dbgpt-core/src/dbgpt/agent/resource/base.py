@@ -4,7 +4,19 @@ import dataclasses
 import json
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generic, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from pydantic import field_validator
 
@@ -227,6 +239,13 @@ class Resource(ABC, Generic[P]):
             if resource.type() == resource_type:
                 resources.append(resource)
         return resources
+
+    def apply(
+        self,
+        apply_func: Callable[["Resource"], Union["Resource", List["Resource"], None]],
+    ) -> Union["Resource", None]:
+        """Apply the function to the resource."""
+        return self
 
 
 class AgentResource(BaseModel):

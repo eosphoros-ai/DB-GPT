@@ -53,10 +53,14 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/ruff format packages
 	$(VENV_BIN)/ruff format --exclude="examples/notebook" examples
 	$(VENV_BIN)/ruff format i18n
+	$(VENV_BIN)/ruff format scripts/update_version_all.py
+	$(VENV_BIN)/ruff format install_help.py
 	# Sort imports
 	$(VENV_BIN)/ruff check --select I --fix packages
 	$(VENV_BIN)/ruff check --select I --fix --exclude="examples/notebook" examples
 	$(VENV_BIN)/ruff check --select I --fix i18n
+	$(VENV_BIN)/ruff check --select I --fix update_version_all.py
+	$(VENV_BIN)/ruff check --select I --fix install_help.py
 
 	$(VENV_BIN)/ruff check --fix packages \
 		--exclude="packages/dbgpt-serve/src/**"
