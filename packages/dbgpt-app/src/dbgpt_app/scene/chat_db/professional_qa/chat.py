@@ -44,7 +44,7 @@ class ChatWithDbQA(BaseChat):
             self.top_k = len(list(self.tables))
         else:
             logger.info(
-                f"Dialect: "
+                "Dialect: "
                 f"{self.database.db_type if self.database is not None else None}"
             )
             self.top_k = self.curr_config.schema_retrieve_top_k
