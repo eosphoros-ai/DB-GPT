@@ -1391,7 +1391,7 @@ def adapt_native_app_model(dialogue: ConversationVo):
             ChatScene.ChatWithDbQA.value(),
             ChatScene.ChatWithDbExecute.value(),
             ChatScene.ChatDashboard.value(),
-            ChatScene.ChatNormal.value,
+            ChatScene.ChatNormal.value(),
         ]:
             return dialogue
         gpts_dao = GptsAppDao()

@@ -76,7 +76,7 @@ async def chat_completions(
     """Chat V2 completions
     Args:
         request (ChatCompletionRequestBody): The chat request.
-        flow_service (FlowService): The flow service.
+        service (FlowService): The flow service.
     Raises:
         HTTPException: If the request is invalid.
     """
