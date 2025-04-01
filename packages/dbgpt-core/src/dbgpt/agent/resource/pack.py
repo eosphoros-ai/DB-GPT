@@ -49,6 +49,11 @@ class ResourcePack(Resource[PackResourceParameters]):
         """Get the resource by name."""
         return self._resources.get(name, None)
 
+    async def preload_resource(self):
+        """Preload the resource."""
+        for sub_resource in self.sub_resources:
+            await sub_resource.preload_resource()
+
     async def get_prompt(
         self,
         *,
