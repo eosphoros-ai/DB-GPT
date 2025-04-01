@@ -1,17 +1,22 @@
 """Tool resource pack module."""
 
+import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union, cast
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 
-from ..base import ResourceType, T
+from dbgpt.util.json_utils import parse_or_raise_error
+
+from ..base import EXECUTE_ARGS_TYPE, PARSE_EXECUTE_ARGS_FUNCTION, ResourceType, T
 from ..pack import Resource, ResourcePack
 from .base import DB_GPT_TOOL_IDENTIFIER, BaseTool, FunctionTool, ToolFunc
 from .exceptions import ToolExecutionException, ToolNotFoundException
 
-ToolResourceType = Union[BaseTool, List[BaseTool], ToolFunc, List[ToolFunc]]
+ToolResourceType = Union[Resource, BaseTool, List[BaseTool], ToolFunc, List[ToolFunc]]
+
+logger = logging.getLogger(__name__)
 
 
 def _is_function_tool(resources: Any) -> bool:
@@ -28,22 +33,40 @@ def _is_tool(resources: Any) -> bool:
     return isinstance(resources, BaseTool) or _is_function_tool(resources)
 
 
-def _to_tool_list(resources: ToolResourceType) -> List[BaseTool]:
-    if isinstance(resources, BaseTool):
-        return [resources]
-    elif isinstance(resources, Sequence) and all(_is_tool(r) for r in resources):
-        new_resources = []
-        for r in resources:
-            if isinstance(r, BaseTool):
-                new_resources.append(r)
-            else:
-                function_tool = cast(FunctionTool, getattr(r, "_tool"))
-                new_resources.append(function_tool)
-        return new_resources
-    elif _is_function_tool(resources):
-        function_tool = cast(FunctionTool, getattr(resources, "_tool"))
-        return [function_tool]
-    raise ValueError("Invalid tool resource type")
+def _to_tool_list(
+    resources: ToolResourceType, unpack: bool = False, ignore_error: bool = False
+) -> List[Resource]:
+    def parse_tool(r):
+        if isinstance(r, BaseTool):
+            return [r]
+        elif _is_function_tool(r):
+            return [cast(FunctionTool, getattr(r, "_tool"))]
+        elif isinstance(r, ResourcePack):
+            if not unpack:
+                return [r]
+            new_list = []
+            for p in r.sub_resources:
+                new_list.extend(parse_tool(p))
+            return new_list
+        elif isinstance(r, Sequence):
+            new_list = []
+            for t in r:
+                new_list.extend(parse_tool(t))
+            return new_list
+        elif ignore_error:
+            return []
+        else:
+            raise ValueError("Invalid tool resource type")
+
+    return parse_tool(resources)
+
+
+def json_parse_execute_args_func(input_str: str) -> Optional[EXECUTE_ARGS_TYPE]:
+    """Parse the execute arguments."""
+    # The position arguments is empty
+    args = ()
+    kwargs = parse_or_raise_error(input_str)
+    return args, kwargs
 
 
 class ToolPack(ResourcePack):
@@ -65,11 +88,7 @@ class ToolPack(ResourcePack):
         """Create a resource from another resource."""
         if not resource:
             return []
-        if isinstance(resource, ToolPack):
-            return [cast(T, resource)]
-        tools = super().from_resource(resource, ResourceType.Tool)
-        if not tools:
-            return []
+        tools = _to_tool_list(resource, unpack=True, ignore_error=True)
         typed_tools = [cast(BaseTool, t) for t in tools]
         return [ToolPack(typed_tools)]  # type: ignore
 
@@ -79,6 +98,7 @@ class ToolPack(ResourcePack):
         command_name: str,
         args: Optional[Dict[str, Any]] = None,
         function: Optional[Callable] = None,
+        parse_execute_args_func: Optional[PARSE_EXECUTE_ARGS_FUNCTION] = None,
     ) -> None:
         """Add a command to the commands.
 
@@ -93,6 +113,8 @@ class ToolPack(ResourcePack):
               values. Defaults to None.
             function (callable, optional): A callable function to be called when
                 the command is executed. Defaults to None.
+            parse_execute_args (callable, optional): A callable function to parse the
+                execute arguments. Defaults to None.
         """
         if args is not None:
             tool_args = {}
@@ -124,6 +146,7 @@ class ToolPack(ResourcePack):
             func=function,
             args=tool_args,
             description=command_label,
+            parse_execute_args_func=parse_execute_args_func,
         )
         self.append(ft)
 
@@ -142,6 +165,16 @@ class ToolPack(ResourcePack):
         for arg_name in diff_args:
             del arguments[arg_name]
         return arguments
+
+    def parse_execute_args(
+        self, resource_name: Optional[str] = None, input_str: Optional[str] = None
+    ) -> Optional[EXECUTE_ARGS_TYPE]:
+        """Parse the execute arguments."""
+        try:
+            tl = self._get_execution_tool(resource_name)
+            return tl.parse_execute_args(input_str=input_str)
+        except ToolNotFoundException:
+            return None
 
     def execute(
         self,
@@ -244,17 +277,6 @@ class AutoGPTPluginToolPack(ToolPack):
         self._loaded = True
 
 
-async def call_mcp_tool(server, tool_name, args: dict):
-    try:
-        async with sse_client(url=server) as (read, write):
-            async with ClientSession(read, write) as session:
-                # Initialize the connection
-                await session.initialize()
-                return await session.call_tool(tool_name, arguments=args)
-    except Exception:
-        raise ValueError("MCP Call Exception!{str(e)}")
-
-
 class MCPToolPack(ToolPack):
     def __init__(self, mcp_servers: Union[str, List[str]], **kwargs):
         """Create an Auto-GPT plugin tool pack."""
@@ -263,42 +285,11 @@ class MCPToolPack(ToolPack):
         self._loaded = False
         self.tool_server_map = {}
 
-    @classmethod
-    def from_resource(
-        cls: Type[T],
-        resource: Optional[Resource],
-        expected_type: Optional[ResourceType] = None,
-    ) -> List[T]:
-        """Create a resource from another resource."""
-        if not resource:
-            return []
-        if isinstance(resource, ToolPack):
-            return [cast(T, resource)]
-        tools = super().from_resource(resource, ResourceType.Tool)
-        if not tools:
-            return []
-        typed_tools = [cast(BaseTool, t) for t in tools]
-        return [ToolPack(typed_tools)]  # type: ignore
-
-    def _get_call_args(self, arguments: Dict[str, Any], tl: BaseTool) -> Dict[str, Any]:
-        """Get the call arguments."""
-        # Delete non-defined parameters
-        diff_args = list(set(arguments.keys()).difference(set(tl.args.keys())))
-        for arg_name in diff_args:
-            del arguments[arg_name]
-
-        # Rebuild dbgpt mcp call param
-        return {
-            "server": self.tool_server_map[tl.name],
-            "args": arguments,
-            "tool_name": tl.name,
-        }
-
     def switch_mcp_input_schema(self, input_schema: dict):
         args = {}
         try:
             properties = input_schema["properties"]
-            required = input_schema["required"]
+            required = input_schema.get("required", [])
             for k, v in properties.items():
                 arg = {}
 
@@ -339,9 +330,29 @@ class MCPToolPack(ToolPack):
                     await session.initialize()
                     result = await session.list_tools()
                     for tool in result.tools:
-                        self.tool_server_map[tool.name] = server
+                        tool_name = tool.name
+                        self.tool_server_map[tool_name] = server
                         args = self.switch_mcp_input_schema(tool.inputSchema)
+
+                        async def call_mcp_tool(
+                            tool_name=tool_name, server=server, **kwargs
+                        ):
+                            try:
+                                async with sse_client(url=server) as (read, write):
+                                    async with ClientSession(read, write) as session:
+                                        # Initialize the connection
+                                        await session.initialize()
+                                        return await session.call_tool(
+                                            tool_name, arguments=kwargs
+                                        )
+                            except Exception:
+                                raise ValueError("MCP Call Exception!{str(e)}")
+
                         self.add_command(
-                            tool.description, tool.name, args, call_mcp_tool
+                            tool.description,
+                            tool_name,
+                            args,
+                            call_mcp_tool,
+                            parse_execute_args_func=json_parse_execute_args_func,
                         )
         self._loaded = True
