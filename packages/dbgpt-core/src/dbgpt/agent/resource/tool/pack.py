@@ -347,6 +347,7 @@ class MCPToolPack(ToolPack):
                                         )
                             except Exception as e:
                                 raise ValueError(f"MCP Call Exception! {str(e)}")
+
                         self.add_command(
                             tool.description,
                             tool_name,
