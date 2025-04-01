@@ -43,7 +43,8 @@ class ChatWithDbQA(BaseChat):
             # topk uses the sum of node table and edge table.
             self.top_k = len(list(self.tables))
         else:
-            logger.info(f"Dialect: {self.database.db_type if self.database is not None else None}")
+            logger.info(f"Dialect: "
+                        f"{self.database.db_type if self.database is not None else None}")
             self.top_k = self.curr_config.schema_retrieve_top_k
 
     @trace()
