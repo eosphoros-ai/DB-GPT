@@ -49,7 +49,27 @@ class MCPPackResourceParameters(PackResourceParameters):
 
 class MCPSSEToolPack(MCPToolPack):
     def __init__(self, mcp_servers: Union[str, List[str]], **kwargs):
-        super().__init__(mcp_servers=mcp_servers, **kwargs)
+        """Initialize the MCPSSEToolPack with the given MCP servers."""
+        headers = {}
+        if "token" in kwargs and kwargs["token"]:
+            # token is not supported in sse mode
+            servers = (
+                mcp_servers.split(";") if isinstance(mcp_servers, str) else mcp_servers
+            )
+            tokens = (
+                kwargs["token"].split(";")
+                if isinstance(kwargs["token"], str)
+                else kwargs["token"]
+            )
+            if len(servers) == len(tokens):
+                for i, token in enumerate(tokens):
+                    headers[servers[i]] = {"Authorization": f"Bearer {token}"}
+            else:
+                token = tokens[0]
+                for server in servers:
+                    headers[server] = {"Authorization": f"Bearer {token}"}
+            kwargs.pop("token")
+        super().__init__(mcp_servers=mcp_servers, headers=headers, **kwargs)
 
     @classmethod
     def type_alias(cls) -> str:
@@ -64,7 +84,17 @@ class MCPSSEToolPack(MCPToolPack):
             mcp_servers: str = dataclasses.field(
                 default="http://127.0.0.1:8000/sse",
                 metadata={
-                    "help": _("MCP SSE Server URL, split by ':'"),
+                    "help": _("MCP SSE Server URL, split by ';'"),
+                },
+            )
+            token: Optional[str] = dataclasses.field(
+                default=None,
+                metadata={
+                    "help": _(
+                        'MCP SSE Server token, split by ";", It will be '
+                        'added to the header({"Authorization": "Bearer your_token"}'
+                    ),
+                    "tags": "privacy",
                 },
             )
 

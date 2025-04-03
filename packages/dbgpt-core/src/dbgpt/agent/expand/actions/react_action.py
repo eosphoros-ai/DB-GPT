@@ -166,6 +166,16 @@ class ReActAction(ToolAction):
         name = parsed_step.action
         action_input = parsed_step.action_input
         action_input_str = action_input
+
+        if not name:
+            terminal_content = str(action_input_str if action_input_str else ai_message)
+            return ActionOutput(
+                is_exe_success=True,
+                content=terminal_content,
+                observations=terminal_content,
+                terminate=True,
+            )
+
         try:
             # Try to parse the action input to dict
             if action_input and isinstance(action_input, str):

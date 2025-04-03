@@ -278,12 +278,48 @@ class AutoGPTPluginToolPack(ToolPack):
 
 
 class MCPToolPack(ToolPack):
-    def __init__(self, mcp_servers: Union[str, List[str]], **kwargs):
+    """MCP tool pack class.
+
+    Wrap the MCP SSE server as a tool pack.
+
+    Example:
+        .. code-block:: python
+
+            tools = MCPToolPack("http://127.0.0.1:8000/sse")
+
+        If you want to pass the token to the server, you can use the headers parameter:
+        .. code-block:: python
+
+            tools = MCPToolPack(
+                "http://127.0.0.1:8000/sse"
+                default_headers={"Authorization": "Bearer your_token"}
+            )
+            # Set the default headers for ech server
+            tools2 = MCPToolPack(
+                "http://127.0.0.1:8000/sse"
+                headers = {
+                    "http://127.0.0.1:8000/sse": {
+                        "Authorization": "Bearer your_token"
+                    }
+                }
+            )
+    """
+
+    def __init__(
+        self,
+        mcp_servers: Union[str, List[str]],
+        headers: Optional[Dict[str, Dict[str, Any]]] = None,
+        default_headers: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
         """Create an Auto-GPT plugin tool pack."""
         super().__init__([], **kwargs)
         self._mcp_servers = mcp_servers
         self._loaded = False
         self.tool_server_map = {}
+        self._default_headers = default_headers or {}
+        self._headers_map = headers or {}
+        self.server_headers_map = {}
 
     def switch_mcp_input_schema(self, input_schema: dict):
         args = {}
@@ -324,7 +360,10 @@ class MCPToolPack(ToolPack):
             server_list = self._mcp_servers.split(";")
 
         for server in server_list:
-            async with sse_client(url=server) as (read, write):
+            server_headers = self._headers_map.get(server, self._default_headers)
+            self.server_headers_map[server] = server_headers
+
+            async with sse_client(url=server, headers=server_headers) as (read, write):
                 async with ClientSession(read, write) as session:
                     # Initialize the connection
                     await session.initialize()
@@ -338,7 +377,10 @@ class MCPToolPack(ToolPack):
                             tool_name=tool_name, server=server, **kwargs
                         ):
                             try:
-                                async with sse_client(url=server) as (read, write):
+                                headers_to_use = self.server_headers_map.get(server, {})
+                                async with sse_client(
+                                    url=server, headers=headers_to_use
+                                ) as (read, write):
                                     async with ClientSession(read, write) as session:
                                         # Initialize the connection
                                         await session.initialize()

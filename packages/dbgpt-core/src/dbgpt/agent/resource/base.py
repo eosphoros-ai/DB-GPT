@@ -272,7 +272,12 @@ class Resource(ABC, Generic[P]):
 
     def apply(
         self,
-        apply_func: Callable[["Resource"], Union["Resource", List["Resource"], None]],
+        apply_func: Optional[
+            Callable[["Resource"], Union["Resource", List["Resource"], None]]
+        ] = None,
+        apply_pack_func: Optional[
+            Callable[["Resource"], Union["Resource", None]]
+        ] = None,
     ) -> Union["Resource", None]:
         """Apply the function to the resource."""
         return self

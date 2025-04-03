@@ -139,7 +139,7 @@ class ConversableAgent(Role, Agent):
     async def preload_resource(self) -> None:
         """Preload resources before agent initialization."""
         if self.resource:
-            await self.blocking_func_to_async(self.resource.preload_resource)
+            await self.resource.preload_resource()
 
     async def build(self, is_retry_chat: bool = False) -> "ConversableAgent":
         """Build the agent."""
