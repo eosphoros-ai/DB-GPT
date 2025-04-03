@@ -125,16 +125,27 @@ class ResourcePack(Resource[PackResourceParameters]):
         return list(self._resources.values())
 
     def apply(
-        self, apply_func: Callable[[Resource], Union[Resource, List[Resource], None]]
+        self,
+        apply_func: Optional[
+            Callable[[Resource], Union[Resource, List[Resource], None]]
+        ] = None,
+        apply_pack_func: Optional[
+            Callable[["Resource"], Union["Resource", None]]
+        ] = None,
     ) -> Union[Resource, None]:
         """Apply the function to the resource."""
         if not self.is_pack:
             return self
 
+        if not apply_func and not apply_pack_func:
+            raise ValueError("No function provided to apply to the resource pack.")
+
         def _apply_func_to_resource(
             resource: Resource,
         ) -> Union[Resource, List[Resource], None]:
             if resource.is_pack:
+                if apply_pack_func is not None:
+                    return apply_pack_func(resource)
                 resources = []
                 resource_copy = cast(ResourcePack, copy.copy(resource))
                 for resource_copy in resource_copy.sub_resources:
@@ -149,7 +160,10 @@ class ResourcePack(Resource[PackResourceParameters]):
                     resource.name: resource for resource in resources
                 }
             else:
-                return apply_func(resource)
+                if apply_func is not None:
+                    return apply_func(resource)
+                else:
+                    return resource
 
         new_resource = _apply_func_to_resource(self)
         resource_copy = cast(ResourcePack, copy.copy(self))
