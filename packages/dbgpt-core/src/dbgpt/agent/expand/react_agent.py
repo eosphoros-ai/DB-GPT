@@ -76,6 +76,7 @@ Question: {{ question }}
 
 
 _REACT_WRITE_MEMORY_TEMPLATE = """\
+{% if question %}Question: {{ question }} {% endif %}
 {% if thought %}Thought: {{ thought }} {% endif %}
 {% if action %}Action: {{ action }} {% endif %}
 {% if action_input %}Action Input: {{ action_input }} {% endif %}
@@ -278,6 +279,7 @@ class ReActAgent(ConversableAgent):
         observation = check_fail_reason or action_output.observations
 
         memory_map = {
+            "question": question,
             "thought": mem_thoughts,
             "action": action,
             "observation": observation,
