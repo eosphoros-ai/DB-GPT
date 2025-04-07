@@ -226,6 +226,7 @@ class Role(ABC, BaseModel):
         action_output: Optional[ActionOutput] = None,
         check_pass: bool = True,
         check_fail_reason: Optional[str] = None,
+        current_retry_counter: Optional[int] = None,
     ) -> AgentMemoryFragment:
         """Write the memories to the memory.
 

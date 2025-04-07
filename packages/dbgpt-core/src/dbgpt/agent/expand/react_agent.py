@@ -68,10 +68,6 @@ _REACT_USER_TEMPLATE = """\
 Most recent message:
 {{ most_recent_memories }}
 {% endif %}\
-
-{% if question %}\
-Question: {{ question }}
-{% endif %}
 """
 
 
@@ -254,6 +250,7 @@ class ReActAgent(ConversableAgent):
         action_output: Optional[ActionOutput] = None,
         check_pass: bool = True,
         check_fail_reason: Optional[str] = None,
+        current_retry_counter: Optional[int] = None,
     ) -> AgentMemoryFragment:
         """Write the memories to the memory.
 
@@ -279,13 +276,15 @@ class ReActAgent(ConversableAgent):
         observation = check_fail_reason or action_output.observations
 
         memory_map = {
-            "question": question,
             "thought": mem_thoughts,
             "action": action,
             "observation": observation,
         }
         if action_input:
             memory_map["action_input"] = action_input
+
+        if current_retry_counter is not None and current_retry_counter == 0:
+            memory_map["question"] = question
 
         write_memory_template = self.write_memory_template
         memory_content = self._render_template(write_memory_template, **memory_map)
