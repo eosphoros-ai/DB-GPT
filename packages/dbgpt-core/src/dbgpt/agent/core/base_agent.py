@@ -364,9 +364,8 @@ class ConversableAgent(Role, Agent):
             fail_reason = None
             current_retry_counter = 0
             is_success = True
-            done = False
             observation = received_message.content or ""
-            while not done and current_retry_counter < self.max_retry_count:
+            while current_retry_counter < self.max_retry_count:
                 if current_retry_counter > 0:
                     a_reply_message: Optional[
                         AgentMessage
@@ -500,6 +499,7 @@ class ConversableAgent(Role, Agent):
                         action_output=act_out,
                         check_pass=check_pass,
                         check_fail_reason=fail_reason,
+                        current_retry_counter=current_retry_counter,
                     )
                 else:
                     # Successful reply
@@ -509,6 +509,7 @@ class ConversableAgent(Role, Agent):
                         ai_message=ai_message,
                         action_output=act_out,
                         check_pass=check_pass,
+                        current_retry_counter=current_retry_counter,
                     )
                     if self.run_mode != AgentRunMode.LOOP or act_out.terminate:
                         logger.debug(f"Agent {self.name} reply success!{reply_message}")
@@ -1127,7 +1128,7 @@ class ConversableAgent(Role, Agent):
             **context,
         )
         if not user_prompt:
-            user_prompt = "Observation: "
+            user_prompt = f"Observation: {observation}"
 
         agent_messages = []
         if system_prompt:
