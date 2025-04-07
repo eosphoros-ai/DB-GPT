@@ -2,13 +2,14 @@
 
 import logging
 import os
+import ssl
 from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union, cast
 
 from mcp import ClientSession
-from mcp.client.sse import sse_client
 
 from dbgpt.util.json_utils import parse_or_raise_error
 
+from ...util.mcp_utils import sse_client
 from ..base import EXECUTE_ARGS_TYPE, PARSE_EXECUTE_ARGS_FUNCTION, ResourceType, T
 from ..pack import Resource, ResourcePack
 from .base import DB_GPT_TOOL_IDENTIFIER, BaseTool, FunctionTool, ToolFunc
@@ -303,6 +304,37 @@ class MCPToolPack(ToolPack):
                     }
                 }
             )
+
+        If you want to set the ssl verify, you can use the ssl_verify parameter:
+        .. code-block:: python
+
+            # Default ssl_verify is True
+            tools = MCPToolPack(
+                "https://your_ssl_domain/sse",
+            )
+
+            # Set the default ssl_verify to False to disable ssl verify
+            tools2 = MCPToolPack(
+                "https://your_ssl_domain/sse", default_ssl_verify=False
+            )
+
+            # With Custom CA file
+            tools3 = MCPToolPack(
+                "https://your_ssl_domain/sse", default_ssl_cafile="/path/to/your/ca.crt"
+            )
+
+            # Set the ssl_verify for each server
+            import ssl
+
+            tools4 = MCPToolPack(
+                "https://your_ssl_domain/sse",
+                ssl_verify={
+                    "https://your_ssl_domain/sse": ssl.create_default_context(
+                        cafile="/path/to/your/ca.crt"
+                    ),
+                },
+            )
+
     """
 
     def __init__(
@@ -310,6 +342,9 @@ class MCPToolPack(ToolPack):
         mcp_servers: Union[str, List[str]],
         headers: Optional[Dict[str, Dict[str, Any]]] = None,
         default_headers: Optional[Dict[str, Any]] = None,
+        ssl_verify: Optional[Dict[str, Union[ssl.SSLContext, str, bool]]] = None,
+        default_ssl_verify: Union[ssl.SSLContext, str, bool] = True,
+        default_ssl_cafile: Optional[str] = None,
         **kwargs,
     ):
         """Create an Auto-GPT plugin tool pack."""
@@ -320,6 +355,12 @@ class MCPToolPack(ToolPack):
         self._default_headers = default_headers or {}
         self._headers_map = headers or {}
         self.server_headers_map = {}
+        if default_ssl_cafile and not ssl_verify and default_ssl_verify:
+            default_ssl_verify = ssl.create_default_context(cafile=default_ssl_cafile)
+
+        self._default_ssl_verify = default_ssl_verify
+        self._ssl_verify_map = ssl_verify or {}
+        self.server_ssl_verify_map = {}
 
     def switch_mcp_input_schema(self, input_schema: dict):
         args = {}
@@ -362,8 +403,14 @@ class MCPToolPack(ToolPack):
         for server in server_list:
             server_headers = self._headers_map.get(server, self._default_headers)
             self.server_headers_map[server] = server_headers
+            server_ssl_verify = self._ssl_verify_map.get(
+                server, self._default_ssl_verify
+            )
+            self.server_ssl_verify_map[server] = server_ssl_verify
 
-            async with sse_client(url=server, headers=server_headers) as (read, write):
+            async with sse_client(
+                url=server, headers=server_headers, verify=server_ssl_verify
+            ) as (read, write):
                 async with ClientSession(read, write) as session:
                     # Initialize the connection
                     await session.initialize()
@@ -378,8 +425,13 @@ class MCPToolPack(ToolPack):
                         ):
                             try:
                                 headers_to_use = self.server_headers_map.get(server, {})
+                                ssl_verify_to_use = self.server_ssl_verify_map.get(
+                                    server, True
+                                )
                                 async with sse_client(
-                                    url=server, headers=headers_to_use
+                                    url=server,
+                                    headers=headers_to_use,
+                                    verify=ssl_verify_to_use,
                                 ) as (read, write):
                                     async with ClientSession(read, write) as session:
                                         # Initialize the connection
