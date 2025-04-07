@@ -67,6 +67,8 @@ def json_parse_execute_args_func(input_str: str) -> Optional[EXECUTE_ARGS_TYPE]:
     # The position arguments is empty
     args = ()
     kwargs = parse_or_raise_error(input_str)
+    if kwargs is not None and isinstance(kwargs, list) and len(kwargs) == 0:
+        kwargs = {}
     return args, kwargs
 
 

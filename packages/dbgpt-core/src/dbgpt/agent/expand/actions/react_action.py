@@ -180,7 +180,7 @@ class ReActAction(ToolAction):
             # Try to parse the action input to dict
             if action_input and isinstance(action_input, str):
                 tool_args = parse_or_raise_error(action_input)
-            elif isinstance(action_input, dict):
+            elif isinstance(action_input, dict) or isinstance(action_input, list):
                 tool_args = action_input
                 action_input_str = json.dumps(action_input, ensure_ascii=False)
         except json.JSONDecodeError:
