@@ -49,6 +49,7 @@ class PostgreSQLParameters(RDBMSDatasourceParameters):
     def db_url(self, ssl: bool = False, charset: Optional[str] = None) -> str:
         return f"{self.driver}://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
+
 class PostgreSQLConnector(RDBMSConnector):
     """PostgreSQL connector."""
 
