@@ -10,4 +10,5 @@ __ALL__ = [
     "OllamaEmbeddings",
     "QianFanEmbeddings",
     "TongYiEmbeddings",
+    "SiliconFlowEmbeddings",
 ]
