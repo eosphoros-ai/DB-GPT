@@ -1,6 +1,6 @@
 [project]
 name = "dbgpt-client"
-version = "0.7.0"
+version = "0.7.1"
 description = "Add your description here"
 authors = [
     { name = "csunny", email = "cfqcsunny@gmail.com" }
@@ -9,7 +9,9 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">= 3.10"
 
-dependencies = ["dbgpt-serve"]
+dependencies = [
+    "dbgpt[client,cli]",
+]
 
 [project.urls]
 Homepage = "https://github.com/eosphoros-ai/DB-GPT"

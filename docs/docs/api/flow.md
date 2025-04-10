@@ -21,6 +21,7 @@ import TabItem from '@theme/TabItem';
   values={[
     {label: 'Curl', value: 'curl'},
     {label: 'Python', value: 'python'},
+    {label: 'Python(OpenAI SDK)', value: 'openai-sdk'},
   ]
 }>
 
@@ -34,7 +35,7 @@ curl -X POST "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
-    -d "{\"messages\":\"Hello\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_flow\", \"chat_param\": \"$FLOW_ID\"}"
+    -d "{\"messages\":\"Hello\",\"model\":\"gpt-4o\", \"chat_mode\": \"chat_flow\", \"chat_param\": \"$FLOW_ID\"}"
 
 ```
  </TabItem>
@@ -50,18 +51,53 @@ FLOW_ID="{YOUR_FLOW_ID}"
 client = Client(api_key=DBGPT_API_KEY)
 async for data in client.chat_stream(
     messages="Introduce AWEL", 
-    model="chatgpt_proxyllm", 
+    model="gpt-4o", 
     chat_mode="chat_flow", 
     chat_param=FLOW_ID
 ):
     print(data)
 ```
  </TabItem>
+
+
+<TabItem value="openai-sdk">
+
+```python
+from openai import OpenAI
+
+DBGPT_API_KEY = "dbgpt"
+FLOW_ID="{YOUR_FLOW_ID}"
+
+client = OpenAI(
+    api_key=DBGPT_API_KEY,
+    base_url="http://localhost:5670/api/v2"
+)
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "user",
+            "content": "Hello",
+        },
+    ],
+    extra_body={
+        "chat_mode": "chat_flow",
+        "chat_param": FLOW_ID,
+    },
+    stream=True,
+    max_tokens=2048,
+)
+
+for chunk in response:
+    delta_content = chunk.choices[0].delta.content
+    print(delta_content, end="", flush=True)
+```
+ </TabItem>
 </Tabs>
 
 #### Chat Completion Stream Response
 ```commandline
-data: {"id": "579f8862-fc4b-481e-af02-a127e6d036c8", "created": 1710918094, "model": "chatgpt_proxyllm", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "\n\n"}}]}
+data: {"id": "579f8862-fc4b-481e-af02-a127e6d036c8", "created": 1710918094, "model": "gpt-4o", "choices": [{"index": 0, "delta": {"role": "assistant", "content": "\n\n"}}]}
 ```
 ### Create Flow
 
