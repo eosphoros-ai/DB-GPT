@@ -1676,7 +1676,7 @@ wheels = [
 
 [[package]]
 name = "dbgpt"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/dbgpt-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -1869,7 +1869,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-auto"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-auto" }
 
 [package.optional-dependencies]
@@ -2012,7 +2012,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-flash-attn"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" }
 
 [package.dev-dependencies]
@@ -2040,7 +2040,7 @@ main = [{ name = "flash-attn", specifier = ">=2.5.8" }]
 
 [[package]]
 name = "dbgpt-app"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/dbgpt-app" }
 dependencies = [
     { name = "aiofiles" },
@@ -2093,21 +2093,21 @@ dev = []
 
 [[package]]
 name = "dbgpt-client"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/dbgpt-client" }
 dependencies = [
-    { name = "dbgpt-serve" },
+    { name = "dbgpt", extra = ["cli", "client"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "dbgpt-serve", editable = "packages/dbgpt-serve" }]
+requires-dist = [{ name = "dbgpt", extras = ["client", "cli"], editable = "packages/dbgpt-core" }]
 
 [package.metadata.requires-dev]
 dev = []
 
 [[package]]
 name = "dbgpt-ext"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/dbgpt-ext" }
 dependencies = [
     { name = "dbgpt" },
@@ -2227,7 +2227,7 @@ dev = [{ name = "pytest", specifier = ">=8.3.4" }]
 
 [[package]]
 name = "dbgpt-mono"
-version = "0.7.0"
+version = "0.7.1"
 source = { virtual = "." }
 
 [package.dev-dependencies]
@@ -2272,7 +2272,7 @@ dev = [
 
 [[package]]
 name = "dbgpt-serve"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "packages/dbgpt-serve" }
 dependencies = [
     { name = "dbgpt-ext" },
