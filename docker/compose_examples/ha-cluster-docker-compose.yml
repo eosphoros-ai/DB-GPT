@@ -154,6 +154,25 @@ services:
     restart: unless-stopped
     networks:
       - dbgptnet
+  apiserver:
+    image: eosphorosai/dbgpt-openai:latest
+    command: dbgpt start apiserver -c /root/configs/ha-model-cluster.toml
+    environment:
+      - CONTROLLER_ADDR=http://controller-1:8000,http://controller-2:8000
+    depends_on:
+      - controller-1
+      - controller-2
+      - llm-worker
+      - embedding-worker
+    volumes:
+      - ../../:/app
+      - ./conf/ha-model-cluster.toml:/root/configs/ha-model-cluster.toml
+    ports:
+      - 8100:8100/tcp
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ipc: host
 volumes:
   dbgpt-init-scripts:
   dbgpt-myql-db:

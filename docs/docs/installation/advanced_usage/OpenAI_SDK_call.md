@@ -38,8 +38,26 @@ Chat
 curl http://127.0.0.1:8100/api/v1/chat/completions \
 -H "Authorization: Bearer EMPTY" \
 -H "Content-Type: application/json" \
--d '{"model": "glm-4-9b-chat", "messages": [{"role": "user", "content": "hello"}]}'
+-d '{
+  "model": "Qwen/Qwen2.5-Coder-32B-Instruct", 
+  "messages": [{"role": "user", "content": "hello"}]
+}'
 ```
+
+:::tip
+Stream Chat
+:::
+```bash
+curl http://127.0.0.1:8100/api/v1/chat/completions \
+-H "Authorization: Bearer EMPTY" \
+-H "Content-Type: application/json" \
+-d '{
+  "model": "Qwen/Qwen2.5-Coder-32B-Instruct", 
+  "stream": true,
+  "messages": [{"role": "user", "content": "hello"}]
+}'
+```
+
 
 :::tip
 Embedding 
@@ -49,7 +67,7 @@ curl http://127.0.0.1:8100/api/v1/embeddings \
 -H "Authorization: Bearer EMPTY" \
 -H "Content-Type: application/json" \
 -d '{
-    "model": "text2vec",
+    "model": "BAAI/bge-large-zh-v1.5",
     "input": "Hello world!"
 }'
 ```
@@ -59,11 +77,13 @@ curl http://127.0.0.1:8100/api/v1/embeddings \
 
 ```bash
 import openai
-openai.api_key = "EMPTY"
-openai.api_base = "http://127.0.0.1:8100/api/v1"
-model = "glm-4-9b-chat"
+model = "Qwen/Qwen2.5-Coder-32B-Instruct"
 
-completion = openai.ChatCompletion.create(
+client = openai.OpenAI(
+  api_key="EMPTY",
+  base_url="http://127.0.0.1:8100/api/v1",
+)
+completion = client.chat.completions.create(
   model=model,
   messages=[{"role": "user", "content": "hello"}]
 )
