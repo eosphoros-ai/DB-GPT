@@ -91,7 +91,7 @@ test: $(VENV)/.testenv ## Run unit tests
 .PHONY: test-doc
 test-doc: $(VENV)/.testenv ## Run doctests
 	# -k "not test_" skips tests that are not doctests.
-	$(VENV_BIN)/pytest --doctest-modules -k "not test_" dbgpt/core
+	$(VENV_BIN)/pytest --doctest-modules -k "not test_" packages
 
 .PHONY: mypy
 mypy: $(VENV)/.testenv ## Run mypy checks

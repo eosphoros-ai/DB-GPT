@@ -20,22 +20,31 @@ ollama pull nomic-embed-text
 
 3. install ollama package.
 ```bash
-pip install ollama
+# Use uv to install dependencies needed for Ollama proxy
+uv sync --all-packages \
+--extra "base" \
+--extra "proxy_ollama" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts"
 ```
 
-### Use ollama proxy model in DB-GPT `.env` file
+### Configure the model
 
-```bash
-LLM_MODEL=ollama_proxyllm
-PROXY_SERVER_URL=http://127.0.0.1:11434
-PROXYLLM_BACKEND="qwen:0.5b"
-PROXY_API_KEY=not_used
-EMBEDDING_MODEL=proxy_ollama
-proxy_ollama_proxy_server_url=http://127.0.0.1:11434
-proxy_ollama_proxy_backend="nomic-embed-text:latest"
-```
+Modify you toml config file to use the `ollama` provider.
 
-### run dbgpt server
-```bash
-python dbgpt/app/dbgpt_server.py
+```toml
+# Model Configurations
+[models]
+[[models.llms]]
+name = "qwen:0.5b"
+provider = "proxy/ollama"
+api_base = "http://localhost:11434"
+api_key = ""
+
+[[models.embeddings]]
+name = "bge-m3:latest"
+provider = "proxy/ollama"
+api_url = "http://localhost:11434"
+api_key = ""
 ```

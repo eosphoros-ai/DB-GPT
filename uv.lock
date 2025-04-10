@@ -1732,6 +1732,7 @@ framework = [
     { name = "jsonschema" },
     { name = "openpyxl" },
     { name = "pymysql" },
+    { name = "python-jsonpath" },
     { name = "pyzmq" },
     { name = "seaborn" },
     { name = "tokenizers" },
@@ -1835,6 +1836,7 @@ requires-dist = [
     { name = "pympler", marker = "extra == 'simple-framework'" },
     { name = "pymysql", marker = "extra == 'framework'" },
     { name = "python-dotenv", specifier = "==1.0.0" },
+    { name = "python-jsonpath", marker = "extra == 'framework'" },
     { name = "python-multipart", marker = "extra == 'simple-framework'" },
     { name = "pyzmq", marker = "extra == 'framework'" },
     { name = "qianfan", marker = "extra == 'proxy-qianfan'" },
@@ -7710,6 +7712,15 @@ source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e3/c4/358cd13daa1d912ef795010897a483ab2f0b41c9ea1b35235a8b2f7d15a7/python_json_logger-3.2.1.tar.gz", hash = "sha256:8eb0554ea17cb75b05d2848bc14fb02fbdbd9d6972120781b974380bfa162008", size = 16287 }
 wheels = [
     { url = "https://pypi.tuna.tsinghua.edu.cn/packages/4b/72/2f30cf26664fcfa0bd8ec5ee62ec90c03bd485e4a294d92aabc76c5203a5/python_json_logger-3.2.1-py3-none-any.whl", hash = "sha256:cdc17047eb5374bd311e748b42f99d71223f3b0e186f4206cc5d52aefe85b090", size = 14924 },
+]
+
+[[package]]
+name = "python-jsonpath"
+version = "1.3.0"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/86/45/0ae98e958fc53cfdc544bb45262d9e8786f415aac7eb35f94a79af740773/python_jsonpath-1.3.0.tar.gz", hash = "sha256:ea5eb4d9b1296c8c19cc53538eb0f20fc54128f84571559ee63539e57875fefe", size = 43050 }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b9/9d/5eed195961588f930db3008199b8023063ebd0253b9de9f0f13f3763b819/python_jsonpath-1.3.0-py3-none-any.whl", hash = "sha256:ce586ec5bd934ce97bc2f06600b00437d9684138b77273ced5b70694a8ef3a76", size = 54354 },
 ]
 
 [[package]]

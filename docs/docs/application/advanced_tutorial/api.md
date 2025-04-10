@@ -13,11 +13,13 @@ In the DB-GPT project, we defined a service-oriented multi-model management fram
 
 ```python
 import openai
-openai.api_key = "EMPTY"
-openai.api_base = "http://127.0.0.1:8100/api/v1"
-model = "vicuna-13b-v1.5"
+model = "Qwen/QwQ-32B"
 
-completion = openai.ChatCompletion.create(
+client = openai.OpenAI(
+  api_key="EMPTY",
+  base_url="http://127.0.0.1:8100/api/v1",
+)
+completion = client.chat.completions.create(
   model=model,
   messages=[{"role": "user", "content": "hello"}]
 )

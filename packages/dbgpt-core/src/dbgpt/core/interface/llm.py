@@ -249,6 +249,34 @@ class MediaContent:
         """Create a MediaContent object from thinking."""
         return cls(type="thinking", object=MediaObject(data=text, format="text"))
 
+    @classmethod
+    def parse_content(
+        cls,
+        content: Union[
+            "MediaContent", List["MediaContent"], Dict[str, Any], List[Dict[str, Any]]
+        ],
+    ) -> Union["MediaContent", List["MediaContent"]]:
+        def _parse_dict(obj_dict: Union[MediaContent, Dict[str, Any]]) -> MediaContent:
+            if isinstance(obj_dict, MediaContent):
+                return obj_dict
+            content_object = obj_dict.get("object")
+            if not content_object:
+                raise ValueError(f"Failed to parse {obj_dict}, no object found")
+            if isinstance(content_object, dict):
+                content_object = MediaObject(
+                    data=content_object.get("data"),
+                    format=content_object.get("format", "text"),
+                )
+            return cls(
+                type=obj_dict.get("type", "text"),
+                object=content_object,
+            )
+
+        if isinstance(content, list):
+            return [_parse_dict(c) for c in content]
+        else:
+            return _parse_dict(content)
+
     def get_text(self) -> str:
         """Get the text."""
         if self.type == MediaContentType.TEXT:
@@ -322,7 +350,11 @@ class ModelOutput:
         self,
         error_code: int,
         text: Optional[str] = None,
-        content: Optional[MediaContent] = None,
+        content: Optional[
+            Union[
+                MediaContent, List[MediaContent], Dict[str, Any], List[Dict[str, Any]]
+            ]
+        ] = None,
         **kwargs,
     ):
         if text is not None and content is not None:
@@ -330,7 +362,7 @@ class ModelOutput:
         elif text is not None:
             self.content = MediaContent.build_text(text)
         elif content is not None:
-            self.content = content
+            self.content = MediaContent.parse_content(content)
         else:
             raise ValueError("Must pass either text or content")
         self.error_code = error_code

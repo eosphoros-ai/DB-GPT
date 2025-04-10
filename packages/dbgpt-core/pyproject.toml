@@ -83,6 +83,7 @@ framework = [
     "gTTS==2.3.1",
     "pymysql",
     "jsonschema",
+    "python-jsonpath",
     # TODO move transformers to default
     "tokenizers>=0.14",
     "alembic==1.12.0",
