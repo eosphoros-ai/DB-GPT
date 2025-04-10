@@ -49,13 +49,6 @@ class SiliconFlowEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs):
         """Initialize the SiliconFlow Embeddings."""
-        try:
-            import requests  # type: ignore
-        except ImportError as exc:
-            raise ValueError(
-                "Could not import python package: requests "
-                "Please install requests by command `pip install requests`"
-            ) from exc
         super().__init__(**kwargs)
         self._api_key = self.api_key
 
@@ -95,7 +88,7 @@ class SiliconFlowEmbeddings(BaseModel, Embeddings):
         for i in range(0, len(texts), max_batch_chunks_size):
             batch_texts = texts[i : i + max_batch_chunks_size]
             response = requests.post(
-                url=f"https://api.siliconflow.cn/v1/embeddings",
+                url="https://api.siliconflow.cn/v1/embeddings",
                 json={"model": self.model_name, "input": batch_texts},
                 headers=headers,
             )
@@ -108,7 +101,7 @@ class SiliconFlowEmbeddings(BaseModel, Embeddings):
             batch_embeddings = data["data"]
             sorted_embeddings = sorted(batch_embeddings, key=lambda e: e["index"])
             embeddings.extend([result["embedding"] for result in sorted_embeddings])
-            
+
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
