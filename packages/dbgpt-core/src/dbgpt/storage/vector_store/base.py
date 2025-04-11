@@ -88,6 +88,24 @@ class VectorStoreConfig(IndexStoreConfig, RegisterParameters):
             ),
         },
     )
+    max_chunks_once_load: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The max chunks once load in vector store, "
+                "if not set, will use the default value 10."
+            ),
+        },
+    )
+    max_threads: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "The max threads in vector store, "
+                "if not set, will use the default value 1."
+            ),
+        },
+    )
 
     def create_store(self, **kwargs) -> "VectorStoreBase":
         """Create a new index store from the config."""
@@ -97,9 +115,16 @@ class VectorStoreConfig(IndexStoreConfig, RegisterParameters):
 class VectorStoreBase(IndexStoreBase, ABC):
     """Vector store base class."""
 
-    def __init__(self, executor: Optional[ThreadPoolExecutor] = None):
+    def __init__(
+        self,
+        executor: Optional[ThreadPoolExecutor] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
+    ):
         """Initialize vector store."""
-        super().__init__(executor)
+        super().__init__(
+            executor, max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
 
     @abstractmethod
     def get_config(self) -> VectorStoreConfig:

@@ -157,13 +157,17 @@ class ElasticStore(VectorStoreBase):
         vector_store_config: ElasticsearchStoreConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a ElasticsearchStore instance.
 
         Args:
             vector_store_config (ElasticsearchStoreConfig): ElasticsearchStore config.
         """
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         connect_kwargs = {}
