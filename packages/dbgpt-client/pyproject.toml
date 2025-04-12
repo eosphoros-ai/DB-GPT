@@ -1,6 +1,6 @@
 [project]
 name = "dbgpt-client"
-version = "0.7.0"
+version = "0.7.1"
 description = "Add your description here"
 authors = [
     { name = "csunny", email = "cfqcsunny@gmail.com" }
@@ -9,7 +9,17 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">= 3.10"
 
-dependencies = ["dbgpt-serve"]
+dependencies = [
+    "dbgpt[client,cli]",
+    "dbgpt_ext",
+    "shortuuid",
+    # 2.0.29 not support duckdb now
+    "SQLAlchemy>=2.0.25, <2.0.29",
+    # for cache
+    "msgpack",
+    # for AWEL operator serialization
+    "cloudpickle",
+]
 
 [project.urls]
 Homepage = "https://github.com/eosphoros-ai/DB-GPT"

@@ -114,6 +114,7 @@ async def run_tool(
     resource: Resource,
     render_protocol: Optional[Vis] = None,
     need_vis_render: bool = False,
+    raw_tool_input: Optional[str] = None,
 ) -> ActionOutput:
     """Run the tool."""
     is_terminal = None
@@ -121,10 +122,26 @@ async def run_tool(
         tool_packs = ToolPack.from_resource(resource)
         if not tool_packs:
             raise ValueError("The tool resource is not found！")
-        tool_pack = tool_packs[0]
+        tool_pack: ToolPack = tool_packs[0]
         response_success = True
         status = Status.RUNNING.value
         err_msg = None
+
+        if raw_tool_input and tool_pack.parse_execute_args(
+            resource_name=name, input_str=raw_tool_input
+        ):
+            # Use real tool to parse the input, it will raise raw error when failed
+            # it will make agent to modify the input and retry
+            parsed_args = tool_pack.parse_execute_args(
+                resource_name=name, input_str=raw_tool_input
+            )
+            if parsed_args and isinstance(parsed_args, tuple):
+                args = parsed_args[1]
+
+            if args is not None and isinstance(args, list) and len(args) == 0:
+                # Input args is empty list, just use default args
+                args = {}
+
         try:
             tool_result = await tool_pack.async_execute(resource_name=name, **args)
             status = Status.COMPLETE.value

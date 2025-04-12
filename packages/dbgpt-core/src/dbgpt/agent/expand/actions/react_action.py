@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 
 from dbgpt.agent import Action, ActionOutput, AgentResource, Resource, ResourceType
+from dbgpt.util.json_utils import parse_or_raise_error
 
 from ...resource.tool.base import BaseTool, ToolParameter
 from ...util.react_parser import ReActOutputParser, ReActStep
@@ -165,10 +166,21 @@ class ReActAction(ToolAction):
         name = parsed_step.action
         action_input = parsed_step.action_input
         action_input_str = action_input
+
+        if not name:
+            terminal_content = str(action_input_str if action_input_str else ai_message)
+            return ActionOutput(
+                is_exe_success=True,
+                content=terminal_content,
+                observations=terminal_content,
+                terminate=True,
+            )
+
         try:
+            # Try to parse the action input to dict
             if action_input and isinstance(action_input, str):
-                tool_args = json.loads(action_input)
-            elif isinstance(action_input, dict):
+                tool_args = parse_or_raise_error(action_input)
+            elif isinstance(action_input, dict) or isinstance(action_input, list):
                 tool_args = action_input
                 action_input_str = json.dumps(action_input, ensure_ascii=False)
         except json.JSONDecodeError:
@@ -181,6 +193,7 @@ class ReActAction(ToolAction):
             self.resource,
             self.render_protocol,
             need_vis_render=need_vis_render,
+            raw_tool_input=action_input_str,
         )
         if not act_out.action_input:
             act_out.action_input = action_input_str

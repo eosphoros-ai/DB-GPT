@@ -101,7 +101,7 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
         sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
         sed -i 's/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list; \
     fi && \
-    apt-get update && apt-get install -y --no-install-recommends gnupg ca-certificates apt-transport-https && \
+    apt-get update && apt-get install -y --no-install-recommends git sqlite3 gnupg ca-certificates apt-transport-https && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update && apt-get install -y \

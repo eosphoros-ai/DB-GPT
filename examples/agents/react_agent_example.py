@@ -81,9 +81,12 @@ async def main():
     await user_proxy.initiate_chat(
         recipient=tool_engineer,
         reviewer=user_proxy,
-        message="Calculate the product of 10 and 99, then count the number of files in /tmp",
-        # message="Calculate the product of 10 and 99",
-        # message="Count the number of files in /tmp",
+        message="Calculate the product of 10 and 99",
+    )
+    await user_proxy.initiate_chat(
+        recipient=tool_engineer,
+        reviewer=user_proxy,
+        message="Count the number of files in /tmp",
     )
 
     # dbgpt-vis message infos

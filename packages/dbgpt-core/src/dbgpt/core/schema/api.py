@@ -7,6 +7,8 @@ from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar, Union
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 
+from .types import ChatCompletionMessageParam
+
 T = TypeVar("T")
 
 
@@ -47,14 +49,13 @@ class Result(BaseModel, Generic[T]):
         return model_to_dict(self, **kwargs)
 
 
-_ChatCompletionMessageType = Union[str, List[Dict[str, str]], List[str]]
-
-
 class APIChatCompletionRequest(BaseModel):
     """Chat completion request entity."""
 
     model: str = Field(..., description="Model name")
-    messages: _ChatCompletionMessageType = Field(..., description="User input messages")
+    messages: Union[str, List[ChatCompletionMessageParam]] = Field(
+        ..., description="User input messages"
+    )
     temperature: Optional[float] = Field(
         0.7,
         description="What sampling temperature to use, between 0 and 2. Higher values "

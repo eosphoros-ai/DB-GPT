@@ -13,11 +13,11 @@ from dbgpt.agent import (
     ResourceType,
 )
 from dbgpt.agent.core.role import AgentRunMode
-from dbgpt.agent.resource import BaseTool, ToolPack
+from dbgpt.agent.resource import BaseTool, ResourcePack, ToolPack
 from dbgpt.agent.util.react_parser import ReActOutputParser
 from dbgpt.util.configure import DynConfig
 
-from .actions.react_action import ReActAction
+from .actions.react_action import ReActAction, Terminate
 
 logger = logging.getLogger(__name__)
 
@@ -68,14 +68,11 @@ _REACT_USER_TEMPLATE = """\
 Most recent message:
 {{ most_recent_memories }}
 {% endif %}\
-
-{% if question %}\
-Question: {{ question }}
-{% endif %}
 """
 
 
 _REACT_WRITE_MEMORY_TEMPLATE = """\
+{% if question %}Question: {{ question }} {% endif %}
 {% if thought %}Thought: {{ thought }} {% endif %}
 {% if action %}Action: {{ action }} {% endif %}
 {% if action_input %}Action Input: {{ action_input }} {% endif %}
@@ -113,7 +110,7 @@ class ReActAgent(ConversableAgent):
         """Init indicator AssistantAgent."""
         super().__init__(**kwargs)
 
-        self._init_actions([ReActAction])
+        self._init_actions([ReActAction, Terminate])
 
     async def _a_init_reply_message(
         self,
@@ -149,6 +146,36 @@ class ReActAgent(ConversableAgent):
             "action_space_simple_desc": "\n".join(action_space_simple_desc),
         }
         return reply_message
+
+    async def preload_resource(self) -> None:
+        await super().preload_resource()
+        self._check_and_add_terminate()
+
+    def _check_and_add_terminate(self):
+        if not self.resource:
+            return
+        _is_has_terminal = False
+
+        def _has_terminal(r: Resource):
+            nonlocal _is_has_terminal
+            if r.type() == ResourceType.Tool and isinstance(r, Terminate):
+                _is_has_terminal = True
+            return r
+
+        _has_add_terminal = False
+
+        def _add_terminate(r: Resource):
+            nonlocal _has_add_terminal
+            if not _has_add_terminal and isinstance(r, ResourcePack):
+                terminal = Terminate()
+                r._resources[terminal.name] = terminal
+                _has_add_terminal = True
+            return r
+
+        self.resource.apply(apply_func=_has_terminal)
+        if not _is_has_terminal:
+            # Add terminal action to the resource
+            self.resource.apply(apply_pack_func=_add_terminate)
 
     async def load_resource(self, question: str, is_retry_chat: bool = False):
         """Load agent bind resource."""
@@ -223,6 +250,7 @@ class ReActAgent(ConversableAgent):
         action_output: Optional[ActionOutput] = None,
         check_pass: bool = True,
         check_fail_reason: Optional[str] = None,
+        current_retry_counter: Optional[int] = None,
     ) -> AgentMemoryFragment:
         """Write the memories to the memory.
 
@@ -254,6 +282,9 @@ class ReActAgent(ConversableAgent):
         }
         if action_input:
             memory_map["action_input"] = action_input
+
+        if current_retry_counter is not None and current_retry_counter == 0:
+            memory_map["question"] = question
 
         write_memory_template = self.write_memory_template
         memory_content = self._render_template(write_memory_template, **memory_map)
