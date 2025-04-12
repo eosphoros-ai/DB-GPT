@@ -133,15 +133,21 @@ class ChromaStore(VectorStoreBase):
             )
         collection_metadata = collection_metadata or {"hnsw:space": "cosine"}
 
-        self._collection = self._chroma_client.get_or_create_collection(
-            name=self._collection_name,
-            embedding_function=None,
-            metadata=collection_metadata,
+        self._collection = self.create_collection(
+            collection_name=self._collection_name,
+            collection_metadata=collection_metadata,
         )
 
     def get_config(self) -> ChromaVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
+
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
+        return self._chroma_client.get_or_create_collection(
+            name=collection_name,
+            embedding_function=None,
+            metadata=kwargs.get("collection_metadata"),
+        )
 
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None
