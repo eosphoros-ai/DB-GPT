@@ -288,11 +288,11 @@ class MilvusStore(VectorStoreBase):
     def create_collection(self, collection_name: str, **kwargs) -> Any:
         """Create a Milvus collection.
 
-            Create a Milvus collection, indexes it with HNSW, load document
-            Args:
-                collection_name (str): your collection name.
-            Returns:
-                List[str]: document ids.
+        Create a Milvus collection, indexes it with HNSW, load document
+        Args:
+            collection_name (str): your collection name.
+        Returns:
+            List[str]: document ids.
         """
         try:
             from pymilvus import (
@@ -365,12 +365,7 @@ class MilvusStore(VectorStoreBase):
         """
         try:
             from pymilvus import (
-                Collection,
-                CollectionSchema,
                 DataType,
-                FieldSchema,
-                connections,
-                utility,
             )
             from pymilvus.orm.types import infer_dtype_bydata  # noqa: F401
         except ImportError:
@@ -387,10 +382,7 @@ class MilvusStore(VectorStoreBase):
                 self.fields.remove(x.name)
             if x.is_primary:
                 self.primary_field = x.name
-            if (
-                    x.dtype == DataType.FLOAT_VECTOR
-                    or x.dtype == DataType.BINARY_VECTOR
-            ):
+            if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
                 self.vector_field = x.name
         return self._add_documents(texts, metadatas)
 
