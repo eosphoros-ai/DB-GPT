@@ -138,6 +138,10 @@ async def run_tool(
             if parsed_args and isinstance(parsed_args, tuple):
                 args = parsed_args[1]
 
+            if args is not None and isinstance(args, list) and len(args) == 0:
+                # Input args is empty list, just use default args
+                args = {}
+
         try:
             tool_result = await tool_pack.async_execute(resource_name=name, **args)
             status = Status.COMPLETE.value

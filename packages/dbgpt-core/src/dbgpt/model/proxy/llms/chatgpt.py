@@ -23,7 +23,7 @@ from dbgpt.model.utils.chatgpt_utils import OpenAIParameters
 from dbgpt.util.i18n_utils import _
 
 if TYPE_CHECKING:
-    from httpx._types import ProxiesTypes
+    from httpx._types import ProxiesTypes, ProxyTypes
     from openai import AsyncAzureOpenAI, AsyncOpenAI
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
@@ -139,6 +139,7 @@ class OpenAILLMClient(ProxyLLMClient):
         api_version: Optional[str] = None,
         model: Optional[str] = None,
         proxies: Optional["ProxiesTypes"] = None,
+        proxy: Optional["ProxyTypes"] = None,
         timeout: Optional[int] = 240,
         model_alias: Optional[str] = "gpt-4o-mini",
         context_length: Optional[int] = 8192,
@@ -160,6 +161,7 @@ class OpenAILLMClient(ProxyLLMClient):
             api_key=self._resolve_env_vars(api_key),
             api_version=self._resolve_env_vars(api_version),
             proxies=proxies,
+            proxy=proxy,
             full_url=kwargs.get("full_url"),
         )
 
@@ -203,7 +205,7 @@ class OpenAILLMClient(ProxyLLMClient):
             api_type=model_params.api_type,
             api_version=model_params.api_version,
             model=model_params.real_provider_model_name,
-            proxies=model_params.http_proxy,
+            proxy=model_params.http_proxy,
             model_alias=model_params.real_provider_model_name,
             context_length=max(model_params.context_length or 8192, 8192),
             # full_url=model_params.proxy_server_url,

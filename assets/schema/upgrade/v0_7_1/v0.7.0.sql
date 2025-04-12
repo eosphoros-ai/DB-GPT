@@ -294,7 +294,7 @@ CREATE TABLE `dbgpt_serve_flow` (
   `uid` varchar(128) NOT NULL COMMENT 'Unique id',
   `dag_id` varchar(128) DEFAULT NULL COMMENT 'DAG id',
   `name` varchar(128) DEFAULT NULL COMMENT 'Flow name',
-  `flow_data` text COMMENT 'Flow data, JSON format',
+  `flow_data` longtext COMMENT 'Flow data, JSON format',
   `user_name` varchar(128) DEFAULT NULL COMMENT 'User name',
   `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
   `gmt_created` datetime DEFAULT NULL COMMENT 'Record creation time',

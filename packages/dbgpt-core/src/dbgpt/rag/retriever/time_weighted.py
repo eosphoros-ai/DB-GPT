@@ -149,7 +149,7 @@ class TimeWeightedEmbeddingRetriever(EmbeddingRetriever):
         self._save_memory_stream()
 
         # Add to vector store
-        return self._index_store.load_document(dup_docs)
+        return self._index_store.load_document_with_limit(dup_docs)
 
     def _retrieve(
         self, query: str, filters: Optional[MetadataFilters] = None

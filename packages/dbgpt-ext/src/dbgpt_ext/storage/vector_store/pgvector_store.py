@@ -85,6 +85,8 @@ class PGVectorStore(VectorStoreBase):
         vector_store_config: PGVectorConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a PGVectorStore instance."""
         try:
@@ -93,7 +95,9 @@ class PGVectorStore(VectorStoreBase):
             raise ImportError(
                 "Please install the `langchain` package to use the PGVector."
             )
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         self.connection_string = vector_store_config.connection_string
