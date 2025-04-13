@@ -80,15 +80,20 @@ class MSSQLConnector(RDBMSConnector):
 
     def get_users(self):
         with self.session_scope() as session:
-            cursor = session.execute(text("SELECT name FROM sys.server_principals WHERE type_desc = 'SQL_LOGIN'"))
+            cursor = session.execute(
+                text(
+                    "SELECT name FROM sys.server_principals "
+                    "WHERE type_desc = 'SQL_LOGIN'"
+                )
+            )
             return [row[0] for row in cursor.fetchall()]
-
 
     def get_grants(self):
         with self.session_scope() as session:
             query = """
             SELECT 
-                CASE WHEN perm.state <> 'W' THEN perm.state_desc ELSE 'GRANT WITH GRANT OPTION' END AS [Permission],
+                CASE WHEN perm.state <> 'W' THEN perm.state_desc ELSE 'GRANT WITH
+                 GRANT OPTION' END AS [Permission],
                 perm.permission_name AS [Permission Name],
                 CASE 
                     WHEN perm.class = 0 THEN 'SERVER'
@@ -99,25 +104,28 @@ class MSSQLConnector(RDBMSConnector):
                 princ.name AS [Principal]
             FROM 
                 sys.server_permissions perm
-                JOIN sys.server_principals princ ON perm.grantee_principal_id = princ.principal_id
+                JOIN sys.server_principals princ ON perm.grantee_principal_id = 
+                princ.principal_id
             """
             cursor = session.execute(text(query))
             return cursor.fetchall()
 
     def _decode_if_bytes(self, value):
         if isinstance(value, bytes):
-            return value.decode('utf-8')
+            return value.decode("utf-8")
         return value
-    
+
     def get_charset(self):
         with self.session_scope() as session:
-            query = "SELECT DATABASEPROPERTYEX(DB_NAME(), 'Collation') AS DatabaseCollation"
+            query = (
+                "SELECT DATABASEPROPERTYEX(DB_NAME(), 'Collation') AS DatabaseCollation"
+            )
             cursor = session.execute(text(query))
             result = cursor.fetchone()
 
             if result and result[0]:
                 collation = self._decode_if_bytes(result[0])
-                parts = collation.split('_')
+                parts = collation.split("_")
                 if len(parts) >= 2:
                     return parts[1]
                 return collation
@@ -126,10 +134,11 @@ class MSSQLConnector(RDBMSConnector):
 
     def get_collation(self):
         with self.session_scope() as session:
-            cursor = session.execute(text("SELECT SERVERPROPERTY('Collation') AS DatabaseCollation"))
+            cursor = session.execute(
+                text("SELECT SERVERPROPERTY('Collation') AS DatabaseCollation")
+            )
             collation = cursor.fetchone()[0]
             return collation
-
 
     def get_table_names(self):
         tables = []
@@ -170,9 +179,6 @@ class MSSQLConnector(RDBMSConnector):
 
             return tables
 
-
-            
-
     def get_columns(self, table_name: str):
         if "." in table_name:
             schema_name, pure_table_name = table_name.split(".", 1)
@@ -197,15 +203,16 @@ class MSSQLConnector(RDBMSConnector):
                 ORDINAL_POSITION
             """
             cursor = session.execute(
-                text(query),
-                {"schema": schema_name, "table": pure_table_name}
+                text(query), {"schema": schema_name, "table": pure_table_name}
             )
             results = cursor.fetchall()
 
             columns = []
             for row in results:
-                name = row[0].decode('utf-8') if isinstance(row[0], bytes) else row[0]
-                col_type = row[1].decode('utf-8') if isinstance(row[1], bytes) else row[1]
+                name = row[0].decode("utf-8") if isinstance(row[0], bytes) else row[0]
+                col_type = (
+                    row[1].decode("utf-8") if isinstance(row[1], bytes) else row[1]
+                )
                 column = {
                     "name": name,
                     "type": col_type,
@@ -213,7 +220,9 @@ class MSSQLConnector(RDBMSConnector):
                 }
 
                 if row[3] is not None:
-                    default = row[3].decode('utf-8') if isinstance(row[3], bytes) else row[3]
+                    default = (
+                        row[3].decode("utf-8") if isinstance(row[3], bytes) else row[3]
+                    )
                     column["default"] = default
 
                 if row[4] is not None:
@@ -221,8 +230,6 @@ class MSSQLConnector(RDBMSConnector):
                 columns.append(column)
 
             return columns
-
-            
 
     def get_indexes(self, table_name: str):
         if "." in table_name:
@@ -241,9 +248,11 @@ class MSSQLConnector(RDBMSConnector):
             FROM
                 sys.indexes i
             INNER JOIN
-                sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+                sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id 
+                = ic.index_id
             INNER JOIN
-                sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+                sys.columns c ON ic.object_id = c.object_id AND ic.column_id 
+                = c.column_id
             INNER JOIN
                 sys.tables t ON i.object_id = t.object_id
             INNER JOIN
@@ -256,15 +265,18 @@ class MSSQLConnector(RDBMSConnector):
                 i.name, ic.key_ordinal
             """
             cursor = session.execute(
-                text(query),
-                {"schema": schema_name, "table": pure_table_name}
+                text(query), {"schema": schema_name, "table": pure_table_name}
             )
             results = cursor.fetchall()
 
             index_dict = {}
             for row in results:
-                index_name = row[0].decode('utf-8') if isinstance(row[0], bytes) else row[0]
-                column_name = row[1].decode('utf-8') if isinstance(row[1], bytes) else row[1]
+                index_name = (
+                    row[0].decode("utf-8") if isinstance(row[0], bytes) else row[0]
+                )
+                column_name = (
+                    row[1].decode("utf-8") if isinstance(row[1], bytes) else row[1]
+                )
                 is_unique = bool(row[2])
                 is_primary_key = bool(row[3])
                 if index_name not in index_dict:
@@ -272,7 +284,7 @@ class MSSQLConnector(RDBMSConnector):
                         "name": index_name,
                         "column_names": [],
                         "unique": is_unique,
-                        "primary": is_primary_key
+                        "primary": is_primary_key,
                     }
 
                 index_dict[index_name]["column_names"].append(column_name)
