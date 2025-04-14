@@ -311,7 +311,7 @@ class OceanBaseStore(VectorStoreBase):
     def create_collection(self, collection_name: str, **kwargs) -> Any:
         """Create the collection."""
         embeddings = self.embedding_function.embed_documents([collection_name])
-        raise self._create_table_with_index(embeddings)
+        return self._create_table_with_index(embeddings)
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in vector database."""
