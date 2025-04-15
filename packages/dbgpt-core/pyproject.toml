@@ -145,7 +145,7 @@ model_vl = [
 hf_qwen_omni = [
     # 4.52.0 not released yet, you can install by 
     # uv pip install git+https://github.com/huggingface/transformers@v4.51.3-Qwen2.5-Omni-preview
-    "transformers>=4.52.0",
+    # "transformers>=4.52.0",
 ]
 hf_kimi = [
     "transformers<4.51.3",
