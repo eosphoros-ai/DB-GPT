@@ -201,3 +201,7 @@ class VectorStoreBase(IndexStoreBase, ABC):
     def truncate(self) -> List[str]:
         """Truncate the collection."""
         raise NotImplementedError
+
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
+        """Create the collection."""
+        raise NotImplementedError

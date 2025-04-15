@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -113,6 +113,10 @@ class PGVectorStore(VectorStoreBase):
     def get_config(self) -> PGVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
+
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
+        """Create the collection."""
+        return self.vector_store_client.create_collection()
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

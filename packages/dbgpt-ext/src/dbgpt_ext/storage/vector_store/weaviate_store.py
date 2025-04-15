@@ -3,7 +3,7 @@
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -124,6 +124,10 @@ class WeaviateStore(VectorStoreBase):
     def get_config(self) -> WeaviateVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
+
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
+        """Create the collection."""
+        return self._default_schema()
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None
