@@ -94,6 +94,44 @@ def trace_cli_group():
     default="text",
     help="The output format",
 )
+@click.option(
+    "-j",
+    "--json_path",
+    required=False,
+    type=str,
+    default=None,
+    help=(
+        "Extract specific JSON path from spans using JSONPath syntax. Example: "
+        "'$.metadata.messages[0].content'"
+    ),
+)
+@click.option(
+    "-sj",
+    "search_json_path",
+    required=False,
+    type=str,
+    default=None,
+    help=(
+        "Extract specific JSON path from spans using JSONPath syntax. Example: "
+        "'$.metadata.messages[0].content'"
+    ),
+)
+@click.option(
+    "-jm",
+    "--json_path_match",
+    required=False,
+    type=str,
+    default=None,
+    help=("To filter the data after extracting the JSON path"),
+)
+@click.option(
+    "--value",
+    required=False,
+    type=bool,
+    default=False,
+    is_flag=True,
+    help="Just show the value after extracting the JSON path",
+)
 @click.argument("files", nargs=-1, type=click.Path(exists=True, readable=True))
 def list(
     trace_id: str,
@@ -106,6 +144,10 @@ def list(
     end_time: str,
     desc: bool,
     output: str,
+    json_path: str,
+    search_json_path: str,
+    json_path_match: str,
+    value: bool = False,
     files=None,
 ):
     """List your trace spans"""
@@ -141,8 +183,84 @@ def list(
     # Sort spans based on the start time
     spans = sorted(
         spans, key=lambda span: _parse_datetime(span["start_time"]), reverse=desc
-    )[:limit]
+    )
 
+    # Handle JSON path extraction if specified
+    if json_path:
+        try:
+            # Try to import python-jsonpath
+            try:
+                import jsonpath
+            except ImportError:
+                print("'python-jsonpath' library is required for --json_path option.")
+                print("Please install it with: pip install python-jsonpath")
+                return
+
+            # Add root prefix $ if not present
+            if not json_path.startswith("$"):
+                json_path = "$." + json_path
+            if search_json_path and not search_json_path.startswith("$"):
+                search_json_path = "$." + search_json_path
+
+            # Process all spans
+            extracted_data = []
+
+            for span in spans:
+                try:
+                    # Find all matches using python-jsonpath
+                    results = jsonpath.findall(json_path, span)
+                    if results and search_json_path and json_path_match:
+                        search_results = jsonpath.findall(search_json_path, span)
+                        if not search_results or json_path_match not in search_results:
+                            results = []
+
+                    if results:
+                        extracted_data.append(
+                            {
+                                "trace_id": span.get("trace_id"),
+                                "span_id": span.get("span_id"),
+                                "extracted_values": results,
+                            }
+                        )
+                except Exception as e:
+                    # Skip spans that cause errors
+                    logger.debug(
+                        f"Error extracting from span {span.get('trace_id')}: {e}"
+                    )
+                    continue
+            extracted_data = extracted_data[:limit]
+            if value:
+                extracted_data = [
+                    item["extracted_values"]
+                    for item in extracted_data
+                    if item["extracted_values"]
+                ]
+
+            if output == "json" and extracted_data:
+                print(json.dumps(extracted_data, ensure_ascii=False, indent=2))
+            elif extracted_data:
+                for item in extracted_data:
+                    if not value:
+                        for it in item["extracted_values"]:
+                            show_value = json.dumps(it, ensure_ascii=False, indent=2)
+                            print(
+                                f"Trace ID: {item['trace_id']}, Span ID: "
+                                f"{item['span_id']}, \nValue: {show_value}"
+                            )
+                            print("=" * 80)
+                    else:
+                        for it in item:
+                            if isinstance(it, dict):
+                                print(json.dumps(it, ensure_ascii=False, indent=2))
+                            else:
+                                print(it)
+                            print("=" * 80)
+            return
+        except Exception as e:
+            print(f"Error while processing JSONPath: {e}")
+            return
+
+    spans = spans[:limit]
     table = PrettyTable(
         ["Trace ID", "Span ID", "Operation Name", "Conversation UID"],
     )
@@ -423,6 +541,8 @@ def read_spans_from_files(files=None) -> Iterable[Dict]:
         for filename in glob.glob(filepath):
             with open(filename, "r") as file:
                 for line in file:
+                    if not line.strip():
+                        continue
                     yield json.loads(line)
 
 

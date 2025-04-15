@@ -197,6 +197,8 @@ class MilvusStore(VectorStoreBase):
         vector_store_config: MilvusVectorConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a MilvusStore instance.
 
@@ -204,7 +206,9 @@ class MilvusStore(VectorStoreBase):
             vector_store_config (MilvusVectorConfig): MilvusStore config.
             refer to https://milvus.io/docs/v2.0.x/manage_connection.md
         """
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         try:

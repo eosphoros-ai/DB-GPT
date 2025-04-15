@@ -157,17 +157,21 @@ class ElasticStore(VectorStoreBase):
         vector_store_config: ElasticsearchStoreConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a ElasticsearchStore instance.
 
         Args:
             vector_store_config (ElasticsearchStoreConfig): ElasticsearchStore config.
         """
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         connect_kwargs = {}
-        elasticsearch_vector_config = vector_store_config.dict()
+        elasticsearch_vector_config = vector_store_config.to_dict()
         self.uri = os.getenv(
             "ELASTICSEARCH_URL", "localhost"
         ) or elasticsearch_vector_config.get("uri")
@@ -224,7 +228,10 @@ class ElasticStore(VectorStoreBase):
                 "`pip install elasticsearch`."
             )
         try:
-            if self.username != "" and self.password != "":
+            # The condition should check for both None and empty string ("")
+            # When reading non-existent keys from env/config files,
+            # the value will be None
+            if self.username and self.password:
                 self.es_client_python = Elasticsearch(
                     f"http://{self.uri}:{self.port}",
                     basic_auth=(self.username, self.password),
@@ -242,7 +249,7 @@ class ElasticStore(VectorStoreBase):
 
         # create es index
         try:
-            if self.username != "" and self.password != "":
+            if self.username and self.password:
                 self.db_init = ElasticsearchStore(
                     es_url=f"http://{self.uri}:{self.port}",
                     index_name=self.index_name,

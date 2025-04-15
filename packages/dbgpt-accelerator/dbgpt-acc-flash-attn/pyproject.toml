@@ -2,7 +2,7 @@
 # https://github.com/astral-sh/uv/issues/2252#issuecomment-2624150395
 [project]
 name = "dbgpt-acc-flash-attn"
-version = "0.7.0"
+version = "0.7.1"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"

@@ -192,6 +192,8 @@ class OceanBaseStore(VectorStoreBase):
         vector_store_config: OceanBaseConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a OceanBaseStore instance."""
         try:
@@ -205,7 +207,9 @@ class OceanBaseStore(VectorStoreBase):
         if vector_store_config.embedding_fn is None:
             raise ValueError("embedding_fn is required for OceanBaseStore")
 
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
 
         self._vector_store_config = vector_store_config
         self.embedding_function = embedding_fn

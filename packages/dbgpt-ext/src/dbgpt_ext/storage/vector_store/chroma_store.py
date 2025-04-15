@@ -91,6 +91,8 @@ class ChromaStore(VectorStoreBase):
         embedding_fn: Optional[Embeddings] = None,
         chroma_client: Optional["PersistentClient"] = None,  # type: ignore # noqa
         collection_metadata: Optional[dict] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a ChromaStore instance.
 
@@ -100,8 +102,12 @@ class ChromaStore(VectorStoreBase):
             embedding_fn(Embeddings): embedding function.
             chroma_client(PersistentClient): chroma client.
             collection_metadata(dict): collection metadata.
+            max_chunks_once_load(int): max chunks once load.
+            max_threads(int): max threads.
         """
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
         try:
             from chromadb import PersistentClient, Settings

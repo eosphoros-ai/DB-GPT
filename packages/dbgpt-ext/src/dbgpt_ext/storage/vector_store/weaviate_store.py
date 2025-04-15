@@ -96,6 +96,8 @@ class WeaviateStore(VectorStoreBase):
         vector_store_config: WeaviateVectorConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Initialize with Weaviate client."""
         try:
@@ -105,7 +107,9 @@ class WeaviateStore(VectorStoreBase):
                 "Could not import weaviate python package. "
                 "Please install it with `pip install weaviate-client`."
             )
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         self.weaviate_url = vector_store_config.weaviate_url

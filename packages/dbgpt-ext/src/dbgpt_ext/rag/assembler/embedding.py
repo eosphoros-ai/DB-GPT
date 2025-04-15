@@ -131,8 +131,8 @@ class EmbeddingAssembler(BaseAssembler):
         Returns:
             List[str]: List of chunk ids.
         """
-        max_chunks_once_load = kwargs.get("max_chunks_once_load", 10)
-        max_threads = kwargs.get("max_threads", 1)
+        max_chunks_once_load = kwargs.get("max_chunks_once_load")
+        max_threads = kwargs.get("max_threads")
         return self._index_store.load_document_with_limit(
             self._chunks, max_chunks_once_load, max_threads
         )
@@ -144,8 +144,8 @@ class EmbeddingAssembler(BaseAssembler):
             List[str]: List of chunk ids.
         """
         # persist chunks into vector store
-        max_chunks_once_load = kwargs.get("max_chunks_once_load", 10)
-        max_threads = kwargs.get("max_threads", 1)
+        max_chunks_once_load = kwargs.get("max_chunks_once_load")
+        max_threads = kwargs.get("max_threads")
         return await self._index_store.aload_document_with_limit(
             self._chunks, max_chunks_once_load, max_threads
         )
