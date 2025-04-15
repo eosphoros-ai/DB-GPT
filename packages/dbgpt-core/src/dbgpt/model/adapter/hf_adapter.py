@@ -15,7 +15,6 @@ from dbgpt.model.adapter.model_metadata import (
     COMMON_HF_QWEN25_MODELS,
 )
 from dbgpt.model.base import ModelType
-from dbgpt.model.utils.media_utils import parse_messages
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
@@ -295,6 +294,8 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             messages: The messages to load.
             tokenizer: The tokenizer to use.
         """
+        from dbgpt.model.utils.media_utils import parse_messages
+
         results = parse_messages(messages)
         if "images" in results and results["images"]:
             params["images"] = results["images"]
@@ -879,6 +880,38 @@ class GLM4Adapter(NewHFChatModelAdapter):
         )
 
 
+class GLM40414Adapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/collections/THUDM/glm-4-0414-67f3cbcb34dd9d252707cb2e
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "glm-4" in lower_model_name_or_path
+            and "0414" in lower_model_name_or_path
+            and "base" not in lower_model_name_or_path
+        ) or (lower_model_name_or_path and "glm-z1" in lower_model_name_or_path)
+
+    def use_fast_tokenizer(self) -> bool:
+        return True
+
+    def is_reasoning_model(
+        self,
+        deploy_model_params: LLMDeployModelParameters,
+        lower_model_name_or_path: Optional[str] = None,
+    ) -> bool:
+        if (
+            deploy_model_params.reasoning_model is not None
+            and deploy_model_params.reasoning_model
+        ):
+            return True
+        return lower_model_name_or_path and "z1" in lower_model_name_or_path
+
+
 class Codegeex4Adapter(GLM4Adapter):
     """
     https://huggingface.co/THUDM/codegeex4-all-9b
@@ -974,6 +1007,7 @@ register_model_adapter(PhiAdapter)
 register_model_adapter(SQLCoderAdapter)
 register_model_adapter(OpenChatAdapter)
 register_model_adapter(GLM4Adapter, supported_models=COMMON_HF_GLM_MODELS)
+register_model_adapter(GLM40414Adapter)
 register_model_adapter(Codegeex4Adapter)
 register_model_adapter(Qwen2Adapter, supported_models=COMMON_HF_QWEN25_MODELS)
 register_model_adapter(Internlm2Adapter)

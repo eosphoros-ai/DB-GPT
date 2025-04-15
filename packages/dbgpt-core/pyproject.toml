@@ -147,6 +147,9 @@ hf_qwen_omni = [
     # uv pip install git+https://github.com/huggingface/transformers@v4.51.3-Qwen2.5-Omni-preview
     # "transformers>=4.52.0",
 ]
+hf_glm4 = [
+    "transformers>=4.51.3",
+]
 hf_kimi = [
     "transformers<4.51.3",
 ]
@@ -163,6 +166,10 @@ default-groups = ["dev"]
 conflicts = [
     [
         { extra = "hf_qwen_omni" },
+        { extra = "hf_kimi" },
+    ],
+    [
+        { extra = "hf_glm4" },
         { extra = "hf_kimi" },
     ],
 ]
