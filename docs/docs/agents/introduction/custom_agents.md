@@ -10,7 +10,7 @@ summarizer.
 Install the required packages by running the following command:
 
 ```bash
-pip install "dbgpt[agent]>=0.5.6rc1" -U
+pip install "dbgpt[agent,simple_framework]>=0.7.0" "dbgpt_ext>=0.7.0" -U
 pip install openai
 ```
 
@@ -286,8 +286,8 @@ class SummaryActionInput(BaseModel):
     )
 
 class SummaryAction(Action[SummaryActionInput]):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
@@ -371,9 +371,9 @@ class MySummarizerAgent(ConversableAgent):
 ### Action Extended Parameter Processing
 
 ```python
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
-from dbgpt.agent import Action, ActionOutput, AgentResource, ConversableAgent
+from dbgpt.agent import Agent, Action, AgentMessage, ActionOutput, AgentResource, ConversableAgent
 
 
 class SummaryActionInput(BaseModel):
@@ -399,7 +399,13 @@ class MySummarizerAgent(ConversableAgent):
         super().__init__(**kwargs)
         self._init_actions([SummaryAction])
     
-    def prepare_act_param(self) -> Dict[str, Any]:
+    def prepare_act_param(
+        self,
+        received_message: Optional[AgentMessage],
+        sender: Agent,
+        rely_messages: Optional[List[AgentMessage]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         return {"action_extra_param_key": "this is extra param"}
 ```
 
@@ -410,6 +416,7 @@ After the custom agent is created, you can use it in the following way:
 ```python
 
 import asyncio
+import os
 
 from dbgpt.agent import AgentContext, ConversableAgent, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.model.proxy import OpenAILLMClient
@@ -418,10 +425,15 @@ class MySummarizerAgent(ConversableAgent):
     ...
 
 async def main():
-    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
+    llm_client = OpenAILLMClient(
+        model_alias="gpt-3.5-turbo",  # or other models, eg. "gpt-4o"
+        api_base=os.getenv("OPENAI_API_BASE"),
+        api_key=os.getenv("OPENAI_API_KEY"),
+    )
     context: AgentContext = AgentContext(conv_id="summarize")
 
     agent_memory: AgentMemory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="summarize")
 
     summarizer = (
         await MySummarizerAgent()
@@ -457,7 +469,7 @@ async def main():
             Nuclear electric rocket
             """,
     )
-    print(await agent_memory.gpts_memory.one_chat_completions("summarize"))
+    print(await agent_memory.gpts_memory.app_link_chat_message("summarize"))
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -467,9 +479,11 @@ Full code as follows:
 
 ```python
 import asyncio
-from typing import Any, Dict, Optional, Tuple
+import os
+from typing import Any, Dict, Optional, Tuple, List
 
 from dbgpt.agent import (
+    Agent,
     Action,
     ActionOutput,
     AgentContext,
@@ -548,7 +562,13 @@ class MySummarizerAgent(ConversableAgent):
         reply_message.context = {"not_related_message": NOT_RELATED_MESSAGE}
         return reply_message
 
-    def prepare_act_param(self) -> Dict[str, Any]:
+    def prepare_act_param(
+        self,
+        received_message: Optional[AgentMessage],
+        sender: Agent,
+        rely_messages: Optional[List[AgentMessage]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         return {"action_extra_param_key": "this is extra param"}
 
     async def correctness_check(
@@ -558,7 +578,7 @@ class MySummarizerAgent(ConversableAgent):
         action_report = message.action_report
         task_result = ""
         if action_report:
-            task_result = action_report.get("content", "")
+            task_result = action_report.content
 
         check_result, model = await self.thinking(
             messages=[
@@ -606,8 +626,8 @@ class SummaryActionInput(BaseModel):
 
 
 class SummaryAction(Action[SummaryActionInput]):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
@@ -671,10 +691,15 @@ class SummaryAction(Action[SummaryActionInput]):
 
 
 async def main():
-    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
+    llm_client = OpenAILLMClient(
+        model_alias="gpt-3.5-turbo",  # or other models, eg. "gpt-4o"
+        api_base=os.getenv("OPENAI_API_BASE"),
+        api_key=os.getenv("OPENAI_API_KEY"),
+    )
     context: AgentContext = AgentContext(conv_id="summarize")
 
     agent_memory: AgentMemory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="summarize")
 
     summarizer = (
         await MySummarizerAgent()
@@ -709,7 +734,7 @@ async def main():
             Nuclear electric rocket
             """,
     )
-    print(await agent_memory.gpts_memory.one_chat_completions("summarize"))
+    print(await agent_memory.gpts_memory.app_link_chat_message("summarize"))
 
 
 if __name__ == "__main__":
