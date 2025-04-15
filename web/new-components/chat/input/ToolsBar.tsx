@@ -8,6 +8,8 @@ import Image from 'next/image';
 import React, { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { parseResourceValue, transformFileUrl } from '@/utils';
+
 import MaxNewTokens from './MaxNewTokens';
 import ModelSwitcher from './ModelSwitcher';
 import Resource from './Resource';
@@ -161,11 +163,70 @@ const ToolsBar: React.FC<{
 
   const fileName = useMemo(() => {
     try {
-      return JSON.parse(currentDialogue.select_param).file_name;
+      // First try to get file_name from resourceValue
+      if (resourceValue) {
+        if (typeof resourceValue === 'string') {
+          return JSON.parse(resourceValue).file_name || '';
+        } else {
+          return resourceValue.file_name || '';
+        }
+      }
+      // Fall back to currentDialogue.select_param if resourceValue doesn't have file_name
+      return JSON.parse(currentDialogue.select_param).file_name || '';
     } catch {
       return '';
     }
-  }, [currentDialogue.select_param]);
+  }, [resourceValue, currentDialogue.select_param]);
+
+  const ResourceItemsDisplay = () => {
+    const resources = parseResourceValue(resourceValue) || parseResourceValue(currentDialogue.select_param) || [];
+
+    if (resources.length === 0) return null;
+
+    return (
+      <div className='group/item flex flex-wrap gap-2 mt-2'>
+        {resources.map((item, index) => {
+          // Handle image type
+          if (item.type === 'image_url' && item.image_url?.url) {
+            const fileName = item.image_url.fileName;
+            const previewUrl = transformFileUrl(item.image_url.url);
+            return (
+              <div
+                key={`img-${index}`}
+                className='flex flex-col border border-[#e3e4e6] dark:border-[rgba(255,255,255,0.6)] rounded-lg p-2'
+              >
+                {/* Add image preview */}
+                <div className='w-32 h-32 mb-2 overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded'>
+                  <img src={previewUrl} alt={fileName || 'Preview'} className='max-w-full max-h-full object-contain' />
+                </div>
+                <div className='flex items-center'>
+                  <span className='text-sm text-[#1c2533] dark:text-white line-clamp-1'>{fileName}</span>
+                </div>
+              </div>
+            );
+          }
+          // Handle file type
+          else if (item.type === 'file_url' && item.file_url?.url) {
+            const fileName = item.file_url.file_name;
+
+            return (
+              <div
+                key={`file-${index}`}
+                className='flex items-center justify-between border border-[#e3e4e6] dark:border-[rgba(255,255,255,0.6)] rounded-lg p-2'
+              >
+                <div className='flex items-center'>
+                  <Image src={`/icons/chat/excel.png`} width={20} height={20} alt='file-icon' className='mr-2' />
+                  <span className='text-sm text-[#1c2533] dark:text-white line-clamp-1'>{fileName}</span>
+                </div>
+              </div>
+            );
+          }
+
+          return null;
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className='flex flex-col  mb-2'>
@@ -178,19 +239,8 @@ const ToolsBar: React.FC<{
         </div>
         <div className='flex gap-1'>{returnTools(rightToolsConfig)}</div>
       </div>
-      {(fileName || fileList[0]?.name) && (
-        <div className='group/item flex mt-2'>
-          <div className='flex items-center justify-between w-64 border border-[#e3e4e6] dark:border-[rgba(255,255,255,0.6)] rounded-lg p-2'>
-            <div className='flex items-center'>
-              <Image src={`/icons/chat/excel.png`} width={20} height={20} alt='file-icon' className='mr-2' />
-              <span className='text-sm text-[#1c2533] dark:text-white line-clamp-1'>
-                {fileName || fileList[0]?.name}
-              </span>
-            </div>
-            <Spin spinning={loading} indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-          </div>
-        </div>
-      )}
+      <ResourceItemsDisplay />
+      <Spin spinning={loading} indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
     </div>
   );
 };

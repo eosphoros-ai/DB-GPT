@@ -14,6 +14,7 @@ export const ChatEn = {
   copy_success: 'Copy success',
   copy_failed: 'Copy failed',
   file_tip: 'File cannot be changed after upload',
+  file_upload_tip: 'Upload file to chat(Your model must support multimodal input)',
   assistant: 'Platform Assistant', // DataFun Assistant
   model_tip: 'Model selection is not supported for the current application',
   temperature_tip: 'The current application does not support temperature configuration',

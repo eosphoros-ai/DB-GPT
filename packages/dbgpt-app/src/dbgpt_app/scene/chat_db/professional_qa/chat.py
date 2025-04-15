@@ -55,6 +55,7 @@ class ChatWithDbQA(BaseChat):
             from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
+        user_input = self.current_user_input.last_text
         table_infos = None
         if self.db_name:
             client = DBSummaryClient(system_app=self.system_app)
@@ -63,7 +64,7 @@ class ChatWithDbQA(BaseChat):
                     self._executor,
                     client.get_db_summary,
                     self.db_name,
-                    self.current_user_input,
+                    user_input,
                     self.top_k,
                 )
             except Exception as e:
@@ -78,7 +79,7 @@ class ChatWithDbQA(BaseChat):
                     table_infos = table_infos[: self.curr_config.schema_max_tokens]
 
         input_values = {
-            "input": self.current_user_input,
+            "input": user_input,
             "table_info": table_infos,
         }
         return input_values

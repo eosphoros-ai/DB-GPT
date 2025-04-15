@@ -184,7 +184,27 @@ const ChatContent: React.FC<{
               className='flex-1 text-sm text-[#1c2533] dark:text-white'
               style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
             >
-              {typeof context === 'string' && context}
+              {typeof context === 'string' && (
+                <div>
+                  <GPTVis
+                    components={{
+                      ...markdownComponents,
+                      img: ({ src, alt, ...props }) => (
+                        <img
+                          src={src}
+                          alt={alt || 'image'}
+                          className='max-w-full md:max-w-[80%] lg:max-w-[70%] object-contain'
+                          style={{ maxHeight: '200px' }}
+                          {...props}
+                        />
+                      ),
+                    }}
+                    {...markdownPlugins}
+                  >
+                    {preprocessLaTeX(formatMarkdownVal(value))}
+                  </GPTVis>
+                </div>
+              )}
             </div>
             {typeof context === 'string' && context.trim() && (
               <div className='absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200'>
