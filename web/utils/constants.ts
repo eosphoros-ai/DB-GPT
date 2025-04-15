@@ -33,7 +33,7 @@ export const MODEL_ICON_INFO: Record<string, ModelIconInfo> = {
   moonshot: {
     label: 'Moonshot',
     icon: '/models/moonshot.png',
-    patterns: ['moonshot'],
+    patterns: ['moonshot', 'kimi'],
   },
   doubao: {
     label: 'Doubao',

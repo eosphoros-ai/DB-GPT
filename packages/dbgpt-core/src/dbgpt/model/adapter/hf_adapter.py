@@ -15,6 +15,7 @@ from dbgpt.model.adapter.model_metadata import (
     COMMON_HF_QWEN25_MODELS,
 )
 from dbgpt.model.base import ModelType
+from dbgpt.model.utils.media_utils import parse_messages
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
@@ -171,7 +172,10 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     def load(self, model_path: str, from_pretrained_kwargs: dict):
         try:
             import transformers  # noqa: F401
-            from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
+            from transformers import (
+                AutoModel,
+                AutoModelForCausalLM,
+            )
         except ImportError as exc:
             raise ValueError(
                 "Could not import depend python package "
@@ -193,20 +197,13 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             from_pretrained_kwargs["trust_remote_code"] = trust_remote_code
         if "low_cpu_mem_usage" not in from_pretrained_kwargs:
             from_pretrained_kwargs["low_cpu_mem_usage"] = low_cpu_mem_usage
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=self.use_fast_tokenizer(),
-                revision=revision,
-                trust_remote_code=trust_remote_code,
-            )
-        except TypeError:
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_path,
-                use_fast=False,
-                revision=revision,
-                trust_remote_code=trust_remote_code,
-            )
+
+        tokenizer = self.load_tokenizer(
+            model_path,
+            revision,
+            use_fast=self.use_fast_tokenizer(),
+            trust_remote_code=trust_remote_code,
+        )
         try:
             model = AutoModelForCausalLM.from_pretrained(
                 model_path,
@@ -218,6 +215,43 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
                 **from_pretrained_kwargs,
             )
         return model, tokenizer
+
+    def load_tokenizer(
+        self,
+        model_path: str,
+        revision: Optional[str] = None,
+        use_fast: bool = False,
+        trust_remote_code: bool = False,
+    ):
+        from transformers import (
+            AutoProcessor,
+            AutoTokenizer,
+        )
+
+        try:
+            return AutoProcessor.from_pretrained(
+                model_path,
+                use_fast=use_fast,
+                revision=revision,
+                trust_remote_code=trust_remote_code,
+            )
+        except Exception as _e:
+            pass
+
+        try:
+            return AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=use_fast,
+                revision=revision,
+                trust_remote_code=trust_remote_code,
+            )
+        except TypeError:
+            return AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=False,
+                revision=revision,
+                trust_remote_code=trust_remote_code,
+            )
 
     def load_from_params(self, params: LLMDeployModelParameters):
         """Load the model from the parameters."""
@@ -253,6 +287,21 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             messages, tokenize=False, add_generation_prompt=True
         )
         return str_prompt
+
+    def load_media(self, params: Dict, messages: List[ModelMessage]):
+        """Load the media from the messages.
+        Args:
+            params: The parameters of the model.
+            messages: The messages to load.
+            tokenizer: The tokenizer to use.
+        """
+        results = parse_messages(messages)
+        if "images" in results and results["images"]:
+            params["images"] = results["images"]
+        if "videos" in results and results["videos"]:
+            params["videos"] = results["videos"]
+        if "audios" in results and results["audios"]:
+            params["audios"] = results["audios"]
 
 
 class CommonModelAdapter(NewHFChatModelAdapter):
@@ -550,6 +599,83 @@ class QwenMoeAdapter(NewHFChatModelAdapter):
         )
 
 
+class QwenOmniAdapter(NewHFChatModelAdapter):
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path and (
+            "qwen" in lower_model_name_or_path and "omni" in lower_model_name_or_path
+        )
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        try:
+            from transformers import (
+                AutoModel,
+                Qwen2_5OmniForConditionalGeneration,
+                Qwen2_5OmniProcessor,
+            )
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import qwen2.5 omni model, please upgrade your "
+                "transformers package to 4.51.4 or later."
+            ) from exc
+        logger.info(
+            f"Load model from {model_path}, from_pretrained_kwargs: "
+            f"{from_pretrained_kwargs}"
+        )
+
+        revision = from_pretrained_kwargs.get("revision", "main")
+        trust_remote_code = from_pretrained_kwargs.get(
+            "trust_remote_code", self.trust_remote_code
+        )
+        low_cpu_mem_usage = from_pretrained_kwargs.get("low_cpu_mem_usage", False)
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = trust_remote_code
+        if "low_cpu_mem_usage" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["low_cpu_mem_usage"] = low_cpu_mem_usage
+        tokenizer = Qwen2_5OmniProcessor.from_pretrained(
+            model_path,
+            revision=revision,
+            use_fast=self.use_fast_tokenizer(),
+            trust_remote_code=trust_remote_code,
+        )
+        try:
+            model = Qwen2_5OmniForConditionalGeneration.from_pretrained(
+                model_path, **from_pretrained_kwargs
+            )
+        except NameError:
+            model = AutoModel.from_pretrained(
+                model_path,
+                **from_pretrained_kwargs,
+            )
+        return model, tokenizer
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        messages = self.transform_model_messages(messages, convert_to_compatible_format)
+        sys_messages = []
+        other_messages = []
+        for message in messages:
+            if message["role"] == "system":
+                sys_messages.append(message)
+            else:
+                other_messages.append(message)
+        if sys_messages and isinstance(sys_messages[0]["content"], str):
+            sys_messages[0]["content"] = [
+                {"type": "text", "text": sys_messages[0]["content"]}
+            ]
+        new_messages = sys_messages + other_messages
+        logger.debug(f"The messages after transform: \n{messages}")
+        str_prompt = tokenizer.apply_chat_template(
+            new_messages, tokenize=False, add_generation_prompt=True
+        )
+        return str_prompt[0] if isinstance(str_prompt, list) else str_prompt
+
+
 class Llama3Adapter(NewHFChatModelAdapter):
     """
     https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct
@@ -789,6 +915,42 @@ class Internlm2Adapter(NewHFChatModelAdapter):
         return super().load(model_path, from_pretrained_kwargs)
 
 
+class KimiVLAdapter(NewHFChatModelAdapter):
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path and "kimi-vl" in lower_model_name_or_path
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        str_prompt = super().get_str_prompt(
+            params,
+            messages,
+            tokenizer,
+            prompt_template,
+            convert_to_compatible_format,
+        )
+        params["think_start_token"] = "◁think▷"
+        params["think_end_token"] = "◁/think▷"
+        return str_prompt
+
+    def is_reasoning_model(
+        self,
+        deploy_model_params: LLMDeployModelParameters,
+        lower_model_name_or_path: Optional[str] = None,
+    ) -> bool:
+        if (
+            deploy_model_params.reasoning_model is not None
+            and deploy_model_params.reasoning_model
+        ):
+            return True
+        return lower_model_name_or_path and "thinking" in lower_model_name_or_path
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(CommonModelAdapter)  # For all of hf models can be matched
@@ -802,6 +964,7 @@ register_model_adapter(Gemma2Adapter)
 register_model_adapter(StarlingLMAdapter)
 register_model_adapter(QwenAdapter)
 register_model_adapter(QwenMoeAdapter)
+register_model_adapter(QwenOmniAdapter)
 register_model_adapter(Llama3Adapter)
 register_model_adapter(Llama31Adapter)
 register_model_adapter(DeepseekV2Adapter)
@@ -815,3 +978,4 @@ register_model_adapter(Codegeex4Adapter)
 register_model_adapter(Qwen2Adapter, supported_models=COMMON_HF_QWEN25_MODELS)
 register_model_adapter(Internlm2Adapter)
 register_model_adapter(DeepseekV3R1Adapter, supported_models=COMMON_HF_DEEPSEEK__MODELS)
+register_model_adapter(KimiVLAdapter)

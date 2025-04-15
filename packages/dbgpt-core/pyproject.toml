@@ -137,6 +137,20 @@ proxy_openai = [
 ]
 proxy_anthropic = ["anthropic"]
 
+# For vision-language models
+model_vl = [
+    "pillow",
+    "librosa"
+]
+hf_qwen_omni = [
+    # 4.52.0 not released yet, you can install by 
+    # uv pip install git+https://github.com/huggingface/transformers@v4.51.3-Qwen2.5-Omni-preview
+    "transformers>=4.52.0",
+]
+hf_kimi = [
+    "transformers<4.51.3",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -146,6 +160,12 @@ managed = true
 dev-dependencies = []
 default-groups = ["dev"]
 
+conflicts = [
+    [
+        { extra = "hf_qwen_omni" },
+        { extra = "hf_kimi" },
+    ],
+]
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt"]
 exclude = [

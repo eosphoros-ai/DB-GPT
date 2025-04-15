@@ -4,7 +4,7 @@ from typing import List, Optional, Union
 from sqlalchemy import URL
 
 from dbgpt.component import SystemApp
-from dbgpt.core.interface.file import FileStorageClient
+from dbgpt.core.interface.file import FileStorageClient, FileStorageURI
 from dbgpt.storage.metadata import DatabaseManager
 from dbgpt_serve.core import BaseServe
 
@@ -136,3 +136,18 @@ class Serve(BaseServe):
         if not self._file_storage_client:
             raise ValueError("File storage client is not initialized")
         return self._file_storage_client
+
+    def replace_uri(self, uri: str) -> str:
+        """Replace the uri with the new uri"""
+        try:
+            parsed_uri = FileStorageURI.parse(uri)
+            bucket, file_id = parsed_uri.bucket, parsed_uri.file_id
+            node_address = self._serve_config.get_node_address()
+            api_prefix = (
+                self._api_prefix[0]
+                if isinstance(self._api_prefix, list)
+                else self._api_prefix
+            )
+            return f"http://{node_address}{api_prefix}/files/{bucket}/{file_id}"
+        except Exception as _e:
+            return uri

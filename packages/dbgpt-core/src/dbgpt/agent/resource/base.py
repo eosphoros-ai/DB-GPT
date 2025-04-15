@@ -48,6 +48,8 @@ class ResourceType(str, Enum):
     TextFile = "text_file"
     ExcelFile = "excel_file"
     ImageFile = "image_file"
+    AudioFile = "audio_file"
+    VideoFile = "video_file"
     AWELFlow = "awel_flow"
     App = "app"
     # Resource type for resource pack

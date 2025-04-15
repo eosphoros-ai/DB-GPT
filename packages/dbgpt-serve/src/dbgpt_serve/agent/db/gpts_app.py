@@ -1147,6 +1147,18 @@ class GptsAppDao(BaseDao):
             app_describe=chat_normal_ctx.scene_describe,
             team_context=chat_normal_ctx,
             param_need=[
+                {
+                    "type": AppParamType.Resource.value,
+                    "value": ResourceType.ImageFile.value,
+                },
+                {
+                    "type": AppParamType.Resource.value,
+                    "value": ResourceType.AudioFile.value,
+                },
+                {
+                    "type": AppParamType.Resource.value,
+                    "value": ResourceType.VideoFile.value,
+                },
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
                 {"type": AppParamType.MaxNewTokens.value, "value": None},

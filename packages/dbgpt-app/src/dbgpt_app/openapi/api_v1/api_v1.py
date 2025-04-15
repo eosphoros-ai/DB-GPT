@@ -336,68 +336,74 @@ async def file_upload(
     max_new_tokens: Optional[int] = None,
     sys_code: Optional[str] = None,
     model_name: Optional[str] = None,
-    doc_file: UploadFile = File(...),
+    doc_files: List[UploadFile] = File(...),
     user_token: UserRequest = Depends(get_user_from_headers),
     fs: FileStorageClient = Depends(get_fs),
 ):
-    logger.info(f"file_upload:{conv_uid},{doc_file.filename}")
-    # file_client = FileClient()
-    file_name = doc_file.filename
-    # is_oss, file_key = await file_client.write_file(
-    #     conv_uid=conv_uid, doc_file=doc_file
-    # )
-    #
-    custom_metadata = {
-        "user_name": user_token.user_id,
-        "sys_code": sys_code,
-        "conv_uid": conv_uid,
-    }
-    bucket = "dbgpt_app_file"
-    file_uri = await blocking_func_to_async(
-        CFG.SYSTEM_APP,
-        fs.save_file,
-        bucket,
-        file_name,
-        doc_file.file,
-        custom_metadata=custom_metadata,
+    logger.info(
+        f"file_upload:{conv_uid}, files:{[file.filename for file in doc_files]}"
     )
 
-    _, file_extension = os.path.splitext(file_name)
-    if file_extension.lower() in [".xls", ".xlsx", ".csv", "*.json", "*.parquet"]:
+    bucket = "dbgpt_app_file"
+    file_params = []
+
+    for doc_file in doc_files:
+        file_name = doc_file.filename
+        custom_metadata = {
+            "user_name": user_token.user_id,
+            "sys_code": sys_code,
+            "conv_uid": conv_uid,
+        }
+
+        file_uri = await blocking_func_to_async(
+            CFG.SYSTEM_APP,
+            fs.save_file,
+            bucket,
+            file_name,
+            doc_file.file,
+            custom_metadata=custom_metadata,
+        )
+
+        _, file_extension = os.path.splitext(file_name)
         file_param = {
             "is_oss": True,
             "file_path": file_uri,
             "file_name": file_name,
-            "file_learning": True,
+            "file_learning": False,
             "bucket": bucket,
         }
-        # Prepare the chat
-        dialogue = ConversationVo(
-            conv_uid=conv_uid,
-            chat_mode=chat_mode,
-            select_param=file_param,
-            model_name=model_name,
-            user_name=user_token.user_id,
-            sys_code=sys_code,
-        )
-        if temperature is not None:
-            dialogue.temperature = temperature
-        if max_new_tokens is not None:
-            dialogue.max_new_tokens = max_new_tokens
-        chat: BaseChat = await get_chat_instance(dialogue)
-        await chat.prepare()
+        file_params.append(file_param)
+    if chat_mode == ChatScene.ChatExcel.value():
+        if len(file_params) != 1:
+            return Result.failed(msg="Only one file is supported for Excel chat.")
+        file_param = file_params[0]
+        _, file_extension = os.path.splitext(file_param["file_name"])
+        if file_extension.lower() in [".xls", ".xlsx", ".csv", ".json", ".parquet"]:
+            # Prepare the chat
+            file_param["file_learning"] = True
+            dialogue = ConversationVo(
+                user_input="Learn from the file",
+                conv_uid=conv_uid,
+                chat_mode=chat_mode,
+                select_param=file_param,
+                model_name=model_name,
+                user_name=user_token.user_id,
+                sys_code=sys_code,
+            )
 
-        # Refresh messages
-        return Result.succ(file_param)
-    else:
-        return Result.succ(
-            {
-                "is_oss": True,
-                "file_path": file_uri,
-                "file_learning": False,
-                "file_name": file_name,
-            }
-        )
+            if temperature is not None:
+                dialogue.temperature = temperature
+            if max_new_tokens is not None:
+                dialogue.max_new_tokens = max_new_tokens
+
+            chat: BaseChat = await get_chat_instance(dialogue)
+            await chat.prepare()
+            # Refresh messages
+
+    # If only one file was uploaded, return the single file_param directly
+    # Otherwise return the array of file_params
+    result = file_params[0] if len(file_params) == 1 else file_params
+    return Result.succ(result)
 
 
 @router.post("/v1/resource/file/delete")
