@@ -360,7 +360,14 @@ class ConversableAgent(Role, Agent):
                         received_message=received_message
                     )
                 span.metadata["reply_message"] = reply_message.to_dict()
-
+            thinking_messages, resource_info = await self._load_thinking_messages(
+                received_message=received_message,
+                sender=sender,
+                rely_messages=rely_messages,
+                historical_dialogues=historical_dialogues,
+                context=reply_message.get_dict_context(),
+                is_retry_chat=is_retry_chat,
+            )
             fail_reason = None
             current_retry_counter = 0
             is_success = True
@@ -399,14 +406,7 @@ class ConversableAgent(Role, Agent):
                 logger.info(
                     f"Depends on the number of historical messages:{len(rely_messages) if rely_messages else 0}！"  # noqa
                 )
-                thinking_messages, resource_info = await self._load_thinking_messages(
-                    received_message=received_message,
-                    sender=sender,
-                    rely_messages=rely_messages,
-                    historical_dialogues=historical_dialogues,
-                    context=reply_message.get_dict_context(),
-                    is_retry_chat=is_retry_chat,
-                )
+
                 with root_tracer.start_span(
                     "agent.generate_reply.thinking",
                     metadata={
@@ -419,6 +419,9 @@ class ConversableAgent(Role, Agent):
                     # 1.Think about how to do things
                     llm_reply, model_name = await self.thinking(
                         thinking_messages, sender
+                    )
+                    thinking_messages.append(
+                        AgentMessage(role=ModelMessageRoleType.AI, content=llm_reply)
                     )
                     reply_message.model_name = model_name
                     reply_message.content = llm_reply
@@ -493,6 +496,7 @@ class ConversableAgent(Role, Agent):
                         logger.warning("No retry available!")
                         break
                     fail_reason = reason
+                    observation = fail_reason
                     await self.write_memories(
                         question=question,
                         ai_message=ai_message,
@@ -514,7 +518,12 @@ class ConversableAgent(Role, Agent):
                     if self.run_mode != AgentRunMode.LOOP or act_out.terminate:
                         logger.debug(f"Agent {self.name} reply success!{reply_message}")
                         break
-
+                thinking_messages.append(
+                    AgentMessage(
+                        role=ModelMessageRoleType.HUMAN,
+                        content=f"Observation: {observation}",
+                    )
+                )
                 # Continue to run the next round
                 current_retry_counter += 1
                 # Send error messages and issue new problem-solving instructions

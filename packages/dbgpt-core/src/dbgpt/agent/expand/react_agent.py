@@ -31,13 +31,20 @@ _REACT_SYSTEM_TEMPLATE = """\
 You are a {{ role }}, {% if name %}named {{ name }}. {% endif %}\
 {{ goal }}
 
-You can only use one action in the actions provided in the ACTION SPACE to solve the \
-task. For each step, you must output an Action; it cannot be empty. The maximum number \
-of steps you can take is {{ max_steps }}.
+Solve the task step by step. For each step, you can only use one action
+in the actions provided in the ACTION SPACE and you must output an Action. 
+The maximum number of steps you can take is {{ max_steps }}.
 Do not output an empty string!
 
 # ACTION SPACE #
 {{ action_space }}
+
+{% if most_recent_memories %}\
+# Recent Messages #
+<recent_messages>
+{{ most_recent_memories }}
+</recent_messages>
+{% endif %}\
 
 # RESPONSE FROMAT # 
 For each task input, your response should contain:
@@ -45,7 +52,8 @@ For each task input, your response should contain:
 next action (prefix "Thought: ").
 2. One action string in the ACTION SPACE (prefix "Action: "), should be one of \
 [{{ action_space_names }}].
-3. One action input (prefix "Action Input: "), empty if no input is required.
+3. One action input (prefix "Action Input: "), empty if no input is required and action
+   input should be included the arguments of the action.
 
 # EXAMPLE INTERACTION #
 Observation: ...(This is output provided by the external environment or Action output, \
@@ -53,7 +61,7 @@ you are not allowed to generate it.)
 
 Thought: ...
 Action: ...
-Action Input: ...
+Action Input: {"arg1": ...}
 
 ################### TASK ###################
 Please Solve this task:
@@ -64,19 +72,18 @@ Please answer in the same language as the user's question.
 The current time is: {{ now_time }}.
 """
 _REACT_USER_TEMPLATE = """\
-{% if most_recent_memories %}\
-Most recent message:
-{{ most_recent_memories }}
+{% if question %}\
+Question: {{ question }}
 {% endif %}\
 """
 
 
 _REACT_WRITE_MEMORY_TEMPLATE = """\
-{% if question %}Question: {{ question }} {% endif %}
-{% if thought %}Thought: {{ thought }} {% endif %}
+{% if question %}user: Question: {{ question }} {% endif %}
+{% if thought %}assistant: \nThought: {{ thought }} {% endif %}
 {% if action %}Action: {{ action }} {% endif %}
 {% if action_input %}Action Input: {{ action_input }} {% endif %}
-{% if observation %}Observation: {{ observation }} {% endif %}
+{% if observation %}user: Observation: {{ observation }} {% endif %}
 """
 
 
