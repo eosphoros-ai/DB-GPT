@@ -47,6 +47,9 @@ datasource_mysql = [
     # libpq-dev and libmysqlclient-dev first.
     "mysqlclient==2.1.0",
 ]
+datasource_oracle = [
+    "cx_Oracle>=8.3.0",  # 需要 Oracle Instant Client
+]
 datasource_postgres = [
     # "psycopg2", # In production, you can install psycopg2 instead of psycopg2-binary
     "psycopg2-binary",
