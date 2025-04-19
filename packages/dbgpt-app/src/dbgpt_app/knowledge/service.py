@@ -340,11 +340,14 @@ class KnowledgeService:
                 else 0.3
             )
 
-            if CFG.RERANK_MODEL is not None:
-                if top_k < int(CFG.RERANK_TOP_K) or top_k < 20:
+            app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
+            rerank_top_k = app_config.rag.rerank_top_k
+
+            if app_config.models.rerankers:
+                if top_k < int(rerank_top_k) or top_k < 20:
                     # We use reranker, so if the top_k is less than 20,
                     # we need to set it to 20
-                    top_k = max(int(CFG.RERANK_TOP_K), 20)
+                    top_k = max(int(rerank_top_k), 20)
 
             knowledge_space_retriever = KnowledgeSpaceRetriever(
                 space_id=space.id, top_k=top_k, system_app=CFG.SYSTEM_APP
@@ -360,7 +363,8 @@ class KnowledgeService:
             )
 
             recall_top_k = int(doc_recall_test_request.recall_top_k)
-            if CFG.RERANK_MODEL is not None:
+
+            if app_config.models.rerankers:
                 rerank_embeddings = RerankEmbeddingFactory.get_instance(
                     CFG.SYSTEM_APP
                 ).create()
