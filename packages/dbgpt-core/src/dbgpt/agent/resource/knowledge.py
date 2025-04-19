@@ -7,9 +7,9 @@ import cachetools
 
 from dbgpt._private.config import Config
 from dbgpt.core import Chunk
-from dbgpt.util.cache_utils import cached
-from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
+from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
+from dbgpt.util.cache_utils import cached
 
 from .base import Resource, ResourceParameters, ResourceType
 
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from dbgpt.storage.vector_store.filters import MetadataFilters
 
 CFG = Config()
+
 
 @dataclasses.dataclass
 class RetrieverResourceParameters(ResourceParameters):
@@ -37,11 +38,11 @@ class RetrieverResource(Resource[ResourceParameters]):
         self._name = name
         self._retriever = retriever
         app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
-        rerank_embeddings = RerankEmbeddingFactory.get_instance(
-            CFG.SYSTEM_APP
-        ).create()
+        rerank_embeddings = RerankEmbeddingFactory.get_instance(CFG.SYSTEM_APP).create()
         self.need_rerank = bool(app_config.models.rerankers)
-        self.reranker = RerankEmbeddingsRanker(rerank_embeddings, topk=app_config.rag.rerank_top_k)
+        self.reranker = RerankEmbeddingsRanker(
+            rerank_embeddings, topk=app_config.rag.rerank_top_k
+        )
 
     @property
     def name(self) -> str:
