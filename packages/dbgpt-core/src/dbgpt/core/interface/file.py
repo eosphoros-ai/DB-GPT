@@ -189,13 +189,22 @@ class StorageBackend(ABC):
     storage_type: str = "__base__"
 
     @abstractmethod
-    def save(self, bucket: str, file_id: str, file_data: BinaryIO) -> str:
+    def save(
+        self,
+        bucket: str,
+        file_id: str,
+        file_data: BinaryIO,
+        public_url: bool = False,
+        public_url_expire: Optional[int] = None,
+    ) -> str:
         """Save the file data to the storage backend.
 
         Args:
             bucket (str): The bucket name
             file_id (str): The file ID
             file_data (BinaryIO): The file data
+            public_url (bool): Whether to generate a public URL
+            public_url_expire (Optional[int]): The expiration time for the public URL
 
         Returns:
             str: The storage path
@@ -223,6 +232,21 @@ class StorageBackend(ABC):
             bool: True if the file was deleted, False otherwise
         """
 
+    def get_public_url(
+        self, fm: FileMetadata, expire: Optional[int] = None
+    ) -> Optional[str]:
+        """Generate a public URL for an existing file.
+
+        Args:
+            fm (FileMetadata): The file metadata
+            expire (Optional[int], optional): Expiration time in seconds. Defaults to
+                class default.
+
+        Returns:
+            str: The generated public URL
+        """
+        return None
+
     @property
     @abstractmethod
     def save_chunk_size(self) -> int:
@@ -249,7 +273,14 @@ class LocalFileStorage(StorageBackend):
         """Get the save chunk size."""
         return self._save_chunk_size
 
-    def save(self, bucket: str, file_id: str, file_data: BinaryIO) -> str:
+    def save(
+        self,
+        bucket: str,
+        file_id: str,
+        file_data: BinaryIO,
+        public_url: bool = False,
+        public_url_expire: Optional[int] = None,
+    ) -> str:
         """Save the file data to the local storage backend."""
         bucket_path = os.path.join(self.base_path, bucket)
         os.makedirs(bucket_path, exist_ok=True)
@@ -321,6 +352,8 @@ class FileStorageSystem:
         storage_type: str,
         custom_metadata: Optional[Dict[str, Any]] = None,
         file_id: Optional[str] = None,
+        public_url: bool = False,
+        public_url_expire: Optional[int] = None,
     ) -> str:
         """Save the file data to the storage backend."""
         file_id = str(uuid.uuid4()) if not file_id else file_id
@@ -337,7 +370,14 @@ class FileStorageSystem:
                 "storage_type": storage_type,
             },
         ):
-            storage_path = backend.save(bucket, file_id, file_data)
+            storage_path = backend.save(
+                bucket,
+                file_id,
+                file_data,
+                public_url=public_url,
+                public_url_expire=public_url_expire,
+            )
+
         file_data.seek(0, 2)  # Move to the end of the file
         file_size = file_data.tell()  # Get the file size
         file_data.seek(0)  # Reset file pointer
@@ -482,6 +522,39 @@ class FileStorageSystem:
                 # If the metadata deletion fails, log the error and return False
                 return False
         return False
+
+    def get_public_url(
+        self,
+        uri: str,
+        expire: Optional[int] = None,
+    ) -> str:
+        """Generate a public URL for an existing file.
+
+        Args:
+            uri (str): The file URI
+            expire (Optional[int], optional): Expiration time in seconds. Defaults to
+                None.
+
+        Returns:
+            str: The generated public URL, just return the original URI if the backend
+                does not support public URL generation.
+        """
+        parsed_uri = FileStorageURI.parse(uri)
+        metadata = self.metadata_storage.load(
+            FileMetadataIdentifier(
+                file_id=parsed_uri.file_id, bucket=parsed_uri.bucket
+            ),
+            FileMetadata,
+        )
+        if not metadata:
+            return None
+
+        backend = self.storage_backends.get(metadata.storage_type)
+        if not backend:
+            raise ValueError(f"Unsupported storage type: {metadata.storage_type}")
+
+        pub_url = backend.get_public_url(metadata, expire)
+        return pub_url if pub_url else uri
 
     def list_files(
         self, bucket: str, filters: Optional[Dict[str, Any]] = None
@@ -729,6 +802,23 @@ class FileStorageClient(BaseComponent):
         """
         return self.storage_system.list_files(bucket, filters)
 
+    def get_public_url(
+        self,
+        uri: str,
+        expire: Optional[int] = None,
+    ) -> str:
+        """Generate a public URL for an existing file.
+
+        Args:
+            uri (str): The file URI
+            expire (Optional[int], optional): Expiration time in seconds. Defaults to
+                None.
+
+        Returns:
+            str: The generated public URL
+        """
+        return self.storage_system.get_public_url(uri, expire)
+
 
 class SimpleDistributedStorage(StorageBackend):
     """Simple distributed storage backend."""
@@ -768,7 +858,14 @@ class SimpleDistributedStorage(StorageBackend):
             raise ValueError("Invalid storage path")
         return storage_path.split("//")[1].split("/")[0]
 
-    def save(self, bucket: str, file_id: str, file_data: BinaryIO) -> str:
+    def save(
+        self,
+        bucket: str,
+        file_id: str,
+        file_data: BinaryIO,
+        public_url: bool = False,
+        public_url_expire: Optional[int] = None,
+    ) -> str:
         """Save the file data to the distributed storage backend.
 
         Just save the file locally.

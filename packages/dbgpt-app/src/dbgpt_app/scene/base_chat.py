@@ -17,6 +17,7 @@ from dbgpt.core import (
     ModelRequestContext,
     SystemPromptTemplate,
 )
+from dbgpt.core.interface.file import FileStorageClient
 from dbgpt.core.interface.media import MediaContent
 from dbgpt.core.interface.message import (
     HumanMessage,
@@ -199,6 +200,7 @@ class BaseChat(ABC):
         # will be compatible with all models
         self._message_version = chat_param.message_version
         self._chat_param = chat_param
+        self.fs_client = FileStorageClient.get_instance(system_app)
 
     async def generate_input_values(self) -> Dict:
         """Generate input to LLM

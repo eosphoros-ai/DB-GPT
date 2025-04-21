@@ -174,6 +174,10 @@ const sidebars = {
               type: 'doc',
               id: 'installation/advanced_usage/OpenAI_SDK_call',
             },
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/multimodal',
+            },
           ],
         },
       ],
