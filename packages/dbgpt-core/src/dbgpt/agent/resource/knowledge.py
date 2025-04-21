@@ -111,6 +111,9 @@ class RetrieverResource(Resource[ResourceParameters]):
         if not question:
             raise ValueError("Question is required for knowledge resource.")
         chunks = await self.retrieve(question)
+        if self.need_rerank and len(chunks) > 1:
+            chunks = self.reranker.rank(candidates_with_scores=chunks, query=question)
+
         prompt_template = """Resources-{name}:\n {content}"""
         prompt_template_zh = """资源-{name}:\n {content}"""
         if lang == "en":
