@@ -140,6 +140,10 @@ class Serve(BaseServe):
     def replace_uri(self, uri: str) -> str:
         """Replace the uri with the new uri"""
         try:
+            new_uri = self.file_storage_client.get_public_url(uri)
+            if new_uri != uri:
+                return new_uri
+            # If the uri is not changed, replace it with the new uri
             parsed_uri = FileStorageURI.parse(uri)
             bucket, file_id = parsed_uri.bucket, parsed_uri.file_id
             node_address = self._serve_config.get_node_address()
