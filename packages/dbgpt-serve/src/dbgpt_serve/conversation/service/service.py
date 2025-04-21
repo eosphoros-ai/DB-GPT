@@ -9,13 +9,25 @@ from dbgpt.core import (
 from dbgpt.core.interface.message import _append_view_messages
 from dbgpt.storage.metadata._base_dao import REQ, RES
 from dbgpt.util.pagination_utils import PaginationResult
-from dbgpt.vis.client import vis_name_change
 from dbgpt_serve.core import BaseService
 
 from ...feedback.api.endpoints import get_service
 from ..api.schemas import MessageVo, ServeRequest, ServerResponse
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
+
+
+## Compatible with historical old messages
+def vis_name_change(vis_message: str) -> str:
+    """Change vis tag name use new name."""
+    replacements = {
+        "```vis-chart": "```vis-db-chart",
+    }
+
+    for old_tag, new_tag in replacements.items():
+        vis_message = vis_message.replace(old_tag, new_tag)
+
+    return vis_message
 
 
 class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):

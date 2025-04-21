@@ -634,5 +634,8 @@ def _try_import_torch():
         import torch
 
         _torch_imported = True
-    except ImportError:
+    except ImportError as e:
+        logger.warning(f"_try_import_torch ImportError!{str(e)}")
         pass
+    except Exception as e:
+        logger.warning(f"_try_import_torch exception!{str(e)}")

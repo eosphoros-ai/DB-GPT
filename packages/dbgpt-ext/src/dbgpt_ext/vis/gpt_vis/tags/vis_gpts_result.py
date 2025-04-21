@@ -1,6 +1,6 @@
 """VisDbgptsFlowResult."""
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 class VisDbgptsFlowResult(Vis):

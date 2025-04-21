@@ -9,6 +9,13 @@ from dbgpt.util.json_utils import serialize
 class Vis:
     """Vis protocol base class."""
 
+    def __init__(self, **kwargs):
+        """
+        vis init
+        Args:
+            **kwargs:
+        """
+
     def render_prompt(self) -> Optional[str]:
         """Return the prompt for the vis protocol."""
         return None

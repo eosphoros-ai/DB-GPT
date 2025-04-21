@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import dataclasses
+import json
+import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbgpt.core import LLMClient
 from dbgpt.util.annotations import PublicAPI
 
+from ...util.json_utils import serialize
 from .action.base import ActionOutput
 from .memory.agent_memory import AgentMemory
+from .memory.gpts import GptsMessage
 
 
 class Agent(ABC):
@@ -99,6 +103,7 @@ class Agent(ABC):
     async def thinking(
         self,
         messages: List[AgentMessage],
+        reply_message_id: str,
         sender: Optional[Agent] = None,
         prompt: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
@@ -180,6 +185,11 @@ class Agent(ABC):
     @abstractmethod
     def name(self) -> str:
         """Return the name of the agent."""
+
+    @property
+    @abstractmethod
+    def avatar(self) -> str:
+        """Return the avatar of the agent."""
 
     @property
     @abstractmethod
@@ -273,7 +283,9 @@ class AgentReviewInfo:
 class AgentMessage:
     """Message object for agent communication."""
 
+    message_id: Optional[str] = None
     content: Optional[str] = None
+    thinking: Optional[str] = None
     name: Optional[str] = None
     rounds: int = 0
     context: Optional[MessageContextType] = None
@@ -284,6 +296,7 @@ class AgentMessage:
     role: Optional[str] = None
     success: bool = True
     resource_info: Optional[ResourceReferType] = None
+    show_message: bool = True
 
     def to_dict(self) -> Dict:
         """Return a dictionary representation of the AgentMessage."""
@@ -297,16 +310,43 @@ class AgentMessage:
 
     def to_llm_message(self) -> Dict[str, Any]:
         """Return a dictionary representation of the AgentMessage."""
+        content = self.content
+        action_report = self.action_report
+        if action_report:
+            content = action_report.content
         return {
-            "content": self.content,
+            "content": content,  # use tool data as message
             "context": self.context,
             "role": self.role,
         }
 
     @classmethod
+    def init_new(
+        cls,
+        content: Optional[str] = None,
+        current_goal: Optional[str] = None,
+        context: Optional[dict] = None,
+        rounds: Optional[int] = None,
+        name: Optional[str] = None,
+        role: Optional[str] = None,
+        show_message: bool = True,
+    ):
+        return cls(
+            message_id=uuid.uuid4().hex,
+            content=content,
+            current_goal=current_goal,
+            context=context,
+            rounds=rounds + 1,
+            name=name,
+            role=role,
+            show_message=show_message,
+        )
+
+    @classmethod
     def from_llm_message(cls, message: Dict[str, Any]) -> AgentMessage:
         """Create an AgentMessage object from a dictionary."""
         return cls(
+            message_id=uuid.uuid4().hex,
             content=message.get("content"),
             context=message.get("context"),
             role=message.get("role"),
@@ -322,6 +362,7 @@ class AgentMessage:
             kwargs = {
                 key: value for key, value in message.items() if key in field_names
             }
+            kwargs["message_id"] = uuid.uuid4().hex
             results.append(cls(**kwargs))
         return results
 
@@ -337,6 +378,7 @@ class AgentMessage:
         copied_review_info = self.review_info.copy() if self.review_info else None
         return AgentMessage(
             content=self.content,
+            thinking=self.thinking,
             name=self.name,
             context=copied_context,
             rounds=self.rounds,
@@ -354,3 +396,46 @@ class AgentMessage:
         if isinstance(self.context, dict):
             return self.context
         return {}
+
+    def to_gpts_message(
+        self,
+        sender: "ConversableAgent",  # noqa
+        receiver: "ConversableAgent",  # noqa
+    ) -> GptsMessage:
+        gpts_message: GptsMessage = GptsMessage(
+            conv_id=receiver.not_null_agent_context.conv_id,
+            message_id=self.message_id if self.message_id else uuid.uuid4().hex,
+            sender=sender.role,
+            sender_name=sender.name,
+            receiver=receiver.role,
+            receiver_name=receiver.name,
+            role=receiver.role,
+            rounds=self.rounds,
+            is_success=self.success,
+            app_code=sender.not_null_agent_context.gpts_app_code,
+            app_name=sender.not_null_agent_context.gpts_app_name,
+            current_goal=self.current_goal,
+            content=self.content if self.content else "",
+            thinking=self.thinking if self.thinking else "",
+            context=(
+                json.dumps(self.context, default=serialize, ensure_ascii=False)
+                if self.context
+                else None
+            ),
+            review_info=(
+                json.dumps(self.review_info.to_dict(), ensure_ascii=False)
+                if self.review_info
+                else None
+            ),
+            action_report=(
+                json.dumps(self.action_report.to_dict(), ensure_ascii=False)
+                if self.action_report
+                else None
+            ),
+            model_name=self.model_name,
+            resource_info=(
+                json.dumps(self.resource_info) if self.resource_info else None
+            ),
+            show_message=self.show_message,
+        )
+        return gpts_message

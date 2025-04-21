@@ -1,6 +1,6 @@
 """Vis Plugin."""
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 class VisPlugin(Vis):

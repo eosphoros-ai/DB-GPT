@@ -25,6 +25,8 @@ from dbgpt._private.pydantic import (
     model_validator,
 )
 from dbgpt.agent.core.plan import AWELTeamContext
+from dbgpt.agent.core.plan.base import SingleAgentContext
+from dbgpt.agent.core.plan.react.team_react_plan import AutoTeamContext
 from dbgpt.agent.resource.base import AgentResource, ResourceType
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt_app.openapi.api_view_model import ConversationVo
@@ -42,17 +44,25 @@ logger = logging.getLogger(__name__)
 recommend_question_dao = RecommendQuestionDao()
 
 
+class BindAppRequest(BaseModel):
+    team_app_code: str
+    bin_app_codes: List[str]
+
+
 class GptsAppDetail(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     app_code: Optional[str] = None
     app_name: Optional[str] = None
+    type: Optional[str] = None
     agent_name: Optional[str] = None
+    agent_role: Optional[str] = None
+    agent_describe: Optional[str] = None
     node_id: Optional[str] = None
     resources: Optional[list[AgentResource]] = None
     prompt_template: Optional[str] = None
     llm_strategy: Optional[str] = None
-    llm_strategy_value: Optional[str] = None
+    llm_strategy_value: Union[Optional[str], Optional[List[Any]]] = None
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
 
@@ -81,7 +91,10 @@ class GptsAppDetail(BaseModel):
         return cls(
             app_code=d["app_code"],
             app_name=d["app_name"],
+            type=d["type"],
             agent_name=d["agent_name"],
+            agent_role=d["agent_role"],
+            agent_describe=d.get("agent_describe", None),
             node_id=d["node_id"],
             resources=AgentResource.from_json_list_str(d.get("resources", None)),
             prompt_template=d.get("prompt_template", None),
@@ -97,7 +110,10 @@ class GptsAppDetail(BaseModel):
         return cls(
             app_code=entity.app_code,
             app_name=entity.app_name,
+            type=entity.type,
             agent_name=entity.agent_name,
+            agent_role=entity.agent_role,
+            agent_describe=entity.agent_describe,
             node_id=entity.node_id,
             resources=resources,
             prompt_template=entity.prompt_template,
@@ -116,7 +132,11 @@ class GptsApp(BaseModel):
     app_describe: Optional[str] = None
     team_mode: Optional[str] = None
     language: Optional[str] = None
-    team_context: Optional[Union[str, AWELTeamContext, NativeTeamContext]] = None
+    team_context: Optional[
+        Union[
+            str, AutoTeamContext, SingleAgentContext, AWELTeamContext, NativeTeamContext
+        ]
+    ] = None
     user_code: Optional[str] = None
     sys_code: Optional[str] = None
     is_collected: Optional[str] = None
@@ -162,6 +182,7 @@ class GptsApp(BaseModel):
             team_context=d.get("team_context", None),
             user_code=d.get("user_code", None),
             sys_code=d.get("sys_code", None),
+            icon=d.get("icon", None),
             is_collected=d.get("is_collected", None),
             created_at=d.get("created_at", None),
             updated_at=d.get("updated_at", None),
@@ -285,9 +306,12 @@ class GptsAppCollectionEntity(Model):
     app_code = Column(String(255), nullable=False, comment="Current AI assistant code")
     user_code = Column(String(255), nullable=True, comment="user code")
     sys_code = Column(String(255), nullable=True, comment="system app code")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
+    created_at = Column(
+        DateTime, name="gmt_create", default=datetime.utcnow, comment="create time"
+    )
     updated_at = Column(
         DateTime,
+        name="gmt_modified",
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         comment="last update time",
@@ -322,9 +346,12 @@ class GptsAppEntity(Model):
         comment="Parameters required for application",
     )
 
-    created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
+    created_at = Column(
+        DateTime, name="gmt_create", default=datetime.utcnow, comment="create time"
+    )
     updated_at = Column(
         DateTime,
+        name="gmt_modified",
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         comment="last update time",
@@ -339,7 +366,14 @@ class GptsAppDetailEntity(Model):
     id = Column(Integer, primary_key=True, comment="autoincrement id")
     app_code = Column(String(255), nullable=False, comment="Current AI assistant code")
     app_name = Column(String(255), nullable=False, comment="Current AI assistant name")
+    type = Column(
+        String(255),
+        nullable=False,
+        comment="bind detail agent type. 'app' or 'agent', default 'agent'",
+    )
     agent_name = Column(String(255), nullable=False, comment=" Agent name")
+    agent_role = Column(String(255), nullable=False, comment=" Agent role")
+    agent_describe = Column(Text, nullable=True, comment=" Agent describe")
     node_id = Column(
         String(255), nullable=False, comment="Current AI assistant Agent Node id"
     )
@@ -349,9 +383,12 @@ class GptsAppDetailEntity(Model):
     llm_strategy_value = Column(
         Text, nullable=True, comment="Agent use llm strategy value"
     )
-    created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
+    created_at = Column(
+        DateTime, name="gmt_create", default=datetime.utcnow, comment="create time"
+    )
     updated_at = Column(
         DateTime,
+        name="gmt_modified",
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         comment="last update time",
@@ -695,6 +732,7 @@ class GptsAppDao(BaseDao):
                 app_info.team_mode, app_info.team_context
             ),
             "user_code": app_info.user_code,
+            "icon": app_info.icon,
             "sys_code": app_info.sys_code,
             "is_collected": "true" if app_info.app_code in app_collects else "false",
             "created_at": app_info.created_at,
@@ -765,6 +803,45 @@ class GptsAppDao(BaseDao):
                 return app
             else:
                 return app_info
+
+    async def auto_team_bin_apps(self, team_app_code: str, bind_apps: List[str]):
+        logger.info(f"auto_team_bin_apps:{team_app_code},{bind_apps}")
+        ### 把应用转换为当前应用的子agent，
+        team_app: GptsApp = self.app_detail(team_app_code)
+        if not team_app:
+            raise ValueError(f"{team_app} is not a app!")
+        if team_app.team_mode != TeamMode.AUTO_PLAN.value:
+            raise ValueError(f"{team_app.app_name} is not a multi agents app!")
+
+        gpt_apps: List[GptsApp] = []
+        err_app_codes: List[str] = []
+        for bind_app in bind_apps:
+            gpt_app: GptsApp = self.app_detail(bind_app)
+            if not gpt_app:
+                err_app_codes.append(bind_app)
+            gpt_apps.append(gpt_app)
+        if len(err_app_codes) > 0:
+            raise ValueError(
+                f"There is a problem with the app codes to be bound！[{err_app_codes}]"
+            )
+        for gpt_app in gpt_apps:
+            ## 暂时线只支持绑定单agent应用，多Agent应用绑定要把多Agent的子Agent资源提到绑定的TL Agent上，可能需要产品测来定义    #noqa
+            if gpt_app.team_mode == TeamMode.SINGLE_AGENT.value:
+                new_detail: GptsAppDetail = gpt_app.details[0].copy()
+                new_detail.app_name = team_app.app_name
+                new_detail.app_code = team_app.app_code
+                strategy_values = json.loads(gpt_app.details[0].llm_strategy_value)
+                # 恢复模拟前端的数据
+                new_detail.llm_strategy_value = ",".join(strategy_values)
+                new_detail.agent_describe = gpt_app.app_describe
+                new_detail.agent_role = (
+                    new_detail.agent_role
+                    if new_detail.agent_role
+                    else new_detail.agent_name
+                )
+                new_detail.agent_name = gpt_app.app_name
+                team_app.details.append(new_detail)
+                self.edit(team_app)
 
     def app_detail(self, app_code: str, user_code: str = None, sys_code: str = None):
         with self.session() as session:
@@ -874,6 +951,9 @@ class GptsAppDao(BaseDao):
                         app_code=app_entity.app_code,
                         app_name=app_entity.app_name,
                         agent_name=item.agent_name,
+                        agent_role=item.agent_role
+                        if item.agent_role
+                        else item.agent_name,
                         node_id=str(uuid.uuid1()),
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
@@ -935,7 +1015,6 @@ class GptsAppDao(BaseDao):
                 GptsAppDetailEntity.app_code == gpts_app.app_code
             )
             old_details.delete()
-            session.commit()
 
             app_details = []
             for item in gpts_app.details:
@@ -945,6 +1024,11 @@ class GptsAppDao(BaseDao):
                         app_code=gpts_app.app_code,
                         app_name=gpts_app.app_name,
                         agent_name=item.agent_name,
+                        type=item.type,
+                        agent_role=item.agent_role
+                        if item.agent_role
+                        else item.agent_name,
+                        agent_describe=item.agent_describe,
                         node_id=str(uuid.uuid1()),
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
@@ -983,7 +1067,6 @@ class GptsAppDao(BaseDao):
                         params=json.dumps(recommend_question.params),
                         valid=recommend_question.valid,
                         chat_mode=chat_scene,
-                        user_code=gpts_app.user_code,
                     )
                 )
             session.add_all(recommend_questions)
@@ -1147,18 +1230,6 @@ class GptsAppDao(BaseDao):
             app_describe=chat_normal_ctx.scene_describe,
             team_context=chat_normal_ctx,
             param_need=[
-                {
-                    "type": AppParamType.Resource.value,
-                    "value": ResourceType.ImageFile.value,
-                },
-                {
-                    "type": AppParamType.Resource.value,
-                    "value": ResourceType.AudioFile.value,
-                },
-                {
-                    "type": AppParamType.Resource.value,
-                    "value": ResourceType.VideoFile.value,
-                },
                 {"type": AppParamType.Model.value, "value": None},
                 {"type": AppParamType.Temperature.value, "value": None},
                 {"type": AppParamType.MaxNewTokens.value, "value": None},
@@ -1269,13 +1340,20 @@ class GptsAppDao(BaseDao):
 
 
 def _parse_team_context(
-    team_context: Optional[Union[str, AWELTeamContext, NativeTeamContext]] = None,
+    team_context: Optional[
+        Union[
+            str, AutoTeamContext, SingleAgentContext, AWELTeamContext, NativeTeamContext
+        ]
+    ] = None,
 ):
     """
     parse team_context to str
     """
-    if isinstance(team_context, AWELTeamContext) or isinstance(
-        team_context, NativeTeamContext
+    if (
+        isinstance(team_context, AWELTeamContext)
+        or isinstance(team_context, NativeTeamContext)
+        or isinstance(team_context, AutoTeamContext)
+        or isinstance(team_context, SingleAgentContext)
     ):
         return model_to_json(team_context)
     return team_context
@@ -1283,17 +1361,55 @@ def _parse_team_context(
 
 def _load_team_context(
     team_mode: str = None, team_context: str = None
-) -> Union[str, AWELTeamContext, NativeTeamContext]:
+) -> Union[
+    str, AWELTeamContext, SingleAgentContext, NativeTeamContext, AutoTeamContext
+]:
     """
     load team_context to str or AWELTeamContext
     """
     if team_mode is not None:
         match team_mode:
+            case TeamMode.SINGLE_AGENT.value:
+                try:
+                    if team_context:
+                        single_agent_ctx = SingleAgentContext(
+                            **json.loads(team_context)
+                        )
+                        return single_agent_ctx
+                    else:
+                        return None
+                except Exception as ex:
+                    logger.warning(
+                        f"_load_team_context error, team_mode={team_mode}, "
+                        f"team_context={team_context}, {ex}"
+                    )
+                    return None
             case TeamMode.AWEL_LAYOUT.value:
                 try:
                     if team_context:
                         awel_team_ctx = AWELTeamContext(**json.loads(team_context))
                         return awel_team_ctx
+                    else:
+                        return None
+                except Exception as ex:
+                    logger.exception(
+                        f"_load_team_context error, team_mode={team_mode}, "
+                        f"team_context={team_context}, {ex}"
+                    )
+            case TeamMode.AUTO_PLAN.value:
+                try:
+                    if team_context:
+                        context_obj = json.loads(team_context)
+                        if "resources" in context_obj:
+                            resource = context_obj["resources"]
+                            if isinstance(resource, str):
+                                resource_obj = json.loads(context_obj["resources"])
+                            else:
+                                resource_obj = resource
+                            context_obj["resources"] = resource_obj
+
+                        auto_team_ctx = AutoTeamContext(**context_obj)
+                        return auto_team_ctx
                     else:
                         return None
                 except Exception as ex:
@@ -1403,7 +1519,7 @@ def adapt_native_app_model(dialogue: ConversationVo):
             ChatScene.ChatWithDbQA.value(),
             ChatScene.ChatWithDbExecute.value(),
             ChatScene.ChatDashboard.value(),
-            ChatScene.ChatNormal.value(),
+            ChatScene.ChatNormal.value,
         ]:
             return dialogue
         gpts_dao = GptsAppDao()

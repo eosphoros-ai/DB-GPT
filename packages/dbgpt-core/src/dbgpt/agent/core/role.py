@@ -154,6 +154,11 @@ class Role(ABC, BaseModel):
         return self.current_profile.get_goal()
 
     @property
+    def avatar(self) -> Optional[str]:
+        """Return the goal of the role."""
+        return self.current_profile.get_avatar()
+
+    @property
     def retry_goal(self) -> Optional[str]:
         """Return the retry goal of the role."""
         return self.current_profile.get_retry_goal()

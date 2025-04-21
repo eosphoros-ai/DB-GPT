@@ -1,12 +1,13 @@
 """LLM module."""
 
 import logging
+from abc import ABC
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
-from dbgpt.core import LLMClient, ModelMetadata, ModelRequest
+from dbgpt.core import LLMClient, ModelRequest
 
 logger = logging.getLogger(__name__)
 
@@ -67,31 +68,37 @@ class LLMStrategyType(Enum):
         }
 
 
-class LLMStrategy:
-    """LLM strategy base class."""
-
+class LLMStrategy(ABC):
     def __init__(self, llm_client: LLMClient, context: Optional[str] = None):
-        """Create an LLMStrategy instance."""
         self._llm_client = llm_client
         self._context = context
 
     @property
     def type(self) -> LLMStrategyType:
-        """Return the strategy type."""
         return LLMStrategyType.Default
 
     def _excluded_models(
         self,
-        all_models: List[ModelMetadata],
-        excluded_models: List[str],
-        need_uses: Optional[List[str]] = None,
+        all_models: List[str],
+        order_llms: Optional[List[str]] = None,
+        excluded_models: Optional[List[str]] = None,
     ):
-        if not need_uses:
-            need_uses = []
+        if not order_llms:
+            order_llms = []
+        if not excluded_models:
+            excluded_models = []
         can_uses = []
-        for item in all_models:
-            if item.model in need_uses and item.model not in excluded_models:
-                can_uses.append(item)
+        if order_llms and len(order_llms) > 0:
+            for llm_name in order_llms:
+                if llm_name in all_models and (
+                    not excluded_models or llm_name not in excluded_models
+                ):
+                    can_uses.append(llm_name)
+        else:
+            for llm_name in all_models:
+                if not excluded_models or llm_name not in excluded_models:
+                    can_uses.append(llm_name)
+
         return can_uses
 
     async def next_llm(self, excluded_models: Optional[List[str]] = None):
@@ -107,9 +114,11 @@ class LLMStrategy:
             excluded_models = []
         try:
             all_models = await self._llm_client.models()
-            available_llms = self._excluded_models(all_models, excluded_models, None)
-            if available_llms and len(available_llms) > 0:
-                return available_llms[0].model
+            all_model_names = [item.model for item in all_models]
+
+            can_uses = self._excluded_models(all_model_names, None, excluded_models)
+            if can_uses and len(can_uses) > 0:
+                return can_uses[0]
             else:
                 raise ValueError("No model service available!")
 
@@ -118,14 +127,26 @@ class LLMStrategy:
             raise ValueError(f"Failed to allocate model service,{str(e)}!")
 
 
-llm_strategies: Dict[LLMStrategyType, List[Type[LLMStrategy]]] = defaultdict(list)
+### Model selection strategy registration, built-in strategy registration by default
+llm_strategies: Dict[LLMStrategyType, List[Type[LLMStrategy]]] = defaultdict(
+    Type[LLMStrategy]
+)
 
 
-def register_llm_strategy(
+def register_llm_strategy_cls(
     llm_strategy_type: LLMStrategyType, strategy: Type[LLMStrategy]
 ):
     """Register llm strategy."""
-    llm_strategies[llm_strategy_type].append(strategy)
+    llm_strategies[llm_strategy_type] = strategy
+
+
+def get_llm_strategy_cls(
+    llm_strategy_type: LLMStrategyType,
+) -> Optional[Type[LLMStrategy]]:
+    return llm_strategies.get(llm_strategy_type, None)
+
+
+register_llm_strategy_cls(LLMStrategyType.Default, LLMStrategy)
 
 
 class LLMConfig(BaseModel):

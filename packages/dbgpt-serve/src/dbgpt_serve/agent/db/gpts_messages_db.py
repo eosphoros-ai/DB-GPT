@@ -26,15 +26,28 @@ class GptsMessagesEntity(Model):
     conv_id = Column(
         String(255), nullable=False, comment="The unique id of the conversation record"
     )
+    message_id = Column(
+        String(255), nullable=False, comment="The unique id of the messages"
+    )
     sender = Column(
         String(255),
         nullable=False,
-        comment="Who speaking in the current conversation turn",
+        comment="Who(role) speaking in the current conversation turn",
+    )
+    sender_name = Column(
+        String(255),
+        nullable=False,
+        comment="Who(name) speaking in the current conversation turn",
     )
     receiver = Column(
         String(255),
         nullable=False,
-        comment="Who receive message in the current conversation turn",
+        comment="Who(role) receive message in the current conversation turn",
+    )
+    receiver_name = Column(
+        String(255),
+        nullable=False,
+        comment="Who(name) receive message in the current conversation turn",
     )
     model_name = Column(String(255), nullable=True, comment="message generate model")
     rounds = Column(Integer, nullable=False, comment="dialogue turns")
@@ -49,8 +62,16 @@ class GptsMessagesEntity(Model):
         nullable=False,
         comment="The message in which app name",
     )
+    thinking = Column(
+        Text(length=2**31 - 1), nullable=True, comment="Thinking of the speech"
+    )
     content = Column(
         Text(length=2**31 - 1), nullable=True, comment="Content of the speech"
+    )
+    show_message = Column(
+        Boolean,
+        nullable=True,
+        comment="Whether the current message needs to be displayed to the user",
     )
     current_goal = Column(
         Text, nullable=True, comment="The target corresponding to the current message"
@@ -72,7 +93,11 @@ class GptsMessagesEntity(Model):
     role = Column(
         String(255), nullable=True, comment="The role of the current message content"
     )
-
+    avatar = Column(
+        String(255),
+        nullable=True,
+        comment="The avatar of the agent who send current message content",
+    )
     created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
     updated_at = Column(
         DateTime,
@@ -84,15 +109,19 @@ class GptsMessagesEntity(Model):
 
 
 class GptsMessagesDao(BaseDao):
-    def append(self, entity: dict):
-        session = self.get_raw_session()
-        message = GptsMessagesEntity(
+    def _dict_to_entity(self, entity: dict) -> GptsMessagesEntity:
+        return GptsMessagesEntity(
             conv_id=entity.get("conv_id"),
+            message_id=entity.get("message_id"),
             sender=entity.get("sender"),
+            sender_name=entity.get("sender_name"),
             receiver=entity.get("receiver"),
+            receiver_name=entity.get("receiver_name"),
             content=entity.get("content"),
+            thinking=entity.get("thinking"),
             is_success=entity.get("is_success", True),
             role=entity.get("role", None),
+            avatar=entity.get("avatar", None),
             model_name=entity.get("model_name", None),
             context=entity.get("context", None),
             rounds=entity.get("rounds", None),
@@ -102,7 +131,46 @@ class GptsMessagesDao(BaseDao):
             review_info=entity.get("review_info", None),
             action_report=entity.get("action_report", None),
             resource_info=entity.get("resource_info", None),
+            show_message=entity.get("show_message", None),
         )
+
+    def update_message(self, entity: dict):
+        session = self.get_raw_session()
+        message_qry = session.query(GptsMessagesEntity)
+        message_qry = message_qry.filter(
+            GptsMessagesEntity.message_id == entity["message_id"]
+        )
+        old_message: GptsMessagesEntity = message_qry.order_by(
+            GptsMessagesEntity.rounds
+        ).one_or_none()
+
+        if old_message:
+            old_message.update(
+                {
+                    GptsMessagesEntity.receiver: entity.get("receiver"),
+                    GptsMessagesEntity.receiver_name: entity.get("receiver_name"),
+                    GptsMessagesEntity.content: entity.get("content"),
+                    GptsMessagesEntity.thinking: entity.get("thinking"),
+                    GptsMessagesEntity.is_success: entity.get("is_success"),
+                    GptsMessagesEntity.role: entity.get("role"),
+                    GptsMessagesEntity.model_name: entity.get("model_name"),
+                    GptsMessagesEntity.context: entity.get("context"),
+                    GptsMessagesEntity.review_info: entity.get("review_info"),
+                    GptsMessagesEntity.action_report: entity.get("action_report"),
+                    GptsMessagesEntity.resource_info: entity.get("resource_info"),
+                },
+                synchronize_session="fetch",
+            )
+        else:
+            session.add(self._dict_to_entity(entity))
+
+        session.commit()
+        session.close()
+        return id
+
+    def append(self, entity: dict):
+        session = self.get_raw_session()
+        message = self._dict_to_entity(entity)
         session.add(message)
         session.commit()
         id = message.id
@@ -145,6 +213,30 @@ class GptsMessagesDao(BaseDao):
         if conv_id:
             gpts_messages = gpts_messages.filter(GptsMessagesEntity.conv_id == conv_id)
         result = gpts_messages.order_by(GptsMessagesEntity.rounds).all()
+        session.close()
+        return result
+
+    def delete_by_msg_id(self, message_id: str):
+        session = self.get_raw_session()
+        old_message_qry = session.query(GptsMessagesEntity)
+
+        old_message_qry = old_message_qry.filter(
+            GptsMessagesEntity.message_id == message_id
+        )
+        old_message = old_message_qry.order_by(GptsMessagesEntity.rounds).one_or_none()
+        if old_message:
+            session.delete(old_message)
+            session.commit()
+        session.close()
+
+    def get_by_message_id(self, message_id: str) -> Optional[GptsMessagesEntity]:
+        session = self.get_raw_session()
+        gpts_messages = session.query(GptsMessagesEntity)
+
+        gpts_messages = gpts_messages.filter(
+            GptsMessagesEntity.message_id == message_id
+        )
+        result = gpts_messages.order_by(GptsMessagesEntity.rounds).one_or_none()
         session.close()
         return result
 
