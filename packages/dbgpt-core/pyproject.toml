@@ -151,6 +151,8 @@ hf_glm4 = [
     "transformers>=4.51.3",
 ]
 hf_kimi = [
+    "tiktoken",
+    "blobfile",
     "transformers<4.51.3",
 ]
 
